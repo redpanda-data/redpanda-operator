@@ -1,0 +1,368 @@
+{{/*
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- $values := .Values }}
+{{- $advertiseAddress := include "redpanda.kafka.internal.advertise.address" . -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "redpanda.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    helm.sh/chart: {{ template "redpanda.chart" . }}
+    app.kubernetes.io/name: {{ template "redpanda.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/component: {{ template "redpanda.name" . }}
+{{- with .Values.commonLabels }}
+  {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "redpanda.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  serviceName: {{ template "redpanda.fullname" . }}
+  replicas: {{ .Values.statefulset.replicas | int64 }}
+  updateStrategy:
+    {{- toYaml .Values.statefulset.updateStrategy | nindent 4 }}
+  podManagementPolicy: {{ .Values.statefulset.podManagementPolicy }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "redpanda.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/component: {{ template "redpanda.name" . }}
+{{- with .Values.commonLabels }}
+        {- toYaml . | nindent 8 }}
+{{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+{{- with $.Values.statefulset.annotations }}
+        {{- toYaml . | nindent 8 }}
+{{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.statefulset.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: set-datadir-ownership
+          image: busybox:latest
+          command: ["/bin/sh", "-c", "chown 101:101 -R /var/lib/redpanda/data"]
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/redpanda/data
+        - name: {{ template "redpanda.name" . }}-configurator
+          image: {{ .Values.image.repository}}:{{ template "redpanda.tag" . }}
+          command: ["/bin/sh", "-c"]
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          args:
+            - >
+              CONFIG=/etc/redpanda/redpanda.yaml;
+              cp /tmp/base-config/redpanda.yaml "$CONFIG";
+              {{- if (include "redpanda-atleast-22-1-1" . | fromJson).bool }}
+              cp /tmp/base-config/bootstrap.yaml /etc/redpanda/.bootstrap.yaml;
+              {{- end }}
+              {{- if (include "redpanda-atleast-22-3-0" . | fromJson).bool }}
+              rpk --config "$CONFIG" config set redpanda.empty_seed_starts_cluster false;
+              {{- else }}
+              NODE_ID=${SERVICE_NAME##*-};
+              rpk --config "$CONFIG" config set redpanda.node_id $NODE_ID;
+              if [ "$NODE_ID" = "0" ]; then
+                rpk --config "$CONFIG" config set redpanda.seed_servers '[]' --format yaml;
+              fi;
+              {{- end }}
+          volumeMounts:
+            - name: {{ template "redpanda.fullname" . }}
+              mountPath: /tmp/base-config
+            - name: config
+              mountPath: /etc/redpanda
+          resources:
+            {{- toYaml .Values.statefulset.resources | nindent 12 }}
+      containers:
+        - name: {{ template "redpanda.name" . }}
+          image: {{ .Values.image.repository}}:{{ template "redpanda.tag" . }}
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                {{- if (include "admin-internal-tls-enabled" . |fromJson).bool }}
+                - >
+                  curl https://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview
+                  -svk --cacert /etc/tls/certs/{{ .Values.listeners.admin.tls.cert }}/ca.crt |
+                  awk '{
+                    id = $0; gsub(/.*"controller_id": /, "", id); gsub(/,.*/, "", id)
+                    nd_str = $0; gsub(/.*"nodes_down": \[/, "", nd_str); gsub(/\].*/, "", nd_str)
+                    FS=","
+                    split(nd_str, nd_list)
+                    for (i in nd_list) nodes_down[nd_list[i]]=""
+                    exit (id in nodes_down)
+                  }'
+                {{- else }}
+                - >
+                  curl -sv http://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview |
+                  awk '{
+                    id = $0; gsub(/.*"controller_id": /, "", id); gsub(/,.*/, "", id)
+                    nd_str = $0; gsub(/.*"nodes_down": \[/, "", nd_str); gsub(/\].*/, "", nd_str)
+                    FS=","
+                    split(nd_str, nd_list)
+                    for (i in nd_list) nodes_down[nd_list[i]]=""
+                    exit (id in nodes_down)
+                  }'
+                {{- end }}
+            initialDelaySeconds: {{ .Values.statefulset.startupProbe.initialDelaySeconds }}
+            failureThreshold: {{ .Values.statefulset.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.statefulset.startupProbe.periodSeconds }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                {{- if (include "admin-internal-tls-enabled" . |fromJson).bool }}
+                - >
+                  curl https://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview
+                  -svk --cacert /etc/tls/certs/{{ .Values.listeners.admin.tls.cert }}/ca.crt
+                {{- else }}
+                - >
+                  curl -sv http://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview
+                {{- end }}
+            initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
+            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                {{- if (include "admin-internal-tls-enabled" . |fromJson).bool }}
+                - >
+                  curl https://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview
+                  -svk --cacert /etc/tls/certs/{{ .Values.listeners.admin.tls.cert }}/ca.crt |
+                  awk '{
+                    id = $0; gsub(/.*"controller_id": /, "", id); gsub(/,.*/, "", id)
+                    nd_str = $0; gsub(/.*"nodes_down": \[/, "", nd_str); gsub(/\].*/, "", nd_str)
+                    FS=","
+                    split(nd_str, nd_list)
+                    for (i in nd_list) nodes_down[nd_list[i]]=""
+                    exit (id in nodes_down)
+                  }'
+                {{- else }}
+                - >
+                  curl -sv http://localhost:{{ .Values.listeners.admin.port }}/v1/cluster/health_overview |
+                  awk '{
+                    id = $0; gsub(/.*"controller_id": /, "", id); gsub(/,.*/, "", id)
+                    nd_str = $0; gsub(/.*"nodes_down": \[/, "", nd_str); gsub(/\].*/, "", nd_str)
+                    FS=","
+                    split(nd_str, nd_list)
+                    for (i in nd_list) nodes_down[nd_list[i]]=""
+                    exit (id in nodes_down)
+                  }'
+                {{- end }}
+            initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
+            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
+          command:
+            - rpk
+            - redpanda
+            - start
+            - --smp={{ .Values.resources.cpu.cores }}
+            - --memory={{ template "redpanda-memory" . }}M
+            - --reserve-memory={{ template "redpanda-reserve-memory" . }}
+            - --default-log-level={{ .Values.logging.logLevel }}
+            - --advertise-kafka-addr=internal://{{ $advertiseAddress }}:{{ .Values.listeners.kafka.port }},
+{{- range $name, $listener := .Values.listeners.kafka.external -}}
+  {{- $enabled := dig "enabled" $values.external.enabled $listener -}}
+  {{- $listenerNodePortEnabled := and $enabled (eq (dig "type" $values.external.type $listener) "NodePort") -}}
+  {{- $advertiseKafkaHost := $advertiseAddress -}}
+  {{- $advertiseKafkaPort := $listener.nodePort -}}
+  {{- if $listenerNodePortEnabled -}}
+    {{- $advertiseKafkaHost = printf "$(SERVICE_NAME).%s" $values.external.domain -}}
+  {{- end -}}
+                {{ $name }}://{{ $advertiseKafkaHost }}:{{ $advertiseKafkaPort }},
+{{- end }}
+            - --advertise-rpc-addr={{ $advertiseAddress }}:{{ .Values.listeners.rpc.port }}
+            - --advertise-pandaproxy-addr=internal://{{ $advertiseAddress }}:{{ .Values.listeners.http.port }},
+{{- range $name, $listener := .Values.listeners.http.external -}}
+                {{ $name}}://{{ $advertiseAddress }}:{{ $listener.nodePort }},
+{{- end }}
+          ports:
+{{- range $name, $listener := .Values.listeners }}
+            - name: {{ lower $name }}
+              containerPort: {{ $listener.port }}
+  {{- range $externalName, $external := $listener.external }}
+    {{- if $external.port }}
+            - name: {{ lower $name | trunc 6 }}-{{ lower $externalName | trunc 8}}
+              containerPort: {{ $external.port }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/redpanda/data
+            - name: config
+              mountPath: /etc/redpanda
+{{- if (include "tls-enabled" . | fromJson).bool }}
+  {{- range $name, $cert := .Values.tls.certs }}
+            - name: redpanda-{{ $name }}-cert
+              mountPath: {{ printf "/etc/tls/certs/%s" $name }}
+  {{- end }}
+{{- end }}
+          resources:
+{{- if hasKey .Values.resources.memory "min" }}
+            requests:
+              cpu: {{ .Values.resources.cpu.cores }}
+              memory: {{ .Values.resources.memory.container.min }}
+{{- end }}
+            limits:
+              cpu: {{ .Values.resources.cpu.cores }}
+              memory: {{ .Values.resources.memory.container.max }}
+      volumes:
+        - name: datadir
+{{- if .Values.storage.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: datadir
+{{- else if .Values.storage.hostPath }}
+          hostPath:
+            path: {{ .Values.storage.hostPath | quote }}
+{{- else }}
+          emptyDir: {}
+{{- end }}
+        - name: {{ template "redpanda.fullname" . }}
+          configMap:
+            name: {{ template "redpanda.fullname" . }}
+        - name: config
+          emptyDir: {}
+{{- if (include "tls-enabled" . | fromJson).bool }}
+  {{- range $name, $cert := .Values.tls.certs }}
+        - name: redpanda-{{ $name }}-cert
+          secret:
+            defaultMode: 420
+            items:
+            - key: tls.key
+              path: tls.key
+            - key: tls.crt
+              path: tls.crt
+    {{- if $cert.caEnabled }}
+            - key: ca.crt
+              path: ca.crt
+    {{- end }}
+            secretName: {{ template "redpanda.fullname" $ }}-{{ $name }}-cert
+  {{- end }}
+{{- end -}}
+{{- if or .Values.statefulset.nodeAffinity .Values.statefulset.podAffinity .Values.statefulset.podAntiAffinity }}
+      affinity:
+  {{- with .Values.statefulset.nodeAffinity }}
+        nodeAffinity: {{- toYaml . | nindent 10 }}
+  {{- end }}
+  {{- with .Values.statefulset.podAffinity }}
+        podAffinity: {{- toYaml . | nindent 10 }}
+  {{- end }}
+  {{- if .Values.statefulset.podAntiAffinity }}
+        podAntiAffinity:
+    {{- if .Values.statefulset.podAntiAffinity.type }}
+      {{- if eq .Values.statefulset.podAntiAffinity.type "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: {{ .Values.statefulset.podAntiAffinity.topologyKey }}
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ template "redpanda.name" . }}
+                  app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      {{- else if eq .Values.statefulset.podAntiAffinity.type "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: {{ .Values.statefulset.podAntiAffinity.weight | int64 }}
+              podAffinityTerm:
+                topologyKey: {{ .Values.statefulset.podAntiAffinity.topologyKey }}
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: {{ template "redpanda.name" . }}
+                    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      {{- end }}
+    {{- else }}
+      {{- toYaml .Values.statefulset.podAntiAffinity | nindent 10 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.16-0" .Capabilities.KubeVersion.GitVersion }}
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: {{ template "redpanda.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  {{- with .Values.statefulset.topologySpreadConstraints }}
+        maxSkew: {{ .maxSkew }}
+        topologyKey: {{ .topologyKey }}
+        whenUnsatisfiable: {{ .whenUnsatisfiable }}
+  {{- end }}
+{{- end }}
+{{- with .Values.statefulset.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+{{- end }}
+{{- if .Values.statefulset.priorityClassName }}
+      priorityClassName: {{ .Values.statefulset.priorityClassName }}
+{{- end }}
+{{- with .Values.statefulset.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+{{- end }}
+{{- if .Values.storage.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        labels:
+          app.kubernetes.io/name: {{ template "redpanda.name" . }}
+          app.kubernetes.io/instance: {{ .Release.Name | quote }}
+          app.kubernetes.io/component: {{ template "redpanda.name" . }}
+  {{- with .Values.storage.persistentVolume.labels }}
+    {{- toYaml . | nindent 10 }}
+  {{- end }}
+  {{- with .Values.commonLabels }}
+    {{- toYaml . | nindent 10 }}
+  {{- end }}
+  {{- with .Values.storage.persistentVolume.annotations }}
+        annotations: {{- toYaml . | nindent 10 }}
+  {{- end }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+  {{- if .Values.storage.persistentVolume.storageClass }}
+    {{- if (eq "-" .Values.storage.persistentVolume.storageClass) }}
+        storageClassName: ""
+    {{- else }}
+        storageClassName: {{ .Values.storage.persistentVolume.storageClass | quote }}
+    {{- end }}
+  {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.persistentVolume.size | quote }}
+{{- end }}
