@@ -1,0 +1,124 @@
+version: '3'
+
+vars:
+  DOCKER_REGISTRY: '778696301129.dkr.ecr.us-west-2.amazonaws.com'
+  GOLANG_TOOLCHAIN_IMAGE: '{{.DOCKER_REGISTRY}}/k8s-builder:all'
+
+tasks:
+  build-golang-toolchain-image:
+    desc: build golang toolchain image
+    env:
+      DOCKER_BUILDKIT: 1
+    cmds:
+      - 'echo "~~~ Building k8s toolchain image :toolbox:"'
+      - docker build
+          --progress plain
+          --build-arg BUILDKIT_INLINE_CACHE=1
+          --file ci/docker/Dockerfile
+          --tag {{.GOLANG_TOOLCHAIN_IMAGE}}
+          --cache-from {{.GOLANG_TOOLCHAIN_IMAGE}}-dev
+          --cache-from {{.GOLANG_TOOLCHAIN_IMAGE}}-{{.IMAGE_CACHE_TAG_SUFFIX}}
+          ci/docker
+      - task: push-image-cache
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+
+  push-image-cache:
+    desc: push builder cache
+    summary: |
+      Pushes from CI environments, but restricted to jobs that correspond to
+      merges into upstream branches. The PULL_REQUEST variable takes the
+      value of the PR number when the build is triggered from a PR, and
+      takes a value of 'false' for merges to branches.
+
+      NOTE: In addition to the conditional execution of this task,
+            buildkite pipelines for the redpanda project are
+            configured in such a way that only a subset of branches
+            from the upstream repo trigger jobs.
+    cmds:
+      - docker tag {{.DOCKER_IMAGE}} {{.DOCKER_IMAGE}}-{{.IMAGE_CACHE_TAG_SUFFIX}}
+      - docker push {{.DOCKER_IMAGE}}-{{.IMAGE_CACHE_TAG_SUFFIX}}
+    status:
+      - test "$CI" != "true" -o "$PULL_REQUEST" != "false"
+
+  k8s:
+    cmds:
+      - task: build-golang-toolchain-image
+      - task: run-k8s-tests
+      - task: publish-k8s-operator-images
+
+  k8s-v2-helm:
+    cmds:
+      - task: build-golang-toolchain-image
+      - task: :dev:install-yq
+      - task: :dev:install-helm
+      - task: :k8s:create-v2-helm-tests
+      - task: run-k8s-v2-helm-tests
+
+  k8s-v2:
+    cmds:
+      - task: build-golang-toolchain-image
+      - task: run-k8s-v2-tests
+
+  run-k8s-v2-tests:
+    cmds:
+      - 'echo "~~~ Running operator v2 e2e tests :k8s:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-test.yaml ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      # fail explicitly if stable operator tests failed
+      - "grep -q '0' ./k8s-stable-test-exit-code"
+
+  run-k8s-v2-helm-tests:
+    cmds:
+      - 'echo "~~~ Running operator v2 helm-ci e2e tests :k8s:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-helm-test.yaml ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      # fail explicitly if stable operator tests failed
+      - "grep -q '0' ./k8s-stable-test-exit-code"
+
+  run-k8s-tests:
+    cmds:
+      - 'echo "~~~ Linting operator code :golangci-lint:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:run-golangci-lint
+      - 'echo "~~~ Run operator code unit tests :golang:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:run-unit-tests
+      - 'echo "~~~ Running operator e2e tests :k8s:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:run-kuttl-tests ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      # fail explicitly if stable operator tests failed
+      - "grep -q '0' ./k8s-stable-test-exit-code"
+    status:
+      - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
+
+  publish-k8s-operator-images:
+    cmds:
+      - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
+      - task: :docker:task
+        vars:
+          DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
+          TASK_ARGS: k8s:build-tag-and-push-images
+    status:
+      - test -z '{{.TAG_NAME}}' # only run for tagged commits
+
+  chown-buildkite-agent:
+    cmds:
+      - chown -R 2000:2000 '{{.DIR}}'
+    preconditions:
+      - test -n '{{.DIR}}'
+    status:
+      - test "$CI" != "true" # run only in CI

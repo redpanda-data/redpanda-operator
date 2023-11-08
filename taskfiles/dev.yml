@@ -1,0 +1,285 @@
+version: '3'
+
+vars:
+  TASK_VERSION: '3.19.1'
+  GOLANG_VERSION: '1.21.3'
+  GOLANG_INSTALL_DIR: '{{.BUILD_ROOT}}/go/{{.GOLANG_VERSION}}'
+  KUBECTL_VERSION: '1.28.2'
+  KUBECTL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kubectl/{{.KUBECTL_VERSION}}'
+  GOLANGCI_LINT_VERSION: '1.55.0'
+  GOLANGCI_LINT_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/golangci-lint/{{.GOLANGCI_LINT_VERSION}}'
+  HELM_VERSION: '3.6.3'
+  HELM_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/helm/{{.HELM_VERSION}}'
+  KIND_VERSION: '0.20.0'
+  KIND_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kind/{{.KIND_VERSION}}'
+  GOFUMPT_VERSION: 'v0.5.0'
+  GOFUMPT_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/gofumpt/{{.GOFUMPT_VERSION}}'
+  K8S_CONTROLLER_GEN_VERSION: 'v0.13.0'
+  K8S_CONTROLLER_GEN_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-controller-gen/{{.K8S_CONTROLLER_GEN_VERSION}}'
+  K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION: 'v0.7.0'
+  K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-controller-runtime-setup-envtest/{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION}}'
+  KUSTOMIZE_VERSION: 'v5.1.1'
+  KUSTOMIZE_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kustomize/{{.KUSTOMIZE_VERSION}}'
+  YQ_VERSION: '4.35.2'
+  YQ_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/yq/{{.YQ_VERSION}}'
+  KUTTL_VERSION: '0.15.0'
+  KUTTL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kuttl/{{.KUTTL_VERSION}}'
+  GORELEASER_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/goreleaser'
+  GORELEASER_VERSION: '1.20.0'
+  QUILL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/quill'
+  QUILL_VERSION: '0.4.1'
+
+
+tasks:
+  install-task:
+    cmds:
+      - "{{.SRC_DIR}}/ci/scripts/install-task.sh"
+    status:
+      - test -f bin/task
+      - "[[ $(bin/task --version | grep -o {{.TASK_VERSION}}) == {{.TASK_VERSION}} ]]"
+
+  install-go:
+    desc: install golang compiler
+    vars:
+      GOLANG_URL: 'https://vectorized-public.s3.us-west-2.amazonaws.com/dependencies/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz'
+    cmds:
+      - mkdir -p '{{.GOLANG_INSTALL_DIR}}'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors -o '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz' '{{.GOLANG_URL}}'
+      - tar -xz -C '{{.GOLANG_INSTALL_DIR}}' -f '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz' --strip 1
+      - rm '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz'
+    status:
+      - test -f '{{.GOLANG_INSTALL_DIR}}/bin/go'
+
+  install-gofumpt:
+    desc: install gofumpt go formater
+    summary: |
+      Install gofumpt go formater tool in the build directory ($BUILD_ROOT/bin/go),
+      only if it does not exist on the host already. Checking whether is
+      available on the host is done so that this task can also run in
+      containerized environments.
+    deps:
+      - task: :dev:install-go
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
+        TMP_DIR=$(mktemp -d)
+        cd $TMP_DIR
+        go mod init tmp
+        GOBIN={{.GOFUMPT_INSTALL_DIR}}/bin/ go install mvdan.cc/gofumpt@{{.GOFUMPT_VERSION}}
+        rm -rf $TMP_DIR
+    status:
+      - test -f '{{.GOFUMPT_INSTALL_DIR}}/bin/gofumpt'
+
+  install-kustomize:
+    vars:
+      KUSTOMIZE_URL: 'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/{{.KUSTOMIZE_VERSION}}/kustomize_{{.KUSTOMIZE_VERSION}}_{{OS}}_{{ARCH}}.tar.gz'
+    cmds:
+      - mkdir -p '{{.KUSTOMIZE_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors '{{.KUSTOMIZE_URL}}' | tar -xz -C '{{.KUSTOMIZE_INSTALL_DIR}}/bin'
+    status:
+      - test -f '{{.KUSTOMIZE_INSTALL_DIR}}/bin/kustomize'
+
+  install-kubectl:
+    desc: install kubectl
+    vars:
+      KUBECTL_URL_DEFAULT: 'https://storage.googleapis.com/kubernetes-release/release/v{{.KUBECTL_VERSION}}/bin/{{OS}}/{{ARCH}}/kubectl'
+      KUBECTL_URL: '{{default .KUBECTL_URL_DEFAULT .KUBECTL_URL}}'
+    cmds:
+      - mkdir -p '{{.KUBECTL_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 '{{.KUBECTL_URL}}' --retry-all-errors -o '{{.KUBECTL_INSTALL_DIR}}/bin/kubectl'
+      - chmod +x '{{.KUBECTL_INSTALL_DIR}}/bin/kubectl'
+    status:
+      - test -f '{{.KUBECTL_INSTALL_DIR}}/bin/kubectl'
+
+  install-kind:
+    desc: install kind
+    vars:
+      KIND_URL_DEFAULT: 'https://kind.sigs.k8s.io/dl/v{{.KIND_VERSION}}/kind-{{OS}}-{{ARCH}}'
+      KIND_URL: '{{default .KIND_URL_DEFAULT .KIND_URL}}'
+    cmds:
+      - mkdir -p '{{.KIND_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 '{{.KIND_URL}}' --retry-all-errors -o '{{.KIND_INSTALL_DIR}}/bin/kind'
+      - chmod +x '{{.KIND_INSTALL_DIR}}/bin/kind'
+    status:
+      - test -f '{{.KIND_INSTALL_DIR}}/bin/kind'
+
+  install-golangci-lint:
+    desc: install golangci-lint
+    vars:
+      GOLANGCI_LINT_URL_DEFAULT: 'https://github.com/golangci/golangci-lint/releases/download/v{{.GOLANGCI_LINT_VERSION}}/golangci-lint-{{.GOLANGCI_LINT_VERSION}}-{{OS}}-{{ARCH}}.tar.gz'
+      GOLANGCI_LINT_URL: '{{default .GOLANGCI_LINT_URL_DEFAULT .GOLANGCI_LINT_URL}}'
+    cmds:
+      - mkdir -p '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors -o '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin/golangci-lint-{{.GOLANGCI_LINT_VERSION}}-{{OS}}-{{ARCH}}.tar.gz' '{{.GOLANGCI_LINT_URL}}'
+      - tar -xz -C '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin' -f '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin/golangci-lint-{{.GOLANGCI_LINT_VERSION}}-{{OS}}-{{ARCH}}.tar.gz' --strip 1 --wildcards '*/golangci-lint'
+      - rm '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin/golangci-lint-{{.GOLANGCI_LINT_VERSION}}-{{OS}}-{{ARCH}}.tar.gz'
+    status:
+      - test -f '{{.GOLANGCI_LINT_INSTALL_DIR}}/bin/golangci-lint'
+
+  install-docker-tag-list:
+    desc: install docker-tag-list
+    deps:
+      - install-go
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
+        export GOBIN='{{.DOCKER_TAG_LIST_INSTALL_DIR}}/'
+        go install github.com/joejulian/docker-tag-list@latest
+    status:
+      - test -f '{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list'
+
+  install-goreleaser:
+    desc: install goreleaser
+    deps:
+      - install-go
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
+        GOBIN='{{.GORELEASER_INSTALL_DIR}}' \
+        go install "github.com/goreleaser/goreleaser@v{{.GORELEASER_VERSION}}"
+    status:
+      - test -f {{.GORELEASER_INSTALL_DIR}}/goreleaser
+      - |
+        PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
+        [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
+
+  install-k8s-controller-gen:
+    desc: install k8s-controller-gen
+    deps:
+      - install-go
+    cmds:
+      - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin'
+      - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
+        export GOBIN={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin
+        cd '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
+        go mod init tmp
+        go install sigs.k8s.io/controller-tools/cmd/controller-gen@{{.K8S_CONTROLLER_GEN_VERSION}}
+      - rm -rf '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
+    status:
+      - test -f '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen'
+
+  start-podman-socket-service:
+    desc: start podman.socket service
+    vars:
+      USE_PODMAN_DOCKER: '{{default "" .USE_PODMAN_DOCKER}}'
+    cmds:
+      - systemctl --user start podman.socket
+      - "curl -H 'Content-Type: application/json' --unix-socket $XDG_RUNTIME_DIR/podman/podman.sock http://localhost/_ping | grep OK"
+    status:
+      - test -z {{.USE_PODMAN_DOCKER}}
+
+  install-helm:
+    desc: install helm
+    vars:
+      HELM_URL_DEFAULT: 'https://get.helm.sh/helm-v{{.HELM_VERSION}}-{{OS}}-{{ARCH}}.tar.gz'
+      HELM_URL: '{{default .HELM_URL_DEFAULT .HELM_URL}}'
+    cmds:
+      - mkdir -p '{{.HELM_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors '{{.HELM_URL}}' -o '{{.HELM_INSTALL_DIR}}/bin/helm.tgz'
+      - tar -xz -C '{{.HELM_INSTALL_DIR}}/bin' --strip 1 -f '{{.HELM_INSTALL_DIR}}/bin/helm.tgz' '{{OS}}-{{ARCH}}/helm'
+      - rm '{{.HELM_INSTALL_DIR}}/bin/helm.tgz'
+    status:
+      - test -f '{{.HELM_INSTALL_DIR}}/bin/helm'
+
+  install-yq:
+    desc: install yq (YAML processor)
+    cmds:
+      - mkdir -p '{{.YQ_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors https://github.com/mikefarah/yq/releases/download/v{{.YQ_VERSION}}/yq_{{OS}}_{{ARCH}}.tar.gz -o '{{.YQ_INSTALL_DIR}}/bin/yq.tar.gz'
+      - tar -xz -C '{{.YQ_INSTALL_DIR}}/bin' --strip 1 -f '{{.YQ_INSTALL_DIR}}/bin/yq.tar.gz' './yq_{{OS}}_{{ARCH}}'
+      - rm '{{.YQ_INSTALL_DIR}}/bin/yq.tar.gz'
+      - mv {{.YQ_INSTALL_DIR}}/bin/yq_{{OS}}_{{ARCH}} {{.YQ_INSTALL_DIR}}/bin/yq
+    status:
+      - test -f '{{.YQ_INSTALL_DIR}}/bin/yq'
+
+  install-kuttl:
+    desc: install kuttl
+    vars:
+      KUTTL_URL: 'https://github.com/kudobuilder/kuttl/releases/download/v{{.KUTTL_VERSION}}/kubectl-kuttl_{{.KUTTL_VERSION}}_{{OS}}_{{if eq ARCH "amd64"}}x86_64{{else}}arm64{{end}}'
+    cmds:
+      - mkdir -p '{{.KUTTL_INSTALL_DIR}}/bin'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 '{{.KUTTL_URL}}' -o '{{.KUTTL_INSTALL_DIR}}/bin/kuttl'
+      - chmod +x '{{.KUTTL_INSTALL_DIR}}/bin/kuttl'
+    status:
+      - test -f '{{.KUTTL_INSTALL_DIR}}/bin/kuttl'
+
+  retry-task:
+    vars:
+      TASK_EXEC: '{{default "bin/task" .TASK_EXEC}}'
+      RETRY_COUNT: '{{default 3 .RETRY_COUNT}}'
+      SLEEP_INTERVAL: '{{default 3 .SLEEP_INTERVAL}}'
+    cmds:
+      - echo "will retry task {{.TASK}}"
+      - |
+        retry_times={{.RETRY_COUNT}}
+        retry_index=0
+        while ((retry_index < retry_times)); do
+          set +e
+          {{.TASK_EXEC}} {{.TASK}} {{.PARAMS}}
+          cmd_code="$?"
+          set -e
+          if [[ $cmd_code == "0" ]]; then
+            break
+          fi
+          let retry_index=retry_index+1
+          echo "retrying task {{.TASK}}, attempt $retry_index, after sleep {{.SLEEP_INTERVAL}}"
+          sleep {{.SLEEP_INTERVAL}}
+        done
+        if [[ $cmd_code != "0" ]]; then
+          echo "retried '{{.TASK}}' task {{.RETRY_COUNT}} times and failed"
+          exit $cmd_code
+        fi
+    preconditions:
+      - test -n '{{.TASK}}'
+
+  create-buildx-builder:
+    cmds:
+      - task: :dev:retry-task
+        vars:
+          TASK: dev:retry-create-buildx-builder
+    status:
+      - docker buildx ls | grep -q v-builder
+
+  retry-create-buildx-builder:
+    cmds:
+      - docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 --platform linux/amd64,linux/arm64 --name v-builder --use
+      - '{{if eq ARCH "amd64"}} docker run --rm --privileged linuxkit/binfmt:v0.8 {{else}} echo "" {{end}}'
+
+  install-k8s-controller-runtime-setup-envtest:
+    vars:
+      SETUP_ENVTEST_URL: 'https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION}}/hack/setup-envtest.sh'
+    cmds:
+      - mkdir -p '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}'
+      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 '{{.SETUP_ENVTEST_URL}}' -o '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
+      - chmod +x '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
+    status:
+      - test -f '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
+
+  install-goreleaser:
+    desc: install goreleaser
+    deps:
+      - install-go
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
+        GOBIN='{{.GORELEASER_INSTALL_DIR}}' \
+        go install "github.com/goreleaser/goreleaser@v{{.GORELEASER_VERSION}}"
+    status:
+      - test -f {{.GORELEASER_INSTALL_DIR}}/goreleaser
+      - |
+        PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
+        [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
+
+  install-quill:
+    desc: install quill
+    cmds:
+      - mkdir -p '{{.QUILL_INSTALL_DIR}}'
+      - |
+        curl -sSfL \
+          https://raw.githubusercontent.com/anchore/quill/main/install.sh \
+          | sh -s -- -b "{{.QUILL_INSTALL_DIR}}" "v{{.QUILL_VERSION}}"
+    status:
+      - test -f {{.QUILL_INSTALL_DIR}}/quill
+      - "[[ $({{.QUILL_INSTALL_DIR}}/quill --version | grep -o {{.QUILL_VERSION}}) == {{.QUILL_VERSION}} ]]"

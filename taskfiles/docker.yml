@@ -1,0 +1,114 @@
+version: '3'
+
+tasks:
+  task:
+    desc: run Task within a docker image
+    summary: |
+      In scenarios where the host environment does not have the dependencies 
+      expected by a task, the `docker:task` can be used to run it inside a 
+      container. The goal for this is to behave exactly as if it was being 
+      invoked on the host. For example:
+
+        task docker:task \
+          TASK_ARGS='rp:build COMPILER=gcc' \
+          DOCKER_IMAGE=gcc:11
+
+      is equivalent to:
+
+        task rp:build COMPILER=gcc  # gcc-11 available on host
+
+      When this task runs, the working directory ($PWD) is bind-mounted at the 
+      same location as in the host, and some environment variables are defined 
+      (see `cmds:` for the exact list).
+    deps:
+      - :dev:install-task
+      - :dev:start-podman-socket-service
+    run: always
+    env:
+      AWS_ACCESS_KEY_ID: '{{.AWS_ACCESS_KEY_ID}}'
+      AWS_SECRET_ACCESS_KEY: '{{.AWS_SECRET_ACCESS_KEY}}'
+      GCP_ACCESS_KEY_ID: '{{.GCP_ACCESS_KEY_ID}}'
+      GCP_SECRET_ACCESS_KEY: '{{.GCP_SECRET_ACCESS_KEY}}'
+      GCP_PRIVATE_KEY_ID: '{{ .GCP_PRIVATE_KEY_ID }}'
+      GCP_PRIVATE_KEY: '{{ .GCP_PRIVATE_KEY }}'
+      GCP_CLIENT_ID: '{{ .GCP_CLIENT_ID }}'
+      ARM_SUBSCRIPTION_ID: '{{.ARM_SUBSCRIPTION_ID}}'
+      ARM_TENANT_ID: '{{.ARM_TENANT_ID}}'
+      ARM_CLIENT_ID: '{{.ARM_CLIENT_ID}}'
+      ARM_CLIENT_SECRET: '{{.ARM_CLIENT_SECRET}}'
+    cmds:
+      - |
+        if ! {{empty .USE_PODMAN_DOCKER}}; then
+          DOCKER_SOCKET=$XDG_RUNTIME_DIR/podman/podman.sock
+        else
+          DOCKER_SOCKET=/var/run/docker.sock
+        fi
+        export DOCKER_HOST=unix://$DOCKER_SOCKET
+
+        # there are two sets of environment variables that are defined:
+        #
+        #   1. those that come from the environment where `task` runs. these are
+        #      defined prior to the execution of `task` and can be referenced in 
+        #      `-e` and `--env-file` directly. there's no need to specify them 
+        #      anywhere else
+        #
+        #   2. those that take their value from `task` variables. these need to 
+        #      be declared in the `env:` part of this task, and then can be 
+        #      referenced via `-e` flags. IMPORTANT: if the environment variable 
+        #      being defined exists prior to `task` running, its value won't be 
+        #      overridden (see https://github.com/go-task/task/issues/482)
+
+        docker run --rm -i \
+          -e DOCKER_HOST \
+          -e PWD \
+          -e CI \
+          -e COMMIT \
+          -e BRANCH_NAME \
+          -e TAG_NAME \
+          -e PULL_REQUEST \
+          -e PULL_REQUEST_BASE_BRANCH \
+          -e DOCKERHUB_USER \
+          -e DOCKERHUB_TOKEN \
+          -e CLOUDSMITH_USERNAME \
+          -e CLOUDSMITH_API_KEY \
+          -e OPSTRACE_DEV_TENANT_TOKEN \
+          -e METRICS_MONITORING \
+          -e REDPANDA_CLOUD_PREPROD_CLIENT_ID \
+          -e REDPANDA_CLOUD_PREPROD_CLIENT_SECRET \
+          -e REDPANDA_CLOUD_INTEGRATION_CLIENT_ID \
+          -e REDPANDA_CLOUD_INTEGRATION_CLIENT_SECRET \
+          -e REDPANDA_CLOUD_TELEPORT_BOT_TOKEN \
+          -e REDPANDA_CLOUD_TELEPORT_AWS \
+          -e REDPANDA_CLOUD_TELEPORT_GCP \
+          -e GRAFANA_TOKEN \
+          -e REDPANDA_SAMPLE_LICENSE \
+          -e REDPANDA_SECOND_SAMPLE_LICENSE \
+          -e ACTIVE_DIRECTORY_IP \
+          -e ACTIVE_DIRECTORY_REALM \
+          -e ACTIVE_DIRECTORY_SSH_USER \
+          -e ACTIVE_DIRECTORY_SSH_PASSWORD \
+          -e ACTIVE_DIRECTORY_KEYTAB_PASSWORD \
+          -e ACTIVE_DIRECTORY_UPN_USER \
+          -e ACTIVE_DIRECTORY_SPN_USER \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e GCP_ACCESS_KEY_ID \
+          -e GCP_SECRET_ACCESS_KEY \
+          -e GCP_PRIVATE_KEY_ID \
+          -e GCP_PRIVATE_KEY \
+          -e GCP_CLIENT_ID \
+          -e ARM_SUBSCRIPTION_ID \
+          -e ARM_TENANT_ID \
+          -e ARM_CLIENT_SECRET \
+          -e ARM_CLIENT_ID \
+          --env RPK_TEST_CLIENT_ID \
+          --env RPK_TEST_CLIENT_SECRET \
+          --privileged \
+          --net=host \
+          --ipc=host \
+          --volume $DOCKER_SOCKET:$DOCKER_SOCKET \
+          --volume '{{.PWD}}:{{.PWD}}' \
+          --workdir '{{.PWD}}' \
+          --entrypoint=bin/task \
+          {{.DOCKER_IMAGE}} \
+            {{.TASK_ARGS}}

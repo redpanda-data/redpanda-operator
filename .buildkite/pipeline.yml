@@ -1,0 +1,105 @@
+env:
+  BRANCH_NAME: $BUILDKITE_BRANCH
+  PULL_REQUEST: $BUILDKITE_PULL_REQUEST
+  PULL_REQUEST_BASE_BRANCH_NAME: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
+  PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
+  REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
+
+setup: &setup |
+  mkdir -p .build
+  ci/scripts/install-task.sh
+
+steps:
+  - key: release-migration-tool
+    label: Release Migration Tool
+    if: build.tag != null
+    timeout: 20
+    commands:
+      - *setup
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) bin/task goreleaser:release
+
+  - key: k8s-operator
+    label: K8s Operator
+    if: |
+      build.env("K8S_NIGHTLY") == "1" ||
+      build.branch == "main" ||
+      (build.pull_request.labels includes "k8s/tests") ||
+      build.tag != null 
+    timeout: 180
+    notify:
+      - github_commit_status:
+          context: k8s-operator
+    commands:
+      - *setup
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) bin/task ci:k8s
+    agents:
+      queue: amd64-builders
+    artifact_paths:
+      - src/go/k8s/*.tar.gz
+      - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
+      
+  - group: K8s Operator v2 Jobs
+    if: | 
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    steps:
+      - key: k8s-operator-v2
+        label: K8s Operator v2
+        timeout: 30
+        notify:
+          - github_commit_status:
+              context: k8s-operator-v2
+        commands:
+          - *setup
+          - bin/task ci:k8s-v2
+        agents:
+          queue: amd64-builders
+        artifact_paths:
+          - src/go/k8s/*.tar.gz
+          - src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml
+
+      - key: annotate-v2-testresults
+        label: Parse Operator v2 Test Results
+        plugins:
+          - junit-annotate#v2.4.1:
+              artifacts: src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml 
+              report-slowest: 5
+        timeout: 0
+        agents:
+          queue: k8s-builders
+        depends_on: k8s-operator-v2
+        allow_dependency_failure: true
+
+  - group: K8s Operator v2 Helm Jobs
+    if: |
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    steps:
+      - key: k8s-operator-v2-helm
+        label: K8s Operator v2 Helm
+        timeout: 50
+        notify:
+          - github_commit_status:
+              context: k8s-operator-v2-helm
+        commands:
+          - *setup
+          - bin/task ci:k8s-v2-helm
+        agents:
+          queue: amd64-builders
+        artifact_paths:
+          - src/go/k8s/*.tar.gz
+          - src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
+
+      - key: annotate-v2-helm-testresults
+        label: Parse Operator v2 Helm Test Results
+        plugins:
+          - junit-annotate#v2.0.2:
+              artifacts: src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
+              report-slowest: 5
+        timeout: 0
+        agents:
+          queue: k8s-builders
+        depends_on: k8s-operator-v2-helm
+        allow_dependency_failure: true

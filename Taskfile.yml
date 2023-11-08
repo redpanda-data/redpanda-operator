@@ -1,0 +1,16 @@
+version: '3'
+
+# if a task is referenced multiple times, only run it once
+run: once
+
+vars:
+  SRC_DIR:
+    sh: 'realpath {{default "." .SRC_DIR}}'
+  BUILD_ROOT:
+    sh: 'realpath {{default ".build" .BUILD_ROOT}}'
+
+includes:
+  ci: taskfiles/ci.yml
+  k8s: taskfiles/k8s.yml 
+  dev: taskfiles/dev.yml
+  docker: taskfiles/docker.yml

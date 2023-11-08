@@ -1,0 +1,47 @@
+version: '3'
+
+vars:
+  GO_SRC_DIR: '{{.SRC_DIR}}/src/go' 
+
+tasks:
+  release:
+    dir: '{{.GO_SRC_DIR}}'
+    desc: release go binaries using the .goreleaser.yml file in given directory
+    deps:
+      - task: :dev:install-goreleaser
+      - task: :dev:install-quill
+    env:
+      GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
+      GITHUB_TOKEN:
+        sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
+    cmds:
+      - |
+        EMPTY_NOTES="/tmp/empty_notes"
+        mkdir -p /tmp
+        echo "" >> "$EMPTY_NOTES"
+
+        export PATH="{{.GOLANG_INSTALL_DIR}}/bin:{{.GORELEASER_INSTALL_DIR}}:{{.QUILL_INSTALL_DIR}}:$PATH"
+        goreleaser release --clean --release-notes "$EMPTY_NOTES"
+    preconditions:
+      - test -n "$QUILL_SIGN_P12"
+      - test -n "$QUILL_SIGN_PASSWORD"
+      - test -n "$QUILL_NOTARY_KEY_ID"
+      - test -n "$QUILL_NOTARY_KEY"
+      - test -n "$QUILL_NOTARY_ISSUER"
+      - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
+      - test -n "{{.TAG_NAME}}"
+  build:
+    dir: '{{.GO_SRC_DIR}}'
+    # A .goreleaser.yml file is required at the GO_SRC_DIR
+    desc: build go binaries with goreleaser and a given id
+    deps:
+      - task: :dev:install-goreleaser
+    env:
+      GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
+    cmds:
+      - |
+        export PATH="{{.GOLANG_INSTALL_DIR}}/bin:{{.GORELEASER_INSTALL_DIR}}:$PATH"
+        goreleaser build --clean --id {{.GORELEASER_BUILD_ID}} {{.CLI_ARGS}}
+    preconditions:
+      - test -n "{{.GORELEASER_BUILD_ID}}"
+      - test -n "{{.TAG_NAME}}"

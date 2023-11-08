@@ -1,0 +1,324 @@
+version: '3'
+
+env:
+  # some of the tasks defined in this file are executed in containers
+  # see https://github.com/golang/go/issues/53640 for details on why
+  # 1.19.2 fails to deal with modules with nested repositories. Once
+  # the fix for #53640 is included in a release, either next minor for
+  # 1.19 or 1.20, this can be removed
+  GOFLAGS: -buildvcs=false
+
+tasks:
+
+  generate-controller-code:
+    deps:
+      - :dev:install-go
+      - :dev:install-k8s-controller-gen
+    dir: 'src/go/k8s'
+    sources:
+      - './**/*.go'
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
+        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
+        controller-gen \
+          object:headerFile="../../../licenses/boilerplate.go.txt" \
+          paths='./...'
+
+  run-go-vet:
+    dir: 'src/go/k8s'
+    deps:
+      - :dev:install-go
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
+        go vet ./...
+
+  generate-manifests:
+    dir: 'src/go/k8s'
+    deps:
+      - :dev:install-go
+      - :dev:install-k8s-controller-gen
+    vars:
+      CRD_OPTIONS_DEFAULT: 'crd'
+      CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
+    sources:
+      - './**/*.go'
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
+        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
+        controller-gen \
+          {{.CRD_OPTIONS}} \
+          rbac:roleName=manager-role \
+          webhook \
+          paths='./...' \
+          output:crd:artifacts:config=config/crd/bases \
+          output:rbac:artifacts:config=config/rbac/bases/operator
+
+  run-unit-tests:
+    dir: 'src/go/k8s'
+    deps:
+      - run-go-vet
+      - generate-controller-code
+      - generate-manifests
+      - :dev:install-k8s-controller-runtime-setup-envtest
+    vars:
+      ENVTEST_ASSETS_DIR_DEFAULT: '{{.BUILD_ROOT}}/k8s-operator/envtest/'
+      ENVTEST_ASSETS_DIR: '{{.ENVTEST_ASSETS_DIR | default .ENVTEST_ASSETS_DIR_DEFAULT}}'
+    cmds:
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
+        source {{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh
+        fetch_envtest_tools {{.ENVTEST_ASSETS_DIR}}
+        setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
+        go test --race -v ./... -coverprofile cover.out
+
+  build-operator-images:
+    dir: 'src/go'
+    cmds:
+      - docker buildx build
+          --platform linux/{{ARCH}}
+          --file k8s/Dockerfile
+          --target=manager
+          --tag localhost/redpanda-operator:dev
+          --load
+          .
+      - docker buildx build
+          --platform linux/{{ARCH}}
+          --file k8s/Dockerfile
+          --target=configurator
+          --tag localhost/configurator:dev
+          --load
+          .
+
+  fetch-latest-nightly-redpanda:
+    desc: fetch the latest redpanda nightly build and tag it localhost/redpanda:dev
+    summary: |
+      pulls down the latest redpanda nightly build and tag it localhost/repdanda:dev
+      to allow us to skip building redpanda with every CI run.
+    dir: src/go/k8s
+    deps:
+      - :dev:install-docker-tag-list
+    cmds:
+      - task: fetch-latest-redpanda
+        vars:
+          CONSTRAINT: '~0.0.0-0'
+          REPO: 'docker.redpanda.com/redpandadata/redpanda-nightly'
+
+
+  fetch-latest-redpanda:
+    desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
+    summary: |
+      pulls down the latest redpanda nightly build and tag it localhost/repdanda:dev
+      to allow us to skip building redpanda with every CI run.
+    dir: src/go/k8s
+    vars:
+      CONSTRAINT: '{{.CONSTRAINT | default ""}}'
+      REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
+    deps:
+      - :dev:install-docker-tag-list
+    cmds:
+      - |
+        TAG=$("{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list" -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
+        docker pull "{{.REPO}}":"${TAG}"
+        docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
+
+  set-aio-max:
+    desc: set minimum required value for fs.aio-max-nr sysctl option
+    vars:
+      MIN_REQUIRED_AIO_MAX: 10485760
+      USE_SUDO: '{{default "true" .USE_SUDO}}'
+    cmds:
+      - 'echo "Setting fs.aio-max-nr sysctl option to {{.MIN_REQUIRED_AIO_MAX}}"'
+      - '{{if eq .USE_SUDO "true"}}echo "Please enter your sudo password: "{{end}}'
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.aio-max-nr={{.MIN_REQUIRED_AIO_MAX}}'
+    status:
+      - test {{.MIN_REQUIRED_AIO_MAX}} -le $(sysctl -nb fs.aio-max-nr)
+
+  run-kuttl-tests:
+    desc: run kuttl tests
+    summary: |
+      Executes end-to-end kuttl tests. It expects a KUTTL_CONFIG_FILE variable
+      that points to the config file passed to kuttl. In addition, Task's
+      CLI_ARGS is also passed to `kuttl`, so arbitrary flags can be given too.
+
+      Currently, e2e redpanda operator tests assumes a docker image for redpanda
+      exists locally at the time this task runs (localhost/redpanda:dev image).
+      This image can be downloaded by invoking the fetch-latest-redpanda task.
+
+      This task doesn't fail if kuttl fails. Instead, it writes the exit code of
+      kuttl to the kuttl-exit-code file and expects the caller to check the
+      content of this file in order to determine if kuttl failed.
+
+      When kuttl fails, the artifacts dir specified in the `artifactsDir` kuttl
+      configuration option is compressed. The name of the tarball is the same as
+      basename of the `artifactsDir` variable, with the `.tar.gz` suffix.
+    dir: 'src/go/k8s'
+    vars:
+      KUTTL_CONFIG_FILE: '{{default "kuttl-test.yaml" .KUTTL_CONFIG_FILE}}'
+      KUTTL_ARTIFACTS_DIR:
+        sh: |
+          cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
+    deps:
+      - :dev:install-go
+      - :dev:install-helm
+      - :dev:install-kind
+      - :dev:install-kubectl
+      - :dev:install-kustomize
+      - :dev:install-kuttl
+      - :dev:install-yq
+      - task: set-aio-max
+        vars:
+          USE_SUDO: "false"
+      - generate-manifests
+      - build-operator-images
+      - task: set-inotify-watches
+        vars:
+          USE_SUDO: "false"
+      - task: set-inotify-instances
+        vars:
+          USE_SUDO: "false"
+      - task: fetch-latest-redpanda
+    cmds:
+      - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
+      - docker image list
+      - |
+        PATH="{{.GOLANG_INSTALL_DIR}}"/bin:"{{.HELM_INSTALL_DIR}}"/bin:"{{.KIND_INSTALL_DIR}}"/bin:"{{.KUBECTL_INSTALL_DIR}}"/bin:"{{.KUTTL_INSTALL_DIR}}"/bin:"{{.KUSTOMIZE_INSTALL_DIR}}"/bin:"{{.YQ_INSTALL_DIR}}"/bin:$PATH
+        KUTTL_EXIT_CODE=0
+        kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}} || KUTTL_EXIT_CODE=$?
+        echo "$KUTTL_EXIT_CODE" > kuttl-exit-code
+        if ! grep -q "0" kuttl-exit-code; then
+          echo "Kuttl returned exit code $(cat kuttl-exit-code). Creating artifacts tarball"
+          tar -czf {{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz {{.KUTTL_ARTIFACTS_DIR}}
+        fi
+
+  set-inotify-watches:
+    desc: |
+      set minimum required value for fs.inotify.max_user_watches sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_WATCHES: 655360
+      USE_SUDO: '{{default "true" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_watches={{.MIN_REQUIRED_USER_WATCHES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_WATCHES}} -le $(sysctl -nb fs.inotify.max_user_watches)
+
+  set-inotify-instances:
+    desc: |
+      set minimum required value for fs.inotify.max_user_instances sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_INSTANCES: 1280
+      USE_SUDO: '{{default "true" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_instances={{.MIN_REQUIRED_USER_INSTANCES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_INSTANCES}} -le $(sysctl -nb fs.inotify.max_user_instances)
+
+  run-golangci-lint:
+    desc: run golangci-lint
+    deps:
+      - task: :dev:install-go
+      - task: :dev:install-golangci-lint
+    dir: 'src/go/k8s'
+    cmds:
+      - |
+        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
+        golangci-lint run --timeout 8m --go {{.GOLANG_VERSION}} -v
+
+  build-tag-and-push-images:
+    desc: builds, tags and pushes images to dockerhub
+    deps:
+      - :dev:create-buildx-builder
+    dir: 'src/go'
+    vars:
+      IS_INTERNAL:
+        sh: |
+          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
+            echo "true"
+          else
+            echo "false"
+          fi
+      CLOUDSMITH_REPO:
+        sh: |
+          repo="docker.cloudsmith.io/redpanda/cloudv2/redpanda"
+          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
+            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
+              repo="docker.cloudsmith.io/redpanda/redpanda-internal/redpanda"
+            fi
+          fi
+          echo $repo
+      OPERATOR_REPO:
+        sh: |
+          repo="redpanda-operator"
+          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
+            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
+              repo="redpanda-operator-internal"
+            fi
+          fi
+          echo $repo
+      CONFIGURATOR_REPO:
+        sh: |
+          repo="configurator"
+          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
+            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
+              repo="configurator-internal"
+            fi
+          fi
+          echo $repo
+    cmds:
+      - |
+        if [[ "{{.IS_INTERNAL}}" == "false" && "{{.IS_OPERATOR}}" == "false" ]]; then
+          echo "operator requires 'operator/' prefix in tags"
+          exit 1
+        fi
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - docker buildx build
+          --platform linux/arm64,linux/amd64
+          --file k8s/Dockerfile
+          --target manager
+          --tag docker.io/vectorized/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+          --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+          --push
+          .
+      - docker buildx build
+          --platform linux/arm64,linux/amd64
+          --file k8s/Dockerfile
+          --target configurator
+          --tag docker.io/vectorized/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
+          --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
+          --push
+          .
+      # re-enable as part of https://github.com/redpanda-data/cloudv2/issues/3267
+      # - cmd: docker login docker.cloudsmith.io --username {{.CLOUDSMITH_USERNAME}} --password {{.CLOUDSMITH_API_KEY}}
+      #   silent: true
+      # - docker buildx build
+      #     --platform linux/arm64,linux/amd64
+      #     --file k8s/Dockerfile
+      #     --target manager
+      #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
+      #     --push
+      #     .
+      # - docker buildx build
+      #     --platform linux/arm64,linux/amd64
+      #     --file k8s/Dockerfile
+      #     --target configurator
+      #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
+      #     --push
+      #     .
+    preconditions:
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"
+      - test -n "$CLOUDSMITH_USERNAME"
+      - test -n "$CLOUDSMITH_API_KEY"
+
+  create-v2-helm-tests:
+    dir: 'src/go/k8s'
+    cmds:
+      - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
+      - |
+        PATH={{.HELM_INSTALL_DIR}}/bin:{{.YQ_INSTALL_DIR}}/bin:$PATH
+        ./hack/v2-helm-setup.sh
