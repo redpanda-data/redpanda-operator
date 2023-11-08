@@ -20,9 +20,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	podutils "github.com/redpanda-data/redpanda/src/go/k8s/internal/util/pod"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	podutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/util/pod"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
 )
 
 func resourceGetter(key client.ObjectKey, res client.Object) func() error {

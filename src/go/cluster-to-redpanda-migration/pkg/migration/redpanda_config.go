@@ -14,8 +14,8 @@ import (
 
 	"k8s.io/utils/pointer"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/apis/redpanda/v1alpha1"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/apis/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/redpanda/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/vectorized/v1alpha1"
 )
 
 func MigrateRedpandaConfig(cluster *vectorizedv1alpha1.Cluster, rp *v1alpha1.Redpanda) {

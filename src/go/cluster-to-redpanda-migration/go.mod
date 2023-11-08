@@ -1,11 +1,11 @@
-module github.com/redpanda-data/redpanda/src/go/cluster-to-redpanda-migration
+module github.com/redpanda-data/redpanda-operator/src/go/cluster-to-redpanda-migration
 
 go 1.21
 
 require (
 	github.com/json-iterator/go v1.1.12
 	github.com/r3labs/diff/v3 v3.0.1
-	github.com/redpanda-data/redpanda/src/go/k8s v0.0.0-20230920233823-0b32bc8b6e41
+	github.com/redpanda-data/redpanda-operator/src/go/k8s v0.0.0-20230920233823-0b32bc8b6e41
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.26.2

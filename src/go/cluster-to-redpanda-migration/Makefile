@@ -15,7 +15,7 @@ endif
 GOOS ?= linux
 
 VERSION ?= v0.0.1
-VER_PKG=github.com/redpanda-data/redpanda/src/go/cluster-to-redpanda-migration/cmd/version
+VER_PKG=github.com/redpanda-data/redpanda-operator/src/go/cluster-to-redpanda-migration/cmd/version
 LDFLAGS=-X $(VER_PKG).version=$(VERSION)
 
 GOBUILD_CLI=go build -ldflags '$(LDFLAGS)' -o $(LOCALBIN)/cluster-to-redpanda-migration/cluster-to-redpanda-migration
