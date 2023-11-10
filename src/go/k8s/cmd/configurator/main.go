@@ -29,8 +29,8 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/networking"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 )
 
 const (

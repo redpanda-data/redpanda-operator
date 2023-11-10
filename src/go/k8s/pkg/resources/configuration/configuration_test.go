@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
 )
 
 func TestConfigMode(t *testing.T) {

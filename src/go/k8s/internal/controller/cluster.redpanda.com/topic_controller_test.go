@@ -21,9 +21,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
-	clusterredpandacom "github.com/redpanda-data/redpanda/src/go/k8s/internal/controller/cluster.redpanda.com"
-	"github.com/redpanda-data/redpanda/src/go/k8s/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
+	clusterredpandacom "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/cluster.redpanda.com"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 )
 
 func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.

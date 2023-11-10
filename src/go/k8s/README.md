@@ -48,13 +48,13 @@ resources. To verify that cert manager is ready please follow
 You can simply deploy the Redpanda operator with webhook (recommended) by running the following command
 
 ```bash
-kubectl apply -k https://github.com/redpanda-data/redpanda/src/go/k8s/config/default
+kubectl apply -k https://github.com/redpanda-data/redpanda-operator/src/go/k8s/config/default
 ```
 
 You can deploy the Redpanda operator without webhook by running the following command:
 
 ```bash
-kubectl apply -k https://github.com/redpanda-data/redpanda/src/go/k8s/config/without-webhook
+kubectl apply -k https://github.com/redpanda-data/redpanda-operator/src/go/k8s/config/without-webhook
 ```
 
 Install sample RedpandaCluster custom resource
@@ -97,5 +97,5 @@ To remove all resources even the running Redpanda cluster
 please run the following command:
 
 ```bash
-kubectl delete -k https://github.com/redpanda-data/redpanda/src/go/k8s/config/default
+kubectl delete -k https://github.com/redpanda-data/redpanda-operator/src/go/k8s/config/default
 ```

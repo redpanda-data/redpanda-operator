@@ -15,7 +15,7 @@ import (
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 )
 
 type state interface {

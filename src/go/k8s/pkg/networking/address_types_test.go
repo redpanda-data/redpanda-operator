@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/networking"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
 )
 
 func TestGetPreferredAddress(t *testing.T) {

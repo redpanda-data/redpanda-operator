@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/internal/testutils"
-	adminutils "github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/labels"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
-	resourcetypes "github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/types"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
+	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
 )
 
 const (

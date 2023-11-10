@@ -29,9 +29,9 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/internal/testutils"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 )
 

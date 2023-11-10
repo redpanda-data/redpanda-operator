@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 )
 
 func TestTemplateGen(t *testing.T) {

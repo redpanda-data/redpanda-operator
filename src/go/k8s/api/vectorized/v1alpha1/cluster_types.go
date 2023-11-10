@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/featuregates"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
 
 const (

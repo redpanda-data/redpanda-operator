@@ -13,13 +13,13 @@ import (
 	"fmt"
 	"os"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/apis/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/vectorized/v1alpha1"
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/i18n"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda/src/go/cluster-to-redpanda-migration/cmd/version"
-	"github.com/redpanda-data/redpanda/src/go/cluster-to-redpanda-migration/pkg/migration"
+	"github.com/redpanda-data/redpanda-operator/src/go/cluster-to-redpanda-migration/cmd/version"
+	"github.com/redpanda-data/redpanda-operator/src/go/cluster-to-redpanda-migration/pkg/migration"
 )
 
 var (

@@ -15,7 +15,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/certmanager"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
 )
 
 func TestCommonName(t *testing.T) {

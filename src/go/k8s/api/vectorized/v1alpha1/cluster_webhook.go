@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/featuregates"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 )
 
 const (

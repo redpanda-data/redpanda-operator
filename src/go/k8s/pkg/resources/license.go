@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 )
 
 type license struct {

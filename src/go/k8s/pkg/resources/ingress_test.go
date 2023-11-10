@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
 
 func TestIngressWithTLS(t *testing.T) {

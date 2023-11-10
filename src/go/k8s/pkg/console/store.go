@@ -13,9 +13,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	labels "github.com/redpanda-data/redpanda/src/go/k8s/pkg/labels"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	labels "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
 
 // By default, Console can only be created with the same namespace as the referenced Cluster.

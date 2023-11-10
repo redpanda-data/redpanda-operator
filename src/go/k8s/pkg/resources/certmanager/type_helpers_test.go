@@ -26,9 +26,9 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/certmanager"
-	resourcetypes "github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
 )
 
 //nolint:funlen // the subtests might causes linter to complain

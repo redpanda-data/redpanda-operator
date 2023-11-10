@@ -26,12 +26,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	resourcetypes "github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/types"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
 
 func TestEnsureConfigMap(t *testing.T) {
