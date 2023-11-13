@@ -14,11 +14,12 @@ import (
 	"fmt"
 
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-
 	"github.com/fluxcd/pkg/apis/meta"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 )
 
 var RedpandaChartRepository = "https://charts.redpanda.com/"
@@ -46,6 +47,23 @@ type RedpandaSpec struct {
 	ChartRef ChartRef `json:"chartRef,omitempty"`
 	// ClusterSpec defines the values to use in the cluster
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
+	// Migration flag that adjust Kubernetes core resources with annotation and labels, so
+	// flux controller can import resources.
+	// Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/
+	Migration *Migration `json:"migration,omitempty"`
+}
+
+// Migration can configure old Cluster and Console custom resource that will be disabled.
+// With Migration the ChartRef and ClusterSpec still need to be correctly configured.
+type Migration struct {
+	Enabled bool `json:"enabled"`
+	// ClusterRef by default will not be able to reach different namespaces, but it can be
+	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+	ClusterRef v1alpha1.NamespaceNameRef `json:"clusterRef"`
+
+	// ConsoleRef by default will not be able to reach different namespaces, but it can be
+	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+	ConsoleRef v1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
 // RedpandaStatus defines the observed state of Redpanda

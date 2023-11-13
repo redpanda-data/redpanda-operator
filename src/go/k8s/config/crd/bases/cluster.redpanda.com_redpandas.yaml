@@ -3009,6 +3009,48 @@ spec:
                         type: string
                     type: object
                 type: object
+              migration:
+                description: 'Migration flag that adjust Kubernetes core resources
+                  with annotation and labels, so flux controller can import resources.
+                  Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/'
+                properties:
+                  clusterRef:
+                    description: ClusterRef by default will not be able to reach different
+                      namespaces, but it can be overwritten by adding ClusterRole
+                      and ClusterRoleBinding to operator ServiceAccount.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  consoleRef:
+                    description: ConsoleRef by default will not be able to reach different
+                      namespaces, but it can be overwritten by adding ClusterRole
+                      and ClusterRoleBinding to operator ServiceAccount.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  enabled:
+                    type: boolean
+                required:
+                - clusterRef
+                - consoleRef
+                - enabled
+                type: object
             type: object
           status:
             description: RedpandaStatus defines the observed state of Redpanda
