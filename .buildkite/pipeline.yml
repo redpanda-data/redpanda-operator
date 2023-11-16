@@ -18,6 +18,8 @@ steps:
       - *setup
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) bin/task goreleaser:release
+    agents:
+      queue: k8s-builders
 
   - key: k8s-operator
     label: K8s Operator
