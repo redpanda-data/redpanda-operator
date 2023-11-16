@@ -161,6 +161,21 @@ spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                     type: object
+                  connectors:
+                    properties:
+                      deployment:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                      enabled:
+                        type: boolean
+                      test:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                    type: object
                   console:
                     properties:
                       affinity:
