@@ -13,8 +13,8 @@ import (
 	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/redpanda/v1alpha1"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 )
@@ -84,7 +84,7 @@ func MigrateConsole(console *vectorizedv1alpha1.Console, rp *v1alpha1.Redpanda) 
 	// -- finish config ---
 	if len(connect) > 0 {
 		configObj["connect"] = connect
-		rpConsole.Config = &runtime.RawExtension{}
+		rpConsole.Console = &runtime.RawExtension{}
 	}
 
 	// -- server ---
@@ -143,8 +143,8 @@ func MigrateConsole(console *vectorizedv1alpha1.Console, rp *v1alpha1.Redpanda) 
 			fmt.Printf("marshalling console config data: %s\n", err)
 		}
 
-		rpConsole.Config = &runtime.RawExtension{}
-		err = rpConsole.Config.UnmarshalJSON(jsonBytes)
+		rpConsole.Console = &runtime.RawExtension{}
+		err = rpConsole.Console.UnmarshalJSON(jsonBytes)
 		if err != nil {
 			fmt.Printf("unable to unmarshal config data: %s\n", err)
 		}

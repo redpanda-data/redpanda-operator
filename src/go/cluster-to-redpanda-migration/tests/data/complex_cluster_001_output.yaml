@@ -111,12 +111,13 @@ spec:
         enabled: true
         size: 2550Gi
         storageClass: local-path
-      tieredConfig:
-        cloud_storage_bucket: ""
-        cloud_storage_enable_remote_read: true
-        cloud_storage_enable_remote_write: true
-        cloud_storage_region: ""
-        cloud_storage_segment_max_upload_interval_sec: 3600
+      tiered:
+        config:
+          cloud_storage_bucket: null
+          cloud_storage_enable_remote_read: true
+          cloud_storage_enable_remote_write: true
+          cloud_storage_region: null
+          cloud_storage_segment_max_upload_interval_sec: 3600
     tls:
       certs:
         http-default:

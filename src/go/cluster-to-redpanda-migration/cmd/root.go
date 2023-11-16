@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"os"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/i18n"
 	"sigs.k8s.io/yaml"
