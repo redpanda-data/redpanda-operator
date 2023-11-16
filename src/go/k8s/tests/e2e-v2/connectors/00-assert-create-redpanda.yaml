@@ -44,7 +44,6 @@ metadata:
   labels:
     app.kubernetes.io/component: connectors
     app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: connectors
 status:
   phase: Running
 ---
