@@ -15,6 +15,8 @@ _helm_e2e_artifacts/
 /src/go/k8s/*.tar.gz
 /src/go/k8s/*-exit-code
 /src/go/k8s/kubeconfig
+/src/go/k8s/tests/_e2e_artifacts_v2/
+*.idea
 
 .DS_Store
 

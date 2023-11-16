@@ -10,8 +10,8 @@
 package migration
 
 import (
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/redpanda/v1alpha1"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/apis/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
