@@ -49,6 +49,8 @@ type RedpandaClusterSpec struct {
 
 	Resources *Resources `json:"resources,omitempty"`
 
+	Service *Service `json:"service,omitempty"`
+
 	Storage *Storage `json:"storage,omitempty"`
 
 	PostInstallJob *PostInstallJob `json:"post_install_job,omitempty"`
@@ -608,4 +610,13 @@ type EnterpriseLicenseSecretRef struct {
 type Enterprise struct {
 	License          *string                     `json:"license,omitempty"`
 	LicenseSecretRef *EnterpriseLicenseSecretRef `json:"licenseSecretRef,omitempty"`
+}
+
+type ServiceInternal struct {
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type Service struct {
+	Name     *string          `json:"name,omitempty"`
+	Internal *ServiceInternal `json:"internal,omitempty"`
 }
