@@ -22,7 +22,7 @@ import (
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
 )
 
 type MockAdminAPI struct {

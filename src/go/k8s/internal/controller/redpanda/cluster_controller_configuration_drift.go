@@ -24,13 +24,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	adminutils "github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/networking"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/certmanager"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/featuregates"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
 
 const (

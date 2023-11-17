@@ -15,10 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	adminutils "github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/certmanager"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
 )
 
 // NewAdminAPI create an Admin API client

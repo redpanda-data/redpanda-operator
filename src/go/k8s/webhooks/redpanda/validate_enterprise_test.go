@@ -26,15 +26,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	clusterredpandacomv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
-	redpandav1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/redpanda/v1alpha1"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	redpandacontrollers "github.com/redpanda-data/redpanda/src/go/k8s/internal/controller/redpanda"
-	"github.com/redpanda-data/redpanda/src/go/k8s/internal/testutils"
-	adminutils "github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
-	consolepkg "github.com/redpanda-data/redpanda/src/go/k8s/pkg/console"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/types"
-	"github.com/redpanda-data/redpanda/src/go/k8s/webhooks/redpanda"
+	clusterredpandacomv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
+	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
+	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/webhooks/redpanda"
 )
 
 type mockKafkaAdmin struct{}

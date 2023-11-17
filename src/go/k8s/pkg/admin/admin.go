@@ -19,8 +19,8 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/types"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
 )
 
 // NoInternalAdminAPI signal absence of the internal admin API endpoint

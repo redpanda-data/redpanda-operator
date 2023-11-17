@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	types2 "github.com/onsi/gomega/types"
-	"github.com/redpanda-data/redpanda/src/go/k8s/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	res "github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	res "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
 
 var _ = Describe("RedPandaCluster controller", func() {

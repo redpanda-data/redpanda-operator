@@ -40,6 +40,9 @@ type RedpandaClusterSpec struct {
 	// Defines Redpanda Console settings.
 	Console *RedpandaConsole `json:"console,omitempty"`
 
+	// Defines Redpanda Connector settings.
+	Connectors *RedpandaConnectors `json:"connectors,omitempty"`
+
 	// Defines authentication settings for listeners.
 	Auth *Auth `json:"auth,omitempty"`
 
@@ -223,6 +226,21 @@ type RedpandaConsole struct {
 type ConsoleCreateObj struct {
 	// Indicates whether the corresponding Kubernetes object (ConfigMap, Secret, or Deployment) should be created.
 	Create bool `json:"create"`
+}
+
+// Configures Redpanda Connectors. Redpanda Connectors is a package that includes Kafka Connect and built-in connectors, sometimes known as plugins.
+type RedpandaConnectors struct {
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies whether to create a Deployment resource. When `connectors.deployment.create` is `false`, the chart automatically configures and creates the Deployment resource to connect to your Redpanda cluster.
+	Deployment *ConnectorsCreateObj `json:"deployment,omitempty"`
+	// Specifies whether to create Helm tests.
+	Test       *ConnectorsCreateObj `json:"test,omitempty"`
+}
+
+// Configures Kubernetes resources for Redpanda Connectors.
+type ConnectorsCreateObj struct {
+	// Specifies whether to create the resource.
+	Create *bool `json:"enabled,omitempty"`
 }
 
 // Configures authentication in the Helm values.

@@ -28,7 +28,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 )
 
 var fakeK8sClient = fake.NewClientBuilder().Build()

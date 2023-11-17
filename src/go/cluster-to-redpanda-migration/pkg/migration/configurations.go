@@ -17,7 +17,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/apis/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 )
 
 func MigrateConfigurations(configs map[string]string, rp *v1alpha1.Redpanda) {
@@ -33,8 +33,8 @@ func migrateTieredConfigs(configs map[string]string, rp *v1alpha1.Redpanda) {
 		storage = rp.Spec.ClusterSpec.Storage
 	}
 
-	if storage.TieredConfig == nil {
-		storage.TieredConfig = &v1alpha1.TieredConfig{}
+	if storage.Tiered == nil {
+		storage.Tiered = &v1alpha1.Tiered{}
 	}
 
 	tieredConfig := &v1alpha1.TieredConfig{}
@@ -68,7 +68,7 @@ func migrateTieredConfigs(configs map[string]string, rp *v1alpha1.Redpanda) {
 		fmt.Printf("error in unmarshalling data: %s\n", err)
 	}
 
-	storage.TieredConfig = tieredConfig
+	storage.Tiered.Config = tieredConfig
 	rp.Spec.ClusterSpec.Storage = storage
 }
 

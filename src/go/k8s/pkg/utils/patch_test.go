@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 )
 
 func TestPatchComputation(t *testing.T) {

@@ -19,7 +19,7 @@ import (
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
 )
 
 func TestComputePatch(t *testing.T) {

@@ -19,10 +19,10 @@ jobs:
     steps:
 
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: stable
 
@@ -36,7 +36,7 @@ jobs:
 
     - name: Run gofumpt
       run: |
-        find src/go -type f -not -name 'zz*' -name '*.go' | xargs -n1 "$HOME/.local/bin/gofumpt" -w -lang=1.20
+        find src/go -type f -not -name 'zz*' -name '*.go' | xargs -n1 "$HOME/.local/bin/gofumpt" -w -lang=1.21
         git diff --exit-code
 
     - name: go mod tidy (cluster-to-redpanda-migration)

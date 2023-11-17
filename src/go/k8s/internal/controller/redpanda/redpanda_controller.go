@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
-	"github.com/redpanda-data/redpanda/src/go/k8s/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 )
 
 const (
@@ -496,7 +496,7 @@ func (r *RedpandaReconciler) helmReleaseRequiresUpdate(ctx context.Context, hr, 
 	case !reflect.DeepEqual(hr.GetValues(), hrTemplate.GetValues()):
 		log.Info("values found different")
 		return true
-	case helmChartRequiresUpdate(&hr.Spec.Chart, &hrTemplate.Spec.Chart):
+	case helmChartRequiresUpdate(log, &hr.Spec.Chart, &hrTemplate.Spec.Chart):
 		log.Info("chartTemplate found different")
 		return true
 	case hr.Spec.Interval != hrTemplate.Spec.Interval:
@@ -510,13 +510,13 @@ func (r *RedpandaReconciler) helmReleaseRequiresUpdate(ctx context.Context, hr, 
 // helmChartRequiresUpdate compares the v2beta1.HelmChartTemplate of the
 // v2beta1.HelmRelease to the given v1beta2.HelmChart to determine if an
 // update is required.
-func helmChartRequiresUpdate(template, chart *helmv2beta1.HelmChartTemplate) bool {
+func helmChartRequiresUpdate(log logr.Logger, template, chart *helmv2beta1.HelmChartTemplate) bool {
 	switch {
 	case template.Spec.Chart != chart.Spec.Chart:
-		fmt.Println("chart is different")
+		log.Info("chart is different")
 		return true
 	case template.Spec.Version != "" && template.Spec.Version != chart.Spec.Version:
-		fmt.Println("spec version is different")
+		log.Info("spec version is different")
 		return true
 	default:
 		return false

@@ -21,12 +21,12 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda/src/go/k8s/api/vectorized/v1alpha1"
-	adminutils "github.com/redpanda-data/redpanda/src/go/k8s/pkg/admin"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/certmanager"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda/src/go/k8s/pkg/resources/featuregates"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
 
 // reconcileConfiguration ensures that the cluster configuration is synchronized with expected data
