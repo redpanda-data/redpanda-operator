@@ -37,13 +37,13 @@ status:
   replicas: 1
   updatedReplicas: 1
 ---
-apiVersion: apps/v1
-kind: pod
+apiVersion: v1
+kind: Pod
 metadata:
-  name: redpanda
   labels:
     app.kubernetes.io/component: connectors
     app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: connectors
 status:
   phase: Running
 ---
