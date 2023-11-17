@@ -24,33 +24,33 @@ import (
 var RedpandaChartRepository = "https://charts.redpanda.com/"
 
 type ChartRef struct {
-	// ChartName is the chart to use
+	// Specifies the name of the chart to deploy.
 	ChartName string `json:"chartName,omitempty"`
-	// ChartVersion defines the helm chart version to use
+	// Defines the version of the Redpanda Helm chart to deploy.
 	ChartVersion string `json:"chartVersion,omitempty"`
-	// HelmRepositoryName defines the repository to use, defaults to redpanda if not defined
+	// Defines the chart repository to use. Defaults to `redpanda` if not defined.
 	HelmRepositoryName string `json:"helmRepositoryName,omitempty"`
-	// Timeout is the time to wait for any individual Kubernetes operation (like Jobs
-	// for hooks) during the performance of a Helm action. Defaults to '15m0s'.
+	// Specifies the time to wait for any individual Kubernetes operation (like Jobs
+	// for hooks) during Helm actions. Defaults to `15m0s`.
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Pattern="^([0-9]+(\\.[0-9]+)?(ms|s|m|h))+$"
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
-	// Upgrade contains the details for handling upgrades including failures
+	// Defines how to handle upgrades, including failures.
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
 }
 
-// RedpandaSpec defines the desired state of Redpanda
+// Defines the desired state of the Redpanda cluster.
 type RedpandaSpec struct {
-	// ChartRef defines chart details including repository
+	// Defines chart details, including the version and repository.
 	ChartRef ChartRef `json:"chartRef,omitempty"`
-	// ClusterSpec defines the values to use in the cluster
+	// Defines the Helm values to use to deploy the cluster.
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
 }
 
-// RedpandaStatus defines the observed state of Redpanda
+// Defines the observed state of Redpanda
 type RedpandaStatus struct {
-	// ObservedGeneration is the last observed generation.
+	// Specifies the last observed generation.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
@@ -94,15 +94,19 @@ type RedpandaStatus struct {
 
 type RemediationStrategy string
 
-// HelmUpgrade represents the configurations upgrading helm releases
+// Configures the behavior and strategy for Helm chart upgrades.
 type HelmUpgrade struct {
+	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
 	Remediation    *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
+	// Enables forceful updates during an upgrade.
 	Force          *bool                           `json:"force,omitempty"`
+	// Specifies whether to preserve user-configured values during an upgrade.
 	PreserveValues *bool                           `json:"preserveValues,omitempty"`
+	// Specifies whether to perform cleanup in case of failed upgrades.
 	CleanupOnFail  *bool                           `json:"cleanupOnFail,omitempty"`
 }
 
-// Redpanda is the Schema for the redpanda API
+// Defines the CRD for Redpanda clusters.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=redpandas
@@ -113,15 +117,18 @@ type Redpanda struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Defines the desired state of the Redpanda cluster.
 	Spec   RedpandaSpec   `json:"spec,omitempty"`
+	// Represents the current status of the Redpanda cluster.
 	Status RedpandaStatus `json:"status,omitempty"`
 }
 
-// RedpandaList contains a list of Redpanda
+// Contains a list of Redpanda objects.
 // +kubebuilder:object:root=true
 type RedpandaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
+	// Specifies a list of Redpanda resources.
 	Items           []Redpanda `json:"items"`
 }
 
@@ -129,7 +136,7 @@ func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
 }
 
-// GetHelmRelease returns the namespace and name of the HelmRelease.
+// Returns the namespace and name of the HelmRelease.
 func (in *RedpandaStatus) GetHelmRelease() string {
 	return in.HelmRelease
 }
@@ -156,7 +163,7 @@ func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 	return values, nil
 }
 
-// RedpandaReady registers a successful reconciliation of the given HelmRelease.
+// Registers a successful reconciliation of the given HelmRelease.
 func RedpandaReady(rp *Redpanda) *Redpanda {
 	newCondition := metav1.Condition{
 		Type:    meta.ReadyCondition,
@@ -169,7 +176,7 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 	return rp
 }
 
-// RedpandaNotReady registers a failed reconciliation of the given Redpanda.
+// Registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	newCondition := metav1.Condition{
 		Type:    meta.ReadyCondition,
@@ -181,7 +188,7 @@ func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	return rp
 }
 
-// RedpandaProgressing resets any failures and registers progress toward
+// Resets any failures and registers progress toward
 // reconciling the given Redpanda by setting the meta.ReadyCondition to
 // 'Unknown' for meta.ProgressingReason.
 func RedpandaProgressing(rp *Redpanda) *Redpanda {
