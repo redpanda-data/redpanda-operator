@@ -37,6 +37,8 @@ type RedpandaClusterSpec struct {
 
 	Console *RedpandaConsole `json:"console,omitempty"`
 
+	Connectors *RedpandaConnectors `json:"connectors,omitempty"`
+
 	Auth *Auth `json:"auth,omitempty"`
 
 	TLS *TLS `json:"tls,omitempty"`
@@ -162,6 +164,17 @@ type RedpandaConsole struct {
 
 type ConsoleCreateObj struct {
 	Create bool `json:"create"`
+}
+
+type RedpandaConnectors struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	Deployment *ConnectorsCreateObj `json:"deployment,omitempty"`
+	Test       *ConnectorsCreateObj `json:"test,omitempty"`
+}
+
+type ConnectorsCreateObj struct {
+	Create *bool `json:"enabled,omitempty"`
 }
 
 // Auth is a top-level field of the values file
