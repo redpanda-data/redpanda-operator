@@ -49,7 +49,7 @@ steps:
     steps:
       - key: k8s-operator-v2
         label: K8s Operator v2
-        timeout: 30
+        timeout: 37
         notify:
           - github_commit_status:
               context: k8s-operator-v2
