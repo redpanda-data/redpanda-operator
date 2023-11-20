@@ -236,7 +236,6 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 	} else if isConsoleManaged(log, &console) ||
 		controllerutil.ContainsFinalizer(&console, consolepkg.ConsoleSAFinalizer) ||
 		controllerutil.ContainsFinalizer(&console, consolepkg.ConsoleACLFinalizer) {
-
 		annotatedConsole := console.DeepCopy()
 		disableConsoleReconciliation(annotatedConsole)
 		controllerutil.RemoveFinalizer(annotatedConsole, consolepkg.ConsoleSAFinalizer)
