@@ -293,7 +293,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 		Namespace: rp.Namespace,
 		Name:      resourcesName,
 	}, &svc)
-	if err != nil {
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 		errorResult = errors.Join(fmt.Errorf("get internal service (%s): %w", resourcesName, err), errorResult)
 	} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
 		"app.kubernetes.io/instance": rp.Name,
@@ -321,7 +321,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 		Namespace: rp.Namespace,
 		Name:      externalSVCName,
 	}, &svc)
-	if err != nil {
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 		errorResult = errors.Join(fmt.Errorf("get external service (%s): %w", externalSVCName, err), errorResult)
 	} else if !hasLabelsAndAnnotations(&svc, rp) {
 		externalService := svc.DeepCopy()
@@ -342,7 +342,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 		Namespace: rp.Namespace,
 		Name:      resourcesName,
 	}, &sa)
-	if err != nil {
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 		errorResult = errors.Join(fmt.Errorf("get service account (%s): %w", resourcesName, err), errorResult)
 	} else if !hasLabelsAndAnnotations(&sa, rp) {
 		annotatedSA := sa.DeepCopy()
@@ -363,7 +363,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 		Namespace: rp.Namespace,
 		Name:      resourcesName,
 	}, &pdb)
-	if err != nil {
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 		errorResult = errors.Join(fmt.Errorf("get pod disruption budget (%s): %w", resourcesName, err), errorResult)
 	} else if !hasLabelsAndAnnotations(&pdb, rp) {
 		annotatedPDB := pdb.DeepCopy()
@@ -410,7 +410,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 			Namespace: rp.Namespace,
 			Name:      consoleResourcesName,
 		}, &sa)
-		if err != nil {
+		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 			errorResult = errors.Join(fmt.Errorf("get console service account (%s): %w", consoleResourcesName, err), errorResult)
 		} else if !hasLabelsAndAnnotations(&sa, rp) {
 			annotatedConsoleSA := sa.DeepCopy()
@@ -430,7 +430,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 			Namespace: rp.Namespace,
 			Name:      consoleResourcesName,
 		}, &svc)
-		if err != nil {
+		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 			errorResult = errors.Join(fmt.Errorf("get console service (%s): %w", consoleResourcesName, err), errorResult)
 		} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
 			"app.kubernetes.io/instance": rp.Name,
@@ -476,7 +476,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 			Namespace: rp.Namespace,
 			Name:      consoleResourcesName,
 		}, &ing)
-		if err != nil {
+		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
 			errorResult = errors.Join(fmt.Errorf("get console ingress (%s): %w", consoleResourcesName, err), errorResult)
 		} else if !hasLabelsAndAnnotations(&ing, rp) {
 			annotatedIngress := ing.DeepCopy()
