@@ -1008,6 +1008,18 @@ spec:
                         - container
                         type: object
                     type: object
+                  service:
+                    properties:
+                      internal:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                      name:
+                        type: string
+                    type: object
                   serviceAccount:
                     properties:
                       annotations:
