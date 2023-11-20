@@ -53,6 +53,9 @@ const (
 	resourceTypeHelmRelease    = "HelmRelease"
 
 	managedPath = "/managed"
+
+	revisionPath        = "/revision"
+	componentLabelValue = "redpanda-statefulset"
 )
 
 // RedpandaReconciler reconciles a Redpanda object
@@ -212,7 +215,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update Cluster custom resource"
 		log.V(logger.DebugLevel).Info(msg, "cluster-name", annotatedCluster.Name, "annotations", annotatedCluster.Annotations, "finalizers", annotatedCluster.Finalizers)
-		r.EventRecorder.AnnotatedEventf(annotatedCluster, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(annotatedCluster, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	var console vectorzied_v1alpha1.Console
@@ -246,7 +249,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update Console custom resource"
 		log.V(logger.DebugLevel).Info(msg, "console-name", annotatedConsole.Name, "annotations", annotatedConsole.Annotations, "finalizers", annotatedConsole.Finalizers)
-		r.EventRecorder.AnnotatedEventf(annotatedConsole, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(annotatedConsole, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	var pl v1.PodList
@@ -259,14 +262,14 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 	}
 
 	for i := range pl.Items {
-		if l, exist := pl.Items[i].Labels["app.kubernetes.io/component"]; exist && l == "redpanda-statefulset" && !controllerutil.ContainsFinalizer(&pl.Items[i], FinalizerKey) {
+		if l, exist := pl.Items[i].Labels["app.kubernetes.io/component"]; exist && l == componentLabelValue && !controllerutil.ContainsFinalizer(&pl.Items[i], FinalizerKey) {
 			continue
 		}
 		newPod := pl.Items[i].DeepCopy()
 		if newPod.Labels == nil {
 			newPod.Labels = make(map[string]string)
 		}
-		newPod.Labels["app.kubernetes.io/component"] = "redpanda-statefulset"
+		newPod.Labels["app.kubernetes.io/component"] = componentLabelValue
 
 		controllerutil.RemoveFinalizer(newPod, FinalizerKey)
 
@@ -277,7 +280,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update Redpanda Pod"
 		log.V(logger.DebugLevel).Info(msg, "pod-name", newPod.Name, "labels", newPod.Labels)
-		r.EventRecorder.AnnotatedEventf(newPod, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(newPod, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	resourcesName := rp.Name
@@ -310,7 +313,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update internal Service"
 		log.V(logger.DebugLevel).Info(msg, "service-name", internalService.Name, "labels", internalService.Labels, "annotations", internalService.Annotations, "selector", internalService.Spec.Selector)
-		r.EventRecorder.AnnotatedEventf(internalService, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(internalService, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	externalSVCName := fmt.Sprintf("%s-external", resourcesName)
@@ -331,7 +334,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update external Service"
 		log.V(logger.DebugLevel).Info(msg, "service-account-name", externalService.Name, "labels", externalService.Labels, "annotations", externalService.Annotations)
-		r.EventRecorder.AnnotatedEventf(externalService, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(externalService, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	var sa v1.ServiceAccount
@@ -352,7 +355,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update ServiceAccount"
 		log.V(logger.DebugLevel).Info(msg, "service-account-name", annotatedSA.Name, "labels", annotatedSA.Labels, "annotations", annotatedSA.Annotations)
-		r.EventRecorder.AnnotatedEventf(annotatedSA, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(annotatedSA, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	var pdb policyv1.PodDisruptionBudget
@@ -373,7 +376,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "update PodDistributionBudget"
 		log.V(logger.DebugLevel).Info(msg, "pod-distribution-budget-name", annotatedPDB.Name, "labels", annotatedPDB.Labels, "annotations", annotatedPDB.Annotations)
-		r.EventRecorder.AnnotatedEventf(annotatedPDB, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(annotatedPDB, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	var sts appsv1.StatefulSet
@@ -394,7 +397,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 		msg := "delete StatefulSet with orphant propagation mode"
 		log.V(logger.DebugLevel).Info(msg, "stateful-set-name", sts.Name)
-		r.EventRecorder.AnnotatedEventf(&sts, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		r.EventRecorder.AnnotatedEventf(&sts, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 
 	if ptr.Deref(rp.Spec.ClusterSpec.Console.Enabled, true) {
@@ -420,7 +423,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 			msg := "update console ServiceAccount"
 			log.V(logger.DebugLevel).Info(msg, "service-account-name", annotatedConsoleSA.Name, "labels", annotatedConsoleSA.Labels, "annotations", annotatedConsoleSA.Annotations)
-			r.EventRecorder.AnnotatedEventf(annotatedConsoleSA, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+			r.EventRecorder.AnnotatedEventf(annotatedConsoleSA, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 		}
 
 		err = r.Get(ctx, types.NamespacedName{
@@ -447,7 +450,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 			msg := "update console Service"
 			log.V(logger.DebugLevel).Info(msg, "service-name", annotatedConsoleSVC.Name, "labels", annotatedConsoleSVC.Labels, "annotations", annotatedConsoleSVC.Annotations, "selector", annotatedConsoleSVC.Spec.Selector)
-			r.EventRecorder.AnnotatedEventf(annotatedConsoleSVC, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+			r.EventRecorder.AnnotatedEventf(annotatedConsoleSVC, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 		}
 
 		var deploy appsv1.Deployment
@@ -465,7 +468,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 			msg := "delete console Deployment"
 			log.V(logger.DebugLevel).Info(msg, "deployment-name", deploy.Name)
-			r.EventRecorder.AnnotatedEventf(&deploy, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+			r.EventRecorder.AnnotatedEventf(&deploy, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 		}
 
 		var ing networkingv1.Ingress
@@ -486,7 +489,7 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 
 			msg := "update console Ingress"
 			log.V(logger.DebugLevel).Info(msg, "ingress-name", annotatedIngress.Name, "labels", annotatedIngress.Labels, "annotations", annotatedIngress.Annotations)
-			r.EventRecorder.AnnotatedEventf(annotatedIngress, map[string]string{v2.GroupVersion.Group + "/revision": rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+			r.EventRecorder.AnnotatedEventf(annotatedIngress, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 		}
 	}
 	return errorResult
@@ -849,7 +852,7 @@ func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *v1alph
 func (r *RedpandaReconciler) event(rp *v1alpha1.Redpanda, revision, severity, msg string) {
 	var metaData map[string]string
 	if revision != "" {
-		metaData = map[string]string{v2.GroupVersion.Group + "/revision": revision}
+		metaData = map[string]string{v2.GroupVersion.Group + revisionPath: revision}
 	}
 	eventType := "Normal"
 	if severity == v1alpha1.EventSeverityError {
