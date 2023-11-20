@@ -58,6 +58,8 @@ const (
 	componentLabelValue = "redpanda-statefulset"
 )
 
+var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
+
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	client.Client
@@ -702,7 +704,7 @@ func (r *RedpandaReconciler) deleteHelmRelease(ctx context.Context, rp *v1alpha1
 		return fmt.Errorf("deleting helm release connected with Redpanda (%s): %w", rp.Name, err)
 	}
 
-	return errors.New("wait for helm release deletion")
+	return errWaitForReleaseDeletion
 }
 
 func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta1.HelmRelease, error) {
