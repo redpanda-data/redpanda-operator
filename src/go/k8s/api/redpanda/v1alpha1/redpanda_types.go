@@ -227,3 +227,55 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 		UID:        in.UID,
 	}
 }
+
+// GetMigrationConsoleName returns Console custom resource namespace which will be taken out from
+// old reconciler, so that underlying resources could be migrated.
+func (in *Redpanda) GetMigrationConsoleName() string {
+	if in.Spec.Migration == nil {
+		return ""
+	}
+	name := in.Spec.Migration.ConsoleRef.Name
+	if name == "" {
+		name = in.Name
+	}
+	return name
+}
+
+// GetMigrationConsoleNamespace returns Console custom resource name which will be taken out from
+// old reconciler, so that underlying resources could be migrated.
+func (in *Redpanda) GetMigrationConsoleNamespace() string {
+	if in.Spec.Migration == nil {
+		return ""
+	}
+	namespace := in.Spec.Migration.ConsoleRef.Namespace
+	if namespace == "" {
+		namespace = in.Namespace
+	}
+	return namespace
+}
+
+// GetMigrationClusterName returns Cluster custom resource namespace which will be taken out from
+// old reconciler, so that underlying resources could be migrated.
+func (in *Redpanda) GetMigrationClusterName() string {
+	if in.Spec.Migration == nil {
+		return ""
+	}
+	name := in.Spec.Migration.ClusterRef.Name
+	if name == "" {
+		name = in.Name
+	}
+	return name
+}
+
+// GetMigrationClusterNamespace returns Cluster custom resource name which will be taken out from
+// old reconciler, so that underlying resources could be migrated.
+func (in *Redpanda) GetMigrationClusterNamespace() string {
+	if in.Spec.Migration == nil {
+		return ""
+	}
+	namespace := in.Spec.Migration.ClusterRef.Namespace
+	if namespace == "" {
+		namespace = in.Namespace
+	}
+	return namespace
+}
