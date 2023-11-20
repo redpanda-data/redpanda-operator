@@ -1,0 +1,5 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl apply -f node1.yaml
+  - script: kubectl apply -f node2.yaml
