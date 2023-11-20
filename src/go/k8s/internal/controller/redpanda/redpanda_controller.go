@@ -400,96 +400,109 @@ func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, 
 	}
 
 	if ptr.Deref(rp.Spec.ClusterSpec.Console.Enabled, true) {
-		log.V(logger.DebugLevel).Info("migrate console")
-		consoleResourcesName := rp.Name
-		if overwriteSAName := ptr.Deref(rp.Spec.ClusterSpec.Console.FullNameOverride, ""); overwriteSAName != "" {
-			consoleResourcesName = overwriteSAName
-		}
-		err = r.Get(ctx, types.NamespacedName{
-			Namespace: rp.Namespace,
-			Name:      consoleResourcesName,
-		}, &sa)
-		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
-			errorResult = errors.Join(fmt.Errorf("get console service account (%s): %w", consoleResourcesName, err), errorResult)
-		} else if !hasLabelsAndAnnotations(&sa, rp) {
-			annotatedConsoleSA := sa.DeepCopy()
-			setHelmLabelsAndAnnotations(annotatedConsoleSA, rp)
-
-			err = r.Update(ctx, annotatedConsoleSA)
-			if err != nil {
-				errorResult = errors.Join(fmt.Errorf("updating console service account (%s): %w", annotatedConsoleSA.Name, err), errorResult)
-			}
-
-			msg := "update console ServiceAccount"
-			log.V(logger.DebugLevel).Info(msg, "service-account-name", annotatedConsoleSA.Name, "labels", annotatedConsoleSA.Labels, "annotations", annotatedConsoleSA.Annotations)
-			r.EventRecorder.AnnotatedEventf(annotatedConsoleSA, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
-		}
-
-		err = r.Get(ctx, types.NamespacedName{
-			Namespace: rp.Namespace,
-			Name:      consoleResourcesName,
-		}, &svc)
-		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
-			errorResult = errors.Join(fmt.Errorf("get console service (%s): %w", consoleResourcesName, err), errorResult)
-		} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
-			"app.kubernetes.io/instance": rp.Name,
-			"app.kubernetes.io/name":     "console",
-		}) {
-			annotatedConsoleSVC := svc.DeepCopy()
-			setHelmLabelsAndAnnotations(annotatedConsoleSVC, rp)
-
-			annotatedConsoleSVC.Spec.Selector = make(map[string]string)
-			annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/instance"] = rp.Name
-			annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/name"] = "console"
-
-			err = r.Update(ctx, annotatedConsoleSVC)
-			if err != nil {
-				errorResult = errors.Join(fmt.Errorf("updating console service (%s): %w", annotatedConsoleSVC.Name, err), errorResult)
-			}
-
-			msg := "update console Service"
-			log.V(logger.DebugLevel).Info(msg, "service-name", annotatedConsoleSVC.Name, "labels", annotatedConsoleSVC.Labels, "annotations", annotatedConsoleSVC.Annotations, "selector", annotatedConsoleSVC.Spec.Selector)
-			r.EventRecorder.AnnotatedEventf(annotatedConsoleSVC, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
-		}
-
-		var deploy appsv1.Deployment
-		err = r.Get(ctx, types.NamespacedName{
-			Namespace: rp.Namespace,
-			Name:      consoleResourcesName,
-		}, &deploy)
+		err = r.tryMigrateConsole(ctx, log, rp)
 		if err != nil {
-			errorResult = errors.Join(fmt.Errorf("get console deployment (%s): %w", consoleResourcesName, err), errorResult)
-		} else if !hasLabelsAndAnnotations(&sts, rp) {
-			err = r.Delete(ctx, &deploy)
-			if err != nil {
-				errorResult = errors.Join(fmt.Errorf("deleting console deployment (%s): %w", deploy.Name, err), errorResult)
-			}
+			errorResult = errors.Join(err, errorResult)
+		}
+	}
+	return errorResult
+}
 
-			msg := "delete console Deployment"
-			log.V(logger.DebugLevel).Info(msg, "deployment-name", deploy.Name)
-			r.EventRecorder.AnnotatedEventf(&deploy, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+func (r *RedpandaReconciler) tryMigrateConsole(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) error {
+	log.V(logger.DebugLevel).Info("migrate console")
+	consoleResourcesName := rp.Name
+	if overwriteSAName := ptr.Deref(rp.Spec.ClusterSpec.Console.FullNameOverride, ""); overwriteSAName != "" {
+		consoleResourcesName = overwriteSAName
+	}
+
+	var errorResult error
+
+	var sa v1.ServiceAccount
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &sa)
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
+		errorResult = errors.Join(fmt.Errorf("get console service account (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&sa, rp) {
+		annotatedConsoleSA := sa.DeepCopy()
+		setHelmLabelsAndAnnotations(annotatedConsoleSA, rp)
+
+		err = r.Update(ctx, annotatedConsoleSA)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating console service account (%s): %w", annotatedConsoleSA.Name, err), errorResult)
 		}
 
-		var ing networkingv1.Ingress
-		err = r.Get(ctx, types.NamespacedName{
-			Namespace: rp.Namespace,
-			Name:      consoleResourcesName,
-		}, &ing)
-		if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
-			errorResult = errors.Join(fmt.Errorf("get console ingress (%s): %w", consoleResourcesName, err), errorResult)
-		} else if !hasLabelsAndAnnotations(&ing, rp) {
-			annotatedIngress := ing.DeepCopy()
-			setHelmLabelsAndAnnotations(annotatedIngress, rp)
+		msg := "update console ServiceAccount"
+		log.V(logger.DebugLevel).Info(msg, "service-account-name", annotatedConsoleSA.Name, "labels", annotatedConsoleSA.Labels, "annotations", annotatedConsoleSA.Annotations)
+		r.EventRecorder.AnnotatedEventf(annotatedConsoleSA, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
 
-			err = r.Update(ctx, annotatedIngress)
-			if err != nil {
-				errorResult = errors.Join(fmt.Errorf("updating console ingress (%s): %w", annotatedIngress.Name, err), errorResult)
-			}
+	var svc v1.Service
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &svc)
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
+		errorResult = errors.Join(fmt.Errorf("get console service (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
+		"app.kubernetes.io/instance": rp.Name,
+		"app.kubernetes.io/name":     "console",
+	}) {
+		annotatedConsoleSVC := svc.DeepCopy()
+		setHelmLabelsAndAnnotations(annotatedConsoleSVC, rp)
 
-			msg := "update console Ingress"
-			log.V(logger.DebugLevel).Info(msg, "ingress-name", annotatedIngress.Name, "labels", annotatedIngress.Labels, "annotations", annotatedIngress.Annotations)
-			r.EventRecorder.AnnotatedEventf(annotatedIngress, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		annotatedConsoleSVC.Spec.Selector = make(map[string]string)
+		annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/instance"] = rp.Name
+		annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/name"] = "console"
+
+		err = r.Update(ctx, annotatedConsoleSVC)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating console service (%s): %w", annotatedConsoleSVC.Name, err), errorResult)
 		}
+
+		msg := "update console Service"
+		log.V(logger.DebugLevel).Info(msg, "service-name", annotatedConsoleSVC.Name, "labels", annotatedConsoleSVC.Labels, "annotations", annotatedConsoleSVC.Annotations, "selector", annotatedConsoleSVC.Spec.Selector)
+		r.EventRecorder.AnnotatedEventf(annotatedConsoleSVC, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	var deploy appsv1.Deployment
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &deploy)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("get console deployment (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&deploy, rp) {
+		err = r.Delete(ctx, &deploy)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("deleting console deployment (%s): %w", deploy.Name, err), errorResult)
+		}
+
+		msg := "delete console Deployment"
+		log.V(logger.DebugLevel).Info(msg, "deployment-name", deploy.Name)
+		r.EventRecorder.AnnotatedEventf(&deploy, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	var ing networkingv1.Ingress
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &ing)
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
+		errorResult = errors.Join(fmt.Errorf("get console ingress (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&ing, rp) {
+		annotatedIngress := ing.DeepCopy()
+		setHelmLabelsAndAnnotations(annotatedIngress, rp)
+
+		err = r.Update(ctx, annotatedIngress)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating console ingress (%s): %w", annotatedIngress.Name, err), errorResult)
+		}
+
+		msg := "update console Ingress"
+		log.V(logger.DebugLevel).Info(msg, "ingress-name", annotatedIngress.Name, "labels", annotatedIngress.Labels, "annotations", annotatedIngress.Annotations)
+		r.EventRecorder.AnnotatedEventf(annotatedIngress, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
 	}
 	return errorResult
 }
