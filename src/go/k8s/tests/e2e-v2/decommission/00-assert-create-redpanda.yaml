@@ -45,8 +45,8 @@ status:
       status: "True"
       type: Released
   helmChart: redpanda/redpanda-decommission
-  lastAppliedRevision: 5.3.2
-  lastAttemptedRevision: 5.3.2
+  lastAppliedRevision: 5.6.48
+  lastAttemptedRevision: 5.6.48
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
