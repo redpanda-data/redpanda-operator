@@ -40,11 +40,16 @@ func NewEndpointTemplateData(index int, hostIP string) EndpointTemplateData {
 	}
 }
 
-// ComputeEndpoint constructs the expected endpoint name using the given
+// ComputeEndpoint is the wrapper around Compute for evaluating an endpoint.
+func ComputeEndpoint(tmpl string, data EndpointTemplateData) (string, error) {
+	return Compute(tmpl, data, true)
+}
+
+// Compute constructs the expected endpoint name and port using the given
 // template.
 // In case the template is empty, the legacy method for computing the endpoint
 // name is used, which consists in using the plain index.
-func ComputeEndpoint(tmpl string, data EndpointTemplateData) (string, error) {
+func Compute(tmpl string, data EndpointTemplateData, isEndpoint bool) (string, error) {
 	if tmpl == "" {
 		return strconv.Itoa(data.Index), nil
 	}
@@ -59,7 +64,7 @@ func ComputeEndpoint(tmpl string, data EndpointTemplateData) (string, error) {
 	}
 
 	ep := b.String()
-	if !validEndpointRegexp.MatchString(ep) {
+	if isEndpoint && !validEndpointRegexp.MatchString(ep) {
 		return "", &InvalidEndpointSegmentError{endpoint: ep}
 	}
 

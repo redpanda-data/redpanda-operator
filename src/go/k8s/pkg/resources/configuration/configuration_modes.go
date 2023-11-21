@@ -69,7 +69,7 @@ func (r globalConfigurationModeClassic) SetAdditionalFlatProperties(
 			if err != nil {
 				return fmt.Errorf("setting built-in type: %w", err)
 			}
-		} else {
+		} else if !skipNodeSpecificConfiguration(v) {
 			err := targetConfig.NodeConfiguration.Set(k, v, "")
 			if err != nil {
 				return fmt.Errorf("setting complex type: %w", err)
@@ -77,6 +77,13 @@ func (r globalConfigurationModeClassic) SetAdditionalFlatProperties(
 		}
 	}
 	return nil
+}
+
+// It returns whether to skip node specific configuration in handling additional configuration.
+// Node specific configuration contains variable like {{ .Index }}
+// e.g. "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
+func skipNodeSpecificConfiguration(cfg string) bool {
+	return strings.Contains(cfg, ".Index")
 }
 
 // globalConfigurationModeCentralized provides centralized configuration rules
