@@ -126,7 +126,7 @@ type KafkaSASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password  SecretKeyRef  `json:"passwordSecretRef,omitempty"`
+	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
 	// +optional
@@ -279,7 +279,7 @@ type Topic struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Defines the desired state of the Topic resource.
-	Spec   TopicSpec   `json:"spec,omitempty"`
+	Spec TopicSpec `json:"spec,omitempty"`
 	// Represents the current status of the Topic resource.
 	Status TopicStatus `json:"status,omitempty"`
 }
@@ -291,7 +291,7 @@ type TopicList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Topic resources.
-	Items           []Topic `json:"items"`
+	Items []Topic `json:"items"`
 }
 
 func init() {

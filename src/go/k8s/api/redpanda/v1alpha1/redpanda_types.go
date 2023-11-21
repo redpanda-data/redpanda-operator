@@ -115,13 +115,13 @@ type RemediationStrategy string
 // Configures the behavior and strategy for Helm chart upgrades.
 type HelmUpgrade struct {
 	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
-	Remediation    *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
+	Remediation *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
 	// Enables forceful updates during an upgrade.
-	Force          *bool                           `json:"force,omitempty"`
+	Force *bool `json:"force,omitempty"`
 	// Specifies whether to preserve user-configured values during an upgrade.
-	PreserveValues *bool                           `json:"preserveValues,omitempty"`
+	PreserveValues *bool `json:"preserveValues,omitempty"`
 	// Specifies whether to perform cleanup in case of failed upgrades.
-	CleanupOnFail  *bool                           `json:"cleanupOnFail,omitempty"`
+	CleanupOnFail *bool `json:"cleanupOnFail,omitempty"`
 }
 
 // Defines the CRD for Redpanda clusters.
@@ -136,7 +136,7 @@ type Redpanda struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Defines the desired state of the Redpanda cluster.
-	Spec   RedpandaSpec   `json:"spec,omitempty"`
+	Spec RedpandaSpec `json:"spec,omitempty"`
 	// Represents the current status of the Redpanda cluster.
 	Status RedpandaStatus `json:"status,omitempty"`
 }
@@ -147,7 +147,7 @@ type RedpandaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Redpanda resources.
-	Items           []Redpanda `json:"items"`
+	Items []Redpanda `json:"items"`
 }
 
 func init() {

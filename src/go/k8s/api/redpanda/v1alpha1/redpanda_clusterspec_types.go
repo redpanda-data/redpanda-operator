@@ -32,7 +32,7 @@ type RedpandaClusterSpec struct {
 	// Deprecated: Use `EnterpriseLicenseSecretRef` instead.
 	LicenseSecretRef *LicenseSecretRef `json:"license_secret_ref,omitempty"`
 	// Defines an Enterprise license.
-	Enterprise       *Enterprise       `json:"enterprise,omitempty"`
+	Enterprise *Enterprise `json:"enterprise,omitempty"`
 
 	// Defines rack awareness settings.
 	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
@@ -60,7 +60,7 @@ type RedpandaClusterSpec struct {
 
 	// Defines settings for the headless ClusterIP Service.
 	Service *Service `json:"service,omitempty"`
-  
+
 	// Defines storage settings for the Redpanda data directory and the Tiered Storage cache.
 	Storage *Storage `json:"storage,omitempty"`
 
@@ -99,13 +99,13 @@ type RedpandaClusterSpec struct {
 // Configures a sidecar that watches for changes to the Secret in `auth.sasl.secretRef` and applies the changes to the Redpanda cluster.
 type ConfigWatcher struct {
 	// Specifies whether the sidecar is enabled.
-	Enabled           *bool                        `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies additional volumes to mount to the sidecar.
-	ExtraVolumeMounts string                       `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts string `json:"extraVolumeMounts,omitempty"`
 	// Specifies resource requests for the sidecar container.
-	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Specifies the container's security context, including privileges and access levels of the container and its processes.
-	SecurityContext   *corev1.SecurityContext      `json:"SecurityContext,omitempty"`
+	SecurityContext *corev1.SecurityContext `json:"SecurityContext,omitempty"`
 }
 
 // Configures the Redpanda container image settings in the Helm values.
@@ -113,7 +113,7 @@ type RedpandaImage struct {
 	// Specifies the image repository to pull from.
 	Repository *string `json:"repository,omitempty"`
 	// Specifies the image tag.
-	Tag        *string `json:"tag,omitempty"`
+	Tag *string `json:"tag,omitempty"`
 	// Specifies the strategy used for pulling images from the repository. For available values, see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy.
 	PullPolicy *string `json:"pullPolicy,omitempty"`
 }
@@ -121,7 +121,7 @@ type RedpandaImage struct {
 // Deprecated: Use `EnterpriseLicenseSecretRef` instead.
 type LicenseSecretRef struct {
 	// Specifies the key that is contains the Enterprise license in the Secret.
-	SecretKey  *string `json:"secret_key,omitempty"`
+	SecretKey *string `json:"secret_key,omitempty"`
 	// Specifies the name of the Secret.
 	SecretName *string `json:"secret_name,omitempty"`
 }
@@ -129,7 +129,7 @@ type LicenseSecretRef struct {
 // Configures rack awareness in the Helm values.
 type RackAwareness struct {
 	// Specifies whether rack awareness is enabled. When enabled, Kubernetes failure zones are treated as racks. Redpanda maps each rack to a failure zone and places partition replicas across them. Requires `rbac.enabled` set to `true`.
-	Enabled        bool    `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Specifies the key in Node labels or annotations to use to denote failure zones.
 	NodeAnnotation *string `json:"nodeAnnotation,omitempty"`
 }
@@ -139,11 +139,11 @@ type RedpandaConsole struct {
 	// Specifies whether the Redpanda Console subchart should be deployed.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Sets the number of replicas for the Redpanda Console Deployment resource.
-	ReplicaCount      *int    `json:"replicaCount,omitempty"`
+	ReplicaCount *int `json:"replicaCount,omitempty"`
 	// Specifies a custom name for the Redpanda Console resources, overriding the default naming convention.
-	NameOverride      *string `json:"nameOverride,omitempty"`
+	NameOverride *string `json:"nameOverride,omitempty"`
 	// Specifies a full custom name, which overrides the entire naming convention including release name and chart name.
-	FullNameOverride  *string `json:"fullnameOverride,omitempty"`
+	FullNameOverride *string `json:"fullnameOverride,omitempty"`
 	// Specifies the priority class name for the Pods that run Redpanda Console.
 	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -214,9 +214,9 @@ type RedpandaConsole struct {
 	// Mounts additional Secret resources inside the containers that run Redpanda Console.
 	SecretMounts *runtime.RawExtension `json:"secretMounts,omitempty"`
 	// Specifies whether a ConfigMap should be created for Redpanda Console.
-	ConfigMap  *ConsoleCreateObj `json:"configMap,omitempty"`
+	ConfigMap *ConsoleCreateObj `json:"configMap,omitempty"`
 	// Specifies whether a Secret should be created for Redpanda Console.
-	Secret     *ConsoleCreateObj `json:"secret,omitempty"`
+	Secret *ConsoleCreateObj `json:"secret,omitempty"`
 	// Specifies whether a Deployment should be created for Redpanda Console.
 	Deployment *ConsoleCreateObj `json:"deployment,omitempty"`
 
@@ -237,7 +237,7 @@ type RedpandaConnectors struct {
 	// Specifies whether to create a Deployment resource. When `connectors.deployment.create` is `false`, the chart automatically configures and creates the Deployment resource to connect to your Redpanda cluster.
 	Deployment *ConnectorsCreateObj `json:"deployment,omitempty"`
 	// Specifies whether to create Helm tests.
-	Test       *ConnectorsCreateObj `json:"test,omitempty"`
+	Test *ConnectorsCreateObj `json:"test,omitempty"`
 }
 
 // Configures Kubernetes resources for Redpanda Connectors.
@@ -255,13 +255,13 @@ type Auth struct {
 // Configures SASL authentication in the Helm values.
 type SASL struct {
 	// Enables SASL authentication. If you enable SASL authentication, you must provide a Secret name in `secretRef`.
-	Enabled   bool         `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Specifies the default authentication mechanism to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
-	Mechanism *string      `json:"mechanism,omitempty"`
+	Mechanism *string `json:"mechanism,omitempty"`
 	// If `users` is empty, `secretRef` specifies the name of the Secret that contains your superuser credentials in the format <username>:<password>:<optional-authentication-mechanism>. Otherwise, `secretRef` specifies the name of the Secret that the chart creates to store the credentials in `users`.
-	SecretRef *string      `json:"secretRef,omitempty"`
+	SecretRef *string `json:"secretRef,omitempty"`
 	// Specifies a list of superuser credentials.
-	Users     []UsersItems `json:"users,omitempty"`
+	Users []UsersItems `json:"users,omitempty"`
 }
 
 // Configures a list of superusers in the Helm values.
@@ -269,29 +269,29 @@ type UsersItems struct {
 	// Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
 	Mechanism *string `json:"mechanism,omitempty"`
 	// Specifies the name of the superuser.
-	Name      *string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 	// Specifies the superuser password.
-	Password  *string `json:"password,omitempty"`
+	Password *string `json:"password,omitempty"`
 }
 
 // Configures TLS in the Helm values.
 type TLS struct {
 	// Lists all available certificates in the cluster. You can reference a specific certificate’s name in each listener’s `listeners.<listener name>.tls.cert` setting.
-	Certs   map[string]*Certificate `json:"certs,omitempty"`
+	Certs map[string]*Certificate `json:"certs,omitempty"`
 	// Enables TLS globally for all listeners. Each listener must include a certificate name in its `<listener>.tls` object. To allow you to enable TLS for individual listeners, certificates are always loaded, even if TLS is disabled.
-	Enabled *bool                   `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // Configures TLS certificates.
 type Certificate struct {
 	// Specify the name of an existing Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs.
-	IssuerRef *IssuerRef       `json:"issuerRef,omitempty"`
+	IssuerRef *IssuerRef `json:"issuerRef,omitempty"`
 	// Specify the name of an existing Secret resource that contains your TLS certificate.
-	SecretRef *SecretRef       `json:"secretRef,omitempty"`
+	SecretRef *SecretRef `json:"secretRef,omitempty"`
 	// Specifies the validity duration of certificates generated with `issuerRef`.
-	Duration  *metav1.Duration `json:"duration,omitempty"`
+	Duration *metav1.Duration `json:"duration,omitempty"`
 	// Specifies whether to include the `ca.crt` file in the trust stores of all listeners. Set to `true` only for certificates that are not authenticated using public certificate authorities (CAs).
-	CAEnabled bool             `json:"caEnabled"`
+	CAEnabled bool `json:"caEnabled"`
 }
 
 // Configures the Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs.
@@ -311,13 +311,13 @@ type SecretRef struct {
 // Configures TLS configuration for each listener in the Helm values.
 type ListenerTLS struct {
 	// References a specific certificate for the listener.
-	Cert              *string `json:"cert,omitempty"`
+	Cert *string `json:"cert,omitempty"`
 	// Specifies whether TLS is enabled for the listener.
-	Enabled           *bool   `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// References a Secret rsource containing TLS credentials for the listener.
-	SecretRef         *string `json:"secretRef,omitempty"`
+	SecretRef *string `json:"secretRef,omitempty"`
 	// Indicates whether client authentication (mTLS) is required.
-	RequireClientAuth *bool   `json:"requireClientAuth,omitempty"`
+	RequireClientAuth *bool `json:"requireClientAuth,omitempty"`
 }
 
 // Allows you to enable or disable the creation of an external Service type.
@@ -329,29 +329,29 @@ type ExternalService struct {
 // Defines external connectivity settings in the Helm values.
 type External struct {
 	// Specifies addresses for the external listeners to advertise.Provide one entry for each broker in order of StatefulSet replicas. The number of brokers is defined in `statefulset.replicas`. The values can be IP addresses or DNS names. If `external.domain` is set, the domain is appended to these values.
-	Addresses      []string          `json:"addresses,omitempty"`
+	Addresses []string `json:"addresses,omitempty"`
 	// Adds custom annotations to the external Service.
-	Annotations    map[string]string `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies the domain to advertise to external clients. If specified, then it will be appended to the `external.addresses` values as each broker's advertised address.
-	Domain         *string           `json:"domain,omitempty"`
+	Domain *string `json:"domain,omitempty"`
 	// Specifies whether the external access is enabled.
-	Enabled        *bool             `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Configures the external Service resource.
-	Service        *ExternalService  `json:"service,omitempty"`
+	Service *ExternalService `json:"service,omitempty"`
 	// Source range for external access. Only applicable when `external.type` is LoadBalancer.
-	SourceRanges   []string          `json:"sourceRanges,omitempty"`
+	SourceRanges []string `json:"sourceRanges,omitempty"`
 	// Specifies the external Service type. Only NodePort and LoadBalancer are supported. If undefined, then advertised listeners will be configured in Redpanda, but the Helm chart will not create a Service. NodePort is recommended in cases where latency is a priority.
-	Type           *string           `json:"type,omitempty"`
+	Type *string `json:"type,omitempty"`
 	// Defines externalDNS configurations.
-	ExternalDNS    *ExternalDNS      `json:"externalDns,omitempty"`
+	ExternalDNS *ExternalDNS `json:"externalDns,omitempty"`
 	// Specifies a naming prefix template for external Services.
-	PrefixTemplate *string           `json:"prefixTemplate,omitempty"`
+	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
 }
 
 // Configures logging settings in the Helm values.
 type Logging struct {
 	// Sets the verbosity level of logs.
-	LogLevel   string     `json:"logLevel"`
+	LogLevel string `json:"logLevel"`
 	// Specifies whether to send usage statistics to Redpanda Data.
 	UsageStats UsageStats `json:"usageStats"`
 }
@@ -359,17 +359,17 @@ type Logging struct {
 // Configures the reporting of usage statistics. Redpanda Data uses these metrics to learn how the software is used, which can guide future improvements.
 type UsageStats struct {
 	// Specifies whether usage reporting is enabled.
-	Enabled      bool    `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled.
 	Organization *string `json:"organization,omitempty"`
 	// Specifies the ID of your Redpanda cluster.
-	ClusterID    *string `json:"clusterId,omitempty"`
+	ClusterID *string `json:"clusterId,omitempty"`
 }
 
 // Configures resource allocation. The default values are for a development environment. Production-level values and other considerations are documented, where those values are different from the default.
 type Resources struct {
 	// Specifies the number of CPU cores.
-	CPU    *CPU    `json:"cpu,omitempty"`
+	CPU *CPU `json:"cpu,omitempty"`
 	// Specifies the amount of memory.
 	Memory *Memory `json:"memory,omitempty"`
 }
@@ -389,11 +389,11 @@ type Requests struct {
 // Configures storage-related settings in the Helm values.
 type Storage struct {
 	// Specifies the absolute path on the worker node to store the Redpanda data directory. If unspecified, then an `emptyDir` volume is used. If specified but `persistentVolume.enabled` is true, `storage.hostPath` has no effect.
-	HostPath         *string           `json:"hostPath,omitempty"`
+	HostPath *string `json:"hostPath,omitempty"`
 	// Configures a PersistentVolumeClaim (PVC) template to create for each Pod. This PVC is used to store the Redpanda data directory.
 	PersistentVolume *PersistentVolume `json:"persistentVolume,omitempty"`
 	// Configures storage for the Tiered Storage cache.
-	Tiered           *Tiered           `json:"tiered,omitempty"`
+	Tiered *Tiered `json:"tiered,omitempty"`
 }
 
 // Configures storage for the Tiered Storage cache.
@@ -404,103 +404,103 @@ type Tiered struct {
 	// - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on.
 	// - `emptyDir`: Mounts an empty directory every time the Pod starts.
 	// - `persistentVolume`: Creates and mounts a PersistentVolumeClaim using the template defined in `persistentVolume`.
-	MountType                     *string                        `json:"mountType,omitempty"`
+	MountType *string `json:"mountType,omitempty"`
 	// Specifies the absolute path on the worker node to store the Tiered Storage cache.
-	HostPath                      *string                        `json:"hostPath,omitempty"`
+	HostPath *string `json:"hostPath,omitempty"`
 	// Configures a PersistentVolumeClaim (PVC) template to create for each Pod. This PVC is used to store the Tiered Storage cache.
 	TieredStoragePersistentVolume *TieredStoragePersistentVolume `json:"persistentVolume,omitempty"`
 	// Configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprised.licenseSecretRef`.
-	Config                        *TieredConfig                  `json:"config,omitempty"`
+	Config *TieredConfig `json:"config,omitempty"`
 }
 
 // Configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
 type TieredConfig struct {
 	// Enables Tiered Storage if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-	CloudStorageEnabled                     *string `json:"cloud_storage_enabled,omitempty"`
+	CloudStorageEnabled *string `json:"cloud_storage_enabled,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
-	CloudStorageAPIEndpoint                 *string `json:"cloud_storage_api_endpoint,omitempty"`
+	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
-	CloudStorageAPIEndpointPort             *int    `json:"cloud_storage_api_endpoint_port,omitempty"`
+	CloudStorageAPIEndpointPort *int `json:"cloud_storage_api_endpoint_port,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
-	CloudStorageBucket                      *string `json:"cloud_storage_bucket"`
+	CloudStorageBucket *string `json:"cloud_storage_bucket"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
-	CloudStorageCacheCheckInterval          *int    `json:"cloud_storage_cache_check_interval,omitempty"`
+	CloudStorageCacheCheckInterval *int `json:"cloud_storage_cache_check_interval,omitempty"`
 	// See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
-	CloudStorageCacheDirectory              *string `json:"cloud_storage_cache_directory,omitempty"`
+	CloudStorageCacheDirectory *string `json:"cloud_storage_cache_directory,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
-	CloudStorageCacheSize                   *string `json:"cloud_storage_cache_size,omitempty"`
+	CloudStorageCacheSize *string `json:"cloud_storage_cache_size,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
-	CloudStorageCredentialsSource           *string `json:"cloud_storage_credentials_source,omitempty"`
+	CloudStorageCredentialsSource *string `json:"cloud_storage_credentials_source,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
-	CloudStorageDisableTLS                  *bool   `json:"cloud_storage_disable_tls,omitempty"`
+	CloudStorageDisableTLS *bool `json:"cloud_storage_disable_tls,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
-	CloudStorageEnableRemoteRead            *bool   `json:"cloud_storage_enable_remote_read,omitempty"`
+	CloudStorageEnableRemoteRead *bool `json:"cloud_storage_enable_remote_read,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
-	CloudStorageEnableRemoteWrite           *bool   `json:"cloud_storage_enable_remote_write,omitempty"`
+	CloudStorageEnableRemoteWrite *bool `json:"cloud_storage_enable_remote_write,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
-	CloudStorageInitialBackoffMs            *int    `json:"cloud_storage_initial_backoff_ms,omitempty"`
+	CloudStorageInitialBackoffMs *int `json:"cloud_storage_initial_backoff_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
-	CloudStorageManifestUploadTimeoutMs     *int    `json:"cloud_storage_manifest_upload_timeout_ms,omitempty"`
+	CloudStorageManifestUploadTimeoutMs *int `json:"cloud_storage_manifest_upload_timeout_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
-	CloudStorageMaxConnectionIdleTimeMs     *int    `json:"cloud_storage_max_connection_idle_time_ms,omitempty"`
+	CloudStorageMaxConnectionIdleTimeMs *int `json:"cloud_storage_max_connection_idle_time_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
-	CloudStorageMaxConnections              *int    `json:"cloud_storage_max_connections,omitempty"`
+	CloudStorageMaxConnections *int `json:"cloud_storage_max_connections,omitempty"`
 	// Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.
-	CloudStorageReconciliationIntervalMs    *int    `json:"cloud_storage_reconciliation_interval_ms,omitempty"`
+	CloudStorageReconciliationIntervalMs *int `json:"cloud_storage_reconciliation_interval_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
-	CloudStorageRegion                      *string `json:"cloud_storage_region"`
+	CloudStorageRegion *string `json:"cloud_storage_region"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
-	CloudStorageSegmentMaxUploadIntervalSec *int    `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
+	CloudStorageSegmentMaxUploadIntervalSec *int `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
-	CloudStorageSegmentUploadTimeoutMs      *int    `json:"cloud_storage_segment_upload_timeout_ms,omitempty"`
+	CloudStorageSegmentUploadTimeoutMs *int `json:"cloud_storage_segment_upload_timeout_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
-	CloudStorageTrustFile                   *string `json:"cloud_storage_trust_file,omitempty"`
+	CloudStorageTrustFile *string `json:"cloud_storage_trust_file,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
-	CloudStorageUploadCtrlDCoeff            *int    `json:"cloud_storage_upload_ctrl_d_coeff,omitempty"`
+	CloudStorageUploadCtrlDCoeff *int `json:"cloud_storage_upload_ctrl_d_coeff,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
-	CloudStorageUploadCtrlMaxShares         *int    `json:"cloud_storage_upload_ctrl_max_shares,omitempty"`
+	CloudStorageUploadCtrlMaxShares *int `json:"cloud_storage_upload_ctrl_max_shares,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
-	CloudStorageUploadCtrlMinShares         *int    `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
+	CloudStorageUploadCtrlMinShares *int `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
-	CloudStorageUploadCtrlPCoeff            *int    `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
+	CloudStorageUploadCtrlPCoeff *int `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
-	CloudStorageUploadCtrlUpdateIntervalMs  *int    `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
+	CloudStorageUploadCtrlUpdateIntervalMs *int `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
 }
 
 // Configures configurations for a PersistentVolumeClaim to use to store the Tiered Storage cache.
 type TieredStoragePersistentVolume struct {
 	// Adds annotations to the PersistentVolumeClaims to provide additional information or metadata that can be used by other tools or libraries.
-	Annotations  map[string]string `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Applies labels to the PersistentVolumeClaims to facilitate identification and selection based on custom criteria.
-	Labels       map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed.
-	StorageClass *string           `json:"storageClass,omitempty"`
+	StorageClass *string `json:"storageClass,omitempty"`
 }
 
 // Configures configurations for a PersistentVolumeClaim to use to store the Redpanda data directory.
 type PersistentVolume struct {
 	// Adds annotations to the PersistentVolumeClaims to provide additional information or metadata that can be used by other tools or libraries.
-	Annotations  map[string]string `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether to enable the Helm chart to create PersistentVolumeClaims for Pods.
-	Enabled      *bool             `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Applies labels to the PersistentVolumeClaims to facilitate identification and selection based on custom criteria.
-	Labels       map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies the storage capacity required.
-	Size         *string           `json:"size,omitempty"`
+	Size *string `json:"size,omitempty"`
 	// Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed.
-	StorageClass *string           `json:"storageClass,omitempty"`
+	StorageClass *string `json:"storageClass,omitempty"`
 }
 
 // Configures configurations for the post-install job that run after installation of the Helm chart.
 type PostInstallJob struct {
 	// Sets resource requirements (CPU, memory) for the job to ensure proper allocation and limit resource usage.
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Adds annotations to the job to provide additional information or metadata that can be used by other tools or libraries.
-	Annotations map[string]string            `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether the job is deployed.
-	Enabled     bool                         `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Applies labels to the job to facilitate identification and selection based on custom criteria.
-	Labels      map[string]string            `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // Configures configurations for the post-upgrade job that run after each upgrade of the Helm chart.
@@ -508,65 +508,65 @@ type PostUpgradeJob struct {
 	// Adds annotations to the job to provide additional information or metadata that can be used by other tools or libraries.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether the job is deployed.
-	Enabled     bool              `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Applies labels to the job to facilitate identification and selection based on custom criteria.
-	Labels      map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	// Adds environment variables to the job container to configure its runtime behavior.
-	ExtraEnv     []corev1.EnvVar              `json:"extraEnv,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+	ExtraEnv []corev1.EnvVar `json:"extraEnv,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 	// Specifies environment variables from external sources, such as ConfigMap resources, or Secret resources, to dynamically configure the job.
-	ExtraEnvFrom []corev1.EnvFromSource       `json:"extraEnvFrom,omitempty"`
+	ExtraEnvFrom []corev1.EnvFromSource `json:"extraEnvFrom,omitempty"`
 	// Sets resource requirements (CPU, memory) for the job to ensure proper allocation and limit resource usage.
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Defines configurations for the StatefulSet in Helm values.
 type Statefulset struct {
 	// Includes additional command flags for Redpanda at startup to customize its runtime behavior.
-	AdditionalRedpandaCmdFlags    []string                   `json:"additionalRedpandaCmdFlags,omitempty"`
+	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags,omitempty"`
 	// Adds annotations to the StatefulSet to provide additional information or metadata.
-	Annotations                   map[string]string          `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Defines the management of disruptions affecting the Pods in the StatefulSet.
-	Budget                        *Budget                    `json:"budget,omitempty"`
+	Budget *Budget `json:"budget,omitempty"`
 	// Specifies extra volume mounts for the Pods.
-	ExtraVolumeMounts             string                     `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts string `json:"extraVolumeMounts,omitempty"`
 	// Defines additional volumes for the Pods.
-	ExtraVolumes                  string                     `json:"extraVolumes,omitempty"`
+	ExtraVolumes string `json:"extraVolumes,omitempty"`
 	// Defines the init container image used to perform initial setup tasks before the main containers start.
-	InitContainerImage            *InitContainerImage        `json:"initContainerImage,omitempty"`
+	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
 	// Configures the init container used to perform initial setup tasks before the main containers start.
-	InitContainers                *InitContainers            `json:"initContainers,omitempty"`
+	InitContainers *InitContainers `json:"initContainers,omitempty"`
 	// Defines liveness probes to monitor the health of the Pods and restart them if necessary.
-	LivenessProbe                 *LivenessProbe             `json:"livenessProbe,omitempty"`
+	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
 	// Applies node selectors to schedule Pods on specific nodes based on labels.
-	NodeSelector                  map[string]string          `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines Pod affinity rules to influence the scheduling and placement of Pods relative to other Pods.
-	PodAffinity                   *corev1.PodAffinity        `json:"podAffinity,omitempty"`
+	PodAffinity *corev1.PodAffinity `json:"podAffinity,omitempty"`
 	// Defines Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
-	PodAntiAffinity               *corev1.PodAntiAffinity    `json:"podAntiAffinity,omitempty"`
+	PodAntiAffinity *corev1.PodAntiAffinity `json:"podAntiAffinity,omitempty"`
 	// Defines the priority class name to assign priority levels to the Pods, influencing their scheduling order.
-	PriorityClassName             *string                    `json:"priorityClassName,omitempty"`
+	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// Defines readiness probes to determine when a Pod is ready to handle traffic.
-	ReadinessProbe                *ReadinessProbe            `json:"readinessProbe,omitempty"`
+	ReadinessProbe *ReadinessProbe `json:"readinessProbe,omitempty"`
 	// Specifies the number of replicas to determine the desired number of Pods (Redpanda brokers) in the StatefulSet.
-	Replicas                      *int                       `json:"replicas,omitempty"`
+	Replicas *int `json:"replicas,omitempty"`
 	// Sets a security context for the Pods to define privilege and access control settings.
-	SecurityContext               *corev1.SecurityContext    `json:"securityContext,omitempty"`
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 	// Defines the additional sidecar containers that run alongside the main Redpanda container in the Pod.
-	SideCars                      *SideCars                  `json:"sideCars,omitempty"`
+	SideCars *SideCars `json:"sideCars,omitempty"`
 	// Specifies whether to skip the changing of file ownership (chown) during Pod initialization.
-	SkipChown                     *bool                      `json:"skipChown,omitempty"`
+	SkipChown *bool `json:"skipChown,omitempty"`
 	// Configures the startup probe to determine when the Redpanda application within the Pod has started successfully.
-	StartupProbe                  *StartupProbe              `json:"startupProbe,omitempty"`
+	StartupProbe *StartupProbe `json:"startupProbe,omitempty"`
 	// Applies tolerations to allow Pods to be scheduled on nodes with matching taints, enabling control over where Pods can run.
-	Tolerations                   []corev1.Toleration        `json:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// Defines topology spread constraints to control how Pods are spread across different topology domains.
-	TopologySpreadConstraints     *TopologySpreadConstraints `json:"topologySpreadConstraints,omitempty"`
+	TopologySpreadConstraints *TopologySpreadConstraints `json:"topologySpreadConstraints,omitempty"`
 	// Defines the update strategy for the StatefulSet to manage how updates are rolled out to the Pods.
-	UpdateStrategy                *UpdateStrategy            `json:"updateStrategy,omitempty"`
+	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
 	// Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod.
-	TerminationGracePeriodSeconds *int                       `json:"terminationGracePeriodSeconds,omitempty"`
+	TerminationGracePeriodSeconds *int `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 // Configures the management of disruptions affecting the Pods in the StatefulSet.
@@ -575,34 +575,34 @@ type Budget struct {
 	MaxUnavailable int `json:"maxUnavailable"`
 }
 
-	// Configures liveness probes to monitor the health of the Pods and restart them if necessary.
+// Configures liveness probes to monitor the health of the Pods and restart them if necessary.
 type LivenessProbe struct {
 	// Sets the number of consecutive failures required to consider a Pod as not live.
-	FailureThreshold    int `json:"failureThreshold"`
+	FailureThreshold int `json:"failureThreshold"`
 	// Specifies the time in seconds to wait before the first probe is initiated.
 	InitialDelaySeconds int `json:"initialDelaySeconds"`
 	// Determines the frequency in seconds of performing the probe.
-	PeriodSeconds       int `json:"periodSeconds"`
+	PeriodSeconds int `json:"periodSeconds"`
 }
 
-	// Configures readiness probes to determine when a Pod is ready to handle traffic.
+// Configures readiness probes to determine when a Pod is ready to handle traffic.
 type ReadinessProbe struct {
 	// Defines the threshold for how many times the probe can fail before the Pod is marked Unready.
-	FailureThreshold    int `json:"failureThreshold"`
+	FailureThreshold int `json:"failureThreshold"`
 	// Sets the initial delay before the readiness probe is initiated, in seconds.
 	InitialDelaySeconds int `json:"initialDelaySeconds"`
 	// Configures the period, in seconds, between each readiness check.
-	PeriodSeconds       int `json:"periodSeconds"`
+	PeriodSeconds int `json:"periodSeconds"`
 }
 
 // Configures the startup probe to determine when the Redpanda application within the Pod has started successfully.
 type StartupProbe struct {
 	// Determines the failure threshold to mark the application in the Pod as not started.
-	FailureThreshold    int `json:"failureThreshold"`
+	FailureThreshold int `json:"failureThreshold"`
 	// Specifies the delay in seconds before the startup probe begins.
 	InitialDelaySeconds int `json:"initialDelaySeconds"`
 	// Sets the period in seconds for conducting subsequent probes.
-	PeriodSeconds       int `json:"periodSeconds"`
+	PeriodSeconds int `json:"periodSeconds"`
 }
 
 // Configures Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
@@ -610,9 +610,9 @@ type PodAntiAffinity struct {
 	// Specifies the topology key used to spread Pods across different nodes or other topologies.
 	TopologyKey string `json:"topologyKey"`
 	// Defines the type of anti-affinity, such as `soft` or `hard`.
-	Type        string `json:"type"`
+	Type string `json:"type"`
 	// Sets the weight associated with the soft anti-affinity rule.
-	Weight      int    `json:"weight"`
+	Weight int `json:"weight"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Configures additional custom anti-affinity rules.
 	Custom *runtime.RawExtension `json:"custom,omitempty"`
@@ -621,9 +621,9 @@ type PodAntiAffinity struct {
 // Configures topology spread constraints to control how Pods are spread across different topology domains.
 type TopologySpreadConstraints struct {
 	// Defines the maximum skew between the number of Pods in any two topology domains.
-	MaxSkew           int    `json:"maxSkew"`
+	MaxSkew int `json:"maxSkew"`
 	// Specifies the topology key to use for spreading Pods.
-	TopologyKey       string `json:"topologyKey"`
+	TopologyKey string `json:"topologyKey"`
 	// Sets the policy for how to handle unsatisfiable constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
 	WhenUnsatisfiable string `json:"whenUnsatisfiable"`
 }
@@ -637,33 +637,33 @@ type UpdateStrategy struct {
 // Configures settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance.
 type Tuning struct {
 	// Configures additional volume mounts for the Pod.
-	ExtraVolumeMounts string                       `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts string `json:"extraVolumeMounts,omitempty"`
 	// Sets resource requirements such as CPU and memory limits.
-	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Specifies the file path for ballast file. A ballast file is an empty file that takes up disk space. If Redpanda runs out of disk space and becomes unavailable, you can delete the ballast file as a last resort. This clears up some space and gives you time to delete topics or records and change your retention properties.
-	BallastFilePath   *string                      `json:"ballast_file_path,omitempty"`
+	BallastFilePath *string `json:"ballast_file_path,omitempty"`
 	// Defines the size of the ballast file.
-	BallastFileSize   *string                      `json:"ballast_file_size,omitempty"`
+	BallastFileSize *string `json:"ballast_file_size,omitempty"`
 	// Specifies whether to increase the number of allowed asynchronous IO events.
-	TuneAioEvents     *bool                        `json:"tune_aio_events,omitempty"`
+	TuneAioEvents *bool `json:"tune_aio_events,omitempty"`
 	// Specifies whether to create the ballast file.
-	TuneBallastFile   *bool                        `json:"tune_ballast_file,omitempty"`
+	TuneBallastFile *bool `json:"tune_ballast_file,omitempty"`
 	// Specifies whether to synchronize NTP.
-	TuneClockSource   *bool                        `json:"tune_clocksource,omitempty"`
+	TuneClockSource *bool `json:"tune_clocksource,omitempty"`
 	// Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>. This hints to Redpanda which configuration values it should use for the Redpanda IO scheduler.
-	WellKnownIo       *string                      `json:"well_known_io,omitempty"`
+	WellKnownIo *string `json:"well_known_io,omitempty"`
 }
 
 // Configures settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API.
 type Listeners struct {
 	// Configures settings for the Admin API listeners.
-	Admin          *Admin          `json:"admin,omitempty"`
+	Admin *Admin `json:"admin,omitempty"`
 	// Configures settings for the HTTP Proxy listeners.
-	HTTP           *HTTP           `json:"http,omitempty"`
+	HTTP *HTTP `json:"http,omitempty"`
 	// Configures settings for the Kafka API listeners.
-	Kafka          *Kafka          `json:"kafka,omitempty"`
+	Kafka *Kafka `json:"kafka,omitempty"`
 	// Configures settings for the RPC API listener.
-	RPC            *RPC            `json:"rpc,omitempty"`
+	RPC *RPC `json:"rpc,omitempty"`
 	// Configures settings for the Schema Registry listeners.
 	SchemaRegistry *SchemaRegistry `json:"schemaRegistry,omitempty"`
 }
@@ -671,13 +671,13 @@ type Listeners struct {
 // Configures settings for the external listeners.
 type ExternalListener struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string      `json:"authenticationMethod,omitempty"`
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies the container port number for the external listener.
-	Port                 *int         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the external listener.
-	TLS                  *ListenerTLS `json:"tls,omitempty"`
-	//Specifies the network port that the external Service listens on.
-	AdvertisedPorts      []int        `json:"advertisedPorts,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
+	// Specifies the network port that the external Service listens on.
+	AdvertisedPorts []int `json:"advertisedPorts,omitempty"`
 }
 
 // Configures settings for the Admin API listeners.
@@ -685,65 +685,65 @@ type Admin struct {
 	// Defines settings for the external listener.
 	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Specifies the container port number for the internal listener.
-	Port     *int                         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS      *ListenerTLS                 `json:"tls,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
 }
 
 // Configures settings for the HTTP Proxy listeners.
 type HTTP struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string                      `json:"authenticationMethod,omitempty"`
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies whether the HTTP Proxy is enabled.
-	Enabled              *bool                        `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Defines settings for the external listener.
-	External             map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
-	KafkaEndpoint        *string                      `json:"kafkaEndpoint,omitempty"`
+	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
 	// Specifies the container port number for the internal listener.
-	Port                 *int                         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS                  *ListenerTLS                 `json:"tls,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
 	// Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number.
-	PrefixTemplate       *string                      `json:"prefixTemplate,omitempty"`
+	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
 }
 
 // Configures settings for the Kafka API listeners.
 type Kafka struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string                      `json:"authenticationMethod,omitempty"`
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Defines settings for the external listener.
-	External             map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Specifies the container port number for the internal listener.
-	Port                 *int                         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS                  *ListenerTLS                 `json:"tls,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
 	// Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number.
-	PrefixTemplate       *string                      `json:"prefixTemplate,omitempty"`
+	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
 }
 
 // Configures settings for the RPC API listeners.
 type RPC struct {
 	// Specifies the container port number for the internal listener.
-	Port *int         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS  *ListenerTLS `json:"tls,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
 }
 
 // Configures settings for the Schema Registry listeners.
 type SchemaRegistry struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string                      `json:"authenticationMethod,omitempty"`
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies whether the Schema Registry is enabled.
-	Enabled              *bool                        `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Defines settings for the external listener.
-	External             map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
-	KafkaEndpoint        *string                      `json:"kafkaEndpoint,omitempty"`
+	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
 	// Specifies the container port number for the internal listener.
-	Port                 *int                         `json:"port,omitempty"`
+	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS                  *ListenerTLS                 `json:"tls,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
 }
 
 // Configures Redpanda config properties supported by Redpanda that may not work correctly in a Kubernetes cluster. Changing these values from the defaults comes with some risk. Use these properties to customize various Redpanda configurations that are not available in the `RedpandaClusterSpec`. These values have no impact on the configuration or behavior of the Kubernetes objects deployed by Helm, and therefore should not be modified for the purpose of configuring those objects. Instead, these settings get passed directly to the Redpanda binary at startup.
@@ -769,9 +769,9 @@ type SideCars struct {
 // Configures topology spread constraints to control how Pods are spread across different topology domains.
 type TopologySpreadConstraintsItems struct {
 	// Defines the degree to which Pods may be unevenly distributed.
-	MaxSkew           int     `json:"maxSkew,omitempty"`
+	MaxSkew int `json:"maxSkew,omitempty"`
 	// Specifies the topology key used to spread Pods across different nodes or other topologies.
-	TopologyKey       *string `json:"topologyKey,omitempty"`
+	TopologyKey *string `json:"topologyKey,omitempty"`
 	// Sets the policy for how to handle unsatisfiable constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
 	WhenUnsatisfiable *string `json:"whenUnsatisfiable,omitempty"`
 }
@@ -779,9 +779,9 @@ type TopologySpreadConstraintsItems struct {
 // Configures CPU resources for containers.
 type CPU struct {
 	// Specifies the number of CPU cores available to the application. Redpanda makes use of a thread per core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model. For this reason, Redpanda should only be given full cores. Note: You can increase cores, but decreasing cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350. This setting is equivalent to `--smp`, `resources.requests.cpu`, and `resources.limits.cpu`. For production, use `4` or greater.
-	Cores           *resource.Quantity `json:"cores,omitempty"`
-  // Specifies whether Redpanda assumes it has all of the provisioned CPU. This should be `true` unless the container has CPU affinity. Equivalent to: `--idle-poll-time-us 0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value of full cores in `resources.cpu.cores` is less than `1`, this setting is set to `true`.
-	Overprovisioned *bool              `json:"overprovisioned,omitempty"`
+	Cores *resource.Quantity `json:"cores,omitempty"`
+	// Specifies whether Redpanda assumes it has all of the provisioned CPU. This should be `true` unless the container has CPU affinity. Equivalent to: `--idle-poll-time-us 0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value of full cores in `resources.cpu.cores` is less than `1`, this setting is set to `true`.
+	Overprovisioned *bool `json:"overprovisioned,omitempty"`
 }
 
 // Defines resource limits for containers.
@@ -795,11 +795,11 @@ type Container struct {
 // Configures memory resources.
 type Memory struct {
 	// Defines resource limits for containers.
-	Container           *Container      `json:"container"`
-  // Enables memory locking. For production, set to `true`.
-	EnableMemoryLocking *bool           `json:"enable_memory_locking,omitempty"`
+	Container *Container `json:"container"`
+	// Enables memory locking. For production, set to `true`.
+	EnableMemoryLocking *bool `json:"enable_memory_locking,omitempty"`
 	// Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar.
-	Redpanda            *RedpandaMemory `json:"redpanda,omitempty"`
+	Redpanda *RedpandaMemory `json:"redpanda,omitempty"`
 }
 
 // Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar. This section is omitted by default, and memory sizes are calculated automatically based on container memory. Configuring this section and setting `memory` and `reserveMemory` values will disable automatic calculation.
@@ -810,7 +810,7 @@ type Memory struct {
 // 3. Other container processes (whatever small amount remains)
 type RedpandaMemory struct {
 	// Memory for the Redpanda process. This must be lower than the container's memory (`resources.memory.container.min` if provided, otherwise `resources.memory.container.max`). Equivalent to `--memory`. For production, use 8Gi or greater.
-	Memory        *resource.Quantity `json:"memory"`
+	Memory *resource.Quantity `json:"memory"`
 	// Memory reserved for the Seastar subsystem. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi.
 	ReserveMemory *resource.Quantity `json:"reserveMemory"`
 }
@@ -820,7 +820,7 @@ type RBAC struct {
 	// Adds custom annotations to the RBAC resources.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles.
-	Enabled     bool              `json:"enabled"`
+	Enabled bool `json:"enabled"`
 }
 
 // Configures Service Accounts.
@@ -828,19 +828,19 @@ type ServiceAccount struct {
 	// Adds custom annotations to the ServiceAccount resources.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether a ServiceAccount should be created.
-	Create      bool              `json:"create"`
+	Create bool `json:"create"`
 	// Specifies the name of the ServiceAccount.
-	Name        *string           `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // Defines the settings related to ownership of the Redpanda data directory in environments where root access is restricted.
 type SetDataDirOwnership struct {
 	// Specifies whether to enable root access. Enable only in environments where root access is not allowed, such as minikube.
-	Enabled           *bool                        `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Adds extra volume mounts.
-	ExtraVolumeMounts string                       `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts string `json:"extraVolumeMounts,omitempty"`
 	// Specifies the resource requirements.
-	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Configures the init container image used to perform initial setup tasks before the main containers start.
@@ -851,14 +851,14 @@ type InitContainerImage struct {
 
 // Configures the init container used to perform initial setup tasks before the main containers start.
 type InitContainers struct {
-	Configurator                      *Configurator                      `json:"configurator,omitempty"`
-	ExtraInitContainers               string                             `json:"extraInitContainers,omitempty"`
+	Configurator        *Configurator `json:"configurator,omitempty"`
+	ExtraInitContainers string        `json:"extraInitContainers,omitempty"`
 	// Defines the settings related to ownership of the Redpanda data directory in environments where root access is restricted.
-	SetDataDirOwnership               *SetDataDirOwnership               `json:"setDataDirOwnership,omitempty"`
+	SetDataDirOwnership *SetDataDirOwnership `json:"setDataDirOwnership,omitempty"`
 	// Defines the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
 	SetTieredStorageCacheDirOwnership *SetTieredStorageCacheDirOwnership `json:"setTieredStorageCacheDirOwnership,omitempty"`
 	// Defines settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance.
-	Tuning                            *Tuning                            `json:"tuning,omitempty"`
+	Tuning *Tuning `json:"tuning,omitempty"`
 }
 
 type Configurator struct {
@@ -875,11 +875,11 @@ type SetTieredStorageCacheDirOwnership struct {
 // Configures monitoring resources for Redpanda.
 type Monitoring struct {
 	// Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics.
-	Enabled        bool              `json:"enabled"`
+	Enabled bool `json:"enabled"`
 	// Adds custom labels to the ServiceMonitor resource.
-	Labels         map[string]string `json:"commonLabels,omitempty"`
+	Labels map[string]string `json:"commonLabels,omitempty"`
 	// Specifies how often to scrape metrics.
-	ScrapeInterval *string           `json:"scrapeInterval,omitempty"`
+	ScrapeInterval *string `json:"scrapeInterval,omitempty"`
 }
 
 // Configures externalDNS.
@@ -898,7 +898,7 @@ type SideCarObj struct {
 // Configures a reference to a Secret resource that contains the Enterprise license key.
 type EnterpriseLicenseSecretRef struct {
 	// Specifies the key that is contains the Enterprise license in the Secret.
-	Key  string `json:"key,omitempty"`
+	Key string `json:"key,omitempty"`
 	// Specifies the name of the Secret resource to use.
 	Name string `json:"name,omitempty"`
 }
@@ -906,7 +906,7 @@ type EnterpriseLicenseSecretRef struct {
 // Configures an Enterprise license key to enable Redpanda Enterprise features. Requires the post-install job to be enabled (default).
 type Enterprise struct {
 	// Specifies the Enterprise license key.
-	License          *string                     `json:"license,omitempty"`
+	License *string `json:"license,omitempty"`
 	// Defines a reference to a Secret resource that contains the Enterprise license key.
 	LicenseSecretRef *EnterpriseLicenseSecretRef `json:"licenseSecretRef,omitempty"`
 }
