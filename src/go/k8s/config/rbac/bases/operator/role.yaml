@@ -587,6 +587,26 @@ rules:
   - update
   - watch
 - apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - source.toolkit.fluxcd.io
   resources:
   - buckets

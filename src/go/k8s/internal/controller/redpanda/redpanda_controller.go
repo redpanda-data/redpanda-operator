@@ -105,8 +105,8 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=networking.k8s.io,namespace=default,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 // for the migration purposes to disable reconciliation of cluster and console custom resources
-// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=consoles,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=redpanda.vectorized.io,namespace=default,resources=clusters,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=redpanda.vectorized.io,namespace=default,resources=consoles,verbs=get;list;watch;update;patch
 
 // redpanda resources
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;create;update;patch;delete
