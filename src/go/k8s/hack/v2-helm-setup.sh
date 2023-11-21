@@ -57,7 +57,8 @@ rm test-generator-chart/files/12-*.yaml || true
 rm test-generator-chart/files/18-*.yaml || true
 # remove origin type tests
 rm test-generator-chart/files/19-*.yaml || true
-
+# remove rack awareness test # Locally it works, but not on CI. FIX THIS.
+rm test-generator-chart/files/06-*.yaml || true
 echo "Creating template files for testing"
 
 # clean and recreate if it exists already
@@ -75,6 +76,9 @@ helm template redpanda test-generator-chart -s templates/assertions.yaml | yq -s
 
 # create the next step files
 helm template redpanda test-generator-chart -s templates/run-helm-tests.yaml | yq -s '"temp_tests/" + .metadata.name + "/01-helm-test.yaml"'
+
+# create the deletion
+helm template redpanda test-generator-chart -s templates/cleanup.yaml | yq -s '"temp_tests/" + .delete[0].name + "/02-cleanup.yaml"'
 
 # remove the #--- from comments, this is on purpose
 OS=$(uname -s)

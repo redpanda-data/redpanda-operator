@@ -14,3 +14,4 @@ includes:
   k8s: taskfiles/k8s.yml 
   dev: taskfiles/dev.yml
   docker: taskfiles/docker.yml
+  goreleaser: taskfiles/goreleaser.yml

@@ -13,14 +13,21 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"time"
 
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	"github.com/fluxcd/pkg/apis/meta"
+	"github.com/fluxcd/pkg/runtime/logger"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +41,8 @@ import (
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	vectorzied_v1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 )
 
 const (
@@ -44,7 +53,12 @@ const (
 	resourceTypeHelmRelease    = "HelmRelease"
 
 	managedPath = "/managed"
+
+	revisionPath        = "/revision"
+	componentLabelValue = "redpanda-statefulset"
 )
+
+var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
 
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
@@ -83,12 +97,16 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=core,namespace=default,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets,verbs=get;create;update;patch;delete
-// +kubebuilder:rbac:groups=policy,namespace=default,resources=poddisruptionbudgets,verbs=get;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,namespace=default,resources=deployments,verbs=get;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,namespace=default,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,namespace=default,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cert-manager.io,namespace=default,resources=certificates,verbs=get;create;update;patch;delete
 // +kubebuilder:rbac:groups=cert-manager.io,namespace=default,resources=issuers,verbs=get;create;update;patch;delete
 // +kubebuilder:rbac:groups="monitoring.coreos.com",namespace=default,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,namespace=default,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+
+// for the migration purposes to disable reconciliation of cluster and console custom resources
+// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // redpanda resources
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;create;update;patch;delete
@@ -145,6 +163,12 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	if rp.Spec.Migration != nil && rp.Spec.Migration.Enabled {
+		if err := r.tryMigration(ctx, log, rp); err != nil {
+			log.Error(err, "migration")
+		}
+	}
+
 	rp, result, err := r.reconcile(ctx, rp)
 
 	// Update status after reconciliation.
@@ -161,6 +185,302 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 	log.Info(durationMsg)
 
 	return result, err
+}
+
+type resourceToMigrate struct {
+	resourceName string
+	helperString string
+	resource     client.Object
+}
+
+func (r *RedpandaReconciler) tryMigration(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) error {
+	log = log.WithName("tryMigration")
+	var errorResult error
+
+	var cluster vectorzied_v1alpha1.Cluster
+	clusterNamespace := rp.GetMigrationClusterNamespace()
+	clusterName := rp.GetMigrationClusterName()
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: clusterNamespace,
+		Name:      clusterName,
+	}, &cluster)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("get cluster reference (%s/%s): %w", clusterNamespace, clusterName, err), errorResult)
+	} else if isRedpandaClusterManaged(log, &cluster) {
+		annotatedCluster := cluster.DeepCopy()
+		disableRedpandaReconciliation(annotatedCluster)
+
+		err = r.Update(ctx, annotatedCluster)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("disabling Cluster reconciliation (%s): %w", annotatedCluster.Name, err), errorResult)
+		}
+
+		msg := "update Cluster custom resource"
+		log.V(logger.DebugLevel).Info(msg, "cluster-name", annotatedCluster.Name, "annotations", annotatedCluster.Annotations, "finalizers", annotatedCluster.Finalizers)
+		r.EventRecorder.AnnotatedEventf(annotatedCluster, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	var console vectorzied_v1alpha1.Console
+	consoleNamespace := rp.GetMigrationConsoleNamespace()
+	consoleName := rp.GetMigrationConsoleName()
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: consoleNamespace,
+		Name:      consoleName,
+	}, &console)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("get cluster reference (%s/%s): %w", consoleNamespace, consoleName, err), errorResult)
+	} else if isConsoleManaged(log, &console) ||
+		controllerutil.ContainsFinalizer(&console, consolepkg.ConsoleSAFinalizer) ||
+		controllerutil.ContainsFinalizer(&console, consolepkg.ConsoleACLFinalizer) {
+		annotatedConsole := console.DeepCopy()
+		disableConsoleReconciliation(annotatedConsole)
+		controllerutil.RemoveFinalizer(annotatedConsole, consolepkg.ConsoleSAFinalizer)
+		controllerutil.RemoveFinalizer(annotatedConsole, consolepkg.ConsoleACLFinalizer)
+
+		err = r.Update(ctx, annotatedConsole)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("disabling Cluster reconciliation (%s): %w", annotatedConsole.Name, err), errorResult)
+		}
+
+		msg := "update Console custom resource"
+		log.V(logger.DebugLevel).Info(msg, "console-name", annotatedConsole.Name, "annotations", annotatedConsole.Annotations, "finalizers", annotatedConsole.Finalizers)
+		r.EventRecorder.AnnotatedEventf(annotatedConsole, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	redpandaResourcesToMigrate, err := r.tryMigrateRedpanda(ctx, log, rp)
+	if err != nil {
+		errorResult = errors.Join(err, errorResult)
+	}
+
+	var allResourcesToMigrate []resourceToMigrate
+	allResourcesToMigrate = append(allResourcesToMigrate, redpandaResourcesToMigrate...)
+
+	if ptr.Deref(rp.Spec.ClusterSpec.Console.Enabled, true) {
+		consoleResourcesToMigrate, err := r.tryMigrateConsole(ctx, log, rp)
+		if err != nil {
+			errorResult = errors.Join(err, errorResult)
+		}
+		allResourcesToMigrate = append(allResourcesToMigrate, consoleResourcesToMigrate...)
+	}
+
+	for _, obj := range allResourcesToMigrate {
+		err := r.Get(ctx, types.NamespacedName{
+			Namespace: rp.Namespace,
+			Name:      obj.resourceName,
+		}, obj.resource)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("get %s (%s): %w", obj.helperString, obj.resourceName, err), errorResult)
+		} else if !hasLabelsAndAnnotations(obj.resource, rp) {
+			annotatedObject := obj.resource.DeepCopyObject()
+			setHelmLabelsAndAnnotations(annotatedObject.(client.Object), rp)
+
+			resourceName := annotatedObject.(client.Object).GetName()
+			err = r.Update(ctx, annotatedObject.(client.Object))
+			if err != nil {
+				errorResult = errors.Join(fmt.Errorf("updating %s (%s): %w", obj.helperString, resourceName, err), errorResult)
+			}
+
+			msg := "update " + obj.helperString
+			log.V(logger.DebugLevel).Info(msg, "object-name", resourceName, "labels", annotatedObject.(client.Object).GetLabels(), "annotations", annotatedObject.(client.Object).GetAnnotations())
+			r.EventRecorder.AnnotatedEventf(annotatedObject, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+		}
+	}
+
+	return errorResult
+}
+
+func (r *RedpandaReconciler) tryMigrateRedpanda(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) ([]resourceToMigrate, error) {
+	errorResult := r.migrateRedpandaPods(ctx, log, rp)
+
+	resourcesName := rp.Name
+	if rp.Spec.ClusterSpec.FullNameOverride != "" {
+		resourcesName = rp.Spec.ClusterSpec.FullNameOverride
+	}
+
+	var svc v1.Service
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      resourcesName,
+	}, &svc)
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
+		errorResult = errors.Join(fmt.Errorf("get internal service (%s): %w", resourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
+		"app.kubernetes.io/instance": rp.Name,
+		"app.kubernetes.io/name":     "redpanda",
+	}) {
+		internalService := svc.DeepCopy()
+		setHelmLabelsAndAnnotations(internalService, rp)
+
+		internalService.Spec.Selector = make(map[string]string)
+		internalService.Spec.Selector["app.kubernetes.io/instance"] = rp.Name
+		internalService.Spec.Selector["app.kubernetes.io/name"] = "redpanda"
+
+		err = r.Update(ctx, internalService)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating internal service (%s): %w", internalService.Name, err), errorResult)
+		}
+
+		msg := "update internal Service"
+		log.V(logger.DebugLevel).Info(msg, "service-name", internalService.Name, "labels", internalService.Labels, "annotations", internalService.Annotations, "selector", internalService.Spec.Selector)
+		r.EventRecorder.AnnotatedEventf(internalService, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	var sts appsv1.StatefulSet
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      resourcesName,
+	}, &sts)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("get statefulset (%s): %w", resourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&sts, rp) {
+		orphan := metav1.DeletePropagationOrphan
+		err = r.Delete(ctx, &sts, &client.DeleteOptions{
+			PropagationPolicy: &orphan,
+		})
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("deleting statefulset (%s): %w", sts.Name, err), errorResult)
+		}
+
+		msg := "delete StatefulSet with orphant propagation mode"
+		log.V(logger.DebugLevel).Info(msg, "stateful-set-name", sts.Name)
+		r.EventRecorder.AnnotatedEventf(&sts, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+	return []resourceToMigrate{
+		{fmt.Sprintf("%s-external", resourcesName), "external Service", &svc},
+		{resourcesName, "ServiceAccount", &v1.ServiceAccount{}},
+		{resourcesName, "PodDistributionBudget", &policyv1.PodDisruptionBudget{}},
+	}, errorResult
+}
+
+func (r *RedpandaReconciler) migrateRedpandaPods(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) error {
+	var errorResult error
+
+	var pl v1.PodList
+	err := r.List(ctx, &pl, []client.ListOption{
+		client.InNamespace(rp.Namespace),
+		client.MatchingLabels(map[string]string{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}),
+	}...)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("listing pods: %w", err), errorResult)
+	}
+
+	for i := range pl.Items {
+		if l, exist := pl.Items[i].Labels["app.kubernetes.io/component"]; exist && l == componentLabelValue && !controllerutil.ContainsFinalizer(&pl.Items[i], FinalizerKey) {
+			continue
+		}
+		newPod := pl.Items[i].DeepCopy()
+		if newPod.Labels == nil {
+			newPod.Labels = make(map[string]string)
+		}
+		newPod.Labels["app.kubernetes.io/component"] = componentLabelValue
+
+		controllerutil.RemoveFinalizer(newPod, FinalizerKey)
+
+		err = r.Update(ctx, newPod)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating component Pod label (%s): %w", newPod.Name, err), errorResult)
+		}
+
+		msg := "update Redpanda Pod"
+		log.V(logger.DebugLevel).Info(msg, "pod-name", newPod.Name, "labels", newPod.Labels, "finalizers", newPod.Finalizers)
+		r.EventRecorder.AnnotatedEventf(newPod, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+	return errorResult
+}
+
+func (r *RedpandaReconciler) tryMigrateConsole(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) ([]resourceToMigrate, error) {
+	log.V(logger.DebugLevel).Info("migrate console")
+	consoleResourcesName := rp.Name
+	if overwriteSAName := ptr.Deref(rp.Spec.ClusterSpec.Console.FullNameOverride, ""); overwriteSAName != "" {
+		consoleResourcesName = overwriteSAName
+	}
+
+	var errorResult error
+
+	var svc v1.Service
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &svc)
+	if err != nil { // nolint:dupl // Repetition in tryMigration function is acceptable as generalised function would not bring any value
+		errorResult = errors.Join(fmt.Errorf("get console service (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&svc, rp) || !maps.Equal(svc.Spec.Selector, map[string]string{
+		"app.kubernetes.io/instance": rp.Name,
+		"app.kubernetes.io/name":     "console",
+	}) {
+		annotatedConsoleSVC := svc.DeepCopy()
+		setHelmLabelsAndAnnotations(annotatedConsoleSVC, rp)
+
+		annotatedConsoleSVC.Spec.Selector = make(map[string]string)
+		annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/instance"] = rp.Name
+		annotatedConsoleSVC.Spec.Selector["app.kubernetes.io/name"] = "console"
+
+		err = r.Update(ctx, annotatedConsoleSVC)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("updating console service (%s): %w", annotatedConsoleSVC.Name, err), errorResult)
+		}
+
+		msg := "update console Service"
+		log.V(logger.DebugLevel).Info(msg, "service-name", annotatedConsoleSVC.Name, "labels", annotatedConsoleSVC.Labels, "annotations", annotatedConsoleSVC.Annotations, "selector", annotatedConsoleSVC.Spec.Selector)
+		r.EventRecorder.AnnotatedEventf(annotatedConsoleSVC, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+
+	var deploy appsv1.Deployment
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: rp.Namespace,
+		Name:      consoleResourcesName,
+	}, &deploy)
+	if err != nil {
+		errorResult = errors.Join(fmt.Errorf("get console deployment (%s): %w", consoleResourcesName, err), errorResult)
+	} else if !hasLabelsAndAnnotations(&deploy, rp) {
+		err = r.Delete(ctx, &deploy)
+		if err != nil {
+			errorResult = errors.Join(fmt.Errorf("deleting console deployment (%s): %w", deploy.Name, err), errorResult)
+		}
+
+		msg := "delete console Deployment"
+		log.V(logger.DebugLevel).Info(msg, "deployment-name", deploy.Name)
+		r.EventRecorder.AnnotatedEventf(&deploy, map[string]string{v2.GroupVersion.Group + revisionPath: rp.Status.LastAttemptedRevision}, "Normal", v1alpha1.EventSeverityInfo, msg)
+	}
+	return []resourceToMigrate{
+		{consoleResourcesName, "console ServiceAccount", &v1.ServiceAccount{}},
+		{consoleResourcesName, "console Ingress", &networkingv1.Ingress{}},
+	}, errorResult
+}
+
+func hasLabelsAndAnnotations(object client.Object, rp *v1alpha1.Redpanda) bool {
+	manageByLabel := false
+	releaseName := false
+	releaseNamespace := false
+	for k, v := range object.GetLabels() {
+		if k == "app.kubernetes.io/managed-by" && v == helm {
+			manageByLabel = true
+		}
+	}
+
+	for k, v := range object.GetAnnotations() {
+		switch k {
+		case "meta.helm.sh/release-name":
+			releaseName = v == rp.Name
+		case "meta.helm.sh/release-namespace":
+			releaseNamespace = v == rp.Namespace
+		}
+	}
+
+	return manageByLabel && releaseName && releaseNamespace
+}
+
+const helm = "Helm"
+
+func setHelmLabelsAndAnnotations(object client.Object, rp *v1alpha1.Redpanda) {
+	labels := make(map[string]string)
+	labels["app.kubernetes.io/managed-by"] = helm
+	object.SetLabels(labels)
+
+	annotations := make(map[string]string)
+	annotations["meta.helm.sh/release-name"] = rp.Name
+	annotations["meta.helm.sh/release-namespace"] = rp.Namespace
+	object.SetAnnotations(annotations)
 }
 
 func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha1.Redpanda) (*v1alpha1.Redpanda, ctrl.Result, error) {
@@ -370,16 +690,21 @@ func (r *RedpandaReconciler) deleteHelmRelease(ctx context.Context, rp *v1alpha1
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			rp.Status.HelmRelease = ""
+			rp.Status.HelmRepository = ""
 			return nil
 		}
 		return fmt.Errorf("failed to get HelmRelease '%s': %w", rp.Status.HelmRelease, err)
 	}
-	if err = r.Client.Delete(ctx, &hr); err == nil {
-		rp.Status.HelmRelease = ""
-		rp.Status.HelmRepository = ""
+
+	foregroundDeletePropagation := metav1.DeletePropagationForeground
+
+	if err = r.Client.Delete(ctx, &hr, &client.DeleteOptions{
+		PropagationPolicy: &foregroundDeletePropagation,
+	}); err != nil {
+		return fmt.Errorf("deleting helm release connected with Redpanda (%s): %w", rp.Name, err)
 	}
 
-	return err
+	return errWaitForReleaseDeletion
 }
 
 func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta1.HelmRelease, error) {
@@ -480,7 +805,7 @@ func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *v1alph
 func (r *RedpandaReconciler) event(rp *v1alpha1.Redpanda, revision, severity, msg string) {
 	var metaData map[string]string
 	if revision != "" {
-		metaData = map[string]string{v2.GroupVersion.Group + "/revision": revision}
+		metaData = map[string]string{v2.GroupVersion.Group + revisionPath: revision}
 	}
 	eventType := "Normal"
 	if severity == v1alpha1.EventSeverityError {
@@ -532,4 +857,20 @@ func isRedpandaManaged(ctx context.Context, redpandaCluster *v1alpha1.Redpanda) 
 		return false
 	}
 	return true
+}
+
+func disableRedpandaReconciliation(redpandaCluster *vectorzied_v1alpha1.Cluster) {
+	managedAnnotationKey := vectorzied_v1alpha1.GroupVersion.Group + managedPath
+	if redpandaCluster.Annotations == nil {
+		redpandaCluster.Annotations = map[string]string{}
+	}
+	redpandaCluster.Annotations[managedAnnotationKey] = NotManaged
+}
+
+func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
+	managedAnnotationKey := vectorzied_v1alpha1.GroupVersion.Group + managedPath
+	if console.Annotations == nil {
+		console.Annotations = map[string]string{}
+	}
+	console.Annotations[managedAnnotationKey] = NotManaged
 }

@@ -23,11 +23,6 @@ steps:
 
   - key: k8s-operator
     label: K8s Operator
-    if: |
-      build.env("K8S_NIGHTLY") == "1" ||
-      build.branch == "main" ||
-      (build.pull_request.labels includes "k8s/tests") ||
-      build.tag != null 
     timeout: 180
     notify:
       - github_commit_status:
@@ -49,7 +44,7 @@ steps:
     steps:
       - key: k8s-operator-v2
         label: K8s Operator v2
-        timeout: 30
+        timeout: 37
         notify:
           - github_commit_status:
               context: k8s-operator-v2

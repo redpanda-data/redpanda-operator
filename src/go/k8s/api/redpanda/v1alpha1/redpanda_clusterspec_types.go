@@ -58,6 +58,9 @@ type RedpandaClusterSpec struct {
 	// Defines container resource settings.
 	Resources *Resources `json:"resources,omitempty"`
 
+	// Defines settings for the headless ClusterIP Service.
+	Service *Service `json:"service,omitempty"`
+  
 	// Defines storage settings for the Redpanda data directory and the Tiered Storage cache.
 	Storage *Storage `json:"storage,omitempty"`
 
@@ -906,4 +909,13 @@ type Enterprise struct {
 	License          *string                     `json:"license,omitempty"`
 	// Defines a reference to a Secret resource that contains the Enterprise license key.
 	LicenseSecretRef *EnterpriseLicenseSecretRef `json:"licenseSecretRef,omitempty"`
+}
+
+type ServiceInternal struct {
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type Service struct {
+	Name     *string          `json:"name,omitempty"`
+	Internal *ServiceInternal `json:"internal,omitempty"`
 }
