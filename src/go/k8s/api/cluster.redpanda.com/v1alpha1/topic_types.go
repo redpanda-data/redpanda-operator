@@ -21,7 +21,7 @@ import (
 )
 
 // SecretKeyRef contains enough information to inspect or modify the referred Secret data
-// REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
+// See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 type SecretKeyRef struct {
 	// Name of the referent.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -32,7 +32,7 @@ type SecretKeyRef struct {
 	Key string `json:"key,omitempty"`
 }
 
-// GetValue retrieve the value from corev1.Secret{}
+// GetValue retrieves the value from `corev1.Secret{}`.
 func (s *SecretKeyRef) GetValue(
 	ctx context.Context, cl client.Client, namespace, defaultKey string,
 ) ([]byte, error) {
@@ -64,65 +64,70 @@ func (s *SecretKeyRef) getValue(
 	return value, nil
 }
 
-// TopicSpec defines the desired state of Topic
+// TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
 type TopicSpec struct {
-	// Partitions is the number topic shards that is distributed across the nodes in a cluster.
-	// This cannot be decreased after topic creation.
+	// Specifies the number of topic shards that are distributed across the brokers in a cluster.
+	// This number cannot be decreased after topic creation.
 	// It can be increased after topic creation, but it is
 	// important to understand the consequences that has, especially for
 	// topics with semantic partitioning. When absent this will default to
 	// the Redpanda cluster configuration `default_topic_partitions`.
-	// https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_partitions
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_partitions and
 	// https://docs.redpanda.com/docs/get-started/architecture/#partitions
 	Partitions *int `json:"partitions,omitempty"`
-	// ReplicationFactor is the number of replicas the topic should have. Must be odd value.
+	// Specifies the number of replicas the topic should have. Must be odd value.
 	// When absent this will default to the Redpanda cluster configuration `default_topic_replications`.
-	// https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_replications
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_replications.
 	ReplicationFactor *int `json:"replicationFactor,omitempty"`
-	// OverwriteTopicName will change the topic name from the `metadata.name` to `OverwriteTopicName`
+	// Changes the topic name from the value of `metadata.name`.
 	OverwriteTopicName *string `json:"overwriteTopicName,omitempty"`
-	// AdditionalConfig is free form map of any configuration option that topic can have.
+	// Adds extra topic configurations. This is a free-form map of any configuration options that topics can have.
 	// Examples:
-	// cleanup.policy=compact
-	// redpanda.remote.write=true
-	// redpanda.remote.read=true
-	// redpanda.remote.recovery=true
-	// redpanda.remote.delete=true
+	// `cleanup.policy=compact`
+	// `redpanda.remote.write=true`
+	// `redpanda.remote.read=true`
+	// `redpanda.remote.recovery=true`
+	// `redpanda.remote.delete=true`
 	AdditionalConfig map[string]*string `json:"additionalConfig,omitempty"`
 
-	// KafkaAPISpec is client configuration for connecting to Redpanda brokers
+	// Defines client configuration for connecting to Redpanda brokers.
 	KafkaAPISpec *KafkaAPISpec `json:"kafkaApiSpec,omitempty"`
 
-	// MetricsNamespace can be used to overwrite fully-qualified
-	// name of the Metric. That should be easier to identify if
-	// multiple operator runs inside the same Kubernetes cluster.
+	// Overwrites the fully-qualified
+	// name of the metric. This should be easier to identify if
+	// multiple operator instances runs inside the same Kubernetes cluster.
 	// By default, it is set to `redpanda-operator`.
 	MetricsNamespace *string `json:"metricsNamespace,omitempty"`
 
-	// SynchronizationInterval when the topic controller will schedule next reconciliation
-	// Default is 3 seconds
+	// Defines when the topic controller will schedule the next reconciliation.
+	// Default is 3 seconds.
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=duration
 	// +kubebuilder:default="3s"
 	SynchronizationInterval *metav1.Duration `json:"interval,omitempty"`
 }
 
-// KafkaAPISpec represents definition for connection that used
-// Kafka protocol.
+// KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
 type KafkaAPISpec struct {
+	// Specifies a list of broker addresses in the format <host>:<port>
 	Brokers []string `json:"brokers"`
+	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
 	// +optional
 	TLS *KafkaTLS `json:"tls,omitempty"`
+	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
 	// +optional
 	SASL *KafkaSASL `json:"sasl,omitempty"`
 }
 
-// KafkaSASL to connect to Kafka using SASL credentials
+// KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
 type KafkaSASL struct {
+	// Specifies the username.
 	// +optional
 	Username string `json:"username,omitempty"`
+	// Specifies the password.
 	// +optional
-	Password  SecretKeyRef  `json:"passwordSecretRef,omitempty"`
+	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
 	// +optional
 	OAUth KafkaSASLOAuthBearer `json:"oauth,omitempty"`
@@ -183,7 +188,7 @@ type KafkaSASLAWSMskIam struct {
 	UserAgent string `json:"userAgent"`
 }
 
-// KafkaTLS to connect to Kafka via TLS
+// KafkaTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
 type KafkaTLS struct {
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
 	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
@@ -196,7 +201,7 @@ type KafkaTLS struct {
 	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify"`
 }
 
-// TopicStatus defines the observed state of Topic
+// TopicStatus defines the observed state of the Topic resource.
 type TopicStatus struct {
 	// ObservedGeneration is the last observed generation of the Topic.
 	// +optional
@@ -269,22 +274,24 @@ type ConfigSynonyms struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Topic is the Schema for the topics API
+// Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
 type Topic struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   TopicSpec   `json:"spec,omitempty"`
+	// Defines the desired state of the Topic resource.
+	Spec TopicSpec `json:"spec,omitempty"`
+	// Represents the current status of the Topic resource.
 	Status TopicStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// TopicList contains a list of Topic
+// TopicList contains a list of Topic objects.
 type TopicList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Topic `json:"items"`
+	// Specifies a list of Topic resources.
+	Items []Topic `json:"items"`
 }
 
 func init() {
