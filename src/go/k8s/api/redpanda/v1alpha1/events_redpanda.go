@@ -2,13 +2,13 @@ package v1alpha1
 
 // These constants define valid values for event severity levels.
 const (
-	// A trace event that usually
+	// EventSeverityTrace is a trace event that usually
 	// informs you about actions taken during reconciliation.
 	EventSeverityTrace string = "trace"
-	// An informational event that usually
+	// EventSeverityInfo is an informational event that usually
 	// informs you about changes.
 	EventSeverityInfo string = "info"
-	// An error event that usually warns you
+	// EventSeverityError is an error event that usually warns you
 	// that something went wrong.
 	EventSeverityError string = "error"
 )

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	// The group version used to register these objects.
+	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add Go types to the GroupVersionKind scheme.

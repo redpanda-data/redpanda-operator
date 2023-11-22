@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Contains enough information to inspect or modify the referred Secret data
+// SecretKeyRef contains enough information to inspect or modify the referred Secret data
 // See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 type SecretKeyRef struct {
 	// Name of the referent.
@@ -64,7 +64,7 @@ func (s *SecretKeyRef) getValue(
 	return value, nil
 }
 
-// Defines the desired state of the topic.
+// TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
 type TopicSpec struct {
 	// Specifies the number of topic shards that are distributed across the brokers in a cluster.
 	// This number cannot be decreased after topic creation.
@@ -107,7 +107,7 @@ type TopicSpec struct {
 	SynchronizationInterval *metav1.Duration `json:"interval,omitempty"`
 }
 
-// Configures client configuration settings for connecting to Redpanda brokers.
+// KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
 type KafkaAPISpec struct {
 	// Specifies a list of broker addresses in the format <host>:<port>
 	Brokers []string `json:"brokers"`
@@ -119,7 +119,7 @@ type KafkaAPISpec struct {
 	SASL *KafkaSASL `json:"sasl,omitempty"`
 }
 
-// Configures credentials to connect to Redpanda cluster that has authenticaton enabled.
+// KafkaSASL configures credentials to connect to Redpanda cluster that has authenticaton enabled.
 type KafkaSASL struct {
 	// Specifies the username.
 	// +optional
@@ -188,7 +188,7 @@ type KafkaSASLAWSMskIam struct {
 	UserAgent string `json:"userAgent"`
 }
 
-// Specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
+// KafkaTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
 type KafkaTLS struct {
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
 	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
@@ -201,7 +201,7 @@ type KafkaTLS struct {
 	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify"`
 }
 
-// Defines the observed state of the Topic resource.
+// TopicStatus defines the observed state of the Topic resource.
 type TopicStatus struct {
 	// ObservedGeneration is the last observed generation of the Topic.
 	// +optional
@@ -274,7 +274,7 @@ type ConfigSynonyms struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Defines the CRD for Topic resources.
+// Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
 type Topic struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

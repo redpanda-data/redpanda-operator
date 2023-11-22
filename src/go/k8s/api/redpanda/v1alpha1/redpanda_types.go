@@ -41,7 +41,7 @@ type ChartRef struct {
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
 }
 
-// Defines the desired state of the Redpanda cluster.
+// RedpandaSpec defines the desired state of the Redpanda cluster.
 type RedpandaSpec struct {
 	// Defines chart details, including the version and repository.
 	ChartRef ChartRef `json:"chartRef,omitempty"`
@@ -66,7 +66,7 @@ type Migration struct {
 	ConsoleRef v1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
-// Defines the observed state of Redpanda
+// RedpandaStatus defines the observed state of Redpanda
 type RedpandaStatus struct {
 	// Specifies the last observed generation.
 	// +optional
@@ -112,7 +112,7 @@ type RedpandaStatus struct {
 
 type RemediationStrategy string
 
-// Configures the behavior and strategy for Helm chart upgrades.
+// HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
 type HelmUpgrade struct {
 	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
 	Remediation *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
@@ -124,7 +124,7 @@ type HelmUpgrade struct {
 	CleanupOnFail *bool `json:"cleanupOnFail,omitempty"`
 }
 
-// Defines the CRD for Redpanda clusters.
+// Redpanda defines the CRD for Redpanda clusters.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=redpandas
@@ -141,7 +141,7 @@ type Redpanda struct {
 	Status RedpandaStatus `json:"status,omitempty"`
 }
 
-// Contains a list of Redpanda objects.
+// RedpandaList contains a list of Redpanda objects.
 // +kubebuilder:object:root=true
 type RedpandaList struct {
 	metav1.TypeMeta `json:",inline"`

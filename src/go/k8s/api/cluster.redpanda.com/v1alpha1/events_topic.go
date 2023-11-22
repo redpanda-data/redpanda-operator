@@ -2,7 +2,7 @@ package v1alpha1
 
 // Defines valid event severity values.
 const (
-	// Indicate an error when topic creation
+	// Indicates an error when topic creation
 	// was not successful.
 	EventTopicCreationFailure string = "topicCreationFailure"
 	// Indicates an error when topic deletion
