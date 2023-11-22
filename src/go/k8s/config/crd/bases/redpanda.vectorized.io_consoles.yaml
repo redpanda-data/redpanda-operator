@@ -479,6 +479,13 @@ spec:
                         type: string
                       enabled:
                         type: boolean
+                      orgId:
+                        description: OrgID refers to the Redpanda Cloud organization
+                          id that Console is running in. If the OrgID is set, Console
+                          will ensure that incoming requests will only pass if the
+                          provided access token matches this org id in the custom
+                          claims.
+                        type: string
                     required:
                     - audience
                     - domain
