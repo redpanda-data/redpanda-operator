@@ -323,8 +323,10 @@ rules:
   - create
   - delete
   - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -581,6 +583,26 @@ rules:
   verbs:
   - create
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - consoles
+  verbs:
   - get
   - list
   - patch
