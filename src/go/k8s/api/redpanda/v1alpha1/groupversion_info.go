@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package v1alpha1 contains API Schema definitions for the redpanda v1alpha1 API group
+// Package v1alpha1 defines the v1alpha1 schema for the Redpanda API. It is part of an evolving API architecture, representing an initial stage that may be subject to change based on user feedback and further development.
 // +kubebuilder:object:generate=true
 // +groupName=cluster.redpanda.com
 package v1alpha1
@@ -21,9 +21,9 @@ var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha1"}
 
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	// SchemeBuilder is used to add Go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
-	// AddToScheme adds the types in this group-version to the given scheme.
+	// AddToScheme adds the types in this group version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )

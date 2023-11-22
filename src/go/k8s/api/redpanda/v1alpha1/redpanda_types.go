@@ -25,27 +25,27 @@ import (
 var RedpandaChartRepository = "https://charts.redpanda.com/"
 
 type ChartRef struct {
-	// ChartName is the chart to use
+	// Specifies the name of the chart to deploy.
 	ChartName string `json:"chartName,omitempty"`
-	// ChartVersion defines the helm chart version to use
+	// Defines the version of the Redpanda Helm chart to deploy.
 	ChartVersion string `json:"chartVersion,omitempty"`
-	// HelmRepositoryName defines the repository to use, defaults to redpanda if not defined
+	// Defines the chart repository to use. Defaults to `redpanda` if not defined.
 	HelmRepositoryName string `json:"helmRepositoryName,omitempty"`
-	// Timeout is the time to wait for any individual Kubernetes operation (like Jobs
-	// for hooks) during the performance of a Helm action. Defaults to '15m0s'.
+	// Specifies the time to wait for any individual Kubernetes operation (like Jobs
+	// for hooks) during Helm actions. Defaults to `15m0s`.
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Pattern="^([0-9]+(\\.[0-9]+)?(ms|s|m|h))+$"
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
-	// Upgrade contains the details for handling upgrades including failures
+	// Defines how to handle upgrades, including failures.
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
 }
 
-// RedpandaSpec defines the desired state of Redpanda
+// RedpandaSpec defines the desired state of the Redpanda cluster.
 type RedpandaSpec struct {
-	// ChartRef defines chart details including repository
+	// Defines chart details, including the version and repository.
 	ChartRef ChartRef `json:"chartRef,omitempty"`
-	// ClusterSpec defines the values to use in the cluster
+	// Defines the Helm values to use to deploy the cluster.
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
 	// Migration flag that adjust Kubernetes core resources with annotation and labels, so
 	// flux controller can import resources.
@@ -68,7 +68,7 @@ type Migration struct {
 
 // RedpandaStatus defines the observed state of Redpanda
 type RedpandaStatus struct {
-	// ObservedGeneration is the last observed generation.
+	// Specifies the last observed generation.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
@@ -112,15 +112,19 @@ type RedpandaStatus struct {
 
 type RemediationStrategy string
 
-// HelmUpgrade represents the configurations upgrading helm releases
+// HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
 type HelmUpgrade struct {
-	Remediation    *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
-	Force          *bool                           `json:"force,omitempty"`
-	PreserveValues *bool                           `json:"preserveValues,omitempty"`
-	CleanupOnFail  *bool                           `json:"cleanupOnFail,omitempty"`
+	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
+	Remediation *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
+	// Enables forceful updates during an upgrade.
+	Force *bool `json:"force,omitempty"`
+	// Specifies whether to preserve user-configured values during an upgrade.
+	PreserveValues *bool `json:"preserveValues,omitempty"`
+	// Specifies whether to perform cleanup in case of failed upgrades.
+	CleanupOnFail *bool `json:"cleanupOnFail,omitempty"`
 }
 
-// Redpanda is the Schema for the redpanda API
+// Redpanda defines the CRD for Redpanda clusters.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=redpandas
@@ -131,16 +135,19 @@ type Redpanda struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RedpandaSpec   `json:"spec,omitempty"`
+	// Defines the desired state of the Redpanda cluster.
+	Spec RedpandaSpec `json:"spec,omitempty"`
+	// Represents the current status of the Redpanda cluster.
 	Status RedpandaStatus `json:"status,omitempty"`
 }
 
-// RedpandaList contains a list of Redpanda
+// RedpandaList contains a list of Redpanda objects.
 // +kubebuilder:object:root=true
 type RedpandaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Redpanda `json:"items"`
+	// Specifies a list of Redpanda resources.
+	Items []Redpanda `json:"items"`
 }
 
 func init() {

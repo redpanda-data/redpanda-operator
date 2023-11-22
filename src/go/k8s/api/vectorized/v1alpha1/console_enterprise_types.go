@@ -45,6 +45,11 @@ type EnterpriseLoginRedpandaCloud struct {
 
 	// AllowedOrigins indicates if response is allowed from given origin
 	AllowedOrigins []string `json:"allowedOrigins,omitempty" yaml:"allowedOrigins,omitempty"`
+
+	// OrgID refers to the Redpanda Cloud organization id that Console is running in.
+	// If the OrgID is set, Console will ensure that incoming requests will only pass
+	// if the provided access token matches this org id in the custom claims.
+	OrgID string `json:"orgId,omitempty" yaml:"orgId,omitempty"`
 }
 
 // IsGoogleLoginEnabled returns true if Google SSO provider is enabled
