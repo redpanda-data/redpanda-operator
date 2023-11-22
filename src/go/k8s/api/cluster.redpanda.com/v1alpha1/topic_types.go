@@ -32,7 +32,7 @@ type SecretKeyRef struct {
 	Key string `json:"key,omitempty"`
 }
 
-// Retrieves the value from `corev1.Secret{}`.
+// GetValue retrieves the value from `corev1.Secret{}`.
 func (s *SecretKeyRef) GetValue(
 	ctx context.Context, cl client.Client, namespace, defaultKey string,
 ) ([]byte, error) {
@@ -119,7 +119,7 @@ type KafkaAPISpec struct {
 	SASL *KafkaSASL `json:"sasl,omitempty"`
 }
 
-// KafkaSASL configures credentials to connect to Redpanda cluster that has authenticaton enabled.
+// KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
 type KafkaSASL struct {
 	// Specifies the username.
 	// +optional

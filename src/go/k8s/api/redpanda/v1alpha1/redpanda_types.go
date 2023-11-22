@@ -154,7 +154,7 @@ func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
 }
 
-// Returns the namespace and name of the HelmRelease.
+// GetHelmRelease returns the namespace and name of the HelmRelease.
 func (in *RedpandaStatus) GetHelmRelease() string {
 	return in.HelmRelease
 }
@@ -181,7 +181,7 @@ func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 	return values, nil
 }
 
-// Registers a successful reconciliation of the given HelmRelease.
+// RedpandaReady registers a successful reconciliation of the given HelmRelease.
 func RedpandaReady(rp *Redpanda) *Redpanda {
 	newCondition := metav1.Condition{
 		Type:    meta.ReadyCondition,
@@ -194,7 +194,7 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 	return rp
 }
 
-// Registers a failed reconciliation of the given Redpanda.
+// RedpandaNotReady registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	newCondition := metav1.Condition{
 		Type:    meta.ReadyCondition,
@@ -206,7 +206,7 @@ func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	return rp
 }
 
-// Resets any failures and registers progress toward
+// RedpandaProgressing resets any failures and registers progress toward
 // reconciling the given Redpanda by setting the meta.ReadyCondition to
 // 'Unknown' for meta.ProgressingReason.
 func RedpandaProgressing(rp *Redpanda) *Redpanda {
