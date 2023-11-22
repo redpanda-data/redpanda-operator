@@ -304,6 +304,7 @@ func (cm *ConfigMap) genLogin(
 		switch {
 		case provider.RedpandaCloud != nil:
 			enterpriseLogin.RedpandaCloud = &vectorizedv1alpha1.EnterpriseLoginRedpandaCloud{
+				OrgID:          provider.RedpandaCloud.OrgID,
 				Enabled:        provider.RedpandaCloud.Enabled,
 				Domain:         provider.RedpandaCloud.Domain,
 				Audience:       provider.RedpandaCloud.Audience,
