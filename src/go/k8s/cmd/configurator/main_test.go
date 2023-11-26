@@ -37,6 +37,7 @@ func TestPopulateRack(t *testing.T) {
 
 func TestAdditionalListeners(t *testing.T) { //nolint
 	sasl := "sasl"
+	httpBasic := "http_basic"
 	tests := []struct {
 		name                            string
 		addtionalListenersCfg           string
@@ -62,7 +63,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			expectedError: true,
 		},
 		{
-			name:                  "no additional listener",
+			name:                  "no additional listener with empty string",
 			addtionalListenersCfg: "",
 			hostIndex:             1,
 			hostIP:                "192.168.0.1",
@@ -74,11 +75,6 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 						Port:    9092,
 						AuthN:   &sasl,
 					}},
-					AdvertisedKafkaAPI: []config.NamedSocketAddress{{
-						Name:    "internal",
-						Address: "cluster1.redpanda.svc.cluster.local",
-						Port:    9092,
-					}},
 				},
 			},
 			expectedKafkaAPI: []config.NamedAuthNSocketAddress{
@@ -87,6 +83,21 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 					Address: "0.0.0.0",
 					Port:    9092,
 					AuthN:   &sasl,
+				},
+			},
+		},
+		{
+			name:                  "no additional listener {}",
+			addtionalListenersCfg: "{}",
+			hostIndex:             1,
+			hostIP:                "192.168.0.1",
+			nodeCfg: config.Config{
+				Redpanda: config.RedpandaNodeConfig{
+					AdvertisedKafkaAPI: []config.NamedSocketAddress{{
+						Name:    "internal",
+						Address: "cluster1.redpanda.svc.cluster.local",
+						Port:    9092,
+					}},
 				},
 			},
 			expectedAdvertisedKafkaAPI: []config.NamedSocketAddress{
@@ -119,6 +130,95 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 					Address: "1-f415bda0-37d7a80.redpanda.com",
 					Name:    "private-link-kafka",
 					Port:    30092 + 1,
+				},
+			},
+		},
+		{
+			name: "additional listeners using the address from the external listerners",
+			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'port': {{39002 | add .Index}}}]",` +
+				`"redpanda.kafka_api":"[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{39002 | add .Index}}}]",` +
+				`"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'port': {{32082 | add .Index}}}]",` +
+				`"pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0', 'port': {{32082 | add .Index}}}]"}`,
+			hostIndex: 1,
+			hostIP:    "192.168.0.1",
+			nodeCfg: config.Config{
+				Redpanda: config.RedpandaNodeConfig{
+					KafkaAPI: []config.NamedAuthNSocketAddress{{
+						Name:    "kafka-external",
+						Address: "0.0.0.0",
+						Port:    9092,
+						AuthN:   &sasl,
+					}},
+					AdvertisedKafkaAPI: []config.NamedSocketAddress{{
+						Name:    "kafka-external",
+						Address: "kafka.cluster123.redpanda.com",
+						Port:    9092,
+					}},
+				},
+				Pandaproxy: &config.Pandaproxy{
+					PandaproxyAPI: []config.NamedAuthNSocketAddress{{
+						Name:    "proxy-external",
+						Address: "0.0.0.0",
+						Port:    30082,
+						AuthN:   &httpBasic,
+					}},
+					AdvertisedPandaproxyAPI: []config.NamedSocketAddress{{
+						Name:    "proxy-external",
+						Address: "proxy.cluster123.redpanda.com",
+						Port:    30082,
+					}},
+				},
+			},
+			expectedKafkaAPI: []config.NamedAuthNSocketAddress{
+				{
+					Name:    "kafka-external",
+					Address: "0.0.0.0",
+					Port:    9092,
+					AuthN:   &sasl,
+				},
+				{
+					Name:    "private-link-kafka",
+					Address: "0.0.0.0",
+					Port:    39002 + 1,
+					AuthN:   &sasl,
+				},
+			},
+			expectedAdvertisedKafkaAPI: []config.NamedSocketAddress{
+				{
+					Name:    "kafka-external",
+					Address: "kafka.cluster123.redpanda.com",
+					Port:    9092,
+				},
+				{
+					Name:    "private-link-kafka",
+					Address: "kafka.cluster123.redpanda.com",
+					Port:    39002 + 1,
+				},
+			},
+			expectedPandaProxyAPI: []config.NamedAuthNSocketAddress{
+				{
+					Name:    "proxy-external",
+					Address: "0.0.0.0",
+					Port:    30082,
+					AuthN:   &httpBasic,
+				},
+				{
+					Name:    "private-link-proxy",
+					Address: "0.0.0.0",
+					Port:    32082 + 1,
+					AuthN:   &httpBasic,
+				},
+			},
+			expectedadvertisedPandaProxyAPI: []config.NamedSocketAddress{
+				{
+					Name:    "proxy-external",
+					Address: "proxy.cluster123.redpanda.com",
+					Port:    30082,
+				},
+				{
+					Name:    "private-link-proxy",
+					Address: "proxy.cluster123.redpanda.com",
+					Port:    32082 + 1,
 				},
 			},
 		},

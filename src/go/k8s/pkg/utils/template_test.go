@@ -62,6 +62,11 @@ func TestTemplateGen(t *testing.T) {
 			expected:             "'address': '2-f1412386.redpanda.com', 'port': 39004",
 			endpointContainsPort: true,
 		},
+		{
+			tmpl:                 "'address': '{{.Index}}-{{.HostIP | sha256sum | substr 0 8}}.redpanda.com', 'port': {{30092 | add (.Index | sub .Index )}}",
+			expected:             "'address': '2-f1412386.redpanda.com', 'port': 30092",
+			endpointContainsPort: true,
+		},
 	}
 
 	for _, tc := range tests {
