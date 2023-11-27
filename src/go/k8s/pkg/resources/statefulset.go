@@ -919,7 +919,7 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 // - pandaproxy.pandaproxy_api
 // - pandaproxy.advertised_pandaproxy_api
 // example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
-// example: redpanda.advertised_kafka_api: "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.clb2jkpb06k16j807u20.byoc.ign.cloud.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
+// example: redpanda.advertised_kafka_api: "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cluster123.fmc.prd.cloud.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
 func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{}
 
@@ -943,7 +943,6 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		}
 	}
 
-	// We will reply on the webhook to validate and reject invalid configurations, e.g. port conflict.
 	for i := 0; i < int(*r.pandaCluster.Spec.Replicas); i++ {
 		for _, n := range additionalNode0Config.Redpanda.AdvertisedKafkaAPI {
 			ports = append(ports, corev1.ContainerPort{
