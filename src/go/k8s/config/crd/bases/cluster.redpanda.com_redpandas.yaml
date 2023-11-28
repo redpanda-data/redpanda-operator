@@ -202,6 +202,10 @@ spec:
                   connectors:
                     description: Defines Redpanda Connector settings.
                     properties:
+                      connectors:
+                        description: Connectors specified manual configurations
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       deployment:
                         description: Specifies whether to create a Deployment resource.
                           When `connectors.deployment.create` is `false`, the chart
@@ -276,8 +280,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       console:
                         description: Configures custom settings for Redpanda Console.
@@ -292,8 +294,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       enabled:
                         description: Specifies whether the Redpanda Console subchart
@@ -392,8 +392,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       secretMounts:
                         description: Mounts additional Secret resources inside the
