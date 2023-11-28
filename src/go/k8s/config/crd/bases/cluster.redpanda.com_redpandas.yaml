@@ -26,7 +26,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Redpanda is the Schema for the redpanda API
+        description: Redpanda defines the CRD for Redpanda clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,40 +41,45 @@ spec:
           metadata:
             type: object
           spec:
-            description: RedpandaSpec defines the desired state of Redpanda
+            description: Defines the desired state of the Redpanda cluster.
             properties:
               chartRef:
-                description: ChartRef defines chart details including repository
+                description: Defines chart details, including the version and repository.
                 properties:
                   chartName:
-                    description: ChartName is the chart to use
+                    description: Specifies the name of the chart to deploy.
                     type: string
                   chartVersion:
-                    description: ChartVersion defines the helm chart version to use
+                    description: Defines the version of the Redpanda Helm chart to
+                      deploy.
                     type: string
                   helmRepositoryName:
-                    description: HelmRepositoryName defines the repository to use,
-                      defaults to redpanda if not defined
+                    description: Defines the chart repository to use. Defaults to
+                      `redpanda` if not defined.
                     type: string
                   timeout:
-                    description: Timeout is the time to wait for any individual Kubernetes
-                      operation (like Jobs for hooks) during the performance of a
-                      Helm action. Defaults to '15m0s'.
+                    description: Specifies the time to wait for any individual Kubernetes
+                      operation (like Jobs for hooks) during Helm actions. Defaults
+                      to `15m0s`.
                     pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$
                     type: string
                   upgrade:
-                    description: Upgrade contains the details for handling upgrades
-                      including failures
+                    description: Defines how to handle upgrades, including failures.
                     properties:
                       cleanupOnFail:
+                        description: Specifies whether to perform cleanup in case
+                          of failed upgrades.
                         type: boolean
                       force:
+                        description: Enables forceful updates during an upgrade.
                         type: boolean
                       preserveValues:
+                        description: Specifies whether to preserve user-configured
+                          values during an upgrade.
                         type: boolean
                       remediation:
-                        description: UpgradeRemediation holds the configuration for
-                          Helm upgrade remediation.
+                        description: Specifies the actions to take on upgrade failures.
+                          See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
                         properties:
                           ignoreTestFailures:
                             description: IgnoreTestFailures tells the controller to
@@ -105,30 +110,47 @@ spec:
                     type: object
                 type: object
               clusterSpec:
-                description: ClusterSpec defines the values to use in the cluster
+                description: Defines the Helm values to use to deploy the cluster.
                 properties:
                   auth:
-                    description: Auth is a top-level field of the values file
+                    description: Defines authentication settings for listeners.
                     properties:
                       sasl:
-                        description: SASL is a top-level field of the values file
+                        description: Configures SASL authentication in the Helm values.
                         properties:
                           enabled:
+                            description: Enables SASL authentication. If you enable
+                              SASL authentication, you must provide a Secret name
+                              in `secretRef`.
                             type: boolean
                           mechanism:
+                            description: Specifies the default authentication mechanism
+                              to use for superusers. Options are `SCRAM-SHA-256` and
+                              `SCRAM-SHA-512`.
                             type: string
                           secretRef:
+                            description: If `users` is empty, `secretRef` specifies
+                              the name of the Secret that contains your superuser
+                              credentials in the format <username>:<password>:<optional-authentication-mechanism>.
+                              Otherwise, `secretRef` specifies the name of the Secret
+                              that the chart creates to store the credentials in `users`.
                             type: string
                           users:
+                            description: Specifies a list of superuser credentials.
                             items:
-                              description: UsersItems is a top-level field of the
-                                values file
+                              description: UsersItems configures a list of superusers
+                                in the Helm values.
                               properties:
                                 mechanism:
+                                  description: Specifies the authentication mechanism
+                                    to use for superusers. Overrides the default in
+                                    `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
                                   type: string
                                 name:
+                                  description: Specifies the name of the superuser.
                                   type: string
                                 password:
+                                  description: Specifies the superuser password.
                                   type: string
                               type: object
                             type: array
@@ -139,222 +161,385 @@ spec:
                     - sasl
                     type: object
                   clusterDomain:
-                    description: ClusterDomain is the override to give your redpanda
-                      release
+                    description: Customizes the Kubernetes cluster domain. This domain
+                      is used to generate the internal domains of the StatefulSet
+                      Pods. For details, see https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id.
+                      The default is the `cluster.local` domain.
                     type: string
                   commonLabels:
                     additionalProperties:
                       type: string
-                    description: CommonLabels is the override to give your redpanda
-                      release
+                    description: Assigns custom labels to all resources generated
+                      by the Redpanda Helm chart. Specify labels as key/value pairs.
                     type: object
                   config:
-                    description: Config is a top-level field of the values file
+                    description: Defines configuration properties supported by Redpanda
+                      that may not work correctly in a Kubernetes cluster. Changing
+                      these values from the defaults comes with some risk. Use these
+                      properties to customize various Redpanda configurations that
+                      are not available in the `RedpandaClusterSpec`. These values
+                      have no impact on the configuration or behavior of the Kubernetes
+                      objects deployed by Helm, and therefore should not be modified
+                      for the purpose of configuring those objects. Instead, these
+                      settings get passed directly to the Redpanda binary at startup.
                     properties:
                       cluster:
+                        description: Specifies cluster configuration properties. See
+                          https://docs.redpanda.com/current/reference/cluster-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       node:
+                        description: Specifies broker configuration properties. See
+                          https://docs.redpanda.com/current/reference/node-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       tunable:
+                        description: Specifies tunable configuration properties. See
+                          https://docs.redpanda.com/current/reference/tunable-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                     type: object
                   connectors:
+                    description: Defines Redpanda Connector settings.
                     properties:
                       deployment:
+                        description: Specifies whether to create a Deployment resource.
+                          When `connectors.deployment.create` is `false`, the chart
+                          automatically configures and creates the Deployment resource
+                          to connect to your Redpanda cluster.
                         properties:
                           enabled:
+                            description: Specifies whether to create the resource.
                             type: boolean
                         type: object
                       enabled:
                         type: boolean
+                      monitoring:
+                        description: Specifies monitoring resources
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Adds custom Annotations to the ServiceMonitor
+                              resource.
+                            type: object
+                          commonLabels:
+                            additionalProperties:
+                              type: string
+                            description: Adds custom labels to the ServiceMonitor
+                              resource.
+                            type: object
+                          enabled:
+                            description: Specifies whether to create a ServiceMonitor
+                              that can be used by Prometheus Operator or VictoriaMetrics
+                              Operator to scrape the metrics.
+                            type: boolean
+                          namespaceSelector:
+                            additionalProperties:
+                              type: string
+                            description: Adds custom namespaceSelector to monitoring
+                              resources
+                            type: object
+                          scrapeInterval:
+                            description: Specifies how often to scrape metrics.
+                            type: string
+                        type: object
                       test:
+                        description: Specifies whether to create Helm tests.
                         properties:
                           enabled:
+                            description: Specifies whether to create the resource.
                             type: boolean
                         type: object
                     type: object
                   console:
+                    description: Defines Redpanda Console settings.
                     properties:
                       affinity:
+                        description: Defines affinity rules for Pod assignment.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       annotations:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       autoscaling:
+                        description: Configures Horizontal Pod Autoscaling (HPA) for
+                          Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       configMap:
+                        description: Specifies whether a ConfigMap should be created
+                          for Redpanda Console.
                         properties:
                           create:
+                            description: Indicates whether the corresponding Kubernetes
+                              object (ConfigMap, Secret, or Deployment) should be
+                              created.
                             type: boolean
                         required:
                         - create
                         type: object
                       console:
+                        description: Configures custom settings for Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       deployment:
+                        description: Specifies whether a Deployment should be created
+                          for Redpanda Console.
                         properties:
                           create:
+                            description: Indicates whether the corresponding Kubernetes
+                              object (ConfigMap, Secret, or Deployment) should be
+                              created.
                             type: boolean
                         required:
                         - create
                         type: object
                       enabled:
+                        description: Specifies whether the Redpanda Console subchart
+                          should be deployed.
                         type: boolean
                       extraContainers:
+                        description: Adds extra containers to the Pods that run Redpanda
+                          Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraEnv:
+                        description: Adds extra environment variables to the Pods
+                          that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraEnvFrom:
+                        description: Allows you to add extra environment variables
+                          from external resources to the Pods that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraVolumeMounts:
+                        description: Mounts additional volumes inside the containers
+                          that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraVolumes:
+                        description: Adds extra volumes to the Pods that run Redpanda
+                          Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       fullnameOverride:
+                        description: Specifies a full custom name, which overrides
+                          the entire naming convention including release name and
+                          chart name.
                         type: string
                       image:
+                        description: Defines the container image for the Redpanda
+                          Console, including the repository, name, and tag.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       imagePullSecrets:
+                        description: Defines Secrets used to pull the container images
+                          from a private registry.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       ingress:
+                        description: Configures the Kubernetes Ingress resource for
+                          Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       initContainers:
+                        description: Specifies init containers for the Pods that run
+                          Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       nameOverride:
+                        description: Specifies a custom name for the Redpanda Console
+                          resources, overriding the default naming convention.
                         type: string
                       nodeSelector:
+                        description: Specifies Node labels for Pod assignment.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       podAnnotations:
+                        description: Adds custom annotations to the Pods that run
+                          Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       podLabels:
+                        description: Adds custom labels to the Pods that run Redpanda
+                          Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       podSecurityContext:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       priorityClassName:
+                        description: Specifies the priority class name for the Pods
+                          that run Redpanda Console.
                         type: string
                       replicaCount:
+                        description: Sets the number of replicas for the Redpanda
+                          Console Deployment resource.
                         type: integer
                       resources:
+                        description: Configures resource requests and limits for the
+                          Pods that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       secret:
+                        description: Specifies whether a Secret should be created
+                          for Redpanda Console.
                         properties:
                           create:
+                            description: Indicates whether the corresponding Kubernetes
+                              object (ConfigMap, Secret, or Deployment) should be
+                              created.
                             type: boolean
                         required:
                         - create
                         type: object
                       secretMounts:
+                        description: Mounts additional Secret resources inside the
+                          containers that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       securityContext:
+                        description: Sets the security context for the Pods that run
+                          Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       service:
+                        description: Configures the Kubernetes Service for Redpanda
+                          Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       serviceAccount:
+                        description: Configures the ServiceAccount used by the Pods
+                          that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       tolerations:
+                        description: Specifies tolerations for scheduling Pods onto
+                          Nodes with taints.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       topologySpreadConstraints:
+                        description: Specifies topology spread constraints for Pod
+                          placement.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                     type: object
                   enterprise:
-                    description: Enterprise represents license data
+                    description: Defines an Enterprise license.
                     properties:
                       license:
+                        description: Specifies the Enterprise license key.
                         type: string
                       licenseSecretRef:
-                        description: EnterpriseLicenseSecretRef is the secret used
-                          in the Enterprise struct
+                        description: Defines a reference to a Secret resource that
+                          contains the Enterprise license key.
                         properties:
                           key:
+                            description: Specifies the key that is contains the Enterprise
+                              license in the Secret.
                             type: string
                           name:
+                            description: Specifies the name of the Secret resource
+                              to use.
                             type: string
                         type: object
                     type: object
                   external:
-                    description: External is a top-level field of the values file
+                    description: Defines external access settings.
                     properties:
                       addresses:
+                        description: Specifies addresses for the external listeners
+                          to advertise.Provide one entry for each broker in order
+                          of StatefulSet replicas. The number of brokers is defined
+                          in `statefulset.replicas`. The values can be IP addresses
+                          or DNS names. If `external.domain` is set, the domain is
+                          appended to these values.
                         items:
                           type: string
                         type: array
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds custom annotations to the external Service.
                         type: object
                       domain:
+                        description: Specifies the domain to advertise to external
+                          clients. If specified, then it will be appended to the `external.addresses`
+                          values as each broker's advertised address.
                         type: string
                       enabled:
+                        description: Specifies whether the external access is enabled.
                         type: boolean
                       externalDns:
+                        description: Defines externalDNS configurations.
                         properties:
                           enabled:
+                            description: Specifies whether externalDNS annotations
+                              are added to LoadBalancer Services. If you enable externalDns,
+                              each LoadBalancer Service defined in `external.type`
+                              will be annotated with an external-dns hostname that
+                              matches `external.addresses[i]`.`external.domain`.
                             type: boolean
-                        required:
-                        - enabled
                         type: object
                       prefixTemplate:
+                        description: Specifies a naming prefix template for external
+                          Services.
                         type: string
                       service:
-                        description: ExternalService allows you to enable or disable
-                          creation of external service type
+                        description: Configures the external Service resource.
                         properties:
                           enabled:
+                            description: Specifies whether to create the external
+                              Service. If set to `false`, the external Service type
+                              is not created. You can still set your cluster with
+                              external access but not create the supporting Service.
+                              Set this to `false` to manage your own Service.
                             type: boolean
                         type: object
                       sourceRanges:
+                        description: Source range for external access. Only applicable
+                          when `external.type` is LoadBalancer.
                         items:
                           type: string
                         type: array
                       type:
+                        description: Specifies the external Service type. Only NodePort
+                          and LoadBalancer are supported. If undefined, then advertised
+                          listeners will be configured in Redpanda, but the Helm chart
+                          will not create a Service. NodePort is recommended in cases
+                          where latency is a priority.
                         type: string
                     type: object
                   force:
-                    description: Force is used for allowing a change of TLS configuration.
-                      Using this value will result in a short period of downtime.
+                    description: Adds the `--force` flag in `helm upgrade` commands.
+                      Used for allowing a change of TLS configuration for the RPC
+                      listener. Setting `force` to `true` will result in a short period
+                      of downtime.
                     type: boolean
                   fullNameOverride:
-                    description: FullNameOverride is the override to give your redpanda
-                      release
+                    description: Customizes the name of the StatefulSet and Services.
+                      The default is `redpanda`.
                     type: string
                   image:
-                    description: Image defines the container image to use for the
-                      redpanda cluster
+                    description: Defines the container image settings to use for the
+                      Redpanda cluster.
                     properties:
                       pullPolicy:
+                        description: Specifies the strategy used for pulling images
+                          from the repository. For available values, see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy.
                         type: string
                       repository:
+                        description: Specifies the image repository to pull from.
                         type: string
                       tag:
+                        description: Specifies the image tag.
                         type: string
                     type: object
                   imagePullSecrets:
+                    description: Specifies credentials for a private image repository.
+                      For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
                     items:
                       description: LocalObjectReference contains enough information
                         to let you locate the referenced object inside the same namespace.
@@ -367,250 +552,407 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                   license_key:
-                    description: 'Deprecated: Use `Enterprise.LicenseKey` instead.'
+                    description: 'Deprecated: Use `Enterprise` instead.'
                     type: string
                   license_secret_ref:
-                    description: 'Deprecated: Use `Enterprise.LicenseSecretRef` instead.'
+                    description: 'Deprecated: Use `EnterpriseLicenseSecretRef` instead.'
                     properties:
                       secret_key:
+                        description: Specifies the key that is contains the Enterprise
+                          license in the Secret.
                         type: string
                       secret_name:
+                        description: Specifies the name of the Secret.
                         type: string
                     type: object
                   listeners:
-                    description: Listeners is a top-level field of the values file
+                    description: Defines settings for listeners, including HTTP Proxy,
+                      Schema Registry, the Admin API and the Kafka API.
                     properties:
                       admin:
-                        description: Admin is a top-level field of the values file
+                        description: Configures settings for the Admin API listeners.
                         properties:
                           external:
                             additionalProperties:
+                              description: ExternalListener configures settings for
+                                the external listeners.
                               properties:
                                 advertisedPorts:
+                                  description: Specifies the network port that the
+                                    external Service listens on.
                                   items:
                                     type: integer
                                   type: array
                                 authenticationMethod:
+                                  description: Specifies the authentication method
+                                    for the external listener. For example, 'mtls_identity'
+                                    or `sasl`.
                                   type: string
                                 port:
+                                  description: Specifies the container port number
+                                    for the external listener.
                                   type: integer
                                 tls:
-                                  description: ListenerTLS is a top-level field of
-                                    the values file
+                                  description: Configures TLS settings for the external
+                                    listener.
                                   properties:
                                     cert:
+                                      description: References a specific certificate
+                                        for the listener.
                                       type: string
                                     enabled:
+                                      description: Specifies whether TLS is enabled
+                                        for the listener.
                                       type: boolean
                                     requireClientAuth:
+                                      description: Indicates whether client authentication
+                                        (mTLS) is required.
                                       type: boolean
                                     secretRef:
+                                      description: References a Secret rsource containing
+                                        TLS credentials for the listener.
                                       type: string
                                   type: object
                               type: object
+                            description: Defines settings for the external listener.
                             type: object
                           port:
+                            description: Specifies the container port number for the
+                              internal listener.
                             type: integer
                           tls:
-                            description: ListenerTLS is a top-level field of the values
-                              file
+                            description: Configures TLS settings for the internal
+                              listener.
                             properties:
                               cert:
+                                description: References a specific certificate for
+                                  the listener.
                                 type: string
                               enabled:
+                                description: Specifies whether TLS is enabled for
+                                  the listener.
                                 type: boolean
                               requireClientAuth:
+                                description: Indicates whether client authentication
+                                  (mTLS) is required.
                                 type: boolean
                               secretRef:
+                                description: References a Secret rsource containing
+                                  TLS credentials for the listener.
                                 type: string
                             type: object
                         type: object
                       http:
-                        description: HTTP is a top-level field of the values file`
+                        description: Configures settings for the HTTP Proxy listeners.
                         properties:
                           authenticationMethod:
+                            description: Specifies the authentication method for the
+                              external listener. For example, 'mtls_identity' or `sasl`.
                             type: string
                           enabled:
+                            description: Specifies whether the HTTP Proxy is enabled.
                             type: boolean
                           external:
                             additionalProperties:
+                              description: ExternalListener configures settings for
+                                the external listeners.
                               properties:
                                 advertisedPorts:
+                                  description: Specifies the network port that the
+                                    external Service listens on.
                                   items:
                                     type: integer
                                   type: array
                                 authenticationMethod:
+                                  description: Specifies the authentication method
+                                    for the external listener. For example, 'mtls_identity'
+                                    or `sasl`.
                                   type: string
                                 port:
+                                  description: Specifies the container port number
+                                    for the external listener.
                                   type: integer
                                 tls:
-                                  description: ListenerTLS is a top-level field of
-                                    the values file
+                                  description: Configures TLS settings for the external
+                                    listener.
                                   properties:
                                     cert:
+                                      description: References a specific certificate
+                                        for the listener.
                                       type: string
                                     enabled:
+                                      description: Specifies whether TLS is enabled
+                                        for the listener.
                                       type: boolean
                                     requireClientAuth:
+                                      description: Indicates whether client authentication
+                                        (mTLS) is required.
                                       type: boolean
                                     secretRef:
+                                      description: References a Secret rsource containing
+                                        TLS credentials for the listener.
                                       type: string
                                   type: object
                               type: object
+                            description: Defines settings for the external listener.
                             type: object
                           kafkaEndpoint:
+                            description: Configures the listener to use for HTTP connections.
+                              For example `default` for the internal listener.
                             type: string
                           port:
+                            description: Specifies the container port number for the
+                              internal listener.
                             type: integer
                           prefixTemplate:
+                            description: Specifies the template used for generating
+                              the advertised addresses of Services. This field accepts
+                              a string template that dynamically constructs Service
+                              addresses based on various parameters such as Service
+                              name and port number.
                             type: string
                           tls:
-                            description: ListenerTLS is a top-level field of the values
-                              file
+                            description: Configures TLS settings for the internal
+                              listener.
                             properties:
                               cert:
+                                description: References a specific certificate for
+                                  the listener.
                                 type: string
                               enabled:
+                                description: Specifies whether TLS is enabled for
+                                  the listener.
                                 type: boolean
                               requireClientAuth:
+                                description: Indicates whether client authentication
+                                  (mTLS) is required.
                                 type: boolean
                               secretRef:
+                                description: References a Secret rsource containing
+                                  TLS credentials for the listener.
                                 type: string
                             type: object
                         type: object
                       kafka:
-                        description: Kafka is a top-level field of the values file
+                        description: Configures settings for the Kafka API listeners.
                         properties:
                           authenticationMethod:
+                            description: Specifies the authentication method for the
+                              external listener. For example, 'mtls_identity' or `sasl`.
                             type: string
                           external:
                             additionalProperties:
+                              description: ExternalListener configures settings for
+                                the external listeners.
                               properties:
                                 advertisedPorts:
+                                  description: Specifies the network port that the
+                                    external Service listens on.
                                   items:
                                     type: integer
                                   type: array
                                 authenticationMethod:
+                                  description: Specifies the authentication method
+                                    for the external listener. For example, 'mtls_identity'
+                                    or `sasl`.
                                   type: string
                                 port:
+                                  description: Specifies the container port number
+                                    for the external listener.
                                   type: integer
                                 tls:
-                                  description: ListenerTLS is a top-level field of
-                                    the values file
+                                  description: Configures TLS settings for the external
+                                    listener.
                                   properties:
                                     cert:
+                                      description: References a specific certificate
+                                        for the listener.
                                       type: string
                                     enabled:
+                                      description: Specifies whether TLS is enabled
+                                        for the listener.
                                       type: boolean
                                     requireClientAuth:
+                                      description: Indicates whether client authentication
+                                        (mTLS) is required.
                                       type: boolean
                                     secretRef:
+                                      description: References a Secret rsource containing
+                                        TLS credentials for the listener.
                                       type: string
                                   type: object
                               type: object
+                            description: Defines settings for the external listener.
                             type: object
                           port:
+                            description: Specifies the container port number for the
+                              internal listener.
                             type: integer
                           prefixTemplate:
+                            description: Specifies the template used for generating
+                              the advertised addresses of Services. This field accepts
+                              a string template that dynamically constructs Service
+                              addresses based on various parameters such as Service
+                              name and port number.
                             type: string
                           tls:
-                            description: ListenerTLS is a top-level field of the values
-                              file
+                            description: Configures TLS settings for the internal
+                              listener.
                             properties:
                               cert:
+                                description: References a specific certificate for
+                                  the listener.
                                 type: string
                               enabled:
+                                description: Specifies whether TLS is enabled for
+                                  the listener.
                                 type: boolean
                               requireClientAuth:
+                                description: Indicates whether client authentication
+                                  (mTLS) is required.
                                 type: boolean
                               secretRef:
+                                description: References a Secret rsource containing
+                                  TLS credentials for the listener.
                                 type: string
                             type: object
                         type: object
                       rpc:
-                        description: RPC is a top-level field of the values file
+                        description: Configures settings for the RPC API listener.
                         properties:
                           port:
+                            description: Specifies the container port number for the
+                              internal listener.
                             type: integer
                           tls:
-                            description: ListenerTLS is a top-level field of the values
-                              file
+                            description: Configures TLS settings for the internal
+                              listener.
                             properties:
                               cert:
+                                description: References a specific certificate for
+                                  the listener.
                                 type: string
                               enabled:
+                                description: Specifies whether TLS is enabled for
+                                  the listener.
                                 type: boolean
                               requireClientAuth:
+                                description: Indicates whether client authentication
+                                  (mTLS) is required.
                                 type: boolean
                               secretRef:
+                                description: References a Secret rsource containing
+                                  TLS credentials for the listener.
                                 type: string
                             type: object
                         type: object
                       schemaRegistry:
-                        description: SchemaRegistry is a top-level field of the values
-                          file
+                        description: Configures settings for the Schema Registry listeners.
                         properties:
                           authenticationMethod:
+                            description: Specifies the authentication method for the
+                              external listener. For example, 'mtls_identity' or `sasl`.
                             type: string
                           enabled:
+                            description: Specifies whether the Schema Registry is
+                              enabled.
                             type: boolean
                           external:
                             additionalProperties:
+                              description: ExternalListener configures settings for
+                                the external listeners.
                               properties:
                                 advertisedPorts:
+                                  description: Specifies the network port that the
+                                    external Service listens on.
                                   items:
                                     type: integer
                                   type: array
                                 authenticationMethod:
+                                  description: Specifies the authentication method
+                                    for the external listener. For example, 'mtls_identity'
+                                    or `sasl`.
                                   type: string
                                 port:
+                                  description: Specifies the container port number
+                                    for the external listener.
                                   type: integer
                                 tls:
-                                  description: ListenerTLS is a top-level field of
-                                    the values file
+                                  description: Configures TLS settings for the external
+                                    listener.
                                   properties:
                                     cert:
+                                      description: References a specific certificate
+                                        for the listener.
                                       type: string
                                     enabled:
+                                      description: Specifies whether TLS is enabled
+                                        for the listener.
                                       type: boolean
                                     requireClientAuth:
+                                      description: Indicates whether client authentication
+                                        (mTLS) is required.
                                       type: boolean
                                     secretRef:
+                                      description: References a Secret rsource containing
+                                        TLS credentials for the listener.
                                       type: string
                                   type: object
                               type: object
+                            description: Defines settings for the external listener.
                             type: object
                           kafkaEndpoint:
+                            description: Configures the listener to use for HTTP connections.
+                              For example `default` for the internal listener.
                             type: string
                           port:
+                            description: Specifies the container port number for the
+                              internal listener.
                             type: integer
                           tls:
-                            description: ListenerTLS is a top-level field of the values
-                              file
+                            description: Configures TLS settings for the internal
+                              listener.
                             properties:
                               cert:
+                                description: References a specific certificate for
+                                  the listener.
                                 type: string
                               enabled:
+                                description: Specifies whether TLS is enabled for
+                                  the listener.
                                 type: boolean
                               requireClientAuth:
+                                description: Indicates whether client authentication
+                                  (mTLS) is required.
                                 type: boolean
                               secretRef:
+                                description: References a Secret rsource containing
+                                  TLS credentials for the listener.
                                 type: string
                             type: object
                         type: object
                     type: object
                   logging:
-                    description: Logging is a top-level field of the values file
+                    description: Defines the log level settings.
                     properties:
                       logLevel:
+                        description: Sets the verbosity level of logs.
                         type: string
                       usageStats:
+                        description: Specifies whether to send usage statistics to
+                          Redpanda Data.
                         properties:
                           clusterId:
+                            description: Specifies the ID of your Redpanda cluster.
                             type: string
                           enabled:
+                            description: Specifies whether usage reporting is enabled.
                             type: boolean
                           organization:
+                            description: Specifies the name of the organization using
+                              the software. This can be useful for identifying and
+                              segmenting usage data by organization, if usage reporting
+                              is enabled.
                             type: string
                         required:
                         - enabled
@@ -620,45 +962,58 @@ spec:
                     - usageStats
                     type: object
                   monitoring:
+                    description: Defines settings for monitoring Redpanda.
                     properties:
                       commonLabels:
                         additionalProperties:
                           type: string
+                        description: Adds custom labels to the ServiceMonitor resource.
                         type: object
                       enabled:
+                        description: Specifies whether to create a ServiceMonitor
+                          that can be used by Prometheus Operator or VictoriaMetrics
+                          Operator to scrape the metrics.
                         type: boolean
                       scrapeInterval:
+                        description: Specifies how often to scrape metrics.
                         type: string
-                    required:
-                    - enabled
                     type: object
                   nameOverride:
-                    description: NameOverride is the override to give your redpanda
-                      release
+                    description: Customizes the labels `app.kubernetes.io/component=<nameOverride>-statefulset`
+                      and `app.kubernetes.io/name=<nameOverride>` on the StatefulSet
+                      Pods. The default is `redpanda`.
                     type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: NodeSelector is the override to give your redpanda
-                      release
+                    description: Specifies on which nodes a Pod should be scheduled.
+                      These key/value pairs ensure that Pods are scheduled onto nodes
+                      with the specified labels.
                     type: object
                   post_install_job:
-                    description: PostInstallJob is a top-level field of the values
-                      file
+                    description: Defines settings for the post-install hook, which
+                      runs after each install or upgrade. For example, this job is
+                      responsible for setting the Enterprise license, if specified.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds annotations to the job to provide additional
+                          information or metadata that can be used by other tools
+                          or libraries.
                         type: object
                       enabled:
+                        description: Specifies whether the job is deployed.
                         type: boolean
                       labels:
                         additionalProperties:
                           type: string
+                        description: Applies labels to the job to facilitate identification
+                          and selection based on custom criteria.
                         type: object
                       resources:
-                        description: ResourceRequirements describes the compute resource
-                          requirements.
+                        description: Sets resource requirements (CPU, memory) for
+                          the job to ensure proper allocation and limit resource usage.
                         properties:
                           claims:
                             description: "Claims lists the names of resources, defined
@@ -710,16 +1065,24 @@ spec:
                     - enabled
                     type: object
                   post_upgrade_job:
-                    description: PostUpgradeJob is a top-level field of the values
-                      file
+                    description: Defines settings for the post-upgrade hook, which
+                      runs after each update. For example, this job is responsible
+                      for setting cluster configuration properties and restarting
+                      services such as Schema Registry, if required.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds annotations to the job to provide additional
+                          information or metadata that can be used by other tools
+                          or libraries.
                         type: object
                       enabled:
+                        description: Specifies whether the job is deployed.
                         type: boolean
                       extraEnv:
+                        description: Adds environment variables to the job container
+                          to configure its runtime behavior.
                         items:
                           description: EnvVar represents an environment variable present
                             in a Container.
@@ -837,6 +1200,9 @@ spec:
                           type: object
                         type: array
                       extraEnvFrom:
+                        description: Specifies environment variables from external
+                          sources, such as ConfigMap resources, or Secret resources,
+                          to dynamically configure the job.
                         items:
                           description: EnvFromSource represents the source of a set
                             of ConfigMaps
@@ -878,10 +1244,12 @@ spec:
                       labels:
                         additionalProperties:
                           type: string
+                        description: Applies labels to the job to facilitate identification
+                          and selection based on custom criteria.
                         type: object
                       resources:
-                        description: ResourceRequirements describes the compute resource
-                          requirements.
+                        description: Sets resource requirements (CPU, memory) for
+                          the job to ensure proper allocation and limit resource usage.
                         properties:
                           claims:
                             description: "Claims lists the names of resources, defined
@@ -933,71 +1301,120 @@ spec:
                     - enabled
                     type: object
                   rackAwareness:
-                    description: RackAwareness is a top-level field of the values
-                      file
+                    description: Defines rack awareness settings.
                     properties:
                       enabled:
+                        description: Specifies whether rack awareness is enabled.
+                          When enabled, Kubernetes failure zones are treated as racks.
+                          Redpanda maps each rack to a failure zone and places partition
+                          replicas across them. Requires `rbac.enabled` set to `true`.
                         type: boolean
                       nodeAnnotation:
+                        description: Specifies the key in Node labels or annotations
+                          to use to denote failure zones.
                         type: string
                     required:
                     - enabled
                     type: object
                   rbac:
+                    description: Defines Role Based Access Control (RBAC) settings.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds custom annotations to the RBAC resources.
                         type: object
                       enabled:
+                        description: Whether RBAC is enabled. Enable for features
+                          that need extra privileges, such as rack awareness. If you
+                          use the Redpanda Operator, you must deploy it with the `--set
+                          rbac.createRPKBundleCRs=true` flag to give it the required
+                          ClusterRoles.
                         type: boolean
                     required:
                     - enabled
                     type: object
                   resources:
+                    description: Defines container resource settings.
                     properties:
                       cpu:
+                        description: Specifies the number of CPU cores.
                         properties:
                           cores:
                             anyOf:
                             - type: integer
                             - type: string
+                            description: 'Specifies the number of CPU cores available
+                              to the application. Redpanda makes use of a thread per
+                              core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model.
+                              For this reason, Redpanda should only be given full
+                              cores. Note: You can increase cores, but decreasing
+                              cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350.
+                              This setting is equivalent to `--smp`, `resources.requests.cpu`,
+                              and `resources.limits.cpu`. For production, use `4`
+                              or greater.'
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
                           overprovisioned:
+                            description: 'Specifies whether Redpanda assumes it has
+                              all of the provisioned CPU. This should be `true` unless
+                              the container has CPU affinity. Equivalent to: `--idle-poll-time-us
+                              0`, `--thread-affinity 0`, and `--poll-aio 0`. If the
+                              value of full cores in `resources.cpu.cores` is less
+                              than `1`, this setting is set to `true`.'
                             type: boolean
                         type: object
                       memory:
+                        description: Specifies the amount of memory.
                         properties:
                           container:
+                            description: Defines resource limits for containers.
                             properties:
                               max:
                                 anyOf:
                                 - type: integer
                                 - type: string
+                                description: Specifies the maximum resources that
+                                  can be allocated to a container.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                               min:
                                 anyOf:
                                 - type: integer
                                 - type: string
+                                description: Specifies the minimum resources required
+                                  for a container.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
                           enable_memory_locking:
+                            description: Enables memory locking. For production, set
+                              to `true`.
                             type: boolean
                           redpanda:
+                            description: Allows you to optionally specify the memory
+                              size for both the Redpanda process and the underlying
+                              reserved memory used by Seastar.
                             properties:
                               memory:
                                 anyOf:
                                 - type: integer
                                 - type: string
+                                description: Memory for the Redpanda process. This
+                                  must be lower than the container's memory (`resources.memory.container.min`
+                                  if provided, otherwise `resources.memory.container.max`).
+                                  Equivalent to `--memory`. For production, use 8Gi
+                                  or greater.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                               reserveMemory:
                                 anyOf:
                                 - type: integer
                                 - type: string
+                                description: Memory reserved for the Seastar subsystem.
+                                  Any value above 1Gi will provide diminishing performance
+                                  benefits. Equivalent to `--reserve-memory`. For
+                                  production, use 1Gi.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             required:
@@ -1009,6 +1426,7 @@ spec:
                         type: object
                     type: object
                   service:
+                    description: Defines settings for the headless ClusterIP Service.
                     properties:
                       internal:
                         properties:
@@ -1021,42 +1439,60 @@ spec:
                         type: string
                     type: object
                   serviceAccount:
+                    description: Defines Service account settings.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds custom annotations to the ServiceAccount
+                          resources.
                         type: object
                       create:
+                        description: Specifies whether a ServiceAccount should be
+                          created.
                         type: boolean
                       name:
+                        description: Specifies the name of the ServiceAccount.
                         type: string
                     required:
                     - create
                     type: object
                   statefulset:
-                    description: Statefulset is a top-level field of the values file
+                    description: Defines settings for the StatefulSet that manages
+                      Redpanda brokers.
                     properties:
                       additionalRedpandaCmdFlags:
+                        description: Includes additional command flags for Redpanda
+                          at startup to customize its runtime behavior.
                         items:
                           type: string
                         type: array
                       annotations:
                         additionalProperties:
                           type: string
+                        description: Adds annotations to the StatefulSet to provide
+                          additional information or metadata.
                         type: object
                       budget:
-                        description: Budget is a top-level field of the values file
+                        description: Defines the management of disruptions affecting
+                          the Pods in the StatefulSet.
                         properties:
                           maxUnavailable:
+                            description: Defines the maximum number of Pods that can
+                              be unavailable during a voluntary disruption.
                             type: integer
                         required:
                         - maxUnavailable
                         type: object
                       extraVolumeMounts:
+                        description: Specifies extra volume mounts for the Pods.
                         type: string
                       extraVolumes:
+                        description: Defines additional volumes for the Pods.
                         type: string
                       initContainerImage:
+                        description: Defines the init container image used to perform
+                          initial setup tasks before the main containers start.
                         properties:
                           repository:
                             type: string
@@ -1064,6 +1500,8 @@ spec:
                             type: string
                         type: object
                       initContainers:
+                        description: Configures the init container used to perform
+                          initial setup tasks before the main containers start.
                         properties:
                           configurator:
                             properties:
@@ -1126,14 +1564,20 @@ spec:
                           extraInitContainers:
                             type: string
                           setDataDirOwnership:
+                            description: Defines the settings related to ownership
+                              of the Redpanda data directory in environments where
+                              root access is restricted.
                             properties:
                               enabled:
+                                description: Specifies whether to enable root access.
+                                  Enable only in environments where root access is
+                                  not allowed, such as minikube.
                                 type: boolean
                               extraVolumeMounts:
+                                description: Adds extra volume mounts.
                                 type: string
                               resources:
-                                description: ResourceRequirements describes the compute
-                                  resource requirements.
+                                description: Specifies the resource requirements.
                                 properties:
                                   claims:
                                     description: "Claims lists the names of resources,
@@ -1186,6 +1630,9 @@ spec:
                                 type: object
                             type: object
                           setTieredStorageCacheDirOwnership:
+                            description: Defines the settings related to ownership
+                              of the Tiered Storage cache in environments where root
+                              access is restricted.
                             properties:
                               extraVolumeMounts:
                                 type: string
@@ -1244,18 +1691,30 @@ spec:
                                 type: object
                             type: object
                           tuning:
-                            description: Tuning is a top-level field of the values
-                              file
+                            description: Defines settings for the autotuner tool in
+                              Redpanda. The autotuner identifies the hardware configuration
+                              in the container and optimizes the Linux kernel to give
+                              you the best performance.
                             properties:
                               ballast_file_path:
+                                description: Specifies the file path for ballast file.
+                                  A ballast file is an empty file that takes up disk
+                                  space. If Redpanda runs out of disk space and becomes
+                                  unavailable, you can delete the ballast file as
+                                  a last resort. This clears up some space and gives
+                                  you time to delete topics or records and change
+                                  your retention properties.
                                 type: string
                               ballast_file_size:
+                                description: Defines the size of the ballast file.
                                 type: string
                               extraVolumeMounts:
+                                description: Configures additional volume mounts for
+                                  the Pod.
                                 type: string
                               resources:
-                                description: ResourceRequirements describes the compute
-                                  resource requirements.
+                                description: Sets resource requirements such as CPU
+                                  and memory limits.
                                 properties:
                                   claims:
                                     description: "Claims lists the names of resources,
@@ -1307,24 +1766,40 @@ spec:
                                     type: object
                                 type: object
                               tune_aio_events:
+                                description: Specifies whether to increase the number
+                                  of allowed asynchronous IO events.
                                 type: boolean
                               tune_ballast_file:
+                                description: Specifies whether to create the ballast
+                                  file.
                                 type: boolean
                               tune_clocksource:
+                                description: Specifies whether to synchronize NTP.
                                 type: boolean
                               well_known_io:
+                                description: Specifies the vendor, VM type, and storage
+                                  device type that Redpanda runs on, in the format
+                                  <vendor>:<vm>:<storage>. This hints to Redpanda
+                                  which configuration values it should use for the
+                                  Redpanda IO scheduler.
                                 type: string
                             type: object
                         type: object
                       livenessProbe:
-                        description: LivenessProbe is a top-level field of the values
-                          file
+                        description: Defines liveness probes to monitor the health
+                          of the Pods and restart them if necessary.
                         properties:
                           failureThreshold:
+                            description: Sets the number of consecutive failures required
+                              to consider a Pod as not live.
                             type: integer
                           initialDelaySeconds:
+                            description: Specifies the time in seconds to wait before
+                              the first probe is initiated.
                             type: integer
                           periodSeconds:
+                            description: Determines the frequency in seconds of performing
+                              the probe.
                             type: integer
                         required:
                         - failureThreshold
@@ -1334,10 +1809,12 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
+                        description: Applies node selectors to schedule Pods on specific
+                          nodes based on labels.
                         type: object
                       podAffinity:
-                        description: Pod affinity is a group of inter pod affinity
-                          scheduling rules.
+                        description: Defines Pod affinity rules to influence the scheduling
+                          and placement of Pods relative to other Pods.
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods
@@ -1659,8 +2136,8 @@ spec:
                             type: array
                         type: object
                       podAntiAffinity:
-                        description: Pod anti affinity is a group of inter pod anti
-                          affinity scheduling rules.
+                        description: Defines Pod anti-affinity rules to prevent Pods
+                          from being scheduled together on the same node.
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods
@@ -1982,16 +2459,24 @@ spec:
                             type: array
                         type: object
                       priorityClassName:
+                        description: Defines the priority class name to assign priority
+                          levels to the Pods, influencing their scheduling order.
                         type: string
                       readinessProbe:
-                        description: ReadinessProbe is a top-level field of the values
-                          file
+                        description: Defines readiness probes to determine when a
+                          Pod is ready to handle traffic.
                         properties:
                           failureThreshold:
+                            description: Defines the threshold for how many times
+                              the probe can fail before the Pod is marked Unready.
                             type: integer
                           initialDelaySeconds:
+                            description: Sets the initial delay before the readiness
+                              probe is initiated, in seconds.
                             type: integer
                           periodSeconds:
+                            description: Configures the period, in seconds, between
+                              each readiness check.
                             type: integer
                         required:
                         - failureThreshold
@@ -1999,12 +2484,12 @@ spec:
                         - periodSeconds
                         type: object
                       replicas:
+                        description: Specifies the number of replicas to determine
+                          the desired number of Pods (Redpanda brokers) in the StatefulSet.
                         type: integer
                       securityContext:
-                        description: SecurityContext holds security configuration
-                          that will be applied to a container. Some fields are present
-                          in both SecurityContext and PodSecurityContext.  When both
-                          are set, the values in SecurityContext take precedence.
+                        description: Sets a security context for the Pods to define
+                          privilege and access control settings.
                         properties:
                           allowPrivilegeEscalation:
                             description: 'AllowPrivilegeEscalation controls whether
@@ -2175,17 +2660,20 @@ spec:
                             type: object
                         type: object
                       sideCars:
-                        description: SideCars is a field that stores sidecars in the
-                          statefulset
+                        description: Defines the additional sidecar containers that
+                          run alongside the main Redpanda container in the Pod.
                         properties:
                           configWatcher:
+                            description: Configures the `config-watcher` sidecar.
+                              The `config-watcher` sidecar polls the Secret resource
+                              in `auth.sasl.secretRef` for changes and triggers a
+                              rolling upgrade to add the new superusers to the Redpanda
+                              cluster.
                             properties:
                               SecurityContext:
-                                description: SecurityContext holds security configuration
-                                  that will be applied to a container. Some fields
-                                  are present in both SecurityContext and PodSecurityContext.  When
-                                  both are set, the values in SecurityContext take
-                                  precedence.
+                                description: Specifies the container's security context,
+                                  including privileges and access levels of the container
+                                  and its processes.
                                 properties:
                                   allowPrivilegeEscalation:
                                     description: 'AllowPrivilegeEscalation controls
@@ -2374,12 +2862,15 @@ spec:
                                     type: object
                                 type: object
                               enabled:
+                                description: Specifies whether the sidecar is enabled.
                                 type: boolean
                               extraVolumeMounts:
+                                description: Specifies additional volumes to mount
+                                  to the sidecar.
                                 type: string
                               resources:
-                                description: ResourceRequirements describes the compute
-                                  resource requirements.
+                                description: Specifies resource requests for the sidecar
+                                  container.
                                 properties:
                                   claims:
                                     description: "Claims lists the names of resources,
@@ -2432,9 +2923,8 @@ spec:
                                 type: object
                             type: object
                           rpkStatus:
-                            description: SideCarObj represents generic sidecar object.
-                              This is a placeholder for now as it may each sidecar
-                              entry may require more specific impl.
+                            description: SideCarObj represents a generic sidecar object.
+                              This is a placeholder for now.
                             properties:
                               SecurityContext:
                                 description: SecurityContext holds security configuration
@@ -2687,16 +3177,24 @@ spec:
                             type: object
                         type: object
                       skipChown:
+                        description: Specifies whether to skip the changing of file
+                          ownership (chown) during Pod initialization.
                         type: boolean
                       startupProbe:
-                        description: StartupProbe is a top-level field of the values
-                          file
+                        description: Configures the startup probe to determine when
+                          the Redpanda application within the Pod has started successfully.
                         properties:
                           failureThreshold:
+                            description: Determines the failure threshold to mark
+                              the application in the Pod as not started.
                             type: integer
                           initialDelaySeconds:
+                            description: Specifies the delay in seconds before the
+                              startup probe begins.
                             type: integer
                           periodSeconds:
+                            description: Sets the period in seconds for conducting
+                              subsequent probes.
                             type: integer
                         required:
                         - failureThreshold
@@ -2704,8 +3202,14 @@ spec:
                         - periodSeconds
                         type: object
                       terminationGracePeriodSeconds:
+                        description: Specifies the termination grace period in seconds
+                          to control the time delay before forcefully terminating
+                          a Pod.
                         type: integer
                       tolerations:
+                        description: Applies tolerations to allow Pods to be scheduled
+                          on nodes with matching taints, enabling control over where
+                          Pods can run.
                         items:
                           description: The pod this Toleration is attached to tolerates
                             any taint that matches the triple <key,value,effect> using
@@ -2747,14 +3251,20 @@ spec:
                           type: object
                         type: array
                       topologySpreadConstraints:
-                        description: TopologySpreadConstraints is a top-level field
-                          of the values file
+                        description: Defines topology spread constraints to control
+                          how Pods are spread across different topology domains.
                         properties:
                           maxSkew:
+                            description: Defines the maximum skew between the number
+                              of Pods in any two topology domains.
                             type: integer
                           topologyKey:
+                            description: Specifies the topology key to use for spreading
+                              Pods.
                             type: string
                           whenUnsatisfiable:
+                            description: Sets the policy for how to handle unsatisfiable
+                              constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
                             type: string
                         required:
                         - maxSkew
@@ -2762,143 +3272,227 @@ spec:
                         - whenUnsatisfiable
                         type: object
                       updateStrategy:
-                        description: UpdateStrategy is a top-level field of the values
-                          file
+                        description: Defines the update strategy for the StatefulSet
+                          to manage how updates are rolled out to the Pods.
                         properties:
                           type:
+                            description: Defines the strategy type for updating the
+                              StatefulSet, such as `RollingUpdate` or `OnDelete`.
                             type: string
                         required:
                         - type
                         type: object
                     type: object
                   storage:
-                    description: Storage is a top-level field of the values file
+                    description: Defines storage settings for the Redpanda data directory
+                      and the Tiered Storage cache.
                     properties:
                       hostPath:
+                        description: Specifies the absolute path on the worker node
+                          to store the Redpanda data directory. If unspecified, then
+                          an `emptyDir` volume is used. If specified but `persistentVolume.enabled`
+                          is true, `storage.hostPath` has no effect.
                         type: string
                       persistentVolume:
-                        description: PersistentVolume is a top-level field of the
-                          values file
+                        description: Configures a PersistentVolumeClaim (PVC) template
+                          to create for each Pod. This PVC is used to store the Redpanda
+                          data directory.
                         properties:
                           annotations:
                             additionalProperties:
                               type: string
+                            description: Adds annotations to the PersistentVolumeClaims
+                              to provide additional information or metadata that can
+                              be used by other tools or libraries.
                             type: object
                           enabled:
+                            description: Specifies whether to enable the Helm chart
+                              to create PersistentVolumeClaims for Pods.
                             type: boolean
                           labels:
                             additionalProperties:
                               type: string
+                            description: Applies labels to the PersistentVolumeClaims
+                              to facilitate identification and selection based on
+                              custom criteria.
                             type: object
                           size:
+                            description: Specifies the storage capacity required.
                             type: string
                           storageClass:
+                            description: Specifies the StorageClass for the PersistentVolumeClaims
+                              to determine how PersistentVolumes are provisioned and
+                              managed.
                             type: string
                         type: object
                       tiered:
+                        description: Configures storage for the Tiered Storage cache.
                         properties:
                           config:
-                            description: TieredConfig is a top-level field of the
-                              values file
+                            description: Configures Tiered Storage, which requires
+                              an Enterprise license configured in `enterprise.licenseKey`
+                              or `enterprised.licenseSecretRef`.
                             properties:
                               cloud_storage_api_endpoint:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
                                 type: string
                               cloud_storage_api_endpoint_port:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
                                 type: integer
                               cloud_storage_bucket:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
                                 type: string
                               cloud_storage_cache_check_interval:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
                                 type: integer
                               cloud_storage_cache_directory:
+                                description: See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
                                 type: string
                               cloud_storage_cache_size:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
                                 type: string
                               cloud_storage_credentials_source:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
                                 type: string
                               cloud_storage_disable_tls:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
                                 type: boolean
                               cloud_storage_enable_remote_read:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
                                 type: boolean
                               cloud_storage_enable_remote_write:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
                                 type: boolean
                               cloud_storage_enabled:
+                                description: Enables Tiered Storage if a license key
+                                  is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
                                 type: string
                               cloud_storage_initial_backoff_ms:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
                                 type: integer
                               cloud_storage_manifest_upload_timeout_ms:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
                                 type: integer
                               cloud_storage_max_connection_idle_time_ms:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
                                 type: integer
                               cloud_storage_max_connections:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
                                 type: integer
                               cloud_storage_reconciliation_interval_ms:
+                                description: 'Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.'
                                 type: integer
                               cloud_storage_region:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
                                 type: string
                               cloud_storage_segment_max_upload_interval_sec:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
                                 type: integer
                               cloud_storage_segment_upload_timeout_ms:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
                                 type: integer
                               cloud_storage_trust_file:
+                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
                                 type: string
                               cloud_storage_upload_ctrl_d_coeff:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_max_shares:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_min_shares:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_p_coeff:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_update_interval_ms:
+                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
                                 type: integer
                             required:
                             - cloud_storage_bucket
                             - cloud_storage_region
                             type: object
                           hostPath:
+                            description: Specifies the absolute path on the worker
+                              node to store the Tiered Storage cache.
                             type: string
                           mountType:
+                            description: "mountType can be one of: \n - `none`: Does
+                              not mount a volume. Tiered storage will use the same
+                              volume as the one defined for the Redpanda data directory.
+                              - `hostPath`: Uses the path specified in `hostPath`
+                              on the worker node that the Pod is running on. - `emptyDir`:
+                              Mounts an empty directory every time the Pod starts.
+                              - `persistentVolume`: Creates and mounts a PersistentVolumeClaim
+                              using the template defined in `persistentVolume`."
                             type: string
                           persistentVolume:
-                            description: TieredStoragePersistentVolume is a top-level
-                              field of the values file
+                            description: Configures a PersistentVolumeClaim (PVC)
+                              template to create for each Pod. This PVC is used to
+                              store the Tiered Storage cache.
                             properties:
                               annotations:
                                 additionalProperties:
                                   type: string
+                                description: Adds annotations to the PersistentVolumeClaims
+                                  to provide additional information or metadata that
+                                  can be used by other tools or libraries.
                                 type: object
                               labels:
                                 additionalProperties:
                                   type: string
+                                description: Applies labels to the PersistentVolumeClaims
+                                  to facilitate identification and selection based
+                                  on custom criteria.
                                 type: object
                               storageClass:
+                                description: Specifies the StorageClass for the PersistentVolumeClaims
+                                  to determine how PersistentVolumes are provisioned
+                                  and managed.
                                 type: string
                             type: object
                         type: object
                     type: object
                   tls:
-                    description: TLS is a top-level field of the values file
+                    description: Defines TLS settings for listeners.
                     properties:
                       certs:
                         additionalProperties:
+                          description: Certificate configures TLS certificates.
                           properties:
                             caEnabled:
+                              description: Specifies whether to include the `ca.crt`
+                                file in the trust stores of all listeners. Set to
+                                `true` only for certificates that are not authenticated
+                                using public certificate authorities (CAs).
                               type: boolean
                             duration:
+                              description: Specifies the validity duration of certificates
+                                generated with `issuerRef`.
                               type: string
                             issuerRef:
+                              description: Specify the name of an existing Issuer
+                                or ClusterIssuer resource to use to generate certificates.
+                                Requires cert-manager. See https://cert-manager.io/v1.1-docs.
                               properties:
                                 kind:
+                                  description: Specifies the kind of resource. One
+                                    of `Issuer` or `ClusterIssuer`.
                                   type: string
                                 name:
+                                  description: Specifies the name of the resource.
                                   type: string
                               required:
                               - kind
                               - name
                               type: object
                             secretRef:
+                              description: Specify the name of an existing Secret
+                                resource that contains your TLS certificate.
                               properties:
                                 name:
+                                  description: Specifies the name of the Secret resource.
                                   type: string
                               required:
                               - name
@@ -2906,13 +3500,20 @@ spec:
                           required:
                           - caEnabled
                           type: object
+                        description: Lists all available certificates in the cluster.
+                          You can reference a specific certificate’s name in each
+                          listener’s `listeners.<listener name>.tls.cert` setting.
                         type: object
                       enabled:
+                        description: Enables TLS globally for all listeners. Each
+                          listener must include a certificate name in its `<listener>.tls`
+                          object. To allow you to enable TLS for individual listeners,
+                          certificates are always loaded, even if TLS is disabled.
                         type: boolean
                     type: object
                   tolerations:
-                    description: Tolerations is the override to give your redpanda
-                      release
+                    description: Specifies tolerations to allow Pods to be scheduled
+                      onto nodes where they otherwise wouldn’t.
                     items:
                       description: The pod this Toleration is attached to tolerates
                         any taint that matches the triple <key,value,effect> using
@@ -2953,17 +3554,27 @@ spec:
                       type: object
                     type: array
                   tuning:
-                    description: Tuning is a top-level field of the values file
+                    description: Defines settings for the autotuner tool in Redpanda.
+                      The autotuner identifies the hardware configuration in the container
+                      and optimizes the Linux kernel to give you the best performance.
                     properties:
                       ballast_file_path:
+                        description: Specifies the file path for ballast file. A ballast
+                          file is an empty file that takes up disk space. If Redpanda
+                          runs out of disk space and becomes unavailable, you can
+                          delete the ballast file as a last resort. This clears up
+                          some space and gives you time to delete topics or records
+                          and change your retention properties.
                         type: string
                       ballast_file_size:
+                        description: Defines the size of the ballast file.
                         type: string
                       extraVolumeMounts:
+                        description: Configures additional volume mounts for the Pod.
                         type: string
                       resources:
-                        description: ResourceRequirements describes the compute resource
-                          requirements.
+                        description: Sets resource requirements such as CPU and memory
+                          limits.
                         properties:
                           claims:
                             description: "Claims lists the names of resources, defined
@@ -3012,12 +3623,20 @@ spec:
                             type: object
                         type: object
                       tune_aio_events:
+                        description: Specifies whether to increase the number of allowed
+                          asynchronous IO events.
                         type: boolean
                       tune_ballast_file:
+                        description: Specifies whether to create the ballast file.
                         type: boolean
                       tune_clocksource:
+                        description: Specifies whether to synchronize NTP.
                         type: boolean
                       well_known_io:
+                        description: Specifies the vendor, VM type, and storage device
+                          type that Redpanda runs on, in the format <vendor>:<vm>:<storage>.
+                          This hints to Redpanda which configuration values it should
+                          use for the Redpanda IO scheduler.
                         type: string
                     type: object
                 type: object
@@ -3065,7 +3684,7 @@ spec:
                 type: object
             type: object
           status:
-            description: RedpandaStatus defines the observed state of Redpanda
+            description: Represents the current status of the Redpanda cluster.
             properties:
               conditions:
                 description: Conditions holds the conditions for the Redpanda.
@@ -3166,7 +3785,7 @@ spec:
                   be detected.
                 type: string
               observedGeneration:
-                description: ObservedGeneration is the last observed generation.
+                description: Specifies the last observed generation.
                 format: int64
                 type: integer
               upgradeFailures:
