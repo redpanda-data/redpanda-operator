@@ -670,7 +670,7 @@ func setAdditionalAdvertisedListeners(externalListenerName string, advListeners 
 	var serverTLSCfg *config.ServerTLS
 	for i := 0; i < len(*tlsCfgs); i++ {
 		tlsCfg := &(*tlsCfgs)[i]
-		if tlsCfg.Name == resources.PandaproxyPortExternalName {
+		if tlsCfg.Name == externalListenerName {
 			serverTLSCfg = tlsCfg
 			break
 		}
