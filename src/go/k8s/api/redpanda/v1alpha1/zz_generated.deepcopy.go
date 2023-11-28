@@ -1400,11 +1400,6 @@ func (in *RedpandaConnectors) DeepCopyInto(out *RedpandaConnectors) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.Deployment != nil {
-		in, out := &in.Deployment, &out.Deployment
-		*out = new(ConnectorsCreateObj)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Test != nil {
 		in, out := &in.Test, &out.Test
 		*out = new(ConnectorsCreateObj)
@@ -1417,6 +1412,65 @@ func (in *RedpandaConnectors) DeepCopyInto(out *RedpandaConnectors) {
 	}
 	if in.Connectors != nil {
 		in, out := &in.Connectors, &out.Connectors
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Deployment != nil {
+		in, out := &in.Deployment, &out.Deployment
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.NameOverride != nil {
+		in, out := &in.NameOverride, &out.NameOverride
+		*out = new(string)
+		**out = **in
+	}
+	if in.FullNameOverride != nil {
+		in, out := &in.FullNameOverride, &out.FullNameOverride
+		*out = new(string)
+		**out = **in
+	}
+	if in.CommonLabels != nil {
+		in, out := &in.CommonLabels, &out.CommonLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.Tolerations != nil {
+		in, out := &in.Tolerations, &out.Tolerations
+		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.Image != nil {
+		in, out := &in.Image, &out.Image
+		*out = new(RedpandaImage)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
+	if in.Auth != nil {
+		in, out := &in.Auth, &out.Auth
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Container != nil {
+		in, out := &in.Container, &out.Container
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Storage != nil {
+		in, out := &in.Storage, &out.Storage
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Logging != nil {
+		in, out := &in.Logging, &out.Logging
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
