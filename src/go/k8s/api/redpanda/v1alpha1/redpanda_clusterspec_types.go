@@ -240,16 +240,9 @@ type RedpandaConnectors struct {
 	Test *ConnectorsCreateObj `json:"test,omitempty"`
 	// Specifies monitoring resources
 	Monitoring *ConnectorMonitoring `json:"monitoring,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// Connectors specified manual configurations
-	Connectors *Connectors `json:"connectors,omitempty"`
-}
-
-// Connectors
-type Connectors struct {
-	// The port on which the Kafka Connect REST API listens. The API is used for administrative tasks.
-	RestPort *int32 `json:"restPort,omitempty"`
-	// A comma-separated list of Redpanda broker addresses in the format of IP:Port or DNS:Port. Kafka Connect uses this to connect to the Redpanda/Kafka cluster.
-	BootstrapServers *string `json:"bootstrapServers,omitempty"`
+	Connectors *runtime.RawExtension `json:"connectors,omitempty"`
 }
 
 // ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
