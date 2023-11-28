@@ -228,7 +228,7 @@ type RedpandaConsole struct {
 // ConsoleCreateObj represents configuration options for creating Kubernetes objects such as ConfigMaps, Secrets, and Deployments.
 type ConsoleCreateObj struct {
 	// Indicates whether the corresponding Kubernetes object (ConfigMap, Secret, or Deployment) should be created.
-	Create bool `json:"create"`
+	Create bool `json:"create,omitempty"`
 }
 
 // RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a package that includes Kafka Connect and built-in connectors, sometimes known as plugins. See https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/k-deploy-connectors/.
@@ -240,6 +240,16 @@ type RedpandaConnectors struct {
 	Test *ConnectorsCreateObj `json:"test,omitempty"`
 	// Specifies monitoring resources
 	Monitoring *ConnectorMonitoring `json:"monitoring,omitempty"`
+	// Connectors specified manual configurations
+	Connectors *Connectors `json:"connectors,omitempty"`
+}
+
+// Connectors
+type Connectors struct {
+	// The port on which the Kafka Connect REST API listens. The API is used for administrative tasks.
+	RestPort *int32 `json:"restPort,omitempty"`
+	// A comma-separated list of Redpanda broker addresses in the format of IP:Port or DNS:Port. Kafka Connect uses this to connect to the Redpanda/Kafka cluster.
+	BootstrapServers *string `json:"bootstrapServers,omitempty"`
 }
 
 // ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
