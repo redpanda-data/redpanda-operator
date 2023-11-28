@@ -11,6 +11,7 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -38,6 +39,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 var _ Resource = &StatefulSetResource{}
@@ -75,6 +77,9 @@ var (
 
 	// terminationGracePeriodSeconds should account for additional delay introduced by hooks
 	terminationGracePeriodSeconds int64 = 120
+
+	// additionalListenerCfgNames contains the list of the listener names supported in additionalConfiguration.
+	additionalListenerCfgNames = []string{"redpanda.kafka_api", "redpanda.advertised_kafka_api", "pandaproxy.pandaproxy_api", "pandaproxy.advertised_pandaproxy_api"}
 )
 
 // ConfiguratorSettings holds settings related to configurator container and deployment
@@ -466,7 +471,7 @@ func (r *StatefulSetResource) obj(
 									Name:  "VALIDATE_MOUNTED_VOLUME",
 									Value: strconv.FormatBool(r.pandaCluster.Spec.InitialValidationForVolume != nil && *r.pandaCluster.Spec.InitialValidationForVolume),
 								},
-							}, r.pandaproxyEnvVars()...),
+							}, append(r.pandaproxyEnvVars(), r.AdditionalListenersEnvVars()...)...),
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  ptr.To(int64(userID)),
 								RunAsGroup: ptr.To(int64(groupID)),
@@ -878,6 +883,82 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 		return ports
 	}
 
+	ports = append(ports, r.GetPortsForListenersInAdditionalConfig()...)
+
+	return ports
+}
+
+// AdditionalListenersEnvVars returns the env var containing the additioanl listeners specified in additionalConfiguration.
+func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
+	if len(r.pandaCluster.Spec.AdditionalConfiguration) == 0 {
+		return nil
+	}
+
+	cfg := map[string]string{}
+	for _, k := range additionalListenerCfgNames {
+		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
+			cfg[k] = v
+		}
+	}
+	if len(cfg) == 0 {
+		return nil
+	}
+	jsonStr, err := json.Marshal(cfg)
+	if err != nil {
+		return nil
+	}
+	return []corev1.EnvVar{{
+		Name:  "ADDITIONAL_LISTENERS",
+		Value: string(jsonStr),
+	}}
+}
+
+// GetPortsForListenersInAdditionalConfig gets the ports for the additional listeners and advertised APIs set in addtionalConfiguration.
+// - redpanda.kafka_api
+// - redpanda.advertised_kafka_api
+// - pandaproxy.pandaproxy_api
+// - pandaproxy.advertised_pandaproxy_api
+// example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
+// example: redpanda.advertised_kafka_api: "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cluster123.fmc.prd.cloud.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
+func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
+	ports := []corev1.ContainerPort{}
+
+	if len(r.pandaCluster.Spec.AdditionalConfiguration) == 0 {
+		return ports
+	}
+
+	additionalNode0Config := &config.Config{}
+	for _, k := range additionalListenerCfgNames {
+		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
+			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy"), false)
+			if err != nil {
+				r.logger.Error(err, "failed to evaluate template", "template", v)
+				continue
+			}
+			err = additionalNode0Config.Set(k, res, "")
+			if err != nil {
+				r.logger.Error(err, "failed to set node config", k, v)
+				continue
+			}
+		}
+	}
+
+	for i := 0; i < int(*r.pandaCluster.Spec.Replicas); i++ {
+		for _, n := range additionalNode0Config.Redpanda.AdvertisedKafkaAPI {
+			ports = append(ports, corev1.ContainerPort{
+				Name:          n.Name,
+				ContainerPort: int32(n.Port + i),
+			})
+		}
+		if additionalNode0Config.Pandaproxy != nil {
+			for _, n := range additionalNode0Config.Pandaproxy.AdvertisedPandaproxyAPI {
+				ports = append(ports, corev1.ContainerPort{
+					Name:          n.Name,
+					ContainerPort: int32(n.Port + i),
+				})
+			}
+		}
+	}
 	return ports
 }
 

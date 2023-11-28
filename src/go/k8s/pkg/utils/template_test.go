@@ -20,9 +20,10 @@ import (
 func TestTemplateGen(t *testing.T) {
 	data := utils.NewEndpointTemplateData(2, "1.1.1.1")
 	tests := []struct {
-		tmpl     string
-		expected string
-		error    bool
+		tmpl                 string
+		endpointContainsPort bool
+		expected             string
+		error                bool
 	}{
 		{
 			tmpl:     "",
@@ -56,11 +57,21 @@ func TestTemplateGen(t *testing.T) {
 			tmpl:  "{{.Index}}-",
 			error: true, // invalid end character
 		},
+		{
+			tmpl:                 "'address': '{{.Index}}-{{.HostIP | sha256sum | substr 0 8}}.redpanda.com', 'port': {{39002 | add .Index}}",
+			expected:             "'address': '2-f1412386.redpanda.com', 'port': 39004",
+			endpointContainsPort: true,
+		},
+		{
+			tmpl:                 "'address': '{{.Index}}-{{.HostIP | sha256sum | substr 0 8}}.redpanda.com', 'port': {{30092 | add (.Index | sub .Index )}}",
+			expected:             "'address': '2-f1412386.redpanda.com', 'port': 30092",
+			endpointContainsPort: true,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.tmpl, func(t *testing.T) {
-			res, err := utils.ComputeEndpoint(tc.tmpl, data)
+			res, err := utils.Compute(tc.tmpl, data, !tc.endpointContainsPort)
 			assert.Equal(t, tc.expected, res)
 			if tc.error {
 				assert.Error(t, err)

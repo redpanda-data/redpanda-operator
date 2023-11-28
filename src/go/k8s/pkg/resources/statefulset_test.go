@@ -12,6 +12,7 @@ package resources_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -761,6 +762,143 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("StatefulSetResource.IsManagedDecommission() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
+	var logger logr.Logger
+	var replicas int32 = 3
+	tests := []struct {
+		name                   string
+		pandaCluster           *vectorizedv1alpha1.Cluster
+		expectedContainerPorts []int32
+	}{
+		{
+			name: "no kafka listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas:                &replicas,
+					AdditionalConfiguration: map[string]string{},
+				},
+			},
+			expectedContainerPorts: []int32{},
+		},
+		{
+			name: "additional kafka listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas: &replicas,
+					AdditionalConfiguration: map[string]string{
+						"redpanda.advertised_kafka_api": "[{'name':'private-link','address':'0.0.0.0','port': {{30092 | add .Index}}}]",
+					},
+				},
+			},
+			expectedContainerPorts: []int32{30092, 30093, 30094},
+		},
+		{
+			name: "additional panda proxy listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas: &replicas,
+					AdditionalConfiguration: map[string]string{
+						"redpanda.advertised_kafka_api":        "[{'name':'private-link','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
+						"pandaproxy.advertised_pandaproxy_api": "[{'name':'private-link','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
+					},
+				},
+			},
+			expectedContainerPorts: []int32{30092, 30093, 30094, 39282, 39283, 39284},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := resources.NewStatefulSet(nil,
+				tt.pandaCluster,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				logger,
+				time.Hour)
+			containerPorts := r.GetPortsForListenersInAdditionalConfig()
+			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
+			for _, cp := range containerPorts {
+				found := false
+				for _, p := range tt.expectedContainerPorts {
+					if cp.ContainerPort == p {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found)
+			}
+		})
+	}
+}
+
+func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
+	var logger logr.Logger
+	var replicas int32 = 3
+	tests := []struct {
+		name             string
+		pandaCluster     *vectorizedv1alpha1.Cluster
+		expectedEnvValue string
+	}{
+		{
+			name: "no additional listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas:                &replicas,
+					AdditionalConfiguration: map[string]string{},
+				},
+			},
+			expectedEnvValue: "",
+		},
+		{
+			name: "additional kafka listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas: &replicas,
+					AdditionalConfiguration: map[string]string{
+						"redpanda.kafka_api": "[{'name': 'private-link', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
+					},
+				},
+			},
+			expectedEnvValue: `{"redpanda.kafka_api":"[{'name': 'private-link', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]"}`,
+		},
+		{
+			name: "additional listeners have all",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Replicas: &replicas,
+					AdditionalConfiguration: map[string]string{
+						"redpanda.kafka_api":                   "[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
+						"redpanda.advertised_kafka_api":        "[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
+						"pandaproxy.pandaproxy_api":            "[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
+						"pandaproxy.advertised_pandaproxy_api": "[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s","%s":"%s"}`,
+				"pandaproxy.advertised_pandaproxy_api", "[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
+				"pandaproxy.pandaproxy_api", "[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
+				"redpanda.advertised_kafka_api", "[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
+				"redpanda.kafka_api", "[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := resources.NewStatefulSet(nil,
+				tt.pandaCluster,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				logger,
+				time.Hour)
+			envs := r.AdditionalListenersEnvVars()
+
+			if tt.expectedEnvValue == "" {
+				assert.Nil(t, envs)
+			} else {
+				assert.Equal(t, "ADDITIONAL_LISTENERS", envs[0].Name)
+				assert.Equal(t, tt.expectedEnvValue, envs[0].Value)
 			}
 		})
 	}
