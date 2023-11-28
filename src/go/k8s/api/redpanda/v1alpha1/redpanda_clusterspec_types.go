@@ -238,6 +238,8 @@ type RedpandaConnectors struct {
 	Deployment *ConnectorsCreateObj `json:"deployment,omitempty"`
 	// Specifies whether to create Helm tests.
 	Test *ConnectorsCreateObj `json:"test,omitempty"`
+	// Specifies monitoring resources
+	Monitoring *ConnectorMonitoring `json:"monitoring,omitempty"`
 }
 
 // ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
@@ -875,17 +877,31 @@ type SetTieredStorageCacheDirOwnership struct {
 // Monitoring configures monitoring resources for Redpanda. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
 type Monitoring struct {
 	// Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics.
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Adds custom labels to the ServiceMonitor resource.
 	Labels map[string]string `json:"commonLabels,omitempty"`
 	// Specifies how often to scrape metrics.
 	ScrapeInterval *string `json:"scrapeInterval,omitempty"`
 }
 
+// ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
+type ConnectorMonitoring struct {
+	// Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics.
+	Enabled bool `json:"enabled,omitempty"`
+	// Adds custom labels to the ServiceMonitor resource.
+	Labels map[string]string `json:"commonLabels,omitempty"`
+	// Specifies how often to scrape metrics.
+	ScrapeInterval *string `json:"scrapeInterval,omitempty"`
+	// Adds custom Annotations to the ServiceMonitor resource.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// Adds custom namespaceSelector to monitoring resources
+	NamespaceSelector map[string]string `json:"namespaceSelector,omitempty"`
+}
+
 // ExternalDNS configures externalDNS.
 type ExternalDNS struct {
 	// Specifies whether externalDNS annotations are added to LoadBalancer Services. If you enable externalDns, each LoadBalancer Service defined in `external.type` will be annotated with an external-dns hostname that matches `external.addresses[i]`.`external.domain`.
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // SideCarObj represents a generic sidecar object. This is a placeholder for now.
