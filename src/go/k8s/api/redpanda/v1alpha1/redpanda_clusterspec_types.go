@@ -890,18 +890,29 @@ type InitContainers struct {
 	SetDataDirOwnership *SetDataDirOwnership `json:"setDataDirOwnership,omitempty"`
 	// Defines the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
 	SetTieredStorageCacheDirOwnership *SetTieredStorageCacheDirOwnership `json:"setTieredStorageCacheDirOwnership,omitempty"`
+	// Defines the setting for init container that not allow to start Redpanda until filesystem matches
+	FsValidator *FsValidator `json:"fsValidator,omitempty"`
 	// Defines settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance.
 	Tuning *Tuning `json:"tuning,omitempty"`
 }
 
+type FsValidator struct {
+	Enabled    *bool   `json:"enabled,omitempty"`
+	ExpectedFS *string `json:"expectedFS,omitempty"`
+	// Adds extra volume mounts.
+	ExtraVolumeMounts *string `json:"extraVolumeMounts,omitempty"`
+	// Specifies the resource requirements.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
 type Configurator struct {
-	ExtraVolumeMounts string                       `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
 type SetTieredStorageCacheDirOwnership struct {
-	ExtraVolumeMounts string                       `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
