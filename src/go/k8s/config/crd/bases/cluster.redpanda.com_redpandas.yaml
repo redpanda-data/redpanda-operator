@@ -202,18 +202,70 @@ spec:
                   connectors:
                     description: Defines Redpanda Connector settings.
                     properties:
-                      deployment:
-                        description: Specifies whether to create a Deployment resource.
-                          When `connectors.deployment.create` is `false`, the chart
-                          automatically configures and creates the Deployment resource
-                          to connect to your Redpanda cluster.
-                        properties:
-                          enabled:
-                            description: Specifies whether to create the resource.
-                            type: boolean
+                      auth:
+                        description: Specifies superuser credentials
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      commonLabels:
+                        additionalProperties:
+                          type: string
+                        description: Assigns custom labels to all resources generated
+                          by the Connector Helm chart. Specify labels as key/value
+                          pairs.
+                        type: object
+                      connectors:
+                        description: Connectors specified manual configurations
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      container:
+                        description: Specifies container information
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      deployment:
+                        description: Connectors specified manual configurations
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       enabled:
                         type: boolean
+                      fullnameOverride:
+                        description: Specifies a full custom name, which overrides
+                          the entire naming convention including release name and
+                          chart name.
+                        type: string
+                      image:
+                        description: Defines the container image settings to use for
+                          the Redpanda cluster.
+                        properties:
+                          pullPolicy:
+                            description: Specifies the strategy used for pulling images
+                              from the repository. For available values, see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy.
+                            type: string
+                          repository:
+                            description: Specifies the image repository to pull from.
+                            type: string
+                          tag:
+                            description: Specifies the image tag.
+                            type: string
+                        type: object
+                      imagePullSecrets:
+                        description: Specifies credentials for a private image repository.
+                          For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
+                        items:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      logging:
+                        description: Specifies logging details
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       monitoring:
                         description: Specifies monitoring resources
                         properties:
@@ -223,17 +275,17 @@ spec:
                             description: Adds custom Annotations to the ServiceMonitor
                               resource.
                             type: object
-                          commonLabels:
-                            additionalProperties:
-                              type: string
-                            description: Adds custom labels to the ServiceMonitor
-                              resource.
-                            type: object
                           enabled:
                             description: Specifies whether to create a ServiceMonitor
                               that can be used by Prometheus Operator or VictoriaMetrics
                               Operator to scrape the metrics.
                             type: boolean
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Adds custom labels to the ServiceMonitor
+                              resource.
+                            type: object
                           namespaceSelector:
                             additionalProperties:
                               type: string
@@ -244,6 +296,14 @@ spec:
                             description: Specifies how often to scrape metrics.
                             type: string
                         type: object
+                      nameOverride:
+                        description: Specifies a custom name for the Redpanda Console
+                          resources, overriding the default naming convention.
+                        type: string
+                      storage:
+                        description: Specifies storage information
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       test:
                         description: Specifies whether to create Helm tests.
                         properties:
@@ -251,6 +311,50 @@ spec:
                             description: Specifies whether to create the resource.
                             type: boolean
                         type: object
+                      tolerations:
+                        description: Applies tolerations to allow Pods to be scheduled
+                          on nodes with matching taints, enabling control over where
+                          Pods can run.
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
                     type: object
                   console:
                     description: Defines Redpanda Console settings.
@@ -276,8 +380,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       console:
                         description: Configures custom settings for Redpanda Console.
@@ -292,8 +394,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       enabled:
                         description: Specifies whether the Redpanda Console subchart
@@ -392,8 +492,6 @@ spec:
                               object (ConfigMap, Secret, or Deployment) should be
                               created.
                             type: boolean
-                        required:
-                        - create
                         type: object
                       secretMounts:
                         description: Mounts additional Secret resources inside the
@@ -964,16 +1062,16 @@ spec:
                   monitoring:
                     description: Defines settings for monitoring Redpanda.
                     properties:
-                      commonLabels:
-                        additionalProperties:
-                          type: string
-                        description: Adds custom labels to the ServiceMonitor resource.
-                        type: object
                       enabled:
                         description: Specifies whether to create a ServiceMonitor
                           that can be used by Prometheus Operator or VictoriaMetrics
                           Operator to scrape the metrics.
                         type: boolean
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Adds custom labels to the ServiceMonitor resource.
+                        type: object
                       scrapeInterval:
                         description: Specifies how often to scrape metrics.
                         type: string
