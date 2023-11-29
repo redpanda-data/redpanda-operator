@@ -865,6 +865,8 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 		})
 	}
 
+	ports = append(ports, r.GetPortsForListenersInAdditionalConfig()...)
+
 	if len(r.nodePortSvc.Spec.Ports) > 0 {
 		for _, port := range r.nodePortSvc.Spec.Ports {
 			ports = append(ports, corev1.ContainerPort{
@@ -882,8 +884,6 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 		}
 		return ports
 	}
-
-	ports = append(ports, r.GetPortsForListenersInAdditionalConfig()...)
 
 	return ports
 }
@@ -946,20 +946,31 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 	for i := 0; i < int(*r.pandaCluster.Spec.Replicas); i++ {
 		for _, n := range additionalNode0Config.Redpanda.AdvertisedKafkaAPI {
 			ports = append(ports, corev1.ContainerPort{
-				Name:          n.Name,
+				Name:          getAdditionalListenerPortName(n.Name, i),
 				ContainerPort: int32(n.Port + i),
 			})
 		}
 		if additionalNode0Config.Pandaproxy != nil {
 			for _, n := range additionalNode0Config.Pandaproxy.AdvertisedPandaproxyAPI {
 				ports = append(ports, corev1.ContainerPort{
-					Name:          n.Name,
+					Name:          getAdditionalListenerPortName(n.Name, i),
 					ContainerPort: int32(n.Port + i),
 				})
 			}
 		}
 	}
 	return ports
+}
+
+// getAdditionalListenerPortName returns the name of container port for additional listener.
+// Container port name must be unique and its length can not exceed 15.
+func getAdditionalListenerPortName(listenerName string, podOrdinal int) string {
+	portName := fmt.Sprintf("%s%d", listenerName, podOrdinal)
+	s := 0
+	if len(portName) > 15 {
+		s = len(portName) - 15
+	}
+	return portName[s:]
 }
 
 func (r *StatefulSetResource) fullConfiguratorImage() string {

@@ -355,6 +355,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			assert.NoError(t, err)
 			validateListenerConfig(t, tt.expectedKafkaAPI, tt.nodeCfg.Redpanda.KafkaAPI, func(c config.NamedAuthNSocketAddress) string { return c.Name })
 			validateListenerConfig(t, tt.expectedAdvertisedKafkaAPI, tt.nodeCfg.Redpanda.AdvertisedKafkaAPI, func(c config.NamedSocketAddress) string { return c.Name })
+			validateListenerConfig(t, tt.expectedKafkaAPITLS, tt.nodeCfg.Redpanda.KafkaAPITLS, func(c config.ServerTLS) string { return c.Name })
 			if len(tt.expectedPandaProxyAPI) > 0 {
 				validateListenerConfig(t, tt.expectedPandaProxyAPI, tt.nodeCfg.Pandaproxy.PandaproxyAPI, func(c config.NamedAuthNSocketAddress) string { return c.Name })
 			}
