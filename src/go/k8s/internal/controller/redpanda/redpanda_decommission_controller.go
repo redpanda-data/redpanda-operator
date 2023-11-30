@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 	appsv1 "k8s.io/api/apps/v1"
@@ -44,6 +45,8 @@ const (
 	DecomConditionFalseReasonMsg   = "Decommission process is in waiting phase."
 	DecomConditionTrueReasonMsg    = "Decommission process is actively running."
 	DecomConditionUnknownReasonMsg = "Decommission process has completed or in an unknown state."
+
+	defaultReconciliation = time.Second * 30
 )
 
 var ConditionUnknown = appsv1.StatefulSetCondition{
@@ -55,6 +58,8 @@ var ConditionUnknown = appsv1.StatefulSetCondition{
 type DecommissionReconciler struct {
 	client.Client
 	OperatorMode bool
+
+	DecommissionWaitInterval time.Duration
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -92,7 +97,7 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 	switch decomCondition.Status {
 	case corev1.ConditionUnknown:
 		// we have been notified, check to see if we need to decommission
-		result, err = r.verifyIfNeedDecommission(ctx, sts)
+		result, err = r.verifyIfNeedDecommission(ctx, sts, log)
 	case corev1.ConditionFalse:
 		// we have verified we need to decommission, so we need to start, update the condition to do so
 		patch := client.MergeFrom(sts.DeepCopy())
@@ -120,6 +125,14 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 		result, err = r.reconcileDecommission(ctx, sts)
 	}
 
+	// Decommission status must be reconciled constantly
+	if result.RequeueAfter == 0 {
+		result.RequeueAfter = defaultReconciliation
+		if r.DecommissionWaitInterval != 0 {
+			result.RequeueAfter = r.DecommissionWaitInterval
+		}
+	}
+
 	// Log reconciliation duration
 	durationMsg := fmt.Sprintf("succesfull reconciliation finished in %s", time.Since(start).String())
 	if result.RequeueAfter > 0 {
@@ -144,9 +157,9 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 // 6. If we have this situation, we are most likely decommission since we have a signal of scaling, set condition and requeue
 // The requeue process at the end of the above process allows time the node to get enter maintenance mode.
 // nolint:funlen // the length is ok
-func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, sts *appsv1.StatefulSet) (ctrl.Result, error) {
-	log := ctrl.LoggerFrom(ctx).WithName("DecommissionReconciler.verifyIfNeedDecommission")
-	Infof(log, "verify if we need to decommission: %s/%s", sts.Namespace, sts.Name)
+func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (ctrl.Result, error) {
+	log = log.WithName("verifyIfNeedDecommission")
+	log.V(logger.DebugLevel).Info("verify if we need to decommission", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
 
 	namespace := sts.Namespace
 
@@ -156,7 +169,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 	// if helm is not managing it, move on.
 	if managedBy, ok := sts.Labels[K8sManagedByLabelKey]; managedBy != "Helm" || !ok {
-		Infof(log, "not managed by helm, moving on: managed-by: %s, ok: %t", managedBy, ok)
+		log.Info("not managed by helm", "managed-by", managedBy, "found-key", ok)
 		return ctrl.Result{}, nil
 	}
 
@@ -184,7 +197,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 	var releaseName string
 	if val, ok := sts.Labels[K8sInstanceLabelKey]; !ok || !isValidReleaseName(val, redpandaNameList) {
-		Infof(log, "could not find instance label or unable retrieve valid releaseName: %s", val)
+		log.Info("could not find instance label or unable retrieve valid releaseName", "release-name", val)
 		return ctrl.Result{}, nil
 	} else {
 		releaseName = val
@@ -204,7 +217,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 			return ctrl.Result{}, fmt.Errorf("could not retrieve sideCar state: %w", errGetBool)
 		}
 		if ok && enabledControllerSideCar {
-			log.Info("another controller has ownership, moving on ")
+			log.Info("another controller has ownership as side car controller is enabled, moving on")
 			return ctrl.Result{}, nil
 		}
 	}
@@ -221,13 +234,13 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 	// strange error case here
 	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
-		Infof(log, "requested replicas %q, or number of nodes registered %q are invalid, stopping reconciliation", requestedReplicas, health.AllNodes)
+		log.V(logger.DebugLevel).Info("stopping decommission verification reconciliation", "requested-replicas", requestedReplicas, "nodes-registered", health.AllNodes)
 		return ctrl.Result{}, nil
 	}
 
-	Debugf(log, "health is found to be %+v", health)
+	log.V(logger.DebugLevel).Info("cluster health", "health", health)
 
-	Infof(log, "all-nodes/requestedReps: %d/%d", len(health.AllNodes), int(requestedReplicas))
+	log.V(logger.DebugLevel).Info("current state", "nodes-registered-number", len(health.AllNodes), "statefulset-spec-replicas", int(requestedReplicas))
 	if len(health.AllNodes) > int(requestedReplicas) {
 		log.Info("we are downscaling, attempt to add condition with status false")
 		// we are in decommission mode, we should probably wait here some time to verify
@@ -249,7 +262,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 			if errPatch := r.Client.Status().Patch(ctx, sts, patch); errPatch != nil {
 				return ctrl.Result{}, fmt.Errorf("unable to update sts status %q with condition: %w", sts.Name, errPatch)
 			}
-			log.Info("Updating false condition successfully")
+			log.Info("updating false condition successfully", "new-condition", newCondition)
 		}
 
 		log.Info("we are entering decommission and updated conditions, waiting to begin")

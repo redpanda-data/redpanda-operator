@@ -440,8 +440,9 @@ func main() {
 
 		if runThisController(DecommissionController, additionalControllers) {
 			if err = (&redpandacontrollers.DecommissionReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: operatorMode,
+				Client:                   mgr.GetClient(),
+				OperatorMode:             operatorMode,
+				DecommissionWaitInterval: decommissionWaitInterval,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 				os.Exit(1)
@@ -466,8 +467,9 @@ func main() {
 
 		if runThisController(DecommissionController, additionalControllers) {
 			if err = (&redpandacontrollers.DecommissionReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: operatorMode,
+				Client:                   mgr.GetClient(),
+				OperatorMode:             operatorMode,
+				DecommissionWaitInterval: decommissionWaitInterval,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 				os.Exit(1)
