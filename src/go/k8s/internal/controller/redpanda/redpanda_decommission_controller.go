@@ -122,7 +122,7 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 	case corev1.ConditionTrue:
 		// condition updated to true, so we proceed to decommission
 		log.Info("decommission started")
-		result, err = r.reconcileDecommission(ctx, sts)
+		result, err = r.reconcileDecommission(ctx, log, sts)
 	}
 
 	// Decommission status must be reconciled constantly
@@ -222,7 +222,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 		}
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, valuesMap)
+	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminapi: %w", err)
 	}
@@ -287,15 +287,16 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 // 11. Finally, reset condition state to unknown if we have been successful so far.
 //
 //nolint:funlen // length looks good
-func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, sts *appsv1.StatefulSet) (ctrl.Result, error) {
-	log := ctrl.LoggerFrom(ctx).WithName("DecommissionReconciler.reconcileDecommission")
-	Infof(log, "reconciling: %s/%s", sts.Namespace, sts.Name)
+func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log logr.Logger, sts *appsv1.StatefulSet) (ctrl.Result, error) {
+	log = log.WithName("reconcileDecommission")
+
+	log.Info("reconciling", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
 
 	namespace := sts.Namespace
 
 	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
 	if !ok {
-		log.Info("could not find instance label to retrieve releaseName")
+		log.Info("could not find instance label to retrieve releaseName", "label", K8sInstanceLabelKey)
 		return ctrl.Result{}, nil
 	}
 
@@ -306,7 +307,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, sts 
 	// we have started decommission, but we want to requeue if we have not transitioned here. This should
 	// avoid decommissioning the wrong node (broker) id
 	if statusReplicas != requestedReplicas && sts.Status.UpdatedReplicas == 0 {
-		log.Info("have not finished terminating and restarted largest ordinal, requeue here")
+		log.Info("have not finished terminating and restarted largest ordinal, requeue here", "statusReplicas", statusReplicas, "availableReplicas", availableReplicas)
 		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
 
@@ -322,7 +323,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, sts 
 		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, valuesMap)
+	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminAPI: %w", err)
 	}
@@ -353,34 +354,49 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, sts 
 			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 		}
 
+		nodesDownMap := map[int]any{}
+		for _, node := range health.NodesDown {
+			nodesDownMap[node] = struct{}{}
+		}
+
 		// perform decommission on down down-nodes but only if down nodes match count of all-nodes-replicas
 		// the greater case takes care of the situation where we may also have additional ids here.
 		if len(health.NodesDown) >= (len(health.AllNodes) - int(requestedReplicas)) {
-			// TODO guard against intermittent situations where a node is coming up after it being brought down
-			// how do we get a signal of this, it would be easy if we can compare previous situation
-			for i := range health.NodesDown {
-				item := health.NodesDown[i]
+			for podOrdinal := 0; podOrdinal < int(requestedReplicas); podOrdinal++ {
+				singleNodeAdminAPI, buildErr := buildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
+				if buildErr == nil {
+					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
+					continue
+				}
+				nodeCfg, nodeErr := singleNodeAdminAPI.GetNodeConfig(ctx)
+				if nodeErr != nil {
+					log.Error(nodeErr, "getting node configuration", "pod-ordinal", podOrdinal)
+					return ctrl.Result{}, fmt.Errorf("getting node configuration from pod (%d): %w", podOrdinal, nodeErr)
+				}
+				delete(nodesDownMap, nodeCfg.NodeID)
+			}
 
+			for nodeID := range nodesDownMap {
 				// Now we check the decommission status before continuing
 				doDecommission := false
-				status, decommStatusError := adminAPI.DecommissionBrokerStatus(ctx, item)
+				status, decommStatusError := adminAPI.DecommissionBrokerStatus(ctx, nodeID)
 				if decommStatusError != nil {
-					Infof(log, "error found for decommission status: %s", decommStatusError.Error())
+					log.Info("found for decommission status error", "decommStatusError", decommStatusError)
 					// nolint:gocritic // no need for a switch, this is ok
 					if strings.Contains(decommStatusError.Error(), "is not decommissioning") {
 						doDecommission = true
 					} else if strings.Contains(decommStatusError.Error(), "does not exists") {
-						Infof(log, "nodeID %d does not exist, skipping: %s", item, decommStatusError.Error())
+						log.Info("nodeID does not exist, skipping", "nodeID", nodeID, "decommStatusError", decommStatusError)
 					} else {
 						errList = errors.Join(errList, fmt.Errorf("could get decommission status of broker: %w", decommStatusError))
 					}
 				}
-				Debugf(log, "decommission status: %v", status)
+				log.V(logger.DebugLevel).Info("decommission status", "status", status)
 
 				if doDecommission {
-					Infof(log, "all checks pass, attempting to decommission: %d", item)
+					log.Info("all checks pass, attempting to decommission", "nodeID", nodeID)
 					// we want a clear signal to avoid 400s here, the suspicion here is an invalid transitional state
-					decomErr := adminAPI.DecommissionBroker(ctx, item)
+					decomErr := adminAPI.DecommissionBroker(ctx, nodeID)
 					if decomErr != nil && !strings.Contains(decomErr.Error(), "failed: Not Found") && !strings.Contains(decomErr.Error(), "failed: Bad Request") {
 						errList = errors.Join(errList, fmt.Errorf("could not decommission broker: %w", decomErr))
 					}
@@ -563,7 +579,7 @@ func isNameInList(name string, keys []string) bool {
 	return false
 }
 
-func buildAdminAPI(releaseName, namespace string, replicas int32, values map[string]interface{}) (*admin.AdminAPI, error) {
+func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *int, values map[string]interface{}) (*admin.AdminAPI, error) {
 	tlsEnabled, ok, err := unstructured.NestedBool(values, "tls", "enabled")
 	if !ok || err != nil {
 		// probably not a correct helm release, bail
@@ -586,7 +602,7 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, values map[str
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	urls, err := createBrokerURLs(releaseName, namespace, replicas, values)
+	urls, err := createBrokerURLs(releaseName, namespace, replicas, podOrdinal, values)
 	if err != nil {
 		return nil, fmt.Errorf("could not create broker url: %w", err)
 	}
@@ -595,7 +611,7 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, values map[str
 	return admin.NewAdminAPI(urls, admin.BasicCredentials{}, tlsConfig)
 }
 
-func createBrokerURLs(release, namespace string, replicas int32, values map[string]interface{}) ([]string, error) {
+func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, values map[string]interface{}) ([]string, error) {
 	brokerList := make([]string, 0)
 
 	fullnameOverride, ok, err := unstructured.NestedString(values, "fullnameOverride")
@@ -621,8 +637,12 @@ func createBrokerURLs(release, namespace string, replicas int32, values map[stri
 		return brokerList, fmt.Errorf("could not retrieve clusterDomain: %s; error: %w", domain, err)
 	}
 
-	for i := 0; i < int(replicas); i++ {
-		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, i, serviceName, namespace, domain, port))
+	if ordinal == nil {
+		for i := 0; i < int(replicas); i++ {
+			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, i, serviceName, namespace, domain, port))
+		}
+	} else {
+		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, *ordinal, serviceName, namespace, domain, port))
 	}
 
 	return brokerList, nil
