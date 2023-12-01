@@ -713,6 +713,7 @@ spec:
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
+                            nullable: true
                             type: object
                           port:
                             description: Specifies the container port number for the
@@ -739,6 +740,8 @@ spec:
                                   TLS credentials for the listener.
                                 type: string
                             type: object
+                        required:
+                        - external
                         type: object
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
@@ -793,6 +796,7 @@ spec:
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
+                            nullable: true
                             type: object
                           kafkaEndpoint:
                             description: Configures the listener to use for HTTP connections.
@@ -830,6 +834,8 @@ spec:
                                   TLS credentials for the listener.
                                 type: string
                             type: object
+                        required:
+                        - external
                         type: object
                       kafka:
                         description: Configures settings for the Kafka API listeners.
@@ -881,6 +887,7 @@ spec:
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
+                            nullable: true
                             type: object
                           port:
                             description: Specifies the container port number for the
@@ -914,6 +921,8 @@ spec:
                                   TLS credentials for the listener.
                                 type: string
                             type: object
+                        required:
+                        - external
                         type: object
                       rpc:
                         description: Configures settings for the RPC API listener.
@@ -998,6 +1007,7 @@ spec:
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
+                            nullable: true
                             type: object
                           kafkaEndpoint:
                             description: Configures the listener to use for HTTP connections.
@@ -1028,6 +1038,8 @@ spec:
                                   TLS credentials for the listener.
                                 type: string
                             type: object
+                        required:
+                        - external
                         type: object
                     type: object
                   logging:

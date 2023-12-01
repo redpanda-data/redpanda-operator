@@ -715,8 +715,9 @@ type ExternalListener struct {
 
 // Admin configures settings for the Admin API listeners.
 type Admin struct {
+	// +nullable
 	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external"`
 	// Specifies the container port number for the internal listener.
 	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
@@ -729,8 +730,9 @@ type HTTP struct {
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies whether the HTTP Proxy is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
+	// +nullable
 	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external"`
 	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
 	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
 	// Specifies the container port number for the internal listener.
@@ -745,8 +747,9 @@ type HTTP struct {
 type Kafka struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	// +nullable
 	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external"`
 	// Specifies the container port number for the internal listener.
 	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
@@ -769,8 +772,9 @@ type SchemaRegistry struct {
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies whether the Schema Registry is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
+	// +nullable
 	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
+	External map[string]*ExternalListener `json:"external"`
 	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
 	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
 	// Specifies the container port number for the internal listener.
