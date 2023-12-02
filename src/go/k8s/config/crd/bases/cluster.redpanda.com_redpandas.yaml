@@ -686,6 +686,8 @@ spec:
                                     for the external listener. For example, 'mtls_identity'
                                     or `sasl`.
                                   type: string
+                                enabled:
+                                  type: boolean
                                 port:
                                   description: Specifies the container port number
                                     for the external listener.
@@ -766,6 +768,8 @@ spec:
                                     for the external listener. For example, 'mtls_identity'
                                     or `sasl`.
                                   type: string
+                                enabled:
+                                  type: boolean
                                 port:
                                   description: Specifies the container port number
                                     for the external listener.
@@ -854,6 +858,8 @@ spec:
                                     for the external listener. For example, 'mtls_identity'
                                     or `sasl`.
                                   type: string
+                                enabled:
+                                  type: boolean
                                 port:
                                   description: Specifies the container port number
                                     for the external listener.
@@ -971,6 +977,8 @@ spec:
                                     for the external listener. For example, 'mtls_identity'
                                     or `sasl`.
                                   type: string
+                                enabled:
+                                  type: boolean
                                 port:
                                   description: Specifies the container port number
                                     for the external listener.
