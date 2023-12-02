@@ -703,6 +703,7 @@ type Listeners struct {
 
 // ExternalListener configures settings for the external listeners.
 type ExternalListener struct {
+	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
 	// Specifies the container port number for the external listener.
