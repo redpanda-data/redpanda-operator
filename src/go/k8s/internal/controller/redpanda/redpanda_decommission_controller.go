@@ -364,9 +364,9 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		if len(health.NodesDown) >= (len(health.AllNodes) - int(requestedReplicas)) {
 			for podOrdinal := 0; podOrdinal < int(requestedReplicas); podOrdinal++ {
 				singleNodeAdminAPI, buildErr := buildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
-				if buildErr == nil {
+				if buildErr != nil {
 					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
-					continue
+					return ctrl.Result{}, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, buildErr)
 				}
 				nodeCfg, nodeErr := singleNodeAdminAPI.GetNodeConfig(ctx)
 				if nodeErr != nil {
