@@ -12,7 +12,7 @@ require (
 	github.com/fluxcd/helm-controller/api v0.36.0
 	github.com/fluxcd/helm-controller/shim v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/pkg/apis/meta v1.2.0
-	github.com/fluxcd/pkg/runtime v0.43.0
+	github.com/fluxcd/pkg/runtime v0.42.0
 	github.com/fluxcd/source-controller/api v1.1.2
 	github.com/fluxcd/source-controller/shim v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.3.0
@@ -142,7 +142,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.15.0 // indirect
-	github.com/fluxcd/cli-utils v0.36.0-flux.1 // indirect
 	github.com/fluxcd/helm-controller v0.36.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
 	github.com/fluxcd/pkg/apis/event v0.6.0 // indirect
@@ -151,11 +150,11 @@ require (
 	github.com/fluxcd/pkg/git/gogit v0.14.0 // indirect
 	github.com/fluxcd/pkg/lockedfile v0.1.0 // indirect
 	github.com/fluxcd/pkg/masktoken v0.2.0 // indirect
-	github.com/fluxcd/pkg/oci v0.31.0 // indirect
+	github.com/fluxcd/pkg/oci v0.32.0 // indirect
 	github.com/fluxcd/pkg/sourceignore v0.3.5 // indirect
 	github.com/fluxcd/pkg/ssa v0.32.0 // indirect
 	github.com/fluxcd/pkg/ssh v0.8.2 // indirect
-	github.com/fluxcd/pkg/tar v0.2.0 // indirect
+	github.com/fluxcd/pkg/tar v0.3.0 // indirect
 	github.com/fluxcd/pkg/version v0.2.2 // indirect
 	github.com/fluxcd/source-controller v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -378,13 +377,13 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.15.0 // indirect
 	sigs.k8s.io/release-utils v0.7.4 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
 
 replace github.com/cyphar/filepath-securejoin => github.com/cyphar/filepath-securejoin v0.2.4
 
-replace github.com/fluxcd/helm-controller/shim => github.com/0x686868/flux-controller-shim/helm/shim v0.0.0-20231127174618-18a69120cf97
+replace github.com/fluxcd/helm-controller/shim => github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231204154350-697b98e33bd3
 
-replace github.com/fluxcd/source-controller/shim => github.com/0x686868/flux-controller-shim/source/shim v0.0.0-20231127174618-18a69120cf97
+replace github.com/fluxcd/source-controller/shim => github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20231204154350-697b98e33bd3
