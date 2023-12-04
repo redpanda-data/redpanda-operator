@@ -586,6 +586,12 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *in
 		return nil, fmt.Errorf("tlsEnabled found not to be ok %t, err: %w", tlsEnabled, err)
 	}
 
+	internalTLSEnabled, foundInternal, err := unstructured.NestedBool(values, "listeners", "admin", "tls", "enabled")
+	if err != nil {
+		// probably not a correct helm release, bail
+		return nil, fmt.Errorf("internal admin listener configuration not found: %w", err)
+	}
+
 	// need some additional checks to see if this is a redpanda
 
 	// Now try to either use the URL if it is not empty or build the service name to get the sts information
@@ -597,7 +603,7 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *in
 	// http scheme will be determined by tls option below:
 
 	var tlsConfig *tls.Config = nil
-	if tlsEnabled {
+	if foundInternal && internalTLSEnabled || !foundInternal && tlsEnabled {
 		//nolint:gosec // will not pull secrets unless working in chart
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
