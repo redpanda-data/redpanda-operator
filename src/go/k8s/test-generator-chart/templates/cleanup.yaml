@@ -11,4 +11,16 @@ delete:
     kind: Job
   - apiVersion: v1
     kind: PersistentVolumeClaim
+  - apiVersion: v1
+    kind: Pod
+    labels:
+      app.kubernetes.io/name: redpanda
+  - apiVersion: v1
+    kind: Pod
+    labels:
+      app.kubernetes.io/name: console
+  - apiVersion: v1
+    kind: Service
+    labels:
+      app.kubernetes.io/name: redpanda
 {{- end }}
