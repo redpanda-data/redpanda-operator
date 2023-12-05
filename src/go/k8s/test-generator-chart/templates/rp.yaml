@@ -7,7 +7,7 @@ metadata:
   name: redpanda-{{ substr 0 2 (base $path) }}
 spec:
   chartRef:
-    chartVersion: "5.4.10"
+    chartVersion: "5.6.57"
   {{- with $root }}
   clusterSpec:
   {{- .Files.Get $path | nindent 4 }}
