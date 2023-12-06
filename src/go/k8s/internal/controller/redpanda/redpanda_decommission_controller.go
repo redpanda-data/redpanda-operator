@@ -364,9 +364,9 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		if len(health.NodesDown) >= (len(health.AllNodes) - int(requestedReplicas)) {
 			for podOrdinal := 0; podOrdinal < int(requestedReplicas); podOrdinal++ {
 				singleNodeAdminAPI, buildErr := buildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
-				if buildErr == nil {
+				if buildErr != nil {
 					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
-					continue
+					return ctrl.Result{}, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, buildErr)
 				}
 				nodeCfg, nodeErr := singleNodeAdminAPI.GetNodeConfig(ctx)
 				if nodeErr != nil {
@@ -586,6 +586,12 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *in
 		return nil, fmt.Errorf("tlsEnabled found not to be ok %t, err: %w", tlsEnabled, err)
 	}
 
+	internalTLSEnabled, foundInternal, err := unstructured.NestedBool(values, "listeners", "admin", "tls", "enabled")
+	if err != nil {
+		// probably not a correct helm release, bail
+		return nil, fmt.Errorf("internal admin listener configuration not found: %w", err)
+	}
+
 	// need some additional checks to see if this is a redpanda
 
 	// Now try to either use the URL if it is not empty or build the service name to get the sts information
@@ -597,7 +603,7 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *in
 	// http scheme will be determined by tls option below:
 
 	var tlsConfig *tls.Config = nil
-	if tlsEnabled {
+	if foundInternal && internalTLSEnabled || !foundInternal && tlsEnabled {
 		//nolint:gosec // will not pull secrets unless working in chart
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
