@@ -715,6 +715,8 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 		return nil, fmt.Errorf("could not parse clusterSpec to json: %w", err)
 	}
 
+	log.V(logger.DebugLevel).Info(fmt.Sprintf("values found to be %+v", string(values.Raw)))
+
 	hasher := sha256.New()
 	hasher.Write(values.Raw)
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
