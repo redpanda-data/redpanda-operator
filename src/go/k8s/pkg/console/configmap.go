@@ -149,6 +149,7 @@ func (cm *ConfigMap) generateConsoleConfig(
 		Kafka:            cm.genKafka(username),
 		Enterprise:       cm.genEnterprise(),
 		Redpanda:         cm.genRedpanda(),
+		Console:          cm.genConsoleConfigField(),
 	}
 
 	consoleConfig.Connect, err = cm.genConnect(ctx)
@@ -223,6 +224,18 @@ func (cm *ConfigMap) genEnterprise() (e Enterprise) {
 		}
 	}
 	return e
+}
+
+func (cm *ConfigMap) genConsoleConfigField() (c vectorizedv1alpha1.ConsoleConfigField) {
+	if console := cm.consoleobj.Spec.Console; console != nil {
+		return vectorizedv1alpha1.ConsoleConfigField{
+			API: vectorizedv1alpha1.ConsoleAPI{
+				Enabled:           console.API.Enabled,
+				EnabledProcedures: console.API.EnabledProcedures,
+			},
+		}
+	}
+	return c
 }
 
 func (cm *ConfigMap) genCloud() CloudConfig {
