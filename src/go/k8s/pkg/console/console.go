@@ -30,12 +30,13 @@ type ConsoleConfig struct {
 	Kafka   config.Kafka   `json:"kafka" yaml:"kafka"`
 	Connect config.Connect `json:"connect" yaml:"connect"`
 
-	License     string                `json:"license,omitempty" yaml:"license,omitempty"`
-	Enterprise  Enterprise            `json:"enterprise,omitempty" yaml:"enterprise,omitempty"`
-	Login       EnterpriseLogin       `json:"login,omitempty" yaml:"login,omitempty"`
-	Cloud       CloudConfig           `json:"cloud,omitempty" yaml:"cloud,omitempty"`
-	Redpanda    Redpanda              `json:"redpanda,omitempty" yaml:"redpanda,omitempty"`
-	SecretStore EnterpriseSecretStore `json:"secretStore,omitempty" yaml:"secretStore,omitempty"`
+	License     string                                `json:"license,omitempty" yaml:"license,omitempty"`
+	Enterprise  Enterprise                            `json:"enterprise,omitempty" yaml:"enterprise,omitempty"`
+	Login       EnterpriseLogin                       `json:"login,omitempty" yaml:"login,omitempty"`
+	Cloud       CloudConfig                           `json:"cloud,omitempty" yaml:"cloud,omitempty"`
+	Redpanda    Redpanda                              `json:"redpanda,omitempty" yaml:"redpanda,omitempty"`
+	SecretStore EnterpriseSecretStore                 `json:"secretStore,omitempty" yaml:"secretStore,omitempty"`
+	Console     vectorizedv1alpha1.ConsoleConfigField `json:"console,omitempty" yaml:"console,omitempty"`
 }
 
 // SetDefaults sets sane defaults
