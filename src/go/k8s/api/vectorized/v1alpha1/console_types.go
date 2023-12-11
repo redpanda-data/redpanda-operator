@@ -82,6 +82,11 @@ type ConsoleSpec struct {
 
 	// The name of the ServiceAccount to be used by the Redpanda pods
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+
+	// +optional
+	// Console contains all configuration options for features that are generic,
+	// such as enabling API endpoints.
+	Console *ConsoleConfigField `json:"console,omitempty"`
 }
 
 // Server is the Console app HTTP server config
@@ -263,6 +268,28 @@ type ConsoleStatus struct {
 type Connectivity struct {
 	Internal string `json:"internal,omitempty"`
 	External string `json:"external,omitempty"`
+}
+
+type ConsoleConfigField struct {
+	// +optional
+	// ConsoleAPI declares the configuration properties for managing the
+	// connect/grpc/grpc-gateway API endpoints.
+	API ConsoleAPI `json:"api" yaml:"api"`
+}
+
+type ConsoleAPI struct {
+	// +kubebuilder:default=true
+	// Enabled determines whether any of the connect/grpc/grpc-gateway endpoints
+	// will be mounted to the server.
+	Enabled bool `json:"enabled"`
+	// +kubebuilder:default={"*"}
+	// EnabledProcedures is a list of procedure names that shall be allowed.
+	// If a procedure is called that is not on this list a descriptive error
+	// will be returned. A procedure name has the following format, regardless
+	// whether it's called via connect, gRPC or the HTTP interface:
+	// "/redpanda.api.dataplane.v1alpha1.UserService/ListUsers".
+	// You can use "*" to enable all procedures.
+	EnabledProcedures []string `json:"enabledProcedures"`
 }
 
 //+kubebuilder:object:root=true

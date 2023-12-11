@@ -798,6 +798,20 @@ type SideCars struct {
 	// Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster.
 	ConfigWatcher *ConfigWatcher `json:"configWatcher,omitempty"`
 	RpkStatus     *SideCarObj    `json:"rpkStatus,omitempty"`
+	Controllers   *RPControllers `json:"controllers,omitempty"`
+}
+
+// RPControllers configures additional controllers that can be deployed as sidecars in rp helm
+type RPControllers struct {
+	// Specifies whether the Controllers are enabled.
+	Enabled            *bool                        `json:"enabled,omitempty"`
+	Resources          *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SecurityContext    *corev1.SecurityContext      `json:"SecurityContext,omitempty"`
+	Image              *RedpandaImage               `json:"image,omitempty"`
+	HealthProbeAddress *string                      `json:"healthProbeAddress,omitempty"`
+	MetricsAddress     *string                      `json:"metricsAddress,omitempty"`
+	Run                []string                     `json:"run,omitempty"`
+	CreateRBAC         *bool                        `json:"createRBAC,omitempty"`
 }
 
 // TopologySpreadConstraintsItems configures topology spread constraints to control how Pods are spread across different topology domains.
@@ -925,6 +939,9 @@ type Monitoring struct {
 	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies how often to scrape metrics.
 	ScrapeInterval *string `json:"scrapeInterval,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies tls configuration properties.
+	TLSConfig *runtime.RawExtension `json:"tlsConfig,omitempty"`
 }
 
 // ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
