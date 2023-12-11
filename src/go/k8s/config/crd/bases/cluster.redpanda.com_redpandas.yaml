@@ -193,6 +193,21 @@ spec:
                           https://docs.redpanda.com/current/reference/node-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      pandaproxy_client:
+                        description: Specifies tunable configuration properties. See
+                          https://docs.redpanda.com/current/reference/tunable-properties/.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      rpk:
+                        description: Specifies cluster configuration properties. See
+                          https://docs.redpanda.com/current/reference/cluster-properties/.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      schema_registry_client:
+                        description: Specifies tunable configuration properties. See
+                          https://docs.redpanda.com/current/reference/tunable-properties/.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       tunable:
                         description: Specifies tunable configuration properties. See
                           https://docs.redpanda.com/current/reference/tunable-properties/.
@@ -1555,8 +1570,6 @@ spec:
                             - memory
                             - reserveMemory
                             type: object
-                        required:
-                        - container
                         type: object
                     type: object
                   service:
@@ -1999,10 +2012,6 @@ spec:
                             description: Determines the frequency in seconds of performing
                               the probe.
                             type: integer
-                        required:
-                        - failureThreshold
-                        - initialDelaySeconds
-                        - periodSeconds
                         type: object
                       nodeSelector:
                         additionalProperties:
@@ -2676,10 +2685,6 @@ spec:
                             description: Configures the period, in seconds, between
                               each readiness check.
                             type: integer
-                        required:
-                        - failureThreshold
-                        - initialDelaySeconds
-                        - periodSeconds
                         type: object
                       replicas:
                         description: Specifies the number of replicas to determine
@@ -3676,10 +3681,6 @@ spec:
                             description: Sets the period in seconds for conducting
                               subsequent probes.
                             type: integer
-                        required:
-                        - failureThreshold
-                        - initialDelaySeconds
-                        - periodSeconds
                         type: object
                       terminationGracePeriodSeconds:
                         description: Specifies the termination grace period in seconds
