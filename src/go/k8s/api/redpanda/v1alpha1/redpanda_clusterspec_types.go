@@ -151,7 +151,7 @@ type RedpandaConsole struct {
 	Image *runtime.RawExtension `json:"image,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Defines Secrets used to pull the container images from a private registry.
-	ImagePullSecrets *runtime.RawExtension `json:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []*runtime.RawExtension `json:"imagePullSecrets,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Configures the ServiceAccount used by the Pods that run Redpanda Console.
 	ServiceAccount *runtime.RawExtension `json:"serviceAccount,omitempty"`
@@ -185,7 +185,7 @@ type RedpandaConsole struct {
 	NodeSelector *runtime.RawExtension `json:"nodeSelector,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies tolerations for scheduling Pods onto Nodes with taints.
-	Tolerations *runtime.RawExtension `json:"tolerations,omitempty"`
+	Tolerations []*runtime.RawExtension `json:"tolerations,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Defines affinity rules for Pod assignment.
 	Affinity *runtime.RawExtension `json:"affinity,omitempty"`
@@ -194,25 +194,25 @@ type RedpandaConsole struct {
 	TopologySpreadConstraints *runtime.RawExtension `json:"topologySpreadConstraints,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Adds extra environment variables to the Pods that run Redpanda Console.
-	ExtraEnv *runtime.RawExtension `json:"extraEnv,omitempty"`
+	ExtraEnv []*runtime.RawExtension `json:"extraEnv,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Allows you to add extra environment variables from external resources to the Pods that run Redpanda Console.
-	ExtraEnvFrom *runtime.RawExtension `json:"extraEnvFrom,omitempty"`
+	ExtraEnvFrom []*runtime.RawExtension `json:"extraEnvFrom,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Adds extra volumes to the Pods that run Redpanda Console.
-	ExtraVolumes *runtime.RawExtension `json:"extraVolumes,omitempty"`
+	ExtraVolumes []*runtime.RawExtension `json:"extraVolumes,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Mounts additional volumes inside the containers that run Redpanda Console.
-	ExtraVolumeMounts *runtime.RawExtension `json:"extraVolumeMounts,omitempty"`
+	ExtraVolumeMounts []*runtime.RawExtension `json:"extraVolumeMounts,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Adds extra containers to the Pods that run Redpanda Console.
-	ExtraContainers *runtime.RawExtension `json:"extraContainers,omitempty"`
+	ExtraContainers []*runtime.RawExtension `json:"extraContainers,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies init containers for the Pods that run Redpanda Console.
 	InitContainers *runtime.RawExtension `json:"initContainers,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Mounts additional Secret resources inside the containers that run Redpanda Console.
-	SecretMounts *runtime.RawExtension `json:"secretMounts,omitempty"`
+	SecretMounts []*runtime.RawExtension `json:"secretMounts,omitempty"`
 	// Specifies whether a ConfigMap should be created for Redpanda Console.
 	ConfigMap *ConsoleCreateObj `json:"configMap,omitempty"`
 	// Specifies whether a Secret should be created for Redpanda Console.

@@ -402,27 +402,42 @@ spec:
                       extraContainers:
                         description: Adds extra containers to the Pods that run Redpanda
                           Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       extraEnv:
                         description: Adds extra environment variables to the Pods
                           that run Redpanda Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       extraEnvFrom:
                         description: Allows you to add extra environment variables
                           from external resources to the Pods that run Redpanda Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       extraVolumeMounts:
                         description: Mounts additional volumes inside the containers
                           that run Redpanda Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       extraVolumes:
                         description: Adds extra volumes to the Pods that run Redpanda
                           Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       fullnameOverride:
                         description: Specifies a full custom name, which overrides
@@ -437,7 +452,10 @@ spec:
                       imagePullSecrets:
                         description: Defines Secrets used to pull the container images
                           from a private registry.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       ingress:
                         description: Configures the Kubernetes Ingress resource for
@@ -496,7 +514,10 @@ spec:
                       secretMounts:
                         description: Mounts additional Secret resources inside the
                           containers that run Redpanda Console.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       securityContext:
                         description: Sets the security context for the Pods that run
@@ -516,7 +537,10 @@ spec:
                       tolerations:
                         description: Specifies tolerations for scheduling Pods onto
                           Nodes with taints.
-                        type: object
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
                         x-kubernetes-preserve-unknown-fields: true
                       topologySpreadConstraints:
                         description: Specifies topology spread constraints for Pod
