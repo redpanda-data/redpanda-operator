@@ -1676,8 +1676,14 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ServiceAccount != nil {
 		in, out := &in.ServiceAccount, &out.ServiceAccount
@@ -1736,8 +1742,14 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
@@ -1751,28 +1763,58 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.ExtraEnv != nil {
 		in, out := &in.ExtraEnv, &out.ExtraEnv
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ExtraEnvFrom != nil {
 		in, out := &in.ExtraEnvFrom, &out.ExtraEnvFrom
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ExtraVolumes != nil {
 		in, out := &in.ExtraVolumes, &out.ExtraVolumes
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ExtraVolumeMounts != nil {
 		in, out := &in.ExtraVolumeMounts, &out.ExtraVolumeMounts
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ExtraContainers != nil {
 		in, out := &in.ExtraContainers, &out.ExtraContainers
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
@@ -1781,8 +1823,14 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.SecretMounts != nil {
 		in, out := &in.SecretMounts, &out.SecretMounts
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(runtime.RawExtension)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.ConfigMap != nil {
 		in, out := &in.ConfigMap, &out.ConfigMap
