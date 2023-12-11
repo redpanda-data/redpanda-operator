@@ -303,6 +303,36 @@ spec:
                     format: duration
                     type: string
                 type: object
+              console:
+                description: Console contains all configuration options for features
+                  that are generic, such as enabling API endpoints.
+                properties:
+                  api:
+                    description: ConsoleAPI declares the configuration properties
+                      for managing the connect/grpc/grpc-gateway API endpoints.
+                    properties:
+                      enabled:
+                        default: true
+                        description: Enabled determines whether any of the connect/grpc/grpc-gateway
+                          endpoints will be mounted to the server.
+                        type: boolean
+                      enabledProcedures:
+                        default:
+                        - '*'
+                        description: 'EnabledProcedures is a list of procedure names
+                          that shall be allowed. If a procedure is called that is
+                          not on this list a descriptive error will be returned. A
+                          procedure name has the following format, regardless whether
+                          it''s called via connect, gRPC or the HTTP interface: "/redpanda.api.dataplane.v1alpha1.UserService/ListUsers".
+                          You can use "*" to enable all procedures.'
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - enabled
+                    - enabledProcedures
+                    type: object
+                type: object
               deployment:
                 description: Deployment defines configurable fields for the Console
                   Deployment resource

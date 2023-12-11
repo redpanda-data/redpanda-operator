@@ -611,31 +611,31 @@ type Budget struct {
 // LivenessProbe configures liveness probes to monitor the health of the Pods and restart them if necessary.
 type LivenessProbe struct {
 	// Sets the number of consecutive failures required to consider a Pod as not live.
-	FailureThreshold int `json:"failureThreshold"`
+	FailureThreshold *int `json:"failureThreshold,omitempty"`
 	// Specifies the time in seconds to wait before the first probe is initiated.
-	InitialDelaySeconds int `json:"initialDelaySeconds"`
+	InitialDelaySeconds *int `json:"initialDelaySeconds,omitempty"`
 	// Determines the frequency in seconds of performing the probe.
-	PeriodSeconds int `json:"periodSeconds"`
+	PeriodSeconds *int `json:"periodSeconds,omitempty"`
 }
 
 // ReadinessProbe configures readiness probes to determine when a Pod is ready to handle traffic.
 type ReadinessProbe struct {
 	// Defines the threshold for how many times the probe can fail before the Pod is marked Unready.
-	FailureThreshold int `json:"failureThreshold"`
+	FailureThreshold *int `json:"failureThreshold,omitempty"`
 	// Sets the initial delay before the readiness probe is initiated, in seconds.
-	InitialDelaySeconds int `json:"initialDelaySeconds"`
+	InitialDelaySeconds *int `json:"initialDelaySeconds,omitempty"`
 	// Configures the period, in seconds, between each readiness check.
-	PeriodSeconds int `json:"periodSeconds"`
+	PeriodSeconds *int `json:"periodSeconds,omitempty"`
 }
 
 // StartupProbe configures the startup probe to determine when the Redpanda application within the Pod has started successfully.
 type StartupProbe struct {
 	// Determines the failure threshold to mark the application in the Pod as not started.
-	FailureThreshold int `json:"failureThreshold"`
+	FailureThreshold *int `json:"failureThreshold,omitempty"`
 	// Specifies the delay in seconds before the startup probe begins.
-	InitialDelaySeconds int `json:"initialDelaySeconds"`
+	InitialDelaySeconds *int `json:"initialDelaySeconds,omitempty"`
 	// Sets the period in seconds for conducting subsequent probes.
-	PeriodSeconds int `json:"periodSeconds"`
+	PeriodSeconds *int `json:"periodSeconds,omitempty"`
 }
 
 // PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
@@ -784,6 +784,9 @@ type SchemaRegistry struct {
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/.
+	RPK *runtime.RawExtension `json:"rpk,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/.
 	Cluster *runtime.RawExtension `json:"cluster,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies broker configuration properties. See https://docs.redpanda.com/current/reference/node-properties/.
@@ -791,6 +794,13 @@ type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/.
 	Tunable *runtime.RawExtension `json:"tunable,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/.
+	SchemaRegistryClient *runtime.RawExtension `json:"schema_registry_client,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/.
+	PandaProxyClient *runtime.RawExtension `json:"pandaproxy_client,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 }
 
 // SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
@@ -798,6 +808,20 @@ type SideCars struct {
 	// Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster.
 	ConfigWatcher *ConfigWatcher `json:"configWatcher,omitempty"`
 	RpkStatus     *SideCarObj    `json:"rpkStatus,omitempty"`
+	Controllers   *RPControllers `json:"controllers,omitempty"`
+}
+
+// RPControllers configures additional controllers that can be deployed as sidecars in rp helm
+type RPControllers struct {
+	// Specifies whether the Controllers are enabled.
+	Enabled            *bool                        `json:"enabled,omitempty"`
+	Resources          *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SecurityContext    *corev1.SecurityContext      `json:"SecurityContext,omitempty"`
+	Image              *RedpandaImage               `json:"image,omitempty"`
+	HealthProbeAddress *string                      `json:"healthProbeAddress,omitempty"`
+	MetricsAddress     *string                      `json:"metricsAddress,omitempty"`
+	Run                []string                     `json:"run,omitempty"`
+	CreateRBAC         *bool                        `json:"createRBAC,omitempty"`
 }
 
 // TopologySpreadConstraintsItems configures topology spread constraints to control how Pods are spread across different topology domains.
@@ -829,7 +853,7 @@ type Container struct {
 // Memory configures memory resources.
 type Memory struct {
 	// Defines resource limits for containers.
-	Container *Container `json:"container"`
+	Container *Container `json:"container,omitempty"`
 	// Enables memory locking. For production, set to `true`.
 	EnableMemoryLocking *bool `json:"enable_memory_locking,omitempty"`
 	// Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar.
@@ -925,6 +949,9 @@ type Monitoring struct {
 	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies how often to scrape metrics.
 	ScrapeInterval *string `json:"scrapeInterval,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies tls configuration properties.
+	TLSConfig *runtime.RawExtension `json:"tlsConfig,omitempty"`
 }
 
 // ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
