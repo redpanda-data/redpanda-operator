@@ -27,18 +27,16 @@ status:
   replicas: 1
   updatedReplicas: 1
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: redpanda
 status:
   conditions:
-    - message: Release reconciliation succeeded
-      reason: ReconciliationSucceeded
+    - reason: UpgradeSucceeded
       status: "True"
       type: Ready
-    - message: Helm upgrade succeeded
-      reason: UpgradeSucceeded
+    - reason: UpgradeSucceeded
       status: "True"
       type: Released
   helmChart: redpanda/redpanda-redpanda
