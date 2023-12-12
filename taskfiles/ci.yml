@@ -41,13 +41,30 @@ tasks:
     status:
       - test "$CI" != "true" -o "$PULL_REQUEST" != "false"
 
+  configure-git-private-repo:
+    env:
+      GITHUB_TOKEN:
+        sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
+    cmds:
+      - git config --global url."https://$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
+    preconditions:
+      - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
+
   k8s:
+    env:
+      GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+    deps:
+      - configure-git-private-repo
     cmds:
       - task: build-golang-toolchain-image
       - task: run-k8s-tests
       - task: publish-k8s-operator-images
 
   k8s-v2-helm:
+    env:
+      GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+    deps:
+      - configure-git-private-repo
     cmds:
       - task: build-golang-toolchain-image
       - task: :dev:install-yq
@@ -56,6 +73,10 @@ tasks:
       - task: run-k8s-v2-helm-tests
 
   k8s-v2:
+    env:
+      GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+    deps:
+      - configure-git-private-repo
     cmds:
       - task: build-golang-toolchain-image
       - task: run-k8s-v2-tests
