@@ -1,0 +1,20 @@
+# This workflow triggers the action in redpanda-data/docs that publishes the CRD specifications to the Redpanda documentation.
+
+name: Trigger CRD docs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/k8s/api/**'
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger generate-crd-docs event
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.ACTIONS_BOT_TOKEN }}
+          repository: redpanda-data/docs
+          event-type: generate-crd-docs
