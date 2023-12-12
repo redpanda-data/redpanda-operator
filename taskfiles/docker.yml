@@ -59,6 +59,7 @@ tasks:
           -e DOCKERHUB_TOKEN \
           -e CLOUDSMITH_USERNAME \
           -e CLOUDSMITH_API_KEY \
+          -e GITHUB_API_TOKEN \
           --env RPK_TEST_CLIENT_ID \
           --env RPK_TEST_CLIENT_SECRET \
           --privileged \
