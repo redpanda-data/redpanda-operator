@@ -3,6 +3,8 @@ version: '3'
 # if a task is referenced multiple times, only run it once
 run: once
 
+dotenv: [".env"]
+
 vars:
   SRC_DIR:
     sh: 'realpath {{default "." .SRC_DIR}}'

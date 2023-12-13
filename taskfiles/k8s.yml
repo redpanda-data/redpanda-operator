@@ -172,7 +172,6 @@ tasks:
         vars:
           USE_SUDO: "false"
       - generate-manifests
-      - build-operator-images
       - task: set-inotify-watches
         vars:
           USE_SUDO: "false"
@@ -181,6 +180,10 @@ tasks:
           USE_SUDO: "false"
       - task: fetch-latest-redpanda
     cmds:
+      - |
+        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
+        go mod tidy
+      - task: build-operator-images
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
       - |

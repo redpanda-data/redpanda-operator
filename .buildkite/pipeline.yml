@@ -13,7 +13,7 @@ steps:
   - key: release-migration-tool
     label: Release Migration Tool
     if: build.tag != null
-    timeout: 20
+    timeout_in_minutes: 20
     commands:
       - *setup
       - |
@@ -23,7 +23,7 @@ steps:
 
   - key: k8s-operator
     label: K8s Operator
-    timeout: 180
+    timeout_in_minutes: 180
     notify:
       - github_commit_status:
           context: k8s-operator
@@ -44,7 +44,7 @@ steps:
     steps:
       - key: k8s-operator-v2
         label: K8s Operator v2
-        timeout: 45
+        timeout_in_minutes: 45
         notify:
           - github_commit_status:
               context: k8s-operator-v2
@@ -63,7 +63,7 @@ steps:
           - junit-annotate#v2.4.1:
               artifacts: src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml 
               report-slowest: 5
-        timeout: 0
+        timeout_in_minutes: 10
         agents:
           queue: k8s-builders
         depends_on: k8s-operator-v2
@@ -76,7 +76,7 @@ steps:
     steps:
       - key: k8s-operator-v2-helm
         label: K8s Operator v2 Helm
-        timeout: 50
+        timeout_in_minutes: 50
         notify:
           - github_commit_status:
               context: k8s-operator-v2-helm
@@ -95,7 +95,7 @@ steps:
           - junit-annotate#v2.0.2:
               artifacts: src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
               report-slowest: 5
-        timeout: 0
+        timeout_in_minutes: 10
         agents:
           queue: k8s-builders
         depends_on: k8s-operator-v2-helm
