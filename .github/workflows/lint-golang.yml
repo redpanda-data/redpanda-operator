@@ -47,12 +47,14 @@ jobs:
     - name: go mod tidy (cluster-to-redpanda-migration)
       working-directory: src/go/cluster-to-redpanda-migration
       run: |
-        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
+        go env -w GOPRIVATE=github.com/redpanda-data
+        go mod tidy
         git diff --exit-code -- go.mod go.sum
 
     - name: go mod tidy (k8s)
       working-directory: src/go/k8s
       run: |
-        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
+        go env -w GOPRIVATE=github.com/redpanda-data
+        go mod tidy
         git diff --exit-code -- go.mod go.sum
 
