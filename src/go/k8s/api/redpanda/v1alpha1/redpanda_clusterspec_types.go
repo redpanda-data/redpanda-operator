@@ -55,6 +55,9 @@ type RedpandaClusterSpec struct {
 	// Defines the log level settings.
 	Logging *Logging `json:"logging,omitempty"`
 
+	// Defines the log level settings.
+	AuditLogging *AuditLogging `json:"auditLogging,omitempty"`
+
 	// Defines container resource settings.
 	Resources *Resources `json:"resources,omitempty"`
 
@@ -1004,4 +1007,26 @@ type ServiceInternal struct {
 type Service struct {
 	Name     *string          `json:"name,omitempty"`
 	Internal *ServiceInternal `json:"internal,omitempty"`
+}
+
+// AuditLogging configures how to perform audit logging for a redpanda cluster
+type AuditLogging struct {
+	// Specifies whether to enable audit logging or not
+	Enabled *bool `json:"enabled,omitempty"`
+	// Kafka external listener name, note that it must have `authenticationMethod` set to sasl
+	Listener *string `json:"listener,omitempty"`
+	// Integer value defining the number of partitions used by a newly created audit topic
+	Partitions *int32 `json:"partitions,omitempty"`
+	// Event types that should be captured by audit logs
+	EnabledEventTypes []string `json:"enabledEventTypes,omitempty"`
+	// List of topics to exclude from auditing
+	ExcludedTopics []string `json:"excludedTopics,omitempty"`
+	// List of principals to exclude from auditing
+	ExcludedPrincipals []string `json:"excludedPrincipals,omitempty"`
+	// Defines the number of bytes (in bytes) allocated by the internal audit client for audit messages.
+	ClientMaxBufferSize *int32 `json:"clientMaxBufferSize,omitempty"`
+	// In ms, frequency in which per shard audit logs are batched to client for write to audit log.
+	QueueDrainIntervalMs *int32 `json:"queueDrainIntervalMs,omitempty"`
+	// Defines the maximum amount of memory used (in bytes) by the audit buffer in each shard
+	QueueMaxBufferSizePerShard *int32 `json:"queueMaxBufferSizePerShard,omitempty"`
 }
