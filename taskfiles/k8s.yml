@@ -74,8 +74,25 @@ tasks:
         setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
         go test --race -v ./... -coverprofile cover.out
 
+  download-k8s-go-dependencies:
+    deps:
+      - :dev:install-go
+    dir: 'src/go/k8s'
+    cmds:
+      - |
+        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
+        mkdir mod || (rm -rf mod && mkdir mod)
+        GOPATH=$(realpath ./mod/) go mod download
+
+  cleanup-k8s-go-dependencies:
+    dir: 'src/go/k8s'
+    cmds:
+      - rm -rf mod
+
   build-operator-images:
     dir: 'src/go'
+    deps:
+      - download-k8s-go-dependencies
     cmds:
       - docker buildx build
           --platform linux/{{ARCH}}
@@ -91,6 +108,7 @@ tasks:
           --tag localhost/configurator:dev
           --load
           .
+      - task: cleanup-k8s-go-dependencies
 
   fetch-latest-nightly-redpanda:
     desc: fetch the latest redpanda nightly build and tag it localhost/redpanda:dev
@@ -180,9 +198,6 @@ tasks:
           USE_SUDO: "false"
       - task: fetch-latest-redpanda
     cmds:
-      - |
-        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
-        go mod tidy
       - task: build-operator-images
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
@@ -235,6 +250,7 @@ tasks:
     desc: builds, tags and pushes images to dockerhub
     deps:
       - :dev:create-buildx-builder
+      - download-k8s-go-dependencies
     dir: 'src/go'
     vars:
       IS_INTERNAL:
@@ -295,6 +311,7 @@ tasks:
           --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
           --push
           .
+      - task: cleanup-k8s-go-dependencies
       # re-enable as part of https://github.com/redpanda-data/cloudv2/issues/3267
       # - cmd: docker login docker.cloudsmith.io --username {{.CLOUDSMITH_USERNAME}} --password {{.CLOUDSMITH_API_KEY}}
       #   silent: true
