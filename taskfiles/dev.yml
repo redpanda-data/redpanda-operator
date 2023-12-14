@@ -257,21 +257,6 @@ tasks:
     status:
       - test -f '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
 
-  install-goreleaser:
-    desc: install goreleaser
-    deps:
-      - install-go
-    cmds:
-      - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
-        GOBIN='{{.GORELEASER_INSTALL_DIR}}' \
-        go install "github.com/goreleaser/goreleaser@v{{.GORELEASER_VERSION}}"
-    status:
-      - test -f {{.GORELEASER_INSTALL_DIR}}/goreleaser
-      - |
-        PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
-        [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
-
   install-quill:
     desc: install quill
     cmds:

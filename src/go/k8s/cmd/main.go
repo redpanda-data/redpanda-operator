@@ -334,13 +334,11 @@ func main() {
 
 		// Helm Release Controller
 		helmRelease := helmController.HelmReleaseReconcilerFactory{
-			Client:              mgr.GetClient(),
-			Config:              mgr.GetConfig(),
-			Scheme:              mgr.GetScheme(),
-			EventRecorder:       helmReleaseEventRecorder,
-			ClientOpts:          clientOptions,
-			KubeConfigOpts:      kubeConfigOpts,
-			NoCrossNamespaceRef: true,
+			Client:           mgr.GetClient(),
+			EventRecorder:    helmReleaseEventRecorder,
+			ClientOpts:       clientOptions,
+			KubeConfigOpts:   kubeConfigOpts,
+			GetClusterConfig: ctrl.GetConfig,
 		}
 		if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
