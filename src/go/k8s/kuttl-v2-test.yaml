@@ -18,7 +18,7 @@ commands:
   - command: helm install --set logLevel=trace --set image.tag=dev
       --set image.repository=localhost/redpanda-operator --namespace redpanda --create-namespace redpanda-operator
        redpanda/operator --set rbac.createAdditionalControllerCRs=true --set additionalCmdFlags="{--additional-controllers=all}"
-      --set rbac.createRPKBundleCRs=true
+      --set rbac.createRPKBundleCRs=true --wait
 artifactsDir: tests/_e2e_artifacts_v2
 timeout: 720
 reportFormat: xml

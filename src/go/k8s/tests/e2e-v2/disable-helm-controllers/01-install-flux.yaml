@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl apply -f https://github.com/fluxcd/flux2/releases/download/v2.1.2/install.yaml
+assert:
+  - 01-assert-install-flux.yaml
