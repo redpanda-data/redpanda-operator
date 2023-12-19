@@ -39,15 +39,20 @@ jobs:
         find src/go -type f -not -name 'zz*' -name '*.go' | xargs -n1 "$HOME/.local/bin/gofumpt" -w -lang=1.21
         git diff --exit-code
 
+    - name: configure git
+      env:
+        GH_ACCESS_TOKEN: ${{ secrets.ACTIONS_BOT_TOKEN }}
+      run: git config --global "url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf" https://github.com/
+  
     - name: go mod tidy (cluster-to-redpanda-migration)
       working-directory: src/go/cluster-to-redpanda-migration
       run: |
-        go mod tidy
+        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
         git diff --exit-code -- go.mod go.sum
 
     - name: go mod tidy (k8s)
       working-directory: src/go/k8s
       run: |
-        go mod tidy
+        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
         git diff --exit-code -- go.mod go.sum
 

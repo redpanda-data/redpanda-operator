@@ -92,7 +92,7 @@ func bestTrySetRetainPV(c client.Client, log logr.Logger, ctx context.Context, n
 // ClientGenerator generates a registry client and a temporary credential file.
 // The client is meant to be used for a single reconciliation.
 // The file is meant to be used for a single reconciliation and deleted after.
-func ClientGenerator(tlsConfig *tls.Config, isLogin bool) (*registry.Client, string, error) {
+func ClientGenerator(tlsConfig *tls.Config, isLogin, insecure bool) (*registry.Client, string, error) {
 	if !isLogin {
 		rClient, err := newClient("", tlsConfig)
 		if err != nil {

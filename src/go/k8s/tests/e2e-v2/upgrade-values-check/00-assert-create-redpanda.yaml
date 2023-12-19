@@ -30,25 +30,23 @@ status:
   replicas: 1
   updatedReplicas: 1
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: redpanda
 status:
   conditions:
-    - message: Release reconciliation succeeded
-      reason: ReconciliationSucceeded
+    - reason: InstallSucceeded
       status: "True"
       type: Ready
-    - message: Helm install succeeded
-      reason: InstallSucceeded
+    - reason: InstallSucceeded
       status: "True"
       type: Released
   helmChart: redpanda/redpanda-redpanda
   lastAppliedRevision: 5.3.2
   lastAttemptedRevision: 5.3.2
-  lastAttemptedValuesChecksum: 9a164b2eba37330d0bb90cd1dff1e40779cab130
-  lastReleaseRevision: 1
+  lastAttemptedConfigDigest: sha256:bd42835737f3bc042176268bda36420d9edab32547c60c778cb6835c13e117d6
+  lastAttemptedGeneration: 1
   observedGeneration: 1
 ---
 apiVersion: kuttl.dev/v1beta1

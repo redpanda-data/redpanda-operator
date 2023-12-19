@@ -20,6 +20,7 @@ import (
 
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmControllerAPIv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	helmController "github.com/fluxcd/helm-controller/shim"
 	"github.com/fluxcd/pkg/runtime/client"
 	helper "github.com/fluxcd/pkg/runtime/controller"
@@ -31,6 +32,7 @@ import (
 	helmSourceController "github.com/fluxcd/source-controller/shim"
 	flag "github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -74,6 +76,8 @@ const (
 	OperatorV2Mode          = OperatorState("Namespaced-v2")
 	ClusterControllerMode   = OperatorState("Clustered-Controllers")
 	NamespaceControllerMode = OperatorState("Namespaced-Controllers")
+
+	controllerName = "redpanda-controller"
 )
 
 var (
@@ -108,6 +112,7 @@ func init() {
 	utilruntime.Must(clusterredpandacomv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(cmapiv1.AddToScheme(scheme))
 	utilruntime.Must(helmControllerAPIv2beta1.AddToScheme(scheme))
+	utilruntime.Must(helmControllerAPIv2beta2.AddToScheme(scheme))
 	utilruntime.Must(redpandav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1beta2.AddToScheme(scheme))
@@ -181,6 +186,9 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(logger.NewLogger(logOptions))
+
+	// set the managedFields owner for resources reconciled from Helm charts
+	kube.ManagedFieldsManager = controllerName
 
 	if debug {
 		go func() {
@@ -334,13 +342,13 @@ func main() {
 
 		// Helm Release Controller
 		helmRelease := helmController.HelmReleaseReconcilerFactory{
-			Client:              mgr.GetClient(),
-			Config:              mgr.GetConfig(),
-			Scheme:              mgr.GetScheme(),
-			EventRecorder:       helmReleaseEventRecorder,
-			ClientOpts:          clientOptions,
-			KubeConfigOpts:      kubeConfigOpts,
-			NoCrossNamespaceRef: true,
+			Client:           mgr.GetClient(),
+			EventRecorder:    helmReleaseEventRecorder,
+			Metrics:          metricsH,
+			GetClusterConfig: ctrl.GetConfig,
+			FieldManager:     controllerName,
+			ClientOpts:       clientOptions,
+			KubeConfigOpts:   kubeConfigOpts,
 		}
 		if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
@@ -353,14 +361,24 @@ func main() {
 			os.Exit(1)
 		}
 
-		chartOpts := helmSourceController.HelmRepositoryReconcilerOptions{}
+		cacheRecorder := helmSourceController.MustMakeCacheMetrics()
+		indexTTL := 15 * time.Minute
+		helmIndexCache := helmSourceController.NewCache(0, indexTTL)
+
+		chartOpts := helmSourceController.HelmRepositoryReconcilerOptions{
+			RateLimiter: helper.GetDefaultRateLimiter(),
+		}
 		helmChart := helmSourceController.HelmChartReconcilerFactory{
 			Client:                  mgr.GetClient(),
-			RegistryClientGenerator: redpandacontrollers.ClientGenerator,
-			Getters:                 getters,
-			Metrics:                 metricsH,
-			Storage:                 storage,
 			EventRecorder:           helmChartEventRecorder,
+			Metrics:                 metricsH,
+			RegistryClientGenerator: redpandacontrollers.ClientGenerator,
+			Storage:                 storage,
+			Getters:                 getters,
+			ControllerName:          "redpanda-controller-helm-chart",
+			Cache:                   helmIndexCache,
+			CacheRecorder:           cacheRecorder,
+			TTL:                     indexTTL,
 		}
 		if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
@@ -376,11 +394,13 @@ func main() {
 		helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
 			Client:         mgr.GetClient(),
 			EventRecorder:  helmRepositoryEventRecorder,
-			Getters:        getters,
-			ControllerName: "redpanda-controller",
-			TTL:            15 * time.Minute,
 			Metrics:        metricsH,
+			Getters:        getters,
 			Storage:        storage,
+			ControllerName: "redpanda-controller-helm-repository",
+			Cache:          helmIndexCache,
+			CacheRecorder:  cacheRecorder,
+			TTL:            indexTTL,
 		}
 
 		if err = helmRepository.SetupWithManager(ctx, mgr, chartOpts); err != nil {
