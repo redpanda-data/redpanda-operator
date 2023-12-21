@@ -5,3 +5,8 @@ metadata:
 spec:
   image: "localhost/redpanda"
   version: "dev"
+  configuration:
+    additionalCommandlineArguments:
+      default-log-level: trace
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      reserve-memory: 0M

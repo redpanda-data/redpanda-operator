@@ -13,8 +13,8 @@ delete:
   - apiVersion: v1
     kind: Pod
     labels:
-      app.kubernetes.io/name: redpanda
+      app.kubernetes.io/name: redpanda-topic
   - apiVersion: v1
     kind: Service
     labels:
-      app.kubernetes.io/name: redpanda
+      app.kubernetes.io/name: redpanda-topic
