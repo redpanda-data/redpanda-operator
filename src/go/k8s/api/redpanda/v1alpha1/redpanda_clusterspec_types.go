@@ -356,7 +356,7 @@ type ListenerTLS struct {
 // ExternalService allows you to enable or disable the creation of an external Service type.
 type ExternalService struct {
 	// Specifies whether to create the external Service. If set to `false`, the external Service type is not created. You can still set your cluster with external access but not create the supporting Service. Set this to `false` to manage your own Service.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // External defines external connectivity settings in the Helm values.
