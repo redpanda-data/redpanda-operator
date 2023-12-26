@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fluxcd/helm-controller/api/v2beta1"
+	"github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/source-controller/api/v1beta2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,8 +31,8 @@ var _ = Describe("Redpanda Controller", func() {
 		RedpandaClusterName = "redpanda-test"
 		HelmRepositoryName  = "redpanda-repository"
 
-		timeout  = time.Second * 30
-		interval = time.Millisecond * 100
+		timeout  = time.Second * 120
+		interval = time.Millisecond * 200
 	)
 
 	Context("When creating a Redpanda with no values file changes", func() {
@@ -64,7 +64,7 @@ var _ = Describe("Redpanda Controller", func() {
 					},
 					Spec: v1alpha1.RedpandaSpec{
 						ChartRef: v1alpha1.ChartRef{
-							ChartVersion:       "3.x.x",
+							ChartVersion:       "5.x.x",
 							HelmRepositoryName: HelmRepositoryName,
 						},
 						ClusterSpec: &v1alpha1.RedpandaClusterSpec{},
@@ -83,7 +83,7 @@ var _ = Describe("Redpanda Controller", func() {
 
 		It("Should create a HelmRelease", func() {
 			key := client.ObjectKey{Namespace: RedpandaNamespace, Name: RedpandaClusterName}
-			Eventually(func() bool { return k8sClient.Get(ctx, key, &v2beta1.HelmRelease{}) == nil }, timeout, interval).Should(BeTrue())
+			Eventually(func() bool { return k8sClient.Get(ctx, key, &v2beta2.HelmRelease{}) == nil }, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should create a HelmChart", func() {

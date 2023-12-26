@@ -4,6 +4,12 @@ CONFIGURATOR_IMG_LATEST ?= "localhost/configurator:dev"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd"
 
+HELM_CONTROLLER_VERSION ?= v0.37.2
+SOURCE_CONTROLLER_VERSION ?= v1.2.3
+
+# needed since we are using a private repo
+SSH_AUTH_SOCK ?= ""
+
 # default redpanda image to load
 REDPANDA_IMG ?= "localhost/redpanda:dev"
 
@@ -116,7 +122,7 @@ prepare-dockerfile:
 docker-build: prepare-dockerfile
 	echo "~~~ Building operator image :docker:"
 	echo  building '${TARGETOS}/${TARGETARCH}'
-	docker buildx build --build-arg BUILDPLATFORM='${TARGETOS}/${TARGETARCH}' --build-arg TARGETARCH=${TARGETARCH} --build-arg TARGETOS=${TARGETOS} --target=manager --load -f Dockerfile.out -t ${OPERATOR_IMG_LATEST} ../
+	docker buildx build --build-arg BUILDPLATFORM='${TARGETOS}/${TARGETARCH}' --build-arg TARGETARCH=${TARGETARCH} --build-arg TARGETOS=${TARGETOS} --target=manager --load -f Dockerfile.out -t ${OPERATOR_IMG_LATEST} --ssh default=$(SSH_AUTH_SOCK) ../
 
 # Build the docker image
 docker-build-configurator: prepare-dockerfile
@@ -247,3 +253,10 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 .PHONY: install-prometheus
 install-prometheus:
 	kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/e23ff77fceba6a5d9f190f5d1a123c87701dc964/bundle.yaml || true
+
+.PHONY: update-external-crds
+update-external-crds:
+	echo "building source-controller crds..."
+	kustomize build "https://github.com/fluxcd/source-controller//config/crd?ref=$(SOURCE_CONTROLLER_VERSION)" -o config/crd/bases/toolkit.fluxcd.io/source-controller.yaml
+	echo "building helm-controller crds..."
+	kustomize build "https://github.com/fluxcd/helm-controller//config/crd?ref=$(HELM_CONTROLLER_VERSION)" -o config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml
