@@ -4,6 +4,9 @@ CONFIGURATOR_IMG_LATEST ?= "localhost/configurator:dev"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd"
 
+HELM_CONTROLLER_VERSION ?= v0.37.2
+SOURCE_CONTROLLER_VERSION ?= v1.2.3
+
 # default redpanda image to load
 REDPANDA_IMG ?= "localhost/redpanda:dev"
 
@@ -243,3 +246,10 @@ lint: golangci-lint
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: update-external-crds
+update-external-crds:
+	echo "building source-controller crds..."
+	kustomize build "https://github.com/fluxcd/source-controller//config/crd?ref=$(SOURCE_CONTROLLER_VERSION)" -o config/crd/bases/toolkit.fluxcd.io/source-controller.yaml
+	echo "building helm-controller crds..."
+	kustomize build "https://github.com/fluxcd/helm-controller//config/crd?ref=$(HELM_CONTROLLER_VERSION)" -o config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml
