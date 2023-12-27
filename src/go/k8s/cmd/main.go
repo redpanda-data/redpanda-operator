@@ -138,6 +138,7 @@ func main() {
 		eventsAddr                  string
 		additionalControllers       []string
 		operatorMode                bool
+		enableHelmControllers       bool
 
 		// allowPVCDeletion controls the PVC deletion feature in the Cluster custom resource.
 		// PVCs will be deleted when its Pod has been deleted and the Node that Pod is assigned to
@@ -173,6 +174,7 @@ func main() {
 	_ = flag.CommandLine.MarkHidden("unsafe-decommission-failed-brokers")
 	flag.StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	flag.BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
+	flag.BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
 
 	logOptions.BindFlags(flag.CommandLine)
 	clientOptions.BindFlags(flag.CommandLine)
@@ -312,89 +314,94 @@ func main() {
 			})
 		}
 	case OperatorV2Mode:
-		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "namespace", namespace)
-		storageAddr := ":9090"
-		storageAdvAddr = redpandacontrollers.DetermineAdvStorageAddr(storageAddr, setupLog)
-		storage := redpandacontrollers.MustInitStorage("/tmp", storageAdvAddr, 60*time.Second, 2, setupLog)
+		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
 
-		metricsH := helper.NewMetrics(mgr, metrics.MustMakeRecorder())
+		// if we enable these controllers then run them, otherwise, do not
+		//nolint:nestif // not really nested, required.
+		if enableHelmControllers {
+			storageAddr := ":9090"
+			storageAdvAddr = redpandacontrollers.DetermineAdvStorageAddr(storageAddr, setupLog)
+			storage := redpandacontrollers.MustInitStorage("/tmp", storageAdvAddr, 60*time.Second, 2, setupLog)
 
-		// TODO fill this in with options
-		helmOpts := helmController.HelmReleaseReconcilerOptions{
-			DependencyRequeueInterval: 30 * time.Second, // The interval at which failing dependencies are reevaluated.
-			HTTPRetry:                 9,                // The maximum number of retries when failing to fetch artifacts over HTTP.
-			RateLimiter:               workqueue.NewItemExponentialFailureRateLimiter(30*time.Second, 60*time.Second),
+			metricsH := helper.NewMetrics(mgr, metrics.MustMakeRecorder())
+
+			// TODO fill this in with options
+			helmOpts := helmController.HelmReleaseReconcilerOptions{
+				DependencyRequeueInterval: 30 * time.Second, // The interval at which failing dependencies are reevaluated.
+				HTTPRetry:                 9,                // The maximum number of retries when failing to fetch artifacts over HTTP.
+				RateLimiter:               workqueue.NewItemExponentialFailureRateLimiter(30*time.Second, 60*time.Second),
+			}
+
+			// Helm Release Controller
+			var helmReleaseEventRecorder *events.Recorder
+			if helmReleaseEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmReleaseReconciler"); err != nil {
+				setupLog.Error(err, "unable to create event recorder for: HelmReleaseReconciler")
+				os.Exit(1)
+			}
+
+			helmRelease := helmController.HelmReleaseReconcilerFactory{
+				Client:              mgr.GetClient(),
+				Config:              mgr.GetConfig(),
+				Scheme:              mgr.GetScheme(),
+				EventRecorder:       helmReleaseEventRecorder,
+				ClientOpts:          clientOptions,
+				KubeConfigOpts:      kubeConfigOpts,
+				NoCrossNamespaceRef: true,
+			}
+			if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
+				setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
+			}
+
+			// Helm Chart Controller
+			var helmChartEventRecorder *events.Recorder
+			if helmChartEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmChartReconciler"); err != nil {
+				setupLog.Error(err, "unable to create event recorder for: HelmChartReconciler")
+				os.Exit(1)
+			}
+
+			chartOpts := helmSourceController.HelmRepositoryReconcilerOptions{}
+			helmChart := helmSourceController.HelmChartReconcilerFactory{
+				Client:                  mgr.GetClient(),
+				RegistryClientGenerator: redpandacontrollers.ClientGenerator,
+				Getters:                 getters,
+				Metrics:                 metricsH,
+				Storage:                 storage,
+				EventRecorder:           helmChartEventRecorder,
+			}
+			if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
+				setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
+			}
+
+			// Helm Repository Controller
+			var helmRepositoryEventRecorder *events.Recorder
+			if helmRepositoryEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmRepositoryReconciler"); err != nil {
+				setupLog.Error(err, "unable to create event recorder for: HelmRepositoryReconciler")
+				os.Exit(1)
+			}
+
+			helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
+				Client:         mgr.GetClient(),
+				EventRecorder:  helmRepositoryEventRecorder,
+				Getters:        getters,
+				ControllerName: "redpanda-controller",
+				TTL:            15 * time.Minute,
+				Metrics:        metricsH,
+				Storage:        storage,
+			}
+
+			if err = helmRepository.SetupWithManager(ctx, mgr, chartOpts); err != nil {
+				setupLog.Error(err, "Unable to create controller", "controller", "HelmRepository")
+			}
+
+			go func() {
+				// Block until our controller manager is elected leader. We presume our
+				// entire process will terminate if we lose leadership, so we don't need
+				// to handle that.
+				<-mgr.Elected()
+
+				redpandacontrollers.StartFileServer(storage.BasePath, storageAddr, setupLog)
+			}()
 		}
-
-		var helmReleaseEventRecorder *events.Recorder
-		if helmReleaseEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmReleaseReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: HelmReleaseReconciler")
-			os.Exit(1)
-		}
-
-		// Helm Release Controller
-		helmRelease := helmController.HelmReleaseReconcilerFactory{
-			Client:              mgr.GetClient(),
-			Config:              mgr.GetConfig(),
-			Scheme:              mgr.GetScheme(),
-			EventRecorder:       helmReleaseEventRecorder,
-			ClientOpts:          clientOptions,
-			KubeConfigOpts:      kubeConfigOpts,
-			NoCrossNamespaceRef: true,
-		}
-		if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
-		}
-
-		// Helm Chart Controller
-		var helmChartEventRecorder *events.Recorder
-		if helmChartEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmChartReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: HelmChartReconciler")
-			os.Exit(1)
-		}
-
-		chartOpts := helmSourceController.HelmRepositoryReconcilerOptions{}
-		helmChart := helmSourceController.HelmChartReconcilerFactory{
-			Client:                  mgr.GetClient(),
-			RegistryClientGenerator: redpandacontrollers.ClientGenerator,
-			Getters:                 getters,
-			Metrics:                 metricsH,
-			Storage:                 storage,
-			EventRecorder:           helmChartEventRecorder,
-		}
-		if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
-		}
-
-		// Helm Repository Controller
-		var helmRepositoryEventRecorder *events.Recorder
-		if helmRepositoryEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmRepositoryReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: HelmRepositoryReconciler")
-			os.Exit(1)
-		}
-
-		helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
-			Client:         mgr.GetClient(),
-			EventRecorder:  helmRepositoryEventRecorder,
-			Getters:        getters,
-			ControllerName: "redpanda-controller",
-			TTL:            15 * time.Minute,
-			Metrics:        metricsH,
-			Storage:        storage,
-		}
-
-		if err = helmRepository.SetupWithManager(ctx, mgr, chartOpts); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "HelmRepository")
-		}
-
-		go func() {
-			// Block until our controller manager is elected leader. We presume our
-			// entire process will terminate if we lose leadership, so we don't need
-			// to handle that.
-			<-mgr.Elected()
-
-			redpandacontrollers.StartFileServer(storage.BasePath, storageAddr, setupLog)
-		}()
 
 		// Redpanda Reconciler
 		var redpandaEventRecorder *events.Recorder
