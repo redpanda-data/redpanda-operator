@@ -203,8 +203,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	// Helm Release Controller
 	helmRelease := helmController.HelmReleaseReconcilerFactory{
 		Client:        k8sManager.GetClient(),
-		Config:        k8sManager.GetConfig(),
-		Scheme:        k8sManager.GetScheme(),
 		EventRecorder: k8sManager.GetEventRecorderFor("HelmReleaseReconciler"),
 	}
 	err = helmRelease.SetupWithManager(ctx, k8sManager, helmOpts)

@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"time"
 
-	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/logger"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
@@ -121,7 +121,7 @@ type RedpandaReconciler struct {
 func (r *RedpandaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Redpanda{}).
-		Owns(&helmv2beta1.HelmRelease{}).
+		Owns(&helmv2beta2.HelmRelease{}).
 		Complete(r)
 }
 
@@ -582,11 +582,11 @@ func (r *RedpandaReconciler) checkIfResourceIsReady(log logr.Logger, msgNotReady
 	return true
 }
 
-func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alpha1.Redpanda) (*v1alpha1.Redpanda, *helmv2beta1.HelmRelease, error) {
+func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alpha1.Redpanda) (*v1alpha1.Redpanda, *helmv2beta2.HelmRelease, error) {
 	var err error
 
 	// Check if HelmRelease exists or create it
-	hr := &helmv2beta1.HelmRelease{}
+	hr := &helmv2beta2.HelmRelease{}
 
 	// have we recorded a helmRelease, if not assume we have not created it
 	if rp.Status.HelmRelease == "" {
@@ -662,7 +662,7 @@ func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha1.R
 	return ctrl.Result{}, nil
 }
 
-func (r *RedpandaReconciler) createHelmRelease(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta1.HelmRelease, error) {
+func (r *RedpandaReconciler) createHelmRelease(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta2.HelmRelease, error) {
 	// create helmRelease resource from template
 	hRelease, err := r.createHelmReleaseFromTemplate(ctx, rp)
 	if err != nil {
@@ -692,7 +692,7 @@ func (r *RedpandaReconciler) deleteHelmRelease(ctx context.Context, rp *v1alpha1
 		return nil
 	}
 
-	var hr helmv2beta1.HelmRelease
+	var hr helmv2beta2.HelmRelease
 	hrName := rp.Status.GetHelmRelease()
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: rp.Namespace, Name: hrName}, &hr)
 	if err != nil {
@@ -715,7 +715,7 @@ func (r *RedpandaReconciler) deleteHelmRelease(ctx context.Context, rp *v1alpha1
 	return errWaitForReleaseDeletion
 }
 
-func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta1.HelmRelease, error) {
+func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha1.Redpanda) (*helmv2beta2.HelmRelease, error) {
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.createHelmReleaseFromTemplate")
 
 	values, err := rp.ValuesJSON()
@@ -736,10 +736,10 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 		timeout = &metav1.Duration{Duration: 15 * time.Minute}
 	}
 
-	rollBack := helmv2beta1.RemediationStrategy("rollback")
+	rollBack := helmv2beta2.RemediationStrategy("rollback")
 
-	upgrade := &helmv2beta1.Upgrade{
-		Remediation: &helmv2beta1.UpgradeRemediation{
+	upgrade := &helmv2beta2.Upgrade{
+		Remediation: &helmv2beta2.UpgradeRemediation{
 			Retries:  1,
 			Strategy: &rollBack,
 		},
@@ -761,19 +761,19 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 		}
 	}
 
-	return &helmv2beta1.HelmRelease{
+	return &helmv2beta2.HelmRelease{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            rp.GetHelmReleaseName(),
 			Namespace:       rp.Namespace,
 			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
 		},
-		Spec: helmv2beta1.HelmReleaseSpec{
-			Chart: helmv2beta1.HelmChartTemplate{
-				Spec: helmv2beta1.HelmChartTemplateSpec{
+		Spec: helmv2beta2.HelmReleaseSpec{
+			Chart: helmv2beta2.HelmChartTemplate{
+				Spec: helmv2beta2.HelmChartTemplateSpec{
 					Chart:    "redpanda",
 					Version:  rp.Spec.ChartRef.ChartVersion,
 					Interval: &metav1.Duration{Duration: 1 * time.Minute},
-					SourceRef: helmv2beta1.CrossNamespaceObjectReference{
+					SourceRef: helmv2beta2.CrossNamespaceObjectReference{
 						Kind:      "HelmRepository",
 						Name:      rp.GetHelmRepositoryName(),
 						Namespace: rp.Namespace,
@@ -824,7 +824,7 @@ func (r *RedpandaReconciler) event(rp *v1alpha1.Redpanda, revision, severity, ms
 	r.EventRecorder.AnnotatedEventf(rp, metaData, eventType, severity, msg)
 }
 
-func (r *RedpandaReconciler) helmReleaseRequiresUpdate(ctx context.Context, hr, hrTemplate *helmv2beta1.HelmRelease) bool {
+func (r *RedpandaReconciler) helmReleaseRequiresUpdate(ctx context.Context, hr, hrTemplate *helmv2beta2.HelmRelease) bool {
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.helmReleaseRequiresUpdate")
 
 	switch {
@@ -845,7 +845,7 @@ func (r *RedpandaReconciler) helmReleaseRequiresUpdate(ctx context.Context, hr, 
 // helmChartRequiresUpdate compares the v2beta1.HelmChartTemplate of the
 // v2beta1.HelmRelease to the given v1beta2.HelmChart to determine if an
 // update is required.
-func helmChartRequiresUpdate(log logr.Logger, template, chart *helmv2beta1.HelmChartTemplate) bool {
+func helmChartRequiresUpdate(log logr.Logger, template, chart *helmv2beta2.HelmChartTemplate) bool {
 	switch {
 	case template.Spec.Chart != chart.Spec.Chart:
 		log.Info("chart is different")

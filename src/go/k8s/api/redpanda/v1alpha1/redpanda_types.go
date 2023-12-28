@@ -12,8 +12,8 @@ package v1alpha1
 import (
 	"encoding/json"
 	"fmt"
+	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 
-	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	"github.com/fluxcd/pkg/apis/meta"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -120,7 +120,7 @@ type RemediationStrategy string
 // HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
 type HelmUpgrade struct {
 	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
-	Remediation *helmv2beta1.UpgradeRemediation `json:"remediation,omitempty"`
+	Remediation *helmv2beta2.UpgradeRemediation `json:"remediation,omitempty"`
 	// Enables forceful updates during an upgrade.
 	Force *bool `json:"force,omitempty"`
 	// Specifies whether to preserve user-configured values during an upgrade.

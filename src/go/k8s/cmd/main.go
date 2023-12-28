@@ -20,6 +20,7 @@ import (
 
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmControllerAPIv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	helmController "github.com/fluxcd/helm-controller/shim"
 	"github.com/fluxcd/pkg/runtime/client"
 	helper "github.com/fluxcd/pkg/runtime/controller"
@@ -108,6 +109,7 @@ func init() {
 	utilruntime.Must(clusterredpandacomv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(cmapiv1.AddToScheme(scheme))
 	utilruntime.Must(helmControllerAPIv2beta1.AddToScheme(scheme))
+	utilruntime.Must(helmControllerAPIv2beta2.AddToScheme(scheme))
 	utilruntime.Must(redpandav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1beta2.AddToScheme(scheme))
@@ -334,13 +336,12 @@ func main() {
 
 		// Helm Release Controller
 		helmRelease := helmController.HelmReleaseReconcilerFactory{
-			Client:              mgr.GetClient(),
-			Config:              mgr.GetConfig(),
-			Scheme:              mgr.GetScheme(),
-			EventRecorder:       helmReleaseEventRecorder,
-			ClientOpts:          clientOptions,
-			KubeConfigOpts:      kubeConfigOpts,
-			NoCrossNamespaceRef: true,
+			Client:           mgr.GetClient(),
+			EventRecorder:    helmReleaseEventRecorder,
+			ClientOpts:       clientOptions,
+			KubeConfigOpts:   kubeConfigOpts,
+			FieldManager:     "redpanda-helmRelease-controller",
+			GetClusterConfig: ctrl.GetConfig,
 		}
 		if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
@@ -361,6 +362,7 @@ func main() {
 			Metrics:                 metricsH,
 			Storage:                 storage,
 			EventRecorder:           helmChartEventRecorder,
+			ControllerName:          "redpanda-helmChart-reconciler",
 		}
 		if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
@@ -377,7 +379,7 @@ func main() {
 			Client:         mgr.GetClient(),
 			EventRecorder:  helmRepositoryEventRecorder,
 			Getters:        getters,
-			ControllerName: "redpanda-controller",
+			ControllerName: "redpanda-helmRepository-controller",
 			TTL:            15 * time.Minute,
 			Metrics:        metricsH,
 			Storage:        storage,
