@@ -20,7 +20,8 @@ import (
 	"time"
 
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	helmControllerAPIV2 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmControllerAPIV2Beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmControllerAPIV2Beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	helmController "github.com/fluxcd/helm-controller/shim"
 	helper "github.com/fluxcd/pkg/runtime/controller"
 	"github.com/fluxcd/pkg/runtime/metrics"
@@ -116,7 +117,9 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).NotTo(HaveOccurred())
 	err = cmapiv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = helmControllerAPIV2.AddToScheme(scheme.Scheme)
+	err = helmControllerAPIV2Beta1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = helmControllerAPIV2Beta2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = sourcev1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -202,8 +205,10 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Helm Release Controller
 	helmRelease := helmController.HelmReleaseReconcilerFactory{
-		Client:        k8sManager.GetClient(),
-		EventRecorder: k8sManager.GetEventRecorderFor("HelmReleaseReconciler"),
+		Client:           k8sManager.GetClient(),
+		EventRecorder:    k8sManager.GetEventRecorderFor("HelmReleaseReconciler"),
+		FieldManager:     "redpanda-helmRelease-controller",
+		GetClusterConfig: ctrl.GetConfig,
 	}
 	err = helmRelease.SetupWithManager(ctx, k8sManager, helmOpts)
 	Expect(err).ToNot(HaveOccurred())
@@ -217,6 +222,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		Metrics:                 metricsH,
 		Storage:                 storage,
 		EventRecorder:           k8sManager.GetEventRecorderFor("HelmChartReconciler"),
+		ControllerName:          "redpanda-helmChart-reconciler",
 	}
 	err = helmChart.SetupWithManager(ctx, k8sManager, chartOpts)
 	Expect(err).ToNot(HaveOccurred())
