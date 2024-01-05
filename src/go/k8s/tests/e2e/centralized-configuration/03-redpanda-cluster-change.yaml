@@ -28,4 +28,4 @@ spec:
       abort-on-seastar-bad-alloc: ''
   additionalConfiguration:
     redpanda.segment_appender_flush_timeout_ms: "1003"
-    redpanda.aggregate_metrics: "true"
+    redpanda.disable_metrics: "true"
