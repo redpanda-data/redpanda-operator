@@ -463,9 +463,19 @@ rules:
   resources:
   - pods
   verbs:
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:

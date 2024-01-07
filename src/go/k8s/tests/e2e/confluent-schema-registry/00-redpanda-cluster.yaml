@@ -26,6 +26,5 @@ spec:
     additionalCommandlineArguments:
       dump-memory-diagnostics-on-alloc-failure-kind: all
       abort-on-seastar-bad-alloc: ''
-      reserve-memory: 100M
     autoCreateTopics: true
   dnsTrailingDotDisabled: true

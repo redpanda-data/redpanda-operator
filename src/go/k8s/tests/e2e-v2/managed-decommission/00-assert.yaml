@@ -1,0 +1,22 @@
+apiVersion: cluster.redpanda.com/v1alpha1
+kind: Redpanda
+metadata:
+  finalizers:
+    - operator.redpanda.com/finalizer
+  name: managed-decommission
+status:
+  conditions:
+    - message: Redpanda reconciliation succeeded
+      reason: RedpandaClusterDeployed
+      status: "True"
+      type: Ready
+  helmRelease: managed-decommission
+  helmReleaseReady: true
+  helmRepository: redpanda-repository
+  helmRepositoryReady: true
+  observedGeneration: 1
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh redpanda ../../_e2e_artifacts_v2

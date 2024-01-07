@@ -428,6 +428,20 @@ func main() {
 			os.Exit(1)
 		}
 
+		var managedDecommissionEventRecorder *events.Recorder
+		if managedDecommissionEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "ManagedDecommissionReconciler"); err != nil {
+			setupLog.Error(err, "unable to create event recorder for: ManagedDecommissionReconciler")
+			os.Exit(1)
+		}
+
+		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
+			Client:        mgr.GetClient(),
+			EventRecorder: managedDecommissionEventRecorder,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
+			os.Exit(1)
+		}
+
 		if runThisController(NodeController, additionalControllers) {
 			if err = (&redpandacontrollers.RedpandaNodePVCReconciler{
 				Client:       mgr.GetClient(),

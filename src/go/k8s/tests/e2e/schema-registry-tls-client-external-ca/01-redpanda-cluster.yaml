@@ -18,7 +18,6 @@ spec:
       default-log-level: trace
       dump-memory-diagnostics-on-alloc-failure-kind: all
       abort-on-seastar-bad-alloc: ''
-      reserve-memory: 100M
     rpcServer:
       port: 33145
     kafkaApi:

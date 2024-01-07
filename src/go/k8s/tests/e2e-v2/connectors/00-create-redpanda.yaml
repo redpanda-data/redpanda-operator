@@ -2,12 +2,13 @@
 apiVersion: cluster.redpanda.com/v1alpha1
 kind: Redpanda
 metadata:
-  name: redpanda
+  name: rp-connectors
 spec:
   chartRef:
-    chartVersion: "5.6.46"
+    chartVersion: "5.7.4"
   clusterSpec:
     statefulset:
       replicas: 1
     connectors:
       enabled: true
+      nameOverride: test

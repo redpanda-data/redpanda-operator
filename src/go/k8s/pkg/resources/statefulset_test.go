@@ -434,7 +434,7 @@ func TestCurrentVersion(t *testing.T) {
 					Namespace: redpanda.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
-				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}},
+				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
 			},
 		}, 1, "v21.11.11", false},
 		{"one pod with matching version, not in ready state", []corev1.Pod{
@@ -454,7 +454,7 @@ func TestCurrentVersion(t *testing.T) {
 					Namespace: redpanda.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
-				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}},
+				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
 			},
 		}, 2, "v21.11.11", true},
 		{"one pod with matching and one pod with non-matching version", []corev1.Pod{
@@ -464,7 +464,7 @@ func TestCurrentVersion(t *testing.T) {
 					Namespace: redpanda.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
-				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}},
+				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -472,7 +472,7 @@ func TestCurrentVersion(t *testing.T) {
 					Namespace: redpanda.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v22.2.2"}}},
-				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}},
+				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
 			},
 		}, 2, "v21.11.11", true},
 	}

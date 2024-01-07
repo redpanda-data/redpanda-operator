@@ -20,13 +20,10 @@ var ErrInvalidInputParameters = fmt.Errorf("invalid input parameters")
 
 // IsPodReady tells if a given pod is ready looking at its status.
 func IsPodReady(pod *corev1.Pod) bool {
-	for _, c := range pod.Status.Conditions {
-		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
+	return pod.Status.Phase == corev1.PodRunning &&
+		IsStatusPodConditionTrue(pod.Status.Conditions, corev1.ContainersReady) &&
+		IsStatusPodConditionTrue(pod.Status.Conditions, corev1.PodReady) &&
+		IsAllPodsStatusesReady(pod.Status.ContainerStatuses)
 }
 
 func GetPodOrdinal(podName, clusterName string) (int32, error) {
