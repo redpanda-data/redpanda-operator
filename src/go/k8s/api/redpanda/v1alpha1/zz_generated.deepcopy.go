@@ -14,7 +14,7 @@
 package v1alpha1
 
 import (
-	"github.com/fluxcd/helm-controller/api/v2beta1"
+	"github.com/fluxcd/helm-controller/api/v2beta2"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -715,7 +715,7 @@ func (in *HelmUpgrade) DeepCopyInto(out *HelmUpgrade) {
 	*out = *in
 	if in.Remediation != nil {
 		in, out := &in.Remediation, &out.Remediation
-		*out = new(v2beta1.UpgradeRemediation)
+		*out = new(v2beta2.UpgradeRemediation)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Force != nil {

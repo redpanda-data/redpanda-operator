@@ -92,9 +92,9 @@ func bestTrySetRetainPV(c client.Client, log logr.Logger, ctx context.Context, n
 // ClientGenerator generates a registry client and a temporary credential file.
 // The client is meant to be used for a single reconciliation.
 // The file is meant to be used for a single reconciliation and deleted after.
-func ClientGenerator(tlsConfig *tls.Config, isLogin bool) (*registry.Client, string, error) {
+func ClientGenerator(tlsConfig *tls.Config, isLogin, insecureHTTP bool) (*registry.Client, string, error) {
 	if !isLogin {
-		rClient, err := newClient("", tlsConfig)
+		rClient, err := newClient("", tlsConfig, insecureHTTP)
 		if err != nil {
 			return nil, "", err
 		}
@@ -108,7 +108,7 @@ func ClientGenerator(tlsConfig *tls.Config, isLogin bool) (*registry.Client, str
 	}
 
 	var errs []error
-	rClient, err := newClient(credentialsFile.Name(), tlsConfig)
+	rClient, err := newClient(credentialsFile.Name(), tlsConfig, insecureHTTP)
 	if err != nil {
 		errs = append(errs, err)
 		// attempt to delete the temporary file
@@ -123,9 +123,12 @@ func ClientGenerator(tlsConfig *tls.Config, isLogin bool) (*registry.Client, str
 	return rClient, credentialsFile.Name(), nil
 }
 
-func newClient(credentialsFile string, tlsConfig *tls.Config) (*registry.Client, error) {
+func newClient(credentialsFile string, tlsConfig *tls.Config, insecureHTTP bool) (*registry.Client, error) {
 	opts := []registry.ClientOption{
 		registry.ClientOptWriter(io.Discard),
+	}
+	if insecureHTTP {
+		opts = append(opts, registry.ClientOptPlainHTTP())
 	}
 	if tlsConfig != nil {
 		opts = append(opts, registry.ClientOptHTTPClient(&http.Client{

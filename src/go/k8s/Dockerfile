@@ -2,22 +2,29 @@ FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.21.3 as bu
 
 ARG TARGETARCH
 ARG TARGETOS
+ENV GOPRIVATE="github.com/redpanda-data/flux-controller-shim"
+
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+
 
 WORKDIR /workspace/k8s
 # Copy the Go Modules manifests
 COPY k8s/go.mod go.mod
 COPY k8s/go.sum go.sum
 
+RUN git config --global url."ssh://git@github.com".insteadOf "https://github.com"
+
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+COPY k8s/mod/pkg/mod /go/pkg/mod
+RUN --mount=type=ssh go mod download
 
 # Copy the go source
 COPY k8s/ .
 
 # build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -a -o manager cmd/main.go && \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -a -o configurator cmd/configurator/main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on GOPRIVATE=github.com/redpanda-data/flux-controller-shim go build -a -o manager cmd/main.go && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on GOPRIVATE=github.com/redpanda-data/flux-controller-shim go build -a -o configurator cmd/configurator/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
