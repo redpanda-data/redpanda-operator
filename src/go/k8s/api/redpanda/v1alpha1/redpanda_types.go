@@ -12,8 +12,8 @@ package v1alpha1
 import (
 	"encoding/json"
 	"fmt"
-	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 
+	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"

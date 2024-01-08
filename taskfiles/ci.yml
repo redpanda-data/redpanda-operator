@@ -5,6 +5,15 @@ vars:
   GOLANG_TOOLCHAIN_IMAGE: '{{.DOCKER_REGISTRY}}/k8s-builder:all'
 
 tasks:
+  configure-git-private-repo:
+    env:
+      GITHUB_TOKEN:
+        sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
+    cmds:
+      - git config --global url."https://$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
+    preconditions:
+      - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
+
   build-golang-toolchain-image:
     desc: build golang toolchain image
     env:
@@ -66,7 +75,7 @@ tasks:
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-test.yaml ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+          TASK_ARGS: ci:configure-git-private-repo k8s:download-k8s-go-dependencies k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-test.yaml k8s:cleanup-k8s-go-dependencies ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
@@ -77,7 +86,7 @@ tasks:
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-helm-test.yaml ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+          TASK_ARGS: ci:configure-git-private-repo k8s:download-k8s-go-dependencies k8s:run-kuttl-tests KUTTL_CONFIG_FILE=kuttl-v2-helm-test.yaml k8s:cleanup-k8s-go-dependencies ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
@@ -88,17 +97,17 @@ tasks:
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:run-golangci-lint
+          TASK_ARGS: ci:configure-git-private-repo k8s:run-golangci-lint
       - 'echo "~~~ Run operator code unit tests :golang:"'
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:run-unit-tests
+          TASK_ARGS: ci:configure-git-private-repo k8s:run-unit-tests
       - 'echo "~~~ Running operator e2e tests :k8s:"'
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:run-kuttl-tests ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
+          TASK_ARGS: ci:configure-git-private-repo k8s:download-k8s-go-dependencies k8s:run-kuttl-tests k8s:cleanup-k8s-go-dependencies ci:chown-buildkite-agent DIR='{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
