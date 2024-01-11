@@ -172,7 +172,7 @@ KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.7
+KUSTOMIZE_VERSION ?= v5.1.1
 CONTROLLER_TOOLS_VERSION ?= v0.13.0
 KUTTL_VERSION ?= v0.15.0
 
@@ -243,3 +243,7 @@ lint: golangci-lint
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: install-prometheus
+install-prometheus:
+	kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/e23ff77fceba6a5d9f190f5d1a123c87701dc964/bundle.yaml || true
