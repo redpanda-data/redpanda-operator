@@ -36,10 +36,10 @@ metadata:
   name: decommission
 status:
   conditions:
-    - reason: InstallSucceeded
+    - reason: ReconciliationSucceeded
       status: "True"
       type: Ready
-    - reason: InstallSucceeded
+    - reason: ReconciliationSucceeded
       status: "True"
       type: Released
   helmChart: redpanda/redpanda-decommission
