@@ -9,3 +9,4 @@
 !k8s/webhooks
 !k8s/go.mod
 !k8s/go.sum
+!k8s/mod

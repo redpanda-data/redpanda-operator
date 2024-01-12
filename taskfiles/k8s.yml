@@ -7,8 +7,24 @@ env:
   # the fix for #53640 is included in a release, either next minor for
   # 1.19 or 1.20, this can be removed
   GOFLAGS: -buildvcs=false
+  GOPRIVATE: github.com/redpanda-data/flux-controller-shim
 
 tasks:
+
+  download-k8s-go-dependencies:
+    deps:
+      - :dev:install-go
+    dir: 'src/go/k8s'
+    cmds:
+      - |
+        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
+        mkdir mod || (rm -rf mod && mkdir mod)
+        GOPATH=$(realpath ./mod/) go mod download
+
+  cleanup-k8s-go-dependencies:
+    dir: 'src/go/k8s'
+    cmds:
+      - rm -rf mod
 
   generate-controller-code:
     deps:
@@ -42,6 +58,8 @@ tasks:
     vars:
       CRD_OPTIONS_DEFAULT: 'crd'
       CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
+      GOPATH:
+        sh: 'realpath "{{.PWD}}/mod"'
     sources:
       - './**/*.go'
     cmds:
@@ -72,7 +90,7 @@ tasks:
         source {{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh
         fetch_envtest_tools {{.ENVTEST_ASSETS_DIR}}
         setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
-        go test --race -v ./... -coverprofile cover.out
+        go test -v ./... -coverprofile cover.out
 
   build-operator-images:
     dir: 'src/go'
@@ -171,7 +189,6 @@ tasks:
       - task: set-aio-max
         vars:
           USE_SUDO: "false"
-      - generate-manifests
       - build-operator-images
       - task: set-inotify-watches
         vars:
