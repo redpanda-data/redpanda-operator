@@ -32,8 +32,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kuberecorder "k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,6 +46,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	vectorzied_v1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
 
 const (
@@ -153,6 +156,12 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 
 		return ctrl.Result{}, nil
+	}
+
+	_, ok := rp.GetAnnotations()[resources.ManagedDecommissionAnnotation]
+	if ok {
+		log.Info("Managed decommission")
+		return ctrl.Result{RequeueAfter: wait.Jitter(defaultDecommissionWaitInterval, decommissionWaitJitterFactor)}, nil
 	}
 
 	// add finalizer if not exist
@@ -357,11 +366,10 @@ func (r *RedpandaReconciler) tryMigrateRedpanda(ctx context.Context, log logr.Lo
 func (r *RedpandaReconciler) migrateRedpandaPods(ctx context.Context, log logr.Logger, rp *v1alpha1.Redpanda) error {
 	var errorResult error
 
-	var pl v1.PodList
-	err := r.List(ctx, &pl, []client.ListOption{
-		client.InNamespace(rp.Namespace),
-		client.MatchingLabels(map[string]string{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}),
-	}...)
+	pl, err := getPodList(ctx, r.Client, rp.Namespace, labels.Set{
+		"app.kubernetes.io/instance": rp.Name,
+		"app.kubernetes.io/name":     "redpanda",
+	}.AsSelector())
 	if err != nil {
 		errorResult = errors.Join(fmt.Errorf("listing pods: %w", err), errorResult)
 	}
@@ -475,9 +483,9 @@ func hasLabelsAndAnnotations(object client.Object, rp *v1alpha1.Redpanda) bool {
 const helm = "Helm"
 
 func setHelmLabelsAndAnnotations(object client.Object, rp *v1alpha1.Redpanda) {
-	labels := make(map[string]string)
-	labels["app.kubernetes.io/managed-by"] = helm
-	object.SetLabels(labels)
+	l := make(map[string]string)
+	l["app.kubernetes.io/managed-by"] = helm
+	object.SetLabels(l)
 
 	annotations := make(map[string]string)
 	annotations["meta.helm.sh/release-name"] = rp.Name

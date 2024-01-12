@@ -31,7 +31,6 @@ spec:
     additionalCommandlineArguments:
       dump-memory-diagnostics-on-alloc-failure-kind: all
       abort-on-seastar-bad-alloc: ''
-      reserve-memory: 100M
   additionalConfiguration:
     redpanda.append_chunk_size: "40960"
     redpanda.segment_appender_flush_timeout_ms: "1003"

@@ -108,6 +108,11 @@ type RedpandaStatus struct {
 
 	// +optional
 	InstallFailures int64 `json:"installFailures,omitempty"`
+
+	// ManagedDecommissioningNode indicates that a node is currently being
+	// decommissioned from the cluster and provides its ordinal number.
+	// +optional
+	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
 }
 
 type RemediationStrategy string

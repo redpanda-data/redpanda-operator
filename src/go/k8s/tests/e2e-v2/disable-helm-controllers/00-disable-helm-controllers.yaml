@@ -1,0 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: helm upgrade --install --set logLevel=trace --set image.tag=dev
+        --set image.repository=localhost/redpanda-operator --namespace redpanda --create-namespace redpanda-operator
+        redpanda/operator --set rbac.createAdditionalControllerCRs=true --set additionalCmdFlags="{--additional-controllers=all,--enable-helm-controllers=false}"
+        --set rbac.createRPKBundleCRs=true --wait
+assert:
+  - 00-assert-disable-helm-controllers.yaml

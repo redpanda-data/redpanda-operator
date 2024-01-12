@@ -112,6 +112,54 @@ spec:
               clusterSpec:
                 description: Defines the Helm values to use to deploy the cluster.
                 properties:
+                  auditLogging:
+                    description: Defines the log level settings.
+                    properties:
+                      clientMaxBufferSize:
+                        description: Defines the number of bytes (in bytes) allocated
+                          by the internal audit client for audit messages.
+                        format: int32
+                        type: integer
+                      enabled:
+                        description: Specifies whether to enable audit logging or
+                          not
+                        type: boolean
+                      enabledEventTypes:
+                        description: Event types that should be captured by audit
+                          logs
+                        items:
+                          type: string
+                        type: array
+                      excludedPrincipals:
+                        description: List of principals to exclude from auditing
+                        items:
+                          type: string
+                        type: array
+                      excludedTopics:
+                        description: List of topics to exclude from auditing
+                        items:
+                          type: string
+                        type: array
+                      listener:
+                        description: Kafka external listener name, note that it must
+                          have `authenticationMethod` set to sasl
+                        type: string
+                      partitions:
+                        description: Integer value defining the number of partitions
+                          used by a newly created audit topic
+                        format: int32
+                        type: integer
+                      queueDrainIntervalMs:
+                        description: In ms, frequency in which per shard audit logs
+                          are batched to client for write to audit log.
+                        format: int32
+                        type: integer
+                      queueMaxBufferSizePerShard:
+                        description: Defines the maximum amount of memory used (in
+                          bytes) by the audit buffer in each shard
+                        format: int32
+                        type: integer
+                    type: object
                   auth:
                     description: Defines authentication settings for listeners.
                     properties:
@@ -4236,6 +4284,11 @@ spec:
                   - type
                   type: object
                 type: array
+              decommissioningNode:
+                description: ManagedDecommissioningNode indicates that a node is currently
+                  being decommissioned from the cluster and provides its ordinal number.
+                format: int32
+                type: integer
               failures:
                 description: Failures is the reconciliation failure count against
                   the latest desired state. It is reset after a successful reconciliation.

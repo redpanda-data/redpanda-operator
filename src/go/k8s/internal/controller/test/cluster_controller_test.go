@@ -929,7 +929,7 @@ func readyPodsForCluster(cluster *v1alpha1.Cluster) []*corev1.Pod {
 					Image: fmt.Sprintf("redpanda:%s", cluster.Spec.Version),
 				}},
 			},
-			Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}},
+			Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
 		}
 		result = append(result, pod)
 	}

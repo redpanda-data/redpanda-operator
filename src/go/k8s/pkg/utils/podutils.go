@@ -99,6 +99,16 @@ func IsStatusPodConditionPresentAndEqual(conditions []corev1.PodCondition, condi
 	return false
 }
 
+// IsAllPodsStatusesReady returns true when all containers reports ready state
+func IsAllPodsStatusesReady(cs []corev1.ContainerStatus) bool {
+	result := true
+	for i := range cs {
+		c := cs[i]
+		result = result && c.Ready
+	}
+	return result
+}
+
 func DeletePodPVCs(ctx context.Context, c client.Client, pod *corev1.Pod, l logr.Logger) error {
 	log := l.WithName("DeletePodPVCs")
 	//   delete the associated pvc

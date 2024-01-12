@@ -26,3 +26,7 @@ spec:
           kind: Secret
           name: upd-mtls-ca-cert
           apiGroup: ''
+    additionalCommandlineArguments:
+      default-log-level: trace
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      reserve-memory: 0M

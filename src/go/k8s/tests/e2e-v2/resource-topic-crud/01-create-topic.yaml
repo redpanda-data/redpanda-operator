@@ -11,8 +11,8 @@ spec:
     segment.bytes: "16777666"
   kafkaApiSpec:
     brokers:
-      - redpanda-0.redpanda.redpanda.svc.cluster.local.:9093
+      - redpanda-topic-0.redpanda-topic.redpanda.svc.cluster.local.:9093
     tls:
       caCertSecretRef:
-        name: redpanda-default-cert
+        name: redpanda-topic-default-cert
         key: ca.crt

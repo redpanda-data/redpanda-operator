@@ -281,7 +281,7 @@ type ConsoleAPI struct {
 	// +kubebuilder:default=true
 	// Enabled determines whether any of the connect/grpc/grpc-gateway endpoints
 	// will be mounted to the server.
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled"  yaml:"enabled"`
 	// +kubebuilder:default={"*"}
 	// EnabledProcedures is a list of procedure names that shall be allowed.
 	// If a procedure is called that is not on this list a descriptive error
@@ -289,7 +289,7 @@ type ConsoleAPI struct {
 	// whether it's called via connect, gRPC or the HTTP interface:
 	// "/redpanda.api.dataplane.v1alpha1.UserService/ListUsers".
 	// You can use "*" to enable all procedures.
-	EnabledProcedures []string `json:"enabledProcedures"`
+	EnabledProcedures []string `json:"enabledProcedures"  yaml:"enabledProcedures"`
 }
 
 //+kubebuilder:object:root=true

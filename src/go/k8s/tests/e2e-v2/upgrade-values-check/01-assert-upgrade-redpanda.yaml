@@ -4,14 +4,14 @@ kind: Redpanda
 metadata:
   finalizers:
     - operator.redpanda.com/finalizer
-  name: redpanda
+  name: redpanda-values-check
 status:
   conditions:
     - message: Redpanda reconciliation succeeded
       reason: RedpandaClusterDeployed
       status: "True"
       type: Ready
-  helmRelease: redpanda
+  helmRelease: redpanda-values-check
   helmReleaseReady: true
   helmRepository: redpanda-repository
   helmRepositoryReady: true
@@ -20,7 +20,7 @@ status:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redpanda
+  name: redpanda-values-check
 status:
   availableReplicas: 1
   collisionCount: 0
@@ -33,7 +33,7 @@ status:
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: redpanda
+  name: redpanda-values-check
 status:
   conditions:
     - reason: UpgradeSucceeded
@@ -42,7 +42,7 @@ status:
     - reason: UpgradeSucceeded
       status: "True"
       type: Released
-  helmChart: redpanda/redpanda-redpanda
+  helmChart: redpanda/redpanda-redpanda-values-check
   lastAppliedRevision: 5.3.2
   lastAttemptedRevision: 5.3.2
   lastAttemptedConfigDigest: sha256:2ba5060a47f2ee629adb0bcd117f4b6d66127e26956d417e7e4e076456c2f8f8

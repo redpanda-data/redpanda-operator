@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: get-broker-count-managed-decom
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      activeDeadlineSeconds: 90
+      containers:
+        - name: curl
+          image: apteno/alpine-jq:latest
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - -c
+            - -ex
+          args:
+            - |
+              url=https://managed-decommission-0.managed-decommission.$NAMESPACE.svc.cluster.local:9644/v1/brokers/0/decommission
+              res=$(curl --silent -L -k $url | jq '.finished')
+
+              if [[ "$res" != "true" ]]; then
+                exit 1;
+              fi
+              
+              url=https://managed-decommission-0.managed-decommission.$NAMESPACE.svc.cluster.local:9644/v1/brokers/1/decommission
+              res=$(curl --silent -L -k $url | jq '.finished')
+
+              if [[ "$res" != "true" ]]; then
+                exit 1;
+              fi
+              
+              url=https://managed-decommission-0.managed-decommission.$NAMESPACE.svc.cluster.local:9644/v1/brokers/2/decommission
+              res=$(curl --silent -L -k $url | jq '.finished')
+
+              if [[ "$res" != "true" ]]; then
+                exit 1;
+              fi
+              
+              url=https://managed-decommission-0.managed-decommission.$NAMESPACE.svc.cluster.local:9644/v1/brokers/3/decommission
+              res=$(curl --silent -L -k $url | jq '.finished')
+
+              if [[ "$res" != "true" ]]; then
+                exit 1;
+              fi
+
+              url=https://managed-decommission-0.managed-decommission.$NAMESPACE.svc.cluster.local:9644/v1/brokers
+              res=$(curl --silent -L -k $url | jq -c '[.[] | .node_id]')
+              expected="[4,5,6,7]"
+              if [ "$res" != "$expected" ]; then
+                exit 1;
+              fi
+      restartPolicy: Never
