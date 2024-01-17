@@ -41,6 +41,10 @@ patches:
   target:
     kind: CustomResourceDefinition
     name: ocirepositories.source.toolkit.fluxcd.io
+- path: patches/re-add-timeout-default_in_helmrepositories.source.toolkit.fluxcd.io.yaml
+  target:
+    kind: CustomResourceDefinition
+    name: helmrepositories.source.toolkit.fluxcd.io
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
