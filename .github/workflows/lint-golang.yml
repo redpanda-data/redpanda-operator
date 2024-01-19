@@ -12,6 +12,9 @@ on:
     paths:
       - 'src/go/**'
 
+env:
+  GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+
 jobs:
   go:
     name: Lint go files
@@ -43,16 +46,16 @@ jobs:
       env:
         GH_ACCESS_TOKEN: ${{ secrets.ACTIONS_BOT_TOKEN }}
       run: git config --global "url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf" https://github.com/
-  
+
     - name: go mod tidy (cluster-to-redpanda-migration)
       working-directory: src/go/cluster-to-redpanda-migration
       run: |
-        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
+        GOPRIVATE=github.com/redpanda-data/* go mod tidy
         git diff --exit-code -- go.mod go.sum
 
     - name: go mod tidy (k8s)
       working-directory: src/go/k8s
       run: |
-        GOPRIVATE=github.com/redpanda-data/flux-controller-shim go mod tidy
+        GOPRIVATE=github.com/redpanda-data/* go mod tidy
         git diff --exit-code -- go.mod go.sum
 

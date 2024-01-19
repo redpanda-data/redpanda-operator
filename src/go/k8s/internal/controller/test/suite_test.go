@@ -20,7 +20,7 @@ import (
 	"time"
 
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	helmControllerAPIV2 "github.com/fluxcd/helm-controller/api/v2beta1"
+	helmControllerAPIV2Beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmControllerAPIV2Beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	helmController "github.com/fluxcd/helm-controller/shim"
 	helper "github.com/fluxcd/pkg/runtime/controller"
@@ -121,7 +121,9 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).NotTo(HaveOccurred())
 	err = cmapiv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = helmControllerAPIV2.AddToScheme(scheme.Scheme)
+	err = helmControllerAPIV2Beta1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = helmControllerAPIV2Beta2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = helmControllerAPIV2Beta2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -173,7 +175,10 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	helmIndexCache := helmSourceController.NewCache(1, indexTTL)
 
 	// Helm Chart Controller
-	chartOpts := helmSourceController.HelmRepositoryReconcilerOptions{
+	chartOpts := helmSourceController.HelmChartReconcilerOptions{
+		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 5*time.Second),
+	}
+	repoOpts := helmSourceController.HelmRepositoryReconcilerOptions{
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 5*time.Second),
 	}
 	helmChart := helmSourceController.HelmChartReconcilerFactory{
@@ -203,7 +208,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		CacheRecorder:  cacheRecorder,
 		TTL:            indexTTL,
 	}
-	err = helmRepository.SetupWithManager(ctx, k8sManager, chartOpts)
+	err = helmRepository.SetupWithManager(ctx, k8sManager, repoOpts)
 	Expect(err).ToNot(HaveOccurred())
 
 	testAdminAPI = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI")}
