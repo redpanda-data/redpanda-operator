@@ -77,7 +77,10 @@ const (
 	ClusterControllerMode   = OperatorState("Clustered-Controllers")
 	NamespaceControllerMode = OperatorState("Namespaced-Controllers")
 
-	controllerName = "redpanda-controller"
+	controllerName               = "redpanda-controller"
+	helmReleaseControllerName    = "redpanda-helmrelease-controller"
+	helmChartControllerName      = "redpanda-helmchart-reconciler"
+	helmRepositoryControllerName = "redpanda-helmrepository-controller"
 )
 
 var (
@@ -353,7 +356,7 @@ func main() {
 				EventRecorder:    helmReleaseEventRecorder,
 				ClientOpts:       clientOptions,
 				KubeConfigOpts:   kubeConfigOpts,
-				FieldManager:     "redpanda-helmRelease-controller",
+				FieldManager:     helmReleaseControllerName,
 				Metrics:          metricsH,
 				GetClusterConfig: ctrl.GetConfig,
 			}
@@ -387,7 +390,7 @@ func main() {
 				Metrics:                 metricsH,
 				Storage:                 storage,
 				EventRecorder:           helmChartEventRecorder,
-				ControllerName:          "redpanda-helmChart-reconciler",
+				ControllerName:          helmChartControllerName,
 			}
 			if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
 				setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
@@ -404,7 +407,7 @@ func main() {
 				Client:         mgr.GetClient(),
 				EventRecorder:  helmRepositoryEventRecorder,
 				Getters:        getters,
-				ControllerName: "redpanda-helmRepository-controller",
+				ControllerName: helmRepositoryControllerName,
 				Cache:          helmIndexCache,
 				CacheRecorder:  cacheRecorder,
 				TTL:            indexTTL,
