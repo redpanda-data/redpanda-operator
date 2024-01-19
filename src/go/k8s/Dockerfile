@@ -3,15 +3,22 @@ FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.21.3 as bu
 ARG TARGETARCH
 ARG TARGETOS
 
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+
 WORKDIR /workspace/k8s
 # Copy the Go Modules manifests
+COPY k8s/mod/pkg/mod /go/pkg/mod
 COPY k8s/go.mod go.mod
 COPY k8s/go.sum go.sum
 
+RUN git config --global url."ssh://git@github.com".insteadOf "https://github.com"
+
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-COPY k8s/mod/pkg/mod /go/pkg/mod
-RUN go mod download
+#COPY k8s/mod/pkg/mod /go/pkg/mod
+#RUN go mod download
+RUN --mount=type=ssh go mod download
 
 # Copy the go source
 COPY k8s/ .
