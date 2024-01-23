@@ -13,8 +13,7 @@ status:
       reason: MinimumReplicasAvailable
       status: "True"
       type: Available
-    - message: ReplicaSet "redpanda-operator-5cdf66789" has successfully progressed.
-      reason: NewReplicaSetAvailable
+    - reason: NewReplicaSetAvailable
       status: "True"
       type: Progressing
 # TestAssert cannot be used, since TestStep is used and this assertion is used there

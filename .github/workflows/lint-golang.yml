@@ -13,7 +13,7 @@ on:
       - 'src/go/**'
 
 env:
-  GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+  GOPRIVATE: github.com/redpanda-data/*
 
 jobs:
   go:

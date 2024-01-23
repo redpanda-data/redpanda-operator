@@ -15,20 +15,20 @@ status:
   helmReleaseReady: true
   helmRepository: redpanda-repository
   helmRepositoryReady: true
-  observedGeneration: 3
+  observedGeneration: 2
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: decommission
 status:
-  availableReplicas: 3
+  availableReplicas: 4
   collisionCount: 0
-  currentReplicas: 3
-  observedGeneration: 3
-  readyReplicas: 3
-  replicas: 3
-  updatedReplicas: 3
+  currentReplicas: 4
+  observedGeneration: 2
+  readyReplicas: 4
+  replicas: 4
+  updatedReplicas: 4
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
@@ -43,8 +43,8 @@ status:
       status: "True"
       type: Released
   helmChart: redpanda/redpanda-decommission
-  lastAppliedRevision: 5.6.48
-  lastAttemptedRevision: 5.6.48
+  lastAppliedRevision: 5.7.9
+  lastAttemptedRevision: 5.7.9
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
