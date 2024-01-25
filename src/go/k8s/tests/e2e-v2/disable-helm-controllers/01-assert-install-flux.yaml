@@ -11,8 +11,7 @@ status:
       reason: MinimumReplicasAvailable
       status: "True"
       type: Available
-    - message: ReplicaSet "helm-controller-b69f59f87" has successfully progressed.
-      reason: NewReplicaSetAvailable
+    - reason: NewReplicaSetAvailable
       status: "True"
       type: Progressing
   readyReplicas: 1
