@@ -120,7 +120,7 @@ tasks:
       - task: :docker:task
         vars:
           DOCKER_IMAGE: '{{.GOLANG_TOOLCHAIN_IMAGE}}'
-          TASK_ARGS: k8s:build-tag-and-push-images
+          TASK_ARGS: ci:configure-git-private-repo k8s:download-k8s-go-dependencies k8s:build-tag-and-push-images k8s:cleanup-k8s-go-dependencies
     status:
       - test -z '{{.TAG_NAME}}' # only run for tagged commits
 
