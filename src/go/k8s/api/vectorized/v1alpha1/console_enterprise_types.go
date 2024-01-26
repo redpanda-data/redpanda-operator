@@ -116,7 +116,7 @@ type PrometheusConfig struct {
 	Jobs []PrometheusScraperJobConfig `json:"jobs"`
 
 	// +kubebuilder:validation:Type=string
-	// +kubebuilder:default="10s"
+	// +kubebuilder:default="1m"
 	TargetRefreshInterval *metav1.Duration `json:"targetRefreshInterval,omitempty"`
 }
 

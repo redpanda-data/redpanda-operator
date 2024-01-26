@@ -149,7 +149,7 @@ func (m *ConsoleDefaulter) Default(
 		console.Spec.Cloud.PrometheusEndpoint != nil &&
 		console.Spec.Cloud.PrometheusEndpoint.Prometheus != nil &&
 		console.Spec.Cloud.PrometheusEndpoint.Prometheus.TargetRefreshInterval == nil {
-		console.Spec.Cloud.PrometheusEndpoint.Prometheus.TargetRefreshInterval = &metav1.Duration{Duration: 10 * time.Second}
+		console.Spec.Cloud.PrometheusEndpoint.Prometheus.TargetRefreshInterval = &metav1.Duration{Duration: 1 * time.Minute}
 	}
 
 	current, err := json.Marshal(console)

@@ -109,7 +109,7 @@ spec:
                               type: object
                             type: array
                           targetRefreshInterval:
-                            default: 10s
+                            default: 1m
                             type: string
                         required:
                         - address
