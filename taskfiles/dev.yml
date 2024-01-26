@@ -35,8 +35,8 @@ tasks:
     cmds:
       - "{{.SRC_DIR}}/ci/scripts/install-task.sh"
     status:
-      - test -f bin/task
-      - "[[ $(bin/task --version | grep -o {{.TASK_VERSION}}) == {{.TASK_VERSION}} ]]"
+      - test -f {{.BIN_DIR}}/task
+      - "[[ $({{.BIN_DIR}}/task --version | grep -o {{.TASK_VERSION}}) == {{.TASK_VERSION}} ]]"
 
   install-go:
     desc: install golang compiler
@@ -207,7 +207,7 @@ tasks:
 
   retry-task:
     vars:
-      TASK_EXEC: '{{default "bin/task" .TASK_EXEC}}'
+      TASK_EXEC: '{{default "./task" .TASK_EXEC}}'
       RETRY_COUNT: '{{default 3 .RETRY_COUNT}}'
       SLEEP_INTERVAL: '{{default 3 .SLEEP_INTERVAL}}'
     cmds:
