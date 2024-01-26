@@ -17,7 +17,6 @@ tasks:
     dir: 'src/go/k8s'
     cmds:
       - |
-        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
         mkdir mod || (rm -rf mod && mkdir mod)
         GOPATH=$(realpath ./mod/) go mod download
 
@@ -35,8 +34,6 @@ tasks:
       - './**/*.go'
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
         controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
           paths='./...'
@@ -46,9 +43,7 @@ tasks:
     deps:
       - :dev:install-go
     cmds:
-      - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        go vet ./...
+      - go vet ./...
 
   generate-manifests:
     dir: 'src/go/k8s'
@@ -86,8 +81,7 @@ tasks:
       ENVTEST_ASSETS_DIR: '{{.ENVTEST_ASSETS_DIR | default .ENVTEST_ASSETS_DIR_DEFAULT}}'
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        source {{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh
+        source {{.BIN_DIR}}/setup-envtest.sh
         fetch_envtest_tools {{.ENVTEST_ASSETS_DIR}}
         setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
         go test -v ./... -coverprofile cover.out
@@ -138,7 +132,7 @@ tasks:
       - :dev:install-docker-tag-list
     cmds:
       - |
-        TAG=$("{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list" -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
+        TAG=$(docker-tag-list -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
         docker pull "{{.REPO}}":"${TAG}"
         docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
 
@@ -201,7 +195,6 @@ tasks:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
       - |
-        PATH="{{.GOLANG_INSTALL_DIR}}"/bin:"{{.HELM_INSTALL_DIR}}"/bin:"{{.KIND_INSTALL_DIR}}"/bin:"{{.KUBECTL_INSTALL_DIR}}"/bin:"{{.KUTTL_INSTALL_DIR}}"/bin:"{{.KUSTOMIZE_INSTALL_DIR}}"/bin:"{{.YQ_INSTALL_DIR}}"/bin:$PATH
         KUTTL_EXIT_CODE=0
         kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}} || KUTTL_EXIT_CODE=$?
         echo "$KUTTL_EXIT_CODE" > kuttl-exit-code
