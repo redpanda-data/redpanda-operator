@@ -535,7 +535,7 @@ func (cm *ConfigMap) genKafka(username string) config.Kafka {
 			Enabled: y,
 			SchemaRegistry: config.ProtoSchemaRegistry{
 				Enabled:         y,
-				RefreshInterval: time.Second * 10,
+				RefreshInterval: time.Minute * 1,
 			},
 		}
 	}
