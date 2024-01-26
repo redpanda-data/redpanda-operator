@@ -25,3 +25,14 @@ src/go/k8s/tests/e2e-v2-helm/
 
 # vim
 .*.sw?
+
+# direnv files
+.envrc
+.direnv/
+
+# task cache directory
+.task/
+
+# Nix files (for now)
+flake.lock
+flake.nix
