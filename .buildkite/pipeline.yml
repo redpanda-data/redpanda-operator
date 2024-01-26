@@ -6,7 +6,6 @@ env:
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
 
 setup: &setup |
-  mkdir -p .build
   ci/scripts/install-task.sh
 
 steps:
@@ -17,7 +16,7 @@ steps:
     commands:
       - *setup
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) bin/task goreleaser:release
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./task goreleaser:release
     agents:
       queue: k8s-builders
 
@@ -30,15 +29,15 @@ steps:
     commands:
       - *setup
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) bin/task ci:k8s
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./task ci:k8s
     agents:
       queue: amd64-builders
     artifact_paths:
       - src/go/k8s/*.tar.gz
       - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
-      
+
   - group: K8s Operator v2 Jobs
-    if: | 
+    if: |
       build.tag == null ||
       build.env("K8S_NIGHTLY") == "1"
     steps:
@@ -50,7 +49,7 @@ steps:
               context: k8s-operator-v2
         commands:
           - *setup
-          - bin/task ci:k8s-v2
+          - ./task ci:k8s-v2
         agents:
           queue: amd64-builders
         artifact_paths:
@@ -82,7 +81,7 @@ steps:
               context: k8s-operator-v2-helm
         commands:
           - *setup
-          - bin/task ci:k8s-v2-helm
+          - ./task ci:k8s-v2-helm
         agents:
           queue: amd64-builders
         artifact_paths:

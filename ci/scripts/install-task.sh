@@ -9,7 +9,6 @@ else
   ARCH="amd64"
 fi
 
-mkdir -p bin/
+mkdir -p .build/bin/
 
-curl -sSLf https://vectorized-public.s3.us-west-2.amazonaws.com/dependencies/task_linux_${TASK_VERSION}_${ARCH}.tar.gz | tar -xz -C bin/ task
-
+curl -sSLf https://vectorized-public.s3.us-west-2.amazonaws.com/dependencies/task_linux_${TASK_VERSION}_${ARCH}.tar.gz | tar -xz -C .build/bin/ task

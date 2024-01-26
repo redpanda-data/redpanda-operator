@@ -68,6 +68,6 @@ tasks:
           --volume $DOCKER_SOCKET:$DOCKER_SOCKET \
           --volume '{{.PWD}}:{{.PWD}}' \
           --workdir '{{.PWD}}' \
-          --entrypoint=bin/task \
+          --entrypoint=./task \
           {{.DOCKER_IMAGE}} \
             {{.TASK_ARGS}}
