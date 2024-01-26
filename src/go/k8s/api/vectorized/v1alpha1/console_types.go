@@ -160,6 +160,11 @@ type Deployment struct {
 
 	// +kubebuilder:default=1
 	MaxSurge int32 `json:"maxSurge,omitempty"`
+
+	// +optional
+	// Compute Resources required by the container.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
 // Connect defines configurable fields for Kafka Connect

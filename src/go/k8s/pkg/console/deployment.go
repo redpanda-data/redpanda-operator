@@ -562,6 +562,7 @@ func (d *Deployment) getContainers(ctx context.Context, ss map[string]string) ([
 			},
 			VolumeMounts: volumeMounts,
 			Env:          env,
+			Resources:    d.consoleobj.Spec.Deployment.Resources,
 		},
 	}, nil
 }
