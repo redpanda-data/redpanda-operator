@@ -160,6 +160,11 @@ type Deployment struct {
 
 	// +kubebuilder:default=1
 	MaxSurge int32 `json:"maxSurge,omitempty"`
+
+	// +optional
+	// Resources are the [corev1.ResourceRequirements] that are passed, verbatim, to the console Deployment.
+	// See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Connect defines configurable fields for Kafka Connect

@@ -548,6 +548,11 @@ func (d *Deployment) getContainers(ctx context.Context, ss map[string]string) ([
 		return nil, err
 	}
 
+	var res corev1.ResourceRequirements
+	if d.consoleobj.Spec.Deployment.Resources != nil {
+		res = *d.consoleobj.Spec.Deployment.Resources
+	}
+
 	return []corev1.Container{
 		{
 			Name:  ConsoleContainerName,
@@ -562,6 +567,7 @@ func (d *Deployment) getContainers(ctx context.Context, ss map[string]string) ([
 			},
 			VolumeMounts: volumeMounts,
 			Env:          env,
+			Resources:    res,
 		},
 	}, nil
 }
