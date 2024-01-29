@@ -146,6 +146,11 @@ type Schema struct {
 	// Indication on whether to use the schema registry CA as trust when connecting to the schema registry.
 	// If not set, the public CAs will be used.
 	UseSchemaRegistryCA bool `json:"useSchemaRegistryCA,omitempty"`
+
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:default="1m"
+	RefreshInterval *metav1.Duration `json:"targetRefreshInterval,omitempty"`
 }
 
 // Deployment defines configurable fields for the Console Deployment resource

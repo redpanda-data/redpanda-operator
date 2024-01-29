@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/fluxcd/pkg/runtime/logger"
@@ -535,7 +534,7 @@ func (cm *ConfigMap) genKafka(username string) config.Kafka {
 			Enabled: y,
 			SchemaRegistry: config.ProtoSchemaRegistry{
 				Enabled:         y,
-				RefreshInterval: time.Second * 10,
+				RefreshInterval: cm.consoleobj.Spec.SchemaRegistry.RefreshInterval.Duration,
 			},
 		}
 	}

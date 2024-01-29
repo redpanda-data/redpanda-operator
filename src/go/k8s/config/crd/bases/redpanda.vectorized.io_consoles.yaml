@@ -597,6 +597,10 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                  targetRefreshInterval:
+                    default: 1m
+                    format: duration
+                    type: string
                   useSchemaRegistryCA:
                     description: Indication on whether to use the schema registry
                       CA as trust when connecting to the schema registry. If not set,
