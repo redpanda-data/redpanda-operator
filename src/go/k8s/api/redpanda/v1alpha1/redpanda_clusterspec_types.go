@@ -430,6 +430,15 @@ type Storage struct {
 	PersistentVolume *PersistentVolume `json:"persistentVolume,omitempty"`
 	// Configures storage for the Tiered Storage cache.
 	Tiered *Tiered `json:"tiered,omitempty"`
+	// CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
+	CredentialsSecretRef *CredentialSecretRef `json:"credentials_secret_ref,omitempty"`
+}
+
+// CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
+type CredentialSecretRef struct {
+	Key              string `json:"key"`
+	Name             string `json:"name"`
+	ConfigurationKey string `json:"configurationKey"`
 }
 
 // Tiered configures storage for the Tiered Storage cache. See https://docs.redpanda.com/current/manage/kubernetes/tiered-storage-kubernetes/.
@@ -525,6 +534,8 @@ type PersistentVolume struct {
 	Size *string `json:"size,omitempty"`
 	// Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed.
 	StorageClass *string `json:"storageClass,omitempty"`
+	// Option to change volume claim template name for tiered storage persistent volume if tiered.mountType is set to `persistentVolume`
+	NameOverwrite *string `json:"nameOverwrite,omitempty"`
 }
 
 // PostInstallJob configures configurations for the post-install job that run after installation of the Helm chart.
@@ -1029,4 +1040,9 @@ type AuditLogging struct {
 	QueueDrainIntervalMs *int32 `json:"queueDrainIntervalMs,omitempty"`
 	// Defines the maximum amount of memory used (in bytes) by the audit buffer in each shard
 	QueueMaxBufferSizePerShard *int32 `json:"queueMaxBufferSizePerShard,omitempty"`
+	// Defines the replication factor for a newly created audit log topic. This configuration applies
+	// only to the audit log topic and may be different from the cluster or other topic configurations.
+	// This cannot be altered for existing audit log topics. Setting this value is optional. If a value is not provided,
+	// Redpanda will use the `internal_topic_replication_factor` cluster config value. Default is `null`
+	ReplicationFactor *int32 `json:"replicationFactor,omitempty"`
 }

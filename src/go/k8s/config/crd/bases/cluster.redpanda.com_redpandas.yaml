@@ -159,6 +159,16 @@ spec:
                           bytes) by the audit buffer in each shard
                         format: int32
                         type: integer
+                      replicationFactor:
+                        description: Defines the replication factor for a newly created
+                          audit log topic. This configuration applies only to the
+                          audit log topic and may be different from the cluster or
+                          other topic configurations. This cannot be altered for existing
+                          audit log topics. Setting this value is optional. If a value
+                          is not provided, Redpanda will use the `internal_topic_replication_factor`
+                          cluster config value. Default is `null`
+                        format: int32
+                        type: integer
                     type: object
                   auth:
                     description: Defines authentication settings for listeners.
@@ -3980,6 +3990,21 @@ spec:
                     description: Defines storage settings for the Redpanda data directory
                       and the Tiered Storage cache.
                     properties:
+                      credentials_secret_ref:
+                        description: CredentialSecretRef can be used to set cloud_storage_secret_key
+                          from referenced Kubernetes Secret
+                        properties:
+                          configurationKey:
+                            type: string
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - configurationKey
+                        - key
+                        - name
+                        type: object
                       hostPath:
                         description: Specifies the absolute path on the worker node
                           to store the Redpanda data directory. If unspecified, then
@@ -4009,6 +4034,11 @@ spec:
                               to facilitate identification and selection based on
                               custom criteria.
                             type: object
+                          nameOverwrite:
+                            description: Option to change volume claim template name
+                              for tiered storage persistent volume if tiered.mountType
+                              is set to `persistentVolume`
+                            type: string
                           size:
                             description: Specifies the storage capacity required.
                             type: string
