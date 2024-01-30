@@ -155,12 +155,9 @@ func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.E
 	}
 
 	// Clean condition from Pods
-	podList, err := getPodList(ctx, c, rp.Namespace, labels.Set{
-		"app.kubernetes.io/component": componentLabelValue,
-		"app.kubernetes.io/instance":  rp.Name,
-	}.AsSelector())
+	podList, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
-		return fmt.Errorf("check all pods have condition: %w", err)
+		return fmt.Errorf("cleanup listing all pods: %w", err)
 	}
 
 	for i := range podList.Items {
@@ -180,6 +177,14 @@ func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.E
 	log.Info("Clean up", "conditions", rp.GetConditions(), "annotations", rp.GetAnnotations())
 
 	return updateRedpanda(ctx, rp, c)
+}
+
+func redpandaPodsSelector(rp *v1alpha1.Redpanda) labels.Selector {
+	selector, err := labels.Parse(fmt.Sprintf("!job-name,app.kubernetes.io/component=%s,app.kubernetes.io/instance=%s", componentLabelValue, rp.Name))
+	if err != nil {
+		panic(fmt.Errorf("label selector should always pass parsing: %w", err))
+	}
+	return selector
 }
 
 func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
@@ -293,12 +298,9 @@ func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alph
 func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha1.Redpanda, nodeID int) (*corev1.Pod, error) {
 	log := l.WithName("getPodFromRedpandaNodeID")
 
-	pl, err := getPodList(ctx, c, rp.Namespace, labels.Set{
-		"app.kubernetes.io/component": componentLabelValue,
-		"app.kubernetes.io/instance":  rp.Name,
-	}.AsSelector())
+	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
-		return nil, fmt.Errorf("check all pods have condition: %w", err)
+		return nil, fmt.Errorf("get Redpanda Node ID pod list: %w", err)
 	}
 
 	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
@@ -362,10 +364,8 @@ func updateRedpanda(ctx context.Context, rp *v1alpha1.Redpanda, c k8sclient.Clie
 
 func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
 	log := l.WithName("reconcilePodsDecommission")
-	pl, err := getPodList(ctx, c, rp.Namespace, labels.Set{
-		"app.kubernetes.io/component": componentLabelValue,
-		"app.kubernetes.io/instance":  rp.Name,
-	}.AsSelector())
+
+	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return err
 	}
@@ -442,10 +442,7 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 }
 
 func areAllPodsUpdated(ctx context.Context, c k8sclient.Client, rp *v1alpha1.Redpanda) (bool, error) {
-	podList, err := getPodList(ctx, c, rp.Namespace, labels.Set{
-		"app.kubernetes.io/component": componentLabelValue,
-		"app.kubernetes.io/instance":  rp.Name,
-	}.AsSelector())
+	podList, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return false, fmt.Errorf("check all pods have condition: %w", err)
 	}
@@ -491,12 +488,9 @@ func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er recor
 		return nil
 	}
 
-	pl, err := getPodList(ctx, c, rp.Namespace, labels.Set{
-		"app.kubernetes.io/component": componentLabelValue,
-		"app.kubernetes.io/instance":  rp.Name,
-	}.AsSelector())
+	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
-		return err
+		return fmt.Errorf("marking Redpanda condition pod list: %w", err)
 	}
 
 	for i := range pl.Items {
