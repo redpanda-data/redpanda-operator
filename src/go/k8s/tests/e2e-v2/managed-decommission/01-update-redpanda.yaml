@@ -8,4 +8,4 @@ spec:
     chartVersion: "5.7.17"
   clusterSpec:
     statefulset:
-      replicas: 3
+      replicas: 4

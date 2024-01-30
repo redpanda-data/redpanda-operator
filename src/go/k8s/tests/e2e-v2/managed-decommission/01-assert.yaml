@@ -1,6 +1,8 @@
 apiVersion: cluster.redpanda.com/v1alpha1
 kind: Redpanda
 metadata:
+  finalizers:
+    - operator.redpanda.com/finalizer
   name: managed-decommission
 status:
   conditions:
@@ -8,16 +10,24 @@ status:
       reason: RedpandaClusterDeployed
       status: "True"
       type: Ready
-    - message: Managed Decommission started
-      reason: ManagedDecommissionStarted
-      status: "True"
-      type: ManagedDecommission
   helmRelease: managed-decommission
   helmReleaseReady: true
   helmRepository: redpanda-repository
   helmRepositoryReady: true
-  observedGeneration: 1
-  decommissioningNode: 3
+  observedGeneration: 2
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: managed-decommission
+spec:
+  replicas: 4
+status:
+  availableReplicas: 4
+  currentReplicas: 4
+  readyReplicas: 4
+  replicas: 4
+  updatedReplicas: 4
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
