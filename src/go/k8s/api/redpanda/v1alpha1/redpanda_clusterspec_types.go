@@ -430,12 +430,15 @@ type Storage struct {
 	PersistentVolume *PersistentVolume `json:"persistentVolume,omitempty"`
 	// Configures storage for the Tiered Storage cache.
 	Tiered *Tiered `json:"tiered,omitempty"`
-	// CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
-	CredentialsSecretRef *CredentialSecretRef `json:"credentials_secret_ref,omitempty"`
 }
 
 // CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
 type CredentialSecretRef struct {
+	AccessKey *SecretWithConfigField `json:"accessKey,omitempty"`
+	SecretKey *SecretWithConfigField `json:"secretKey,omitempty"`
+}
+
+type SecretWithConfigField struct {
 	Key              string `json:"key"`
 	Name             string `json:"name"`
 	ConfigurationKey string `json:"configurationKey"`
@@ -456,6 +459,8 @@ type Tiered struct {
 	TieredStoragePersistentVolume *TieredStoragePersistentVolume `json:"persistentVolume,omitempty"`
 	// Configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprised.licenseSecretRef`.
 	Config *TieredConfig `json:"config,omitempty"`
+	// CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
+	CredentialsSecretRef *CredentialSecretRef `json:"credentials_secret_ref,omitempty"`
 }
 
 // TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.

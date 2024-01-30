@@ -3990,21 +3990,6 @@ spec:
                     description: Defines storage settings for the Redpanda data directory
                       and the Tiered Storage cache.
                     properties:
-                      credentials_secret_ref:
-                        description: CredentialSecretRef can be used to set cloud_storage_secret_key
-                          from referenced Kubernetes Secret
-                        properties:
-                          configurationKey:
-                            type: string
-                          key:
-                            type: string
-                          name:
-                            type: string
-                        required:
-                        - configurationKey
-                        - key
-                        - name
-                        type: object
                       hostPath:
                         description: Specifies the absolute path on the worker node
                           to store the Redpanda data directory. If unspecified, then
@@ -4135,6 +4120,37 @@ spec:
                             required:
                             - cloud_storage_bucket
                             - cloud_storage_region
+                            type: object
+                          credentials_secret_ref:
+                            description: CredentialSecretRef can be used to set cloud_storage_secret_key
+                              from referenced Kubernetes Secret
+                            properties:
+                              accessKey:
+                                properties:
+                                  configurationKey:
+                                    type: string
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - configurationKey
+                                - key
+                                - name
+                                type: object
+                              secretKey:
+                                properties:
+                                  configurationKey:
+                                    type: string
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - configurationKey
+                                - key
+                                - name
+                                type: object
                             type: object
                           hostPath:
                             description: Specifies the absolute path on the worker
