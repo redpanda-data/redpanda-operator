@@ -4121,9 +4121,10 @@ spec:
                             - cloud_storage_bucket
                             - cloud_storage_region
                             type: object
-                          credentials_secret_ref:
-                            description: CredentialSecretRef can be used to set cloud_storage_secret_key
-                              from referenced Kubernetes Secret
+                          credentialsSecretRef:
+                            description: CredentialSecretRef can be used to set `cloud_storage_secret_key`
+                              and/or `cloud_storage_access_key` from referenced Kubernetes
+                              Secret
                             properties:
                               accessKey:
                                 properties:
