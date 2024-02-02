@@ -150,7 +150,7 @@ type Schema struct {
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=duration
 	// +kubebuilder:default="1m"
-	RefreshInterval *metav1.Duration `json:"targetRefreshInterval,omitempty"`
+	RefreshInterval *metav1.Duration `json:"refreshInterval,omitempty"`
 }
 
 // Deployment defines configurable fields for the Console Deployment resource
