@@ -597,7 +597,7 @@ spec:
                 properties:
                   enabled:
                     type: boolean
-                  targetRefreshInterval:
+                  refreshInterval:
                     default: 1m
                     format: duration
                     type: string
