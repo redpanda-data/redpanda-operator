@@ -1,6 +1,8 @@
 module github.com/redpanda-data/redpanda-operator/src/go/k8s
 
-go 1.21
+go 1.21.5
+
+toolchain go1.21.8
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
