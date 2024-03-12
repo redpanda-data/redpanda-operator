@@ -383,7 +383,7 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 			p.TLS.RequireClientAuth,
 			p.TLS.IssuerRef,
 			p.TLS.NodeSecretRef,
-			nil,
+			p.TLS.ClientCACertRef,
 			field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(i).Child("tls"),
 			&r.Spec.Configuration.KafkaAPI[i].External,
 			field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(i).Child("external"),

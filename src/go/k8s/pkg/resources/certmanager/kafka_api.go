@@ -19,4 +19,7 @@ const (
 	AdminClientCert = "admin-client"
 	// RedpandaNodeCert cert name - node certificate
 	RedpandaNodeCert = "redpanda"
+
+	// kafkaAPITrustedClientCAs is the suffix of the certificate bundle name
+	kafkaAPITrustedClientCAs = "kafka-api-trusted-client-ca"
 )
