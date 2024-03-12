@@ -213,7 +213,7 @@ func NewClusterCertificates(
 	}
 	var err error
 	kafkaListeners := kafkaAPIListeners(cluster)
-	cc.kafkaAPI, err = cc.prepareAPI(ctx, "kafka-api", kafkaAPI, RedpandaNodeCert, "", []string{OperatorClientCert, UserClientCert, AdminClientCert}, kafkaListeners, &keystoreSecret)
+	cc.kafkaAPI, err = cc.prepareAPI(ctx, "kafka-api", kafkaAPI, RedpandaNodeCert, kafkaAPITrustedClientCAs, []string{OperatorClientCert, UserClientCert, AdminClientCert}, kafkaListeners, &keystoreSecret)
 	if err != nil {
 		return nil, fmt.Errorf("kafka api certificates %w", err)
 	}
@@ -582,7 +582,7 @@ func (cc *ClusterCertificates) Volumes() (
 	shouldIncludeKafkaClientCerts := len(cc.kafkaAPI.clientCertificates) > 0
 	vol, mount := secretVolumesForTLS(
 		cc.kafkaAPI.nodeCertificateName(),
-		nil,
+		cc.kafkaAPI.bundledClientCACertificateName(),
 		cc.kafkaAPI.clientCertificates,
 		redpandaCertVolName,
 		mountPoints.KafkaAPI.NodeCertMountDir,
@@ -704,7 +704,7 @@ func secretVolumesForTLS(
 		clientCACertVolume.VolumeSource.Secret.Items = append(clientCACertVolume.VolumeSource.Secret.Items, caPath)
 	}
 
-	if len(clientCertificates) > 0 && shouldIncludeClientCert {
+	if len(clientCertificates) > 0 && shouldIncludeClientCert && bundledClientCACert == nil {
 		clientCACertVolume.VolumeSource.Secret.Items = append(
 			clientCACertVolume.VolumeSource.Secret.Items,
 			corev1.KeyToPath{
