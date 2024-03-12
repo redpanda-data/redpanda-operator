@@ -364,7 +364,8 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 
 	var external *KafkaAPI
 	var externalIdx int
-	for i, p := range r.Spec.Configuration.KafkaAPI {
+	for i := range r.Spec.Configuration.KafkaAPI {
+		p := &r.Spec.Configuration.KafkaAPI[i]
 		if p.External.Enabled {
 			if external != nil {
 				allErrs = append(allErrs,
@@ -377,7 +378,8 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 		}
 	}
 
-	for i, p := range r.Spec.Configuration.KafkaAPI {
+	for i := range r.Spec.Configuration.KafkaAPI {
+		p := &r.Spec.Configuration.KafkaAPI[i]
 		tlsErrs := validateListener(
 			p.TLS.Enabled,
 			p.TLS.RequireClientAuth,
