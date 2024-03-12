@@ -851,9 +851,10 @@ func (r *Cluster) ExternalListener() *KafkaAPI {
 	if r == nil {
 		return nil
 	}
-	for _, el := range r.Spec.Configuration.KafkaAPI {
+	for i := range r.Spec.Configuration.KafkaAPI {
+		el := &r.Spec.Configuration.KafkaAPI[i]
 		if el.External.Enabled {
-			return &el
+			return el
 		}
 	}
 	return nil
@@ -864,9 +865,10 @@ func (r *Cluster) InternalListener() *KafkaAPI {
 	if r == nil {
 		return nil
 	}
-	for _, el := range r.Spec.Configuration.KafkaAPI {
+	for i := range r.Spec.Configuration.KafkaAPI {
+		el := &r.Spec.Configuration.KafkaAPI[i]
 		if !el.External.Enabled {
-			return &el
+			return el
 		}
 	}
 	return nil
@@ -885,7 +887,8 @@ func (r *Cluster) KafkaTLSListeners() []ListenerWithName {
 		return nil
 	}
 	res := []ListenerWithName{}
-	for i, el := range r.Spec.Configuration.KafkaAPI {
+	for i := range r.Spec.Configuration.KafkaAPI {
+		el := &r.Spec.Configuration.KafkaAPI[i]
 		if el.TLS.Enabled {
 			name := InternalListenerName
 			if el.External.Enabled {

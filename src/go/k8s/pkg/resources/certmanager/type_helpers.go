@@ -72,8 +72,8 @@ type APIListener interface {
 
 func kafkaAPIListeners(r *vectorizedv1alpha1.Cluster) []APIListener {
 	listeners := []APIListener{}
-	for _, el := range r.Spec.Configuration.KafkaAPI {
-		listeners = append(listeners, el)
+	for i := range r.Spec.Configuration.KafkaAPI {
+		listeners = append(listeners, r.Spec.Configuration.KafkaAPI[i])
 	}
 	return listeners
 }
