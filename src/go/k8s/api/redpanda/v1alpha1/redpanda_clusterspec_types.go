@@ -389,7 +389,7 @@ type Logging struct {
 	// Sets the verbosity level of logs.
 	LogLevel string `json:"logLevel"`
 	// Specifies whether to send usage statistics to Redpanda Data.
-	UsageStats UsageStats `json:"usageStats"`
+	UsageStats UsageStats `json:"usageStats,omitempty"`
 }
 
 // UsageStats configures the reporting of usage statistics. Redpanda Data uses these metrics to learn how the software is used, which can guide future improvements.
