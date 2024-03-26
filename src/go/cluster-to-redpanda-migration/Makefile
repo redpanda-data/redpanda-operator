@@ -33,7 +33,6 @@ compile-linux: GOOS=linux
 compile-linux: TARGETARCH=amd64
 compile-linux: compile
 
-
 .PHONY: gofumpt-install
 gofumpt-install:
 	go install mvdan.cc/gofumpt@latest

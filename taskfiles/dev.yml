@@ -143,23 +143,6 @@ tasks:
         PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
         [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
 
-  install-k8s-controller-gen:
-    desc: install k8s-controller-gen
-    deps:
-      - install-go
-    cmds:
-      - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin'
-      - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
-      - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
-        export GOBIN={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin
-        cd '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
-        go mod init tmp
-        go install sigs.k8s.io/controller-tools/cmd/controller-gen@{{.K8S_CONTROLLER_GEN_VERSION}}
-      - rm -rf '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
-    status:
-      - test -f '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen'
-
   start-podman-socket-service:
     desc: start podman.socket service
     vars:

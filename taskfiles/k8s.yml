@@ -26,20 +26,34 @@ tasks:
     cmds:
       - rm -rf mod
 
-  generate-controller-code:
-    deps:
-      - :dev:install-go
-      - :dev:install-k8s-controller-gen
+  generate:controller:
     dir: 'src/go/k8s'
-    sources:
-      - './**/*.go'
+    requires:
+      vars: [IN_NIX_SHELL]
+    aliases: [generate-controller-code]
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
         controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
           paths='./...'
+
+  generate:manifests:
+    dir: 'src/go/k8s'
+    requires:
+      vars: [IN_NIX_SHELL]
+    aliases: [generate-manifests]
+    vars:
+      CRD_OPTIONS_DEFAULT: 'crd'
+      CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
+    cmds:
+      - |
+        controller-gen \
+          {{.CRD_OPTIONS}} \
+          rbac:roleName=manager-role \
+          webhook \
+          paths='./...' \
+          output:crd:artifacts:config=config/crd/bases \
+          output:rbac:artifacts:config=config/rbac/bases/operator
 
   run-go-vet:
     dir: 'src/go/k8s'
@@ -49,30 +63,6 @@ tasks:
       - |
         PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
         go vet ./...
-
-  generate-manifests:
-    dir: 'src/go/k8s'
-    deps:
-      - :dev:install-go
-      - :dev:install-k8s-controller-gen
-    vars:
-      CRD_OPTIONS_DEFAULT: 'crd'
-      CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
-      GOPATH:
-        sh: 'realpath "{{.PWD}}/mod"'
-    sources:
-      - './**/*.go'
-    cmds:
-      - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
-        controller-gen \
-          {{.CRD_OPTIONS}} \
-          rbac:roleName=manager-role \
-          webhook \
-          paths='./...' \
-          output:crd:artifacts:config=config/crd/bases \
-          output:rbac:artifacts:config=config/rbac/bases/operator
 
   run-unit-tests:
     dir: 'src/go/k8s'

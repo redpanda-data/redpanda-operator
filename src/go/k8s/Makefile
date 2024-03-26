@@ -94,17 +94,17 @@ undeploy:
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases output:rbac:artifacts:config=config/rbac/bases/operator
+	task k8s:generate:manifests
+
+# Generate code
+.PHONY: generate
+generate: controller-gen
+	task k8s:generate:controller
 
 # Run go vet against code
 .PHONY: vet
 vet:
 	go vet ./...
-
-# Generate code
-.PHONY: generate
-generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="../../../licenses/boilerplate.go.txt" paths="./..."
 
 # Creates kind cluster
 kind-create:
@@ -172,7 +172,6 @@ $(LOCALBIN):
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
@@ -183,11 +182,6 @@ CONTROLLER_TOOLS_VERSION ?= v0.13.0
 KUTTL_VERSION ?= v0.15.0
 
 GOLANGCI_LINT_VERSION ?= v1.54.2
-
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
