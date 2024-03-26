@@ -13,8 +13,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"maps"
 	"reflect"
 	"time"
@@ -610,6 +612,13 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 		return rp, hr, fmt.Errorf("failed to get HelmRelease '%s/%s': %w", rp.Namespace, rp.Status.HelmRelease, err)
 	}
 
+	// We have retrieved an existing HelmRelease here, if it did not exist, it would have been created above
+	// so this is a good place, to validate the HelmRelease before updating.
+	errValidating := validateHelmRelease(rp, hr)
+	if errValidating != nil {
+		return rp, hr, fmt.Errorf("validating HelmRelease error: '%s/%s': %w", rp.Namespace, rp.Status.HelmRelease, errValidating)
+	}
+
 	// Check if we need to update here
 	hrTemplate, errTemplated := r.createHelmReleaseFromTemplate(ctx, rp)
 	if errTemplated != nil {
@@ -885,4 +894,44 @@ func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
 		console.Annotations = map[string]string{}
 	}
 	console.Annotations[managedAnnotationKey] = NotManaged
+}
+
+func validateHelmRelease(rp *v1alpha1.Redpanda, hr *helmv2beta2.HelmRelease) error {
+	errs := make([]error, 0)
+
+	errReplicaCount := validateHelmReleaseReplicaCount(rp, hr)
+	if errReplicaCount != nil {
+		errs = append(errs, errReplicaCount)
+	}
+
+	return errors.Join(errs...)
+}
+
+func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.HelmRelease) error {
+	// First validate if we are scaling down too fast
+	clusterSpec := &v1alpha1.RedpandaClusterSpec{}
+	err := json.Unmarshal(hr.Spec.Values.Raw, clusterSpec)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal values data to validate helmrelease")
+	}
+
+	currentReplicas := pointer.IntDeref(clusterSpec.Statefulset.Replicas, 0)
+	if currentReplicas == 0 {
+		// current replicas is 0, no longer validating.
+		return nil
+	}
+
+	// Calculate min number of nodes to (floored) to keep quorum
+	// Note slowly successful decommissioning will change this value,
+	// so as long as we do not lose quorum we should be able to scale
+	// in a controlled manner
+	minForQuorum := (currentReplicas + 1) / 2
+
+	requestedReplicas := pointer.IntDeref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+
+	if requestedReplicas < minForQuorum {
+		return fmt.Errorf("requested replicas of %d is less than %d neeed to maintain quorum", requestedReplicas, minForQuorum)
+	}
+
+	return nil
 }
