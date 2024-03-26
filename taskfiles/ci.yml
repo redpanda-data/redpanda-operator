@@ -5,6 +5,17 @@ vars:
   GOLANG_TOOLCHAIN_IMAGE: '{{.DOCKER_REGISTRY}}/k8s-builder:all'
 
 tasks:
+
+  lint:
+    desc: Lint the entire codebase
+    requires:
+      vars: [IN_NIX_SHELL]
+    cmds:
+      - gofumpt -d -e -lang=1.21 ./src/go/
+      - cd src/go/k8s/ && go mod tidy
+      - cd src/go/cluster-to-redpanda-migration && go mod tidy
+      - git diff --exit-code
+
   configure-git-private-repo:
     env:
       GITHUB_TOKEN:
