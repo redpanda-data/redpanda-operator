@@ -50,6 +50,18 @@ tasks:
         PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
         go vet ./...
 
+  install-crds:
+    dir: 'src/go/k8s'
+    deps:
+      - :dev:install-kustomize
+      - :dev:install-kubectl
+      - generate-manifests
+    sources:
+      - './**/*.go'
+    cmds:
+      - |
+        '{{.KUSTOMIZE_INSTALL_DIR}}/bin/kustomize' build config/crd | '{{.KUBECTL_INSTALL_DIR}}/bin/kubectl' apply -f -
+
   generate-manifests:
     dir: 'src/go/k8s'
     deps:
