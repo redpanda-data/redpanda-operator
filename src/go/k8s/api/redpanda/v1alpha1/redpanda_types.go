@@ -199,6 +199,19 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 	return rp
 }
 
+// RedpandaStalled registers a failure in reconciliation of a given HelmRelease.
+func RedpandaStalled(rp *Redpanda, msg string) *Redpanda {
+	newCondition := metav1.Condition{
+		Type:    meta.StalledCondition,
+		Status:  metav1.ConditionTrue,
+		Reason:  "RedpandaClusterStalled",
+		Message: msg,
+	}
+	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
+	rp.Status.LastAppliedRevision = rp.Status.LastAttemptedRevision
+	return rp
+}
+
 // RedpandaNotReady registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	newCondition := metav1.Condition{

@@ -616,6 +616,8 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 	// so this is a good place, to validate the HelmRelease before updating.
 	errValidating := validateHelmRelease(rp, hr)
 	if errValidating != nil {
+		v1alpha1.RedpandaStalled(rp, "HelmRelease validation failed")
+		r.event(rp, rp.Status.LastAttemptedRevision, v1alpha1.EventSeverityError, errValidating.Error())
 		return rp, hr, fmt.Errorf("validating HelmRelease error: '%s/%s': %w", rp.Namespace, rp.Status.HelmRelease, errValidating)
 	}
 
