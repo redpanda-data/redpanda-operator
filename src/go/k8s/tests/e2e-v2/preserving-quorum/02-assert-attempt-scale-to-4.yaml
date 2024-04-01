@@ -10,17 +10,13 @@ spec:
     chartVersion: "5.7.35"
   clusterSpec:
     statefulset:
-      replicas: 2
+      replicas: 4
 status:
   conditions:
-    - message: Reconciliation in progress
-      reason: Progressing
-      status: Unknown
-      type: Ready
-    - message: HelmRelease validation failed
-      reason: RedpandaClusterStalled
+    - message: Redpanda reconciliation succeeded
+      reason: RedpandaClusterDeployed
       status: "True"
-      type: Stalled
+      type: Ready
   helmRelease: redpanda
   helmReleaseReady: true
   helmRepository: redpanda-repository
@@ -31,13 +27,13 @@ kind: StatefulSet
 metadata:
   name: redpanda
 spec:
-  replicas: 5
+  replicas: 4
 status:
-  availableReplicas: 5
-  currentReplicas: 5
-  readyReplicas: 5
-  replicas: 5
-  updatedReplicas: 5
+  availableReplicas: 4
+  currentReplicas: 4
+  readyReplicas: 4
+  replicas: 4
+  updatedReplicas: 4
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
