@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kuberecorder "k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -914,10 +913,11 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 	clusterSpec := &v1alpha1.RedpandaClusterSpec{}
 	err := json.Unmarshal(hr.Spec.Values.Raw, clusterSpec)
 	if err != nil {
+		// nolint:goerr113 // error is not wrapping existing error
 		return fmt.Errorf("could not unmarshal values data to validate helmrelease")
 	}
 
-	currentReplicas := pointer.IntDeref(clusterSpec.Statefulset.Replicas, 0)
+	currentReplicas := ptr.Deref(clusterSpec.Statefulset.Replicas, 0)
 	if currentReplicas == 0 {
 		// current replicas is 0, no longer validating.
 		return nil
@@ -929,9 +929,10 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 	// in a controlled manner
 	minForQuorum := (currentReplicas + 1) / 2
 
-	requestedReplicas := pointer.IntDeref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+	requestedReplicas := ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
 
 	if requestedReplicas < minForQuorum {
+		// nolint:goerr113 // error is not wrapping existing error
 		return fmt.Errorf("requested replicas of %d is less than %d neeed to maintain quorum", requestedReplicas, minForQuorum)
 	}
 
