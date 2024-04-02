@@ -975,7 +975,7 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 	if doCheckDefMinTopicReplicas {
 		if requestedReplicas < minimumTopicReplicas {
 			// nolint:goerr113 // error is not wrapping existing error
-			return fmt.Errorf("requested replicas of %d is less than replication factor %s", requestedReplicas, minimumTopicReplicas)
+			return fmt.Errorf("requested replicas of %d is less than replication factor %d", requestedReplicas, minimumTopicReplicas)
 		}
 	}
 
