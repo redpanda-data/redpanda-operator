@@ -945,11 +945,13 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 	// If quorum may be preserved, then find out about topic replication and ensure we do not go below default
 	specConfigs := clusterSpec.Config
 	doCheckDefMinTopicReplicas := true
+	// nolint:nestif // complexity is ok
 	if clusterSpec.Config != nil {
 		clusterInfo := specConfigs.Cluster
 		if clusterInfo != nil {
 			clusterMap := make(map[string]string)
-			errUnmar := json.Unmarshal(clusterInfo.Raw, clusterMap)
+			ClusterMapPtr := &clusterMap
+			errUnmar := json.Unmarshal(clusterInfo.Raw, ClusterMapPtr)
 			if errUnmar != nil {
 				return fmt.Errorf("cannot unmarshal cluster config data %w", errUnmar)
 			}
@@ -964,7 +966,7 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 
 				if requestedReplicas < minReplicationFactorInt {
 					// nolint:goerr113 // error is not wrapping existing error
-					return fmt.Errorf("requested replicas of %d is less than replication factor %s", requestedReplicas, minReplicationFactorInt)
+					return fmt.Errorf("requested replicas of %d is less than replication factor %d", requestedReplicas, minReplicationFactorInt)
 				}
 			}
 		}
