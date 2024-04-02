@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"strconv"
 	"time"
 
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
@@ -61,6 +62,11 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
+
+	minimumTopicReplicas = 3
+
+	// these constants can be removed after versions older that v22.3.1 are no longer supported
+	defaultTopicReplicationKey = "default_topic_replications"
 )
 
 var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
@@ -934,6 +940,41 @@ func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.Helm
 	if requestedReplicas < minForQuorum {
 		// nolint:goerr113 // error is not wrapping existing error
 		return fmt.Errorf("requested replicas of %d is less than %d neeed to maintain quorum", requestedReplicas, minForQuorum)
+	}
+
+	// If quorum may be preserved, then find out about topic replication and ensure we do not go below default
+	specConfigs := clusterSpec.Config
+	doCheckDefMinTopicReplicas := true
+	if clusterSpec.Config != nil {
+		clusterInfo := specConfigs.Cluster
+		if clusterInfo != nil {
+			clusterMap := make(map[string]string)
+			errUnmar := json.Unmarshal(clusterInfo.Raw, clusterMap)
+			if errUnmar != nil {
+				return fmt.Errorf("cannot unmarshal cluster config data %w", errUnmar)
+			}
+
+			minReplicationFactor, ok := clusterMap[defaultTopicReplicationKey]
+			if ok {
+				doCheckDefMinTopicReplicas = false
+				minReplicationFactorInt, errConvert := strconv.Atoi(minReplicationFactor)
+				if errConvert != nil {
+					return fmt.Errorf("cannot unmarshal cluster config data %w", errConvert)
+				}
+
+				if requestedReplicas < minReplicationFactorInt {
+					// nolint:goerr113 // error is not wrapping existing error
+					return fmt.Errorf("requested replicas of %d is less than replication factor %s", requestedReplicas, minReplicationFactorInt)
+				}
+			}
+		}
+	}
+
+	if doCheckDefMinTopicReplicas {
+		if requestedReplicas < minimumTopicReplicas {
+			// nolint:goerr113 // error is not wrapping existing error
+			return fmt.Errorf("requested replicas of %d is less than replication factor %s", requestedReplicas, minimumTopicReplicas)
+		}
 	}
 
 	return nil
