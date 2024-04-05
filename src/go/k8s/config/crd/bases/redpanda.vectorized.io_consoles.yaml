@@ -119,6 +119,10 @@ spec:
                         default: 1s
                         format: duration
                         type: string
+                      scrapeTargetTimeout:
+                        default: 15s
+                        format: duration
+                        type: string
                     required:
                     - enabled
                     - prometheus

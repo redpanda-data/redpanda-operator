@@ -92,6 +92,7 @@ type PrometheusEndpointConfig struct {
 		Username string `yaml:"username"`
 	} `yaml:"basicAuth"`
 	ResponseCacheDuration time.Duration    `yaml:"responseCacheDuration"`
+	ScrapeTargetTimeout   time.Duration    `yaml:"scrapeTargetTimeout"`
 	Prometheus            PrometheusConfig `yaml:"prometheus"`
 }
 

@@ -256,6 +256,9 @@ func (cm *ConfigMap) genCloud() CloudConfig {
 	if prometheus.ResponseCacheDuration != nil {
 		cc.PrometheusEndpoint.ResponseCacheDuration = prometheus.ResponseCacheDuration.Duration
 	}
+	if prometheus.ScrapeTargetTimeout != nil {
+		cc.PrometheusEndpoint.ScrapeTargetTimeout = prometheus.ScrapeTargetTimeout.Duration
+	}
 	if prometheus.Prometheus != nil {
 		cc.PrometheusEndpoint.Prometheus = PrometheusConfig{
 			Address: prometheus.Prometheus.Address,
