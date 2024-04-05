@@ -1162,7 +1162,6 @@ spec:
                         type: object
                     required:
                     - logLevel
-                    - usageStats
                     type: object
                   monitoring:
                     description: Defines settings for monitoring Redpanda.
