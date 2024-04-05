@@ -1085,6 +1085,11 @@ func (in *PrometheusEndpointConfig) DeepCopyInto(out *PrometheusEndpointConfig) 
 		*out = new(apismetav1.Duration)
 		**out = **in
 	}
+	if in.ScrapeTargetTimeout != nil {
+		in, out := &in.ScrapeTargetTimeout, &out.ScrapeTargetTimeout
+		*out = new(apismetav1.Duration)
+		**out = **in
+	}
 	if in.Prometheus != nil {
 		in, out := &in.Prometheus, &out.Prometheus
 		*out = new(PrometheusConfig)

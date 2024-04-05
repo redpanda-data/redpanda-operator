@@ -95,8 +95,12 @@ type PrometheusEndpointConfig struct {
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=duration
 	// +kubebuilder:default="1s"
-	ResponseCacheDuration *metav1.Duration  `json:"responseCacheDuration,omitempty"`
-	Prometheus            *PrometheusConfig `json:"prometheus"`
+	ResponseCacheDuration *metav1.Duration `json:"responseCacheDuration,omitempty"`
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:default="15s"
+	ScrapeTargetTimeout *metav1.Duration  `json:"scrapeTargetTimeout,omitempty"`
+	Prometheus          *PrometheusConfig `json:"prometheus"`
 }
 
 // BasicAuthConfig are credentials that will be required by the user in order to
