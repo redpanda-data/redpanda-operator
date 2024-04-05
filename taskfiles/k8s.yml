@@ -18,8 +18,8 @@ tasks:
     cmds:
       - |
         PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
-        mkdir mod || (rm -rf mod && mkdir mod)
-        GOPATH=$(realpath ./mod/) go mod download
+        mkdir {{.PWD}}/mod || (rm -rf {{.PWD}}/mod && mkdir {{.PWD}}/mod)
+        GOPATH=$(realpath {{.PWD}}/mod/) go mod download
 
   cleanup-k8s-go-dependencies:
     dir: 'src/go/k8s'
@@ -93,18 +93,17 @@ tasks:
         go test -v ./... -coverprofile cover.out
 
   build-operator-images:
-    dir: 'src/go'
     cmds:
       - docker buildx build
           --platform linux/{{ARCH}}
-          --file k8s/Dockerfile
+          --file src/go/k8s/Dockerfile
           --target=manager
           --tag localhost/redpanda-operator:dev
           --load
           .
       - docker buildx build
           --platform linux/{{ARCH}}
-          --file k8s/Dockerfile
+          --file src/go/k8s/Dockerfile
           --target=configurator
           --tag localhost/configurator:dev
           --load

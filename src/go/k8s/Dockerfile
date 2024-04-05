@@ -5,16 +5,16 @@ ARG TARGETOS
 
 WORKDIR /workspace/k8s
 # Copy the Go Modules manifests
-COPY k8s/go.mod go.mod
-COPY k8s/go.sum go.sum
+COPY src/go/k8s/go.mod go.mod
+COPY src/go/k8s/go.sum go.sum
 
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-COPY k8s/mod/pkg/mod /go/pkg/mod
+COPY mod/pkg/mod /go/pkg/mod
 RUN go mod download
 
 # Copy the go source
-COPY k8s/ .
+COPY src/go/k8s/ .
 
 # build
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on GOPRIVATE=github.com/redpanda-data/* go build -a -o manager cmd/main.go && \
