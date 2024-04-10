@@ -10,63 +10,36 @@ env:
   GOPRIVATE: github.com/redpanda-data/flux-controller-shim
 
 tasks:
-
-  download-k8s-go-dependencies:
-    deps:
-      - :dev:install-go
-    dir: 'src/go/k8s'
-    cmds:
-      - |
-        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
-        mkdir {{.PWD}}/mod || (rm -rf {{.PWD}}/mod && mkdir {{.PWD}}/mod)
-        GOPATH=$(realpath {{.PWD}}/mod/) go mod download
-
-  cleanup-k8s-go-dependencies:
-    dir: 'src/go/k8s'
-    cmds:
-      - rm -rf mod
-
   generate-controller-code:
-    deps:
-      - :dev:install-go
-      - :dev:install-k8s-controller-gen
     dir: 'src/go/k8s'
+    deps:
+      - :dev:install-k8s-controller-gen
     sources:
       - './**/*.go'
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
-        controller-gen \
+        {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
           paths='./...'
 
   run-go-vet:
     dir: 'src/go/k8s'
-    deps:
-      - :dev:install-go
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
         go vet ./...
 
   generate-manifests:
     dir: 'src/go/k8s'
     deps:
-      - :dev:install-go
       - :dev:install-k8s-controller-gen
     vars:
       CRD_OPTIONS_DEFAULT: 'crd'
       CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
-      GOPATH:
-        sh: 'realpath "{{.PWD}}/mod"'
     sources:
       - './**/*.go'
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
-        PATH={{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin:$PATH
-        controller-gen \
+        {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
           {{.CRD_OPTIONS}} \
           rbac:roleName=manager-role \
           webhook \
@@ -86,28 +59,30 @@ tasks:
       ENVTEST_ASSETS_DIR: '{{.ENVTEST_ASSETS_DIR | default .ENVTEST_ASSETS_DIR_DEFAULT}}'
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
         source {{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh
         fetch_envtest_tools {{.ENVTEST_ASSETS_DIR}}
         setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
         go test -v ./... -coverprofile cover.out
 
   build-operator-images:
+    deps:
+      - :goreleaser:build-operator-binaries
     cmds:
+      # TODO(chrisseto): Get multiplatform builds working.
       - docker buildx build
           --platform linux/{{ARCH}}
           --file src/go/k8s/Dockerfile
           --target=manager
           --tag localhost/redpanda-operator:dev
           --load
-          .
+          ./dist
       - docker buildx build
           --platform linux/{{ARCH}}
           --file src/go/k8s/Dockerfile
           --target=configurator
           --tag localhost/configurator:dev
           --load
-          .
+          ./dist
 
   fetch-latest-nightly-redpanda:
     desc: fetch the latest redpanda nightly build and tag it localhost/redpanda:dev
@@ -152,6 +127,8 @@ tasks:
       - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.aio-max-nr={{.MIN_REQUIRED_AIO_MAX}}'
     status:
       - test {{.MIN_REQUIRED_AIO_MAX}} -le $(sysctl -nb fs.aio-max-nr)
+    platforms:
+      - linux
 
   run-kuttl-tests:
     desc: run kuttl tests
@@ -178,7 +155,6 @@ tasks:
         sh: |
           cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
     deps:
-      - :dev:install-go
       - :dev:install-helm
       - :dev:install-kind
       - :dev:install-kubectl
@@ -200,7 +176,7 @@ tasks:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
       - |
-        PATH="{{.GOLANG_INSTALL_DIR}}"/bin:"{{.HELM_INSTALL_DIR}}"/bin:"{{.KIND_INSTALL_DIR}}"/bin:"{{.KUBECTL_INSTALL_DIR}}"/bin:"{{.KUTTL_INSTALL_DIR}}"/bin:"{{.KUSTOMIZE_INSTALL_DIR}}"/bin:"{{.YQ_INSTALL_DIR}}"/bin:$PATH
+        PATH="{{.HELM_INSTALL_DIR}}"/bin:"{{.KIND_INSTALL_DIR}}"/bin:"{{.KUBECTL_INSTALL_DIR}}"/bin:"{{.KUTTL_INSTALL_DIR}}"/bin:"{{.KUSTOMIZE_INSTALL_DIR}}"/bin:"{{.YQ_INSTALL_DIR}}"/bin:$PATH
         KUTTL_EXIT_CODE=0
         kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}} || KUTTL_EXIT_CODE=$?
         echo "$KUTTL_EXIT_CODE" > kuttl-exit-code
@@ -220,6 +196,8 @@ tasks:
       - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_watches={{.MIN_REQUIRED_USER_WATCHES}}'
     status:
       - test {{.MIN_REQUIRED_USER_WATCHES}} -le $(sysctl -nb fs.inotify.max_user_watches)
+    platforms:
+      - linux
 
   set-inotify-instances:
     desc: |
@@ -232,23 +210,24 @@ tasks:
       - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_instances={{.MIN_REQUIRED_USER_INSTANCES}}'
     status:
       - test {{.MIN_REQUIRED_USER_INSTANCES}} -le $(sysctl -nb fs.inotify.max_user_instances)
+    platforms:
+      - linux
 
   run-golangci-lint:
     desc: run golangci-lint
     deps:
-      - task: :dev:install-go
       - task: :dev:install-golangci-lint
     dir: 'src/go/k8s'
     cmds:
       - |
-        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:{{.GOLANG_INSTALL_DIR}}/bin:$PATH"
+        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:$PATH"
         golangci-lint run --timeout 8m --go {{.GOLANG_VERSION}} -v
 
   build-tag-and-push-images:
     desc: builds, tags and pushes images to dockerhub
     deps:
       - :dev:create-buildx-builder
-    dir: 'src/go'
+      - :goreleaser:build-operator-binaries
     vars:
       IS_INTERNAL:
         sh: |
@@ -294,37 +273,37 @@ tasks:
         silent: true
       - docker buildx build
           --platform linux/arm64,linux/amd64
-          --file k8s/Dockerfile
+          --file src/go/k8s/Dockerfile
           --target manager
           --tag docker.io/vectorized/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
           --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
           --push
-          .
+          ./dist
       - docker buildx build
           --platform linux/arm64,linux/amd64
-          --file k8s/Dockerfile
+          --file src/go/k8s/Dockerfile
           --target configurator
           --tag docker.io/vectorized/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
           --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
           --push
-          .
+          ./dist
       # re-enable as part of https://github.com/redpanda-data/cloudv2/issues/3267
       # - cmd: docker login docker.cloudsmith.io --username {{.CLOUDSMITH_USERNAME}} --password {{.CLOUDSMITH_API_KEY}}
       #   silent: true
       # - docker buildx build
       #     --platform linux/arm64,linux/amd64
-      #     --file k8s/Dockerfile
+      #     --file src/go/k8s/Dockerfile
       #     --target manager
       #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
       #     --push
-      #     .
+      #     ./dist
       # - docker buildx build
       #     --platform linux/arm64,linux/amd64
-      #     --file k8s/Dockerfile
+      #     --file src/go/k8s/Dockerfile
       #     --target configurator
       #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
       #     --push
-      #     .
+      #     ./dist
     preconditions:
       - test -n "$DOCKERHUB_USER"
       - test -n "$DOCKERHUB_TOKEN"

@@ -93,8 +93,8 @@ undeploy:
 
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
-manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases output:rbac:artifacts:config=config/rbac/bases/operator
+manifests:
+	cd ../../.. && nix develop -c ./task k8s:generate-manifests
 
 # Run go vet against code
 .PHONY: vet
@@ -103,8 +103,8 @@ vet:
 
 # Generate code
 .PHONY: generate
-generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="../../../licenses/boilerplate.go.txt" paths="./..."
+generate:
+	cd ../../.. && nix develop -c ./task k8s:generate-controller-code
 
 # Creates kind cluster
 kind-create:
@@ -114,20 +114,15 @@ kind-create:
 certmanager-install: kind-create
 	./hack/install-cert-manager.sh
 
-prepare-dockerfile:
-	echo "ARG BUILDPLATFORM" > Dockerfile.out
-	cat Dockerfile >> Dockerfile.out
-
 # Build the docker image
-docker-build: prepare-dockerfile
+docker-build:
 	echo "~~~ Building operator image :docker:"
-	echo  building '${TARGETOS}/${TARGETARCH}'
-	docker buildx build --build-arg BUILDPLATFORM='${TARGETOS}/${TARGETARCH}' --build-arg TARGETARCH=${TARGETARCH} --build-arg TARGETOS=${TARGETOS} --target=manager --load -f Dockerfile.out -t ${OPERATOR_IMG_LATEST} --ssh default=$(SSH_AUTH_SOCK) ../
+	cd ../../.. && ./task k8s:build-operator-images
 
 # Build the docker image
 docker-build-configurator: prepare-dockerfile
 	echo "~~~ Building configurator image :docker:"
-	docker buildx build --build-arg BUILDPLATFORM='${TARGETOS}/${TARGETARCH}' --build-arg TARGETARCH=${TARGETARCH} --build-arg TARGETOS=${TARGETOS} --target=configurator --load -f Dockerfile.out -t ${CONFIGURATOR_IMG_LATEST} ../
+	cd ../../.. && ./task k8s:build-operator-images
 
 # Preload controller image to kind cluster
 push-to-kind: kind-create certmanager-install
@@ -172,22 +167,15 @@ $(LOCALBIN):
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.1.1
-CONTROLLER_TOOLS_VERSION ?= v0.13.0
 KUTTL_VERSION ?= v0.15.0
 
 GOLANGCI_LINT_VERSION ?= v1.54.2
-
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

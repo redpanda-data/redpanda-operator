@@ -33,6 +33,5 @@ src/go/k8s/tests/e2e-v2-helm/
 # task cache directory
 .task/
 
-# Nix files (for now)
-flake.lock
-flake.nix
+# Go releaser artifacts
+dist/
