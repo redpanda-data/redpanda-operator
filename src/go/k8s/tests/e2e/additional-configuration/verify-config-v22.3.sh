@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034  # this is a library file
 expected=$(
   cat <<EOF
