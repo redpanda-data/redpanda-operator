@@ -1,11 +1,8 @@
 version: '3'
 
-vars:
-  GO_SRC_DIR: '{{.SRC_DIR}}/src/go' 
-
 tasks:
   release:
-    dir: '{{.GO_SRC_DIR}}'
+    dir: '{{.SRC_DIR}}'
     desc: release go binaries using the .goreleaser.yml file in given directory
     deps:
       - task: :dev:install-goreleaser
@@ -20,7 +17,7 @@ tasks:
         mkdir -p /tmp
         echo "" >> "$EMPTY_NOTES"
 
-        export PATH="{{.GOLANG_INSTALL_DIR}}/bin:{{.GORELEASER_INSTALL_DIR}}:{{.QUILL_INSTALL_DIR}}:$PATH"
+        export PATH="{{.GORELEASER_INSTALL_DIR}}:{{.QUILL_INSTALL_DIR}}:$PATH"
         goreleaser release --clean --release-notes "$EMPTY_NOTES"
     preconditions:
       - test -n "$QUILL_SIGN_P12"
@@ -30,8 +27,9 @@ tasks:
       - test -n "$QUILL_NOTARY_ISSUER"
       - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
       - test -n "{{.TAG_NAME}}"
+
   build:
-    dir: '{{.GO_SRC_DIR}}'
+    dir: '{{.SRC_DIR}}'
     # A .goreleaser.yml file is required at the GO_SRC_DIR
     desc: build go binaries with goreleaser and a given id
     deps:
@@ -40,8 +38,16 @@ tasks:
       GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
     cmds:
       - |
-        export PATH="{{.GOLANG_INSTALL_DIR}}/bin:{{.GORELEASER_INSTALL_DIR}}:$PATH"
+        export PATH="{{.GORELEASER_INSTALL_DIR}}:$PATH"
         goreleaser build --clean --id {{.GORELEASER_BUILD_ID}} {{.CLI_ARGS}}
     preconditions:
       - test -n "{{.GORELEASER_BUILD_ID}}"
       - test -n "{{.TAG_NAME}}"
+
+  build-operator-binaries:
+    deps:
+      - task: :dev:install-goreleaser
+      - task: :k8s:generate-controller-code
+      - task: :k8s:generate-manifests
+    cmds:
+      - '{{.GORELEASER_INSTALL_DIR}}/goreleaser build --snapshot --clean --id configurator --id redpanda-operator'

@@ -5,18 +5,13 @@ env:
   PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
 
-setup: &setup |
-  ci/scripts/install-task.sh
-
 steps:
   - key: release-migration-tool
     label: Release Migration Tool
     if: build.tag != null
     timeout_in_minutes: 20
     commands:
-      - *setup
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./task goreleaser:release
+      - TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task goreleaser:release
     agents:
       queue: k8s-builders
 
@@ -27,9 +22,8 @@ steps:
       - github_commit_status:
           context: k8s-operator
     commands:
-      - *setup
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./task ci:k8s
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s
     agents:
       queue: amd64-builders
     artifact_paths:
@@ -48,8 +42,7 @@ steps:
           - github_commit_status:
               context: k8s-operator-v2
         commands:
-          - *setup
-          - ./task ci:k8s-v2
+          - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2
         agents:
           queue: amd64-builders
         artifact_paths:
@@ -80,8 +73,7 @@ steps:
           - github_commit_status:
               context: k8s-operator-v2-helm
         commands:
-          - *setup
-          - ./task ci:k8s-v2-helm
+          - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2-helm
         agents:
           queue: amd64-builders
         artifact_paths:

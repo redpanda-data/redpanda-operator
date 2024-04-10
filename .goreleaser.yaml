@@ -1,7 +1,37 @@
 project_name: cluster-to-redpanda-migration
 builds:
+  - id: redpanda-operator
+    dir: ./src/go/k8s/
+    main: ./cmd/main.go
+    binary: redpanda-operator-{{ .Os }}-{{ .Arch }}
+    no_unique_dist_dir: true
+    env:
+      - CGO_ENABLED=0
+      - GOPRIVATE=github.com/redpanda-data/flux-controller-shim
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+  - id: configurator
+    dir: ./src/go/k8s/
+    main: ./cmd/configurator/main.go
+    binary: configurator-{{ .Os }}-{{ .Arch }}
+    no_unique_dist_dir: true
+    env:
+      - CGO_ENABLED=0
+      - GOPRIVATE=github.com/redpanda-data/flux-controller-shim
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
   - id: migration-tool-windows-and-linux
-    dir: ./cluster-to-redpanda-migration/
+    dir: ./src/go/cluster-to-redpanda-migration/
     main: ./main.go
     binary: cluster-to-redpanda-migration
     ldflags:
@@ -14,8 +44,9 @@ builds:
     goarch:
       - amd64
       - arm64
+
   - id: migration-tool-darwin
-    dir: ./cluster-to-redpanda-migration/
+    dir: ./src/go/cluster-to-redpanda-migration/
     main: ./main.go
     binary: cluster-to-redpanda-migration
     ldflags:

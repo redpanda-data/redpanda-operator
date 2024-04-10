@@ -1,35 +1,19 @@
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.21.3 as builder
-
-ARG TARGETARCH
-ARG TARGETOS
-
-WORKDIR /workspace/k8s
-# Copy the Go Modules manifests
-COPY src/go/k8s/go.mod go.mod
-COPY src/go/k8s/go.sum go.sum
-
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-COPY mod/pkg/mod /go/pkg/mod
-RUN go mod download
-
-# Copy the go source
-COPY src/go/k8s/ .
-
-# build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on GOPRIVATE=github.com/redpanda-data/* go build -a -o manager cmd/main.go && \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on GOPRIVATE=github.com/redpanda-data/* go build -a -o configurator cmd/configurator/main.go
+# syntax=docker/dockerfile:1
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot as manager
+ARG TARGETARCH
+ARG TARGETOS
 WORKDIR /
-COPY --from=builder /workspace/k8s/manager .
+COPY redpanda-operator-${TARGETOS}-${TARGETARCH} ./manager
 USER 65532:65532
 ENTRYPOINT ["/manager"]
 
 FROM gcr.io/distroless/static:nonroot as configurator
+ARG TARGETARCH
+ARG TARGETOS
 WORKDIR /
-COPY --from=builder /workspace/k8s/configurator .
+COPY configurator-${TARGETOS}-${TARGETARCH} ./configurator
 USER 65532:65532
 ENTRYPOINT ["/configurator"]

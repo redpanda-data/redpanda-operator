@@ -3,7 +3,6 @@ version: '3'
 vars:
   TASK_VERSION: '3.19.1'
   GOLANG_VERSION: '1.21.3'
-  GOLANG_INSTALL_DIR: '{{.BUILD_ROOT}}/go/{{.GOLANG_VERSION}}'
   KUBECTL_VERSION: '1.28.2'
   KUBECTL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kubectl/{{.KUBECTL_VERSION}}'
   GOLANGCI_LINT_VERSION: '1.55.2'
@@ -28,6 +27,7 @@ vars:
   GORELEASER_VERSION: '1.20.0'
   QUILL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/quill'
   QUILL_VERSION: '0.4.1'
+  DOCKER_TAG_LIST_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/docker-tag-list'
 
 
 tasks:
@@ -38,18 +38,6 @@ tasks:
       - test -f {{.BIN_DIR}}/task
       - "[[ $({{.BIN_DIR}}/task --version | grep -o {{.TASK_VERSION}}) == {{.TASK_VERSION}} ]]"
 
-  install-go:
-    desc: install golang compiler
-    vars:
-      GOLANG_URL: 'https://vectorized-public.s3.us-west-2.amazonaws.com/dependencies/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz'
-    cmds:
-      - mkdir -p '{{.GOLANG_INSTALL_DIR}}'
-      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 --retry-all-errors -o '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz' '{{.GOLANG_URL}}'
-      - tar -xz -C '{{.GOLANG_INSTALL_DIR}}' -f '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz' --strip 1
-      - rm '{{.GOLANG_INSTALL_DIR}}/go{{.GOLANG_VERSION}}.{{OS}}-{{ARCH}}.tar.gz'
-    status:
-      - test -f '{{.GOLANG_INSTALL_DIR}}/bin/go'
-
   install-gofumpt:
     desc: install gofumpt go formater
     summary: |
@@ -57,8 +45,6 @@ tasks:
       only if it does not exist on the host already. Checking whether is
       available on the host is done so that this task can also run in
       containerized environments.
-    deps:
-      - task: :dev:install-go
     cmds:
       - |
         PATH={{.GOLANG_INSTALL_DIR}}/bin:$PATH
@@ -118,20 +104,29 @@ tasks:
 
   install-docker-tag-list:
     desc: install docker-tag-list
-    deps:
-      - install-go
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
         export GOBIN='{{.DOCKER_TAG_LIST_INSTALL_DIR}}/'
         go install github.com/joejulian/docker-tag-list@latest
     status:
       - test -f '{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list'
 
-  install-k8s-controller-gen:
-    desc: install k8s-controller-gen
+  install-goreleaser:
+    desc: install goreleaser
     deps:
       - install-go
+    cmds:
+      - |
+        GOBIN='{{.GORELEASER_INSTALL_DIR}}' \
+        go install "github.com/goreleaser/goreleaser@v{{.GORELEASER_VERSION}}"
+    status:
+      - test -f {{.GORELEASER_INSTALL_DIR}}/goreleaser
+      - |
+        PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
+        [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
+
+  install-k8s-controller-gen:
+    desc: install k8s-controller-gen
     cmds:
       - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin'
       - mkdir -p '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
@@ -244,11 +239,8 @@ tasks:
 
   install-goreleaser:
     desc: install goreleaser
-    deps:
-      - install-go
     cmds:
       - |
-        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
         GOBIN='{{.GORELEASER_INSTALL_DIR}}' \
         go install "github.com/goreleaser/goreleaser@v{{.GORELEASER_VERSION}}"
     status:
