@@ -303,6 +303,21 @@ func main() {
 			os.Exit(1)
 		}
 
+		var topicEventRecorder *events.Recorder
+		if topicEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "TopicReconciler"); err != nil {
+			setupLog.Error(err, "unable to create event recorder for: TopicReconciler")
+			os.Exit(1)
+		}
+
+		if err = (&clusterredpandacomcontrollers.TopicReconciler{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			EventRecorder: topicEventRecorder,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Topic")
+			os.Exit(1)
+		}
+
 		// Setup webhooks
 		if webhookEnabled {
 			setupLog.Info("Setup webhook")
