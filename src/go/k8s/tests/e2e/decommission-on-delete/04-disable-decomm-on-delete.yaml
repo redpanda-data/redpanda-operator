@@ -1,0 +1,6 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: decomm-on-delete
+  annotations:
+    operator.redpanda.com/decommission-on-delete: "false"

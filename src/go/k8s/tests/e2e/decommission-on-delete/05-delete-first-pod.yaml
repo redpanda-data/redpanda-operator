@@ -1,0 +1,8 @@
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl delete pod decomm-on-delete-0
+    namespaced: true
+  # NOTE: Using the builtin `delete` functionality here will not work
+  # because the STS replaces the very fast and the step times out.
