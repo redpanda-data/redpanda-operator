@@ -328,6 +328,8 @@ type Certificate struct {
 	Duration *metav1.Duration `json:"duration,omitempty"`
 	// Specifies whether to include the `ca.crt` file in the trust stores of all listeners. Set to `true` only for certificates that are not authenticated using public certificate authorities (CAs).
 	CAEnabled bool `json:"caEnabled"`
+	// Specifies you wish to have Kubernetes internal dns names (IE the headless service of the redpanda StatefulSet) included in `dnsNames` of the  certificate even, when supplying an issuer.
+	ApplyInternalDNSNames *bool `json:"applyInternalDNSNames,omitempty"`
 }
 
 // IssuerRef configures the Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs.
