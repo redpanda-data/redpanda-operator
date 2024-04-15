@@ -1675,7 +1675,9 @@ spec:
                         additionalProperties:
                           type: string
                         description: Adds annotations to the StatefulSet to provide
-                          additional information or metadata.
+                          additional information or metadata. Please use PodTemplate
+                          to add additional annotation or labels for Pods managed
+                          by Statefulset.
                         type: object
                       budget:
                         description: Defines the management of disruptions affecting
@@ -2885,6 +2887,19 @@ spec:
                               - topologyKey
                               type: object
                             type: array
+                        type: object
+                      podTemplate:
+                        description: PodTemplate will pass label and annotation to
+                          Statefulset Pod template.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
                         type: object
                       priorityClassName:
                         description: Defines the priority class name to assign priority

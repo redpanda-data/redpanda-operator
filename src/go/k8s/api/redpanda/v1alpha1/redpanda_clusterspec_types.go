@@ -578,7 +578,10 @@ type Statefulset struct {
 	// Includes additional command flags for Redpanda at startup to customize its runtime behavior.
 	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags,omitempty"`
 	// Adds annotations to the StatefulSet to provide additional information or metadata.
+	// Please use PodTemplate to add additional annotation or labels for Pods managed by Statefulset.
 	Annotations map[string]string `json:"annotations,omitempty"`
+	// PodTemplate will pass label and annotation to Statefulset Pod template.
+	PodTemplate *PodTemplate `json:"podTemplate,omitempty"`
 	// Defines the management of disruptions affecting the Pods in the StatefulSet.
 	Budget *Budget `json:"budget,omitempty"`
 	// Specifies extra volume mounts for the Pods.
@@ -619,6 +622,12 @@ type Statefulset struct {
 	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
 	// Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod.
 	TerminationGracePeriodSeconds *int `json:"terminationGracePeriodSeconds,omitempty"`
+}
+
+// PodTemplate will pass label and annotation to Statefulset Pod template.
+type PodTemplate struct {
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // Budget configures the management of disruptions affecting the Pods in the StatefulSet.
