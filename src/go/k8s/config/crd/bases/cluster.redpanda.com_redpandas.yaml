@@ -4215,6 +4215,12 @@ spec:
                         additionalProperties:
                           description: Certificate configures TLS certificates.
                           properties:
+                            applyInternalDNSNames:
+                              description: Specifies you wish to have Kubernetes internal
+                                dns names (IE the headless service of the redpanda
+                                StatefulSet) included in `dnsNames` of the  certificate
+                                even, when supplying an issuer.
+                              type: boolean
                             caEnabled:
                               description: Specifies whether to include the `ca.crt`
                                 file in the trust stores of all listeners. Set to
