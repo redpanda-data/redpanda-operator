@@ -6,15 +6,6 @@ env:
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
 
 steps:
-  - key: release-migration-tool
-    label: Release Migration Tool
-    if: build.tag != null
-    timeout_in_minutes: 20
-    commands:
-      - TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task goreleaser:release
-    agents:
-      queue: k8s-builders
-
   - key: k8s-operator
     label: K8s Operator
     timeout_in_minutes: 180
