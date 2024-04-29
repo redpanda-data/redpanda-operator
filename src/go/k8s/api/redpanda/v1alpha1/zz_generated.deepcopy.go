@@ -2790,6 +2790,36 @@ func (in *TieredConfig) DeepCopyInto(out *TieredConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.CloudStorageAzureContainer != nil {
+		in, out := &in.CloudStorageAzureContainer, &out.CloudStorageAzureContainer
+		*out = new(string)
+		**out = **in
+	}
+	if in.CloudStorageAzureManagedIdentityID != nil {
+		in, out := &in.CloudStorageAzureManagedIdentityID, &out.CloudStorageAzureManagedIdentityID
+		*out = new(string)
+		**out = **in
+	}
+	if in.CloudStorageAzureStorageAccount != nil {
+		in, out := &in.CloudStorageAzureStorageAccount, &out.CloudStorageAzureStorageAccount
+		*out = new(string)
+		**out = **in
+	}
+	if in.CloudStorageAzureSharedKey != nil {
+		in, out := &in.CloudStorageAzureSharedKey, &out.CloudStorageAzureSharedKey
+		*out = new(string)
+		**out = **in
+	}
+	if in.CloudStorageAzureADLSEndpoint != nil {
+		in, out := &in.CloudStorageAzureADLSEndpoint, &out.CloudStorageAzureADLSEndpoint
+		*out = new(string)
+		**out = **in
+	}
+	if in.CloudStorageAzureADLSPort != nil {
+		in, out := &in.CloudStorageAzureADLSPort, &out.CloudStorageAzureADLSPort
+		*out = new(int)
+		**out = **in
+	}
 	if in.CloudStorageCacheCheckInterval != nil {
 		in, out := &in.CloudStorageCacheCheckInterval, &out.CloudStorageCacheCheckInterval
 		*out = new(int)
