@@ -4061,6 +4061,24 @@ spec:
                               cloud_storage_api_endpoint_port:
                                 description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
                                 type: integer
+                              cloud_storage_azure_adls_endpoint:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
+                                type: string
+                              cloud_storage_azure_adls_port:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
+                                type: integer
+                              cloud_storage_azure_container:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
+                                type: string
+                              cloud_storage_azure_managed_identity_id:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
+                                type: string
+                              cloud_storage_azure_shared_key:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
+                                type: string
+                              cloud_storage_azure_storage_account:
+                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
+                                type: string
                               cloud_storage_bucket:
                                 description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
                                 type: string

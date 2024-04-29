@@ -475,6 +475,18 @@ type TieredConfig struct {
 	CloudStorageAPIEndpointPort *int `json:"cloud_storage_api_endpoint_port,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
 	CloudStorageBucket *string `json:"cloud_storage_bucket"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
+	CloudStorageAzureContainer *string `json:"cloud_storage_azure_container,omitempty"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
+	CloudStorageAzureManagedIdentityID *string `json:"cloud_storage_azure_managed_identity_id,omitempty"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
+	CloudStorageAzureStorageAccount *string `json:"cloud_storage_azure_storage_account,omitempty"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
+	CloudStorageAzureSharedKey *string `json:"cloud_storage_azure_shared_key,omitempty"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
+	CloudStorageAzureADLSEndpoint *string `json:"cloud_storage_azure_adls_endpoint,omitempty"`
+	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
+	CloudStorageAzureADLSPort *int `json:"cloud_storage_azure_adls_port,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
 	CloudStorageCacheCheckInterval *int `json:"cloud_storage_cache_check_interval,omitempty"`
 	// See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
