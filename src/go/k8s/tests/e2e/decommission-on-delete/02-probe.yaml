@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: get-broker-count-managed-decom
+  name: get-broker-count-decom-on-delete
 spec:
   backoffLimit: 10
   template:
