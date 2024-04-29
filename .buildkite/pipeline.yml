@@ -20,6 +20,15 @@ steps:
     artifact_paths:
       - src/go/k8s/*.tar.gz
       - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
+    plugins:
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: ":cloud: K8s Operator v1 Jobs failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+            branches:
+              - main
 
   - group: K8s Operator v2 Jobs
     if: |
@@ -39,6 +48,15 @@ steps:
         artifact_paths:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml
+        plugins:
+          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+              message: ":cloud: K8s Operator v2 Jobs failed"
+              channel_name: "kubernetes-tests"
+              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+              conditions:
+                failed: true
+                branches:
+                  - main
 
       - key: annotate-v2-testresults
         label: Parse Operator v2 Test Results
@@ -75,6 +93,15 @@ steps:
         artifact_paths:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
+        plugins:
+          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+              message: ":cloud: K8s Operator v2 Helm Jobs failed"
+              channel_name: "kubernetes-tests"
+              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+              conditions:
+                failed: true
+                branches:
+                  - main
 
       - key: annotate-v2-helm-testresults
         label: Parse Operator v2 Helm Test Results
