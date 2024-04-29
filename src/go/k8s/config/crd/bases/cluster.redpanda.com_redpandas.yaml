@@ -4149,9 +4149,6 @@ spec:
                               cloud_storage_upload_ctrl_update_interval_ms:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
                                 type: integer
-                            required:
-                            - cloud_storage_bucket
-                            - cloud_storage_region
                             type: object
                           credentialsSecretRef:
                             description: CredentialSecretRef can be used to set `cloud_storage_secret_key`

@@ -474,7 +474,7 @@ type TieredConfig struct {
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
 	CloudStorageAPIEndpointPort *int `json:"cloud_storage_api_endpoint_port,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
-	CloudStorageBucket *string `json:"cloud_storage_bucket"`
+	CloudStorageBucket *string `json:"cloud_storage_bucket,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
 	CloudStorageAzureContainer *string `json:"cloud_storage_azure_container,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
@@ -512,7 +512,7 @@ type TieredConfig struct {
 	// Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.
 	CloudStorageReconciliationIntervalMs *int `json:"cloud_storage_reconciliation_interval_ms,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
-	CloudStorageRegion *string `json:"cloud_storage_region"`
+	CloudStorageRegion *string `json:"cloud_storage_region,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
 	CloudStorageSegmentMaxUploadIntervalSec *int `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
 	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
