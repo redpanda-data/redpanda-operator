@@ -19,10 +19,10 @@ delete:
     namespace: redpanda-system
   - apiVersion: batch/v1
     kind: Job
-    name: get-broker-count-managed-decom
+    name: get-broker-count-decom-on-delete
     namespace: redpanda-system
   - apiVersion: v1
     kind: Pod
     labels:
-      job-name: get-broker-count-managed-decom
+      job-name: get-broker-count-decom-on-delete
     namespace: redpanda-system
