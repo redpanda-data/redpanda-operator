@@ -87,6 +87,8 @@ steps:
            # suffix. Those would not be taken by chart testing (`ct`) program, but
            # `hack/v2-helm-setup.sh` takes all files currently and disables only handful of them.
 #          - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2-helm
+          - mkdir -p src/go/k8s/tests/_e2e_helm_artifacts_v2
+          - touch src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
         agents:
           queue: amd64-builders
