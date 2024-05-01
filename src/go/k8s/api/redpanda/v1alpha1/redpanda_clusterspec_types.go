@@ -108,7 +108,7 @@ type ConfigWatcher struct {
 	// Specifies resource requests for the sidecar container.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Specifies the container's security context, including privileges and access levels of the container and its processes.
-	SecurityContext *corev1.SecurityContext `json:"SecurityContext,omitempty"`
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // RedpandaImage configures the Redpanda container image settings in the Helm values.
@@ -858,7 +858,7 @@ type RPControllers struct {
 	// Specifies whether the Controllers are enabled.
 	Enabled            *bool                        `json:"enabled,omitempty"`
 	Resources          *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecurityContext    *corev1.SecurityContext      `json:"SecurityContext,omitempty"`
+	SecurityContext    *corev1.SecurityContext      `json:"securityContext,omitempty"`
 	Image              *RedpandaImage               `json:"image,omitempty"`
 	HealthProbeAddress *string                      `json:"healthProbeAddress,omitempty"`
 	MetricsAddress     *string                      `json:"metricsAddress,omitempty"`
@@ -1020,7 +1020,7 @@ type ExternalDNS struct {
 type SideCarObj struct {
 	Enabled         bool                         `json:"enabled,omitempty"`
 	Resources       *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecurityContext *corev1.SecurityContext      `json:"SecurityContext,omitempty"`
+	SecurityContext *corev1.SecurityContext      `json:"securityContext,omitempty"`
 }
 
 // EnterpriseLicenseSecretRef configures a reference to a Secret resource that contains the Enterprise license key.
