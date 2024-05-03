@@ -147,7 +147,7 @@ func main() {
 		additionalControllers       []string
 		operatorMode                bool
 		enableHelmControllers       bool
-
+		helmCacheMaxSize            int
 		// allowPVCDeletion controls the PVC deletion feature in the Cluster custom resource.
 		// PVCs will be deleted when its Pod has been deleted and the Node that Pod is assigned to
 		// does not exist, or has the NoExecute taint. This is intended to support the rancher.io/local-path
@@ -183,7 +183,8 @@ func main() {
 	flag.StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	flag.BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	flag.BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
-
+	flag.IntVar(&helmCacheMaxSize, "helm-cache-max-size", 0,
+		"The maximum size of the cache in number of indexes.")
 	logOptions.BindFlags(flag.CommandLine)
 	clientOptions.BindFlags(flag.CommandLine)
 	kubeConfigOpts.BindFlags(flag.CommandLine)
@@ -388,7 +389,12 @@ func main() {
 
 			cacheRecorder := helmSourceController.MustMakeCacheMetrics()
 			indexTTL := 15 * time.Minute
-			helmIndexCache := helmSourceController.NewCache(0, indexTTL)
+
+			var helmIndexCache helmSourceController.Cache
+			if helmCacheMaxSize > 0 {
+				helmIndexCache = helmSourceController.NewCache(helmCacheMaxSize, 1*time.Minute)
+			}
+
 			chartOpts := helmSourceController.HelmChartReconcilerOptions{
 				RateLimiter: helper.GetDefaultRateLimiter(),
 			}
