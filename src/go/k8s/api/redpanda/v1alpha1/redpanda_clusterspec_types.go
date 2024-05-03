@@ -467,8 +467,9 @@ type Tiered struct {
 
 // TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
 type TieredConfig struct {
-	// Enables Tiered Storage if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-	CloudStorageEnabled *string `json:"cloud_storage_enabled,omitempty"`
+	// Enables Tiered Storage if a license key `is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+	CloudStorageEnabled        *string `json:"cloud_storage_enabled,omitempty"`
+	CloudStorageEnabledBoolean *bool   `json:"cloud_storage_enabled,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
 	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.

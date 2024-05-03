@@ -2775,6 +2775,11 @@ func (in *TieredConfig) DeepCopyInto(out *TieredConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.CloudStorageEnabledBoolean != nil {
+		in, out := &in.CloudStorageEnabledBoolean, &out.CloudStorageEnabledBoolean
+		*out = new(bool)
+		**out = **in
+	}
 	if in.CloudStorageAPIEndpoint != nil {
 		in, out := &in.CloudStorageAPIEndpoint, &out.CloudStorageAPIEndpoint
 		*out = new(string)
