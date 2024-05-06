@@ -381,7 +381,7 @@ func (in *TieredConfig) DeepCopyInto(out *TieredConfig) {
 	*out = *in
 	if in.CloudStorageEnabled != nil {
 		in, out := &in.CloudStorageEnabled, &out.CloudStorageEnabled
-		*out = new(string)
+		*out = new(CloudStorageEnabledString)
 		**out = **in
 	}
 	if in.CloudStorageAPIEndpoint != nil {

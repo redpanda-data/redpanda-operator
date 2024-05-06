@@ -513,6 +513,14 @@ func main() {
 			}
 		}
 
+		if webhookEnabled {
+			setupLog.Info("Setup Redpanda conversion webhook")
+			if err = (&redpandav1alpha2.Redpanda{}).SetupWebhookWithManager(mgr); err != nil {
+				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaConversion")
+				os.Exit(1)
+			}
+		}
+
 	case ClusterControllerMode:
 		ctrl.Log.Info("running as a cluster controller", "mode", ClusterControllerMode)
 		setupLog.Error(err, "unable to create cluster controllers, not supported")
