@@ -48,6 +48,7 @@ import (
 
 	clusterredpandacomv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	clusterredpandacomcontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/cluster.redpanda.com"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
@@ -117,6 +118,7 @@ func init() {
 	utilruntime.Must(helmControllerAPIv2beta1.AddToScheme(scheme))
 	utilruntime.Must(helmControllerAPIv2beta2.AddToScheme(scheme))
 	utilruntime.Must(redpandav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(redpandav1alpha2.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1.AddToScheme(scheme))
 	utilruntime.Must(sourceControllerAPIv1beta2.AddToScheme(scheme))
 	utilruntime.Must(vectorizedv1alpha1.AddToScheme(scheme))

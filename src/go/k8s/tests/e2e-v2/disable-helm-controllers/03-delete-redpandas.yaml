@@ -4,7 +4,7 @@ kind: TestStep
 commands:
   - command: kubectl delete -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
 delete:
-  - apiVersion: cluster.redpanda.com/v1alpha1
+  - apiVersion: cluster.redpanda.com/v1alpha2
     kind: Redpanda
   - apiVersion: batch/v1
     kind: Job

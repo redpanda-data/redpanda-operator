@@ -1,4 +1,4 @@
-// Copyright 2021 Redpanda Data, Inc.
+// Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"encoding/json"
@@ -19,21 +19,100 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 )
 
 var RedpandaChartRepository = "https://charts.redpanda.com/"
 
+type ChartRef struct {
+	// Specifies the name of the chart to deploy.
+	ChartName string `json:"chartName,omitempty"`
+	// Defines the version of the Redpanda Helm chart to deploy.
+	ChartVersion string `json:"chartVersion,omitempty"`
+	// Defines the chart repository to use. Defaults to `redpanda` if not defined.
+	HelmRepositoryName string `json:"helmRepositoryName,omitempty"`
+	// Specifies the time to wait for any individual Kubernetes operation (like Jobs
+	// for hooks) during Helm actions. Defaults to `15m0s`.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern="^([0-9]+(\\.[0-9]+)?(ms|s|m|h))+$"
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
+	// Defines how to handle upgrades, including failures.
+	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
+}
+
 // RedpandaSpec defines the desired state of the Redpanda cluster.
 type RedpandaSpec struct {
 	// Defines chart details, including the version and repository.
-	ChartRef v1alpha2.ChartRef `json:"chartRef,omitempty"`
+	ChartRef ChartRef `json:"chartRef,omitempty"`
 	// Defines the Helm values to use to deploy the cluster.
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
 	// Migration flag that adjust Kubernetes core resources with annotation and labels, so
 	// flux controller can import resources.
 	// Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/
-	Migration *v1alpha2.Migration `json:"migration,omitempty"`
+	Migration *Migration `json:"migration,omitempty"`
+}
+
+// Migration can configure old Cluster and Console custom resource that will be disabled.
+// With Migration the ChartRef and ClusterSpec still need to be correctly configured.
+type Migration struct {
+	Enabled bool `json:"enabled"`
+	// ClusterRef by default will not be able to reach different namespaces, but it can be
+	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+	ClusterRef v1alpha1.NamespaceNameRef `json:"clusterRef"`
+
+	// ConsoleRef by default will not be able to reach different namespaces, but it can be
+	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+	ConsoleRef v1alpha1.NamespaceNameRef `json:"consoleRef"`
+}
+
+// RedpandaStatus defines the observed state of Redpanda
+type RedpandaStatus struct {
+	// Specifies the last observed generation.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	meta.ReconcileRequestStatus `json:",inline"`
+
+	// Conditions holds the conditions for the Redpanda.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// LastAppliedRevision is the revision of the last successfully applied source.
+	// +optional
+	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
+
+	// LastAttemptedRevision is the revision of the last reconciliation attempt.
+	// +optional
+	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
+
+	// +optional
+	HelmRelease string `json:"helmRelease,omitempty"`
+
+	// +optional
+	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
+
+	// +optional
+	HelmRepository string `json:"helmRepository,omitempty"`
+
+	// +optional
+	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
+
+	// +optional
+	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
+
+	// Failures is the reconciliation failure count against the latest desired
+	// state. It is reset after a successful reconciliation.
+	// +optional
+	Failures int64 `json:"failures,omitempty"`
+
+	// +optional
+	InstallFailures int64 `json:"installFailures,omitempty"`
+
+	// ManagedDecommissioningNode indicates that a node is currently being
+	// decommissioned from the cluster and provides its ordinal number.
+	// +optional
+	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
 }
 
 type RemediationStrategy string
@@ -57,6 +136,7 @@ type HelmUpgrade struct {
 // +kubebuilder:resource:shortName=rp
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
+// +kubebuilder:storageversion
 type Redpanda struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -64,7 +144,7 @@ type Redpanda struct {
 	// Defines the desired state of the Redpanda cluster.
 	Spec RedpandaSpec `json:"spec,omitempty"`
 	// Represents the current status of the Redpanda cluster.
-	Status v1alpha2.RedpandaStatus `json:"status,omitempty"`
+	Status RedpandaStatus `json:"status,omitempty"`
 }
 
 // RedpandaList contains a list of Redpanda objects.
@@ -78,6 +158,11 @@ type RedpandaList struct {
 
 func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
+}
+
+// GetHelmRelease returns the namespace and name of the HelmRelease.
+func (in *RedpandaStatus) GetHelmRelease() string {
+	return in.HelmRelease
 }
 
 func (in *Redpanda) GetHelmReleaseName() string {

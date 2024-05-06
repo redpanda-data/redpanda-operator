@@ -2,7 +2,7 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 delete:
-  - apiVersion: cluster.redpanda.com/v1alpha1
+  - apiVersion: cluster.redpanda.com/v1alpha2
     kind: Redpanda
   - apiVersion: batch/v1
     kind: Job
