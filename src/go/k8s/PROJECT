@@ -48,6 +48,8 @@ resources:
   path: github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2
   plural: redpandas
   version: v1alpha2
+  webhooks:
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
