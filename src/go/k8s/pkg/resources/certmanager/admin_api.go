@@ -14,4 +14,7 @@ const (
 	adminAPI           = "admin"
 	adminAPIClientCert = "admin-api-client"
 	adminAPINodeCert   = "admin-api-node"
+
+	// adminAPITrustedClientCAs is the suffix of the certificate bundle name
+	adminAPITrustedClientCAs = "admin-api-trusted-client-ca"
 )

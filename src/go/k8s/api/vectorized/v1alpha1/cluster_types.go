@@ -728,8 +728,13 @@ type KafkaAPITLS struct {
 // and PKCS#12 certificate. Both stores are protected with the password that
 // is the same as the name of the Cluster custom resource.
 type AdminAPITLS struct {
-	Enabled           bool `json:"enabled,omitempty"`
-	RequireClientAuth bool `json:"requireClientAuth,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	// If ClientCACertRef points to a secret containing the trusted CA certificates.
+	// If provided and RequireClientAuth is true, the operator uses the certificate
+	// in this secret instead of issuing client certificates. The secret is expected to provide
+	// the following keys: 'ca.crt'.
+	ClientCACertRef   *corev1.TypedLocalObjectReference `json:"clientCACertRef,omitempty"`
+	RequireClientAuth bool                              `json:"requireClientAuth,omitempty"`
 }
 
 // PandaproxyAPITLS configures the TLS of the Pandaproxy API
@@ -1215,14 +1220,15 @@ func (k KafkaAPI) IsMutualTLSEnabled() bool {
 // Admin API
 
 // GetPort returns API port
-func (a AdminAPI) GetPort() int {
+func (a *AdminAPI) GetPort() int {
 	return a.Port
 }
 
 // GetTLS returns API TLSConfig
-func (a AdminAPI) GetTLS() *TLSConfig {
+func (a *AdminAPI) GetTLS() *TLSConfig {
 	return &TLSConfig{
 		Enabled:           a.TLS.Enabled,
+		ClientCACertRef:   a.TLS.ClientCACertRef,
 		RequireClientAuth: a.TLS.RequireClientAuth,
 		IssuerRef:         nil,
 		NodeSecretRef:     nil,
@@ -1230,12 +1236,12 @@ func (a AdminAPI) GetTLS() *TLSConfig {
 }
 
 // GetExternal returns API's ExternalConnectivityConfig
-func (a AdminAPI) GetExternal() *ExternalConnectivityConfig {
+func (a *AdminAPI) GetExternal() *ExternalConnectivityConfig {
 	return &a.External
 }
 
 // GetHTTPScheme returns API HTTP scheme
-func (a AdminAPI) GetHTTPScheme() string {
+func (a *AdminAPI) GetHTTPScheme() string {
 	scheme := "http" //nolint:goconst // no need to set as constant
 	if a.TLS.Enabled {
 		scheme = "https" //nolint:goconst // no need to set as constant
@@ -1244,7 +1250,7 @@ func (a AdminAPI) GetHTTPScheme() string {
 }
 
 // IsMutualTLSEnabled returns true if API requires client auth
-func (a AdminAPI) IsMutualTLSEnabled() bool {
+func (a *AdminAPI) IsMutualTLSEnabled() bool {
 	return a.TLS.Enabled && a.TLS.RequireClientAuth
 }
 

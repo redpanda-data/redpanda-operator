@@ -52,7 +52,7 @@ const (
 
 var (
 	_ APIListener = vectorizedv1alpha1.KafkaAPI{}
-	_ APIListener = vectorizedv1alpha1.AdminAPI{}
+	_ APIListener = &vectorizedv1alpha1.AdminAPI{}
 	_ APIListener = vectorizedv1alpha1.PandaproxyAPI{}
 	_ APIListener = vectorizedv1alpha1.SchemaRegistryAPI{}
 
@@ -80,8 +80,8 @@ func kafkaAPIListeners(r *vectorizedv1alpha1.Cluster) []APIListener {
 
 func adminAPIListeners(r *vectorizedv1alpha1.Cluster) []APIListener {
 	listeners := []APIListener{}
-	for _, el := range r.Spec.Configuration.AdminAPI {
-		listeners = append(listeners, el)
+	for i := range r.Spec.Configuration.AdminAPI {
+		listeners = append(listeners, &r.Spec.Configuration.AdminAPI[i])
 	}
 	return listeners
 }
@@ -219,7 +219,7 @@ func NewClusterCertificates(
 	}
 
 	adminListeners := adminAPIListeners(cluster)
-	cc.adminAPI, err = cc.prepareAPI(ctx, "admin-api", adminAPI, adminAPINodeCert, "", []string{adminAPIClientCert}, adminListeners, &keystoreSecret)
+	cc.adminAPI, err = cc.prepareAPI(ctx, "admin-api", adminAPI, adminAPINodeCert, adminAPITrustedClientCAs, []string{adminAPIClientCert}, adminListeners, &keystoreSecret)
 	if err != nil {
 		return nil, fmt.Errorf("admin api certificates %w", err)
 	}
@@ -596,7 +596,7 @@ func (cc *ClusterCertificates) Volumes() (
 
 	vol, mount = secretVolumesForTLS(
 		cc.adminAPI.nodeCertificateName(),
-		nil,
+		cc.adminAPI.bundledClientCACertificateName(),
 		cc.adminAPI.clientCertificates,
 		adminAPICertVolName,
 		mountPoints.AdminAPI.NodeCertMountDir,
