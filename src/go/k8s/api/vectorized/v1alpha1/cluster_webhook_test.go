@@ -1635,6 +1635,232 @@ func TestSchemaRegistryTLSExternalCACertValidations(t *testing.T) {
 	})
 }
 
+func TestAdminAPITLSExternalCA(t *testing.T) { //nolint:funlen // better packing related tests together
+	cases := []struct {
+		name        string
+		adminAPI    []v1alpha1.AdminAPI
+		clusterFn   func(cluster *v1alpha1.Cluster)
+		secret      *corev1.Secret
+		skipCreate  bool
+		createError bool
+		updateError bool
+	}{
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set, name must be provided in clientCACertRef",
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef:   &corev1.TypedLocalObjectReference{},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set, the CA certificate secret must exist",
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "does-not-exist",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
+			name: "if admin API mTLS enabled, clientCACertRef is set and cluster is being deleted, skip update validation",
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "does-not-exist",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			clusterFn: func(c *v1alpha1.Cluster) {
+				deleteTime := metav1.Now()
+				c.DeletionTimestamp = &deleteTime
+			},
+			skipCreate:  true,
+			updateError: false,
+		},
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set, the CA certificate secret must provide ca.crt",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert-no-ca-crt",
+				},
+				Data: map[string][]byte{"no.ca.crt": []byte("no.ca.crt")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert-no-ca-crt",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set, the CA certificate secret must be in PEM",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert-invalid-pem",
+				},
+				Data: map[string][]byte{"ca.crt": []byte("not-in-pem")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert-invalid-pem",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set, the certificate secret must be valid x509 certificate",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert-not-ca-cert",
+				},
+				Data: map[string][]byte{"ca.crt": readFile(t, "./testdata/not.ca.crt.pem")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert-not-ca-cert",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
+			name: "if admin API mTLS enabled and clientCACertRef is set to a valid x509 certificate, cluster is accepted",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert",
+				},
+				Data: map[string][]byte{"ca.crt": readFile(t, "./testdata/ca.crt.pem")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: false,
+			updateError: false,
+		},
+		{
+			name: "admin API mTLS with clientCACertRef can be enabled also on the external listener only",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert-ext",
+				},
+				Data: map[string][]byte{"ca.crt": readFile(t, "./testdata/ca.crt.pem")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+				},
+				{
+					Port: 30644,
+					External: v1alpha1.ExternalConnectivityConfig{
+						Enabled:   true,
+						Subdomain: "panda.dev",
+					},
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled:           true,
+						RequireClientAuth: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert-ext",
+							Kind: "Secret",
+						},
+					},
+				},
+			},
+			createError: false,
+			updateError: false,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v1alpha1.SetK8sClient(fakeK8sClient)
+			adminCluster := validRedpandaCluster()
+			if tc.secret != nil {
+				if tc.secret.Namespace == "" {
+					tc.secret.Namespace = adminCluster.Namespace
+				}
+				err := fakeK8sClient.Create(context.Background(), tc.secret)
+				assert.NoError(t, err)
+			}
+			adminCluster.Spec.Configuration.AdminAPI = tc.adminAPI
+			if tc.clusterFn != nil {
+				tc.clusterFn(adminCluster)
+			}
+			if !tc.skipCreate {
+				_, err := adminCluster.ValidateCreate()
+				if tc.createError {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+			}
+			_, err := adminCluster.ValidateUpdate(adminCluster)
+			if tc.updateError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func validRedpandaCluster() *v1alpha1.Cluster {
 	return &v1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2109,4 +2335,12 @@ func TestCloudStorage(t *testing.T) {
 		_, err := newRp.ValidateUpdate(rpCluster)
 		assert.NoError(t, err)
 	})
+}
+
+func readFile(t *testing.T, name string) []byte {
+	f, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatalf("failed to read file %s: %v", name, err)
+	}
+	return f
 }
