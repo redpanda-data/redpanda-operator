@@ -1,0 +1,37 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: cluster-admin-api-tls-ext
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  replicas: 1
+  resources:
+    requests:
+      cpu: 1
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+    adminApi:
+      - port: 9644
+      - port: 30644
+        external:
+          enabled: true
+          subdomain: panda.dev
+        tls:
+          enabled: true
+          requireClientAuth: true
+          clientCACertRef:
+            kind: Secret
+            apiGroup: ""
+            name: aa-ca-cert
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
