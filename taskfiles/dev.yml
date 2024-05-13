@@ -15,8 +15,6 @@ vars:
   GOFUMPT_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/gofumpt/{{.GOFUMPT_VERSION}}'
   K8S_CONTROLLER_GEN_VERSION: 'v0.13.0'
   K8S_CONTROLLER_GEN_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-controller-gen/{{.K8S_CONTROLLER_GEN_VERSION}}'
-  K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION: 'v0.7.0'
-  K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-controller-runtime-setup-envtest/{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION}}'
   KUSTOMIZE_VERSION: 'v5.1.1'
   KUSTOMIZE_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kustomize/{{.KUSTOMIZE_VERSION}}'
   YQ_VERSION: '4.35.2'
@@ -212,16 +210,6 @@ tasks:
     cmds:
       - docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 --platform linux/amd64,linux/arm64 --name v-builder --use
       - '{{if eq ARCH "amd64"}} docker run --rm --privileged linuxkit/binfmt:v0.8 {{else}} echo "" {{end}}'
-
-  install-k8s-controller-runtime-setup-envtest:
-    vars:
-      SETUP_ENVTEST_URL: 'https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_VERSION}}/hack/setup-envtest.sh'
-    cmds:
-      - mkdir -p '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}'
-      - curl -sSLf --retry 3 --retry-connrefused --retry-delay 2 '{{.SETUP_ENVTEST_URL}}' -o '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
-      - chmod +x '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
-    status:
-      - test -f '{{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh'
 
   install-goreleaser:
     desc: install goreleaser

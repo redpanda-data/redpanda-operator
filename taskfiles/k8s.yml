@@ -53,15 +53,9 @@ tasks:
       - run-go-vet
       - generate-controller-code
       - generate-manifests
-      - :dev:install-k8s-controller-runtime-setup-envtest
-    vars:
-      ENVTEST_ASSETS_DIR_DEFAULT: '{{.BUILD_ROOT}}/k8s-operator/envtest/'
-      ENVTEST_ASSETS_DIR: '{{.ENVTEST_ASSETS_DIR | default .ENVTEST_ASSETS_DIR_DEFAULT}}'
     cmds:
       - |
-        source {{.K8S_CONTROLLER_RUNTIME_SETUP_ENVTEST_INSTALL_DIR}}/setup-envtest.sh
-        fetch_envtest_tools {{.ENVTEST_ASSETS_DIR}}
-        setup_envtest_env {{.ENVTEST_ASSETS_DIR}}
+        source <(cd {{ .SRC_DIR }} && nix develop -c setup-envtest use -p env 1.29.x)
         go test -v ./... -coverprofile cover.out
 
   build-operator-images:
@@ -172,6 +166,7 @@ tasks:
         vars:
           USE_SUDO: "false"
       - task: fetch-latest-redpanda
+      - task: build-operator-images
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
