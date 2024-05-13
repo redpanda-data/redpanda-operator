@@ -42,8 +42,8 @@ endif
 all: build
 
 # Run tests
-test: manifests generate fmt vet envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test -v ./... -coverprofile cover.out
+test: manifests generate fmt vet
+	cd ../../.. && nix develop -c ./task k8s:run-unit-tests
 
 # Build manager binary
 .PHONY: manager
@@ -167,7 +167,6 @@ $(LOCALBIN):
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
@@ -182,11 +181,6 @@ KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/k
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
 	test -s $(LOCALBIN)/kustomize || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
-
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: kuttl
 kuttl: $(KUTTL)

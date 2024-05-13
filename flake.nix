@@ -22,8 +22,15 @@
 
       perSystem = { self', system, ... }:
         let
-          pkgs = import nixpkgs { inherit system; };
           lib = pkgs.lib;
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [
+              (final: prev: {
+                setup-envtest = pkgs.callPackage ./ci/setup-envtest.nix { };
+              })
+            ];
+          };
         in
         {
           formatter = pkgs.nixpkgs-fmt;
@@ -41,6 +48,7 @@
               pkgs.go-task
               pkgs.go_1_21
               pkgs.openssl
+              pkgs.setup-envtest # Kubernetes provided test utilities
               # TODO(chrisseto): Migrate taskfile to using dependencies from
               # this flake.
               # pkgs.goreleaser
