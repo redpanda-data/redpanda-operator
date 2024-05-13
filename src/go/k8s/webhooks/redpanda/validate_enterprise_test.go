@@ -71,9 +71,10 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 	testEnv := &testutils.RedpandaTestEnv{}
 
 	cfg, err := testEnv.StartRedpandaTestEnv(true)
-	defer testEnv.Stop() //nolint:errcheck // in test test env error is not relevant
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
+
+	defer testEnv.Stop() //nolint:errcheck // in test test env error is not relevant
 
 	testAdminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
 	testAdminAPIFactory := func(

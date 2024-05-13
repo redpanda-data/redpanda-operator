@@ -506,13 +506,16 @@ func (r *ConfigMapResource) preparePandaproxyClient(
 		return nil
 	}
 
-	replicas := r.pandaCluster.GetCurrentReplicas()
-	cfg.NodeConfiguration.PandaproxyClient = &config.KafkaClient{}
-	for i := int32(0); i < replicas; i++ {
-		cfg.NodeConfiguration.PandaproxyClient.Brokers = append(cfg.NodeConfiguration.PandaproxyClient.Brokers, config.SocketAddress{
-			Address: fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN),
-			Port:    r.pandaCluster.InternalListener().Port,
-		})
+	// Point towards redpanda's headless service to utilize K8s native service
+	// discovery features. This mitigates the need to update this section of
+	// the config when the number of brokers change.
+	// Alternatively, localhost could be used to the same end but using DNS
+	// might save us in some cases where the local broker is having some
+	// trouble and it makes the config more generally reusable.
+	cfg.NodeConfiguration.PandaproxyClient = &config.KafkaClient{
+		Brokers: []config.SocketAddress{
+			{Address: r.serviceFQDN, Port: r.pandaCluster.InternalListener().Port},
+		},
 	}
 
 	clientBrokerTLS := r.tlsConfigProvider.KafkaClientBrokerTLS(mountPoints)
@@ -554,13 +557,16 @@ func (r *ConfigMapResource) prepareSchemaRegistryClient(
 		return nil
 	}
 
-	replicas := r.pandaCluster.GetCurrentReplicas()
-	cfg.NodeConfiguration.SchemaRegistryClient = &config.KafkaClient{}
-	for i := int32(0); i < replicas; i++ {
-		cfg.NodeConfiguration.SchemaRegistryClient.Brokers = append(cfg.NodeConfiguration.SchemaRegistryClient.Brokers, config.SocketAddress{
-			Address: fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN),
-			Port:    r.pandaCluster.InternalListener().Port,
-		})
+	// Point towards redpanda's headless service to utilize K8s native service
+	// discovery features. This mitigates the need to update this section of
+	// the config when the number of brokers change.
+	// Alternatively, localhost could be used to the same end but using DNS
+	// might save us in some cases where the local broker is having some
+	// trouble and it makes the config more generally reusable.
+	cfg.NodeConfiguration.SchemaRegistryClient = &config.KafkaClient{
+		Brokers: []config.SocketAddress{
+			{Address: r.serviceFQDN, Port: r.pandaCluster.InternalListener().Port},
+		},
 	}
 
 	clientBrokerTLS := r.tlsConfigProvider.KafkaClientBrokerTLS(mountPoints)
