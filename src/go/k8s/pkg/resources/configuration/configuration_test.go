@@ -132,16 +132,12 @@ func TestStringSliceProperties(t *testing.T) {
 func TestHash_FieldsWithNoHashChange(t *testing.T) {
 	cfg := configuration.For("v22.1.1-test")
 	cfg.NodeConfiguration.Redpanda.SeedServers = []rpkcfg.SeedServer{}
-	cfg.NodeConfiguration.PandaproxyClient = &rpkcfg.KafkaClient{Brokers: []rpkcfg.SocketAddress{}}
-	cfg.NodeConfiguration.SchemaRegistryClient = &rpkcfg.KafkaClient{Brokers: []rpkcfg.SocketAddress{}}
 	nodeConfHash, err := cfg.GetNodeConfigurationHash()
 	require.NoError(t, err)
 	allConfHash, err := cfg.GetFullConfigurationHash()
 	require.NoError(t, err)
 
 	cfg.NodeConfiguration.Redpanda.SeedServers = []rpkcfg.SeedServer{{Host: rpkcfg.SocketAddress{Address: "redpanda.com", Port: 9090}}}
-	cfg.NodeConfiguration.PandaproxyClient = &rpkcfg.KafkaClient{Brokers: []rpkcfg.SocketAddress{{Address: "redpanda.com", Port: 9091}}}
-	cfg.NodeConfiguration.SchemaRegistryClient = &rpkcfg.KafkaClient{Brokers: []rpkcfg.SocketAddress{{Address: "redpanda.com", Port: 9092}}}
 	nodeConfHashNew, err := cfg.GetNodeConfigurationHash()
 	require.NoError(t, err)
 	allConfHashNew, err := cfg.GetFullConfigurationHash()

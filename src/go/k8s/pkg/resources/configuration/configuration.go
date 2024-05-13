@@ -153,16 +153,9 @@ func (c *GlobalConfiguration) GetFullConfigurationHash() (string, error) {
 }
 
 // Ignore seeds in the hash computation such that any seed changes do not
-// trigger a rolling restart across the nodes. Similarly for pandaproxy and
-// schema registry clients.
+// trigger a rolling restart across the nodes.
 func removeFieldsThatShouldNotTriggerRestart(c *GlobalConfiguration) {
 	c.NodeConfiguration.Redpanda.SeedServers = []config.SeedServer{}
-	if c.NodeConfiguration.PandaproxyClient != nil {
-		c.NodeConfiguration.PandaproxyClient.Brokers = []config.SocketAddress{}
-	}
-	if c.NodeConfiguration.SchemaRegistryClient != nil {
-		c.NodeConfiguration.SchemaRegistryClient.Brokers = []config.SocketAddress{}
-	}
 }
 
 // GetAdditionalRedpandaProperty retrieves a configuration option

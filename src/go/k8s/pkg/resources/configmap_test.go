@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -203,9 +204,8 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 	}
 }
 
-func TestConfigMapResource_prepareSeedServerList(t *testing.T) {
+func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test table is long
 	logger := logr.Discard()
-	falsePtr := new(bool)
 	tests := []struct {
 		name        string
 		clusterName string
@@ -220,11 +220,12 @@ func TestConfigMapResource_prepareSeedServerList(t *testing.T) {
 			clusterFQDN: "domain.dom",
 			replicas:    1,
 			wantArgs: &config.RedpandaNodeConfig{
-				EmptySeedStartsCluster: falsePtr,
+				EmptySeedStartsCluster: ptr.To(false),
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
 							Address: "onenode-0.domain.dom",
+							Port:    33145,
 						},
 					},
 				},
@@ -236,21 +237,24 @@ func TestConfigMapResource_prepareSeedServerList(t *testing.T) {
 			clusterName: "threenode",
 			clusterFQDN: "domain.dom",
 			wantArgs: &config.RedpandaNodeConfig{
-				EmptySeedStartsCluster: falsePtr,
+				EmptySeedStartsCluster: ptr.To(false),
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
 							Address: "threenode-0.domain.dom",
+							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
 							Address: "threenode-1.domain.dom",
+							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
 							Address: "threenode-2.domain.dom",
+							Port:    33145,
 						},
 					},
 				},
@@ -264,34 +268,58 @@ func TestConfigMapResource_prepareSeedServerList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().Build()
+
 			p := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.clusterName,
 					Namespace: "namespace",
 				},
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: func() *int32 { i := tt.replicas; return &i }(),
+					Replicas: ptr.To(tt.replicas),
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+							{
+								Port: 123,
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled: false,
+								},
+							},
+						},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{
+							{
+								Port: 5678,
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled: false,
+								},
+							},
+						},
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
+							{
+								Port: 91011,
+							},
+						},
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							Port: 121314,
+						},
+					},
 				},
 			}
-			r := resources.NewConfigMap(nil, p, nil, tt.clusterFQDN, types.NamespacedName{Namespace: "namespace", Name: "internal"}, types.NamespacedName{Namespace: "namespace", Name: "external"}, TestBrokerTLSConfigProvider{}, logger)
-			cr := &config.RedpandaNodeConfig{}
-			if err := r.PrepareSeedServerList(cr); (err != nil) != tt.wantErr {
-				t.Errorf("ConfigMapResource.prepareSeedServerList() error = %v, wantErr %v", err, tt.wantErr)
-			}
+
+			r := resources.NewConfigMap(c, p, nil, tt.clusterFQDN, types.NamespacedName{Namespace: "namespace", Name: "internal"}, types.NamespacedName{Namespace: "namespace", Name: "external"}, TestBrokerTLSConfigProvider{}, logger)
+
+			cfg, err := r.CreateConfiguration(context.Background())
 			if tt.wantErr {
+				require.Error(t, err)
 				return
+			} else if !tt.wantErr {
+				require.NoError(t, err)
 			}
-			if int32(len(cr.SeedServers)) != tt.replicas {
-				t.Errorf("Not enough seed servers (%d) for %d replicas", len(cr.SeedServers), tt.replicas)
-			}
-			if *cr.EmptySeedStartsCluster != *tt.wantArgs.EmptySeedStartsCluster {
-				t.Errorf("EmptySeedStartsCluster is incorrect: got: %v, wanted: %v", cr.EmptySeedStartsCluster, tt.wantArgs.EmptySeedStartsCluster)
-			}
-			for i, seed := range tt.wantArgs.SeedServers {
-				if cr.SeedServers[i].Host.Address != seed.Host.Address {
-					t.Errorf("Seed server hostname is incorrect: got: %s, wanted %s\nRedpandaNodeConfig: %+v", cr.SeedServers[i].Host.Address, seed.Host.Address, cr)
-				}
-			}
+
+			require.Equal(t, tt.wantArgs.SeedServers, cfg.NodeConfiguration.Redpanda.SeedServers)
+			// Assert that the PandaproxyClient and SchemaRegistryClient configurations remain stable regardless of changes to replicas.
+			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, cfg.NodeConfiguration.PandaproxyClient.Brokers)
+			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, cfg.NodeConfiguration.SchemaRegistryClient.Brokers)
 		})
 	}
 }
