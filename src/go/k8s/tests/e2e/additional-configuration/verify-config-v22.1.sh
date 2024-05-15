@@ -14,7 +14,7 @@ pandaproxy:
     port: 8082
 pandaproxy_client:
   brokers:
-  - address: additional-configuration-0.additional-configuration.${NAMESPACE}.svc.cluster.local.
+  - address: additional-configuration.${NAMESPACE}.svc.cluster.local.
     port: 9092
   retries: ${PANDAPROXY_RETRIES}
 redpanda:
