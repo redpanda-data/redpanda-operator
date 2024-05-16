@@ -34,7 +34,7 @@ func (src *Redpanda) ConvertTo(dstRaw conversion.Hub) error { // nolint:styleche
 
 	b, err := json.Marshal(src)
 	if err != nil {
-		return fmt.Errorf("marshaling %T: %w", v1alpha2.Redpanda{}, err)
+		return fmt.Errorf("marshaling %T: %w", Redpanda{}, err)
 	}
 
 	if err = json.Unmarshal(b, dst); err != nil {
@@ -54,7 +54,7 @@ func (dst *Redpanda) ConvertFrom(srcRaw conversion.Hub) error { // nolint:stylec
 	}
 
 	if err = json.Unmarshal(b, dst); err != nil {
-		return fmt.Errorf("unmarshaling %T: %w", v1alpha2.Redpanda{}, err)
+		return fmt.Errorf("unmarshaling %T: %w", Redpanda{}, err)
 	}
 	return nil
 }

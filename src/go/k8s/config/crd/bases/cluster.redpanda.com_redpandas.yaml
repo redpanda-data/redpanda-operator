@@ -4106,6 +4106,7 @@ spec:
                               cloud_storage_enabled:
                                 description: Enables Tiered Storage if a license key
                                   is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+                                pattern: ^(true|false)$
                                 type: string
                               cloud_storage_initial_backoff_ms:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
