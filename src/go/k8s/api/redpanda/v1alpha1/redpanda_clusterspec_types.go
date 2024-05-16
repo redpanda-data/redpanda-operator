@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	v1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -126,28 +128,28 @@ type Tiered struct {
 	CredentialsSecretRef *v1alpha2.CredentialSecretRef `json:"credentialsSecretRef,omitempty"`
 }
 
-type CloudStorageEnabledString string
+// BoolString is a boolean that is represented in memory as a stringified
+// version of a boolean. It will unmarshal from either a boolean or a
+// stringified boolean successfully.
+// +kubebuilder:validation:Pattern=^(true|false)$
+type BoolString string
 
-const (
-	trueStr  = "true"
-	falseStr = "false"
-)
-
-func (s *CloudStorageEnabledString) UnmarshalJSON(text []byte) error {
+func (s *BoolString) UnmarshalJSON(text []byte) error {
 	switch string(text) {
-	case trueStr:
-		*s = trueStr
-	case falseStr:
-		*s = falseStr
+	case `true`, `"true"`: //nolint:goconst // it's really not worth it
+		*s = "true"
+	case `false`, `"false"`: //nolint:goconst // it's really not worth it
+		*s = "false"
+	default:
+		return fmt.Errorf("%q is not a valid boolean nor a stringified boolean", text) // nolint:goerr113 // No one is detecting this type of error.
 	}
-
 	return nil
 }
 
 // TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
 type TieredConfig struct {
 	// Enables Tiered Storage if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-	CloudStorageEnabled *CloudStorageEnabledString `json:"cloud_storage_enabled,omitempty"`
+	CloudStorageEnabled *BoolString `json:"cloud_storage_enabled,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
 	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.

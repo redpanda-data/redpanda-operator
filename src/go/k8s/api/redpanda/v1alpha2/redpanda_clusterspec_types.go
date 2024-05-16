@@ -10,6 +10,8 @@
 package v1alpha2
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -476,14 +478,15 @@ type Tiered struct {
 
 type CloudStorageEnabledBool bool
 
-func (s *CloudStorageEnabledBool) UnmarshalJSON(text []byte) error {
+func (s *CloudStorageEnabledBool) UnmarshalJSON(text []byte) error { //nolint:goconst // its really not worth it
 	switch string(text) {
-	case "\"true\"":
+	case `true`, `"true"`:
 		*s = true
-	case "\"false\"":
+	case `false`, `"false"`:
 		*s = false
+	default:
+		return fmt.Errorf("%q is not a valid boolean nor a stringified boolean", text) // nolint:goerr113 // No one is detecting this type of error.
 	}
-
 	return nil
 }
 
