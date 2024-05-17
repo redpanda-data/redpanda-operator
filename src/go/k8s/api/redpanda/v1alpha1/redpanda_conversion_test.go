@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	fuzz "github.com/google/gofuzz"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -218,6 +220,13 @@ func CRDFuzzer() *fuzz.Fuzzer {
 		// is... Scary.
 		func(q *resource.Quantity, c fuzz.Continue) { // nolint:ineffassign,staticcheck // Fuzzing is weird, we're assigning to a pointer to pass the value out.
 			q = resource.NewQuantity(c.Int63(), resource.DecimalSI)
+		},
+		// TypeMeta is special case where ApiVersion needs to be empty. In the real webhook handler the apiVersion will be set
+		// by controller runtime.
+		func(typeMeta *metav1.TypeMeta, c fuzz.Continue) { // nolint:staticcheck // Fuzzing is weird, we're assigning to a pointer to pass the value out.
+			typeMeta = &metav1.TypeMeta{ // nolint:ineffassign,staticcheck // Fuzzing is weird, we're assigning to a pointer to pass the value out.
+				Kind: c.RandString(),
+			}
 		},
 	).SkipFieldsWithPattern(regexp.MustCompile("Console|Config|Connectors|FieldsV1"))
 }
