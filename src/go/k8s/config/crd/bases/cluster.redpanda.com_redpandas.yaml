@@ -4104,10 +4104,9 @@ spec:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
                                 type: boolean
                               cloud_storage_enabled:
-                                description: Enables Tiered Storage if a license key
-                                  is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-                                pattern: ^(true|false)$
-                                type: string
+                                description: Enables Tiered Storage, if a license
+                                  key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+                                x-kubernetes-preserve-unknown-fields: true
                               cloud_storage_initial_backoff_ms:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
                                 type: integer
@@ -8666,9 +8665,9 @@ spec:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
                                 type: boolean
                               cloud_storage_enabled:
-                                description: Enables Tiered Storage if a license key
-                                  `is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-                                type: boolean
+                                description: Enables Tiered Storage, if a license
+                                  key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+                                x-kubernetes-preserve-unknown-fields: true
                               cloud_storage_initial_backoff_ms:
                                 description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
                                 type: integer

@@ -15,6 +15,7 @@ package v1alpha2
 
 import (
 	"github.com/fluxcd/helm-controller/api/v2beta2"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/apiutil"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -2772,8 +2773,8 @@ func (in *TieredConfig) DeepCopyInto(out *TieredConfig) {
 	*out = *in
 	if in.CloudStorageEnabled != nil {
 		in, out := &in.CloudStorageEnabled, &out.CloudStorageEnabled
-		*out = new(CloudStorageEnabledBool)
-		**out = **in
+		*out = new(apiutil.JSONBoolean)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.CloudStorageAPIEndpoint != nil {
 		in, out := &in.CloudStorageAPIEndpoint, &out.CloudStorageAPIEndpoint

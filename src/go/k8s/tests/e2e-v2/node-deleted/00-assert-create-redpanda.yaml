@@ -1,5 +1,7 @@
 ---
-apiVersion: cluster.redpanda.com/v1alpha2
+# NOTE: This apiVersion is intentionally v1alpha1 instead of v1alpha2 to ensure
+# that both schemas function as expected.
+apiVersion: cluster.redpanda.com/v1alpha1
 kind: Redpanda
 metadata:
   finalizers:
