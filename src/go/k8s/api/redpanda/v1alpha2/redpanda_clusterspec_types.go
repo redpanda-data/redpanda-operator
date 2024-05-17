@@ -10,8 +10,7 @@
 package v1alpha2
 
 import (
-	"fmt"
-
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/apiutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -476,24 +475,10 @@ type Tiered struct {
 	CredentialsSecretRef *CredentialSecretRef `json:"credentialsSecretRef,omitempty"`
 }
 
-type CloudStorageEnabledBool bool
-
-func (s *CloudStorageEnabledBool) UnmarshalJSON(text []byte) error { //nolint:goconst // its really not worth it
-	switch string(text) {
-	case `true`, `"true"`:
-		*s = true
-	case `false`, `"false"`:
-		*s = false
-	default:
-		return fmt.Errorf("%q is not a valid boolean nor a stringified boolean", text) // nolint:goerr113 // No one is detecting this type of error.
-	}
-	return nil
-}
-
 // TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
 type TieredConfig struct {
-	// Enables Tiered Storage if a license key `is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-	CloudStorageEnabled *CloudStorageEnabledBool `json:"cloud_storage_enabled,omitempty"`
+	// Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+	CloudStorageEnabled *apiutil.JSONBoolean `json:"cloud_storage_enabled,omitempty"`
 	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
 	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
 	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
