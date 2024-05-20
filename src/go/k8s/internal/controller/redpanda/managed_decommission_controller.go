@@ -195,7 +195,7 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 	decommissionNodeID := int(*rp.Status.ManagedDecommissioningNode)
 	log := l.WithName("decommissionStatus").WithValues("decommission-node-id", decommissionNodeID)
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(log, rp.GetHelmReleaseName(), rp.Namespace)
 	if err != nil {
 		return fmt.Errorf("get helm values: %w", err)
 	}
@@ -283,7 +283,7 @@ func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alph
 	decommissionNodeID := int(*rp.Status.ManagedDecommissioningNode)
 	log := l.WithName("podEvict").WithValues("decommission-node-id", decommissionNodeID)
 
-	pod, err := getPodFromRedpandaNodeID(ctx, l, c, rp, decommissionNodeID)
+	pod, err := getPodFromRedpandaNodeID(ctx, log, c, rp, decommissionNodeID)
 	if err != nil {
 		return fmt.Errorf("getting pod from node-id (%d): %w", decommissionNodeID, err)
 	}
@@ -303,7 +303,7 @@ func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Cl
 		return nil, fmt.Errorf("get Redpanda Node ID pod list: %w", err)
 	}
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(log, rp.GetHelmReleaseName(), rp.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("get helm values: %w", err)
 	}
@@ -370,7 +370,7 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 		return err
 	}
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(log, rp.GetHelmReleaseName(), rp.Namespace)
 	if err != nil {
 		return fmt.Errorf("get helm values: %w", err)
 	}
@@ -457,8 +457,8 @@ func areAllPodsUpdated(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Red
 	return true, nil
 }
 
-func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c k8sclient.Client, rp *v1alpha1.Redpanda) error {
-	l := log.WithName("removeManagedDecommissionAnnotation")
+func removeManagedDecommissionAnnotation(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha2.Redpanda) error {
+	log := l.WithName("removeManagedDecommissionAnnotation")
 
 	key := k8sclient.ObjectKeyFromObject(rp)
 	latest := &v1alpha2.Redpanda{}
@@ -473,7 +473,7 @@ func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c
 		}
 	}
 
-	l.Info("Managed decommission finished", "annotations", rp.Annotations, "conditions", rp.GetConditions())
+	log.Info("Managed decommission finished", "annotations", rp.Annotations, "conditions", rp.GetConditions())
 
 	if err := c.Patch(ctx, rp, p); err != nil {
 		return fmt.Errorf("unable to remove managed decommission annotation from Cluster %q: %w", rp.Name, err)
@@ -482,7 +482,8 @@ func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c
 	return nil
 }
 
-func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
+func markPods(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
+	log := l.WithName("markPods")
 	if hasManagedCondition(rp) {
 		log.V(logger.DebugLevel).Info("Redpanda has managed decommission condition")
 		return nil
