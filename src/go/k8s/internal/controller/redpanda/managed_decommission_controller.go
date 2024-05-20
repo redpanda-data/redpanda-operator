@@ -30,7 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 )
@@ -56,7 +56,7 @@ type ManagedDecommissionReconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *ManagedDecommissionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Redpanda{}).Complete(r)
+		For(&v1alpha2.Redpanda{}).Complete(r)
 }
 
 func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -66,7 +66,7 @@ func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Re
 	start := time.Now()
 	log := ctrl.LoggerFrom(ctx).WithName("ManagedDecommissionReconciler.Reconcile")
 
-	rp := &v1alpha1.Redpanda{}
+	rp := &v1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, k8sclient.IgnoreNotFound(err)
 	}
@@ -96,7 +96,7 @@ func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Re
 	return result, err
 }
 
-func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) (ctrl.Result, error) {
+func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) (ctrl.Result, error) {
 	log := l.WithName("managedDecommission")
 
 	exist, err := isManagedDecommission(rp)
@@ -146,7 +146,7 @@ func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client,
 	return ctrl.Result{}, nil
 }
 
-func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
+func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
 	log := l.WithName("cleanUp")
 
 	err := decommissionStatus(ctx, log, c, er, rp)
@@ -179,7 +179,7 @@ func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.E
 	return updateRedpanda(ctx, rp, c)
 }
 
-func redpandaPodsSelector(rp *v1alpha1.Redpanda) labels.Selector {
+func redpandaPodsSelector(rp *v1alpha2.Redpanda) labels.Selector {
 	selector, err := labels.Parse(fmt.Sprintf("!job-name,app.kubernetes.io/component=%s,app.kubernetes.io/instance=%s", componentLabelValue, rp.Name))
 	if err != nil {
 		panic(fmt.Errorf("label selector should always pass parsing: %w", err))
@@ -187,7 +187,7 @@ func redpandaPodsSelector(rp *v1alpha1.Redpanda) labels.Selector {
 	return selector
 }
 
-func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
+func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
 	if rp.Status.ManagedDecommissioningNode == nil {
 		return nil
 	}
@@ -225,8 +225,8 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 
 	log.Info("Node decommissioned")
 	er.AnnotatedEventf(rp,
-		map[string]string{v1alpha1.GroupVersion.Group + revisionPath: rp.ResourceVersion},
-		corev1.EventTypeNormal, v1alpha1.EventTypeTrace, fmt.Sprintf("Node decommissioned: %d", decommissionNodeID))
+		map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
+		corev1.EventTypeNormal, v1alpha2.EventTypeTrace, fmt.Sprintf("Node decommissioned: %d", decommissionNodeID))
 
 	err = podEvict(ctx, log, c, rp)
 	if err != nil {
@@ -249,7 +249,7 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 
 var ErrZeroReplicas = errors.New("redpanda replicas is zero")
 
-func getRedpandaReplicas(ctx context.Context, c k8sclient.Client, rp *v1alpha1.Redpanda) (int, error) {
+func getRedpandaReplicas(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Redpanda) (int, error) {
 	requestedReplicas := ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
 	if requestedReplicas == 0 {
 		resourcesName := rp.Name
@@ -275,7 +275,7 @@ func getRedpandaReplicas(ctx context.Context, c k8sclient.Client, rp *v1alpha1.R
 	return requestedReplicas, nil
 }
 
-func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha1.Redpanda) error {
+func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha2.Redpanda) error {
 	if rp.Status.ManagedDecommissioningNode == nil {
 		return nil
 	}
@@ -295,7 +295,7 @@ func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alph
 	return c.Delete(ctx, pod)
 }
 
-func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha1.Redpanda, nodeID int) (*corev1.Pod, error) {
+func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha2.Redpanda, nodeID int) (*corev1.Pod, error) {
 	log := l.WithName("getPodFromRedpandaNodeID")
 
 	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
@@ -348,9 +348,9 @@ func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Cl
 	return nil, nil
 }
 
-func updateRedpanda(ctx context.Context, rp *v1alpha1.Redpanda, c k8sclient.Client) error {
+func updateRedpanda(ctx context.Context, rp *v1alpha2.Redpanda, c k8sclient.Client) error {
 	key := k8sclient.ObjectKeyFromObject(rp)
-	latest := &v1alpha1.Redpanda{}
+	latest := &v1alpha2.Redpanda{}
 	if err := c.Get(ctx, key, latest); err != nil {
 		return fmt.Errorf("getting latest Redpanda resource: %w", err)
 	}
@@ -362,7 +362,7 @@ func updateRedpanda(ctx context.Context, rp *v1alpha1.Redpanda, c k8sclient.Clie
 	return nil
 }
 
-func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
+func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
 	log := l.WithName("reconcilePodsDecommission")
 
 	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
@@ -421,8 +421,8 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 		}
 
 		er.AnnotatedEventf(rp,
-			map[string]string{v1alpha1.GroupVersion.Group + revisionPath: rp.ResourceVersion},
-			corev1.EventTypeNormal, v1alpha1.EventTypeTrace, fmt.Sprintf("Node decommissioning started: %d", nodeCfg.NodeID))
+			map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
+			corev1.EventTypeNormal, v1alpha2.EventTypeTrace, fmt.Sprintf("Node decommissioning started: %d", nodeCfg.NodeID))
 
 		nodeID := int32(nodeCfg.NodeID)
 		rp.Status.ManagedDecommissioningNode = &nodeID
@@ -441,7 +441,7 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 	return nil
 }
 
-func areAllPodsUpdated(ctx context.Context, c k8sclient.Client, rp *v1alpha1.Redpanda) (bool, error) {
+func areAllPodsUpdated(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Redpanda) (bool, error) {
 	podList, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return false, fmt.Errorf("check all pods have condition: %w", err)
@@ -461,7 +461,7 @@ func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c
 	l := log.WithName("removeManagedDecommissionAnnotation")
 
 	key := k8sclient.ObjectKeyFromObject(rp)
-	latest := &v1alpha1.Redpanda{}
+	latest := &v1alpha2.Redpanda{}
 	if err := c.Get(ctx, key, latest); err != nil {
 		return fmt.Errorf("getting latest Redpanda resource: %w", err)
 	}
@@ -482,7 +482,7 @@ func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c
 	return nil
 }
 
-func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha1.Redpanda) error {
+func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
 	if hasManagedCondition(rp) {
 		log.V(logger.DebugLevel).Info("Redpanda has managed decommission condition")
 		return nil
@@ -511,8 +511,8 @@ func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er recor
 
 	log.V(logger.DebugLevel).Info("Redpanda managed decommission started", "conditions", rp.GetConditions())
 	er.AnnotatedEventf(rp,
-		map[string]string{v1alpha1.GroupVersion.Group + revisionPath: rp.ResourceVersion},
-		corev1.EventTypeNormal, v1alpha1.EventTypeTrace, "Managed Decommission started")
+		map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
+		corev1.EventTypeNormal, v1alpha2.EventTypeTrace, "Managed Decommission started")
 
 	newCondition := metav1.Condition{
 		Type:    ManagedDecommissionConditionType,
@@ -525,7 +525,7 @@ func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er recor
 	return updateRedpanda(ctx, rp, c)
 }
 
-func hasManagedCondition(rp *v1alpha1.Redpanda) bool {
+func hasManagedCondition(rp *v1alpha2.Redpanda) bool {
 	conds := rp.GetConditions()
 	if conds == nil {
 		return false
@@ -539,7 +539,7 @@ func hasManagedCondition(rp *v1alpha1.Redpanda) bool {
 	return false
 }
 
-func isManagedDecommission(rp *v1alpha1.Redpanda) (bool, error) {
+func isManagedDecommission(rp *v1alpha2.Redpanda) (bool, error) {
 	t, ok := rp.GetAnnotations()[resources.ManagedDecommissionAnnotation]
 	if !ok {
 		return false, nil
