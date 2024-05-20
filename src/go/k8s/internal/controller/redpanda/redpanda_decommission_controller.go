@@ -30,7 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 )
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;
@@ -176,7 +176,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 	redpandaNameList := make([]string, 0)
 	if r.OperatorMode {
 		opts := &client.ListOptions{Namespace: namespace}
-		redpandaList := &v1alpha1.RedpandaList{}
+		redpandaList := &v1alpha2.RedpandaList{}
 		if errGET := r.Client.List(ctx, redpandaList, opts); errGET != nil {
 			return ctrl.Result{}, fmt.Errorf("could not GET list of Redpandas in namespace: %w", errGET)
 		}

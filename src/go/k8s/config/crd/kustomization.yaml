@@ -19,6 +19,7 @@ patches:
 - path: patches/webhook_in_clusters.yaml
 - path: patches/webhook_in_redpanda_consoles.yaml
 - path: patches/webhook_in_cluster.redpanda.com_topics.yaml
+- path: patches/webhook_in_redpanda_redpanda.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
@@ -26,6 +27,7 @@ patches:
 - path: patches/cainjection_in_clusters.yaml
 - path: patches/cainjection_in_redpanda_consoles.yaml
 - path: patches/cainjection_in_cluster.redpanda.com_topics.yaml
+- path: patches/cainjection_in_redpanda_redpanda.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # patches CRD to re-add removed fields from beta CRDs
