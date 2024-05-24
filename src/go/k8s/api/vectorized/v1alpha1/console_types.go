@@ -157,6 +157,13 @@ type Schema struct {
 type Deployment struct {
 	Image string `json:"image"`
 
+	// +optional
+	// Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
 	// +kubebuilder:default=1
 	Replicas int32 `json:"replicas,omitempty"`
 

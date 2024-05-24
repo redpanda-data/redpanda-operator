@@ -89,6 +89,7 @@ func (d *Deployment) Ensure(ctx context.Context) error {
 					Containers:                    containers,
 					TerminationGracePeriodSeconds: getGracePeriod(d.consoleobj.Spec.Server.ServerGracefulShutdownTimeout.Duration),
 					ServiceAccountName:            sa,
+					ImagePullSecrets:              d.consoleobj.Spec.Deployment.ImagePullSecrets,
 				},
 			},
 			Strategy: v1.DeploymentStrategy{
@@ -555,9 +556,10 @@ func (d *Deployment) getContainers(ctx context.Context, ss map[string]string) ([
 
 	return []corev1.Container{
 		{
-			Name:  ConsoleContainerName,
-			Image: d.consoleobj.Spec.Deployment.Image,
-			Args:  []string{fmt.Sprintf("--config.filepath=%s/%s", configMountPath, "config.yaml")},
+			Name:            ConsoleContainerName,
+			Image:           d.consoleobj.Spec.Deployment.Image,
+			ImagePullPolicy: d.consoleobj.Spec.Deployment.ImagePullPolicy,
+			Args:            []string{fmt.Sprintf("--config.filepath=%s/%s", configMountPath, "config.yaml")},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
