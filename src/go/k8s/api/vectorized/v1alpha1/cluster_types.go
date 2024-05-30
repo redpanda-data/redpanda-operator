@@ -729,6 +729,19 @@ type KafkaAPITLS struct {
 // is the same as the name of the Cluster custom resource.
 type AdminAPITLS struct {
 	Enabled bool `json:"enabled,omitempty"`
+	// References cert-manager Issuer or ClusterIssuer. When provided, this
+	// issuer will be used to issue node certificates.
+	// Typically you want to provide the issuer when a generated self-signed one
+	// is not enough and you need to have a verifiable chain with a proper CA
+	// certificate.
+	IssuerRef *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
+	// If provided, operator uses certificate in this secret instead of
+	// issuing its own node certificate. The secret is expected to provide
+	// the following keys: 'ca.crt', 'tls.key' and 'tls.crt'
+	// If NodeSecretRef points to secret in different namespace, operator will
+	// duplicate the secret to the same namespace as redpanda CRD to be able to
+	// mount it to the nodes.
+	NodeSecretRef *corev1.ObjectReference `json:"nodeSecretRef,omitempty"`
 	// If ClientCACertRef points to a secret containing the trusted CA certificates.
 	// If provided and RequireClientAuth is true, the operator uses the certificate
 	// in this secret instead of issuing client certificates. The secret is expected to provide
@@ -1230,8 +1243,8 @@ func (a *AdminAPI) GetTLS() *TLSConfig {
 		Enabled:           a.TLS.Enabled,
 		ClientCACertRef:   a.TLS.ClientCACertRef,
 		RequireClientAuth: a.TLS.RequireClientAuth,
-		IssuerRef:         nil,
-		NodeSecretRef:     nil,
+		IssuerRef:         a.TLS.IssuerRef,
+		NodeSecretRef:     a.TLS.NodeSecretRef,
 	}
 }
 
