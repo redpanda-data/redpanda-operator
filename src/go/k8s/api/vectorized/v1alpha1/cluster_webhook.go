@@ -346,8 +346,17 @@ func (r *Cluster) validateAdminListeners() field.ErrorList {
 			}
 			foundListenerWithTLS = true
 		}
-		// we need to run the validation on all listeners to also catch errors like !Enabled && RequireClientAuth
-		allErrs = append(allErrs, validateAdminTLS(p.TLS, field.NewPath("spec").Child("configuration").Child("adminApi").Index(i).Child("tls"), r.Namespace)...)
+		allErrs = append(allErrs, validateListener(
+			p.TLS.Enabled,
+			p.TLS.RequireClientAuth,
+			p.TLS.IssuerRef,
+			p.TLS.NodeSecretRef,
+			p.TLS.ClientCACertRef,
+			field.NewPath("spec").Child("configuration").Child("adminApi").Index(i).Child("tls"),
+			&r.Spec.Configuration.AdminAPI[i].External,
+			field.NewPath("spec").Child("configuration").Child("adminApi").Index(i).Child("external"),
+			r.GetNamespace(),
+		)...)
 	}
 
 	return allErrs
@@ -793,21 +802,6 @@ func (r *Cluster) validateRedpandaCoreChanges(old *Cluster) field.ErrorList {
 	return allErrs
 }
 
-func validateAdminTLS(tlsConfig AdminAPITLS, path *field.Path, clusterNamespace string) field.ErrorList {
-	var allErrs field.ErrorList
-	if tlsConfig.RequireClientAuth && !tlsConfig.Enabled {
-		allErrs = append(allErrs,
-			field.Invalid(
-				path.Child("requireclientauth"),
-				tlsConfig.RequireClientAuth,
-				"Enabled has to be set to true for RequireClientAuth to be allowed to be true"))
-	}
-	if tlsConfig.ClientCACertRef != nil {
-		allErrs = append(allErrs, validateExternalCA(tlsConfig.RequireClientAuth, tlsConfig.ClientCACertRef, path, clusterNamespace)...)
-	}
-	return allErrs
-}
-
 func validateTLSRules(
 	tlsListeners []ListenerWithName, path *field.Path,
 ) field.ErrorList {
@@ -896,7 +890,7 @@ func validateListener(
 		return allErrs
 	}
 
-	return validateExternalCA(requireClientAuth, clientCACertRef, path, clusterNamespace)
+	return append(allErrs, validateExternalCA(requireClientAuth, clientCACertRef, path, clusterNamespace)...)
 }
 
 func validateExternalCA(
