@@ -1773,6 +1773,46 @@ func TestAdminAPITLSExternalCA(t *testing.T) { //nolint:funlen // better packing
 			updateError: true,
 		},
 		{
+			name: "admin API mTLS with clientCACertRef can have one of issuer ref or node secret ref",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "admin-api-client-ca-cert-in",
+				},
+				Data: map[string][]byte{"ca.crt": readFile(t, "./testdata/ca.crt.pem")},
+			},
+			adminAPI: []v1alpha1.AdminAPI{
+				{
+					Port: 9644,
+				},
+				{
+					Port: 30644,
+					External: v1alpha1.ExternalConnectivityConfig{
+						Enabled:   true,
+						Subdomain: "panda.dev",
+					},
+					TLS: v1alpha1.AdminAPITLS{
+						Enabled: true,
+						ClientCACertRef: &corev1.TypedLocalObjectReference{
+							Name: "admin-api-client-ca-cert-in",
+							Kind: "Secret",
+						},
+						RequireClientAuth: true,
+						IssuerRef: &cmmeta.ObjectReference{
+							Kind: "ClusterIssuer",
+							Name: "letsencrypt",
+						},
+						NodeSecretRef: &corev1.ObjectReference{
+							Kind:       "Secret",
+							Name:       "mysecret",
+							APIVersion: "v1",
+						},
+					},
+				},
+			},
+			createError: true,
+			updateError: true,
+		},
+		{
 			name: "if admin API mTLS enabled and clientCACertRef is set to a valid x509 certificate, cluster is accepted",
 			secret: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
