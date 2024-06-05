@@ -1071,6 +1071,9 @@ spec:
                       you can read more in https://kubernetes.io/docs/tasks/run-application/configure-pdb/
                     x-kubernetes-int-or-string: true
                 type: object
+              priorityClassName:
+                description: PriorityClassName is the name of PriortyClass.
+                type: string
               replicas:
                 description: Replicas determine how big the cluster will be.
                 format: int32

@@ -104,6 +104,8 @@ type ClusterSpec struct {
 	// Replicas determine how big the cluster will be.
 	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
+	// PriorityClassName is the name of PriortyClass.
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// PodDisruptionBudget specifies whether PDB resource should be created for
 	// the cluster and how should it be configured. By default this is enabled
 	// and defaults to MaxUnavailable=1

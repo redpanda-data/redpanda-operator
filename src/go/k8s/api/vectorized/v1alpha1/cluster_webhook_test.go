@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -615,6 +616,32 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("update priority class name", func(t *testing.T) {
+		v1alpha1.SetK8sClient(fakeK8sClient)
+		pc := &schedulingv1.PriorityClass{}
+		pcName := "my-priority-class-2"
+		pc.SetName(pcName)
+		err := fakeK8sClient.Create(context.TODO(), pc)
+		assert.NoError(t, err)
+		defer func() { _ = fakeK8sClient.Delete(context.TODO(), pc) }()
+
+		cluster := redpandaCluster.DeepCopy()
+		cluster.Spec.PriorityClassName = pcName
+
+		_, err = cluster.ValidateUpdate(redpandaCluster)
+		assert.NoError(t, err)
+	})
+
+	t.Run("priority class does not exist in update", func(t *testing.T) {
+		pcName := "priority-class-not-exist"
+
+		cluster := redpandaCluster.DeepCopy()
+		cluster.Spec.PriorityClassName = pcName
+
+		_, err := cluster.ValidateUpdate(redpandaCluster)
+		assert.Error(t, err)
+	})
+
 	t.Run("resource limits/requests on redpanda resources", func(t *testing.T) {
 		c := redpandaCluster.DeepCopy()
 		c.Spec.Resources.Limits = corev1.ResourceList{
@@ -1050,6 +1077,31 @@ func TestCreation(t *testing.T) {
 			v1alpha1.PandaproxyAPI{TLS: v1alpha1.PandaproxyAPITLS{Enabled: false, RequireClientAuth: true}})
 
 		_, err := tls.ValidateCreate()
+		assert.Error(t, err)
+	})
+
+	t.Run("priority class name is set: success", func(t *testing.T) {
+		v1alpha1.SetK8sClient(fakeK8sClient)
+
+		pc := &schedulingv1.PriorityClass{}
+		pcName := "my-priority-class-1"
+		pc.SetName(pcName)
+		err := fakeK8sClient.Create(context.TODO(), pc)
+		assert.NoError(t, err)
+		defer func() { _ = fakeK8sClient.Delete(context.TODO(), pc) }()
+
+		cluster := redpandaCluster.DeepCopy()
+		cluster.Spec.PriorityClassName = pcName
+		_, err = cluster.ValidateCreate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("specified priority class name does not exist: failure", func(t *testing.T) {
+		v1alpha1.SetK8sClient(fakeK8sClient)
+
+		cluster := redpandaCluster.DeepCopy()
+		cluster.Spec.PriorityClassName = "my-priority-class-not-exist"
+		_, err := cluster.ValidateCreate()
 		assert.Error(t, err)
 	})
 

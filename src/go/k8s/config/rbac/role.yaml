@@ -274,6 +274,13 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - list
+  - get
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -670,3 +677,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - list
+  - get
+
