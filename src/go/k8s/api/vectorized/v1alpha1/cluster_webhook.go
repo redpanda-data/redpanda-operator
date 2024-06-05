@@ -22,6 +22,7 @@ import (
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -264,6 +265,7 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 	if featuregates.InternalTopicReplication(r.Spec.Version) {
 		allErrs = append(allErrs, r.validateAdditionalConfiguration()...)
 	}
+	allErrs = append(allErrs, r.validatePriorityClassName()...)
 	return allErrs
 }
 
@@ -279,6 +281,25 @@ func (r *Cluster) validateScaling() field.ErrorList {
 			field.Invalid(field.NewPath("spec").Child("replicas"),
 				r.Spec.Replicas,
 				"downscaling is not allowed to less than 1 instance"))
+	}
+
+	return allErrs
+}
+
+func (r *Cluster) validatePriorityClassName() field.ErrorList {
+	var allErrs field.ErrorList
+	if r.Spec.PriorityClassName == "" {
+		return allErrs
+	}
+
+	pc := &schedulingv1.PriorityClass{}
+	err := kclient.Get(context.TODO(), types.NamespacedName{Name: r.Spec.PriorityClassName}, pc)
+	if err != nil {
+		allErrs = append(allErrs,
+			field.Invalid(
+				field.NewPath("spec").Child("priorityClassName"),
+				r.Spec.PriorityClassName,
+				"failed to get priority class: "+err.Error()))
 	}
 
 	return allErrs

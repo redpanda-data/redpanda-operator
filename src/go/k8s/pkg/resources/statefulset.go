@@ -340,7 +340,6 @@ func (r *StatefulSetResource) obj(
 
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
 	replicas := r.pandaCluster.GetCurrentReplicas()
-
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.Key().Namespace,
@@ -371,6 +370,7 @@ func (r *StatefulSetResource) obj(
 					SecurityContext: &corev1.PodSecurityContext{
 						FSGroup: ptr.To(int64(fsGroup)),
 					},
+					PriorityClassName: r.pandaCluster.Spec.PriorityClassName,
 					Volumes: append([]corev1.Volume{
 						{
 							Name: "configmap-dir",
