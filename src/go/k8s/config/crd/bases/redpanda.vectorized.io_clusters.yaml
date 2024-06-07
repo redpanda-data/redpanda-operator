@@ -1072,7 +1072,8 @@ spec:
                     x-kubernetes-int-or-string: true
                 type: object
               priorityClassName:
-                description: PriorityClassName is the name of PriortyClass.
+                description: PriorityClassName is used to set the PodSpec.PriorityClassName
+                  of the redpanda Statefulset.
                 type: string
               replicas:
                 description: Replicas determine how big the cluster will be.
