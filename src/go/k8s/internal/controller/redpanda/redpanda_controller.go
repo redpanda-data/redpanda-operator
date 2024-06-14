@@ -13,10 +13,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
 	"reflect"
+	"strconv"
 	"time"
 
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
@@ -60,6 +62,11 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
+
+	minimumTopicReplicas = 3
+
+	// these constants can be removed after versions older that v22.3.1 are no longer supported
+	defaultTopicReplicationKey = "default_topic_replications"
 )
 
 var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
@@ -610,6 +617,15 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 		return rp, hr, fmt.Errorf("failed to get HelmRelease '%s/%s': %w", rp.Namespace, rp.Status.HelmRelease, err)
 	}
 
+	// We have retrieved an existing HelmRelease here, if it did not exist, it would have been created above
+	// so this is a good place, to validate the HelmRelease before updating.
+	errValidating := validateHelmRelease(rp, hr)
+	if errValidating != nil {
+		v1alpha1.RedpandaStalled(rp, "HelmRelease validation failed")
+		r.event(rp, rp.Status.LastAttemptedRevision, v1alpha1.EventSeverityError, errValidating.Error())
+		return rp, hr, fmt.Errorf("validating HelmRelease error: '%s/%s': %w", rp.Namespace, rp.Status.HelmRelease, errValidating)
+	}
+
 	// Check if we need to update here
 	hrTemplate, errTemplated := r.createHelmReleaseFromTemplate(ctx, rp)
 	if errTemplated != nil {
@@ -885,4 +901,83 @@ func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
 		console.Annotations = map[string]string{}
 	}
 	console.Annotations[managedAnnotationKey] = NotManaged
+}
+
+func validateHelmRelease(rp *v1alpha1.Redpanda, hr *helmv2beta2.HelmRelease) error {
+	errs := make([]error, 0)
+
+	errReplicaCount := validateHelmReleaseReplicaCount(rp, hr)
+	if errReplicaCount != nil {
+		errs = append(errs, errReplicaCount)
+	}
+
+	return errors.Join(errs...)
+}
+
+func validateHelmReleaseReplicaCount(rp *v1alpha1.Redpanda, hr *helmv2beta2.HelmRelease) error {
+	// First validate if we are scaling down too fast
+	clusterSpec := &v1alpha1.RedpandaClusterSpec{}
+	err := json.Unmarshal(hr.Spec.Values.Raw, clusterSpec)
+	if err != nil {
+		// nolint:goerr113 // error is not wrapping existing error
+		return fmt.Errorf("could not unmarshal values data to validate helmrelease")
+	}
+
+	currentReplicas := ptr.Deref(clusterSpec.Statefulset.Replicas, 0)
+	if currentReplicas == 0 {
+		// current replicas is 0, no longer validating.
+		return nil
+	}
+
+	// Calculate min number of nodes to (floored) to keep quorum
+	// Note slowly successful decommissioning will change this value,
+	// so as long as we do not lose quorum we should be able to scale
+	// in a controlled manner
+	minForQuorum := (currentReplicas + 1) / 2
+
+	requestedReplicas := ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+
+	if requestedReplicas < minForQuorum {
+		// nolint:goerr113 // error is not wrapping existing error
+		return fmt.Errorf("requested replicas of %d is less than %d neeed to maintain quorum", requestedReplicas, minForQuorum)
+	}
+
+	// If quorum may be preserved, then find out about topic replication and ensure we do not go below default
+	specConfigs := clusterSpec.Config
+	doCheckDefMinTopicReplicas := true
+	// nolint:nestif // complexity is ok
+	if clusterSpec.Config != nil {
+		clusterInfo := specConfigs.Cluster
+		if clusterInfo != nil {
+			clusterMap := make(map[string]string)
+			ClusterMapPtr := &clusterMap
+			errUnmar := json.Unmarshal(clusterInfo.Raw, ClusterMapPtr)
+			if errUnmar != nil {
+				return fmt.Errorf("cannot unmarshal cluster config data %w", errUnmar)
+			}
+
+			minReplicationFactor, ok := clusterMap[defaultTopicReplicationKey]
+			if ok {
+				doCheckDefMinTopicReplicas = false
+				minReplicationFactorInt, errConvert := strconv.Atoi(minReplicationFactor)
+				if errConvert != nil {
+					return fmt.Errorf("cannot unmarshal cluster config data %w", errConvert)
+				}
+
+				if requestedReplicas < minReplicationFactorInt {
+					// nolint:goerr113 // error is not wrapping existing error
+					return fmt.Errorf("requested replicas of %d is less than replication factor %d", requestedReplicas, minReplicationFactorInt)
+				}
+			}
+		}
+	}
+
+	if doCheckDefMinTopicReplicas {
+		if requestedReplicas < minimumTopicReplicas {
+			// nolint:goerr113 // error is not wrapping existing error
+			return fmt.Errorf("requested replicas of %d is less than replication factor %d", requestedReplicas, minimumTopicReplicas)
+		}
+	}
+
+	return nil
 }

@@ -1,0 +1,15 @@
+---
+apiVersion: cluster.redpanda.com/v1alpha1
+kind: Redpanda
+metadata:
+  name: redpanda
+spec:
+  chartRef:
+    chartVersion: "5.7.35"
+  clusterSpec:
+    statefulset:
+      replicas: 3
+# TODO: Default replication factor is 3.
+# If any Topics have less than this, then the cluster is considered unhealthy
+# So we must check the replication factor the topics of a cluster and also stop
+# Scaling in those cases
