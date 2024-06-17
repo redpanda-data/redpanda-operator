@@ -113,6 +113,7 @@ type StatefulSetResource struct {
 	decommissionWaitInterval time.Duration
 	logger                   logr.Logger
 	metricsTimeout           time.Duration
+	nodePool                 *vectorizedv1alpha1.NodePoolSpec
 
 	LastObservedState *appsv1.StatefulSet
 }
@@ -134,6 +135,7 @@ func NewStatefulSet(
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,
+	nodePool *vectorizedv1alpha1.NodePoolSpec,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
 		client,
@@ -152,6 +154,7 @@ func NewStatefulSet(
 		decommissionWaitInterval,
 		logger.WithName("StatefulSetResource"),
 		defaultAdminAPITimeout,
+		nodePool,
 		nil,
 	}
 	if metricsTimeout != 0 {
@@ -340,6 +343,20 @@ func (r *StatefulSetResource) obj(
 
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
 	replicas := r.pandaCluster.GetCurrentReplicas()
+
+	resLimits := r.pandaCluster.Spec.Resources.Limits
+	resRequests := r.pandaCluster.Spec.Resources.Requests
+	storage := r.pandaCluster.Spec.Storage
+
+	if r.nodePool != nil {
+		tolerations = r.nodePool.Tolerations
+		nodeSelector = r.nodePool.NodeSelector
+		replicas = *r.nodePool.Replicas
+		resLimits = r.nodePool.Resources.Limits
+		resRequests = r.nodePool.Resources.Requests
+		storage = r.nodePool.Storage
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.Key().Namespace,
@@ -477,8 +494,8 @@ func (r *StatefulSetResource) obj(
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits:   r.pandaCluster.Spec.Resources.Limits,
-								Requests: r.pandaCluster.Spec.Resources.Requests,
+								Limits:   resLimits,
+								Requests: resRequests,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -557,8 +574,8 @@ func (r *StatefulSetResource) obj(
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits:   r.pandaCluster.Spec.Resources.Limits,
-								Requests: r.pandaCluster.Spec.Resources.Requests,
+								Limits:   resLimits,
+								Requests: resRequests,
 							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
@@ -626,7 +643,7 @@ func (r *StatefulSetResource) obj(
 		})
 	}
 
-	setVolumes(ss, r.pandaCluster)
+	setVolumes(ss, r.pandaCluster, storage)
 
 	rpkStatusContainer := r.rpkStatusContainer(tlsVolumeMounts)
 	if rpkStatusContainer != nil {
@@ -654,8 +671,8 @@ func (r *StatefulSetResource) getHook(script string) *corev1.LifecycleHandler {
 
 // setVolumes manipulates v1.StatefulSet object in order to add cloud storage and
 // Redpanda data volume
-func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster) {
-	pvcDataDir := preparePVCResource(datadirName, cluster.Namespace, cluster.Spec.Storage, ss.Labels)
+func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, storage vectorizedv1alpha1.StorageSpec) {
+	pvcDataDir := preparePVCResource(datadirName, cluster.Namespace, storage, ss.Labels)
 	ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvcDataDir)
 	vol := corev1.Volume{
 		Name: datadirName,
@@ -829,7 +846,11 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // Key returns namespace/name object that is used to identify object.
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
-	return types.NamespacedName{Name: r.pandaCluster.Name, Namespace: r.pandaCluster.Namespace}
+	name := r.pandaCluster.Name
+	if r.nodePool != nil {
+		name = r.nodePool.Name
+	}
+	return types.NamespacedName{Name: name, Namespace: r.pandaCluster.Namespace}
 }
 
 func (r *StatefulSetResource) portsConfiguration() string {

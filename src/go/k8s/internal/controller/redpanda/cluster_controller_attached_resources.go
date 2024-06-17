@@ -347,6 +347,9 @@ func (a *attachedResources) secret() {
 }
 
 func (a *attachedResources) statefulSet() error {
+	if a.cluster.Spec.NodePools != nil {
+		return a.handleNodePools()
+	}
 	// if already initialized, exit immediately
 	if _, ok := a.items[statefulSet]; ok {
 		return nil
@@ -374,7 +377,9 @@ func (a *attachedResources) statefulSet() error {
 		a.reconciler.AdminAPIClientFactory,
 		a.reconciler.DecommissionWaitInterval,
 		a.log,
-		a.reconciler.MetricsTimeout)
+		a.reconciler.MetricsTimeout,
+		nil,
+	)
 	return nil
 }
 
@@ -383,4 +388,44 @@ func (a *attachedResources) getStatefulSet() (*resources.StatefulSetResource, er
 		return nil, err
 	}
 	return a.items[statefulSet].(*resources.StatefulSetResource), nil
+}
+
+func (a *attachedResources) handleNodePools() error {
+	if a.cluster.Spec.NodePools == nil {
+		return fmt.Errorf("no nodepools found in spec")
+	}
+
+	for _, np := range *a.cluster.Spec.NodePools {
+		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
+		if _, ok := a.items[stsKey]; ok {
+			continue
+		}
+
+		pki, err := a.getPKI()
+		if err != nil {
+			return err
+		}
+		cm, err := a.getConfigMap()
+		if err != nil {
+			return err
+		}
+		a.items[stsKey] = resources.NewStatefulSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cm.GetNodeConfigHash,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			&np)
+	}
+	return nil
 }

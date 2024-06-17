@@ -90,6 +90,27 @@ func (r *RedpandaResourceRequirements) RedpandaMemory() *resource.Quantity {
 	return &qd
 }
 
+type NodePoolSpec struct {
+	Name string `json:"name"`
+	// Replicas determine how big the node pool will be.
+	// +kubebuilder:validation:Minimum=0
+	Replicas *int32 `json:"replicas,omitempty"`
+	// If specified, Redpanda Pod tolerations
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If specified, Redpanda Pod node selectors. For reference please visit
+	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Storage spec for cluster
+	Storage StorageSpec `json:"storage,omitempty"`
+	// Resources used by redpanda process running in container. Beware that
+	// there are multiple containers running in the redpanda pod and these can
+	// be enabled/disabled and configured from the `sidecars` field. These
+	// containers have separate resources settings and the amount of resources
+	// assigned to these containers will be required on the cluster on top of
+	// the resources defined here
+	Resources RedpandaResourceRequirements `json:"resources"`
+}
+
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -183,6 +204,8 @@ type ClusterSpec struct {
 
 	// The name of the ServiceAccount to be used by the Redpanda pods
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+
+	NodePools *[]NodePoolSpec `json:"nodePools,omitempty"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
