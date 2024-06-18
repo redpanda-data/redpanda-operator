@@ -54,8 +54,6 @@ const (
 	SecretAnnotationExternalCAKey = "operator.redpanda.com/external-ca"
 
 	NotManaged = "false"
-
-	DecommissionOnDeleteAnnotation = "operator.redpanda.com/decommission-on-delete"
 )
 
 var (
@@ -338,16 +336,6 @@ func (r *ClusterReconciler) handlePodFinalizer(
 		return fmt.Errorf("unable to fetch PodList: %w", err)
 	}
 
-	var decommissionOnDelete bool
-	decommissionOnDeleteVal, ok := rp.Annotations[DecommissionOnDeleteAnnotation]
-	if ok {
-		decommissionOnDelete, err = strconv.ParseBool(decommissionOnDeleteVal)
-		if err != nil {
-			//nolint:goerr113 // not going to use wrapped static error here this time
-			return fmt.Errorf("value of annotation operator.redpanda.com/decommission-on-delete must be convertable to boolean")
-		}
-	}
-
 	for i := range pods.Items {
 		pod := &pods.Items[i]
 		if pod.DeletionTimestamp.IsZero() {
@@ -371,7 +359,7 @@ func (r *ClusterReconciler) handlePodFinalizer(
 			// nor has a noexecute taint
 			untainted := true
 			for _, taint := range node.Spec.Taints {
-				if (taint.Effect == corev1.TaintEffectNoExecute && taint.Key == corev1.TaintNodeUnreachable) || (decommissionOnDelete && taint.Effect == corev1.TaintEffectNoSchedule) {
+				if taint.Effect == corev1.TaintEffectNoExecute && taint.Key == corev1.TaintNodeUnreachable {
 					untainted = false
 				}
 			}
