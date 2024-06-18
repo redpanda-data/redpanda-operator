@@ -1202,7 +1202,15 @@ func (r *Cluster) ComputeInitialCurrentReplicasField() int32 {
 	}
 	if r.Status.Replicas > 1 || r.Status.ReadyReplicas > 1 || len(r.Status.Nodes.Internal) > 1 || featuregates.EmptySeedStartCluster(r.Spec.Version) {
 		// A cluster seems to be already running, we start from the existing amount of replicas
-		return *r.Spec.Replicas
+		if r.Spec.NodePools == nil {
+			return *r.Spec.Replicas
+		} else {
+			sum := int32(0)
+			for _, np := range *r.Spec.NodePools {
+				sum = sum + *np.Replicas
+			}
+			return sum
+		}
 	}
 
 	// Clusters start from a single replica, then upscale

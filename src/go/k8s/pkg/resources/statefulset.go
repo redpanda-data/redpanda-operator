@@ -351,7 +351,6 @@ func (r *StatefulSetResource) obj(
 	if r.nodePool != nil {
 		tolerations = r.nodePool.Tolerations
 		nodeSelector = r.nodePool.NodeSelector
-		replicas = *r.nodePool.Replicas
 		resLimits = r.nodePool.Resources.Limits
 		resRequests = r.nodePool.Resources.Requests
 		storage = r.nodePool.Storage
