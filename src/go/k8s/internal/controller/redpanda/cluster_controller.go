@@ -363,7 +363,10 @@ func (r *ClusterReconciler) handlePodFinalizer(
 					untainted = false
 				}
 			}
-			if untainted {
+
+			// Continue with Pod finalizer handling if allowPVCDeletion flag is not enabled or when
+			// K8S Node does not report NoExecute taint effect with NodeUnreachable key.
+			if untainted || !r.allowPVCDeletion {
 				// remove the finalizer and let the pod be restarted
 				if err = r.removePodFinalizer(ctx, pod, log); err != nil {
 					return fmt.Errorf(`unable to remove finalizer from pod "%s": %w`, pod.Name, err)
@@ -411,13 +414,6 @@ func (r *ClusterReconciler) handlePodFinalizer(
 			}
 		}
 
-		if !r.allowPVCDeletion {
-			//   remove the finalizer
-			if err = r.removePodFinalizer(ctx, pod, log); err != nil {
-				return fmt.Errorf(`unable to remove finalizer from pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
-			}
-			return nil
-		}
 		//   delete the associated pvc
 		if err = utils.DeletePodPVCs(ctx, r.Client, pod, log); err != nil {
 			return fmt.Errorf(`unable to remove VPCs for pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
