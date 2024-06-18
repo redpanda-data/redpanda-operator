@@ -679,8 +679,8 @@ func (r *ClusterReconciler) reportStatus(
 		if sts.LastObservedState == nil {
 			return errNonexistentLastObservedState
 		}
-		readyReplicas = readyReplicas + sts.LastObservedState.Status.ReadyReplicas
-		replicas = replicas + sts.LastObservedState.Status.Replicas
+		readyReplicas += sts.LastObservedState.Status.ReadyReplicas
+		replicas += sts.LastObservedState.Status.Replicas
 
 	}
 
