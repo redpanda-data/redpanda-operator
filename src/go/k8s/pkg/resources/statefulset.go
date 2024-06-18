@@ -847,8 +847,8 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
 	name := r.pandaCluster.Name
-	if r.nodePool != nil {
-		name = r.nodePool.Name
+	if r.nodePool != nil && len(*r.pandaCluster.Spec.NodePools) > 1 {
+		name = fmt.Sprintf("%s-%s", name, r.nodePool.Name)
 	}
 	return types.NamespacedName{Name: name, Namespace: r.pandaCluster.Namespace}
 }

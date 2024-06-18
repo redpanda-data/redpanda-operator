@@ -347,57 +347,35 @@ func (a *attachedResources) secret() {
 }
 
 func (a *attachedResources) statefulSet() error {
-	if a.cluster.Spec.NodePools != nil {
-		return a.handleNodePools()
-	}
-	// if already initialized, exit immediately
-	if _, ok := a.items[statefulSet]; ok {
-		return nil
-	}
-	pki, err := a.getPKI()
-	if err != nil {
-		return err
-	}
-	cm, err := a.getConfigMap()
-	if err != nil {
-		return err
-	}
-	a.items[statefulSet] = resources.NewStatefulSet(
-		a.reconciler.Client,
-		a.cluster,
-		a.reconciler.Scheme,
-		a.getHeadlessServiceFQDN(),
-		a.getHeadlessServiceName(),
-		a.getNodeportServiceKey(),
-		pki.StatefulSetVolumeProvider(),
-		pki.AdminAPIConfigProvider(),
-		a.getServiceAccountName(),
-		a.reconciler.configuratorSettings,
-		cm.GetNodeConfigHash,
-		a.reconciler.AdminAPIClientFactory,
-		a.reconciler.DecommissionWaitInterval,
-		a.log,
-		a.reconciler.MetricsTimeout,
-		nil,
-	)
-	return nil
-}
-
-func (a *attachedResources) getStatefulSet() (*resources.StatefulSetResource, error) {
-	if err := a.statefulSet(); err != nil {
-		return nil, err
-	}
-	return a.items[statefulSet].(*resources.StatefulSetResource), nil
-}
-
-func (a *attachedResources) handleNodePools() error {
 	if a.cluster.Spec.NodePools == nil {
-		return fmt.Errorf("no nodepools found in spec")
+		np := vectorizedv1alpha1.NodePoolSpec{
+			Name:         "imported",
+			Replicas:     a.cluster.Spec.Replicas,
+			Tolerations:  a.cluster.Spec.Tolerations,
+			NodeSelector: a.cluster.Spec.NodeSelector,
+			Storage:      a.cluster.Spec.Storage,
+			Resources:    a.cluster.Spec.Resources,
+		}
+		a.cluster.Spec.NodePools = &[]vectorizedv1alpha1.NodePoolSpec{np}
+	} else if len(*a.cluster.Spec.NodePools) == 1 {
+		n := *a.cluster.Spec.NodePools
+		if n[0].Name == "imported" {
+			np := vectorizedv1alpha1.NodePoolSpec{
+				Name:         "imported",
+				Replicas:     a.cluster.Spec.Replicas,
+				Tolerations:  a.cluster.Spec.Tolerations,
+				NodeSelector: a.cluster.Spec.NodeSelector,
+				Storage:      a.cluster.Spec.Storage,
+				Resources:    a.cluster.Spec.Resources,
+			}
+			a.cluster.Spec.NodePools = &[]vectorizedv1alpha1.NodePoolSpec{np}
+		}
 	}
 
 	for _, np := range *a.cluster.Spec.NodePools {
 		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
-		if _, ok := a.items[stsKey]; ok {
+		if x, ok := a.items[stsKey]; ok {
+			_ = x.Key().Name
 			continue
 		}
 
@@ -427,5 +405,19 @@ func (a *attachedResources) handleNodePools() error {
 			a.reconciler.MetricsTimeout,
 			&np)
 	}
+
 	return nil
+}
+
+func (a *attachedResources) getStatefulSet() ([]*resources.StatefulSetResource, error) {
+	if err := a.statefulSet(); err != nil {
+		return nil, err
+	}
+	out := make([]*resources.StatefulSetResource, 0)
+	// statefulSet() will add nodepools in the spec, so no need to check if it's nil or not
+	for _, np := range *a.cluster.Spec.NodePools {
+		name := fmt.Sprintf("%s-%s", statefulSet, np.Name)
+		out = append(out, a.items[name].(*resources.StatefulSetResource))
+	}
+	return out, nil
 }
