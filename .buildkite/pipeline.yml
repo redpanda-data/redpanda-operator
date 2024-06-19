@@ -21,6 +21,48 @@ steps:
       - src/go/k8s/*.tar.gz
       - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
     plugins:
+      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+          json-to-env:
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/active_directory
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/buildkite_analytics_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/buildkite_api_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/cdt_gcp
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/cdt_runner_aws
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/ci_db
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/cloudsmith
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/dockerhub
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/gh_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/github_api_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/goreleaser_key
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/grafana_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/quill
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/redpanda_sample_license
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/rpk_test_client
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/seceng_audit_aws
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/slack_vbot_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/teleport_bot_token
+            - json-key: .
+              secret-id: sdlc/prod/buildkite/test_result_dsn
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
           message: ":cloud: K8s Operator v1 Jobs failed"
           channel_name: "kubernetes-tests"
@@ -49,6 +91,7 @@ steps:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml
         plugins:
+          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
               message: ":cloud: K8s Operator v2 Jobs failed"
               channel_name: "kubernetes-tests"
@@ -61,6 +104,7 @@ steps:
       - key: annotate-v2-testresults
         label: Parse Operator v2 Test Results
         plugins:
+          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.4.1:
               artifacts: src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml 
               report-slowest: 5
@@ -96,6 +140,7 @@ steps:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
         plugins:
+          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
               message: ":cloud: K8s Operator v2 Helm Jobs failed"
               channel_name: "kubernetes-tests"
@@ -108,6 +153,7 @@ steps:
       - key: annotate-v2-helm-testresults
         label: Parse Operator v2 Helm Test Results
         plugins:
+          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.0.2:
               artifacts: src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
               report-slowest: 5
