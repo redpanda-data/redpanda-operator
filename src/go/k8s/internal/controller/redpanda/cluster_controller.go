@@ -370,21 +370,6 @@ func (r *ClusterReconciler) setPodNodeIDAnnotation(
 			continue
 		}
 
-		var oldNodeID int
-		if annotationExist {
-			oldNodeID, err = strconv.Atoi(nodeIDStrAnnotation)
-			if err != nil {
-				combinedErrors = errors.Join(combinedErrors, fmt.Errorf("unable to convert node ID (%s) to int: %w", nodeIDStrAnnotation, err))
-				continue
-			}
-
-			log.WithValues("pod-name", pod.Name, "old-node-id", oldNodeID).Info("decommission old node-id")
-			if err = r.decommissionBroker(ctx, rp, oldNodeID, log, ar); err != nil {
-				combinedErrors = errors.Join(combinedErrors, fmt.Errorf("unable to decommission broker: %w", err))
-				continue
-			}
-		}
-
 		log.WithValues("pod-name", pod.Name, "new-node-id", nodeID).Info("setting node-id annotation")
 		pod.Annotations[resources.PodAnnotationNodeIDKey] = realNodeIDStr
 		if err := r.Update(ctx, pod, &client.UpdateOptions{}); err != nil {
@@ -428,29 +413,6 @@ func (r *ClusterReconciler) setPodNodeIDLabel(
 		if err := r.Update(ctx, pod, &client.UpdateOptions{}); err != nil {
 			return fmt.Errorf(`unable to update pod "%s" with node-id annotation: %w`, pod.Name, err)
 		}
-	}
-	return nil
-}
-
-func (r *ClusterReconciler) decommissionBroker(
-	ctx context.Context, rp *vectorizedv1alpha1.Cluster, nodeID int, l logr.Logger, ar *attachedResources,
-) error {
-	log := l.WithName("decommissionBroker").WithValues("node-id", nodeID)
-	log.V(logger.DebugLevel).Info("decommission broker")
-
-	pki, err := ar.getPKI()
-	if err != nil {
-		return fmt.Errorf("getting pki: %w", err)
-	}
-
-	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider())
-	if err != nil {
-		return fmt.Errorf("unable to create admin client: %w", err)
-	}
-
-	err = adminClient.DecommissionBroker(ctx, nodeID)
-	if err != nil && !strings.Contains(err.Error(), "failed: Not Found") {
-		return fmt.Errorf("unable to decommission broker: %w", err)
 	}
 	return nil
 }
