@@ -1,13 +1,13 @@
-# This workflow triggers the action in redpanda-data/docs that publishes the CRD specifications to the Redpanda documentation.
+---
+# This workflow triggers the action in redpanda-data/docs that
+# publishes the CRD specifications to the Redpanda documentation.
 
 name: Trigger CRD docs
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'src/k8s/api/**'
-
 jobs:
   dispatch:
     runs-on: ubuntu-latest
