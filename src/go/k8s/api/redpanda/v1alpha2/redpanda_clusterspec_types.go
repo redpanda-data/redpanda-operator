@@ -623,7 +623,7 @@ type Statefulset struct {
 	// Defines Pod affinity rules to influence the scheduling and placement of Pods relative to other Pods.
 	PodAffinity *corev1.PodAffinity `json:"podAffinity,omitempty"`
 	// Defines Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
-	PodAntiAffinity *corev1.PodAntiAffinity `json:"podAntiAffinity,omitempty"`
+	PodAntiAffinity *PodAntiAffinity `json:"podAntiAffinity,omitempty"`
 	// Defines the priority class name to assign priority levels to the Pods, influencing their scheduling order.
 	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// Defines readiness probes to determine when a Pod is ready to handle traffic.
