@@ -2590,7 +2590,7 @@ func (in *Statefulset) DeepCopyInto(out *Statefulset) {
 	}
 	if in.PodAntiAffinity != nil {
 		in, out := &in.PodAntiAffinity, &out.PodAntiAffinity
-		*out = new(v1.PodAntiAffinity)
+		*out = new(PodAntiAffinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PriorityClassName != nil {
