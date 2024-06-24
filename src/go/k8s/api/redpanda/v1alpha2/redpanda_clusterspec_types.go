@@ -295,7 +295,7 @@ type ConnectorsCreateObj struct {
 // Auth configures authentication in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/authentication/sasl-kubernetes/.
 type Auth struct {
 	// Configures SASL authentication in the Helm values.
-	SASL *SASL `json:"sasl"`
+	SASL *SASL `json:"sasl,omitempty"`
 }
 
 // SASL configures SASL authentication in the Helm values.
@@ -356,16 +356,31 @@ type SecretRef struct {
 	Name string `json:"name"`
 }
 
+// TrustStore is a mapping from a value on either a Secret or ConfigMap to the
+// `truststore_path` field of a listener.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
+type TrustStore struct {
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef,omitempty"`
+}
+
 // ListenerTLS configures TLS configuration for each listener in the Helm values.
 type ListenerTLS struct {
 	// References a specific certificate for the listener.
 	Cert *string `json:"cert,omitempty"`
 	// Specifies whether TLS is enabled for the listener.
 	Enabled *bool `json:"enabled,omitempty"`
-	// References a Secret rsource containing TLS credentials for the listener.
+	// References a Secret resource containing TLS credentials for the listener.
+	//
+	// Deprecated: Setting SecretRef has no affect and will be removed in
+	// future releases.
 	SecretRef *string `json:"secretRef,omitempty"`
 	// Indicates whether client authentication (mTLS) is required.
 	RequireClientAuth *bool `json:"requireClientAuth,omitempty"`
+	// TrustStore allows setting the `truststore_path` on this listener. If
+	// specified, this field takes precedence over [Certificate.CAEnabled].
+	TrustStore *TrustStore `json:"trustStore,omitempty"`
 }
 
 // ExternalService allows you to enable or disable the creation of an external Service type.
@@ -407,8 +422,10 @@ type Logging struct {
 // UsageStats configures the reporting of usage statistics. Redpanda Data uses these metrics to learn how the software is used, which can guide future improvements.
 type UsageStats struct {
 	// Specifies whether usage reporting is enabled.
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled.
+	// Deprecated: This value is no longer respected in the redpanda helm chart
+	// and will be removed in a future version.
 	Organization *string `json:"organization,omitempty"`
 	// Specifies the ID of your Redpanda cluster.
 	ClusterID *string `json:"clusterId,omitempty"`
@@ -420,18 +437,6 @@ type Resources struct {
 	CPU *CPU `json:"cpu,omitempty"`
 	// Specifies the amount of memory.
 	Memory *Memory `json:"memory,omitempty"`
-}
-
-// Limits specifies the maximum resources that each Pod can use.
-type Limits struct {
-	CPU    *int    `json:"cpu,omitempty"`
-	Memory *string `json:"memory,omitempty"`
-}
-
-// Requests configures the minimum resources to be allocated to each Pod.
-type Requests struct {
-	CPU    *int    `json:"cpu,omitempty"`
-	Memory *string `json:"memory,omitempty"`
 }
 
 // Storage configures storage-related settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/storage/.
@@ -641,7 +646,7 @@ type Statefulset struct {
 	// Applies tolerations to allow Pods to be scheduled on nodes with matching taints, enabling control over where Pods can run.
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// Defines topology spread constraints to control how Pods are spread across different topology domains.
-	TopologySpreadConstraints *TopologySpreadConstraints `json:"topologySpreadConstraints,omitempty"`
+	TopologySpreadConstraints []*TopologySpreadConstraints `json:"topologySpreadConstraints,omitempty"`
 	// Defines the update strategy for the StatefulSet to manage how updates are rolled out to the Pods.
 	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
 	// Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod.
@@ -692,14 +697,14 @@ type StartupProbe struct {
 
 // PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
 type PodAntiAffinity struct {
-	// Specifies the topology key used to spread Pods across different nodes or other topologies.
-	TopologyKey string `json:"topologyKey"`
-	// Defines the type of anti-affinity, such as `soft` or `hard`.
-	Type string `json:"type"`
-	// Sets the weight associated with the soft anti-affinity rule.
-	Weight int `json:"weight"`
+	// TopologyKey specifies the topology key used to spread Pods across different nodes or other topologies.
+	TopologyKey *string `json:"topologyKey,omitempty"`
+	// Type defines the type of anti-affinity, such as `soft` or `hard`.
+	Type *string `json:"type,omitempty"`
+	// Weight sets the weight associated with the soft anti-affinity rule.
+	Weight *int `json:"weight,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Configures additional custom anti-affinity rules.
+	// Custom configures additional custom anti-affinity rules.
 	Custom *runtime.RawExtension `json:"custom,omitempty"`
 }
 
@@ -876,16 +881,6 @@ type RPControllers struct {
 	CreateRBAC         *bool                        `json:"createRBAC,omitempty"`
 }
 
-// TopologySpreadConstraintsItems configures topology spread constraints to control how Pods are spread across different topology domains.
-type TopologySpreadConstraintsItems struct {
-	// Defines the degree to which Pods may be unevenly distributed.
-	MaxSkew int `json:"maxSkew,omitempty"`
-	// Specifies the topology key used to spread Pods across different nodes or other topologies.
-	TopologyKey *string `json:"topologyKey,omitempty"`
-	// Sets the policy for how to handle unsatisfiable constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
-	WhenUnsatisfiable *string `json:"whenUnsatisfiable,omitempty"`
-}
-
 // CPU configures CPU resources for containers. See https://docs.redpanda.com/current/manage/kubernetes/manage-resources/.
 type CPU struct {
 	// Specifies the number of CPU cores available to the application. Redpanda makes use of a thread per core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model. For this reason, Redpanda should only be given full cores. Note: You can increase cores, but decreasing cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350. This setting is equivalent to `--smp`, `resources.requests.cpu`, and `resources.limits.cpu`. For production, use `4` or greater.
@@ -920,9 +915,9 @@ type Memory struct {
 // 3. Other container processes (whatever small amount remains)
 type RedpandaMemory struct {
 	// Memory for the Redpanda process. This must be lower than the container's memory (`resources.memory.container.min` if provided, otherwise `resources.memory.container.max`). Equivalent to `--memory`. For production, use 8Gi or greater.
-	Memory *resource.Quantity `json:"memory"`
+	Memory *resource.Quantity `json:"memory,omitempty"`
 	// Memory reserved for the Seastar subsystem. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi.
-	ReserveMemory *resource.Quantity `json:"reserveMemory"`
+	ReserveMemory *resource.Quantity `json:"reserveMemory,omitempty"`
 }
 
 // RBAC configures role-based access control (RBAC).
