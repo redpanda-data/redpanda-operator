@@ -217,8 +217,6 @@ spec:
                         required:
                         - enabled
                         type: object
-                    required:
-                    - sasl
                     type: object
                   clusterDomain:
                     description: Customizes the Kubernetes cluster domain. This domain
@@ -809,9 +807,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -837,9 +890,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       http:
@@ -891,9 +998,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -930,9 +1092,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       kafka:
@@ -981,9 +1197,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -1016,9 +1287,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       rpc:
@@ -1045,9 +1370,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       schemaRegistry:
@@ -1100,9 +1479,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -1132,9 +1566,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                     type: object
@@ -1155,13 +1643,11 @@ spec:
                             description: Specifies whether usage reporting is enabled.
                             type: boolean
                           organization:
-                            description: Specifies the name of the organization using
-                              the software. This can be useful for identifying and
-                              segmenting usage data by organization, if usage reporting
-                              is enabled.
+                            description: |-
+                              Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled.
+                              Deprecated: This value is no longer respected in the redpanda helm chart
+                              and will be removed in a future version.
                             type: string
-                        required:
-                        - enabled
                         type: object
                     required:
                     - logLevel
@@ -1636,9 +2122,6 @@ spec:
                                   production, use 1Gi.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
-                            required:
-                            - memory
-                            - reserveMemory
                             type: object
                         type: object
                     type: object
@@ -2464,26 +2947,22 @@ spec:
                           from being scheduled together on the same node.
                         properties:
                           custom:
-                            description: Configures additional custom anti-affinity
+                            description: Custom configures additional custom anti-affinity
                               rules.
                             type: object
                             x-kubernetes-preserve-unknown-fields: true
                           topologyKey:
-                            description: Specifies the topology key used to spread
-                              Pods across different nodes or other topologies.
+                            description: TopologyKey specifies the topology key used
+                              to spread Pods across different nodes or other topologies.
                             type: string
                           type:
-                            description: Defines the type of anti-affinity, such as
-                              `soft` or `hard`.
+                            description: Type defines the type of anti-affinity, such
+                              as `soft` or `hard`.
                             type: string
                           weight:
-                            description: Sets the weight associated with the soft
-                              anti-affinity rule.
+                            description: Weight sets the weight associated with the
+                              soft anti-affinity rule.
                             type: integer
-                        required:
-                        - topologyKey
-                        - type
-                        - weight
                         type: object
                       podTemplate:
                         description: PodTemplate will pass label and annotation to
@@ -3504,24 +3983,29 @@ spec:
                       topologySpreadConstraints:
                         description: Defines topology spread constraints to control
                           how Pods are spread across different topology domains.
-                        properties:
-                          maxSkew:
-                            description: Defines the maximum skew between the number
-                              of Pods in any two topology domains.
-                            type: integer
-                          topologyKey:
-                            description: Specifies the topology key to use for spreading
-                              Pods.
-                            type: string
-                          whenUnsatisfiable:
-                            description: Sets the policy for how to handle unsatisfiable
-                              constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
-                            type: string
-                        required:
-                        - maxSkew
-                        - topologyKey
-                        - whenUnsatisfiable
-                        type: object
+                        items:
+                          description: TopologySpreadConstraints configures topology
+                            spread constraints to control how Pods are spread across
+                            different topology domains.
+                          properties:
+                            maxSkew:
+                              description: Defines the maximum skew between the number
+                                of Pods in any two topology domains.
+                              type: integer
+                            topologyKey:
+                              description: Specifies the topology key to use for spreading
+                                Pods.
+                              type: string
+                            whenUnsatisfiable:
+                              description: Sets the policy for how to handle unsatisfiable
+                                constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
+                              type: string
+                          required:
+                          - maxSkew
+                          - topologyKey
+                          - whenUnsatisfiable
+                          type: object
+                        type: array
                       updateStrategy:
                         description: Defines the update strategy for the StatefulSet
                           to manage how updates are rolled out to the Pods.
@@ -4329,8 +4813,6 @@ spec:
                         required:
                         - enabled
                         type: object
-                    required:
-                    - sasl
                     type: object
                   clusterDomain:
                     description: Customizes the Kubernetes cluster domain. This domain
@@ -4921,9 +5403,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -4949,9 +5486,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       http:
@@ -5003,9 +5594,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -5042,9 +5688,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       kafka:
@@ -5093,9 +5793,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -5128,9 +5883,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       rpc:
@@ -5157,9 +5966,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                       schemaRegistry:
@@ -5212,9 +6075,64 @@ spec:
                                         (mTLS) is required.
                                       type: boolean
                                     secretRef:
-                                      description: References a Secret rsource containing
-                                        TLS credentials for the listener.
+                                      description: |-
+                                        References a Secret resource containing TLS credentials for the listener.
+
+
+                                        Deprecated: Setting SecretRef has no affect and will be removed in
+                                        future releases.
                                       type: string
+                                    trustStore:
+                                      description: |-
+                                        TrustStore allows setting the `truststore_path` on this listener. If
+                                        specified, this field takes precedence over [Certificate.CAEnabled].
+                                      maxProperties: 1
+                                      minProperties: 1
+                                      properties:
+                                        configMapKeyRef:
+                                          description: Selects a key from a ConfigMap.
+                                          properties:
+                                            key:
+                                              description: The key to select.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the ConfigMap
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        secretKeyRef:
+                                          description: SecretKeySelector selects a
+                                            key of a Secret.
+                                          properties:
+                                            key:
+                                              description: The key of the secret to
+                                                select from.  Must be a valid secret
+                                                key.
+                                              type: string
+                                            name:
+                                              description: |-
+                                                Name of the referent.
+                                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                TODO: Add other useful fields. apiVersion, kind, uid?
+                                              type: string
+                                            optional:
+                                              description: Specify whether the Secret
+                                                or its key must be defined
+                                              type: boolean
+                                          required:
+                                          - key
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                      type: object
                                   type: object
                               type: object
                             description: Defines settings for the external listener.
@@ -5244,9 +6162,63 @@ spec:
                                   (mTLS) is required.
                                 type: boolean
                               secretRef:
-                                description: References a Secret rsource containing
-                                  TLS credentials for the listener.
+                                description: |-
+                                  References a Secret resource containing TLS credentials for the listener.
+
+
+                                  Deprecated: Setting SecretRef has no affect and will be removed in
+                                  future releases.
                                 type: string
+                              trustStore:
+                                description: |-
+                                  TrustStore allows setting the `truststore_path` on this listener. If
+                                  specified, this field takes precedence over [Certificate.CAEnabled].
+                                maxProperties: 1
+                                minProperties: 1
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key from a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion, kind, uid?
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
                             type: object
                         type: object
                     type: object
@@ -5267,13 +6239,11 @@ spec:
                             description: Specifies whether usage reporting is enabled.
                             type: boolean
                           organization:
-                            description: Specifies the name of the organization using
-                              the software. This can be useful for identifying and
-                              segmenting usage data by organization, if usage reporting
-                              is enabled.
+                            description: |-
+                              Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled.
+                              Deprecated: This value is no longer respected in the redpanda helm chart
+                              and will be removed in a future version.
                             type: string
-                        required:
-                        - enabled
                         type: object
                     required:
                     - logLevel
@@ -5748,9 +6718,6 @@ spec:
                                   production, use 1Gi.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
-                            required:
-                            - memory
-                            - reserveMemory
                             type: object
                         type: object
                     type: object
@@ -6576,26 +7543,22 @@ spec:
                           from being scheduled together on the same node.
                         properties:
                           custom:
-                            description: Configures additional custom anti-affinity
+                            description: Custom configures additional custom anti-affinity
                               rules.
                             type: object
                             x-kubernetes-preserve-unknown-fields: true
                           topologyKey:
-                            description: Specifies the topology key used to spread
-                              Pods across different nodes or other topologies.
+                            description: TopologyKey specifies the topology key used
+                              to spread Pods across different nodes or other topologies.
                             type: string
                           type:
-                            description: Defines the type of anti-affinity, such as
-                              `soft` or `hard`.
+                            description: Type defines the type of anti-affinity, such
+                              as `soft` or `hard`.
                             type: string
                           weight:
-                            description: Sets the weight associated with the soft
-                              anti-affinity rule.
+                            description: Weight sets the weight associated with the
+                              soft anti-affinity rule.
                             type: integer
-                        required:
-                        - topologyKey
-                        - type
-                        - weight
                         type: object
                       podTemplate:
                         description: PodTemplate will pass label and annotation to
@@ -7616,24 +8579,29 @@ spec:
                       topologySpreadConstraints:
                         description: Defines topology spread constraints to control
                           how Pods are spread across different topology domains.
-                        properties:
-                          maxSkew:
-                            description: Defines the maximum skew between the number
-                              of Pods in any two topology domains.
-                            type: integer
-                          topologyKey:
-                            description: Specifies the topology key to use for spreading
-                              Pods.
-                            type: string
-                          whenUnsatisfiable:
-                            description: Sets the policy for how to handle unsatisfiable
-                              constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
-                            type: string
-                        required:
-                        - maxSkew
-                        - topologyKey
-                        - whenUnsatisfiable
-                        type: object
+                        items:
+                          description: TopologySpreadConstraints configures topology
+                            spread constraints to control how Pods are spread across
+                            different topology domains.
+                          properties:
+                            maxSkew:
+                              description: Defines the maximum skew between the number
+                                of Pods in any two topology domains.
+                              type: integer
+                            topologyKey:
+                              description: Specifies the topology key to use for spreading
+                                Pods.
+                              type: string
+                            whenUnsatisfiable:
+                              description: Sets the policy for how to handle unsatisfiable
+                                constraints, such as `DoNotSchedule` or `ScheduleAnyway`.
+                              type: string
+                          required:
+                          - maxSkew
+                          - topologyKey
+                          - whenUnsatisfiable
+                          type: object
+                        type: array
                       updateStrategy:
                         description: Defines the update strategy for the StatefulSet
                           to manage how updates are rolled out to the Pods.
