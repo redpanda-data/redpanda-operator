@@ -1,0 +1,31 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+  - apiVersion: redpanda.vectorized.io/v1alpha1
+    kind: Cluster
+    name: nodepool-cluster
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-0
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-1
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-2
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-3
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-4
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepool-cluster-5
+    namespace: redpanda-system

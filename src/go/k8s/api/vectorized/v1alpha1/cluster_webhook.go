@@ -270,16 +270,18 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 }
 
 func (r *Cluster) validateScaling() field.ErrorList {
+	replicas := r.GetReplicas()
+
 	var allErrs field.ErrorList
-	if r.Spec.Replicas == nil {
+	if replicas == 0 {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("replicas"),
-				r.Spec.Replicas,
-				"replicas must be specified explicitly"))
-	} else if *r.Spec.Replicas <= 0 {
+			field.Invalid(field.NewPath("spec").Child("nodepools"),
+				replicas,
+				"replicas must be specified explicitly in each nodepool"))
+	} else if replicas <= 0 {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("replicas"),
-				r.Spec.Replicas,
+			field.Invalid(field.NewPath("spec").Child("nodepools"),
+				replicas,
 				"downscaling is not allowed to less than 1 instance"))
 	}
 

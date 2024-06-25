@@ -811,12 +811,19 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 	c := r.pandaCluster.Spec.Configuration
 	replicas := r.pandaCluster.GetCurrentReplicas()
 
+	var activeNodePool *vectorizedv1alpha1.NodePoolSpec
+	for _, np := range r.pandaCluster.Spec.NodePools {
+		if np.Replicas != nil && int32(*np.Replicas) > 0 {
+			activeNodePool = np
+			break
+		}
+	}
+
 	// make this the default when v22.2 is no longer supported
 	if featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version) {
 		cr.EmptySeedStartsCluster = new(bool) // default to false
-		if r.pandaCluster.Spec.Replicas != nil {
-			replicas = *r.pandaCluster.Spec.Replicas
-		}
+		replicas := *activeNodePool.Replicas
+
 		if replicas == 0 {
 			//nolint:goerr113 // out of scope for this PR
 			return fmt.Errorf("cannot create seed list for cluster with 0 replicas")
@@ -827,7 +834,7 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 		cr.SeedServers = append(cr.SeedServers, config.SeedServer{
 			Host: config.SocketAddress{
 				// Example address: cluster-sample-0.cluster-sample.default.svc.cluster.local
-				Address: fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN),
+				Address: fmt.Sprintf("%s-%s-%d.%s", r.pandaCluster.Name, activeNodePool.Name, i, r.serviceFQDN),
 				Port:    clusterCRPortOrRPKDefault(c.RPCServer.Port, cr.RPCServer.Port),
 			},
 		})

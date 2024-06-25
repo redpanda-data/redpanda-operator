@@ -82,15 +82,8 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 		return r.Status().Update(ctx, r.pandaCluster)
 	}
 
-	if *r.pandaCluster.Spec.Replicas == r.pandaCluster.Status.CurrentReplicas {
-		r.logger.V(logger.DebugLevel).Info("No scaling changes required", "replicas", *r.pandaCluster.Spec.Replicas)
-		// No changes to replicas, we do nothing here
-		return nil
-	}
-
-	if *r.pandaCluster.Spec.Replicas > r.pandaCluster.Status.CurrentReplicas {
-		r.logger.Info("Upscaling cluster", "replicas", *r.pandaCluster.Spec.Replicas)
-
+	if r.pandaCluster.GetReplicas() > r.pandaCluster.Status.CurrentReplicas {
+		r.logger.Info("Upscaling cluster", "replicas", r.pandaCluster.GetReplicas())
 		// We care about upscaling only when the cluster is moving off 1 replica, which happen e.g. at cluster startup
 		if r.pandaCluster.Status.CurrentReplicas == 1 {
 			r.logger.Info("Waiting for first node to form a cluster before upscaling")
@@ -101,20 +94,34 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 			if !formed {
 				return &RequeueAfterError{
 					RequeueAfter: wait.Jitter(r.decommissionWaitInterval, decommissionWaitJitterFactor),
-					Msg:          fmt.Sprintf("Waiting for cluster to be formed before upscaling to %d replicas", *r.pandaCluster.Spec.Replicas),
+					Msg:          fmt.Sprintf("Waiting for cluster to be formed before upscaling to %d replicas", r.pandaCluster.GetReplicas()),
 				}
 			}
 			r.logger.Info("Initial cluster has been formed")
 		}
 
+		r.logger.Info("TTT Updating current replicas", "nodepool", r.nodePool.Name, "current", r.pandaCluster.Status.CurrentReplicas, "target", r.pandaCluster.GetReplicas())
 		// Upscaling request: this is already handled by Redpanda, so we just increase status currentReplicas
-		return setCurrentReplicas(ctx, r, r.pandaCluster, *r.pandaCluster.Spec.Replicas, r.logger)
+		return setCurrentReplicas(ctx, r, r.pandaCluster, r.pandaCluster.GetReplicas(), r.logger)
+	}
+
+	npExists := false
+	for _, np := range r.pandaCluster.Spec.NodePools {
+		if np.Name == r.nodePool.Name {
+			npExists = true
+			break
+		}
+	}
+	if *r.LastObservedState.Spec.Replicas == *r.nodePool.Replicas && npExists {
+		r.logger.V(logger.DebugLevel).Info("No scaling changes required for this nodepool", "replicas", r.pandaCluster.GetReplicas(), "nodepool", r.nodePool.Name) // No changes to replicas, we do nothing here
+
+		return nil
 	}
 
 	// User required replicas is lower than current replicas (currentReplicas): start the decommissioning process
-	r.logger.Info("Downscaling cluster", "replicas", *r.pandaCluster.Spec.Replicas)
+	r.logger.Info("Downscaling cluster", "replicas", r.pandaCluster.GetReplicas())
 
-	targetOrdinal := r.pandaCluster.Status.CurrentReplicas - 1 // Always decommission last node
+	targetOrdinal := *r.LastObservedState.Spec.Replicas - 1 // Always decommission last node
 	targetBroker, err := r.getBrokerIDForPod(ctx, targetOrdinal)
 	if err != nil {
 		return fmt.Errorf("error getting broker ID for pod with ordinal %d when downscaling cluster: %w", targetOrdinal, err)
@@ -146,7 +153,7 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 		return nil
 	}
 
-	if *r.pandaCluster.Spec.Replicas >= r.pandaCluster.GetCurrentReplicas() {
+	if r.pandaCluster.GetReplicas() >= r.pandaCluster.GetCurrentReplicas() {
 		// Decommissioning can also be canceled and we need to recommission
 		err := r.handleRecommission(ctx)
 		if !errors.Is(err, &RecommissionFatalError{}) {
@@ -200,6 +207,7 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 	log := l.WithName("handleDecommission").WithValues("node_id", *brokerID)
 	log.Info("handling broker decommissioning")
 
+	log.Info("Getting admin api client")
 	adminAPI, err := r.getAdminAPIClient(ctx)
 	if err != nil {
 		return err
@@ -299,15 +307,17 @@ func (r *StatefulSetResource) handleRecommission(ctx context.Context) error {
 }
 
 func (r *StatefulSetResource) getAdminAPIClient(
-	ctx context.Context, ordinals ...int32,
+	ctx context.Context, pods ...string,
 ) (adminutils.AdminAPIClient, error) {
-	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, ordinals...)
+	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, pods...)
 }
 
 func (r *StatefulSetResource) isClusterFormed(
 	ctx context.Context,
 ) (bool, error) {
-	rootNodeAdminAPI, err := r.getAdminAPIClient(ctx, 0)
+
+	podName := fmt.Sprintf("%s-%s-0", r.pandaCluster.Name, r.nodePool.Name)
+	rootNodeAdminAPI, err := r.getAdminAPIClient(ctx, podName)
 	if err != nil {
 		return false, err
 	}

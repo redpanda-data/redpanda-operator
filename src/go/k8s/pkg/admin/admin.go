@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,6 +22,7 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // NoInternalAdminAPI signal absence of the internal admin API endpoint
@@ -77,6 +79,66 @@ func NewInternalAdminAPI(
 	return adminAPI, nil
 }
 
+// NewNodePoolInternalAdminAPI is used to construct a nodepool specific admin API client that talks to the cluster via
+// the internal interface.
+func NewNodePoolInternalAdminAPI(
+	ctx context.Context,
+	k8sClient client.Reader,
+	redpandaCluster *vectorizedv1alpha1.Cluster,
+	fqdn string,
+	adminTLSProvider types.AdminTLSConfigProvider,
+	pods ...string,
+) (AdminAPIClient, error) {
+	adminInternal := redpandaCluster.AdminAPIInternal()
+	if adminInternal == nil {
+		return nil, &NoInternalAdminAPI{}
+	}
+
+	var tlsConfig *tls.Config
+	if adminInternal.TLS.Enabled {
+		var err error
+		tlsConfig, err = adminTLSProvider.GetTLSConfig(ctx, k8sClient)
+		if err != nil {
+			return nil, fmt.Errorf("could not create tls configuration for internal admin API: %w", err)
+		}
+	}
+
+	adminInternalPort := adminInternal.Port
+
+	urls := make([]string, 0)
+	if len(pods) == 0 {
+
+		var stsList appsv1.StatefulSetList
+		err := k8sClient.List(ctx, &stsList)
+		if err != nil {
+			return nil, fmt.Errorf("while retrieving list of STS resources: %w", err)
+		}
+
+		for _, sts := range stsList.Items {
+			if !strings.HasPrefix(sts.Name, redpandaCluster.Name) {
+				continue
+			}
+
+			for on := 0; on < int(*sts.Spec.Replicas); on++ {
+				podName := fmt.Sprintf("%s-%d.%s:%d", sts.Name, on, fqdn, adminInternalPort)
+				urls = append(urls, podName)
+			}
+		}
+	} else {
+		for _, pod := range pods {
+			urls = append(urls, fmt.Sprintf("%s.%s:%d", pod, fqdn, adminInternalPort))
+		}
+	}
+
+	adminAPI, err := admin.NewAdminAPI(urls, admin.BasicCredentials{}, tlsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("error creating admin api for cluster %s/%s using urls %v (tls=%v): %w", redpandaCluster.Namespace, redpandaCluster.Name, urls, tlsConfig != nil, err)
+	}
+
+	return adminAPI, nil
+
+}
+
 // AdminAPIClient is a sub interface of the admin API containing what we need in the operator
 //
 
@@ -122,3 +184,15 @@ type AdminAPIClientFactory func(
 ) (AdminAPIClient, error)
 
 var _ AdminAPIClientFactory = NewInternalAdminAPI
+
+// AdminAPIClientFactory is a node aware abstract constructor of admin API clients
+type NodePoolAdminAPIClientFactory func(
+	ctx context.Context,
+	k8sClient client.Reader,
+	redpandaCluster *vectorizedv1alpha1.Cluster,
+	fqdn string,
+	adminTLSProvider types.AdminTLSConfigProvider,
+	pods ...string,
+) (AdminAPIClient, error)
+
+var _ NodePoolAdminAPIClientFactory = NewNodePoolInternalAdminAPI

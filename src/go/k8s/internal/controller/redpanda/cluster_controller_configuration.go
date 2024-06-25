@@ -36,7 +36,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	configMapResource *resources.ConfigMapResource,
-	statefulSetResource *resources.StatefulSetResource,
+	statefulSetResources []*resources.StatefulSetResource,
 	pki *certmanager.PkiReconciler,
 	fqdn string,
 	l logr.Logger,
@@ -109,14 +109,17 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	// A possible fix is doing a two-phase commit (first stage commit on configmap, then apply it to the cluster, with possibility to recover on failure),
 	// but it seems overkill given that the case is rare and requires cooperation from the user.
 
-	hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
-	if err != nil {
-		return err
-	} else if hashChanged {
-		// Definitely needs restart
-		log.Info("Centralized configuration hash has changed")
-		if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
-			return errorWithContext(err, "could not update config hash on statefulset")
+	for _, statefulSetResource := range statefulSetResources {
+		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
+		if err != nil {
+			return err
+		} else if hashChanged {
+			// Definitely needs restart
+			log.Info("Centralized configuration hash has changed")
+			if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
+				return errorWithContext(err, "could not update config hash on statefulset")
+			}
+
 		}
 	}
 
@@ -126,7 +129,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Synchronized status with cluster, including triggering a restart if needed
-	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResource, adminAPI, log)
+	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, adminAPI, log)
 	if err != nil {
 		return err
 	}
@@ -309,7 +312,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 func (r *ClusterReconciler) synchronizeStatusWithCluster(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
-	statefulset *resources.StatefulSetResource,
+	statefulsets []*resources.StatefulSetResource,
 	adminAPI adminutils.AdminAPIClient,
 	l logr.Logger,
 ) (*vectorizedv1alpha1.ClusterCondition, error) {
@@ -346,8 +349,13 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 		}
 	}
 	if restartingCluster && !isRestarting {
-		if err := statefulset.MarkPodsForUpdate(ctx); err != nil {
-			return nil, errorWithContext(err, "could not mark pods for update")
+		for _, sts := range statefulsets {
+			if sts == nil {
+				continue
+			}
+			if err := sts.MarkPodsForUpdate(ctx); err != nil {
+				return nil, errorWithContext(err, "could not mark pods for update")
+			}
 		}
 	}
 	return redpandaCluster.Status.GetCondition(conditionData.Type), nil
