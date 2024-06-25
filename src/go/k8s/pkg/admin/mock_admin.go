@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -48,6 +50,10 @@ type ScopedMockAdminAPI struct {
 	Ordinal int32
 }
 
+type NodePoolScopedMockAdminAPI struct {
+	*MockAdminAPI
+	Pod string
+}
 type unavailableError struct{}
 
 func (*unavailableError) Error() string {
@@ -353,6 +359,36 @@ func (s *ScopedMockAdminAPI) GetNodeConfig(
 	}
 	return admin.NodeConfig{
 		NodeID: brokers[int(s.Ordinal)].NodeID,
+	}, nil
+}
+
+//nolint:goerr113 // test code
+func (s *NodePoolScopedMockAdminAPI) GetNodeConfig(
+	ctx context.Context,
+) (admin.NodeConfig, error) {
+	brokers, err := s.Brokers(ctx)
+	if err != nil {
+		return admin.NodeConfig{}, err
+	}
+	s.monitor.Lock()
+	defer s.monitor.Unlock()
+	toks := strings.Split(s.Pod, "-")
+	ordinal, err := strconv.Atoi(toks[len(toks)-1])
+	if err != nil {
+		return admin.NodeConfig{}, fmt.Errorf("invalid pod name: %s", s.Pod)
+	}
+	for _, b := range s.ghostBrokers {
+		if b.NodeID == ordinal {
+			return admin.NodeConfig{
+				NodeID: b.NodeID,
+			}, nil
+		}
+	}
+	if len(brokers) <= ordinal {
+		return admin.NodeConfig{}, fmt.Errorf("broker not registered")
+	}
+	return admin.NodeConfig{
+		NodeID: brokers[ordinal].NodeID,
 	}, nil
 }
 

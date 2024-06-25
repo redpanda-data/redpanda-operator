@@ -224,7 +224,7 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
-							Address: "onenode-0.domain.dom",
+							Address: "onenode-first-0.domain.dom",
 							Port:    33145,
 						},
 					},
@@ -241,19 +241,19 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-0.domain.dom",
+							Address: "threenode-first-0.domain.dom",
 							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-1.domain.dom",
+							Address: "threenode-first-1.domain.dom",
 							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-2.domain.dom",
+							Address: "threenode-first-2.domain.dom",
 							Port:    33145,
 						},
 					},
@@ -276,7 +276,12 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 					Namespace: "namespace",
 				},
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: ptr.To(tt.replicas),
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "first",
+							Replicas: &tt.replicas,
+						},
+					},
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{

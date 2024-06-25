@@ -98,10 +98,11 @@ func TestEnsure_StatefulSet(t *testing.T) {
 			ImagePullPolicy:       "Always",
 		},
 		func(ctx context.Context) (string, error) { return hash, nil },
-		adminutils.NewInternalAdminAPI,
+		adminutils.NewNodePoolInternalAdminAPI,
 		time.Second,
 		ctrl.Log.WithName("test"),
-		0)
+		0,
+		*cluster.Spec.NodePools[0])
 
 	err = sts.Ensure(context.Background())
 	assert.NoError(t, err)

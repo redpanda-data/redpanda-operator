@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -38,6 +40,7 @@ const (
 	serviceAccount          = "ServiceAccount"
 	secret                  = "Secret"
 	statefulSet             = "StatefulSet"
+	nodePool                = "NodePool"
 )
 
 func newAttachedResources(ctx context.Context, r *ClusterReconciler, log logr.Logger, cluster *vectorizedv1alpha1.Cluster) *attachedResources {
@@ -347,10 +350,6 @@ func (a *attachedResources) secret() {
 }
 
 func (a *attachedResources) statefulSet() error {
-	// if already initialized, exit immediately
-	if _, ok := a.items[statefulSet]; ok {
-		return nil
-	}
 	pki, err := a.getPKI()
 	if err != nil {
 		return err
@@ -359,28 +358,100 @@ func (a *attachedResources) statefulSet() error {
 	if err != nil {
 		return err
 	}
-	a.items[statefulSet] = resources.NewStatefulSet(
-		a.reconciler.Client,
-		a.cluster,
-		a.reconciler.Scheme,
-		a.getHeadlessServiceFQDN(),
-		a.getHeadlessServiceName(),
-		a.getNodeportServiceKey(),
-		pki.StatefulSetVolumeProvider(),
-		pki.AdminAPIConfigProvider(),
-		a.getServiceAccountName(),
-		a.reconciler.configuratorSettings,
-		cm.GetNodeConfigHash,
-		a.reconciler.AdminAPIClientFactory,
-		a.reconciler.DecommissionWaitInterval,
-		a.log,
-		a.reconciler.MetricsTimeout)
+
+	for _, np := range a.cluster.Spec.NodePools {
+		if np == nil {
+			continue
+		}
+
+		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
+		if _, ok := a.items[stsKey]; ok {
+			continue
+		}
+
+		a.items[stsKey] = resources.NewStatefulSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cm.GetNodeConfigHash,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			*np)
+	}
+
+	// If a node pool spec has been removed from the spec, we need to recreate it in order for the decomm process to kick in
+	var stsList appsv1.StatefulSetList
+	err = a.reconciler.Client.List(context.TODO(), &stsList)
+
+	if err != nil {
+		return err
+	}
+	for _, sts := range stsList.Items {
+		if !strings.HasPrefix(sts.Name, a.cluster.Name) {
+			continue
+		}
+
+		npName := sts.Name[len(a.cluster.Name)+1:]
+		stsKey := fmt.Sprintf("%s-%s", statefulSet, npName)
+		if _, ok := a.items[stsKey]; ok {
+			continue
+		}
+
+		if *sts.Spec.Replicas == 0 {
+			err = a.reconciler.Client.Delete(context.TODO(), &sts)
+			if err != nil {
+				return fmt.Errorf("while deleting empty STS: %w", err)
+			}
+			continue
+		}
+
+		// Add the sts again in the items map in order for the reconciliation process to take place
+		// Since the np spec was removed, the replicas number hardcoded to 0.
+		a.items[stsKey] = resources.NewStatefulSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cm.GetNodeConfigHash,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			vectorizedv1alpha1.NodePoolSpec{
+				Name:     npName,
+				Replicas: sts.Spec.Replicas,
+			})
+	}
+
 	return nil
 }
 
-func (a *attachedResources) getStatefulSet() (*resources.StatefulSetResource, error) {
+func (a *attachedResources) getStatefulSet() ([]*resources.StatefulSetResource, error) {
 	if err := a.statefulSet(); err != nil {
 		return nil, err
 	}
-	return a.items[statefulSet].(*resources.StatefulSetResource), nil
+	out := make([]*resources.StatefulSetResource, 0)
+	for k, sts := range a.items {
+		if !strings.HasPrefix(k, statefulSet) || sts == nil {
+			continue
+		}
+
+		out = append(out, sts.(*resources.StatefulSetResource))
+	}
+	return out, nil
 }

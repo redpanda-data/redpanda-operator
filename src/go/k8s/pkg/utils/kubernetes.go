@@ -12,6 +12,7 @@ package utils
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -32,8 +33,8 @@ func GetPodOrdinal(podName, clusterName string) (int32, error) {
 		return -1, fmt.Errorf("pod name (%s) and cluster name (%s): %w", podName, clusterName, ErrInvalidInputParameters)
 	}
 
-	// The +1 is for the separator between stateful set name and pod ordinal
-	ordinalStr := podName[len(clusterName)+1:]
+	toks := strings.Split(podName, "-")
+	ordinalStr := toks[len(toks)-1]
 	ordinal, err := strconv.ParseInt(ordinalStr, 10, 0)
 	if err != nil {
 		return -1, fmt.Errorf("parsing int failed (%s): %w", ordinalStr, err)

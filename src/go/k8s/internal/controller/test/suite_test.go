@@ -63,7 +63,7 @@ var (
 	testEnv               *testutils.RedpandaTestEnv
 	cfg                   *rest.Config
 	testAdminAPI          *adminutils.MockAdminAPI
-	testAdminAPIFactory   adminutils.AdminAPIClientFactory
+	testAdminAPIFactory   adminutils.NodePoolAdminAPIClientFactory
 	testStore             *consolepkg.Store
 	testKafkaAdmin        *mockKafkaAdmin
 	testKafkaAdminFactory consolepkg.KafkaAdminClientFactory
@@ -221,12 +221,12 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		_ *vectorizedv1alpha1.Cluster,
 		_ string,
 		_ types.AdminTLSConfigProvider,
-		ordinals ...int32,
+		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
-		if len(ordinals) == 1 {
-			return &adminutils.ScopedMockAdminAPI{
+		if len(pods) == 1 {
+			return &adminutils.NodePoolScopedMockAdminAPI{
 				MockAdminAPI: testAdminAPI,
-				Ordinal:      ordinals[0],
+				Pod:          pods[0],
 			}, nil
 		}
 		return testAdminAPI, nil

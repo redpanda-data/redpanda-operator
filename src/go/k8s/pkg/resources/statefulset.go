@@ -109,12 +109,13 @@ type StatefulSetResource struct {
 	// this has to be retrieved lazily to achieve the correct order of resources
 	// being applied
 	nodeConfigMapHashGetter  func(context.Context) (string, error)
-	adminAPIClientFactory    adminutils.AdminAPIClientFactory
+	adminAPIClientFactory    adminutils.NodePoolAdminAPIClientFactory
 	decommissionWaitInterval time.Duration
 	logger                   logr.Logger
 	metricsTimeout           time.Duration
 
 	LastObservedState *appsv1.StatefulSet
+	nodePool          vectorizedv1alpha1.NodePoolSpec
 }
 
 // NewStatefulSet creates StatefulSetResource
@@ -130,10 +131,11 @@ func NewStatefulSet(
 	serviceAccountName string,
 	configuratorSettings ConfiguratorSettings,
 	nodeConfigMapHashGetter func(context.Context) (string, error),
-	adminAPIClientFactory adminutils.AdminAPIClientFactory,
+	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,
+	nodePool vectorizedv1alpha1.NodePoolSpec,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
 		client,
@@ -153,7 +155,9 @@ func NewStatefulSet(
 		logger.WithName("StatefulSetResource"),
 		defaultAdminAPITimeout,
 		nil,
+		nodePool,
 	}
+
 	if metricsTimeout != 0 {
 		ssr.metricsTimeout = metricsTimeout
 	}
@@ -162,7 +166,7 @@ func NewStatefulSet(
 
 // Ensure will manage kubernetes v1.StatefulSet for redpanda.vectorized.io custom resource
 func (r *StatefulSetResource) Ensure(ctx context.Context) error {
-	log := r.logger.WithName("StatefulSetResource.Ensure")
+	log := r.logger.WithName("StatefulSetResource.Ensure").WithValues("nodepool", r.nodePool.Name)
 	var sts appsv1.StatefulSet
 
 	if r.pandaCluster.ExternalListener() != nil {
@@ -287,7 +291,7 @@ func preparePVCResource(
 func (r *StatefulSetResource) obj(
 	ctx context.Context,
 ) (k8sclient.Object, error) {
-	clusterLabels := labels.ForCluster(r.pandaCluster)
+	clusterLabels := labels.ForCluster(r.pandaCluster).WithNodePool(r.nodePool.Name)
 
 	annotations := r.pandaCluster.Spec.Annotations
 	if annotations == nil {
@@ -298,8 +302,6 @@ func (r *StatefulSetResource) obj(
 		return nil, err
 	}
 	annotations[ConfigMapHashAnnotationKey] = configMapHash
-	tolerations := r.pandaCluster.Spec.Tolerations
-	nodeSelector := r.pandaCluster.Spec.NodeSelector
 
 	if len(r.pandaCluster.Spec.Configuration.KafkaAPI) == 0 {
 		// TODO: Fix this
@@ -340,6 +342,20 @@ func (r *StatefulSetResource) obj(
 
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
 	replicas := r.pandaCluster.GetCurrentReplicas()
+
+	// KO: TODO: we should only launch 1 pod first and then the rest *across* the node pools!
+	if replicas > 1 {
+		replicas = *r.nodePool.Replicas
+	} else if replicas == 1 && r.pandaCluster.Spec.NodePools[0].Name != r.nodePool.Name {
+		replicas = 0
+	}
+	tolerations := r.nodePool.Tolerations
+	nodeSelector := r.nodePool.NodeSelector
+	resLimits := r.nodePool.Resources.Limits
+	resRequests := r.nodePool.Resources.Requests
+
+	npSTSSelector := clusterLabels.AsAPISelector()
+	npSTSSelector.MatchLabels["cluster.redpanda.com/nodepool"] = r.nodePool.Name
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.Key().Namespace,
@@ -353,7 +369,7 @@ func (r *StatefulSetResource) obj(
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            &replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            clusterLabels.AsAPISelector(),
+			Selector:            npSTSSelector,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},
@@ -362,7 +378,7 @@ func (r *StatefulSetResource) obj(
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        r.pandaCluster.Name,
 					Namespace:   r.pandaCluster.Namespace,
-					Labels:      clusterLabels.AsAPISelector().MatchLabels,
+					Labels:      npSTSSelector.MatchLabels,
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
@@ -477,8 +493,8 @@ func (r *StatefulSetResource) obj(
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits:   r.pandaCluster.Spec.Resources.Limits,
-								Requests: r.pandaCluster.Spec.Resources.Requests,
+								Limits:   resLimits,
+								Requests: resRequests,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -626,7 +642,7 @@ func (r *StatefulSetResource) obj(
 		})
 	}
 
-	setVolumes(ss, r.pandaCluster)
+	setVolumes(ss, r.pandaCluster, r.nodePool.Storage)
 
 	rpkStatusContainer := r.rpkStatusContainer(tlsVolumeMounts)
 	if rpkStatusContainer != nil {
@@ -654,8 +670,8 @@ func (r *StatefulSetResource) getHook(script string) *corev1.LifecycleHandler {
 
 // setVolumes manipulates v1.StatefulSet object in order to add cloud storage and
 // Redpanda data volume
-func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster) {
-	pvcDataDir := preparePVCResource(datadirName, cluster.Namespace, cluster.Spec.Storage, ss.Labels)
+func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, storage vectorizedv1alpha1.StorageSpec) {
+	pvcDataDir := preparePVCResource(datadirName, cluster.Namespace, storage, ss.Labels)
 	ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvcDataDir)
 	vol := corev1.Volume{
 		Name: datadirName,
@@ -829,7 +845,8 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // Key returns namespace/name object that is used to identify object.
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
-	return types.NamespacedName{Name: r.pandaCluster.Name, Namespace: r.pandaCluster.Namespace}
+	name := fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)
+	return types.NamespacedName{Name: name, Namespace: r.pandaCluster.Namespace}
 }
 
 func (r *StatefulSetResource) portsConfiguration() string {
@@ -1014,20 +1031,28 @@ func (r *StatefulSetResource) CurrentVersion(ctx context.Context) (string, error
 		return "", nil
 	}
 	replicas := *r.LastObservedState.Spec.Replicas
-	pods, err := r.getPodList(ctx)
+	allPods, err := r.getPodList(ctx)
 	if err != nil {
 		return "", err
 	}
-	if int32(len(pods.Items)) != replicas {
-		//nolint:goerr113 // not going to use wrapped static error here this time
-		return stsVersion, fmt.Errorf("rollout incomplete: pods count %d does not match expected replicas %d", len(pods.Items), replicas)
-	}
-	for i := range pods.Items {
-		if !utils.IsPodReady(&pods.Items[i]) {
-			//nolint:goerr113 // no need for static error
-			return stsVersion, fmt.Errorf("rollout incomplete: at least one pod (%s) is not READY", pods.Items[i].Name)
+
+	pods := make([]corev1.Pod, 0)
+	for _, pod := range allPods.Items {
+		if !strings.HasPrefix(pod.Name, r.LastObservedState.Name) {
+			continue
 		}
-		podVersion := redpandaContainerVersion(pods.Items[i].Spec.Containers)
+		pods = append(pods, pod)
+	}
+	if int32(len(pods)) != replicas {
+		//nolint:goerr113 // not going to use wrapped static error here this time
+		return stsVersion, fmt.Errorf("rollout incomplete: pods count %d does not match expected replicas %d", len(pods), replicas)
+	}
+	for i := range pods {
+		if !utils.IsPodReady(&pods[i]) {
+			//nolint:goerr113 // no need for static error
+			return stsVersion, fmt.Errorf("rollout incomplete: at least one pod (%s) is not READY", pods[i].Name)
+		}
+		podVersion := redpandaContainerVersion(pods[i].Spec.Containers)
 		if podVersion != stsVersion {
 			//nolint:goerr113 // no need for static error
 			return stsVersion, fmt.Errorf("rollout incomplete: at least one pod has version %s not %s", podVersion, stsVersion)
@@ -1059,6 +1084,10 @@ func (r *StatefulSetResource) getPodByBrokerID(ctx context.Context, brokerID *in
 	}
 
 	return GetPodByBrokerIDfromPodList(brokerIDStr, pods), nil
+}
+
+func (r *StatefulSetResource) GetReplicas() int32 {
+	return *r.nodePool.Replicas
 }
 
 func GetPodByBrokerIDfromPodList(brokerIDStr string, pods *corev1.PodList) *corev1.Pod {
@@ -1108,4 +1137,25 @@ func GetBrokerIDForPodFromPodList(pods *corev1.PodList, podName string) (*int32,
 		return &brokerID, nil
 	}
 	return nil, nil
+}
+
+func (r *StatefulSetResource) GetNodePoolPods(ctx context.Context) (*corev1.PodList, error) {
+	var sts appsv1.StatefulSet
+	err := r.Client.Get(ctx, r.Key(), &sts)
+	if err != nil {
+		return nil, fmt.Errorf("while retrieving STS for np %s: %w", r.nodePool.Name, err)
+	}
+
+	var stsPods corev1.PodList
+	s, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+	if err != nil {
+		return nil, fmt.Errorf("while creating pod selector for sts %s: %w", r.nodePool.Name, err)
+	}
+
+	err = r.Client.List(ctx, &stsPods, k8sclient.MatchingLabelsSelector{Selector: s})
+	if err != nil {
+		return nil, fmt.Errorf("while listing pods of nodepool %s: %w", r.nodePool.Name, err)
+	}
+
+	return &stsPods, nil
 }

@@ -20,6 +20,7 @@ import (
 
 	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -344,7 +345,6 @@ func (r *ConfigMapResource) CreateConfiguration(
 	if err := r.PrepareSeedServerList(cr); err != nil {
 		return nil, fmt.Errorf("preparing seed server list: %w", err)
 	}
-
 	r.preparePandaproxy(&cfg.NodeConfiguration)
 	r.preparePandaproxyTLS(&cfg.NodeConfiguration, mountPoints)
 	err := r.preparePandaproxyClient(ctx, cfg, mountPoints)
@@ -809,14 +809,40 @@ func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
 
 func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig) error {
 	c := r.pandaCluster.Spec.Configuration
-	replicas := r.pandaCluster.GetCurrentReplicas()
+	var replicas int32
+	var prefix string
+
+	// Check if there's an existing nodepool
+	var stsList appsv1.StatefulSetList
+	err := r.Client.List(context.TODO(), &stsList)
+	if err != nil {
+		return err
+	}
+	var seedSts *appsv1.StatefulSet
+	for _, sts := range stsList.Items {
+
+		if sts.Status.ReadyReplicas == *sts.Spec.Replicas && sts.Status.ReadyReplicas > int32(0) {
+			seedSts = &sts
+			break
+		}
+	}
+	if seedSts != nil {
+		replicas = *seedSts.Spec.Replicas
+		prefix = seedSts.Name
+	} else {
+		// There is no STS, fall back to node pool definitions
+		for _, np := range r.pandaCluster.Spec.NodePools {
+			if np != nil && *np.Replicas > int32(0) {
+				replicas = *np.Replicas
+				prefix = fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
+				break
+			}
+		}
+	}
 
 	// make this the default when v22.2 is no longer supported
 	if featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version) {
 		cr.EmptySeedStartsCluster = new(bool) // default to false
-		if r.pandaCluster.Spec.Replicas != nil {
-			replicas = *r.pandaCluster.Spec.Replicas
-		}
 		if replicas == 0 {
 			//nolint:goerr113 // out of scope for this PR
 			return fmt.Errorf("cannot create seed list for cluster with 0 replicas")
@@ -827,7 +853,7 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 		cr.SeedServers = append(cr.SeedServers, config.SeedServer{
 			Host: config.SocketAddress{
 				// Example address: cluster-sample-0.cluster-sample.default.svc.cluster.local
-				Address: fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN),
+				Address: fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN),
 				Port:    clusterCRPortOrRPKDefault(c.RPCServer.Port, cr.RPCServer.Port),
 			},
 		})

@@ -3,7 +3,7 @@ redpanda:
     empty_seed_starts_cluster: false
     seed_servers:
         - host:
-            address: cluster-0.cluster.local
+            address: cluster-first-0.cluster.local
             port: 33145
     rpc_server:
         address: 0.0.0.0

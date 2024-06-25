@@ -354,11 +354,7 @@ func (r *StatefulSetResource) listPodsForUpdateOrMaintenance(l logr.Logger, podL
 func (r *StatefulSetResource) checkMaintenanceModeForPods(ctx context.Context, maintenanceItems []*corev1.Pod) error {
 	for i := range maintenanceItems {
 		pod := maintenanceItems[i]
-		ordinal, err := utils.GetPodOrdinal(pod.GetName(), r.pandaCluster.GetName())
-		if err != nil {
-			return fmt.Errorf("cannot convert pod name to ordinal: %w", err)
-		}
-		if err = r.checkMaintenanceMode(ctx, ordinal); err != nil {
+		if err := r.checkMaintenanceMode(ctx, pod.Name); err != nil {
 			return &RequeueAfterError{
 				RequeueAfter: RequeueDuration,
 				Msg:          fmt.Sprintf("checking maintenance node %q: %v", pod.GetName(), err),
@@ -411,7 +407,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return fmt.Errorf("cluster %s: cannot convert pod name (%s) to ordinal: %w", r.pandaCluster.Name, pod.Name, err)
 	}
 
-	if *r.pandaCluster.Spec.Replicas == 1 {
+	if *r.nodePool.Replicas == 1 {
 		log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
 			"pod-name", pod.Name,
 			"patch", patchResult.Patch)
@@ -446,7 +442,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 	}
 
 	log.Info("Put broker into maintenance mode", "patch", patchResult.Patch)
-	if err = r.putInMaintenanceMode(ctx, ordinal); err != nil {
+	if err = r.putInMaintenanceMode(ctx, pod.Name); err != nil {
 		// As maintenance mode can not be easily watched using controller runtime the requeue error
 		// is always returned. That way a rolling update will not finish when operator waits for
 		// maintenance mode finished.
@@ -470,8 +466,8 @@ var (
 	ErrMaintenanceMissing     = errors.New("maintenance definition not returned")
 )
 
-func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, ordinal int32) error {
-	adminAPIClient, err := r.getAdminAPIClient(ctx, ordinal)
+func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, pod string) error {
+	adminAPIClient, err := r.getAdminAPIClient(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("creating admin API client: %w", err)
 	}
@@ -502,12 +498,12 @@ func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, ordinal 
 	return nil
 }
 
-func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, ordinal int32) error {
-	if *r.pandaCluster.Spec.Replicas <= 1 {
+func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, pod string) error {
+	if r.pandaCluster.GetReplicas() <= 1 {
 		return nil
 	}
 
-	adminAPIClient, err := r.getAdminAPIClient(ctx, ordinal)
+	adminAPIClient, err := r.getAdminAPIClient(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("creating admin API client: %w", err)
 	}
@@ -523,7 +519,7 @@ func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, ordinal 
 	}
 
 	if br.Maintenance != nil && br.Maintenance.Draining {
-		r.logger.Info("Disable broker maintenance", "pod-ordinal", ordinal)
+		r.logger.Info("Disable broker maintenance", "pod-ordinal", pod)
 		err = adminAPIClient.DisableMaintenanceMode(ctx, nodeConf.NodeID, false)
 		if err != nil {
 			return fmt.Errorf("disabling maintenance mode: %w", err)

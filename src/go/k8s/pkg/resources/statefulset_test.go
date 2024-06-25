@@ -143,7 +143,7 @@ func TestEnsure(t *testing.T) {
 					ImagePullPolicy:       "Always",
 				},
 				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, ordinals ...int32) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
 					adminAPI.SetClusterHealth(health)
@@ -151,7 +151,8 @@ func TestEnsure(t *testing.T) {
 				},
 				time.Second,
 				ctrl.Log.WithName("test"),
-				0)
+				0,
+				*cluster.Spec.NodePools[0])
 
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 
@@ -236,7 +237,7 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 			Name:      pandaCluster.Name,
 		},
 		Spec: v1.StatefulSetSpec{
-			Replicas: pandaCluster.Spec.Replicas,
+			Replicas: pandaCluster.Spec.NodePools[0].Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"testlabel": "statefulset_test",
@@ -345,9 +346,8 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 			UID: "ff2770aa-c919-43f0-8b4a-30cb7cfdaf79",
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
-			Image:    "image",
-			Version:  "v22.3.0",
-			Replicas: ptr.To(replicas),
+			Image:   "image",
+			Version: "v22.3.0",
 			CloudStorage: vectorizedv1alpha1.CloudStorageConfig{
 				Enabled: true,
 				CacheStorage: &vectorizedv1alpha1.StorageSpec{
@@ -363,13 +363,7 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 345}},
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
 			},
-			Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
-				ResourceRequirements: corev1.ResourceRequirements{
-					Limits:   res,
-					Requests: res,
-				},
-				Redpanda: nil,
-			},
+
 			Sidecars: vectorizedv1alpha1.Sidecars{
 				RpkStatus: &vectorizedv1alpha1.Sidecar{
 					Enabled: true,
@@ -379,9 +373,16 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 					},
 				},
 			},
-			Storage: vectorizedv1alpha1.StorageSpec{
-				Capacity:         resource.MustParse("10Gi"),
-				StorageClassName: "storage-class",
+
+			NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+				{
+					Name:     "first",
+					Replicas: ptr.To(replicas),
+					Storage: vectorizedv1alpha1.StorageSpec{
+						Capacity:         resource.MustParse("10Gi"),
+						StorageClassName: "storage-class",
+					},
+				},
 			},
 		},
 	}
@@ -497,12 +498,13 @@ func TestCurrentVersion(t *testing.T) {
 				ImagePullPolicy:       "Always",
 			},
 			func(ctx context.Context) (string, error) { return hash, nil },
-			func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, ordinals ...int32) (adminutils.AdminAPIClient, error) {
+			func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
 				return nil, nil
 			},
 			time.Second,
 			ctrl.Log.WithName("test"),
-			0)
+			0,
+			*redpanda.Spec.NodePools[0])
 		sts.LastObservedState = &v1.StatefulSet{
 			Spec: v1.StatefulSetSpec{
 				Replicas: &tests[i].expectedReplicas,
@@ -754,7 +756,7 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 				tt.fields.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				tt.fields.logger,
-				time.Hour)
+				time.Hour, vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))})
 			got, err := r.IsManagedDecommission()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StatefulSetResource.IsManagedDecommission() error = %v, wantErr %v", err, tt.wantErr)
@@ -848,7 +850,8 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				tt.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
-				time.Hour)
+				time.Hour,
+				*tt.pandaCluster.Spec.NodePools[0])
 			containerPorts := r.GetPortsForListenersInAdditionalConfig()
 			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
 			for _, cp := range containerPorts {
@@ -922,7 +925,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				tt.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
-				time.Hour)
+				time.Hour,
+				*tt.pandaCluster.Spec.NodePools[0])
 			envs := r.AdditionalListenersEnvVars()
 
 			if tt.expectedEnvValue == "" {

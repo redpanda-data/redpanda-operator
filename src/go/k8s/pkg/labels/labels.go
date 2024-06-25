@@ -83,6 +83,12 @@ func (cl CommonLabels) selectorLabels() k8slabels.Set {
 	}
 }
 
+func (cl CommonLabels) WithNodePool(nodePool string) CommonLabels {
+	var mapLabels map[string]string = cl
+	mapLabels["cluster.redpanda.com/nodepool"] = nodePool
+	return mapLabels
+}
+
 // merge merges two sets of labels
 // if label is set in mainLabels, it won't be overwritten by newLabels
 func merge(

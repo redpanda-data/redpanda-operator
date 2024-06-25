@@ -59,7 +59,7 @@ const (
 )
 
 var (
-	errNonexistentLastObservesState = errors.New("expecting to have statefulset LastObservedState set but it's nil")
+	errNonexistentLastObservedState = errors.New("expecting to have statefulset LastObservedState set but it's nil")
 	errNodePortMissing              = errors.New("the node port is missing from the service")
 	errInvalidImagePullPolicy       = errors.New("invalid image pull policy")
 )
@@ -71,7 +71,7 @@ type ClusterReconciler struct {
 	configuratorSettings      resources.ConfiguratorSettings
 	clusterDomain             string
 	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.AdminAPIClientFactory
+	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
 	DecommissionWaitInterval  time.Duration
 	MetricsTimeout            time.Duration
 	RestrictToRedpandaVersion string
@@ -223,14 +223,21 @@ func (r *ClusterReconciler) Reconcile(
 	if vectorizedCluster.Spec.Configuration.SchemaRegistry != nil {
 		schemaRegistryPort = vectorizedCluster.Spec.Configuration.SchemaRegistry.Port
 	}
-	sts, err := ar.getStatefulSet()
+	stSets, err := ar.getStatefulSet()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	npStatus := make(map[string]string)
+	for _, sts := range stSets {
+		rep := strconv.FormatInt(int64(sts.GetReplicas()), 10)
+		npStatus[sts.Key().Name] = rep
+	}
+
 	err = r.reportStatus(
 		ctx,
 		&vectorizedCluster,
-		sts,
+		stSets,
 		ar.getHeadlessServiceFQDN(),
 		ar.getClusterServiceFQDN(),
 		schemaRegistryPort,
@@ -245,7 +252,7 @@ func (r *ClusterReconciler) Reconcile(
 		ctx,
 		&vectorizedCluster,
 		cm,
-		sts,
+		stSets,
 		pki,
 		ar.getHeadlessServiceFQDN(),
 		log,
@@ -592,12 +599,7 @@ func (r *ClusterReconciler) fetchAdminNodeID(ctx context.Context, rp *vectorized
 		return -1, fmt.Errorf("getting pki: %w", err)
 	}
 
-	ordinal, err := utils.GetPodOrdinal(pod.Name, rp.Name)
-	if err != nil {
-		return -1, fmt.Errorf("cluster %s: cannot convert pod name (%s) to ordinal: %w", rp.Name, pod.Name, err)
-	}
-
-	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), ordinal)
+	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), pod.Name)
 	if err != nil {
 		return -1, fmt.Errorf("unable to create admin client: %w", err)
 	}
@@ -611,7 +613,7 @@ func (r *ClusterReconciler) fetchAdminNodeID(ctx context.Context, rp *vectorized
 func (r *ClusterReconciler) reportStatus(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
-	sts *resources.StatefulSetResource,
+	stSets []*resources.StatefulSetResource,
 	internalFQDN string,
 	clusterFQDN string,
 	schemaRegistryPort int,
@@ -634,10 +636,6 @@ func (r *ClusterReconciler) reportStatus(
 		return fmt.Errorf("failed to construct external node list: %w", err)
 	}
 
-	if sts.LastObservedState == nil {
-		return errNonexistentLastObservesState
-	}
-
 	if nodeList == nil {
 		nodeList = &vectorizedv1alpha1.NodesList{
 			SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryStatus{},
@@ -647,41 +645,73 @@ func (r *ClusterReconciler) reportStatus(
 	nodeList.SchemaRegistry.Internal = fmt.Sprintf("%s:%d", clusterFQDN, schemaRegistryPort)
 
 	//nolint:nestif // the code won't get clearer if it's splitted out in my opinion
-	version, versionErr := sts.CurrentVersion(ctx)
+	version, versionErr := stSets[0].CurrentVersion(ctx)
 	if versionErr != nil {
 		// this is non-fatal error, it will return error even if e.g.
 		// the rollout is not finished because then the currentversion
 		// of the cluster cannot be determined
 		r.Log.Info(fmt.Sprintf("cannot get CurrentVersion of statefulset, %s", versionErr))
 	}
-	if statusShouldBeUpdated(&redpandaCluster.Status, nodeList, sts, version, versionErr) {
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			cluster := &vectorizedv1alpha1.Cluster{}
-			err := r.Get(ctx, types.NamespacedName{
-				Name:      redpandaCluster.Name,
-				Namespace: redpandaCluster.Namespace,
-			}, cluster)
-			if err != nil {
-				return err
-			}
 
-			cluster.Status.Nodes = *nodeList
-			cluster.Status.ReadyReplicas = sts.LastObservedState.Status.ReadyReplicas
-			cluster.Status.Replicas = sts.LastObservedState.Status.Replicas
-			if versionErr == nil {
-				cluster.Status.Version = version
-			}
+	nodePoolStatus := make(map[string]vectorizedv1alpha1.NodePoolStatus)
 
-			err = r.Status().Update(ctx, cluster)
-			if err == nil {
-				// sync original cluster variable to avoid conflicts on subsequent operations
-				*redpandaCluster = *cluster
-			}
-			return err
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update cluster status: %w", err)
+	readyReplicas := int32(0)
+	replicas := int32(0)
+	for _, sts := range stSets {
+		if sts.LastObservedState == nil {
+			return errNonexistentLastObservedState
 		}
+
+		readyReplicas += sts.LastObservedState.Status.ReadyReplicas
+		replicas += sts.LastObservedState.Status.Replicas
+
+		pods, err := sts.GetNodePoolPods(ctx)
+		if err != nil {
+			return fmt.Errorf("while retrieving STS %s list of pods: %w", sts.LastObservedState.Name, err)
+		}
+		podNames := make([]string, 0)
+		for _, pod := range pods.Items {
+			podNames = append(podNames, pod.Name)
+		}
+
+		nodePoolStatus[sts.Key().Name] = vectorizedv1alpha1.NodePoolStatus{
+			CurrentReplicas: sts.LastObservedState.Status.CurrentReplicas,
+			Replicas:        sts.LastObservedState.Status.Replicas,
+			Pods:            podNames,
+		}
+	}
+
+	if !statusShouldBeUpdated(&redpandaCluster.Status, nodeList, replicas, readyReplicas, version, versionErr, nodePoolStatus) {
+		return nil
+	}
+
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		cluster := &vectorizedv1alpha1.Cluster{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      redpandaCluster.Name,
+			Namespace: redpandaCluster.Namespace,
+		}, cluster)
+		if err != nil {
+			return err
+		}
+
+		cluster.Status.Nodes = *nodeList
+		cluster.Status.ReadyReplicas = readyReplicas
+		cluster.Status.Replicas = replicas
+		if versionErr == nil {
+			cluster.Status.Version = version
+		}
+		cluster.Status.NodePools = nodePoolStatus
+
+		err = r.Status().Update(ctx, cluster)
+		if err == nil {
+			// sync original cluster variable to avoid conflicts on subsequent operations
+			*redpandaCluster = *cluster
+		}
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 	return nil
 }
@@ -689,9 +719,11 @@ func (r *ClusterReconciler) reportStatus(
 func statusShouldBeUpdated(
 	status *vectorizedv1alpha1.ClusterStatus,
 	nodeList *vectorizedv1alpha1.NodesList,
-	sts *resources.StatefulSetResource,
+	replicas int32,
+	readyReplicas int32,
 	newVersion string,
 	versionErr error,
+	npStatus map[string]vectorizedv1alpha1.NodePoolStatus,
 ) bool {
 	return nodeList != nil &&
 		(!reflect.DeepEqual(nodeList.Internal, status.Nodes.Internal) ||
@@ -700,8 +732,9 @@ func statusShouldBeUpdated(
 			!reflect.DeepEqual(nodeList.ExternalPandaproxy, status.Nodes.ExternalPandaproxy) ||
 			!reflect.DeepEqual(nodeList.SchemaRegistry, status.Nodes.SchemaRegistry) ||
 			!reflect.DeepEqual(nodeList.ExternalBootstrap, status.Nodes.ExternalBootstrap)) ||
-		status.Replicas != sts.LastObservedState.Status.Replicas ||
-		status.ReadyReplicas != sts.LastObservedState.Status.ReadyReplicas ||
+		!reflect.DeepEqual(npStatus, status.NodePools) ||
+		status.Replicas != replicas ||
+		status.ReadyReplicas != readyReplicas ||
 		(versionErr == nil && status.Version != newVersion)
 }
 

@@ -116,7 +116,7 @@ type ClusterSpec struct {
 	// containers have separate resources settings and the amount of resources
 	// assigned to these containers will be required on the cluster on top of
 	// the resources defined here
-	Resources RedpandaResourceRequirements `json:"resources"`
+	Resources RedpandaResourceRequirements `json:"resources,omitempty"`
 	// Sidecars is list of sidecars run alongside redpanda container
 	Sidecars Sidecars `json:"sidecars,omitempty"`
 	// Configuration represent redpanda specific configuration
@@ -183,6 +183,29 @@ type ClusterSpec struct {
 
 	// The name of the ServiceAccount to be used by the Redpanda pods
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+
+	NodePools []*NodePoolSpec `json:"nodePools,omitempty"`
+}
+
+type NodePoolSpec struct {
+	Name string `json:"name"`
+	// Replicas determine how big the node pool will be.
+	// +kubebuilder:validation:Minimum=0
+	Replicas *int32 `json:"replicas,omitempty"`
+	// If specified, Redpanda Pod tolerations
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If specified, Redpanda Pod node selectors. For reference please visit
+	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Storage spec for cluster
+	Storage StorageSpec `json:"storage,omitempty"`
+	// Resources used by redpanda process running in container. Beware that
+	// there are multiple containers running in the redpanda pod and these can
+	// be enabled/disabled and configured from the `sidecars` field. These
+	// containers have separate resources settings and the amount of resources
+	// assigned to these containers will be required on the cluster on top of
+	// the resources defined here
+	Resources RedpandaResourceRequirements `json:"resources"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
@@ -416,6 +439,8 @@ type ClusterStatus struct {
 	// Current state of the cluster.
 	// +optional
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	// Replicas per Nodepool
+	NodePools map[string]NodePoolStatus `json:"nodePools,omitempty"`
 }
 
 // ClusterCondition contains details for the current conditions of the cluster
@@ -659,6 +684,12 @@ type SchemaRegistryStatus struct {
 // by the load balancer core service
 type LoadBalancerStatus struct {
 	corev1.LoadBalancerStatus `json:""`
+}
+
+type NodePoolStatus struct {
+	CurrentReplicas int32    `json:"currentReplicas,omitempty"`
+	Replicas        int32    `json:"replicas,omitempty"`
+	Pods            []string `json:"pods,omitempty"`
 }
 
 // KafkaAPITLS configures TLS for redpanda Kafka API
@@ -1167,6 +1198,25 @@ func (r *Cluster) GetCurrentReplicas() int32 {
 	return r.Status.CurrentReplicas
 }
 
+func (r *Cluster) GetReplicas() int32 {
+	if r == nil || (r.Spec.Replicas == nil && (r.Spec.NodePools == nil || len(r.Spec.NodePools) == 0)) {
+		return 0
+	}
+
+	replicas := int32(0)
+
+	if r.Spec.NodePools != nil && len(r.Spec.NodePools) > 0 {
+		for _, np := range r.Spec.NodePools {
+			if np == nil {
+				continue
+			}
+			replicas += *np.Replicas
+		}
+	}
+
+	return replicas
+}
+
 // ComputeInitialCurrentReplicasField calculates the initial value for status.currentReplicas.
 //
 // It needs to consider the following cases:
@@ -1177,9 +1227,16 @@ func (r *Cluster) ComputeInitialCurrentReplicasField() int32 {
 	if r == nil {
 		return 0
 	}
+	sum := int32(0)
 	if r.Status.Replicas > 1 || r.Status.ReadyReplicas > 1 || len(r.Status.Nodes.Internal) > 1 || featuregates.EmptySeedStartCluster(r.Spec.Version) {
 		// A cluster seems to be already running, we start from the existing amount of replicas
-		return *r.Spec.Replicas
+		for _, np := range r.Spec.NodePools {
+			if np == nil {
+				continue
+			}
+			sum += *np.Replicas
+		}
+		return sum
 	}
 
 	// Clusters start from a single replica, then upscale

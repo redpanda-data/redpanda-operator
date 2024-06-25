@@ -247,6 +247,55 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 	})
 })
 
+var _ = Describe("Redpanda node pool scale", func() {
+	const (
+		timeout  = time.Second * 30
+		interval = time.Millisecond * 100
+
+		timeoutShort  = time.Millisecond * 100
+		intervalShort = time.Millisecond * 20
+	)
+
+	Context("When starting up a fresh Redpanda cluster", func() {
+		It("Should wait for the first replica of the nodepools to come up before launching the others", func() {
+			By("Allowing creation of a new cluster with two nodepoools of 3 replicas each")
+			_, redpandaCluster := getClusterWithNodePool("np-startup", 3, 3)
+			npFirstKey := types.NamespacedName{
+				Name:      "np-startup-first",
+				Namespace: "default",
+			}
+			npSecondKey := types.NamespacedName{
+				Name:      "np-startup-second",
+				Namespace: "default",
+			}
+
+			redpandaCluster.Spec.Version = featuregates.V22_2_1.String()
+			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
+			By("Keeping the StatefulSet at single replica until initialized")
+			var sts appsv1.StatefulSet
+			Eventually(resourceGetter(npFirstKey, &sts), timeout, interval).Should(Succeed())
+			Consistently(resourceDataGetter(npFirstKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeoutShort, intervalShort).Should(Equal(int32(1)))
+			Eventually(resourceDataGetter(npSecondKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeout, interval).Should(Equal(int32(0)))
+
+			By("Scaling to 6 replicas only when broker appears")
+			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
+			Eventually(resourceDataGetter(npFirstKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeout, interval).Should(Equal(int32(3)))
+			Eventually(resourceDataGetter(npSecondKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeout, interval).Should(Equal(int32(3)))
+
+			By("Deleting the cluster")
+			Expect(k8sClient.Delete(context.Background(), redpandaCluster)).Should(Succeed())
+		})
+	})
+})
+
 func getClusterWithReplicas(
 	name string, replicas int32,
 ) (key types.NamespacedName, cluster *vectorizedv1alpha1.Cluster) {
@@ -287,6 +336,64 @@ func getClusterWithReplicas(
 					},
 				},
 				Redpanda: nil,
+			},
+		},
+	}
+	return key, cluster
+}
+
+func getClusterWithNodePool(
+	name string, firstNodePoolReplicas int32, secondNodePoolReplicas int32,
+) (key types.NamespacedName, cluster *vectorizedv1alpha1.Cluster) {
+	res := vectorizedv1alpha1.RedpandaResourceRequirements{
+		ResourceRequirements: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("2Gi"),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("2Gi"),
+			},
+		},
+		Redpanda: nil,
+	}
+
+	key = types.NamespacedName{
+		Name:      name,
+		Namespace: "default",
+	}
+
+	cluster = &vectorizedv1alpha1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: vectorizedv1alpha1.ClusterSpec{
+			Image:   "vectorized/redpanda",
+			Version: "dev",
+			Configuration: vectorizedv1alpha1.RedpandaConfig{
+				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+					{
+						Port: 9092,
+					},
+				},
+				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
+				RPCServer: vectorizedv1alpha1.SocketAddress{
+					Port: 33145,
+				},
+			},
+			NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+				{
+					Name:      "first",
+					Replicas:  &firstNodePoolReplicas,
+					Resources: res,
+				},
+				{
+					Name:      "second",
+					Replicas:  &secondNodePoolReplicas,
+					Resources: res,
+				},
 			},
 		},
 	}
