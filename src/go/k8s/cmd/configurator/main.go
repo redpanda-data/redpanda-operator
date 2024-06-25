@@ -329,7 +329,7 @@ func registerAdvertisedKafkaAPI(
 		return nil
 	}
 
-	if len(c.subdomain) > 0 {
+	if c.subdomain != "" {
 		data := utils.NewEndpointTemplateData(int(index), c.hostIP)
 		ep, err := utils.ComputeEndpoint(c.externalConnectivityKafkaEndpointTemplate, data)
 		if err != nil {
@@ -374,7 +374,7 @@ func registerAdvertisedPandaproxyAPI(
 	}
 
 	// Pandaproxy uses the Kafka API subdomain.
-	if len(c.subdomain) > 0 {
+	if c.subdomain != "" {
 		data := utils.NewEndpointTemplateData(int(index), c.hostIP)
 		ep, err := utils.ComputeEndpoint(c.externalConnectivityPandaProxyEndpointTemplate, data)
 		if err != nil {
