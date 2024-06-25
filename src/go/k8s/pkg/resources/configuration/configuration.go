@@ -186,7 +186,7 @@ func init() {
 		tag := cfg.Field(i).Tag
 		yamlTag := tag.Get("yaml")
 		parts := strings.Split(yamlTag, ",")
-		if len(parts) > 0 && len(parts[0]) > 0 {
+		if len(parts) > 0 && parts[0] != "" {
 			knownNodeProperties[fmt.Sprintf("redpanda.%s", parts[0])] = true
 		}
 	}

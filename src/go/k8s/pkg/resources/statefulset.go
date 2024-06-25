@@ -275,7 +275,7 @@ func preparePVCResource(
 		pvc.Spec.Resources.Requests[corev1.ResourceStorage] = storage.Capacity
 	}
 
-	if len(storage.StorageClassName) > 0 {
+	if storage.StorageClassName != "" {
 		pvc.Spec.StorageClassName = &storage.StorageClassName
 	}
 	return pvc

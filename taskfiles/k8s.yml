@@ -210,13 +210,10 @@ tasks:
 
   run-golangci-lint:
     desc: run golangci-lint
-    deps:
-      - task: :dev:install-golangci-lint
     dir: 'src/go/k8s'
     cmds:
       - |
-        PATH="{{.GOLANGCI_LINT_INSTALL_DIR}}/bin:$PATH"
-        golangci-lint run --timeout 8m --go {{.GOLANG_VERSION}} -v
+        golangci-lint run --timeout 8m -v
 
   build-tag-and-push-images:
     desc: builds, tags and pushes images to dockerhub

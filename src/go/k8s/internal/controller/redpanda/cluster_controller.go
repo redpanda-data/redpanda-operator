@@ -693,7 +693,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 			}
 		}
 
-		if externalKafkaListener != nil && len(externalKafkaListener.External.Subdomain) > 0 {
+		if externalKafkaListener != nil && externalKafkaListener.External.Subdomain != "" {
 			address, err := subdomainAddress(externalKafkaListener.External.EndpointTemplate, &pod, externalKafkaListener.External.Subdomain, getNodePort(&nodePortSvc, resources.ExternalListenerName))
 			if err != nil {
 				return nil, err
@@ -707,7 +707,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 				))
 		}
 
-		if externalAdminListener != nil && len(externalAdminListener.External.Subdomain) > 0 {
+		if externalAdminListener != nil && externalAdminListener.External.Subdomain != "" {
 			address, err := subdomainAddress(externalAdminListener.External.EndpointTemplate, &pod, externalAdminListener.External.Subdomain, getNodePort(&nodePortSvc, resources.AdminPortExternalName))
 			if err != nil {
 				return nil, err
@@ -721,7 +721,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 				))
 		}
 
-		if externalProxyListener != nil && len(externalProxyListener.External.Subdomain) > 0 {
+		if externalProxyListener != nil && externalProxyListener.External.Subdomain != "" {
 			address, err := subdomainAddress(externalProxyListener.External.EndpointTemplate, &pod, externalProxyListener.External.Subdomain, getNodePort(&nodePortSvc, resources.PandaproxyPortExternalName))
 			if err != nil {
 				return nil, err
@@ -744,7 +744,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 		}
 	}
 
-	if schemaRegistryConf != nil && schemaRegistryConf.External != nil && len(schemaRegistryConf.External.Subdomain) > 0 {
+	if schemaRegistryConf != nil && schemaRegistryConf.External != nil && schemaRegistryConf.External.Subdomain != "" {
 		prefix := ""
 		if schemaRegistryConf.External.Endpoint != "" {
 			prefix = fmt.Sprintf("%s.", schemaRegistryConf.External.Endpoint)
@@ -756,7 +756,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 		)
 	}
 
-	if externalProxyListener != nil && len(externalProxyListener.External.Subdomain) > 0 {
+	if externalProxyListener != nil && externalProxyListener.External.Subdomain != "" {
 		result.PandaproxyIngress = &externalProxyListener.External.Subdomain
 	}
 

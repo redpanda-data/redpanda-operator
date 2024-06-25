@@ -270,7 +270,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					len(rc.Status.Nodes.ExternalAdmin) == 1 &&
 					len(rc.Status.Nodes.ExternalPandaproxy) == 1 &&
 					len(rc.Status.Nodes.SchemaRegistry.ExternalNodeIPs) == 1 &&
-					len(rc.Status.Nodes.SchemaRegistry.Internal) > 0 &&
+					rc.Status.Nodes.SchemaRegistry.Internal != "" &&
 					rc.Status.Nodes.SchemaRegistry.External == "" // Without subdomain the external address is empty
 			}, timeout, interval).Should(BeTrue())
 		})
@@ -449,7 +449,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 				err := k8sClient.Get(context.Background(), key, &cluster)
 				return err == nil &&
 					cluster.Status.Nodes.SchemaRegistry != nil &&
-					len(cluster.Status.Nodes.SchemaRegistry.Internal) > 0 &&
+					cluster.Status.Nodes.SchemaRegistry.Internal != "" &&
 					len(cluster.Status.Nodes.Internal) > 0
 			}, timeout, interval).Should(BeTrue())
 		})
