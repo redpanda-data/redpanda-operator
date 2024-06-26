@@ -151,7 +151,8 @@ func TestEnsure(t *testing.T) {
 				},
 				time.Second,
 				ctrl.Log.WithName("test"),
-				0)
+				0,
+				nil)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 
@@ -502,7 +503,8 @@ func TestCurrentVersion(t *testing.T) {
 			},
 			time.Second,
 			ctrl.Log.WithName("test"),
-			0)
+			0,
+			nil)
 		sts.LastObservedState = &v1.StatefulSet{
 			Spec: v1.StatefulSetSpec{
 				Replicas: &tests[i].expectedReplicas,
@@ -754,7 +756,8 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 				tt.fields.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				tt.fields.logger,
-				time.Hour)
+				time.Hour,
+				nil)
 			got, err := r.IsManagedDecommission()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StatefulSetResource.IsManagedDecommission() error = %v, wantErr %v", err, tt.wantErr)
@@ -848,7 +851,8 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				tt.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
-				time.Hour)
+				time.Hour,
+				nil)
 			containerPorts := r.GetPortsForListenersInAdditionalConfig()
 			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
 			for _, cp := range containerPorts {
@@ -922,7 +926,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				tt.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
-				time.Hour)
+				time.Hour,
+				nil)
 			envs := r.AdditionalListenersEnvVars()
 
 			if tt.expectedEnvValue == "" {

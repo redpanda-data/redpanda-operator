@@ -36,7 +36,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	configMapResource *resources.ConfigMapResource,
-	statefulSetResource *resources.StatefulSetResource,
+	statefulSetResources []*resources.StatefulSetResource,
 	pki *certmanager.PkiReconciler,
 	fqdn string,
 	l logr.Logger,
@@ -108,15 +108,16 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	// changes the CR in the meantime (e.g. removing a field), since we applied a config to the cluster but did not store the information anywhere else.
 	// A possible fix is doing a two-phase commit (first stage commit on configmap, then apply it to the cluster, with possibility to recover on failure),
 	// but it seems overkill given that the case is rare and requires cooperation from the user.
-
-	hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
-	if err != nil {
-		return err
-	} else if hashChanged {
-		// Definitely needs restart
-		log.Info("Centralized configuration hash has changed")
-		if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
-			return errorWithContext(err, "could not update config hash on statefulset")
+	for _, statefulSetResource := range statefulSetResources {
+		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
+		if err != nil {
+			return err
+		} else if hashChanged {
+			// Definitely needs restart
+			log.Info("Centralized configuration hash has changed")
+			if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
+				return errorWithContext(err, "could not update config hash on statefulset")
+			}
 		}
 	}
 
@@ -125,17 +126,18 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return errorWithContext(err, "could not store last applied configuration in the cluster")
 	}
 
-	// Synchronized status with cluster, including triggering a restart if needed
-	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResource, adminAPI, log)
-	if err != nil {
-		return err
-	}
-
-	// If condition is not met, we need to reschedule, waiting for the cluster to heal.
-	if conditionData.Status != corev1.ConditionTrue {
-		return &resources.RequeueAfterError{
-			RequeueAfter: resources.RequeueDuration,
-			Msg:          fmt.Sprintf("cluster configuration is not in sync (%s): %s", conditionData.Reason, conditionData.Message),
+	for _, statefulSetResource := range statefulSetResources {
+		// Synchronized status with cluster, including triggering a restart if needed
+		conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResource, adminAPI, log)
+		if err != nil {
+			return err
+		}
+		// If condition is not met, we need to reschedule, waiting for the cluster to heal.
+		if conditionData.Status != corev1.ConditionTrue {
+			return &resources.RequeueAfterError{
+				RequeueAfter: resources.RequeueDuration,
+				Msg:          fmt.Sprintf("cluster configuration is not in sync (%s): %s", conditionData.Reason, conditionData.Message),
+			}
 		}
 	}
 

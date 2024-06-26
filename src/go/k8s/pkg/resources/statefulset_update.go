@@ -81,6 +81,7 @@ func (r *StatefulSetResource) runUpdate(
 	}
 
 	log.V(logger.DebugLevel).Info("Checking that we should update")
+
 	update, err := r.shouldUpdate(current, modified)
 	if err != nil {
 		return fmt.Errorf("unable to determine the update procedure: %w", err)
