@@ -16,6 +16,7 @@ require (
 	github.com/fluxcd/source-controller/api v1.2.3
 	github.com/fluxcd/source-controller/shim v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.1
+	github.com/google/gofuzz v1.2.0
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
 	github.com/moby/moby v24.0.7+incompatible
@@ -25,7 +26,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.45.0
 	github.com/redpanda-data/console/backend v0.0.0-20230222172326-354751cc7524
-	github.com/redpanda-data/helm-charts v0.0.0-20240624182334-f539d8f02f09
+	github.com/redpanda-data/helm-charts v0.0.0-20240626223457-7d1ab26b4f41
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20230511045643-19a90983809d
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
@@ -206,7 +207,6 @@ require (
 	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20231202142526-55ffb0092afd // indirect
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20231023181126-ff6d637d2a7b // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect

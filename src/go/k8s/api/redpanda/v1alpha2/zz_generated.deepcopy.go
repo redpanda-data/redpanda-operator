@@ -1170,8 +1170,8 @@ func (in *PersistentVolume) DeepCopyInto(out *PersistentVolume) {
 	}
 	if in.Size != nil {
 		in, out := &in.Size, &out.Size
-		*out = new(string)
-		**out = **in
+		x := (*in).DeepCopy()
+		*out = &x
 	}
 	if in.StorageClass != nil {
 		in, out := &in.StorageClass, &out.StorageClass

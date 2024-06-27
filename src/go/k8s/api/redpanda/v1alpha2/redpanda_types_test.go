@@ -12,6 +12,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/apiutil"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -71,7 +72,7 @@ func MarshalThrough[T any](data []byte) ([]byte, error) {
 }
 
 func AssertJSONCompat[From, To any](t *testing.T, fuzzer *fuzz.Fuzzer) {
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 500; i++ {
 		var from From
 		fuzzer.Fuzz(&from)
 
@@ -121,17 +122,9 @@ func TestHelmValuesCompat(t *testing.T) {
 		disabledFields := []string{
 			"Connectors",       // Untyped in the CRD.
 			"Console",          // Untyped in the CRD.
-			"External",         // .Type is missing omitempty due to issues in genpartial.
 			"Force",            // Missing from Helm
 			"FullNameOverride", // Incorrectly cased in the CRD's JSON tag (Should be fullnameOverride). Would be a breaking change to fix.
-			"ImagePullSecrets", // Missing from Helm.
 			"Listeners",        // CRD uses homogeneous types for all listeners which can cause divergences.
-			"Logging",          // Disabled due to issues in genpartial.
-			"Monitoring",       // Disabled due to issues in genpartial.
-			"PostInstallJob",   // Incorrectly typed in Helm.
-			"PostUpgradeJob",   // Incorrectly typed in Helm.
-			"Resources",        // Multiple issues, at least one due to genpartial.
-			"Service",          // Disabled due to issues in genpartial.
 			"Statefulset",      // Many divergences from helm. Needs further inspection.
 			"Storage",          // Helm is missing nameOverwrite
 			"Tuning",           // Disabled due to extraVolumeMounts being typed as a string in helm.
@@ -154,6 +147,10 @@ func TestHelmValuesCompat(t *testing.T) {
 			// in how the values unmarshal which is irrelevant to this test.
 			func(cert *v1alpha2.Certificate, c fuzz.Continue) {
 				c.Fuzz(cert)
+			},
+			func(q *resource.Quantity, c fuzz.Continue) {
+				quant := resource.NewQuantity(c.Int63(), resource.DecimalSI)
+				*q = *quant
 			},
 		)
 		AssertJSONCompat[v1alpha2.RedpandaClusterSpec, redpanda.PartialValues](t, fuzzer)
