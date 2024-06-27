@@ -565,7 +565,7 @@ type PersistentVolume struct {
 	// Applies labels to the PersistentVolumeClaims to facilitate identification and selection based on custom criteria.
 	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies the storage capacity required.
-	Size *string `json:"size,omitempty"`
+	Size *resource.Quantity `json:"size,omitempty"`
 	// Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed.
 	StorageClass *string `json:"storageClass,omitempty"`
 	// Option to change volume claim template name for tiered storage persistent volume if tiered.mountType is set to `persistentVolume`

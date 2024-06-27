@@ -4057,8 +4057,12 @@ spec:
                               is set to `persistentVolume`
                             type: string
                           size:
+                            anyOf:
+                            - type: integer
+                            - type: string
                             description: Specifies the storage capacity required.
-                            type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
                           storageClass:
                             description: Specifies the StorageClass for the PersistentVolumeClaims
                               to determine how PersistentVolumes are provisioned and
@@ -8653,8 +8657,12 @@ spec:
                               is set to `persistentVolume`
                             type: string
                           size:
+                            anyOf:
+                            - type: integer
+                            - type: string
                             description: Specifies the storage capacity required.
-                            type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
                           storageClass:
                             description: Specifies the StorageClass for the PersistentVolumeClaims
                               to determine how PersistentVolumes are provisioned and
