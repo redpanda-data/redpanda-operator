@@ -6,6 +6,7 @@ status:
   version: "dev"
   readyReplicas: 6
   replicas: 6
+  currentReplicas: 6
   upgrading: false
   restarting: false
   conditions:

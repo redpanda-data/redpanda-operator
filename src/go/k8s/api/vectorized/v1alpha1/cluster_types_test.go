@@ -224,7 +224,12 @@ func TestInitialReplicas(t *testing.T) {
 	// backward compatibility. Remove when v22.2 is no longer supported.
 	cluster := v1alpha1.Cluster{}
 	cluster.Spec.Version = featuregates.V22_2_1.String()
-	cluster.Spec.Replicas = ptr.To(int32(3))
+	cluster.Spec.NodePools = []*v1alpha1.NodePoolSpec{
+		{
+			Name:     "test",
+			Replicas: ptr.To(int32(3)),
+		},
+	}
 	assert.Equal(t, int32(1), cluster.GetCurrentReplicas())
 	cluster.Status.Replicas = 2
 	assert.Equal(t, int32(3), cluster.GetCurrentReplicas())
@@ -239,7 +244,12 @@ func TestInitialReplicas(t *testing.T) {
 
 	// test with latest version
 	cluster = v1alpha1.Cluster{}
-	cluster.Spec.Replicas = ptr.To(int32(3))
+	cluster.Spec.NodePools = []*v1alpha1.NodePoolSpec{
+		{
+			Name:     "test",
+			Replicas: ptr.To(int32(3)),
+		},
+	}
 	assert.Equal(t, int32(3), cluster.GetCurrentReplicas())
 	cluster.Status.Replicas = 2
 	assert.Equal(t, int32(3), cluster.GetCurrentReplicas())

@@ -206,6 +206,9 @@ type NodePoolSpec struct {
 	// assigned to these containers will be required on the cluster on top of
 	// the resources defined here
 	Resources RedpandaResourceRequirements `json:"resources"`
+	// Removed is set internally to signal the reconciliation loop that this nodepool
+	// has been removed from spec
+	Removed bool `json:"removed,omitempty"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
@@ -433,6 +436,9 @@ type ClusterStatus struct {
 	// Indicates that a node is currently being decommissioned from the cluster and provides its ordinal number
 	// +optional
 	DecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
+	// Indicates the pod that hosts the node we are currently decommissioning
+	// +optional
+	DecommissioningPod string `json:"decommissioningPod,omitempty"`
 	// Current version of the cluster.
 	// +optional
 	Version string `json:"version"`
@@ -687,9 +693,8 @@ type LoadBalancerStatus struct {
 }
 
 type NodePoolStatus struct {
-	CurrentReplicas int32    `json:"currentReplicas,omitempty"`
-	Replicas        int32    `json:"replicas,omitempty"`
-	Pods            []string `json:"pods,omitempty"`
+	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
+	Replicas        int32 `json:"replicas,omitempty"`
 }
 
 // KafkaAPITLS configures TLS for redpanda Kafka API
@@ -1191,11 +1196,17 @@ func (r *Cluster) GetCurrentReplicas() int32 {
 	if r == nil {
 		return 0
 	}
-	if r.Status.CurrentReplicas <= 0 {
+	var currentReplicas int32
+
+	for _, np := range r.Status.NodePools {
+		currentReplicas += np.CurrentReplicas
+	}
+
+	if currentReplicas <= 0 {
 		// Not initialized, let's give the computed value
 		return r.ComputeInitialCurrentReplicasField()
 	}
-	return r.Status.CurrentReplicas
+	return currentReplicas
 }
 
 func (r *Cluster) GetReplicas() int32 {
@@ -1418,4 +1429,12 @@ func (r *Cluster) GetDecommissionBrokerID() *int32 {
 
 func (r *Cluster) SetDecommissionBrokerID(id *int32) {
 	r.Status.DecommissioningNode = id
+}
+
+func (r *Cluster) GetDecomissionningPod() string {
+	return r.Status.DecommissioningPod
+}
+
+func (r *Cluster) SetDecommissioningPod(pod string) {
+	r.Status.DecommissioningPod = pod
 }

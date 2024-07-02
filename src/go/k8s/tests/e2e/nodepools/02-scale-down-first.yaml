@@ -7,7 +7,7 @@ spec:
   version: "dev"
   nodePools:
     - name: nodepool1
-      replicas: 3
+      replicas: 0
       resources:
         requests:
           cpu: 1

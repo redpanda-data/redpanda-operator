@@ -6,15 +6,6 @@ spec:
   image: "localhost/redpanda"
   version: "dev"
   nodePools:
-    - name: nodepool1
-      replicas: 3
-      resources:
-        requests:
-          cpu: 1
-          memory: 1Gi
-        limits:
-          cpu: 1
-          memory: 1Gi
     - name: nodepool2
       replicas: 3
       resources:

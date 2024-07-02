@@ -12,6 +12,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -414,8 +416,35 @@ func (a *attachedResources) statefulSet() error {
 			continue
 		}
 
+		replicas := sts.Spec.Replicas
+		if st, ok := a.cluster.Status.NodePools[sts.Name]; ok {
+			replicas = &st.CurrentReplicas
+		}
+
+		var redpandaContainer *corev1.Container
+		for _, container := range sts.Spec.Template.Spec.Containers {
+			if container.Name == "redpanda" {
+				redpandaContainer = &container
+				break
+			}
+		}
+		if redpandaContainer == nil {
+			return fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
+		}
+
+		var vcCapacity resource.Quantity
+		var vcStorageClassName string
+		for _, vct := range sts.Spec.VolumeClaimTemplates {
+			if vct.Name != "datadir" {
+				continue
+			}
+			vcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+			if vct.Spec.StorageClassName != nil {
+				vcStorageClassName = *vct.Spec.StorageClassName
+			}
+		}
+
 		// Add the sts again in the items map in order for the reconciliation process to take place
-		// Since the np spec was removed, the replicas number hardcoded to 0.
 		a.items[stsKey] = resources.NewStatefulSet(
 			a.reconciler.Client,
 			a.cluster,
@@ -432,9 +461,20 @@ func (a *attachedResources) statefulSet() error {
 			a.reconciler.DecommissionWaitInterval,
 			a.log,
 			a.reconciler.MetricsTimeout,
+
 			vectorizedv1alpha1.NodePoolSpec{
 				Name:     npName,
-				Replicas: sts.Spec.Replicas,
+				Replicas: replicas,
+				Removed:  true,
+				Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+					ResourceRequirements: redpandaContainer.Resources,
+				},
+				Tolerations:  sts.Spec.Template.Spec.Tolerations,
+				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
+				Storage: vectorizedv1alpha1.StorageSpec{
+					Capacity:         vcCapacity,
+					StorageClassName: vcStorageClassName,
+				},
 			})
 	}
 

@@ -316,7 +316,7 @@ func TestNilReplicasIsNotAllowed(t *testing.T) {
 	rpCluster := validRedpandaCluster()
 	_, err := rpCluster.ValidateCreate()
 	require.Nil(t, err, "Initial cluster is not valid")
-	rpCluster.Spec.Replicas = nil
+	rpCluster.Spec.NodePools = nil
 	_, err = rpCluster.ValidateCreate()
 	assert.Error(t, err)
 }
@@ -331,7 +331,6 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			Namespace: "",
 		},
 		Spec: v1alpha1.ClusterSpec{
-			Replicas: ptr.To(replicas2),
 			Configuration: v1alpha1.RedpandaConfig{
 				KafkaAPI:       []v1alpha1.KafkaAPI{{Port: 124, AuthenticationMethod: "none"}},
 				AdminAPI:       []v1alpha1.AdminAPI{{Port: 125}},
@@ -348,6 +347,12 @@ func TestValidateUpdate_NoError(t *testing.T) {
 				},
 				Redpanda: nil,
 			},
+			NodePools: []*v1alpha1.NodePoolSpec{
+				{
+					Name:     "test",
+					Replicas: ptr.To(replicas2),
+				},
+			},
 		},
 	}
 
@@ -357,7 +362,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 	})
 
 	t.Run("scale up", func(t *testing.T) {
-		scaleUp := *redpandaCluster.Spec.Replicas + 1
+		scaleUp := *redpandaCluster.Spec.NodePools[0].Replicas + 1
 		updatedScaleUp := redpandaCluster.DeepCopy()
 		updatedScaleUp.Spec.Replicas = &scaleUp
 		_, err := updatedScaleUp.ValidateUpdate(redpandaCluster)
@@ -723,17 +728,17 @@ func TestValidateUpdate_NoError(t *testing.T) {
 	for _, tc := range decreaseCases {
 		t.Run(fmt.Sprintf("CPU request change from %s to %s", tc.initial, tc.target), func(t *testing.T) {
 			oldCluster := redpandaCluster.DeepCopy()
-			oldCluster.Spec.Resources.Requests = corev1.ResourceList{
+			oldCluster.Spec.NodePools[0].Resources.Requests = corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("20Gi"),
 				corev1.ResourceCPU:    resource.MustParse(tc.initial),
 			}
-			oldCluster.Spec.Resources.Limits = corev1.ResourceList{
+			oldCluster.Spec.NodePools[0].Resources.Limits = corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("20Gi"),
 				corev1.ResourceCPU:    resource.MustParse(tc.initial),
 			}
 
 			newCluster := redpandaCluster.DeepCopy()
-			newCluster.Spec.Resources.Requests = corev1.ResourceList{
+			newCluster.Spec.NodePools[0].Resources.Requests = corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("20Gi"),
 				corev1.ResourceCPU:    resource.MustParse(tc.target),
 			}
@@ -1960,6 +1965,12 @@ func validRedpandaCluster() *v1alpha1.Cluster {
 			Namespace: "",
 		},
 		Spec: v1alpha1.ClusterSpec{
+			NodePools: []*v1alpha1.NodePoolSpec{
+				{
+					Name:     "test",
+					Replicas: ptr.To(int32(3)),
+				},
+			},
 			Replicas: ptr.To(int32(1)),
 			Configuration: v1alpha1.RedpandaConfig{
 				KafkaAPI:       []v1alpha1.KafkaAPI{{Port: 124, AuthenticationMethod: "none"}},

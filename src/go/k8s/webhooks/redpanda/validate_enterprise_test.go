@@ -177,7 +177,6 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
-			Replicas: &one,
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 					{
@@ -188,6 +187,12 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 					{
 						Port: 8080,
 					},
+				},
+			},
+			NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+				{
+					Name:     "test",
+					Replicas: &one,
 				},
 			},
 		},

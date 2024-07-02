@@ -1042,6 +1042,11 @@ spec:
                         If specified, Redpanda Pod node selectors. For reference please visit
                         https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
                       type: object
+                    removed:
+                      description: |-
+                        Removed is set internally to signal the reconciliation loop that this nodepool
+                        has been removed from spec
+                      type: boolean
                     replicas:
                       description: Replicas determine how big the node pool will be.
                       format: int32
@@ -1522,6 +1527,10 @@ spec:
                   from the cluster and provides its ordinal number
                 format: int32
                 type: integer
+              decommissioningPod:
+                description: Indicates the pod that hosts the node we are currently
+                  decommissioning
+                type: string
               nodePools:
                 additionalProperties:
                   properties:

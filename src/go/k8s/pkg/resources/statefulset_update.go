@@ -71,7 +71,8 @@ var (
 func (r *StatefulSetResource) runUpdate(
 	ctx context.Context, current, modified *appsv1.StatefulSet,
 ) error {
-	log := r.logger.WithName("runUpdate")
+	log := r.logger.WithName("runUpdate").WithValues("nodepool", r.nodePool.Name)
+
 	// Keep existing central config hash annotation during standard reconciliation
 	if ann, ok := current.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey]; ok {
 		if modified.Spec.Template.Annotations == nil {
@@ -424,6 +425,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 			return fmt.Errorf("cannot get broker id for pod: %w", err)
 		}
 		r.pandaCluster.SetDecommissionBrokerID(id)
+		r.pandaCluster.SetDecommissioningPod(pod.Name)
 
 		if err = r.handleDecommission(ctx, log); err != nil {
 			return err

@@ -63,7 +63,7 @@ func TestEnsure(t *testing.T) {
 		corev1.ResourceMemory: resource.MustParse("2222Gi"),
 	}
 	resourcesUpdatedCluster := cluster.DeepCopy()
-	resourcesUpdatedCluster.Spec.Resources.Requests = newResources
+	resourcesUpdatedCluster.Spec.NodePools[0].Resources.Requests = newResources
 	resourcesUpdatedSts := stsFromCluster(cluster).DeepCopy()
 	resourcesUpdatedSts.Spec.Template.Spec.InitContainers[0].Resources.Requests = newResources
 	resourcesUpdatedSts.Spec.Template.Spec.Containers[0].Resources.Requests = newResources
@@ -152,7 +152,7 @@ func TestEnsure(t *testing.T) {
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
-				*cluster.Spec.NodePools[0])
+				*tt.pandaCluster.Spec.NodePools[0])
 
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 
@@ -256,8 +256,8 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 						Name:  "redpanda-configurator",
 						Image: "vectorized/configurator:latest",
 						Resources: corev1.ResourceRequirements{
-							Limits:   pandaCluster.Spec.Resources.Limits,
-							Requests: pandaCluster.Spec.Resources.Requests,
+							Limits:   pandaCluster.Spec.NodePools[0].Resources.Limits,
+							Requests: pandaCluster.Spec.NodePools[0].Resources.Requests,
 						},
 					}},
 					Containers: []corev1.Container{
@@ -265,8 +265,8 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 							Name:  "redpanda",
 							Image: "image:latest",
 							Resources: corev1.ResourceRequirements{
-								Limits:   pandaCluster.Spec.Resources.Limits,
-								Requests: pandaCluster.Spec.Resources.Requests,
+								Limits:   pandaCluster.Spec.NodePools[0].Resources.Limits,
+								Requests: pandaCluster.Spec.NodePools[0].Resources.Requests,
 							},
 						},
 					},
@@ -282,10 +282,10 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 						Resources: corev1.VolumeResourceRequirements{
 							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: pandaCluster.Spec.Storage.Capacity,
+								corev1.ResourceStorage: pandaCluster.Spec.NodePools[0].Storage.Capacity,
 							},
 						},
-						StorageClassName: &pandaCluster.Spec.Storage.StorageClassName,
+						StorageClassName: &pandaCluster.Spec.NodePools[0].Storage.StorageClassName,
 						VolumeMode:       &fileSystemMode,
 					},
 					Status: corev1.PersistentVolumeClaimStatus{
@@ -363,7 +363,6 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 345}},
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
 			},
-
 			Sidecars: vectorizedv1alpha1.Sidecars{
 				RpkStatus: &vectorizedv1alpha1.Sidecar{
 					Enabled: true,
@@ -373,7 +372,6 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 					},
 				},
 			},
-
 			NodePools: []*vectorizedv1alpha1.NodePoolSpec{
 				{
 					Name:     "first",
@@ -381,6 +379,13 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 					Storage: vectorizedv1alpha1.StorageSpec{
 						Capacity:         resource.MustParse("10Gi"),
 						StorageClassName: "storage-class",
+					},
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+						ResourceRequirements: corev1.ResourceRequirements{
+							Limits:   res,
+							Requests: res,
+						},
+						Redpanda: nil,
 					},
 				},
 			},
@@ -781,8 +786,13 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "no kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas:                &replicas,
 					AdditionalConfiguration: map[string]string{},
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 				},
 			},
 			expectedContainerPorts: []corev1.ContainerPort{},
@@ -791,7 +801,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api": "[{'name':'pl-kafka','address':'0.0.0.0','port': {{30092 | add .Index}}}]",
 					},
@@ -807,7 +822,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka and panda proxy listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api":        "[{'name':'pl-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"pandaproxy.advertised_pandaproxy_api": "[{'name':'pl-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
@@ -827,7 +847,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka and panda proxy listeners with longer name",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api":        "[{'name':'private-link-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"pandaproxy.advertised_pandaproxy_api": "[{'name':'private-link-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
@@ -880,8 +905,13 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "no additional listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas:                &replicas,
 					AdditionalConfiguration: map[string]string{},
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 				},
 			},
 			expectedEnvValue: "",
@@ -890,7 +920,12 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "additional kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.kafka_api": "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 					},
@@ -902,7 +937,12 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "additional listeners have all",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []*vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.kafka_api":                   "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"redpanda.advertised_kafka_api":        "[{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",

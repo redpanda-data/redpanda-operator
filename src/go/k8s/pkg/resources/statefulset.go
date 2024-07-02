@@ -167,8 +167,6 @@ func NewStatefulSet(
 // Ensure will manage kubernetes v1.StatefulSet for redpanda.vectorized.io custom resource
 func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 	log := r.logger.WithName("StatefulSetResource.Ensure").WithValues("nodepool", r.nodePool.Name)
-	var sts appsv1.StatefulSet
-
 	if r.pandaCluster.ExternalListener() != nil {
 		err := r.Get(ctx, r.nodePortName, &r.nodePortSvc)
 		if err != nil {
@@ -196,6 +194,7 @@ func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 		return nil
 	}
 
+	var sts appsv1.StatefulSet
 	err = r.Get(ctx, r.Key(), &sts)
 	if err != nil {
 		return fmt.Errorf("error while fetching StatefulSet resource: %w", err)
@@ -341,12 +340,15 @@ func (r *StatefulSetResource) obj(
 	}
 
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
-	replicas := r.pandaCluster.GetCurrentReplicas()
-
-	// KO: TODO: we should only launch 1 pod first and then the rest *across* the node pools!
-	if replicas > 1 {
-		replicas = *r.nodePool.Replicas
-	} else if replicas == 1 && r.pandaCluster.Spec.NodePools[0].Name != r.nodePool.Name {
+	clusterReplicas := r.pandaCluster.GetCurrentReplicas()
+	var replicas int32
+	if clusterReplicas > 1 {
+		if nps, ok := r.pandaCluster.Status.NodePools[fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)]; ok {
+			replicas = nps.CurrentReplicas
+		} else {
+			replicas = *r.nodePool.Replicas
+		}
+	} else if clusterReplicas == 1 && r.pandaCluster.Spec.NodePools[0].Name != r.nodePool.Name {
 		replicas = 0
 	}
 	tolerations := r.nodePool.Tolerations
@@ -573,8 +575,8 @@ func (r *StatefulSetResource) obj(
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits:   r.pandaCluster.Spec.Resources.Limits,
-								Requests: r.pandaCluster.Spec.Resources.Requests,
+								Limits:   resLimits,
+								Requests: resRequests,
 							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
@@ -960,7 +962,7 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		}
 	}
 
-	for i := 0; i < int(*r.pandaCluster.Spec.Replicas); i++ {
+	for i := 0; i < int(*r.nodePool.Replicas); i++ {
 		for _, n := range additionalNode0Config.Redpanda.AdvertisedKafkaAPI {
 			ports = append(ports, corev1.ContainerPort{
 				Name:          getAdditionalListenerPortName(n.Name, i),

@@ -194,7 +194,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("creating statefulset: %w", err)
 	}
 
-	if vectorizedCluster.Status.CurrentReplicas >= 1 {
+	if vectorizedCluster.GetCurrentReplicas() >= 1 {
 		if err = r.setPodNodeIDAnnotation(ctx, &vectorizedCluster, log, ar); err != nil {
 			log.Error(err, "setting pod node_id annotation")
 		}
@@ -226,12 +226,6 @@ func (r *ClusterReconciler) Reconcile(
 	stSets, err := ar.getStatefulSet()
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-
-	npStatus := make(map[string]string)
-	for _, sts := range stSets {
-		rep := strconv.FormatInt(int64(sts.GetReplicas()), 10)
-		npStatus[sts.Key().Name] = rep
 	}
 
 	err = r.reportStatus(
@@ -644,17 +638,14 @@ func (r *ClusterReconciler) reportStatus(
 	nodeList.Internal = observedNodesInternal
 	nodeList.SchemaRegistry.Internal = fmt.Sprintf("%s:%d", clusterFQDN, schemaRegistryPort)
 
-	//nolint:nestif // the code won't get clearer if it's splitted out in my opinion
-	version, versionErr := stSets[0].CurrentVersion(ctx)
-	if versionErr != nil {
-		// this is non-fatal error, it will return error even if e.g.
-		// the rollout is not finished because then the currentversion
-		// of the cluster cannot be determined
-		r.Log.Info(fmt.Sprintf("cannot get CurrentVersion of statefulset, %s", versionErr))
+	if len(stSets) == 0 {
+		r.Log.Info("no stateful sets found")
 	}
 
-	nodePoolStatus := make(map[string]vectorizedv1alpha1.NodePoolStatus)
+	var version string
+	var versionErr error
 
+	nodePoolStatus := make(map[string]vectorizedv1alpha1.NodePoolStatus)
 	readyReplicas := int32(0)
 	replicas := int32(0)
 	for _, sts := range stSets {
@@ -665,22 +656,17 @@ func (r *ClusterReconciler) reportStatus(
 		readyReplicas += sts.LastObservedState.Status.ReadyReplicas
 		replicas += sts.LastObservedState.Status.Replicas
 
-		pods, err := sts.GetNodePoolPods(ctx)
-		if err != nil {
-			return fmt.Errorf("while retrieving STS %s list of pods: %w", sts.LastObservedState.Name, err)
-		}
-		podNames := make([]string, 0)
-		for _, pod := range pods.Items {
-			podNames = append(podNames, pod.Name)
-		}
-
 		nodePoolStatus[sts.Key().Name] = vectorizedv1alpha1.NodePoolStatus{
-			CurrentReplicas: sts.LastObservedState.Status.CurrentReplicas,
-			Replicas:        sts.LastObservedState.Status.Replicas,
-			Pods:            podNames,
+			// We do not update current replicas here.
+			CurrentReplicas: redpandaCluster.Status.NodePools[sts.Key().Name].CurrentReplicas,
+			Replicas:        sts.GetReplicas(),
 		}
+		version, versionErr = sts.CurrentVersion(ctx)
 	}
 
+	if versionErr != nil || version == "" {
+		r.Log.Info(fmt.Sprintf("cannot get CurrentVersion of statefulset, %s", versionErr))
+	}
 	if !statusShouldBeUpdated(&redpandaCluster.Status, nodeList, replicas, readyReplicas, version, versionErr, nodePoolStatus) {
 		return nil
 	}
@@ -1084,6 +1070,7 @@ func (r *ClusterReconciler) doDecommissionGhostBrokers(c context.Context, vClust
 		if _, ok := actualBrokerIDs[broker.NodeID]; ok {
 			continue
 		}
+		log.Info("decommissioning ghost broker", "nodeid", broker.NodeID)
 		if err := adminClient.DecommissionBroker(ctx, broker.NodeID); err != nil {
 			return fmt.Errorf("failed to decommission ghost broker: %w", err)
 		}

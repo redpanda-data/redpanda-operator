@@ -34,6 +34,10 @@ func GetPodOrdinal(podName, clusterName string) (int32, error) {
 	}
 
 	toks := strings.Split(podName, "-")
+	if len(toks) < 2 {
+		return -1, fmt.Errorf("malformed pod name %s", podName)
+	}
+
 	ordinalStr := toks[len(toks)-1]
 	ordinal, err := strconv.ParseInt(ordinalStr, 10, 0)
 	if err != nil {
