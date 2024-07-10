@@ -51,6 +51,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	clusterredpandacomcontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/cluster.redpanda.com"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
@@ -149,14 +150,9 @@ func main() {
 		additionalControllers       []string
 		operatorMode                bool
 		enableHelmControllers       bool
-
-		// allowPVCDeletion controls the PVC deletion feature in the Cluster custom resource.
-		// PVCs will be deleted when its Pod has been deleted and the Node that Pod is assigned to
-		// does not exist, or has the NoExecute taint. This is intended to support the rancher.io/local-path
-		// storage driver.
-		allowPVCDeletion bool
-		debug            bool
-		ghostbuster      bool
+		debug                       bool
+		ghostbuster                 bool
+		unbindPVCsAfter             time.Duration
 	)
 
 	flag.StringVar(&eventsAddr, "events-addr", "", "The address of the events receiver.")
@@ -174,7 +170,7 @@ func main() {
 	flag.DurationVar(&decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
 	flag.DurationVar(&metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
 	flag.BoolVar(&vectorizedv1alpha1.AllowDownscalingInWebhook, "allow-downscaling", true, "Allow to reduce the number of replicas in existing clusters")
-	flag.BoolVar(&allowPVCDeletion, "allow-pvc-deletion", false, "Allow the operator to delete PVCs for Pods assigned to failed or missing Nodes (alpha feature)")
+	flag.Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
 	flag.BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
 	flag.StringVar(&restrictToRedpandaVersion, "restrict-redpanda-version", "", "Restrict management of clusters to those with this version")
 	flag.StringVar(&vectorizedv1alpha1.SuperUsersPrefix, "superusers-prefix", "", "Prefix to add in username of superusers managed by operator. This will only affect new clusters, enabling this will not add prefix to existing clusters (alpha feature)")
@@ -185,6 +181,7 @@ func main() {
 	flag.StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	flag.BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	flag.BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
+	flag.DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 
 	logOptions.BindFlags(flag.CommandLine)
 	clientOptions.BindFlags(flag.CommandLine)
@@ -270,7 +267,7 @@ func main() {
 			MetricsTimeout:            metricsTimeout,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 			GhostDecommissioning:      ghostbuster,
-		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).WithAllowPVCDeletion(allowPVCDeletion).SetupWithManager(mgr); err != nil {
+		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
 			os.Exit(1)
 		}
@@ -318,6 +315,20 @@ func main() {
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			os.Exit(1)
+		}
+
+		if unbindPVCsAfter <= 0 {
+			setupLog.Info("PVCUnbinder controller not active", "flag", unbindPVCsAfter)
+		} else {
+			setupLog.Info("starting PVCUnbinder controller", "flag", unbindPVCsAfter)
+
+			if err := (&pvcunbinder.Reconciler{
+				Client:  mgr.GetClient(),
+				Timeout: unbindPVCsAfter,
+			}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+				os.Exit(1)
+			}
 		}
 
 		// Setup webhooks

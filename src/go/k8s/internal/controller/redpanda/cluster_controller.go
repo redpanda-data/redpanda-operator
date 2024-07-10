@@ -74,7 +74,6 @@ type ClusterReconciler struct {
 	DecommissionWaitInterval  time.Duration
 	MetricsTimeout            time.Duration
 	RestrictToRedpandaVersion string
-	allowPVCDeletion          bool
 	GhostDecommissioning      bool
 }
 
@@ -596,13 +595,6 @@ func (r *ClusterReconciler) WithClusterDomain(
 	clusterDomain string,
 ) *ClusterReconciler {
 	r.clusterDomain = clusterDomain
-	return r
-}
-
-func (r *ClusterReconciler) WithAllowPVCDeletion(
-	allowPVCDeletion bool,
-) *ClusterReconciler {
-	r.allowPVCDeletion = allowPVCDeletion
 	return r
 }
 

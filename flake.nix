@@ -41,13 +41,14 @@
             ];
 
             packages = [
-              pkgs.diffutils # Provided `diff`, used by golangci-lint.
+              pkgs.diffutils # Provides `diff`, used by golangci-lint.
               pkgs.docker-client
               pkgs.gawk # GNU awk, used by some build scripts.
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
               pkgs.go_1_22
               pkgs.golangci-lint
+              pkgs.k3d # Kind alternative that allows adding/removing Nodes.
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
               # TODO(chrisseto): Migrate taskfile to using dependencies from

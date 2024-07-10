@@ -40,3 +40,8 @@ includes:
   k8s: taskfiles/k8s.yml
   dev: taskfiles/dev.yml
   goreleaser: taskfiles/goreleaser.yml
+
+tasks:
+  lint:
+    cmds:
+      - task: k8s:run-golangci-lint
