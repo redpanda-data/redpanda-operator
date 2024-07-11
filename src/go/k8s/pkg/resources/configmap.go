@@ -17,10 +17,10 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -813,29 +813,31 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 	var prefix string
 
 	// Check if there's an existing nodepool
-	var stsList appsv1.StatefulSetList
-	err := r.Client.List(context.TODO(), &stsList)
-	if err != nil {
-		return err
-	}
-	var seedSts *appsv1.StatefulSet
-	for _, sts := range stsList.Items {
-
-		if sts.Status.ReadyReplicas == *sts.Spec.Replicas && sts.Status.ReadyReplicas > int32(0) {
-			seedSts = &sts
+	for k, np := range r.pandaCluster.Status.NodePools {
+		if np.CurrentReplicas > 0 {
+			replicas = np.CurrentReplicas
+			prefix = k
+			if strings.HasSuffix(prefix, "redpanda__imported") {
+				prefix = r.pandaCluster.Name
+			}
+			// No need to send all the nodes in the cluster
 			break
 		}
 	}
-	if seedSts != nil {
-		replicas = *seedSts.Spec.Replicas
-		prefix = seedSts.Name
-	} else {
-		// There is no STS, fall back to node pool definitions
-		for _, np := range r.pandaCluster.Spec.NodePools {
-			if np != nil && *np.Replicas > int32(0) {
-				replicas = *np.Replicas
-				prefix = fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
-				break
+
+	// If we are creating the cluster status is not populated yet. Fallback to the schema
+	if replicas == 0 {
+		if r.pandaCluster.Spec.Replicas != nil && *r.pandaCluster.Spec.Replicas > 0 {
+			replicas += *r.pandaCluster.Spec.Replicas
+			prefix = r.pandaCluster.Name
+		} else {
+			for _, np := range r.pandaCluster.GetNodePools() {
+				if np != nil && *np.Replicas > int32(0) {
+					replicas = *np.Replicas
+					prefix = fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
+					// No need to send all the nodes in the cluster
+					break
+				}
 			}
 		}
 	}

@@ -187,6 +187,30 @@ type ClusterSpec struct {
 	NodePools []*NodePoolSpec `json:"nodePools,omitempty"`
 }
 
+func (c *Cluster) GetNodePools() []*NodePoolSpec {
+	out := make([]*NodePoolSpec, 0)
+	if c.Spec.Replicas != nil && *c.Spec.Replicas > 0 {
+		np := &NodePoolSpec{
+			Name:         "redpanda__imported",
+			Replicas:     c.Spec.Replicas,
+			Tolerations:  c.Spec.Tolerations,
+			NodeSelector: c.Spec.NodeSelector,
+			Storage:      c.Spec.Storage,
+			Resources:    c.Spec.Resources,
+		}
+		out = append(out, np)
+	}
+
+	for _, np := range c.Spec.NodePools {
+		if np == nil {
+			continue
+		}
+		out = append(out, np)
+	}
+
+	return out
+}
+
 type NodePoolSpec struct {
 	Name string `json:"name"`
 	// Replicas determine how big the node pool will be.
@@ -1210,19 +1234,18 @@ func (r *Cluster) GetCurrentReplicas() int32 {
 }
 
 func (r *Cluster) GetReplicas() int32 {
-	if r == nil || (r.Spec.Replicas == nil && (r.Spec.NodePools == nil || len(r.Spec.NodePools) == 0)) {
+	nps := r.GetNodePools()
+	if r == nil || len(nps) == 0 {
 		return 0
 	}
 
 	replicas := int32(0)
 
-	if r.Spec.NodePools != nil && len(r.Spec.NodePools) > 0 {
-		for _, np := range r.Spec.NodePools {
-			if np == nil {
-				continue
-			}
-			replicas += *np.Replicas
+	for _, np := range nps {
+		if np == nil {
+			continue
 		}
+		replicas += *np.Replicas
 	}
 
 	return replicas
@@ -1238,10 +1261,11 @@ func (r *Cluster) ComputeInitialCurrentReplicasField() int32 {
 	if r == nil {
 		return 0
 	}
+	nps := r.GetNodePools()
 	sum := int32(0)
 	if r.Status.Replicas > 1 || r.Status.ReadyReplicas > 1 || len(r.Status.Nodes.Internal) > 1 || featuregates.EmptySeedStartCluster(r.Spec.Version) {
 		// A cluster seems to be already running, we start from the existing amount of replicas
-		for _, np := range r.Spec.NodePools {
+		for _, np := range nps {
 			if np == nil {
 				continue
 			}

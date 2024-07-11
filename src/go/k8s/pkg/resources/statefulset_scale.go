@@ -76,7 +76,7 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 		return err
 	}
 
-	if r.pandaCluster.GetCurrentReplicas() == 0 && r.pandaCluster.Spec.NodePools[0].Name == r.nodePool.Name && !r.nodePool.Removed {
+	if r.pandaCluster.GetCurrentReplicas() == 0 && r.pandaCluster.GetNodePools()[0].Name == r.nodePool.Name && !r.nodePool.Removed {
 		// Initialize the currentReplicas field, so that it can be later controlled
 		nps := r.pandaCluster.Status.NodePools[r.LastObservedState.Name]
 		nps.CurrentReplicas = r.pandaCluster.ComputeInitialCurrentReplicasField()
@@ -361,6 +361,9 @@ func (r *StatefulSetResource) isClusterFormed(
 ) (bool, error) {
 
 	podName := fmt.Sprintf("%s-%s-0", r.pandaCluster.Name, r.nodePool.Name)
+	if strings.EqualFold(r.nodePool.Name, "redpanda__imported") {
+		podName = fmt.Sprintf("%s-0", r.pandaCluster.Name)
+	}
 	rootNodeAdminAPI, err := r.getAdminAPIClient(ctx, podName)
 	if err != nil {
 		return false, err
@@ -472,7 +475,11 @@ func (r *StatefulSetResource) setCurrentReplicas(
 ) error {
 	log := l.WithName("setCurrentReplicas")
 	log.Info("setting currentReplicas", "npReplicas", npReplicas, "np", npName)
-	npName = fmt.Sprintf("%s-%s", r.pandaCluster.Name, npName)
+	if strings.EqualFold(npName, "redpanda__imported") {
+		npName = r.pandaCluster.Name
+	} else {
+		npName = fmt.Sprintf("%s-%s", r.pandaCluster.Name, npName)
+	}
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		cluster := &vectorizedv1alpha1.Cluster{}

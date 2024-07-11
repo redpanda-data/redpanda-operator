@@ -361,11 +361,7 @@ func (a *attachedResources) statefulSet() error {
 		return err
 	}
 
-	for _, np := range a.cluster.Spec.NodePools {
-		if np == nil {
-			continue
-		}
-
+	for _, np := range a.cluster.GetNodePools() {
 		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
 		if _, ok := a.items[stsKey]; ok {
 			continue
@@ -393,7 +389,6 @@ func (a *attachedResources) statefulSet() error {
 	// If a node pool spec has been removed from the spec, we need to recreate it in order for the decomm process to kick in
 	var stsList appsv1.StatefulSetList
 	err = a.reconciler.Client.List(context.TODO(), &stsList)
-
 	if err != nil {
 		return err
 	}
@@ -402,8 +397,15 @@ func (a *attachedResources) statefulSet() error {
 			continue
 		}
 
-		npName := sts.Name[len(a.cluster.Name)+1:]
-		stsKey := fmt.Sprintf("%s-%s", statefulSet, npName)
+		var npName string
+		var stsKey string
+		if strings.EqualFold(a.cluster.Name, sts.Name) {
+			npName = "redpanda__imported"
+		} else {
+			npName = sts.Name[len(a.cluster.Name)+1:]
+		}
+		stsKey = fmt.Sprintf("%s-%s", statefulSet, npName)
+
 		if _, ok := a.items[stsKey]; ok {
 			continue
 		}

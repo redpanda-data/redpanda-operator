@@ -348,8 +348,8 @@ func (r *StatefulSetResource) obj(
 		} else {
 			replicas = *r.nodePool.Replicas
 		}
-	} else if clusterReplicas == 1 && r.pandaCluster.Spec.NodePools[0].Name != r.nodePool.Name {
-		replicas = 0
+	} else if clusterReplicas == 1 && r.pandaCluster.GetNodePools()[0].Name == r.nodePool.Name {
+		replicas = 1
 	}
 	tolerations := r.nodePool.Tolerations
 	nodeSelector := r.nodePool.NodeSelector
@@ -847,7 +847,13 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // Key returns namespace/name object that is used to identify object.
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
-	name := fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)
+	var name string
+	if strings.EqualFold(r.nodePool.Name, "redpanda__imported") {
+		name = r.pandaCluster.Name
+	} else {
+		name = fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)
+	}
+
 	return types.NamespacedName{Name: name, Namespace: r.pandaCluster.Namespace}
 }
 

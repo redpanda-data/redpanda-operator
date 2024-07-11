@@ -22,7 +22,6 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 // NoInternalAdminAPI signal absence of the internal admin API endpoint
@@ -106,23 +105,20 @@ func NewNodePoolInternalAdminAPI(
 	adminInternalPort := adminInternal.Port
 
 	urls := make([]string, 0)
-	if len(pods) == 0 {
-
-		var stsList appsv1.StatefulSetList
-		err := k8sClient.List(ctx, &stsList)
-		if err != nil {
-			return nil, fmt.Errorf("while retrieving list of STS resources: %w", err)
-		}
-
-		for _, sts := range stsList.Items {
-			if !strings.HasPrefix(sts.Name, redpandaCluster.Name) {
+	if len(pods) == 0 && redpandaCluster.GetCurrentReplicas() > 0 {
+		for _, np := range redpandaCluster.GetNodePools() {
+			if np == nil || (np.Replicas != nil && *np.Replicas == int32(0)) || np.Removed {
 				continue
 			}
-
-			for on := 0; on < int(*sts.Spec.Replicas); on++ {
-				podName := fmt.Sprintf("%s-%d.%s:%d", sts.Name, on, fqdn, adminInternalPort)
+			for x := 0; x < int(*np.Replicas); x++ {
+				prefix := redpandaCluster.Name
+				if !strings.EqualFold(np.Name, "redpanda__imported") {
+					prefix = fmt.Sprintf("%s-%s", redpandaCluster.Name, np.Name)
+				}
+				podName := fmt.Sprintf("%s-%d.%s:%d", prefix, x, fqdn, adminInternalPort)
 				urls = append(urls, podName)
 			}
+
 		}
 	} else {
 		for _, pod := range pods {
