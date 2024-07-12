@@ -355,7 +355,10 @@ func (r *StatefulSetResource) obj(
 	nodeSelector := r.nodePool.NodeSelector
 	resLimits := r.nodePool.Resources.Limits
 	resRequests := r.nodePool.Resources.Requests
-
+	rpResources := corev1.ResourceRequirements{
+		Limits:   resLimits,
+		Requests: resRequests,
+	}
 	npSTSSelector := clusterLabels.AsAPISelector()
 	npSTSSelector.MatchLabels["cluster.redpanda.com/nodepool"] = r.nodePool.Name
 	ss := &appsv1.StatefulSet{
@@ -494,10 +497,7 @@ func (r *StatefulSetResource) obj(
 								RunAsUser:  ptr.To(int64(userID)),
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits:   resLimits,
-								Requests: resRequests,
-							},
+							Resources: rpResources,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "config-dir",
@@ -522,7 +522,7 @@ func (r *StatefulSetResource) obj(
 								r.portsConfiguration(),
 							}, prepareAdditionalArguments(
 								r.pandaCluster.Spec.Configuration.DeveloperMode,
-								r.pandaCluster.Spec.Resources,
+								r.nodePool.Resources,
 								r.pandaCluster.Spec.Configuration.AdditionalCommandlineArguments)...),
 							Env: []corev1.EnvVar{
 								{
@@ -574,10 +574,7 @@ func (r *StatefulSetResource) obj(
 								RunAsUser:  ptr.To(int64(userID)),
 								RunAsGroup: ptr.To(int64(groupID)),
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits:   resLimits,
-								Requests: resRequests,
-							},
+							Resources: rpResources,
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "config-dir",
