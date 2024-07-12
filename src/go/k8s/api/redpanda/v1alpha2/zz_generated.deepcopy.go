@@ -200,6 +200,11 @@ func (in *Certificate) DeepCopyInto(out *Certificate) {
 		*out = new(SecretRef)
 		**out = **in
 	}
+	if in.ClientSecretRef != nil {
+		in, out := &in.ClientSecretRef, &out.ClientSecretRef
+		*out = new(SecretRef)
+		**out = **in
+	}
 	if in.Duration != nil {
 		in, out := &in.Duration, &out.Duration
 		*out = new(metav1.Duration)
