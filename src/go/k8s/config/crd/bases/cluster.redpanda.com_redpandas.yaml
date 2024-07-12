@@ -4264,6 +4264,16 @@ spec:
                                 `true` only for certificates that are not authenticated
                                 using public certificate authorities (CAs).
                               type: boolean
+                            clientSecretRef:
+                              description: Specify the name of an existing Secret
+                                resource that contains your client TLS certificate.
+                              properties:
+                                name:
+                                  description: Specifies the name of the Secret resource.
+                                  type: string
+                              required:
+                              - name
+                              type: object
                             duration:
                               description: Specifies the validity duration of certificates
                                 generated with `issuerRef`.
@@ -8864,6 +8874,16 @@ spec:
                                 `true` only for certificates that are not authenticated
                                 using public certificate authorities (CAs).
                               type: boolean
+                            clientSecretRef:
+                              description: Specify the name of an existing Secret
+                                resource that contains your client TLS certificate.
+                              properties:
+                                name:
+                                  description: Specifies the name of the Secret resource.
+                                  type: string
+                              required:
+                              - name
+                              type: object
                             duration:
                               description: Specifies the validity duration of certificates
                                 generated with `issuerRef`.

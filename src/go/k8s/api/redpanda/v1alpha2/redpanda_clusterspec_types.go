@@ -334,6 +334,8 @@ type Certificate struct {
 	IssuerRef *IssuerRef `json:"issuerRef,omitempty"`
 	// Specify the name of an existing Secret resource that contains your TLS certificate.
 	SecretRef *SecretRef `json:"secretRef,omitempty"`
+	// Specify the name of an existing Secret resource that contains your client TLS certificate.
+	ClientSecretRef *SecretRef `json:"clientSecretRef,omitempty"`
 	// Specifies the validity duration of certificates generated with `issuerRef`.
 	Duration *metav1.Duration `json:"duration,omitempty"`
 	// Specifies whether to include the `ca.crt` file in the trust stores of all listeners. Set to `true` only for certificates that are not authenticated using public certificate authorities (CAs).
