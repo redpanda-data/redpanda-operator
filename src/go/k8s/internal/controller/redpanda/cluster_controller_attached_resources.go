@@ -11,9 +11,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/certmanager"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -361,7 +358,11 @@ func (a *attachedResources) statefulSet() error {
 		return err
 	}
 
-	for _, np := range a.cluster.GetNodePools() {
+	nps, err := a.cluster.GetNodePoolsWithRemoved(context.TODO(), a.reconciler.Client)
+	if err != nil {
+		return fmt.Errorf("while getting node pools: %w", err)
+	}
+	for _, np := range nps {
 		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
 		if _, ok := a.items[stsKey]; ok {
 			continue
@@ -384,100 +385,6 @@ func (a *attachedResources) statefulSet() error {
 			a.log,
 			a.reconciler.MetricsTimeout,
 			*np)
-	}
-
-	// If a node pool spec has been removed from the spec, we need to recreate it in order for the decomm process to kick in
-	var stsList appsv1.StatefulSetList
-	err = a.reconciler.Client.List(context.TODO(), &stsList)
-	if err != nil {
-		return err
-	}
-	for _, sts := range stsList.Items {
-		if !strings.HasPrefix(sts.Name, a.cluster.Name) {
-			continue
-		}
-
-		var npName string
-		var stsKey string
-		if strings.EqualFold(a.cluster.Name, sts.Name) {
-			npName = "redpanda__imported"
-		} else {
-			npName = sts.Name[len(a.cluster.Name)+1:]
-		}
-		stsKey = fmt.Sprintf("%s-%s", statefulSet, npName)
-
-		if _, ok := a.items[stsKey]; ok {
-			continue
-		}
-
-		if *sts.Spec.Replicas == 0 {
-			err = a.reconciler.Client.Delete(context.TODO(), &sts)
-			if err != nil {
-				return fmt.Errorf("while deleting empty STS: %w", err)
-			}
-			continue
-		}
-
-		replicas := sts.Spec.Replicas
-		if st, ok := a.cluster.Status.NodePools[sts.Name]; ok {
-			replicas = &st.CurrentReplicas
-		}
-
-		var redpandaContainer *corev1.Container
-		for _, container := range sts.Spec.Template.Spec.Containers {
-			if container.Name == "redpanda" {
-				redpandaContainer = &container
-				break
-			}
-		}
-		if redpandaContainer == nil {
-			return fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
-		}
-
-		var vcCapacity resource.Quantity
-		var vcStorageClassName string
-		for _, vct := range sts.Spec.VolumeClaimTemplates {
-			if vct.Name != "datadir" {
-				continue
-			}
-			vcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
-			if vct.Spec.StorageClassName != nil {
-				vcStorageClassName = *vct.Spec.StorageClassName
-			}
-		}
-
-		// Add the sts again in the items map in order for the reconciliation process to take place
-		a.items[stsKey] = resources.NewStatefulSet(
-			a.reconciler.Client,
-			a.cluster,
-			a.reconciler.Scheme,
-			a.getHeadlessServiceFQDN(),
-			a.getHeadlessServiceName(),
-			a.getNodeportServiceKey(),
-			pki.StatefulSetVolumeProvider(),
-			pki.AdminAPIConfigProvider(),
-			a.getServiceAccountName(),
-			a.reconciler.configuratorSettings,
-			cm.GetNodeConfigHash,
-			a.reconciler.AdminAPIClientFactory,
-			a.reconciler.DecommissionWaitInterval,
-			a.log,
-			a.reconciler.MetricsTimeout,
-
-			vectorizedv1alpha1.NodePoolSpec{
-				Name:     npName,
-				Replicas: replicas,
-				Removed:  true,
-				Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
-					ResourceRequirements: redpandaContainer.Resources,
-				},
-				Tolerations:  sts.Spec.Template.Spec.Tolerations,
-				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
-				Storage: vectorizedv1alpha1.StorageSpec{
-					Capacity:         vcCapacity,
-					StorageClassName: vcStorageClassName,
-				},
-			})
 	}
 
 	return nil

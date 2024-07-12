@@ -10,16 +10,20 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
@@ -209,6 +213,75 @@ func (c *Cluster) GetNodePools() []*NodePoolSpec {
 	}
 
 	return out
+}
+
+func (c *Cluster) GetNodePoolsWithRemoved(ctx context.Context, k8sClient client.Reader) ([]*NodePoolSpec, error) {
+	nps := c.GetNodePools()
+
+	// If a node pool spec has been removed from the spec, we need to recreate it in order for the decomm process to kick in
+	var stsList appsv1.StatefulSetList
+	err := k8sClient.List(context.TODO(), &stsList)
+	if err != nil {
+		return nil, err
+	}
+	for _, sts := range stsList.Items {
+		if !strings.HasPrefix(sts.Name, c.Name) {
+			continue
+		}
+
+		var npName string
+		if strings.EqualFold(c.Name, sts.Name) {
+			npName = "redpanda__imported"
+		} else {
+			npName = sts.Name[len(c.Name)+1:]
+		}
+
+		replicas := sts.Spec.Replicas
+		if st, ok := c.Status.NodePools[sts.Name]; ok {
+			replicas = &st.CurrentReplicas
+		}
+
+		var redpandaContainer *corev1.Container
+		for _, container := range sts.Spec.Template.Spec.Containers {
+			if container.Name == "redpanda" {
+				redpandaContainer = &container
+				break
+			}
+		}
+		if redpandaContainer == nil {
+			return nil, fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
+		}
+
+		var vcCapacity resource.Quantity
+		var vcStorageClassName string
+		for _, vct := range sts.Spec.VolumeClaimTemplates {
+			if vct.Name != "datadir" {
+				continue
+			}
+			vcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+			if vct.Spec.StorageClassName != nil {
+				vcStorageClassName = *vct.Spec.StorageClassName
+			}
+		}
+
+		np := NodePoolSpec{
+			Name:     npName,
+			Replicas: replicas,
+			Removed:  true,
+			Resources: RedpandaResourceRequirements{
+				ResourceRequirements: redpandaContainer.Resources,
+			},
+			Tolerations:  sts.Spec.Template.Spec.Tolerations,
+			NodeSelector: sts.Spec.Template.Spec.NodeSelector,
+			Storage: StorageSpec{
+				Capacity:         vcCapacity,
+				StorageClassName: vcStorageClassName,
+			},
+		}
+
+		nps = append(nps, &np)
+	}
+	return nps, nil
 }
 
 type NodePoolSpec struct {

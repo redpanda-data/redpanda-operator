@@ -106,8 +106,12 @@ func NewNodePoolInternalAdminAPI(
 
 	urls := make([]string, 0)
 	if len(pods) == 0 && redpandaCluster.GetCurrentReplicas() > 0 {
-		for _, np := range redpandaCluster.GetNodePools() {
-			if np == nil || (np.Replicas != nil && *np.Replicas == int32(0)) || np.Removed {
+		nps, err := redpandaCluster.GetNodePoolsWithRemoved(ctx, k8sClient)
+		if err != nil {
+			return nil, fmt.Errorf("while getting node pools: %w", err)
+		}
+		for _, np := range nps {
+			if np == nil || (np.Replicas != nil && *np.Replicas == int32(0)) {
 				continue
 			}
 			for x := 0; x < int(*np.Replicas); x++ {
