@@ -84,6 +84,9 @@ type EnterpriseLoginGoogleDirectory struct {
 // self-hosted installation, you can ignore this
 type CloudConfig struct {
 	PrometheusEndpoint *PrometheusEndpointConfig `json:"prometheusEndpoint"`
+
+	// RedpandaConnect is the configuration for Redpanda Connect in Redpanda Cloud.
+	RedpandaConnect CloudRedpandaConnect `json:"redpandaConnect"`
 }
 
 // PrometheusEndpointConfig configures the Prometheus endpoint that shall be
@@ -132,6 +135,15 @@ type PrometheusScraperJobConfig struct {
 	// KeepLabels is a list of label keys that are added by Prometheus when scraping
 	// the target and should remain for all metrics as exposed to the Prometheus endpoint.
 	KeepLabels []string `json:"keepLabels"`
+}
+
+// CloudRedpandaConnect represents configuration for Cloud Redpanda Connect.
+type CloudRedpandaConnect struct {
+	Enabled bool `json:"enabled"`
+
+	// Address to Redpanda Connect Cloud API service endpoint
+	// (e.g. "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080")
+	Address string `json:"address"`
 }
 
 // SecretStore contains the configuration for the secret manager that shall

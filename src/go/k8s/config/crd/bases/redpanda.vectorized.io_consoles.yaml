@@ -139,8 +139,24 @@ spec:
                     - enabled
                     - prometheus
                     type: object
+                  redpandaConnect:
+                    description: RedpandaConnect is the configuration for Redpanda
+                      Connect in Redpanda Cloud.
+                    properties:
+                      address:
+                        description: |-
+                          Address to Redpanda Connect Cloud API service endpoint
+                          (e.g. "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080")
+                        type: string
+                      enabled:
+                        type: boolean
+                    required:
+                    - address
+                    - enabled
+                    type: object
                 required:
                 - prometheusEndpoint
+                - redpandaConnect
                 type: object
               clusterRef:
                 description: The referenced Redpanda Cluster
