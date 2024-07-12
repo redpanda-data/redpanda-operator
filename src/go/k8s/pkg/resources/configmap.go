@@ -822,7 +822,7 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 
 	for _, npName := range nps {
 		np := r.pandaCluster.Status.NodePools[npName]
-		if np.CurrentReplicas > 0 {
+		if np.CurrentReplicas > 0 && np.CurrentReplicas == np.Replicas && np.CurrentReplicas == np.ReadyReplicas {
 			replicas = np.CurrentReplicas
 			prefix = npName
 			if strings.HasSuffix(prefix, "redpanda__imported") {
@@ -833,7 +833,7 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 		}
 	}
 
-	// If we are creating the cluster status is not populated yet. Fallback to the schema
+	// If we are creating the cluster, status is not populated yet. Fallback to the spec
 	if replicas == 0 {
 		if r.pandaCluster.Spec.Replicas != nil && *r.pandaCluster.Spec.Replicas > 0 {
 			replicas += *r.pandaCluster.Spec.Replicas

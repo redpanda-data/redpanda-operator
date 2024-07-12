@@ -660,6 +660,7 @@ func (r *ClusterReconciler) reportStatus(
 			// We do not update current replicas here.
 			CurrentReplicas: redpandaCluster.Status.NodePools[sts.Key().Name].CurrentReplicas,
 			Replicas:        sts.GetReplicas(),
+			ReadyReplicas:   sts.LastObservedState.Status.ReadyReplicas,
 		}
 		version, versionErr = sts.CurrentVersion(ctx)
 	}

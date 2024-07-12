@@ -792,6 +792,7 @@ type LoadBalancerStatus struct {
 type NodePoolStatus struct {
 	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
 	Replicas        int32 `json:"replicas,omitempty"`
+	ReadyReplicas   int32 `json:"readyReplicas,omitEmpty"`
 }
 
 // KafkaAPITLS configures TLS for redpanda Kafka API

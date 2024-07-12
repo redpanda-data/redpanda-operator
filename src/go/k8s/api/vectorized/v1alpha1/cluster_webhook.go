@@ -272,6 +272,11 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 func (r *Cluster) validateScaling() field.ErrorList {
 	replicas := r.GetReplicas()
 
+	// TODO: Validation
+	// Make sure changes to the cluster size are supported
+	// Make sure that CPU changes are supported
+	// Make sure only one change to nodepool takes place at the same time.
+	// 	i.e don't remove one and add another in the same go.
 	var allErrs field.ErrorList
 	if replicas == 0 {
 		allErrs = append(allErrs,
