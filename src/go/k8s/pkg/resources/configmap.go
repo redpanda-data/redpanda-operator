@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -812,11 +813,18 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 	var replicas int32
 	var prefix string
 
+	nps := make([]string, 0)
 	// Check if there's an existing nodepool
-	for k, np := range r.pandaCluster.Status.NodePools {
+	for k := range r.pandaCluster.Status.NodePools {
+		nps = append(nps, k)
+	}
+	sort.Strings(nps)
+
+	for _, npName := range nps {
+		np := r.pandaCluster.Status.NodePools[npName]
 		if np.CurrentReplicas > 0 {
 			replicas = np.CurrentReplicas
-			prefix = k
+			prefix = npName
 			if strings.HasSuffix(prefix, "redpanda__imported") {
 				prefix = r.pandaCluster.Name
 			}
@@ -835,8 +843,6 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 				if np != nil && *np.Replicas > int32(0) {
 					replicas = *np.Replicas
 					prefix = fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
-					// No need to send all the nodes in the cluster
-					break
 				}
 			}
 		}
