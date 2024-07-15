@@ -41,11 +41,9 @@ linters:
     - errcheck
     - exhaustive
     - exportloopref
-    - funlen
     - goconst
     - gocritic
     - gocyclo
-    - goerr113
     - gofmt
     - gofumpt
     - goimports
@@ -58,18 +56,21 @@ linters:
     - nakedret
     - nestif
     - noctx
-    - prealloc
     - revive
     - rowserrcheck
     - staticcheck
     - stylecheck
-    - testpackage
     - typecheck
     - unconvert
-    - unparam
     - unused
     - vet
     - whitespace
+
+    # - funlen # Humans perform this check better and go is quite verbose in some cases.
+    # - unparam # staticcheck and govet do a much better job with fewer false positives.
+    # - prealloc # Better to have suboptimal code than needing to tell prealloc why we can't prealloc all the time.
+    # - goerr113 # Not all errors need to be first classed
+    # - testpackage # Being able to test unexported functions is useful
 
   # don't enable:
   # - gochecknoinits # the kubebuilder and kubernetes library enforce using init functions
@@ -81,11 +82,9 @@ linters:
   # - godot
   # - gomnd
   # - godox
-  # - goerr113
   # - maligned
   # - nestif
   # - prealloc
-  # - testpackage
   # - wsl
 
 issues:
@@ -111,6 +110,8 @@ issues:
   exclude-use-default: false
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
+    - text: 'shadow: declaration of "(err|ctx)" shadows declaration at'
+      linters: [ govet ]
     - path: _test\.go
       linters:
         - gomnd
