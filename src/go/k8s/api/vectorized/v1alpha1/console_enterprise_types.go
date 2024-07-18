@@ -85,6 +85,7 @@ type EnterpriseLoginGoogleDirectory struct {
 type CloudConfig struct {
 	PrometheusEndpoint *PrometheusEndpointConfig `json:"prometheusEndpoint"`
 
+	// +optional
 	// RedpandaConnect is the configuration for Redpanda Connect in Redpanda Cloud.
 	RedpandaConnect CloudRedpandaConnect `json:"redpandaConnect"`
 }
@@ -139,8 +140,10 @@ type PrometheusScraperJobConfig struct {
 
 // CloudRedpandaConnect represents configuration for Cloud Redpanda Connect.
 type CloudRedpandaConnect struct {
+	// +optional
 	Enabled bool `json:"enabled"`
 
+	// +optional
 	// Address to Redpanda Connect Cloud API service endpoint
 	// (e.g. "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080")
 	Address string `json:"address"`
