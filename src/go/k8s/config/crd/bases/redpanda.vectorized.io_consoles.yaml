@@ -150,13 +150,9 @@ spec:
                         type: string
                       enabled:
                         type: boolean
-                    required:
-                    - address
-                    - enabled
                     type: object
                 required:
                 - prometheusEndpoint
-                - redpandaConnect
                 type: object
               clusterRef:
                 description: The referenced Redpanda Cluster
