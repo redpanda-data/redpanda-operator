@@ -136,6 +136,7 @@ rules:
   - delete
   - get
   - list
+  - patch
   - update
   - watch
 - apiGroups:
@@ -143,6 +144,7 @@ rules:
   resources:
   - pods/finalizers
   verbs:
+  - patch
   - update
 - apiGroups:
   - ""
@@ -237,6 +239,7 @@ rules:
   resources:
   - clusters/finalizers
   verbs:
+  - patch
   - update
 - apiGroups:
   - redpanda.vectorized.io
