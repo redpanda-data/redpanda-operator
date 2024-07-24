@@ -592,7 +592,6 @@ var _ = Describe("Console controller", func() {
 	Context("When adding Redpanda Connect", func() {
 		ctx := context.Background()
 		It("Should add redpanda connect settings", func() {
-
 			By("Updating Console RedpandaCloud Redpanda Connect")
 			Eventually(consoleUpdater(types.NamespacedName{Namespace: ConsoleNamespace, Name: ConsoleName}, func(console *vectorizedv1alpha1.Console) {
 				console.Spec.Cloud.RedpandaConnect = vectorizedv1alpha1.CloudRedpandaConnect{

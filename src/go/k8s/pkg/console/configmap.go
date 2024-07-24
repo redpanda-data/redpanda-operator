@@ -248,35 +248,7 @@ func (cm *ConfigMap) genCloud() CloudConfig {
 	if cm.consoleobj.Spec.Cloud.PrometheusEndpoint != nil {
 		prometheus := cm.consoleobj.Spec.Cloud.PrometheusEndpoint
 
-		cc.PrometheusEndpoint = PrometheusEndpointConfig{
-			Enabled: prometheus.Enabled,
-			BasicAuth: struct {
-				Username string "yaml:\"username\""
-			}{
-				Username: prometheus.BasicAuth.Username,
-			},
-		}
-
-		if prometheus.ResponseCacheDuration != nil {
-			cc.PrometheusEndpoint.ResponseCacheDuration = prometheus.ResponseCacheDuration.Duration
-		}
-		if prometheus.ScrapeTargetTimeout != nil {
-			cc.PrometheusEndpoint.ScrapeTargetTimeout = prometheus.ScrapeTargetTimeout.Duration
-		}
-		if prometheus.Prometheus != nil {
-			cc.PrometheusEndpoint.Prometheus = PrometheusConfig{
-				Address: prometheus.Prometheus.Address,
-			}
-			if prometheus.Prometheus.TargetRefreshInterval != nil {
-				cc.PrometheusEndpoint.Prometheus.TargetRefreshInterval = prometheus.Prometheus.TargetRefreshInterval.Duration
-			}
-			for _, promJob := range prometheus.Prometheus.Jobs {
-				cc.PrometheusEndpoint.Prometheus.Jobs = append(cc.PrometheusEndpoint.Prometheus.Jobs, PrometheusScraperJobConfig{
-					JobName:    promJob.JobName,
-					KeepLabels: promJob.KeepLabels,
-				})
-			}
-		}
+		cc.PrometheusEndpoint = genCloudPrometheusEndpoint(prometheus)
 	}
 
 	// Redpanda Connect config
@@ -286,6 +258,44 @@ func (cm *ConfigMap) genCloud() CloudConfig {
 	}
 
 	return cc
+}
+
+func genCloudPrometheusEndpoint(prometheus *vectorizedv1alpha1.PrometheusEndpointConfig) PrometheusEndpointConfig {
+	if prometheus == nil {
+		return PrometheusEndpointConfig{}
+	}
+
+	pe := PrometheusEndpointConfig{
+		Enabled: prometheus.Enabled,
+		BasicAuth: struct {
+			Username string "yaml:\"username\""
+		}{
+			Username: prometheus.BasicAuth.Username,
+		},
+	}
+
+	if prometheus.ResponseCacheDuration != nil {
+		pe.ResponseCacheDuration = prometheus.ResponseCacheDuration.Duration
+	}
+	if prometheus.ScrapeTargetTimeout != nil {
+		pe.ScrapeTargetTimeout = prometheus.ScrapeTargetTimeout.Duration
+	}
+	if prometheus.Prometheus != nil {
+		pe.Prometheus = PrometheusConfig{
+			Address: prometheus.Prometheus.Address,
+		}
+		if prometheus.Prometheus.TargetRefreshInterval != nil {
+			pe.Prometheus.TargetRefreshInterval = prometheus.Prometheus.TargetRefreshInterval.Duration
+		}
+		for _, promJob := range prometheus.Prometheus.Jobs {
+			pe.Prometheus.Jobs = append(pe.Prometheus.Jobs, PrometheusScraperJobConfig{
+				JobName:    promJob.JobName,
+				KeepLabels: promJob.KeepLabels,
+			})
+		}
+	}
+
+	return pe
 }
 
 var (
