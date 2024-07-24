@@ -589,6 +589,45 @@ var _ = Describe("Console controller", func() {
 		})
 	})
 
+	Context("When adding Redpanda Connect", func() {
+		ctx := context.Background()
+		It("Should add redpanda connect settings", func() {
+
+			By("Updating Console RedpandaCloud Redpanda Connect")
+			Eventually(consoleUpdater(types.NamespacedName{Namespace: ConsoleNamespace, Name: ConsoleName}, func(console *vectorizedv1alpha1.Console) {
+				console.Spec.Cloud.RedpandaConnect = vectorizedv1alpha1.CloudRedpandaConnect{
+					Enabled: true,
+					Address: "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080",
+				}
+			}), timeout, interval).Should(Succeed())
+
+			By("Settings should be in ConfigMap")
+			console := &vectorizedv1alpha1.Console{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: ConsoleNamespace, Name: ConsoleName}, console)).Should(Succeed())
+			createdConfigMaps := &corev1.ConfigMapList{}
+			Eventually(func() bool {
+				if err := k8sClient.List(ctx, createdConfigMaps, client.MatchingLabels(labels.ForConsole(console)), client.InNamespace(ConsoleNamespace)); err != nil {
+					return false
+				}
+				if len(createdConfigMaps.Items) != 1 {
+					return false
+				}
+				for _, cm := range createdConfigMaps.Items {
+					cc := &consolepkg.ConsoleConfig{}
+					if err := yaml.Unmarshal([]byte(cm.Data["config.yaml"]), cc); err != nil {
+						return false
+					}
+
+					redpandaConnectConfig := cc.Cloud.RedpandaConnect
+					if !redpandaConnectConfig.Enabled || redpandaConnectConfig.Address != "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080" {
+						return false
+					}
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+	})
+
 	Context("When ConfigMap is deleted", func() {
 		ctx := context.Background()
 		It("Should reconcile and recreate the ConfigMap", func() {
