@@ -82,6 +82,10 @@ type CloudConfig struct {
 	// exposed in Redpanda Cloud so that users can scrape this URL to
 	// collect their dataplane's metrics in their own time-series database.
 	PrometheusEndpoint PrometheusEndpointConfig `yaml:"prometheusEndpoint"`
+
+	// RedpandaConnect are the Redpanda Connect settings for Console in
+	// Cloud deployments.
+	RedpandaConnect RedpandaConnectConfig `yaml:"redpandaConnect"`
 }
 
 type PrometheusEndpointConfig struct {
@@ -108,6 +112,14 @@ type PrometheusConfig struct {
 	Jobs []PrometheusScraperJobConfig `yaml:"jobs"`
 
 	TargetRefreshInterval time.Duration `yaml:"targetRefreshInterval"`
+}
+
+type RedpandaConnectConfig struct {
+	Enabled bool `yaml:"enabled"`
+
+	// Address to Redpanda Connect Cloud API service endpoint
+	// (e.g. "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080")
+	Address string `yaml:"address"`
 }
 
 // PrometheusScraperJobConfig is the configuration object that determines what Prometheus
