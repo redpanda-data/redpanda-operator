@@ -16,7 +16,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -216,7 +216,7 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 		return r.Status().Update(ctx, r.pandaCluster)
 	}
 
-	if broker.MembershipStatus == admin.MembershipStatusDraining {
+	if broker.MembershipStatus == rpadmin.MembershipStatusDraining {
 		log.Info("broker is still draining")
 		return &RequeueAfterError{
 			RequeueAfter: wait.Jitter(r.decommissionWaitInterval, decommissionWaitJitterFactor),
@@ -280,7 +280,7 @@ func (r *StatefulSetResource) handleRecommission(ctx context.Context) error {
 		return &RecommissionFatalError{Err: fmt.Sprintf("cannot recommission broker %d: already fully decommissioned", *brokerID)}
 	}
 
-	if broker.MembershipStatus == admin.MembershipStatusActive {
+	if broker.MembershipStatus == rpadmin.MembershipStatusActive {
 		log.Info("Recommissioning process successfully completed")
 		r.pandaCluster.SetDecommissionBrokerID(nil)
 		return r.Status().Update(ctx, r.pandaCluster)
@@ -358,7 +358,7 @@ func (r *StatefulSetResource) disableMaintenanceModeOnDecommissionedNodes(
 	log.Info("Forcing deletion of maintenance mode for the decommissioned node")
 	err = adminAPI.DisableMaintenanceMode(ctx, int(*brokerID), false)
 	if err != nil {
-		var httpErr *admin.HTTPResponseError
+		var httpErr *rpadmin.HTTPResponseError
 		if errors.As(err, &httpErr) {
 			if httpErr.Response != nil && httpErr.Response.StatusCode/100 == 4 {
 				// Cluster says we don't need to do it
@@ -399,7 +399,7 @@ func (r *StatefulSetResource) verifyRunningCount(
 // getBrokerByBrokerID allows to get broker information using the admin API
 func getBrokerByBrokerID(
 	ctx context.Context, brokerID int32, adminAPI adminutils.AdminAPIClient,
-) (*admin.Broker, error) {
+) (*rpadmin.Broker, error) {
 	brokers, err := adminAPI.Brokers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get the list of brokers for checking decommission: %w", err)

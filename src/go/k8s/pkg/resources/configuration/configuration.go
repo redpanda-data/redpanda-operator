@@ -16,7 +16,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
@@ -34,7 +34,7 @@ var knownNodeProperties map[string]bool
 
 // GlobalConfiguration is a configuration object that holds both node/local configuration and global configuration.
 type GlobalConfiguration struct {
-	NodeConfiguration    config.Config
+	NodeConfiguration    *config.RedpandaYaml
 	ClusterConfiguration map[string]interface{}
 	Mode                 GlobalConfigurationMode
 }
@@ -43,12 +43,14 @@ type GlobalConfiguration struct {
 func For(version string) *GlobalConfiguration {
 	if featuregates.CentralizedConfiguration(version) {
 		return &GlobalConfiguration{
-			Mode: DefaultCentralizedMode(),
+			Mode:              DefaultCentralizedMode(),
+			NodeConfiguration: config.ProdDefault(),
 		}
 	}
 	// Use classic also when version is not present for some reason
 	return &GlobalConfiguration{
-		Mode: GlobalConfigurationModeClassic,
+		Mode:              GlobalConfigurationModeClassic,
+		NodeConfiguration: config.ProdDefault(),
 	}
 }
 
@@ -96,7 +98,7 @@ func (c *GlobalConfiguration) SetAdditionalFlatProperties(
 // GetCentralizedConfigurationHash computes a hash of the centralized configuration considering only the
 // cluster properties that require a restart (this is why the schema is needed).
 func (c *GlobalConfiguration) GetCentralizedConfigurationHash(
-	schema admin.ConfigSchema,
+	schema rpadmin.ConfigSchema,
 ) (string, error) {
 	clone := *c
 

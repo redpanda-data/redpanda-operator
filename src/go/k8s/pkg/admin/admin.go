@@ -17,7 +17,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
@@ -69,7 +69,7 @@ func NewInternalAdminAPI(
 		urls = append(urls, fmt.Sprintf("%s-%d.%s:%d", redpandaCluster.Name, on, fqdn, adminInternalPort))
 	}
 
-	adminAPI, err := admin.NewAdminAPI(urls, admin.BasicCredentials{}, tlsConfig)
+	adminAPI, err := rpadmin.NewAdminAPI(urls, &rpadmin.NopAuth{}, tlsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error creating admin api for cluster %s/%s using urls %v (tls=%v): %w", redpandaCluster.Namespace, redpandaCluster.Name, urls, tlsConfig != nil, err)
 	}
@@ -81,33 +81,33 @@ func NewInternalAdminAPI(
 //
 
 type AdminAPIClient interface {
-	Config(ctx context.Context, includeDefaults bool) (admin.Config, error)
-	ClusterConfigStatus(ctx context.Context, sendToLeader bool) (admin.ConfigStatusResponse, error)
-	ClusterConfigSchema(ctx context.Context) (admin.ConfigSchema, error)
-	PatchClusterConfig(ctx context.Context, upsert map[string]interface{}, remove []string) (admin.ClusterConfigWriteResult, error)
-	GetNodeConfig(ctx context.Context) (admin.NodeConfig, error)
+	Config(ctx context.Context, includeDefaults bool) (rpadmin.Config, error)
+	ClusterConfigStatus(ctx context.Context, sendToLeader bool) (rpadmin.ConfigStatusResponse, error)
+	ClusterConfigSchema(ctx context.Context) (rpadmin.ConfigSchema, error)
+	PatchClusterConfig(ctx context.Context, upsert map[string]interface{}, remove []string) (rpadmin.ClusterConfigWriteResult, error)
+	GetNodeConfig(ctx context.Context) (rpadmin.NodeConfig, error)
 
 	CreateUser(ctx context.Context, username, password, mechanism string) error
 	ListUsers(ctx context.Context) ([]string, error)
 	DeleteUser(ctx context.Context, username string) error
 	UpdateUser(ctx context.Context, username, password, mechanism string) error
 
-	GetFeatures(ctx context.Context) (admin.FeaturesResponse, error)
+	GetFeatures(ctx context.Context) (rpadmin.FeaturesResponse, error)
 	SetLicense(ctx context.Context, license interface{}) error
-	GetLicenseInfo(ctx context.Context) (admin.License, error)
+	GetLicenseInfo(ctx context.Context) (rpadmin.License, error)
 
-	Brokers(ctx context.Context) ([]admin.Broker, error)
-	Broker(ctx context.Context, nodeID int) (admin.Broker, error)
+	Brokers(ctx context.Context) ([]rpadmin.Broker, error)
+	Broker(ctx context.Context, nodeID int) (rpadmin.Broker, error)
 	DecommissionBroker(ctx context.Context, node int) error
 	RecommissionBroker(ctx context.Context, node int) error
 
 	EnableMaintenanceMode(ctx context.Context, node int) error
 	DisableMaintenanceMode(ctx context.Context, node int, useLeaderNode bool) error
 
-	GetHealthOverview(ctx context.Context) (admin.ClusterHealthOverview, error)
+	GetHealthOverview(ctx context.Context) (rpadmin.ClusterHealthOverview, error)
 }
 
-var _ AdminAPIClient = &admin.AdminAPI{}
+var _ AdminAPIClient = &rpadmin.AdminAPI{}
 
 // AdminAPIClientFactory is an abstract constructor of admin API clients
 //

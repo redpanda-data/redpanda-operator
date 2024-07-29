@@ -25,9 +25,9 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 )
 
 var _ = Describe("Redpanda cluster scale resource", func() {
@@ -54,7 +54,7 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 			}), timeoutShort, intervalShort).Should(Equal(int32(1)))
 
 			By("Scaling to 3 replicas only when broker appears")
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
 			}), timeout, interval).Should(Equal(int32(3)))
@@ -71,7 +71,7 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
 			By("Scaling to 2 replicas when at least one broker appears")
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
 			var sts appsv1.StatefulSet
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
@@ -100,9 +100,9 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
 			By("Scaling to 3 replicas when the brokers start to appear")
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 1, MembershipStatus: admin.MembershipStatusActive})
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 2, MembershipStatus: admin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 1, MembershipStatus: rpadmin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 2, MembershipStatus: rpadmin.MembershipStatusActive})
 			var sts appsv1.StatefulSet
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
@@ -124,26 +124,26 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 				}
 				return *redpandaCluster.GetDecommissionBrokerID()
 			}), timeout, interval).Should(Equal(int32(2)), "node 2 is not decommissioning:\n%s", func() string { y, _ := yaml.Marshal(redpandaCluster); return string(y) }())
-			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(admin.MembershipStatusDraining))
-			Consistently(testAdminAPI.BrokerStatusGetter(1), timeoutShort, intervalShort).Should(Equal(admin.MembershipStatusActive))
+			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(rpadmin.MembershipStatusDraining))
+			Consistently(testAdminAPI.BrokerStatusGetter(1), timeoutShort, intervalShort).Should(Equal(rpadmin.MembershipStatusActive))
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
 			}), timeout, interval).Should(Equal(int32(3)))
 
 			By("Scaling down only when decommissioning is done")
 			Expect(testAdminAPI.RemoveBroker(2)).To(BeTrue())
-			testAdminAPI.AddGhostBroker(admin.Broker{NodeID: 2, MembershipStatus: admin.MembershipStatusDraining})
+			testAdminAPI.AddGhostBroker(rpadmin.Broker{NodeID: 2, MembershipStatus: rpadmin.MembershipStatusDraining})
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
 			}), timeout, interval).Should(Equal(int32(2)))
 			Eventually(statefulSetReplicasReconciler(ctrl.Log.WithName("statefulSetReplicasReconciler"), key, redpandaCluster), timeout, interval).Should(Succeed())
 
 			By("Start decommissioning the other node")
-			Eventually(testAdminAPI.BrokerStatusGetter(1), timeout, interval).Should(Equal(admin.MembershipStatusDraining))
+			Eventually(testAdminAPI.BrokerStatusGetter(1), timeout, interval).Should(Equal(rpadmin.MembershipStatusDraining))
 
 			By("Removing the other node as well when done")
 			Expect(testAdminAPI.RemoveBroker(1)).To(BeTrue())
-			testAdminAPI.AddGhostBroker(admin.Broker{NodeID: 1, MembershipStatus: admin.MembershipStatusDraining})
+			testAdminAPI.AddGhostBroker(rpadmin.Broker{NodeID: 1, MembershipStatus: rpadmin.MembershipStatusDraining})
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
 			}), timeout, interval).Should(Equal(int32(1)))
@@ -158,9 +158,9 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
 			By("Scaling to 3 replicas when the brokers start to appear")
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 1, MembershipStatus: admin.MembershipStatusActive})
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 2, MembershipStatus: admin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 1, MembershipStatus: rpadmin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 2, MembershipStatus: rpadmin.MembershipStatusActive})
 			var sts appsv1.StatefulSet
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
@@ -180,13 +180,13 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 				}
 				return *redpandaCluster.GetDecommissionBrokerID()
 			}), timeout, interval).Should(Equal(int32(2)), "node 2 is not decommissioning:\n%s", func() string { y, _ := yaml.Marshal(redpandaCluster); return string(y) }())
-			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(admin.MembershipStatusDraining))
+			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(rpadmin.MembershipStatusDraining))
 
 			By("Recommissioning the node by restoring replicas")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				cluster.Spec.Replicas = ptr.To(int32(3))
 			}), timeout, interval).Should(Succeed())
-			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(admin.MembershipStatusActive))
+			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(rpadmin.MembershipStatusActive))
 
 			By("Start decommissioning node 2 again")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
@@ -198,13 +198,13 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 				}
 				return *redpandaCluster.GetDecommissionBrokerID()
 			}), timeout, interval).Should(Equal(int32(2)))
-			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(admin.MembershipStatusDraining))
+			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(rpadmin.MembershipStatusDraining))
 
 			By("Recommissioning the node also when scaling to more replicas")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				cluster.Spec.Replicas = ptr.To(int32(4))
 			}), timeout, interval).Should(Succeed())
-			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(admin.MembershipStatusActive))
+			Eventually(testAdminAPI.BrokerStatusGetter(2), timeout, interval).Should(Equal(rpadmin.MembershipStatusActive))
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas
 			}), timeout, interval).Should(Equal(int32(4)))
@@ -219,8 +219,8 @@ var _ = Describe("Redpanda cluster scale resource", func() {
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
 			By("Scaling to 3 replicas, but have last one not registered")
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 0, MembershipStatus: admin.MembershipStatusActive})
-			testAdminAPI.AddBroker(admin.Broker{NodeID: 1, MembershipStatus: admin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
+			testAdminAPI.AddBroker(rpadmin.Broker{NodeID: 1, MembershipStatus: rpadmin.MembershipStatusActive})
 			var sts appsv1.StatefulSet
 			Eventually(resourceDataGetter(key, &sts, func() interface{} {
 				return *sts.Spec.Replicas

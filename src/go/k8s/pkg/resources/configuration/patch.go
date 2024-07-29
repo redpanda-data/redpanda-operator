@@ -21,7 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 )
 
 const (
@@ -70,7 +70,7 @@ func ThreeWayMerge(
 	current map[string]interface{},
 	lastApplied map[string]interface{},
 	invalidProperties []string,
-	schema map[string]admin.ConfigPropertyMetadata,
+	schema map[string]rpadmin.ConfigPropertyMetadata,
 ) CentralConfigurationPatch {
 	patch := CentralConfigurationPatch{
 		// Initialize them early since nil values are rejected by the server
@@ -99,7 +99,7 @@ func ThreeWayMerge(
 	return patch
 }
 
-func parseConfigValueBeforeUpsert(log logr.Logger, value interface{}, metadata *admin.ConfigPropertyMetadata) interface{} {
+func parseConfigValueBeforeUpsert(log logr.Logger, value interface{}, metadata *rpadmin.ConfigPropertyMetadata) interface{} {
 	tempValue := fmt.Sprintf("%v", value)
 
 	//nolint:gocritic // no need to be a switch case
@@ -142,7 +142,7 @@ func convertStringToStringArray(value string) ([]string, error) {
 //
 //nolint:gocritic // code more readable
 func PropertiesEqual(
-	l logr.Logger, v1, v2 interface{}, metadata admin.ConfigPropertyMetadata,
+	l logr.Logger, v1, v2 interface{}, metadata rpadmin.ConfigPropertyMetadata,
 ) bool {
 	log := l.WithName("PropertiesEqual")
 	switch metadata.Type {

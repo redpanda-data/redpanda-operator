@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
@@ -826,7 +826,7 @@ func (m *missingBrokerIDError) Error() string {
 
 // rpBrokerList returns Redpanda view of registered brokers. Health overview of the cluster is just
 // an information during debugging.
-func (r *ClusterReconciler) rpBrokerList(ctx context.Context, vCluster *vectorizedv1alpha1.Cluster, ar *attachedResources) (adminutils.AdminAPIClient, []admin.Broker, *admin.ClusterHealthOverview, error) {
+func (r *ClusterReconciler) rpBrokerList(ctx context.Context, vCluster *vectorizedv1alpha1.Cluster, ar *attachedResources) (adminutils.AdminAPIClient, []rpadmin.Broker, *rpadmin.ClusterHealthOverview, error) {
 	pki, err := ar.getPKI()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("getting pki: %w", err)
@@ -908,7 +908,7 @@ func (r *ClusterReconciler) decommissionGhostBrokers(c context.Context, vCluster
 	var nodesConsideredDown []int
 	for _, b := range bl {
 		_, isInK8S := actualBrokerIDs[b.NodeID]
-		if !isInK8S && b.MembershipStatus == admin.MembershipStatusActive && b.IsAlive != nil && !*b.IsAlive {
+		if !isInK8S && b.MembershipStatus == rpadmin.MembershipStatusActive && b.IsAlive != nil && !*b.IsAlive {
 			nodesConsideredDown = append(nodesConsideredDown, b.NodeID)
 		}
 	}
@@ -937,7 +937,7 @@ func createUserOnAdminAPI(ctx context.Context, adminAPI adminutils.AdminAPIClien
 	username := string(secret.Data[corev1.BasicAuthUsernameKey])
 	password := string(secret.Data[corev1.BasicAuthPasswordKey])
 
-	err := adminAPI.CreateUser(ctx, username, password, admin.ScramSha256)
+	err := adminAPI.CreateUser(ctx, username, password, rpadmin.ScramSha256)
 	// {"message": "Creating user: User already exists", "code": 400}
 	if err != nil { // TODO if user already exists, we only receive "400". Check for specific error code when available.
 		if strings.Contains(err.Error(), "already exists") {
@@ -952,7 +952,7 @@ func updateUserOnAdminAPI(ctx context.Context, adminAPI adminutils.AdminAPIClien
 	username := string(secret.Data[corev1.BasicAuthUsernameKey])
 	password := string(secret.Data[corev1.BasicAuthPasswordKey])
 
-	err := adminAPI.UpdateUser(ctx, username, password, admin.ScramSha256)
+	err := adminAPI.UpdateUser(ctx, username, password, rpadmin.ScramSha256)
 	if err != nil {
 		return fmt.Errorf("could not update user %q: %w", username, err)
 	}

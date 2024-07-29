@@ -22,7 +22,7 @@ import (
 
 func TestSerde(t *testing.T) {
 	conf := configuration.GlobalConfiguration{
-		NodeConfiguration: config.Config{
+		NodeConfiguration: &config.RedpandaYaml{
 			Redpanda: config.RedpandaNodeConfig{
 				ID: ptr.To(3),
 			},

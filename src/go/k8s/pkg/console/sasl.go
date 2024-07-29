@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -111,7 +111,7 @@ func (k *KafkaSA) Ensure(ctx context.Context) error {
 		return err
 	}
 
-	if err := adminAPI.CreateUser(ctx, username, password, admin.ScramSha256); err != nil && !strings.Contains(err.Error(), "already exists") {
+	if err := adminAPI.CreateUser(ctx, username, password, rpadmin.ScramSha256); err != nil && !strings.Contains(err.Error(), "already exists") {
 		// Don't overwhelm Admin API
 		return &resources.RequeueAfterError{
 			RequeueAfter: resources.RequeueDuration,

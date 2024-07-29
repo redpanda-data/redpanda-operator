@@ -28,38 +28,38 @@ func TestConfigMode(t *testing.T) {
 }
 
 func TestRedpandaProperties(t *testing.T) {
-	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized}
+	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	assert.Equal(t, "b", config.ClusterConfiguration["a"])
 	assert.NotContains(t, config.NodeConfiguration.Redpanda.Other, "a")
 
-	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic}
+	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	assert.NotContains(t, config.ClusterConfiguration, "a")
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
 
-	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed}
+	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	assert.Equal(t, "b", config.ClusterConfiguration["a"])
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
 }
 
 func TestFlatProperties(t *testing.T) {
-	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized}
+	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	err := config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.ClusterConfiguration["a"])
 	assert.NotContains(t, config.NodeConfiguration.Redpanda.Other, "a")
 
-	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic}
+	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic, NodeConfiguration: rpkcfg.ProdDefault()}
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
 	assert.NotContains(t, config.ClusterConfiguration, "a")
 
-	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed}
+	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed, NodeConfiguration: rpkcfg.ProdDefault()}
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
@@ -68,7 +68,7 @@ func TestFlatProperties(t *testing.T) {
 }
 
 func TestKnownNodeProperties(t *testing.T) {
-	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized}
+	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	require.NoError(t, config.SetAdditionalFlatProperties(map[string]string{
 		"redpanda.cloud_storage_cache_directory": "/tmp",
 		"redpanda.rpc_server.port":               "8080",
@@ -81,7 +81,7 @@ func TestKnownNodeProperties(t *testing.T) {
 }
 
 func TestDeleteProperties(t *testing.T) {
-	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized}
+	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a1", "x")
 	config.SetAdditionalRedpandaProperty("a2", "x")
 	config.SetAdditionalRedpandaProperty("a3", "x")
@@ -116,7 +116,7 @@ func TestStringSliceProperties(t *testing.T) {
 			return t.Run(fmt.Sprintf("test property slices %d", i), func(t *testing.T) {
 				t.Parallel()
 
-				config := configuration.GlobalConfiguration{Mode: m}
+				config := configuration.GlobalConfiguration{Mode: m, NodeConfiguration: rpkcfg.ProdDefault()}
 				assert.NoError(t, config.AppendToAdditionalRedpandaProperty("superusers", "a"))
 				assert.NoError(t, config.AppendToAdditionalRedpandaProperty("superusers", "b"))
 				assert.NoError(t, config.AppendToAdditionalRedpandaProperty("superusers", "c"))

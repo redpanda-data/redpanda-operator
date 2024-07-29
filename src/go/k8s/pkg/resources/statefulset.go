@@ -927,7 +927,7 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		return ports
 	}
 
-	additionalNode0Config := &config.Config{}
+	additionalNode0Config := config.ProdDefault()
 	for _, k := range additionalListenerCfgNames {
 		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
 			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy"), false)
@@ -935,7 +935,7 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 				r.logger.Error(err, "failed to evaluate template", "template", v)
 				continue
 			}
-			err = additionalNode0Config.Set(k, res, "")
+			err = config.Set(additionalNode0Config, k, res)
 			if err != nil {
 				r.logger.Error(err, "failed to set node config", k, v)
 				continue

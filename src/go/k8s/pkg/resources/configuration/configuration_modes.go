@@ -14,6 +14,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 // GlobalConfigurationMode changes the behavior of the global configuration when reading/writing properties.
@@ -65,12 +67,12 @@ func (r globalConfigurationModeClassic) SetAdditionalFlatProperties(
 	// Add arbitrary parameters to configuration
 	for k, v := range props {
 		if builtInType(v) {
-			err := targetConfig.NodeConfiguration.Set(k, v, "")
+			err := config.Set(targetConfig.NodeConfiguration, k, v)
 			if err != nil {
 				return fmt.Errorf("setting built-in type: %w", err)
 			}
 		} else if !skipNodeSpecificConfiguration(v) {
-			err := targetConfig.NodeConfiguration.Set(k, v, "")
+			err := config.Set(targetConfig.NodeConfiguration, k, v)
 			if err != nil {
 				return fmt.Errorf("setting complex type: %w", err)
 			}

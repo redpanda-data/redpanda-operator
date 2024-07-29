@@ -126,7 +126,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to read the redpanda configuration file, %q: %w", p, err))
 	}
-	cfg := &config.Config{}
+	cfg := config.ProdDefault()
 	err = yaml.Unmarshal(cf, cfg)
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to parse the redpanda configuration file, %q: %w", p, err))
@@ -202,7 +202,7 @@ func main() {
 	log.Printf("Configuration saved to: %s", c.configDestination)
 }
 
-func validateMountedVolume(cfg *config.Config, validate bool) error {
+func validateMountedVolume(cfg *config.RedpandaYaml, validate bool) error {
 	if !validate {
 		return nil
 	}
@@ -271,14 +271,14 @@ func getZoneLabels(nodeName string) (zone, zoneID string, err error) {
 	return zone, zoneID, nil
 }
 
-func populateRack(cfg *config.Config, zone, zoneID string) {
+func populateRack(cfg *config.RedpandaYaml, zone, zoneID string) {
 	cfg.Redpanda.Rack = zoneID
 	if zoneID == "" {
 		cfg.Redpanda.Rack = zone
 	}
 }
 
-func getInternalKafkaAPIPort(cfg *config.Config) (int, error) {
+func getInternalKafkaAPIPort(cfg *config.RedpandaYaml) (int, error) {
 	for _, l := range cfg.Redpanda.KafkaAPI {
 		if l.Name == "kafka" {
 			return l.Port, nil
@@ -287,7 +287,7 @@ func getInternalKafkaAPIPort(cfg *config.Config) (int, error) {
 	return 0, fmt.Errorf("%w %v", errInternalPortMissing, cfg.Redpanda.KafkaAPI)
 }
 
-func getInternalProxyAPIPort(cfg *config.Config) int {
+func getInternalProxyAPIPort(cfg *config.RedpandaYaml) int {
 	for _, l := range cfg.Pandaproxy.PandaproxyAPI {
 		if l.Name == "proxy" {
 			return l.Port
@@ -315,7 +315,7 @@ func getNode(nodeName string) (*corev1.Node, error) {
 }
 
 func registerAdvertisedKafkaAPI(
-	c *configuratorConfig, cfg *config.Config, index brokerID, kafkaAPIPort int,
+	c *configuratorConfig, cfg *config.RedpandaYaml, index brokerID, kafkaAPIPort int,
 ) error {
 	cfg.Redpanda.AdvertisedKafkaAPI = []config.NamedSocketAddress{
 		{
@@ -359,7 +359,7 @@ func registerAdvertisedKafkaAPI(
 }
 
 func registerAdvertisedPandaproxyAPI(
-	c *configuratorConfig, cfg *config.Config, index brokerID, proxyAPIPort int,
+	c *configuratorConfig, cfg *config.RedpandaYaml, index brokerID, proxyAPIPort int,
 ) error {
 	cfg.Pandaproxy.AdvertisedPandaproxyAPI = []config.NamedSocketAddress{
 		{
@@ -560,7 +560,7 @@ func hostIndex(hostName string) (brokerID, error) {
 // setAdditionalListeners sets the additional listeners in the input Redpanda config.
 // sample additional listeners config string:
 // {"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]","redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{30092 | add .Index}}}]","redpanda.kafka_api":"[{'name': 'private-link-kakfa', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]"}
-func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.Config) error {
+func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.RedpandaYaml) error {
 	if additionalListenersCfg == "" || additionalListenersCfg == "{}" {
 		return nil
 	}
@@ -572,14 +572,14 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 	}
 
 	additionalListenerCfgNames := []string{"redpanda.kafka_api", "redpanda.advertised_kafka_api", "pandaproxy.pandaproxy_api", "pandaproxy.advertised_pandaproxy_api"}
-	nodeConfig := &config.Config{}
+	nodeConfig := config.ProdDefault()
 	for _, k := range additionalListenerCfgNames {
 		if v, found := additionalListeners[k]; found {
 			res, err := utils.Compute(v, utils.NewEndpointTemplateData(hostIndex, hostIP), false)
 			if err != nil {
 				return err
 			}
-			err = nodeConfig.Set(k, res, "")
+			err = config.Set(nodeConfig, k, res)
 			if err != nil {
 				return err
 			}
