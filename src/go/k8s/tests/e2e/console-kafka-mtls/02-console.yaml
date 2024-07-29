@@ -11,6 +11,6 @@ spec:
     name: cluster-kafka-mtls
     namespace: redpanda-system
   deployment:
-    image: redpandadata/console:v2.2.4
+    image: redpandadata/console:v2.6.1
   connect:
     enabled: false

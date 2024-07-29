@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
@@ -139,7 +139,7 @@ func TestPropertyEquality(t *testing.T) {
 	tests := []struct {
 		v1        interface{}
 		v2        interface{}
-		metadata  admin.ConfigPropertyMetadata
+		metadata  rpadmin.ConfigPropertyMetadata
 		different bool
 	}{
 		{
@@ -153,7 +153,7 @@ func TestPropertyEquality(t *testing.T) {
 		{
 			v1: 536870912,
 			v2: "536870912",
-			metadata: admin.ConfigPropertyMetadata{
+			metadata: rpadmin.ConfigPropertyMetadata{
 				Type: "integer",
 			},
 		},
@@ -228,7 +228,7 @@ func TestPropertyEquality(t *testing.T) {
 		{
 			v1: 0.4999999999,
 			v2: 0.5,
-			metadata: admin.ConfigPropertyMetadata{
+			metadata: rpadmin.ConfigPropertyMetadata{
 				Type: "number",
 			},
 		},

@@ -221,7 +221,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 	ctx context.Context,
 ) (*configuration.GlobalConfiguration, error) {
 	cfg := configuration.For(r.pandaCluster.Spec.Version)
-	cfg.NodeConfiguration = *config.ProdDefault()
+	cfg.NodeConfiguration = config.ProdDefault()
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
 	c := r.pandaCluster.Spec.Configuration
@@ -345,8 +345,8 @@ func (r *ConfigMapResource) CreateConfiguration(
 		return nil, fmt.Errorf("preparing seed server list: %w", err)
 	}
 
-	r.preparePandaproxy(&cfg.NodeConfiguration)
-	r.preparePandaproxyTLS(&cfg.NodeConfiguration, mountPoints)
+	r.preparePandaproxy(cfg.NodeConfiguration)
+	r.preparePandaproxyTLS(cfg.NodeConfiguration, mountPoints)
 	err := r.preparePandaproxyClient(ctx, cfg, mountPoints)
 	if err != nil {
 		return nil, fmt.Errorf("preparing proxy client: %w", err)
@@ -366,7 +366,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 			},
 		}
 	}
-	r.prepareSchemaRegistryTLS(&cfg.NodeConfiguration, mountPoints)
+	r.prepareSchemaRegistryTLS(cfg.NodeConfiguration, mountPoints)
 	err = r.prepareSchemaRegistryClient(ctx, cfg, mountPoints)
 	if err != nil {
 		return nil, fmt.Errorf("preparing schemaRegistry client: %w", err)
@@ -459,7 +459,7 @@ func (r *ConfigMapResource) prepareCloudStorage(
 	return nil
 }
 
-func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.Config) {
+func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.RedpandaYaml) {
 	internal := r.pandaCluster.PandaproxyAPIInternal()
 	if internal == nil {
 		return
@@ -598,7 +598,7 @@ func (r *ConfigMapResource) prepareSchemaRegistryClient(
 }
 
 func (r *ConfigMapResource) preparePandaproxyTLS(
-	cfgRpk *config.Config, mountPoints *resourcetypes.TLSMountPoints,
+	cfgRpk *config.RedpandaYaml, mountPoints *resourcetypes.TLSMountPoints,
 ) {
 	tlsListener := r.pandaCluster.PandaproxyAPITLS()
 	if tlsListener != nil {
@@ -623,7 +623,7 @@ func (r *ConfigMapResource) preparePandaproxyTLS(
 }
 
 func (r *ConfigMapResource) prepareSchemaRegistryTLS(
-	cfgRpk *config.Config, mountPoints *resourcetypes.TLSMountPoints,
+	cfgRpk *config.RedpandaYaml, mountPoints *resourcetypes.TLSMountPoints,
 ) {
 	if r.pandaCluster.Spec.Configuration.SchemaRegistry != nil &&
 		r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS != nil {

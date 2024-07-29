@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
@@ -495,8 +496,8 @@ func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, ordinal 
 		return ErrMaintenanceMissing
 	}
 
-	if !br.Maintenance.Finished {
-		return fmt.Errorf("draining (%t), errors (%t), failed (%d), finished (%t): %w", br.Maintenance.Draining, br.Maintenance.Errors, br.Maintenance.Failed, br.Maintenance.Finished, ErrMaintenanceNotFinished)
+	if !ptr.Deref(br.Maintenance.Finished, false) {
+		return fmt.Errorf("draining (%t), errors (%t), failed (%d), finished (%t): %w", br.Maintenance.Draining, ptr.Deref(br.Maintenance.Errors, false), br.Maintenance.Failed, ptr.Deref(br.Maintenance.Finished, false), ErrMaintenanceNotFinished)
 	}
 
 	return nil

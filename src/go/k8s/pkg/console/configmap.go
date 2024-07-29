@@ -9,8 +9,8 @@ import (
 	"github.com/cloudhut/common/rest"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -584,10 +584,15 @@ func (cm *ConfigMap) genKafka(username string) config.Kafka {
 		sasl = config.KafkaSASL{
 			Enabled:   yes,
 			Username:  username,
-			Mechanism: admin.ScramSha256,
+			Mechanism: rpadmin.ScramSha256,
 		}
 	}
 	k.SASL = sasl
+
+	startup := config.KafkaStartup{}
+	startup.SetDefaults()
+
+	k.Startup = startup
 
 	return k
 }

@@ -19,7 +19,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
@@ -171,9 +171,9 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	adminAPI adminutils.AdminAPIClient,
 	cfg *configuration.GlobalConfiguration,
-	schema admin.ConfigSchema,
-	clusterConfig admin.Config,
-	status admin.ConfigStatusResponse,
+	schema rpadmin.ConfigSchema,
+	clusterConfig rpadmin.Config,
+	status rpadmin.ConfigStatusResponse,
 	lastAppliedConfiguration map[string]interface{},
 	l logr.Logger,
 ) (success bool, err error) {
@@ -227,7 +227,7 @@ func (r *ClusterReconciler) retrieveClusterState(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	adminAPI adminutils.AdminAPIClient,
-) (admin.ConfigSchema, admin.Config, admin.ConfigStatusResponse, error) {
+) (rpadmin.ConfigSchema, rpadmin.Config, rpadmin.ConfigStatusResponse, error) {
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
 
 	schema, err := adminAPI.ClusterConfigSchema(ctx)
@@ -278,7 +278,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	config *configuration.GlobalConfiguration,
-	schema admin.ConfigSchema,
+	schema rpadmin.ConfigSchema,
 	lastAppliedConfiguration map[string]interface{},
 	statefulSetResource *resources.StatefulSetResource,
 ) (hash string, changed bool, err error) {
@@ -355,7 +355,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 
 //nolint:gocritic // I like this if else chain
 func mapStatusToCondition(
-	clusterStatus admin.ConfigStatusResponse,
+	clusterStatus rpadmin.ConfigStatusResponse,
 ) vectorizedv1alpha1.ClusterCondition {
 	var condition *vectorizedv1alpha1.ClusterCondition
 	var configVersion int64 = -1
@@ -404,7 +404,7 @@ func mapStatusToCondition(
 }
 
 func needsRestart(
-	clusterStatus admin.ConfigStatusResponse, l logr.Logger,
+	clusterStatus rpadmin.ConfigStatusResponse, l logr.Logger,
 ) bool {
 	log := l.WithName("needsRestart")
 	nodeNeedsRestart := false
@@ -418,7 +418,7 @@ func needsRestart(
 }
 
 func isSafeToRestart(
-	clusterStatus admin.ConfigStatusResponse, l logr.Logger,
+	clusterStatus rpadmin.ConfigStatusResponse, l logr.Logger,
 ) bool {
 	log := l.WithName("isSafeToRestart")
 	configVersions := make(map[int64]bool)
@@ -434,7 +434,7 @@ func isSafeToRestart(
 func tryMapErrorToCondition(
 	err error,
 ) (*vectorizedv1alpha1.ClusterCondition, error) {
-	var httpErr *admin.HTTPResponseError
+	var httpErr *rpadmin.HTTPResponseError
 	if errors.As(err, &httpErr) {
 		if httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusBadRequest {
 			return &vectorizedv1alpha1.ClusterCondition{

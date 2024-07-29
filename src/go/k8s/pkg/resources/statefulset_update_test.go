@@ -25,13 +25,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
 )
 
 func TestShouldUpdate_AnnotationChange(t *testing.T) {
@@ -91,41 +92,41 @@ func TestShouldUpdate_AnnotationChange(t *testing.T) {
 func TestPutInMaintenanceMode(t *testing.T) {
 	tcs := []struct {
 		name              string
-		maintenanceStatus *admin.MaintenanceStatus
+		maintenanceStatus *rpadmin.MaintenanceStatus
 		errorRequired     error
 	}{
 		{
 			"maintenance finished",
-			&admin.MaintenanceStatus{
-				Finished: true,
+			&rpadmin.MaintenanceStatus{
+				Finished: ptr.To(true),
 			},
 			nil,
 		},
 		{
 			"maintenance draining",
-			&admin.MaintenanceStatus{
+			&rpadmin.MaintenanceStatus{
 				Draining: true,
 			},
 			ErrMaintenanceNotFinished,
 		},
 		{
 			"maintenance failed",
-			&admin.MaintenanceStatus{
-				Failed: 1,
+			&rpadmin.MaintenanceStatus{
+				Failed: ptr.To(1),
 			},
 			ErrMaintenanceNotFinished,
 		},
 		{
 			"maintenance has errors",
-			&admin.MaintenanceStatus{
-				Errors: true,
+			&rpadmin.MaintenanceStatus{
+				Errors: ptr.To(true),
 			},
 			ErrMaintenanceNotFinished,
 		},
 		{
 			"maintenance did not finished",
-			&admin.MaintenanceStatus{
-				Finished: false,
+			&rpadmin.MaintenanceStatus{
+				Finished: ptr.To(false),
 			},
 			ErrMaintenanceNotFinished,
 		},

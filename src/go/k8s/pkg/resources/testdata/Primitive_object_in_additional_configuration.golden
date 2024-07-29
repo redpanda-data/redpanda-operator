@@ -31,6 +31,7 @@ redpanda:
     log_segment_size: 536870912
     transactional_id_expiration_ms: 25920000000
 rpk:
+    overprovisioned: true
     tune_network: true
     tune_disk_scheduler: true
     tune_disk_nomerges: true
@@ -42,6 +43,5 @@ rpk:
     tune_swappiness: true
     coredump_dir: /var/lib/redpanda/coredump
     tune_ballast_file: true
-    overprovisioned: true
 pandaproxy: {}
 schema_registry: {}

@@ -19,26 +19,26 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/configuration"
 )
 
 type MockAdminAPI struct {
-	config            admin.Config
-	schema            admin.ConfigSchema
+	config            rpadmin.Config
+	schema            rpadmin.ConfigSchema
 	patches           []configuration.CentralConfigurationPatch
 	unavailable       bool
 	invalid           []string
 	unknown           []string
 	directValidation  bool
-	brokers           []admin.Broker
-	ghostBrokers      []admin.Broker
+	brokers           []rpadmin.Broker
+	ghostBrokers      []rpadmin.Broker
 	monitor           sync.Mutex
 	Log               logr.Logger
 	clusterHealth     bool
-	MaintenanceStatus *admin.MaintenanceStatus
+	MaintenanceStatus *rpadmin.MaintenanceStatus
 }
 
 var _ AdminAPIClient = &MockAdminAPI{Log: ctrl.Log.WithName("AdminAPIClient").WithName("mockAdminAPI")}
@@ -60,56 +60,56 @@ func (m *MockAdminAPI) SetClusterHealth(health bool) {
 	m.clusterHealth = health
 }
 
-func (m *MockAdminAPI) Config(context.Context, bool) (admin.Config, error) {
+func (m *MockAdminAPI) Config(context.Context, bool) (rpadmin.Config, error) {
 	m.Log.WithName("Config").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.unavailable {
-		return admin.Config{}, &unavailableError{}
+		return rpadmin.Config{}, &unavailableError{}
 	}
-	var res admin.Config
+	var res rpadmin.Config
 	makeCopy(m.config, &res)
 	return res, nil
 }
 
 func (m *MockAdminAPI) ClusterConfigStatus(
 	_ context.Context, _ bool,
-) (admin.ConfigStatusResponse, error) {
+) (rpadmin.ConfigStatusResponse, error) {
 	m.Log.WithName("ClusterConfigStatus").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.unavailable {
-		return admin.ConfigStatusResponse{}, &unavailableError{}
+		return rpadmin.ConfigStatusResponse{}, &unavailableError{}
 	}
-	node := admin.ConfigStatus{
+	node := rpadmin.ConfigStatus{
 		Invalid: append([]string{}, m.invalid...),
 		Unknown: append([]string{}, m.unknown...),
 	}
-	return []admin.ConfigStatus{node}, nil
+	return []rpadmin.ConfigStatus{node}, nil
 }
 
 func (m *MockAdminAPI) ClusterConfigSchema(
 	_ context.Context,
-) (admin.ConfigSchema, error) {
+) (rpadmin.ConfigSchema, error) {
 	m.Log.WithName("ClusterConfigSchema").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.unavailable {
-		return admin.ConfigSchema{}, &unavailableError{}
+		return rpadmin.ConfigSchema{}, &unavailableError{}
 	}
-	var res admin.ConfigSchema
+	var res rpadmin.ConfigSchema
 	makeCopy(m.schema, &res)
 	return res, nil
 }
 
 func (m *MockAdminAPI) PatchClusterConfig(
 	_ context.Context, upsert map[string]interface{}, remove []string,
-) (admin.ClusterConfigWriteResult, error) {
+) (rpadmin.ClusterConfigWriteResult, error) {
 	m.Log.WithName("PatchClusterConfig").WithValues("upsert", upsert, "remove", remove).Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.unavailable {
-		return admin.ClusterConfigWriteResult{}, &unavailableError{}
+		return rpadmin.ClusterConfigWriteResult{}, &unavailableError{}
 	}
 	m.patches = append(m.patches, configuration.CentralConfigurationPatch{
 		Upsert: upsert,
@@ -126,7 +126,7 @@ func (m *MockAdminAPI) PatchClusterConfig(
 	}
 	invalidRequest := len(newInvalid)+len(newUnknown) > 0
 	if m.directValidation && invalidRequest {
-		return admin.ClusterConfigWriteResult{}, &admin.HTTPResponseError{
+		return rpadmin.ClusterConfigWriteResult{}, &rpadmin.HTTPResponseError{
 			Method: http.MethodPut,
 			URL:    "/v1/cluster_config",
 			Response: &http.Response{
@@ -139,7 +139,7 @@ func (m *MockAdminAPI) PatchClusterConfig(
 	if invalidRequest {
 		m.invalid = addAsSet(m.invalid, newInvalid...)
 		m.unknown = addAsSet(m.unknown, newUnknown...)
-		return admin.ClusterConfigWriteResult{}, nil
+		return rpadmin.ClusterConfigWriteResult{}, nil
 	}
 	if m.config == nil {
 		m.config = make(map[string]interface{})
@@ -160,7 +160,7 @@ func (m *MockAdminAPI) PatchClusterConfig(
 			}
 		}
 	}
-	return admin.ClusterConfigWriteResult{}, nil
+	return rpadmin.ClusterConfigWriteResult{}, nil
 }
 
 func (m *MockAdminAPI) CreateUser(_ context.Context, _, _, _ string) error {
@@ -217,19 +217,19 @@ func (m *MockAdminAPI) Clear() {
 	m.directValidation = false
 	m.brokers = nil
 	m.clusterHealth = true
-	m.MaintenanceStatus = &admin.MaintenanceStatus{}
+	m.MaintenanceStatus = &rpadmin.MaintenanceStatus{}
 }
 
 func (m *MockAdminAPI) GetFeatures(
 	_ context.Context,
-) (admin.FeaturesResponse, error) {
+) (rpadmin.FeaturesResponse, error) {
 	m.Log.WithName("GetFeatures").Info("called")
-	return admin.FeaturesResponse{
+	return rpadmin.FeaturesResponse{
 		ClusterVersion: 0,
-		Features: []admin.Feature{
+		Features: []rpadmin.Feature{
 			{
 				Name:      "central_config",
-				State:     admin.FeatureStateActive,
+				State:     rpadmin.FeatureStateActive,
 				WasActive: true,
 			},
 		},
@@ -246,25 +246,25 @@ func (m *MockAdminAPI) SetLicense(_ context.Context, _ interface{}) error {
 	return nil
 }
 
-func (m *MockAdminAPI) GetLicenseInfo(_ context.Context) (admin.License, error) {
+func (m *MockAdminAPI) GetLicenseInfo(_ context.Context) (rpadmin.License, error) {
 	m.Log.WithName("GetLicenseInfo").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.unavailable {
-		return admin.License{}, &unavailableError{}
+		return rpadmin.License{}, &unavailableError{}
 	}
-	return admin.License{}, nil
+	return rpadmin.License{}, nil
 }
 
 //nolint:gocritic // It's test API
 func (m *MockAdminAPI) RegisterPropertySchema(
-	name string, metadata admin.ConfigPropertyMetadata,
+	name string, metadata rpadmin.ConfigPropertyMetadata,
 ) {
 	m.Log.WithName("RegisterPropertySchema").WithValues("name", name, "metadata", metadata).Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 	if m.schema == nil {
-		m.schema = make(map[string]admin.ConfigPropertyMetadata)
+		m.schema = make(map[string]rpadmin.ConfigPropertyMetadata)
 	}
 	m.schema[name] = metadata
 }
@@ -278,12 +278,12 @@ func (m *MockAdminAPI) PropertyGetter(name string) func() interface{} {
 	}
 }
 
-func (m *MockAdminAPI) ConfigGetter() func() admin.Config {
-	return func() admin.Config {
+func (m *MockAdminAPI) ConfigGetter() func() rpadmin.Config {
+	return func() rpadmin.Config {
 		m.Log.WithName("ConfigGetter").Info("called")
 		m.monitor.Lock()
 		defer m.monitor.Unlock()
-		var res admin.Config
+		var res rpadmin.Config
 		makeCopy(m.config, &res)
 		return res
 	}
@@ -326,32 +326,32 @@ func (m *MockAdminAPI) SetUnavailable(unavailable bool) {
 
 func (m *MockAdminAPI) GetNodeConfig(
 	_ context.Context,
-) (admin.NodeConfig, error) {
+) (rpadmin.NodeConfig, error) {
 	m.Log.WithName("GetNodeConfig").Info("called")
-	return admin.NodeConfig{}, nil
+	return rpadmin.NodeConfig{}, nil
 }
 
 //nolint:goerr113 // test code
 func (s *ScopedMockAdminAPI) GetNodeConfig(
 	ctx context.Context,
-) (admin.NodeConfig, error) {
+) (rpadmin.NodeConfig, error) {
 	brokers, err := s.Brokers(ctx)
 	if err != nil {
-		return admin.NodeConfig{}, err
+		return rpadmin.NodeConfig{}, err
 	}
 	s.monitor.Lock()
 	defer s.monitor.Unlock()
 	for _, b := range s.ghostBrokers {
 		if b.NodeID == int(s.Ordinal) {
-			return admin.NodeConfig{
+			return rpadmin.NodeConfig{
 				NodeID: b.NodeID,
 			}, nil
 		}
 	}
 	if len(brokers) <= int(s.Ordinal) {
-		return admin.NodeConfig{}, fmt.Errorf("broker not registered")
+		return rpadmin.NodeConfig{}, fmt.Errorf("broker not registered")
 	}
-	return admin.NodeConfig{
+	return rpadmin.NodeConfig{
 		NodeID: brokers[int(s.Ordinal)].NodeID,
 	}, nil
 }
@@ -363,7 +363,7 @@ func (m *MockAdminAPI) SetDirectValidationEnabled(directValidation bool) {
 	m.directValidation = directValidation
 }
 
-func (m *MockAdminAPI) AddBroker(broker admin.Broker) {
+func (m *MockAdminAPI) AddBroker(broker rpadmin.Broker) {
 	m.Log.WithName("AddBroker").WithValues("broker", broker).Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
@@ -371,7 +371,7 @@ func (m *MockAdminAPI) AddBroker(broker admin.Broker) {
 	m.brokers = append(m.brokers, broker)
 }
 
-func (m *MockAdminAPI) AddGhostBroker(broker admin.Broker) bool {
+func (m *MockAdminAPI) AddGhostBroker(broker rpadmin.Broker) bool {
 	m.Log.WithName("AddGhostBroker").WithValues("broker", broker).Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
@@ -399,18 +399,18 @@ func (m *MockAdminAPI) RemoveBroker(id int) bool {
 	return true
 }
 
-func (m *MockAdminAPI) Brokers(_ context.Context) ([]admin.Broker, error) {
+func (m *MockAdminAPI) Brokers(_ context.Context) ([]rpadmin.Broker, error) {
 	m.Log.WithName("Brokers").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
 
-	return append([]admin.Broker{}, m.brokers...), nil
+	return append([]rpadmin.Broker{}, m.brokers...), nil
 }
 
 func (m *MockAdminAPI) BrokerStatusGetter(
 	id int,
-) func() admin.MembershipStatus {
-	return func() admin.MembershipStatus {
+) func() rpadmin.MembershipStatus {
+	return func() rpadmin.MembershipStatus {
 		m.Log.WithName("BrokerStatusGetter(func)").WithValues("id", id).Info("called")
 		m.monitor.Lock()
 		defer m.monitor.Unlock()
@@ -426,12 +426,12 @@ func (m *MockAdminAPI) BrokerStatusGetter(
 
 func (m *MockAdminAPI) DecommissionBroker(_ context.Context, id int) error {
 	m.Log.WithName("DecommissionBroker").WithValues("id", id).Info("called")
-	return m.SetBrokerStatus(id, admin.MembershipStatusDraining)
+	return m.SetBrokerStatus(id, rpadmin.MembershipStatusDraining)
 }
 
 func (m *MockAdminAPI) RecommissionBroker(_ context.Context, id int) error {
 	m.Log.WithName("RecommissionBroker").WithValues("id", id).Info("called")
-	return m.SetBrokerStatus(id, admin.MembershipStatusActive)
+	return m.SetBrokerStatus(id, rpadmin.MembershipStatusActive)
 }
 
 func (m *MockAdminAPI) EnableMaintenanceMode(_ context.Context, _ int) error {
@@ -444,18 +444,18 @@ func (m *MockAdminAPI) DisableMaintenanceMode(_ context.Context, _ int, _ bool) 
 	return nil
 }
 
-func (m *MockAdminAPI) GetHealthOverview(_ context.Context) (admin.ClusterHealthOverview, error) {
+func (m *MockAdminAPI) GetHealthOverview(_ context.Context) (rpadmin.ClusterHealthOverview, error) {
 	m.Log.WithName("GetHealthOverview").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
-	return admin.ClusterHealthOverview{
+	return rpadmin.ClusterHealthOverview{
 		IsHealthy: m.clusterHealth,
 	}, nil
 }
 
 //nolint:goerr113 // test code
 func (m *MockAdminAPI) SetBrokerStatus(
-	id int, status admin.MembershipStatus,
+	id int, status rpadmin.MembershipStatus,
 ) error {
 	m.Log.WithName("SetBrokerStatus").WithValues("id", id, "status", status).Info("called")
 	m.monitor.Lock()
@@ -470,9 +470,9 @@ func (m *MockAdminAPI) SetBrokerStatus(
 	return fmt.Errorf("unknown broker %d", id)
 }
 
-func (m *MockAdminAPI) Broker(_ context.Context, nodeID int) (admin.Broker, error) {
+func (m *MockAdminAPI) Broker(_ context.Context, nodeID int) (rpadmin.Broker, error) {
 	t := true
-	return admin.Broker{
+	return rpadmin.Broker{
 		NodeID:           nodeID,
 		NumCores:         2,
 		MembershipStatus: "",

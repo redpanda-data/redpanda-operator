@@ -134,7 +134,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 			name:                    "Primitive object in additional configuration",
 			additionalConfiguration: map[string]string{"redpanda.transactional_id_expiration_ms": "25920000000", "rpk.overprovisioned": "true"},
 			expectedStrings:         []string{"transactional_id_expiration_ms: 25920000000"},
-			expectedHash:            "523b9f16869acb716683f2dc844fe203",
+			expectedHash:            "78b397cdd7924ba28cea07b55e0c8444",
 		},
 		{
 			name:                    "Complex struct in additional configuration",
@@ -362,7 +362,7 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 	err := c.Get(context.Background(), cfgRes.Key(), actual)
 	require.NoError(t, err)
 	data := actual.Data["redpanda.yaml"]
-	cfg := &config.Config{}
+	cfg := config.ProdDefault()
 	require.NoError(t, yaml.Unmarshal([]byte(data), cfg))
 	require.Equal(t, "/etc/tls/certs/ca/tls.key", cfg.PandaproxyClient.BrokerTLS.KeyFile)
 	require.Equal(t, "/etc/tls/certs/ca/tls.crt", cfg.PandaproxyClient.BrokerTLS.CertFile)

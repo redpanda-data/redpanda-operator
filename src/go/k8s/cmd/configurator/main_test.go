@@ -18,7 +18,7 @@ import (
 )
 
 func TestPopulateRack(t *testing.T) {
-	cfg := &config.Config{}
+	cfg := config.ProdDefault()
 	tests := []struct {
 		Zone         string
 		ZoneID       string
@@ -43,7 +43,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		addtionalListenersCfg           string
 		hostIndex                       int
 		hostIP                          string
-		nodeCfg                         config.Config
+		nodeCfg                         config.RedpandaYaml
 		expectedKafkaAPI                []config.NamedAuthNSocketAddress
 		expectedAdvertisedKafkaAPI      []config.NamedSocketAddress
 		expectedKafkaAPITLS             []config.ServerTLS
@@ -57,7 +57,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{'invalid format'`,
 			hostIndex:             1,
 			hostIP:                "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{},
 			},
 			expectedError: true,
@@ -67,7 +67,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			addtionalListenersCfg: "",
 			hostIndex:             1,
 			hostIP:                "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					KafkaAPI: []config.NamedAuthNSocketAddress{{
 						Name:    "internal",
@@ -91,7 +91,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			addtionalListenersCfg: "{}",
 			hostIndex:             1,
 			hostIP:                "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					AdvertisedKafkaAPI: []config.NamedSocketAddress{{
 						Name:    "internal",
@@ -114,7 +114,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 				`"redpanda.kafka_api":"[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}, 'authentication_method': 'sasl'}]"}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{},
 			},
 			expectedKafkaAPI: []config.NamedAuthNSocketAddress{
@@ -141,7 +141,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 				`"pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0', 'port': {{32082 | add .Index}}}]"}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					KafkaAPI: []config.NamedAuthNSocketAddress{{
 						Name:    "kafka-external",
@@ -230,7 +230,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 				`"pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0', 'port': {{30282 | add .Index}}, 'authentication_method': 'sasl'}]"}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
-			nodeCfg: config.Config{
+			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					KafkaAPI: []config.NamedAuthNSocketAddress{{
 						Name:    "kafka-internal",

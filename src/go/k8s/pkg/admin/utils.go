@@ -12,7 +12,7 @@ package admin
 import (
 	"context"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 )
 
 // CentralConfigFeatureName is the name of the centralized configuration feature in Redpanda
@@ -28,7 +28,7 @@ func IsFeatureActive(
 	}
 	for _, f := range res.Features {
 		if f.Name == name {
-			return f.State == admin.FeatureStateActive, nil
+			return f.State == rpadmin.FeatureStateActive, nil
 		}
 	}
 	return false, nil

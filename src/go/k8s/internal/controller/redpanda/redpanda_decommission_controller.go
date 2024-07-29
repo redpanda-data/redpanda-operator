@@ -21,7 +21,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/api/admin"
+	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -579,7 +579,7 @@ func isNameInList(name string, keys []string) bool {
 	return false
 }
 
-func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *int, values map[string]interface{}) (*admin.AdminAPI, error) {
+func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *int, values map[string]interface{}) (*rpadmin.AdminAPI, error) {
 	tlsEnabled, ok, err := unstructured.NestedBool(values, "tls", "enabled")
 	if !ok || err != nil {
 		// probably not a correct helm release, bail
@@ -614,7 +614,7 @@ func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *in
 	}
 
 	// TODO we do not tls, but we may need sasl items here.
-	return admin.NewAdminAPI(urls, admin.BasicCredentials{}, tlsConfig)
+	return rpadmin.NewAdminAPI(urls, &rpadmin.NopAuth{}, tlsConfig)
 }
 
 func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, values map[string]interface{}) ([]string, error) {
@@ -654,11 +654,11 @@ func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, v
 	return brokerList, nil
 }
 
-func watchClusterHealth(ctx context.Context, adminAPI *admin.AdminAPI) (*admin.ClusterHealthOverview, error) {
+func watchClusterHealth(ctx context.Context, adminAPI *rpadmin.AdminAPI) (*rpadmin.ClusterHealthOverview, error) {
 	start := time.Now()
 	stop := start.Add(60 * time.Second)
 
-	var health admin.ClusterHealthOverview
+	var health rpadmin.ClusterHealthOverview
 	var err error
 	for time.Now().Before(stop) {
 		health, err = adminAPI.GetHealthOverview(ctx)
