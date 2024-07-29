@@ -58,4 +58,5 @@ until [ "$retries" -lt 0 ]; do
   ((retries = retries - 1))
 done
 echo "ERROR: out of retries"
+../../../hack/get-redpanda-info.sh
 exit 1
