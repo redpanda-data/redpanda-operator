@@ -20,6 +20,7 @@ type attachedResources struct {
 	log        logr.Logger
 	cluster    *vectorizedv1alpha1.Cluster
 	items      map[string]resources.Resource
+	order      []string
 }
 
 const (
@@ -55,7 +56,11 @@ type resourceKey string
 func (a *attachedResources) Ensure() (ctrl.Result, error) {
 	result := ctrl.Result{}
 	var errs error
-	for key, resource := range a.items {
+	for _, key := range a.order {
+		resource, ok := a.items[key]
+		if !ok {
+			continue
+		}
 		if resource == nil {
 			continue
 		}
@@ -82,6 +87,7 @@ func (a *attachedResources) bootstrapService() {
 	redpandaPorts := networking.NewRedpandaPorts(a.cluster)
 	loadbalancerPorts := collectLBPorts(redpandaPorts)
 	a.items[bootstrapService] = resources.NewLoadBalancerService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, loadbalancerPorts, true, a.log)
+	a.order = append(a.order, bootstrapService)
 }
 
 func (a *attachedResources) getBootstrapService() *resources.LoadBalancerServiceResource {
@@ -99,6 +105,7 @@ func (a *attachedResources) clusterRole() {
 		return
 	}
 	a.items[clusterRole] = resources.NewClusterRole(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
+	a.order = append(a.order, clusterRole)
 }
 
 func (a *attachedResources) clusterRoleBinding() {
@@ -107,6 +114,7 @@ func (a *attachedResources) clusterRoleBinding() {
 		return
 	}
 	a.items[clusterRoleBinding] = resources.NewClusterRoleBinding(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
+	a.order = append(a.order, clusterRoleBinding)
 }
 
 func (a *attachedResources) getClusterRoleBinding() *resources.ClusterRoleBindingResource {
@@ -122,6 +130,7 @@ func (a *attachedResources) clusterService() {
 	redpandaPorts := networking.NewRedpandaPorts(a.cluster)
 	clusterPorts := collectClusterPorts(redpandaPorts, a.cluster)
 	a.items[clusterService] = resources.NewClusterService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, clusterPorts, a.log)
+	a.order = append(a.order, clusterService)
 }
 
 func (a *attachedResources) getClusterService() *resources.ClusterServiceResource {
@@ -153,6 +162,7 @@ func (a *attachedResources) configMap() error {
 	pki := a.items[pki].(*certmanager.PkiReconciler)
 
 	a.items[configMap] = resources.NewConfigMap(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.getHeadlessServiceFQDN(), proxySASLUserKey, schemaRegistrySASLUserKey, pki.BrokerTLSConfigProvider(), a.log)
+	a.order = append(a.order, configMap)
 	return nil
 }
 
@@ -173,6 +183,7 @@ func (a *attachedResources) headlessService() {
 	headlessPorts := collectHeadlessPorts(redpandaPorts)
 
 	a.items[headlessService] = resources.NewHeadlessService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, headlessPorts, a.log)
+	a.order = append(a.order, headlessService)
 }
 
 func (a *attachedResources) getHeadlessService() *resources.HeadlessServiceResource {
@@ -215,6 +226,7 @@ func (a *attachedResources) ingress() {
 		clusterServiceName,
 		resources.PandaproxyPortExternalName,
 		a.log).WithAnnotations(map[string]string{resources.SSLPassthroughAnnotation: "true"}).WithUserConfig(pandaProxyIngressConfig)
+	a.order = append(a.order, ingress)
 }
 
 func (a *attachedResources) nodeportService() {
@@ -225,6 +237,7 @@ func (a *attachedResources) nodeportService() {
 	redpandaPorts := networking.NewRedpandaPorts(a.cluster)
 	nodeports := collectNodePorts(redpandaPorts)
 	a.items[nodeportService] = resources.NewNodePortService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, nodeports, a.log)
+	a.order = append(a.order, nodeportService)
 }
 
 func (a *attachedResources) getNodeportService() *resources.NodePortServiceResource {
@@ -248,6 +261,7 @@ func (a *attachedResources) pki() error {
 	}
 
 	a.items[pki] = newPKI
+	a.order = append(a.order, pki)
 	return nil
 }
 
@@ -265,6 +279,7 @@ func (a *attachedResources) podDisruptionBudget() {
 		return
 	}
 	a.items[podDisruptionBudget] = resources.NewPDB(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
+	a.order = append(a.order, podDisruptionBudget)
 }
 
 func (a *attachedResources) proxySuperuser() {
@@ -278,6 +293,7 @@ func (a *attachedResources) proxySuperuser() {
 	if a.cluster.IsSASLOnInternalEnabled() && a.cluster.PandaproxyAPIInternal() != nil {
 		a.items[proxySuperuser] = resources.NewSuperUsers(a.reconciler.Client, a.cluster, a.reconciler.Scheme, resources.ScramPandaproxyUsername, resources.PandaProxySuffix, a.log)
 	}
+	a.order = append(a.order, proxySuperuser)
 }
 
 func (a *attachedResources) getProxySuperuser() *resources.SuperUsersResource {
@@ -303,6 +319,7 @@ func (a *attachedResources) schemaRegistrySuperUser() {
 	if a.cluster.IsSASLOnInternalEnabled() && a.cluster.Spec.Configuration.SchemaRegistry != nil {
 		a.items[schemaRegistrySuperUser] = resources.NewSuperUsers(a.reconciler.Client, a.cluster, a.reconciler.Scheme, resources.ScramSchemaRegistryUsername, resources.SchemaRegistrySuffix, a.log)
 	}
+	a.order = append(a.order, schemaRegistrySuperUser)
 }
 
 func (a *attachedResources) getSchemaRegistrySuperUser() *resources.SuperUsersResource {
@@ -323,6 +340,7 @@ func (a *attachedResources) serviceAccount() {
 		return
 	}
 	a.items[serviceAccount] = resources.NewServiceAccount(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
+	a.order = append(a.order, serviceAccount)
 }
 
 func (a *attachedResources) getServiceAccount() *resources.ServiceAccountResource {
@@ -344,6 +362,7 @@ func (a *attachedResources) secret() {
 		return
 	}
 	a.items[secret] = resources.PreStartStopScriptSecret(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.getHeadlessServiceFQDN(), a.getProxySuperUserKey(), a.getSchemaRegistrySuperUserKey(), a.log)
+	a.order = append(a.order, secret)
 }
 
 func (a *attachedResources) statefulSet() error {
@@ -375,6 +394,7 @@ func (a *attachedResources) statefulSet() error {
 		a.reconciler.DecommissionWaitInterval,
 		a.log,
 		a.reconciler.MetricsTimeout)
+	a.order = append(a.order, statefulSet)
 	return nil
 }
 
