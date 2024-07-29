@@ -173,6 +173,11 @@ func (r *Reconciling) Do(
 		return ctrl.Result{}, fmt.Errorf("sync console store: %w", err)
 	}
 
+	// To prevent nil pointer dereference
+	if cluster == nil {
+		return ctrl.Result{}, fmt.Errorf("cluster is nil")
+	}
+
 	// ConfigMap is set to immutable and a new one is created if needed every reconcile
 	// Cleanup unused ConfigMaps before ensuring Resources which might create new ConfigMaps again
 	// Otherwise, if reconciliation always fail, a lot of unused ConfigMaps will be created
