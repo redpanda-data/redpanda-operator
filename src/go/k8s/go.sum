@@ -243,6 +243,8 @@ github.com/chai2010/gettext-go v1.0.2 h1:1Lwwip6Q2QGsAdl/ZKPCwTe9fe0CjlUbqj5bFNS
 github.com/chai2010/gettext-go v1.0.2/go.mod h1:y+wnP2cHYaVj19NZhYKAwEMH2CI1gNHeQQ+5AjwawxA=
 github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 h1:krfRl01rzPzxSxyLyrChD+U+MzsBXbm0OwYYB67uF+4=
 github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589/go.mod h1:OuDyvmLnMCwa2ep4Jkm6nyA0ocJuZlGyk2gGseVzERM=
+github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c h1:GZtcJAFTBCr16eM7ytFwWMg9oLaMsRfSsVyi3lTo+mw=
+github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
@@ -1037,8 +1039,8 @@ github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a4
 github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240/go.mod h1:5KLXArOMFOrwb3BihpFaRNiPCyo9AXsXhvMdUmrCdUg=
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19 h1:sJjDhnIbTMOuP4Rnhm1N3GNfgv6BJlocCnGliNvhgbw=
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19/go.mod h1:T39OECA7eOlhpHZPBSGg+bpuwtt/G4m03fjBkJ821CM=
-github.com/redpanda-data/helm-charts v0.0.0-20240727163741-bcb03896c296 h1:WC9J3cp9m9Jr7D6wmiMjemAYFB2/2QWfG0lXBHWL+tA=
-github.com/redpanda-data/helm-charts v0.0.0-20240727163741-bcb03896c296/go.mod h1:O/qWhNT0F7AHBZ6I6gBO7U6YulsvpJIJgImekqXs2Nc=
+github.com/redpanda-data/helm-charts v0.0.0-20240813185950-6155ae7383ca h1:GhdP0kPJ9bKpgYObsZWyuw7+d6nFjgXsds8n59bb7Ig=
+github.com/redpanda-data/helm-charts v0.0.0-20240813185950-6155ae7383ca/go.mod h1:O/qWhNT0F7AHBZ6I6gBO7U6YulsvpJIJgImekqXs2Nc=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e h1:8HB05vSCY+0MwjT2DIVq6gJV5iw7nQNIDfMqcc1NEC8=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e/go.mod h1:jF5kbQy3qT/zufL27DE3lecfYTRWeAzSiVmrbDDQwUw=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240105044330-c094966ca0cf h1:M14hKddyokDrRganGDiUbFPwF2G0agDZIZzpocHf5rc=

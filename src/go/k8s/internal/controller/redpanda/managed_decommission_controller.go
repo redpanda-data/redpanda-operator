@@ -251,10 +251,11 @@ var ErrZeroReplicas = errors.New("redpanda replicas is zero")
 
 func getRedpandaReplicas(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Redpanda) (int, error) {
 	requestedReplicas := ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+
 	if requestedReplicas == 0 {
 		resourcesName := rp.Name
-		if rp.Spec.ClusterSpec.FullNameOverride != "" {
-			resourcesName = rp.Spec.ClusterSpec.FullNameOverride
+		if override := ptr.Deref(rp.Spec.ClusterSpec.FullnameOverride, ""); override != "" {
+			resourcesName = override
 		}
 
 		var sts appsv1.StatefulSet

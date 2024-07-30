@@ -3,17 +3,18 @@ package v1alpha2_test
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"strings"
+	"reflect"
 	"testing"
+	"time"
 
-	fuzz "github.com/google/gofuzz"
 	"github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/apiutil"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+	"pgregory.net/rapid"
 )
 
 // TestRedpanda_ValuesJSON asserts that .ValuesJSON appropriately coalesces the
@@ -71,88 +72,83 @@ func MarshalThrough[T any](data []byte) ([]byte, error) {
 	return json.Marshal(through)
 }
 
-func AssertJSONCompat[From, To any](t *testing.T, fuzzer *fuzz.Fuzzer) {
-	for i := 0; i < 500; i++ {
-		var from From
-		fuzzer.Fuzz(&from)
+func AssertJSONCompat[From, To any](t *rapid.T, cfg rapid.MakeConfig, fn func(*From)) {
+	var to To
+	from := rapid.MakeCustom[From](cfg).Draw(t, "from")
 
-		original, err := json.Marshal(from)
-		require.NoError(t, err)
-
-		through, err := MarshalThrough[To](original)
-		require.NoError(t, err)
-
-		require.JSONEq(t, string(original), string(through))
+	if fn != nil {
+		fn(&from)
 	}
+
+	original, err := json.Marshal(from)
+	require.NoError(t, err)
+
+	through, err := MarshalThrough[To](original)
+	require.NoError(t, err, "failed to marshal %s (%T) through %T", original, from, to)
+
+	require.JSONEq(t, string(original), string(through), "%s (%T) should have serialized to %s (%T)", through, to, original, from)
 }
+
+var (
+	Quantity = rapid.Custom(func(t *rapid.T) *resource.Quantity {
+		return resource.NewQuantity(rapid.Int64().Draw(t, "Quantity"), resource.DecimalSI)
+	})
+
+	Duration = rapid.Custom(func(t *rapid.T) metav1.Duration {
+		dur := rapid.Int64().Draw(t, "Duration")
+		return metav1.Duration{Duration: time.Duration(dur)}
+	})
+)
 
 // TestHelmValuesCompat asserts that the JSON representation of the redpanda
 // cluster spec is byte of byte compatible with the values that the helm chart
 // accepts.
 func TestHelmValuesCompat(t *testing.T) {
-	// There are integer sizing mismatches, so clamp all ints to 32
-	// bits.
-	intTruncation := func(n *int, c fuzz.Continue) { //nolint:staticcheck // fuzzing is weird
-		v := int(c.Int31())
-		*n = v
+	cfg := rapid.MakeConfig{
+		Types: map[reflect.Type]*rapid.Generator[any]{
+			reflect.TypeOf(&resource.Quantity{}):       Quantity.AsAny(),
+			reflect.TypeOf(metav1.Duration{}):          Duration.AsAny(),
+			reflect.TypeOf([]interface{}{}).Elem():     rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeOf(&redpanda.PartialPodSpec{}): rapid.Just[any](nil), // PodSpec's serialization intentionally diverges from PartialPodSpec's so we can leverage builtin types and their validation.
+		},
+		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{
+			reflect.TypeOf(redpanda.PartialValues{}): {
+				"Console":           rapid.Just[any](nil), // TODO assert that console's typings are correct.
+				"Connectors":        rapid.Just[any](nil), // TODO assert that connectors' typings are correct.
+				"CommonAnnotations": rapid.Just[any](nil), // This was accidentally added and shouldn't exist.
+			},
+			reflect.TypeOf(redpanda.PartialStorage{}): {
+				"TieredStorageHostPath":         rapid.Just[any](nil), // Deprecated field, not worth fixing.
+				"TieredStoragePersistentVolume": rapid.Just[any](nil), // Deprecated field, not worth fixing.
+			},
+			reflect.TypeOf(redpanda.PartialStatefulset{}): {
+				"SecurityContext":    rapid.Just[any](nil), // Deprecated field, not worth fixing.
+				"PodSecurityContext": rapid.Just[any](nil), // Deprecated field, not worth fixing.
+			},
+			reflect.TypeOf(redpanda.PartialTieredStorageCredentials{}): {
+				"ConfigurationKey": rapid.Just[any](nil), // Deprecated field, not worth fixing.
+				"Key":              rapid.Just[any](nil), // Deprecated field, not worth fixing.
+				"Name":             rapid.Just[any](nil), // Deprecated field, not worth fixing.
+			},
+			reflect.TypeOf(redpanda.PartialTLSCert{}): {
+				// Duration is incorrectly typed as a *string. Ensure it's a valid [metav1.]
+				"Duration": rapid.Custom(func(t *rapid.T) *string {
+					dur := rapid.Ptr(rapid.Int64(), true).Draw(t, "Duration")
+					if dur == nil {
+						return nil
+					}
+					return ptr.To(time.Duration(*dur).String())
+				}).AsAny(),
+			},
+		},
 	}
 
-	// Makes strings easier to read.
-	asciiStrs := func(s *string, c fuzz.Continue) {
-		var x []byte
-		for i := 0; i < c.Intn(20); i++ {
-			// Ascii range for printable characters is [32,126].
-			x = append(x, byte(32+c.Intn(127-32)))
-		}
-		*s = string(x)
-	}
-
-	t.Run("helm2crd", func(t *testing.T) {
-		t.Skipf("Too many issues to currently be useful")
-
-		fuzzer := fuzz.New().NilChance(0.5).Funcs(
-			asciiStrs,
-			intTruncation,
-			func(a *any, c fuzz.Continue) {},
-		)
-		AssertJSONCompat[redpanda.PartialValues, v1alpha2.RedpandaClusterSpec](t, fuzzer)
-	})
-
-	t.Run("crd2helm", func(t *testing.T) {
-		disabledFields := []string{
-			"Connectors",       // Untyped in the CRD.
-			"Console",          // Untyped in the CRD.
-			"Force",            // Missing from Helm
-			"FullNameOverride", // Incorrectly cased in the CRD's JSON tag (Should be fullnameOverride). Would be a breaking change to fix.
-			"Listeners",        // CRD uses homogeneous types for all listeners which can cause divergences.
-			"Statefulset",      // Many divergences from helm. Needs further inspection.
-			"Storage",          // Helm is missing nameOverwrite
-			"Tuning",           // Disabled due to extraVolumeMounts being typed as a string in helm.
-
-			// Deprecated fields (IE fields that shouldn't be in the CRD but
-			// aren't removed for backwards compat).
-			"Organization", // UsageStats
-		}
-
-		fuzzer := fuzz.New().NilChance(0.5).SkipFieldsWithPattern(
-			regexp.MustCompile("^("+strings.Join(disabledFields, "|")+"$)"),
-		).Funcs(
-			asciiStrs,
-			intTruncation,
-			// There are some untyped values as runtime.RawExtension's within
-			// the CRD. We can't really generate those, so skip over them for
-			// now. Omitting this function will call .Fuzz to panic.
-			func(e **runtime.RawExtension, c fuzz.Continue) {},
-			// Ensure that certificates are never nil. There's a mild divergence
-			// in how the values unmarshal which is irrelevant to this test.
-			func(cert *v1alpha2.Certificate, c fuzz.Continue) {
-				c.Fuzz(cert)
-			},
-			func(q *resource.Quantity, c fuzz.Continue) {
-				quant := resource.NewQuantity(c.Int63(), resource.DecimalSI)
-				*q = *quant
-			},
-		)
-		AssertJSONCompat[v1alpha2.RedpandaClusterSpec, redpanda.PartialValues](t, fuzzer)
+	rapid.Check(t, func(t *rapid.T) {
+		AssertJSONCompat[redpanda.PartialValues, v1alpha2.RedpandaClusterSpec](t, cfg, func(from *redpanda.PartialValues) {
+			if from.Storage != nil && from.Storage.Tiered != nil && from.Storage.Tiered.PersistentVolume != nil {
+				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
+				from.Storage.Tiered.PersistentVolume.Size = nil
+			}
+		})
 	})
 }
