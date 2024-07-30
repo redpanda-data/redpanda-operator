@@ -101,12 +101,12 @@ tasks:
     dir: src/go/k8s
     vars:
       CONSTRAINT: '{{.CONSTRAINT | default ""}}'
-      REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
+      REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda-unstable"}}'
     deps:
       - :dev:install-docker-tag-list
     cmds:
       - |
-        TAG=$("{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list" -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
+        TAG=$(curl "https://hub.docker.com/v2/namespaces/redpandadata/repositories/redpanda-unstable/tags?page_size=25" | jq -r '.results | map(select(.images | length >= 2))[0].name')
         docker pull "{{.REPO}}":"${TAG}"
         docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
 

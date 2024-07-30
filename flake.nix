@@ -48,6 +48,7 @@
               pkgs.go-task
               pkgs.go_1_22
               pkgs.golangci-lint
+              pkgs.jq
               pkgs.k3d # Kind alternative that allows adding/removing Nodes.
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
