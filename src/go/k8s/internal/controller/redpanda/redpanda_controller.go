@@ -304,8 +304,8 @@ func (r *RedpandaReconciler) tryMigrateRedpanda(ctx context.Context, log logr.Lo
 	errorResult := r.migrateRedpandaPods(ctx, log, rp)
 
 	resourcesName := rp.Name
-	if rp.Spec.ClusterSpec.FullNameOverride != "" {
-		resourcesName = rp.Spec.ClusterSpec.FullNameOverride
+	if override := ptr.Deref(rp.Spec.ClusterSpec.FullnameOverride, ""); override != "" {
+		resourcesName = override
 	}
 
 	var svc v1.Service
