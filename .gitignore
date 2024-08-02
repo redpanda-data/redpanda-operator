@@ -27,7 +27,6 @@ src/go/k8s/tests/e2e-v2-helm/
 .*.sw?
 
 # direnv files
-.envrc
 .direnv/
 
 # task cache directory
