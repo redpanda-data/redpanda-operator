@@ -1,8 +1,6 @@
 # Image URL to use all building/pushing image targets
 OPERATOR_IMG_LATEST ?= "localhost/redpanda-operator:dev"
 CONFIGURATOR_IMG_LATEST ?= "localhost/configurator:dev"
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd"
 
 HELM_CONTROLLER_VERSION ?= v0.37.2
 SOURCE_CONTROLLER_VERSION ?= v1.2.3
@@ -42,17 +40,17 @@ endif
 all: build
 
 # Run tests
-test: manifests generate fmt vet
+test: manifests generate fmt
 	cd ../../.. && nix develop -c ./task k8s:run-unit-tests
 
 # Build manager binary
 .PHONY: manager
-manager: manifests generate fmt vet
+manager: manifests generate fmt
 	go build -o bin/manager cmd/main.go
 
 # Build manager binary
 .PHONY: configurator
-configurator: manifests generate fmt vet
+configurator: manifests generate fmt
 	go build -o bin/configurator cmd/configurator/main.go
 
 .PHONY: build
@@ -60,7 +58,7 @@ build: manager configurator
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
-	go fmt ./...
+	cd ../../.. && nix develop -c ./task fmt
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate vet manifests fmt
@@ -96,11 +94,6 @@ undeploy:
 manifests:
 	cd ../../.. && nix develop -c ./task k8s:generate-manifests
 
-# Run go vet against code
-.PHONY: vet
-vet:
-	go vet ./...
-
 # Generate code
 .PHONY: generate
 generate:
@@ -120,7 +113,7 @@ docker-build:
 	cd ../../.. && ./task k8s:build-operator-images
 
 # Build the docker image
-docker-build-configurator: prepare-dockerfile
+docker-build-configurator:
 	echo "~~~ Building configurator image :docker:"
 	cd ../../.. && ./task k8s:build-operator-images
 
@@ -130,33 +123,21 @@ push-to-kind: kind-create certmanager-install
 	kind load docker-image ${CONFIGURATOR_IMG_LATEST}
 
 # Execute end to end tests
-e2e-tests: kuttl test docker-build docker-build-configurator
-	echo "~~~ Running kuttl tests :k8s:"
-	$(KUTTL) test $(TEST_ONLY_FLAG) $(KUTTL_TEST_FLAGS)
+e2e-tests:
+	cd ../../.. && nix develop -c ./task k8s:run-k8s-tests
 
 # Execute end to end tests v2
 e2e-tests-v2: kuttl
-	echo "~~~ Running kuttl tests :k8s:redpanda"
-	$(KUTTL) test $(TEST_ONLY_FLAG) --config kuttl-v2-test.yaml $(KUTTL_TEST_FLAGS)
+	cd ../../.. && nix develop -c ./task k8s:run-k8s-v2-tests
 
 # Create resources for the e2e-tests-v2-ci
 create-e2e-tests-v2-helm:
 	./hack/v2-helm-setup.sh
 
 # Execute end to end tests v2
-e2e-tests-v2-helm: kuttl create-e2e-tests-v2-helm
+e2e-tests-v2-helm:
 	echo "~~~ Running kuttl tests :k8s:redpanda"
-	$(KUTTL) test $(TEST_ONLY_FLAG) --config kuttl-v2-helm-test.yaml $(KUTTL_TEST_FLAGS)
-
-# Execute end to end unstable tests
-e2e-unstable-tests: kuttl test docker-build docker-build-configurator
-	echo "~~~ Running kuttl unstable tests :k8s:"
-	$(KUTTL) test --config kuttl-unstable-test.yaml --kind-context=${PR_NR:-kind} $(TEST_ONLY_FLAG) $(KUTTL_TEST_FLAGS)
-
-# Execute end to end tests using helm as an installation
-helm-e2e-tests: kuttl test docker-build docker-build-configurator
-	echo "~~~ Running kuttl tests :k8s:"
-	$(KUTTL) test --config kuttl-helm-test.yaml $(TEST_ONLY_FLAG) $(KUTTL_TEST_FLAGS)
+	cd ../../.. && nix develop -c ./task k8s:run-k8s-v2-helm-tests
 
 ##@ Build Dependencies
 
@@ -167,14 +148,9 @@ $(LOCALBIN):
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-KUTTL ?= $(LOCALBIN)/kubectl-kuttl
-GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.1.1
-KUTTL_VERSION ?= v0.15.0
-
-GOLANGCI_LINT_VERSION ?= v1.54.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -182,55 +158,13 @@ kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
 	test -s $(LOCALBIN)/kustomize || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
 
-.PHONY: kuttl
-kuttl: $(KUTTL)
-$(KUTTL): $(LOCALBIN)
-	test -s $(LOCALBIN)/kubectl-kuttl || GOBIN=$(LOCALBIN) go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@$(KUTTL_VERSION)
-# go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
-
-.PHONY: gofumpt-install
-gofumpt-install:
-	go install mvdan.cc/gofumpt@latest
-
-.PHONY: goimports-install
-goimports-install:
-	go install golang.org/x/tools/cmd/goimports@latest
-
-.PHONY: gofumpt-lint
-gofumpt-lint: gofumpt-install
-	find . -type f -name '*.go' | xargs -n1 gofumpt -w -lang=1.21
-
-.PHONY: goimports
-goimports: goimports-install
-	goimports -w .
-
-GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.54.2
-golangci-lint:
-	@[ -f $(GOLANGCI_LINT) ] || { \
-	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) $(  GOLANGCI_LINT_VERSION) ;\
-	}
-
 .PHONY: lint
-lint: golangci-lint
-	$(GOLANGCI_LINT) run
+lint: 
+	cd ../../.. && nix develop -c ./task lint
 
 .PHONY: lint-fix
-lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
-	$(GOLANGCI_LINT) run --fix
+lint-fix:
+	cd ../../.. && nix develop -c ./task lint-fix
 
 .PHONY: install-prometheus
 install-prometheus:

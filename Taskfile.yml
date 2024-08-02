@@ -45,3 +45,15 @@ tasks:
   lint:
     cmds:
       - task: k8s:run-golangci-lint
+
+  lint-fix:
+    cmds:
+      - task: k8s:run-golangci-lint-fix
+
+  fmt:
+    cmds:
+      - nix develop -c gofumpt -w ./
+
+  generate:
+    cmds:
+      - task: k8s:generate

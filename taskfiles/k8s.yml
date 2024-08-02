@@ -10,49 +10,29 @@ env:
   GOPRIVATE: github.com/redpanda-data/flux-controller-shim
 
 tasks:
-  generate-controller-code:
+
+  generate:
     dir: 'src/go/k8s'
+    aliases:
+    - generate-controller-code
+    - generate-manifests
     deps:
       - :dev:install-k8s-controller-gen
-    sources:
-      - './**/*.go'
     cmds:
       - |
         {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
-          paths='./...'
-
-  run-go-vet:
-    dir: 'src/go/k8s'
-    cmds:
-      - |
-        go vet ./...
-
-  generate-manifests:
-    dir: 'src/go/k8s'
-    deps:
-      - :dev:install-k8s-controller-gen
-    vars:
-      CRD_OPTIONS_DEFAULT: 'crd'
-      CRD_OPTIONS: '{{default .CRD_OPTIONS_DEFAULT .CRD_OPTIONS}}'
-    sources:
-      - './**/*.go'
-    cmds:
-      - |
-        {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
-          {{.CRD_OPTIONS}} \
-          rbac:roleName=manager-role \
-          webhook \
           paths='./...' \
+          crd \
+          webhook \
+          rbac:roleName=manager-role \
           output:crd:artifacts:config=config/crd/bases \
           output:rbac:artifacts:config=config/rbac/bases/operator
 
   run-unit-tests:
     dir: 'src/go/k8s'
     deps:
-      - run-go-vet
-      - generate-controller-code
-      - generate-manifests
+      - generate
     cmds:
       - |
         source <(cd {{ .SRC_DIR }} && nix develop -c setup-envtest use -p env 1.29.x)
@@ -214,6 +194,13 @@ tasks:
     cmds:
       - |
         golangci-lint run --timeout 8m -v
+
+  run-golangci-lint-fix:
+    desc: run golangci-lint
+    dir: 'src/go/k8s'
+    cmds:
+      - |
+        golangci-lint run --timeout 8m -v --fix
 
   build-tag-and-push-images:
     desc: builds, tags and pushes images to dockerhub

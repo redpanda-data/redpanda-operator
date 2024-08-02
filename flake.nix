@@ -47,6 +47,7 @@
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
               pkgs.go_1_22
+              pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.k3d # Kind alternative that allows adding/removing Nodes.
               pkgs.openssl
@@ -55,7 +56,6 @@
               # this flake.
               # pkgs.goreleaser
               # pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
-              # pkgs.gofumpt
               # pkgs.goreleaser
               # pkgs.gotools
               # pkgs.kind

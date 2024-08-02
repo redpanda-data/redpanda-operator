@@ -47,7 +47,6 @@ tasks:
   build-operator-binaries:
     deps:
       - task: :dev:install-goreleaser
-      - task: :k8s:generate-controller-code
-      - task: :k8s:generate-manifests
+      - task: :k8s:generate
     cmds:
       - '{{.GORELEASER_INSTALL_DIR}}/goreleaser build --snapshot --clean --id configurator --id redpanda-operator'
