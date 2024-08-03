@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: wait-for-v23-1-11
+  name: wait-for-tip-of-the-dev
 status:
   conditions:
     - status: "True"

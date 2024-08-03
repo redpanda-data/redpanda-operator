@@ -34,7 +34,7 @@ kind: Cluster
 metadata:
   name: update-image-cluster-and-node-port
 status:
-  version: "v22.1.11"
+  version: "v23.2.29"
   readyReplicas: 3
   replicas: 3
   upgrading: false

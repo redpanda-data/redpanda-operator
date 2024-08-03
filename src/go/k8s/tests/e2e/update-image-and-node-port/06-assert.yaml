@@ -13,6 +13,18 @@ spec:
   containers:
     - name: redpanda
       image: "localhost/redpanda:dev"
+      volumeMounts:
+        - mountPath: /etc/redpanda
+          name: config-dir
+        - mountPath: /scripts
+          name: hook-scripts-dir
+        - mountPath: /etc/redpanda/.bootstrap.yaml
+          name: configmap-dir
+          subPath: .bootstrap.yaml
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
 status:
   phase: "Running"
 ---
@@ -23,7 +35,19 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: localhost/redpanda:dev
+      image: "localhost/redpanda:dev"
+      volumeMounts:
+        - mountPath: /etc/redpanda
+          name: config-dir
+        - mountPath: /scripts
+          name: hook-scripts-dir
+        - mountPath: /etc/redpanda/.bootstrap.yaml
+          name: configmap-dir
+          subPath: .bootstrap.yaml
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
 status:
   phase: "Running"
 ---
@@ -34,7 +58,19 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: localhost/redpanda:dev
+      image: "localhost/redpanda:dev"
+      volumeMounts:
+        - mountPath: /etc/redpanda
+          name: config-dir
+        - mountPath: /scripts
+          name: hook-scripts-dir
+        - mountPath: /etc/redpanda/.bootstrap.yaml
+          name: configmap-dir
+          subPath: .bootstrap.yaml
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
 status:
   phase: "Running"
 ---

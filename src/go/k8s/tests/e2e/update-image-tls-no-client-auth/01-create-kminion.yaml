@@ -20,7 +20,7 @@ spec:
         - env:
             - name: CONFIG_FILEPATH
               value: /etc/kminion/config.yaml
-          image: quay.io/cloudhut/kminion:v2.2.0
+          image: redpandadata/kminion:v2.2.8
           imagePullPolicy: IfNotPresent
           name: kminion
           ports:
