@@ -60,6 +60,7 @@ type DecommissionReconciler struct {
 	OperatorMode bool
 
 	DecommissionWaitInterval time.Duration
+	BuildAdminAPI            func(releaseName, namespace string, replicas int32, podOrdinal *int, values map[string]interface{}) (*rpadmin.AdminAPI, error)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -89,6 +90,10 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 	decomCondition, _ := getConditionOfTypeAndListWithout(DecommissionCondition, sts.Status.Conditions)
 	if decomCondition == nil {
 		decomCondition = &ConditionUnknown
+	}
+
+	if r.BuildAdminAPI == nil {
+		r.BuildAdminAPI = buildAdminAPI
 	}
 
 	var err error
@@ -222,7 +227,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 		}
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
+	adminAPI, err := r.BuildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminapi: %w", err)
 	}
@@ -313,7 +318,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 
 	// This helps avoid decommissioning nodes that are starting up where, say, a node has been removed
 	// and you need to move it and start a new one
-	if availableReplicas != 0 {
+	if availableReplicas == 0 {
 		log.Info("have not reached steady state yet, requeue here")
 		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
@@ -323,7 +328,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
+	adminAPI, err := r.BuildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminAPI: %w", err)
 	}
@@ -363,7 +368,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		// the greater case takes care of the situation where we may also have additional ids here.
 		if len(health.NodesDown) >= (len(health.AllNodes) - int(requestedReplicas)) {
 			for podOrdinal := 0; podOrdinal < int(requestedReplicas); podOrdinal++ {
-				singleNodeAdminAPI, buildErr := buildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
+				singleNodeAdminAPI, buildErr := r.BuildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
 				if buildErr != nil {
 					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
 					return ctrl.Result{}, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, buildErr)

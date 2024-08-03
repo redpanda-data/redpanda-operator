@@ -130,3 +130,18 @@ func (c *Cluster) Cleanup() error {
 	).CombinedOutput()
 	return err
 }
+
+func (c *Cluster) ImageImport(image string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	_, err := exec.Command(
+		"k3d",
+		"image",
+		"import",
+		image,
+		"-c",
+		c.Name,
+	).CombinedOutput()
+	return err
+}
