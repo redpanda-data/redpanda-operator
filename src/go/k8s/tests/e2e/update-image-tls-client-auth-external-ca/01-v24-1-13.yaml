@@ -13,6 +13,8 @@ spec:
     limits:
       cpu: 1
       memory: 1Gi
+    redpanda:
+      memory: 850Mi
   configuration:
     rpcServer:
       port: 33145
