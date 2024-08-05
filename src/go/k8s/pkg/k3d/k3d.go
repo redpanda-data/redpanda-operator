@@ -6,6 +6,7 @@ package k3d
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -13,6 +14,11 @@ import (
 
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
+)
+
+const (
+	DefaultK3sImage = `rancher/k3s:v1.29.6-k3s2`
+	K3sImageEnv     = `K3S_IMAGE`
 )
 
 type Cluster struct {
@@ -26,6 +32,11 @@ type Cluster struct {
 func NewCluster(name string) (*Cluster, error) {
 	name = strings.ToLower(name)
 
+	image := DefaultK3sImage
+	if override, ok := os.LookupEnv(K3sImageEnv); ok {
+		image = override
+	}
+
 	out, err := exec.Command(
 		"k3d",
 		"cluster",
@@ -33,6 +44,7 @@ func NewCluster(name string) (*Cluster, error) {
 		name,
 		fmt.Sprintf("--agents=%d", 3),
 		fmt.Sprintf("--timeout=%s", 30*time.Second),
+		fmt.Sprintf("--image=%s", image),
 		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
 		// As the formatting is QUITE finicky.
 		// Halve the node-monitor-grace-period to speed up tests that rely on dead node detection.

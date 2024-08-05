@@ -44,6 +44,18 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 			Given: []func(*corev1.Pod){
 				ownedByStatefulSet("my-sts"),
 				withPhase(corev1.PodPending),
+				withUnschedulable(time.Minute, "0/10 nodes are available: 2 node(s) had untolerated taint {node.kubernetes.io/unreachable: }."),
+				withLabels(map[string]string{
+					"key": "value",
+				}),
+			},
+			Should:       true,
+			RequeueAfter: 0,
+		},
+		{
+			Given: []func(*corev1.Pod){
+				ownedByStatefulSet("my-sts"),
+				withPhase(corev1.PodPending),
 				withUnschedulable(10*time.Second, "volume node affinity"),
 				withLabels(map[string]string{
 					"key": "value",
@@ -54,6 +66,17 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 		},
 		// Permutations on the above to demonstrate that all conditions must be
 		// satisfied.
+		{
+			Given: []func(*corev1.Pod){
+				ownedByStatefulSet("my-sts"),
+				withPhase(corev1.PodPending),
+				// If all nodes have disappeared from the cluster, don't do anything.
+				withUnschedulable(10*time.Second, "0/0 nodes are available."),
+				withLabels(map[string]string{
+					"key": "value",
+				}),
+			},
+		},
 		{
 			Given: []func(*corev1.Pod){},
 		},
@@ -98,8 +121,9 @@ func TestPVCUnbinder(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctx = log.IntoContext(ctx, testr.New(t))
-	log.SetLogger(log.FromContext(ctx))
+	logger := testr.New(t).V(0)
+	log.SetLogger(logger)
+	ctx = log.IntoContext(ctx, logger)
 
 	cluster, err := k3d.NewCluster(t.Name())
 	require.NoError(t, err)
@@ -119,83 +143,24 @@ func TestPVCUnbinder(t *testing.T) {
 
 	require.NoError(t, c.Create(ctx, &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-sts",
+			Name:      "hostpath",
 			Namespace: "default",
 		},
-		Spec: appsv1.StatefulSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"my": "sts",
-				},
-			},
-			Replicas:            ptr.To(int32(3)),
-			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"my": "sts",
-					},
-				},
-				Spec: corev1.PodSpec{
-					// No grace period, kill -9 Pods immediately for speed.
-					TerminationGracePeriodSeconds: ptr.To(int64(0)),
-					// Don't schedule on the master/control-plane node as we're
-					// going to kill a random node that these Pods schedule
-					// onto.
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      "node-role.kubernetes.io/master",
-												Operator: corev1.NodeSelectorOpDoesNotExist,
-											},
-											{
-												Key:      "node-role.kubernetes.io/control-plane",
-												Operator: corev1.NodeSelectorOpDoesNotExist,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name:            "alpine",
-							Image:           "alpine",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         []string{"/bin/sh", "-c", "sleep 9000"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "my-pvc",
-									MountPath: "/vol",
-								},
-							},
-						},
-					},
-				},
-			},
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pvc",
-					},
-					Spec: corev1.PersistentVolumeClaimSpec{
-						AccessModes: []corev1.PersistentVolumeAccessMode{
-							corev1.ReadWriteOnce,
-						},
-						Resources: corev1.VolumeResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: resource.MustParse("10Mi"),
-							},
-						},
-					},
-				},
-			},
+		Spec: stsSpec(map[string]string{
+			"my":   "sts",
+			"type": "hostpath",
+		}, "hostpath"),
+	}))
+
+	require.NoError(t, c.Create(ctx, &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "local",
+			Namespace: "default",
 		},
+		Spec: stsSpec(map[string]string{
+			"my":   "sts",
+			"type": "local",
+		}, "local"),
 	}))
 
 	// Wait until all our replicas are up
@@ -210,7 +175,7 @@ func TestPVCUnbinder(t *testing.T) {
 			}),
 		}))
 
-		return len(pods.Items) == 3
+		return len(pods.Items) == 6
 	}, 2*time.Minute, 5*time.Second)
 
 	var pods corev1.PodList
@@ -245,14 +210,18 @@ func TestPVCUnbinder(t *testing.T) {
 	}, time.Minute, time.Second)
 
 	// Start up our manager
-	mgr, err := manager.New(cluster.RESTConfig(), manager.Options{})
+	mgr, err := manager.New(cluster.RESTConfig(), manager.Options{
+		BaseContext: func() context.Context {
+			return log.IntoContext(ctx, logger)
+		},
+	})
 	require.NoError(t, err)
 
 	r := Reconciler{Client: c}
 	require.NoError(t, r.SetupWithManager(mgr))
 
 	tgo(t, ctx, func(ctx context.Context) error {
-		return mgr.Start(ctx)
+		return mgr.Start(log.IntoContext(ctx, logger))
 	})
 
 	// No more Pods stuck in pending!
@@ -270,12 +239,89 @@ func TestPVCUnbinder(t *testing.T) {
 		}
 
 		return len(pods.Items) == 0
-	}, 2*time.Minute, time.Second)
+	}, time.Minute, time.Second)
 
-	// Assert that we have more than 3 (The initial #) PVs.
+	// Assert that we have more than 6 (The initial #) PVs.
 	var pvs corev1.PersistentVolumeList
 	require.NoError(t, c.List(ctx, &pvs))
-	require.Greater(t, len(pvs.Items), 3, "Should have more than 3 PVs")
+	require.Greater(t, len(pvs.Items), 6, "Should have more than 6 PVs")
+}
+
+func stsSpec(labels map[string]string, volumeType string) appsv1.StatefulSetSpec { //nolint:gocritic // Shadowing is acceptable
+	return appsv1.StatefulSetSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: labels,
+		},
+		Replicas:            ptr.To(int32(3)),
+		PodManagementPolicy: appsv1.ParallelPodManagement,
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: labels,
+			},
+			Spec: corev1.PodSpec{
+				// No grace period, kill -9 Pods immediately for speed.
+				TerminationGracePeriodSeconds: ptr.To(int64(0)),
+				// Don't schedule on the master/control-plane node as we're
+				// going to kill a random node that these Pods schedule
+				// onto.
+				Affinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+							NodeSelectorTerms: []corev1.NodeSelectorTerm{
+								{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{
+											Key:      "node-role.kubernetes.io/master",
+											Operator: corev1.NodeSelectorOpDoesNotExist,
+										},
+										{
+											Key:      "node-role.kubernetes.io/control-plane",
+											Operator: corev1.NodeSelectorOpDoesNotExist,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:            "alpine",
+						Image:           "alpine",
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Command:         []string{"/bin/sh", "-c", "sleep 9000"},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "my-pvc",
+								MountPath: "/vol",
+							},
+						},
+					},
+				},
+			},
+		},
+		VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "my-pvc",
+					Labels: labels,
+					Annotations: map[string]string{
+						"volumeType": volumeType,
+					},
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					},
+					Resources: corev1.VolumeResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceStorage: resource.MustParse("10Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 // tgo is a helper for ensuring that goroutines spawned in test cases are
