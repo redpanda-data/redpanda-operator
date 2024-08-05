@@ -5,6 +5,7 @@ package pvcunbinder
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -20,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
 
 // Reconciler is a Kubernetes Reconciler that watches for Pods stuck in a
 // Pending state due to volume affinities and attempts a remediation.
@@ -131,8 +134,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Filter out PVCs and PVs that don't have a NodeAffinity or aren't a
-		// HostPath node. We can't be certain about to handle those.
-		if pv.Spec.NodeAffinity == nil || pv.Spec.HostPath == nil {
+		// HostPath/Local volume.
+		if pv.Spec.NodeAffinity == nil || (pv.Spec.HostPath == nil && pv.Spec.Local == nil) {
 			delete(pvcByKey, key)
 			continue
 		}
@@ -143,7 +146,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// 3. Ensure that all PVs have reclaim set to Retain
 	for _, pv := range pvs {
 		if err := r.ensureRetainPolicy(ctx, pv); err != nil {
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -186,6 +189,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// 5. Delete the Pod to cause the StatefulSet controller to re-create both
 	// the PVCs and the Pod but only if there are missing PVCs.
 	if !missingPVCs {
+		logger.Info("not deleting Pod; no PVCs were deleted", "name", pod.Name)
 		return ctrl.Result{}, nil
 	}
 
@@ -221,8 +225,8 @@ func (r *Reconciler) ensureRetainPolicy(ctx context.Context, pv *corev1.Persiste
 // which makes it available for binding once again.
 // This strategy is only valid for volumes that utilize .HostPath.
 func (r *Reconciler) recyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume) error {
-	if pv.Spec.HostPath == nil {
-		return fmt.Errorf("%T must specify a HostPath for recyling: %q", pv, pv.Name)
+	if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
+		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for recycling: %q", pv, pv.Name)
 	}
 
 	// Skip over unbound PVs.
@@ -260,9 +264,16 @@ func (r *Reconciler) shouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 
 	cond := pod.Status.Conditions[idx]
 
-	// Short of re-implementing the scheduler, this is the best way to detect if a scheduling failure
-	if !strings.Contains(cond.Message, "volume node affinity") {
-		log.FromContext(ctx).Info("scheduled condition does not mention volume affinity; skipping", "name", pod.Name, "condition", cond)
+	// Short of re-implementing or importing scheduler, this is the best way to
+	// detect if a scheduling failure is _likely_ due to volume node affinity
+	// conflict. We check for a either an explicit mention of volume node
+	// affinity issues OR a message indicating that no nodes within the cluster
+	// may host this Pod.
+	// As of Kubernetes >1.21.x <=1.28.x (Didn't track down an exact version),
+	// volume node affinity conflicts no longer seem to appear in the message,
+	// hence the need to check for a much weaker case.
+	if !schedulingFailureRE.MatchString(cond.Message) {
+		log.FromContext(ctx).Info("scheduling failure does not appear to indicate volume affinity issues; skipping", "name", pod.Name, "condition", cond)
 		return false, 0
 	}
 
