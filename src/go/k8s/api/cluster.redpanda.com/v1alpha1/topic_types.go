@@ -11,10 +11,26 @@ package v1alpha1
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"net"
 	"time"
 
+	"github.com/go-logr/logr"
+	krbconfig "github.com/jcmturner/gokrb5/v8/config"
+	"github.com/jcmturner/gokrb5/v8/keytab"
+
+	krbclient "github.com/jcmturner/gokrb5/v8/client"
 	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/aws"
+	"github.com/twmb/franz-go/pkg/sasl/kerberos"
+	"github.com/twmb/franz-go/pkg/sasl/oauth"
+	"github.com/twmb/franz-go/pkg/sasl/plain"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,6 +133,178 @@ type KafkaAPISpec struct {
 	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
 	// +optional
 	SASL *KafkaSASL `json:"sasl,omitempty"`
+}
+
+func (k *KafkaAPISpec) ConfigureTLS(ctx context.Context, namespace string, cl client.Client, opts []kgo.Opt, log logr.Logger) ([]kgo.Opt, error) {
+	var caCertPool *x509.CertPool
+
+	// Root CA
+	if k.TLS.CaCert != nil {
+		ca, err := k.TLS.CaCert.GetValue(ctx, cl, namespace, "ca.crt")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ca certificate secret: %w", err)
+		}
+
+		caCertPool = x509.NewCertPool()
+		isSuccessful := caCertPool.AppendCertsFromPEM(ca)
+		if !isSuccessful {
+			log.Info("failed to append ca file to cert pool, is this a valid PEM format?")
+		}
+	}
+
+	// If configured load TLS cert & key - Mutual TLS
+	var certificates []tls.Certificate
+	if k.TLS.Cert != nil && k.TLS.Key != nil {
+		// 1. Read certificates
+		cert, err := k.TLS.Cert.GetValue(ctx, cl, namespace, "tls.crt")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read certificate secret: %w", err)
+		}
+
+		certData := cert
+
+		key, err := k.TLS.Cert.GetValue(ctx, cl, namespace, "tls.key")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read key certificate secret: %w", err)
+		}
+
+		keyData := key
+
+		// 2. Check if private key needs to be decrypted. Decrypt it if passphrase is given, otherwise return error
+		pemBlock, _ := pem.Decode(keyData)
+		if pemBlock == nil {
+			return nil, fmt.Errorf("no valid private key found") // nolint:goerr113 // this error will not be handled by operator
+		}
+
+		tlsCert, err := tls.X509KeyPair(certData, keyData)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse pem: %w", err)
+		}
+		certificates = []tls.Certificate{tlsCert}
+	}
+
+	tlsDialer := &tls.Dialer{
+		NetDialer: &net.Dialer{Timeout: 10 * time.Second},
+		Config: &tls.Config{
+			//nolint:gosec // InsecureSkipVerify may be true upon user's responsibility.
+			InsecureSkipVerify: k.TLS.InsecureSkipTLSVerify,
+			Certificates:       certificates,
+			RootCAs:            caCertPool,
+		},
+	}
+
+	return append(opts, kgo.Dialer(tlsDialer.DialContext)), nil
+}
+
+func (k *KafkaAPISpec) ConfigureSASL(ctx context.Context, namespace string, cl client.Client, opts []kgo.Opt, log logr.Logger) ([]kgo.Opt, error) {
+	// SASL Plain
+	if k.SASL.Mechanism == config.SASLMechanismPlain {
+		p, err := k.SASL.Password.GetValue(ctx, cl, namespace, "password")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch sasl plain password: %w", err)
+		}
+		mechanism := plain.Auth{
+			User: k.SASL.Username,
+			Pass: string(p),
+		}.AsMechanism()
+		opts = append(opts, kgo.SASL(mechanism))
+	}
+
+	// SASL SCRAM
+	if k.SASL.Mechanism == config.SASLMechanismScramSHA256 ||
+		k.SASL.Mechanism == config.SASLMechanismScramSHA512 {
+		p, err := k.SASL.Password.GetValue(ctx, cl, namespace, "password")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch sasl scram password: %w", err)
+		}
+		var mechanism sasl.Mechanism
+		scramAuth := scram.Auth{
+			User: k.SASL.Username,
+			Pass: string(p),
+		}
+		if k.SASL.Mechanism == config.SASLMechanismScramSHA256 {
+			log.V(2).Info("configuring SCRAM-SHA-256 mechanism")
+			mechanism = scramAuth.AsSha256Mechanism()
+		}
+		if k.SASL.Mechanism == config.SASLMechanismScramSHA512 {
+			log.V(2).Info("configuring SCRAM-SHA-512 mechanism")
+			mechanism = scramAuth.AsSha512Mechanism()
+		}
+		opts = append(opts, kgo.SASL(mechanism))
+	}
+
+	// OAuth Bearer
+	if k.SASL.Mechanism == config.SASLMechanismOAuthBearer {
+		t, err := k.SASL.OAUth.Token.GetValue(ctx, cl, namespace, "token")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch token: %w", err)
+		}
+		mechanism := oauth.Auth{
+			Token: string(t),
+		}.AsMechanism()
+		opts = append(opts, kgo.SASL(mechanism))
+	}
+
+	// Kerberos
+	if k.SASL.Mechanism == config.SASLMechanismGSSAPI {
+		log.V(2).Info("configuring SCRAM-SHA-512 mechanism")
+		var krbClient *krbclient.Client
+
+		kerbCfg, err := krbconfig.Load(k.SASL.GSSAPIConfig.KerberosConfigPath)
+		if err != nil {
+			return nil, fmt.Errorf("creating kerberos config from specified config (%s) filepath: %w", k.SASL.GSSAPIConfig.KerberosConfigPath, err)
+		}
+		switch k.SASL.GSSAPIConfig.AuthType {
+		case "USER_AUTH":
+			p, err := k.SASL.GSSAPIConfig.Password.GetValue(ctx, cl, namespace, "password")
+			if err != nil {
+				return nil, fmt.Errorf("unable to fetch sasl gssapi password: %w", err)
+			}
+			krbClient = krbclient.NewWithPassword(
+				k.SASL.GSSAPIConfig.Username,
+				k.SASL.GSSAPIConfig.Realm,
+				string(p),
+				kerbCfg,
+				krbclient.DisablePAFXFAST(!k.SASL.GSSAPIConfig.EnableFast))
+		case "KEYTAB_AUTH":
+			ktb, err := keytab.Load(k.SASL.GSSAPIConfig.KeyTabPath)
+			if err != nil {
+				return nil, fmt.Errorf("loading keytab from (%s) key tab path: %w", k.SASL.GSSAPIConfig.KeyTabPath, err)
+			}
+			krbClient = krbclient.NewWithKeytab(
+				k.SASL.GSSAPIConfig.Username,
+				k.SASL.GSSAPIConfig.Realm,
+				ktb,
+				kerbCfg,
+				krbclient.DisablePAFXFAST(!k.SASL.GSSAPIConfig.EnableFast))
+		}
+		kerberosMechanism := kerberos.Auth{
+			Client:           krbClient,
+			Service:          k.SASL.GSSAPIConfig.ServiceName,
+			PersistAfterAuth: true,
+		}.AsMechanism()
+		opts = append(opts, kgo.SASL(kerberosMechanism))
+	}
+
+	// AWS MSK IAM
+	if k.SASL.Mechanism == config.SASLMechanismAWSManagedStreamingIAM {
+		s, err := k.SASL.AWSMskIam.SecretKey.GetValue(ctx, cl, namespace, "secret")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch aws msk secret key: %w", err)
+		}
+		t, err := k.SASL.AWSMskIam.SessionToken.GetValue(ctx, cl, namespace, "token")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch aws msk secret key: %w", err)
+		}
+		mechanism := aws.Auth{
+			AccessKey:    k.SASL.AWSMskIam.AccessKey,
+			SecretKey:    string(s),
+			SessionToken: string(t),
+			UserAgent:    k.SASL.AWSMskIam.UserAgent,
+		}.AsManagedStreamingIAMMechanism()
+		opts = append(opts, kgo.SASL(mechanism))
+	}
+	return opts, nil
 }
 
 // KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
