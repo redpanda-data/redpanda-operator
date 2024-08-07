@@ -8,13 +8,18 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/console/backend/pkg/config"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/plain"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -138,6 +143,35 @@ func (c *ClientFactory) getClient(ctx context.Context, namespace string, spec *r
 	return kgo.NewClient(opts...)
 }
 
+type userAuthInfo struct {
+	User      string
+	Password  string
+	Mechanism string
+}
+
+func parseUsers(data string) []userAuthInfo {
+	users := []userAuthInfo{}
+	for _, line := range strings.Split(data, "\n") {
+		tokens := strings.Split(line, ":")
+		if len(tokens) != 3 {
+			continue
+		}
+		mechanism := tokens[2]
+		// whitelist supported methods
+		if mechanism != config.SASLMechanismScramSHA512 {
+			continue
+		}
+
+		users = append(users, userAuthInfo{
+			User:      tokens[0],
+			Password:  tokens[1],
+			Mechanism: tokens[2],
+		})
+	}
+
+	return users
+}
+
 // getClusterClient returns a simple kgo.Client able to communicate with the given cluster.
 func (c *ClientFactory) getClusterClient(ctx context.Context, portName string, cluster *redpandav1alpha2.Redpanda) (*kgo.Client, error) {
 	brokers, err := c.getClusterBrokers(ctx, portName, cluster)
@@ -173,7 +207,43 @@ func (c *ClientFactory) getClusterClient(ctx context.Context, portName string, c
 		opts = append(opts, kgo.Dialer(c.dialAndRemap(c.dialer.DialContext)))
 	}
 
+	auth := cluster.Spec.ClusterSpec.Auth
+	if auth != nil && auth.SASL != nil && auth.SASL.Enabled {
+		secret := auth.SASL.SecretRef
+		if secret != nil {
+			secret, err := c.getAuthSecret(ctx, cluster.Namespace, *secret)
+			if err != nil {
+				return nil, err
+			}
+			users := parseUsers(string(secret.Data["users.txt"]))
+			if len(users) > 0 {
+				opts = applySASL(opts, users[0])
+			}
+		}
+	}
+
 	return kgo.NewClient(opts...)
+}
+
+func applySASL(opts []kgo.Opt, auth userAuthInfo) []kgo.Opt {
+	var mechanism sasl.Mechanism
+	switch auth.Mechanism {
+	case config.SASLMechanismPlain:
+		mechanism = plain.Auth{User: auth.User, Pass: auth.Password}.AsMechanism()
+	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
+		scram := scram.Auth{User: auth.User, Pass: auth.Password}
+
+		switch auth.Mechanism {
+		case config.SASLMechanismScramSHA256:
+			mechanism = scram.AsSha256Mechanism()
+		case config.SASLMechanismScramSHA512:
+			mechanism = scram.AsSha512Mechanism()
+		}
+	default:
+		return opts
+	}
+
+	return append(opts, kgo.SASL(mechanism))
 }
 
 // getClusterBrokers fetches the internal broker addresses for a Redpanda cluster, returning
@@ -350,4 +420,13 @@ func (c *ClientFactory) getCertificateSecretsFromV1Refs(ctx context.Context, nam
 		return clientCertSecret.Data[clientCert.Key], clientKeySecret.Data[clientKey.Key], serverCA, nil
 	}
 	return nil, nil, serverCA, nil
+}
+
+func (c *ClientFactory) getAuthSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
+	authSecret := &corev1.Secret{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, authSecret); err != nil {
+		return nil, err
+	}
+
+	return authSecret, nil
 }

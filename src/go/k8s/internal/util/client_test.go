@@ -81,6 +81,22 @@ func TestClientFactory(t *testing.T) {
 			},
 			GetAdminClient: kafkaAPISpecClient,
 		},
+		"Cluster: SASL SCRAM": {
+			Values: map[string]interface{}{
+				"auth": map[string]interface{}{
+					"sasl": map[string]interface{}{
+						"enabled":   true,
+						"secretRef": "users",
+						"users": []map[string]interface{}{{
+							"name":      "admin",
+							"password":  "change-me",
+							"mechanism": "SCRAM-SHA-512",
+						}},
+					},
+				},
+			},
+			GetAdminClient: clusterClient,
+		},
 	} {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
@@ -91,6 +107,7 @@ func TestClientFactory(t *testing.T) {
 			ensureMapAndSetValue(tt.Values, "console", "enabled", false)
 			// to keep nodeport services from conflicting
 			ensureMapAndSetValue(tt.Values, "external", "enabled", false)
+			ensureMapAndSetValue(tt.Values, "image", "tag", "v24.2.2")
 
 			cluster := stack.InstallCluster(t, testutils.RedpandaOptions{
 				HelmVersion: tt.Version,
