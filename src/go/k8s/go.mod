@@ -8,6 +8,7 @@ require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cisco-open/k8s-objectmatcher v1.9.0
 	github.com/cloudhut/common v0.10.0
+	github.com/cockroachdb/errors v1.11.1
 	github.com/distribution/reference v0.6.0
 	github.com/fluxcd/helm-controller/api v0.37.2
 	github.com/fluxcd/helm-controller/shim v0.0.0-00010101000000-000000000000
@@ -48,6 +49,7 @@ require (
 	k8s.io/component-helpers v0.29.0
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
 	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -122,7 +124,6 @@ require (
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
@@ -413,7 +414,6 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.16.0 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 replace github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
