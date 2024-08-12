@@ -1,4 +1,4 @@
-package clusterredpandacom
+package kafka
 
 import (
 	"net"
@@ -69,7 +69,7 @@ func newClientHooks(logger logr.Logger, metricsNamespace string) *clientHooks {
 	})
 
 	return &clientHooks{
-		logger: logger,
+		logger: logger.V(verboseLevel),
 
 		requestSentCount: promRequestSent,
 		bytesSent:        promBytesSent,
@@ -83,16 +83,16 @@ func newClientHooks(logger logr.Logger, metricsNamespace string) *clientHooks {
 // Kafka cluster.
 func (c *clientHooks) OnBrokerConnect(meta kgo.BrokerMetadata, dialDur time.Duration, _ net.Conn, err error) {
 	if err != nil {
-		c.logger.V(4).Error(err, "kafka connection failed", "broker_host", meta.Host)
+		c.logger.Error(err, "kafka connection failed", "broker_host", meta.Host)
 		return
 	}
-	c.logger.V(4).Info("kafka connection succeeded", "host", meta.Host, "dial_duration", dialDur)
+	c.logger.Info("kafka connection succeeded", "host", meta.Host, "dial_duration", dialDur)
 }
 
 // OnBrokerDisconnect is called when the client disconnects from any node of the target
 // Kafka cluster.
 func (c *clientHooks) OnBrokerDisconnect(meta kgo.BrokerMetadata, _ net.Conn) {
-	c.logger.V(4).Info("kafka broker disconnected", "host", meta.Host)
+	c.logger.Info("kafka broker disconnected", "host", meta.Host)
 }
 
 // OnBrokerRead is passed the broker metadata, the key for the response that

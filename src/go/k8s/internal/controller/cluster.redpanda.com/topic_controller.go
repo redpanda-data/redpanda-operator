@@ -33,6 +33,7 @@ import (
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/util/kafka"
 )
 
 const (
@@ -60,7 +61,8 @@ var (
 // TopicReconciler reconciles a Topic object
 type TopicReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Factory *kafka.ClientFactory
+	Scheme  *runtime.Scheme
 	kuberecorder.EventRecorder
 }
 
@@ -152,7 +154,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *v1alpha1.Topic, 
 		l.V(TraceLevel).Info("bump observed generation", "observed generation", topic.Generation)
 	}
 
-	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
+	kafkaClient, err := r.createKafkaClient(ctx, topic)
 	if err != nil {
 		return v1alpha1.TopicFailed(topic), ctrl.Result{}, err
 	}
@@ -550,24 +552,12 @@ func generateConf(
 	return setConf, specialSetConf, deleteConf
 }
 
-func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *v1alpha1.Topic, l logr.Logger) (*kgo.Client, error) {
-	l.WithName("kafkaClient")
-
+func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *v1alpha1.Topic) (*kgo.Client, error) {
 	if topic.Spec.KafkaAPISpec == nil {
 		return nil, ErrEmptyKafkaAPISpec
 	}
 
-	kgoOpts, err := newKgoConfig(ctx, r.Client, topic, l)
-	if err != nil {
-		return nil, fmt.Errorf("creating kgo configuration options: %w", err)
-	}
-
-	kafkaClient, err := kgo.NewClient(kgoOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)
-	}
-
-	return kafkaClient, nil
+	return r.Factory.GetClient(ctx, topic.Namespace, topic.Spec.KafkaAPISpec)
 }
 
 func (r *TopicReconciler) recordErrorEvent(err error, topic *v1alpha1.Topic, eventType, message string, args ...any) error {

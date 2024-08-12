@@ -39,6 +39,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -53,6 +54,7 @@ import (
 	clusterredpandacomcontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/cluster.redpanda.com"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/util/kafka"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
@@ -258,6 +260,13 @@ func main() {
 	case OperatorV1Mode:
 		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
 
+		factory, err := kafka.NewClientFactory(mgr.GetConfig())
+		if err != nil {
+			setupLog.Error(err, "Unable to initialize client factory")
+			os.Exit(1)
+		}
+		factory = factory.WithLogger(mgr.GetLogger())
+
 		if err = (&redpandacontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
@@ -310,6 +319,7 @@ func main() {
 
 		if err = (&clusterredpandacomcontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
+			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
@@ -342,18 +352,25 @@ func main() {
 			hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 				Handler: &redpandawebhooks.ConsoleDefaulter{
 					Client:  mgr.GetClient(),
-					Decoder: admission.NewDecoder(scheme),
+					Decoder: ptr.To(admission.NewDecoder(scheme)),
 				},
 			})
 			hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 				Handler: &redpandawebhooks.ConsoleValidator{
 					Client:  mgr.GetClient(),
-					Decoder: admission.NewDecoder(scheme),
+					Decoder: ptr.To(admission.NewDecoder(scheme)),
 				},
 			})
 		}
 	case OperatorV2Mode:
 		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
+
+		factory, err := kafka.NewClientFactory(mgr.GetConfig())
+		if err != nil {
+			setupLog.Error(err, "Unable to initialize client factory")
+			os.Exit(1)
+		}
+		factory = factory.WithLogger(mgr.GetLogger())
 
 		// if we enable these controllers then run them, otherwise, do not
 		//nolint:nestif // not really nested, required.
@@ -482,6 +499,7 @@ func main() {
 
 		if err = (&clusterredpandacomcontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
+			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
