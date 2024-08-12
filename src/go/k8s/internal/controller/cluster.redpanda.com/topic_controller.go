@@ -557,7 +557,7 @@ func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *v1alpha1
 		return nil, ErrEmptyKafkaAPISpec
 	}
 
-	return r.Factory.GetClient(ctx, topic.Namespace, topic.Spec.KafkaAPISpec)
+	return r.Factory.GetClient(ctx, topic.Namespace, topic.Spec.MetricsNamespace, topic.Spec.KafkaAPISpec)
 }
 
 func (r *TopicReconciler) recordErrorEvent(err error, topic *v1alpha1.Topic, eventType, message string, args ...any) error {

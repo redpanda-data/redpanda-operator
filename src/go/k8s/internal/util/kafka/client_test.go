@@ -194,7 +194,7 @@ func TestClientFactory(t *testing.T) {
 						InsecureSkipTLSVerify: true,
 					}
 				}
-				adminClient, err := factory.Admin(ctx, name, &spec)
+				adminClient, err := factory.Admin(ctx, name, nil, &spec)
 				require.NoError(t, err)
 				metadata, err := adminClient.BrokerMetadata(ctx)
 				require.NoError(t, err)

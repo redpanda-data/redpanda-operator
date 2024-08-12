@@ -74,19 +74,14 @@ func (c *ClientFactory) WithDialer(dialer redpanda.DialContextFunc) *ClientFacto
 	return c
 }
 
-func (c *ClientFactory) WithMetricNamespace(metricNamespace string) *ClientFactory {
-	c.metricNamespace = &metricNamespace
-	return c
-}
-
 func (c *ClientFactory) WithLogger(logger logr.Logger) *ClientFactory {
 	c.logger = logger
 	return c
 }
 
 // Admin returns a client able to communicate with the cluster defined by the given KafkaAPISpec.
-func (c *ClientFactory) Admin(ctx context.Context, namespace string, spec *redpandav1alpha1.KafkaAPISpec, opts ...kgo.Opt) (*kadm.Client, error) {
-	client, err := c.GetClient(ctx, namespace, spec, opts...)
+func (c *ClientFactory) Admin(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha1.KafkaAPISpec, opts ...kgo.Opt) (*kadm.Client, error) {
+	client, err := c.GetClient(ctx, namespace, metricNamespace, spec, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +106,15 @@ func (c *ClientFactory) ClusterAdmin(ctx context.Context, cluster *redpandav1alp
 }
 
 // GetClient returns a simple kgo.Client able to communicate with the given cluster specified via KafkaAPISpec.
-func (c *ClientFactory) GetClient(ctx context.Context, namespace string, spec *redpandav1alpha1.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
-	kopts, err := c.configFromSpec(ctx, namespace, spec)
+func (c *ClientFactory) GetClient(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha1.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+	kopts, err := c.configFromSpec(ctx, namespace, metricNamespace, spec)
 	if err != nil {
 		return nil, err
 	}
 	return kgo.NewClient(append(opts, kopts...)...)
 }
 
-func (c *ClientFactory) configFromSpec(ctx context.Context, namespace string, spec *redpandav1alpha1.KafkaAPISpec) ([]kgo.Opt, error) {
+func (c *ClientFactory) configFromSpec(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha1.KafkaAPISpec) ([]kgo.Opt, error) {
 	if len(spec.Brokers) == 0 {
 		return nil, ErrEmptyBrokerList
 	}
@@ -128,8 +123,8 @@ func (c *ClientFactory) configFromSpec(ctx context.Context, namespace string, sp
 	}
 
 	metricsLabel := "redpanda_operator"
-	if c.metricNamespace != nil && *c.metricNamespace != "" {
-		metricsLabel = *c.metricNamespace
+	if metricNamespace != nil && *metricNamespace != "" {
+		metricsLabel = *metricNamespace
 	}
 
 	hooks := newClientHooks(c.logger, metricsLabel)
