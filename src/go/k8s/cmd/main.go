@@ -39,7 +39,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -352,13 +351,13 @@ func main() {
 			hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 				Handler: &redpandawebhooks.ConsoleDefaulter{
 					Client:  mgr.GetClient(),
-					Decoder: ptr.To(admission.NewDecoder(scheme)),
+					Decoder: admission.NewDecoder(scheme),
 				},
 			})
 			hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 				Handler: &redpandawebhooks.ConsoleValidator{
 					Client:  mgr.GetClient(),
-					Decoder: ptr.To(admission.NewDecoder(scheme)),
+					Decoder: admission.NewDecoder(scheme),
 				},
 			})
 		}

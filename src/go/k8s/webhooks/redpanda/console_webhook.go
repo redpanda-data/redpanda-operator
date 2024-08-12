@@ -27,7 +27,7 @@ var validHostnameSegment = regexp.MustCompile(`^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0
 // ConsoleValidator validates Consoles
 type ConsoleValidator struct {
 	Client  client.Client
-	Decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 // Handle processes admission for Console
@@ -102,7 +102,7 @@ func (v *ConsoleValidator) Handle(
 // ConsoleDefaulter mutates Consoles
 type ConsoleDefaulter struct {
 	Client  client.Client
-	Decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 // Handle processes admission for Console
