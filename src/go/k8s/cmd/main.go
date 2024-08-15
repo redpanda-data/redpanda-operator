@@ -151,6 +151,7 @@ func main() {
 		debug                       bool
 		ghostbuster                 bool
 		unbindPVCsAfter             time.Duration
+		autoDeletePVCs              bool
 	)
 
 	flag.StringVar(&eventsAddr, "events-addr", "", "The address of the events receiver.")
@@ -180,6 +181,7 @@ func main() {
 	flag.BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	flag.BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
 	flag.DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+	flag.BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 
 	logOptions.BindFlags(flag.CommandLine)
 	clientOptions.BindFlags(flag.CommandLine)
@@ -265,6 +267,7 @@ func main() {
 			MetricsTimeout:            metricsTimeout,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 			GhostDecommissioning:      ghostbuster,
+			AutoDeletePVCs:            autoDeletePVCs,
 		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
 			os.Exit(1)

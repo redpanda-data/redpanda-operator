@@ -15,12 +15,13 @@ import (
 )
 
 type attachedResources struct {
-	ctx        context.Context
-	reconciler *ClusterReconciler
-	log        logr.Logger
-	cluster    *vectorizedv1alpha1.Cluster
-	items      map[string]resources.Resource
-	order      []string
+	ctx            context.Context
+	reconciler     *ClusterReconciler
+	log            logr.Logger
+	cluster        *vectorizedv1alpha1.Cluster
+	items          map[string]resources.Resource
+	order          []string
+	autoDeletePVCs bool
 }
 
 const (
@@ -43,11 +44,12 @@ const (
 
 func newAttachedResources(ctx context.Context, r *ClusterReconciler, log logr.Logger, cluster *vectorizedv1alpha1.Cluster) *attachedResources {
 	return &attachedResources{
-		ctx:        ctx,
-		reconciler: r,
-		log:        log,
-		cluster:    cluster,
-		items:      map[string]resources.Resource{},
+		ctx:            ctx,
+		reconciler:     r,
+		log:            log,
+		cluster:        cluster,
+		items:          map[string]resources.Resource{},
+		autoDeletePVCs: r.AutoDeletePVCs,
 	}
 }
 
@@ -393,7 +395,8 @@ func (a *attachedResources) statefulSet() error {
 		a.reconciler.AdminAPIClientFactory,
 		a.reconciler.DecommissionWaitInterval,
 		a.log,
-		a.reconciler.MetricsTimeout)
+		a.reconciler.MetricsTimeout,
+		a.autoDeletePVCs)
 	a.order = append(a.order, statefulSet)
 	return nil
 }

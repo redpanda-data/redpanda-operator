@@ -75,6 +75,7 @@ type ClusterReconciler struct {
 	MetricsTimeout            time.Duration
 	RestrictToRedpandaVersion string
 	GhostDecommissioning      bool
+	AutoDeletePVCs            bool
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
