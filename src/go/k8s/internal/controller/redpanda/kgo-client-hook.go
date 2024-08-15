@@ -1,4 +1,4 @@
-package clusterredpandacom
+package redpanda
 
 import (
 	"net"

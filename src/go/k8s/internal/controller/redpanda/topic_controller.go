@@ -7,8 +7,8 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package clusterredpandacom reconciles resources that comes from Redpanda dictionary like Topic, ACL and more.
-package clusterredpandacom
+// Package redpanda reconciles resources that comes from Redpanda dictionary like Topic, ACL and more.
+package redpanda
 
 import (
 	"context"
@@ -32,13 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 )
 
 const (
 	NoneConstantString = "none"
-	FinalizerKey       = "operator.redpanda.com/finalizer"
-	revisionPath       = "/revision"
 )
 
 // These are for convenience when doing log.V(...) to log at a particular level. They correspond to the logr

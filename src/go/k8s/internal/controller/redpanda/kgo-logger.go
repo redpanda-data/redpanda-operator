@@ -1,4 +1,4 @@
-package clusterredpandacom
+package redpanda
 
 import (
 	"github.com/go-logr/logr"

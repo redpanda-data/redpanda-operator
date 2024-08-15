@@ -1,4 +1,4 @@
-package clusterredpandacom_test
+package redpanda
 
 import (
 	"context"
@@ -21,8 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
-	clusterredpandacom "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/cluster.redpanda.com"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 )
 
@@ -77,7 +76,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		kafkaAdmCl = kadm.NewClient(kafkaCl)
 	}
 
-	tr := clusterredpandacom.TopicReconciler{
+	tr := TopicReconciler{
 		Client: c,
 		Scheme: scheme.Scheme,
 	}
@@ -815,7 +814,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       deleteTopicName,
 				Namespace:  testNamespace,
-				Finalizers: []string{clusterredpandacom.FinalizerKey},
+				Finalizers: []string{FinalizerKey},
 			},
 			Spec: v1alpha1.TopicSpec{
 				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
@@ -859,7 +858,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       deleteNoneExistentTopicName,
 				Namespace:  testNamespace,
-				Finalizers: []string{clusterredpandacom.FinalizerKey},
+				Finalizers: []string{FinalizerKey},
 			},
 
 			Spec: v1alpha1.TopicSpec{
