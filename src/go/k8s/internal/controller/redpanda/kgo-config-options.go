@@ -1,4 +1,4 @@
-package clusterredpandacom
+package redpanda
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 )
 
 var ErrEmptyBrokerList = errors.New("empty broker list")

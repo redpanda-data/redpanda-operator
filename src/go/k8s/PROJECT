@@ -54,8 +54,9 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  group: cluster.redpanda.com
+  domain: redpanda.com
+  group: cluster
   kind: Topic
-  path: github.com/redpanda-data/redpanda-operator/src/go/k8s/api/cluster.redpanda.com/v1alpha1
+  path: github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1
   version: v1alpha1
 version: "3"
