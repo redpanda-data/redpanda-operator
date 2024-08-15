@@ -566,7 +566,7 @@ func (r *ClusterReconciler) reconcileClusterForPods(ctx context.Context, pod cli
 
 func (r *ClusterReconciler) reconcileClusterForExternalCASecret(ctx context.Context, s client.Object) []reconcile.Request {
 	hasExternalCA, found := s.GetAnnotations()[SecretAnnotationExternalCAKey]
-	if !found || hasExternalCA != "true" {
+	if !found || hasExternalCA != "true" { //nolint:goconst //ignored
 		return nil
 	}
 
