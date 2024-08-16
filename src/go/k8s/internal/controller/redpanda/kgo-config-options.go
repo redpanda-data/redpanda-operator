@@ -25,14 +25,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 )
 
 var ErrEmptyBrokerList = errors.New("empty broker list")
 
 // Reference implementation https://github.com/redpanda-data/console/blob/0ba44b236b6ddd7191da015f44a9302fc13665ec/backend/pkg/kafka/config_helper.go#L44
 
-func newKgoConfig(ctx context.Context, cl k8sclient.Client, topic *v1alpha1.Topic, log logr.Logger) ([]kgo.Opt, error) { // nolint:funlen // This is copy of the console
+func newKgoConfig(ctx context.Context, cl k8sclient.Client, topic *redpandav1alpha2.Topic, log logr.Logger) ([]kgo.Opt, error) { // nolint:funlen // This is copy of the console
 	log.WithName("newKgoConfig")
 
 	if len(topic.Spec.KafkaAPISpec.Brokers) == 0 {
@@ -127,7 +127,7 @@ func newKgoConfig(ctx context.Context, cl k8sclient.Client, topic *v1alpha1.Topi
 	return append(opts, kgo.Dialer(tlsDialer.DialContext)), nil
 }
 
-func configureSASL(ctx context.Context, cl k8sclient.Client, topic *v1alpha1.Topic, opts []kgo.Opt, log logr.Logger) ([]kgo.Opt, error) { // nolint:funlen // configure SASL is almost a copy from console project
+func configureSASL(ctx context.Context, cl k8sclient.Client, topic *redpandav1alpha2.Topic, opts []kgo.Opt, log logr.Logger) ([]kgo.Opt, error) { // nolint:funlen // configure SASL is almost a copy from console project
 	// SASL Plain
 	if topic.Spec.KafkaAPISpec.SASL.Mechanism == config.SASLMechanismPlain {
 		p, err := topic.Spec.KafkaAPISpec.SASL.Password.GetValue(ctx, cl, topic.Namespace, "password")
