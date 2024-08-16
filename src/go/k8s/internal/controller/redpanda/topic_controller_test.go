@@ -21,7 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 )
 
@@ -34,7 +34,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = v1alpha1.AddToScheme(scheme.Scheme)
+	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 
 	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -84,16 +84,16 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	t.Run("create_topic", func(t *testing.T) {
 		topicName := "create-test-topic"
 
-		createTopic := v1alpha1.Topic{
+		createTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig:  nil,
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 				SynchronizationInterval: &metav1.Duration{Duration: time.Second * 5},
@@ -139,26 +139,26 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
 		assert.NotEmpty(t, createTopic.Status.Conditions)
 		cond := createTopic.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
 	})
 	t.Run("overwrite_topic", func(t *testing.T) {
 		topicName := "overwrite-topic"
 		differentName := "different_name_with_underscore"
 
-		createTopic := v1alpha1.Topic{
+		createTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				OverwriteTopicName: &differentName,
 				Partitions:         ptr.To(3),
 				ReplicationFactor:  ptr.To(1),
 				AdditionalConfig:   nil,
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 				SynchronizationInterval: &metav1.Duration{Duration: time.Second * 5},
@@ -204,9 +204,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
 		assert.NotEmpty(t, createTopic.Status.Conditions)
 		cond := createTopic.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
 	})
 	t.Run("create_topic_that_already_exist", func(t *testing.T) {
@@ -215,16 +215,16 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, topicName)
 		require.NoError(t, err)
 
-		createTopic := v1alpha1.Topic{
+		createTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(1),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig:  nil,
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -269,27 +269,27 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
 		assert.NotEmpty(t, createTopic.Status.Conditions)
 		cond := createTopic.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
 	})
 	t.Run("add_partition", func(t *testing.T) {
 		topicName := "partition-count-change"
 
 		// given topic custom resource
-		partitionCountChange := v1alpha1.Topic{
+		partitionCountChange := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig: map[string]*string{
 					"segment.bytes": ptr.To("7654321"),
 				},
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -340,27 +340,27 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, partitionCountChange.Status.Conditions)
 		cond := partitionCountChange.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(partitionCountChange.Status.TopicConfiguration))
 	})
 	t.Run("unable_to_remove_partition", func(t *testing.T) {
 		topicName := "scale-down-partition-count"
 
 		// given topic custom resource
-		partitionCountChange := v1alpha1.Topic{
+		partitionCountChange := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(6),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig: map[string]*string{
 					"segment.bytes": ptr.To("7654321"),
 				},
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -401,24 +401,24 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, partitionCountChange.Status.Conditions)
 		cond := partitionCountChange.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
-		assert.Equal(t, v1alpha1.FailedReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.FailedReason, cond.Reason)
 		assert.NotEqual(t, 0, len(partitionCountChange.Status.TopicConfiguration))
 	})
 	t.Run("unable_to_increase_replication_factor", func(t *testing.T) {
 		topicName := "change-replication-factor"
 
 		// given topic custom resource
-		replicationFactorChange := v1alpha1.Topic{
+		replicationFactorChange := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(6),
 				ReplicationFactor: ptr.To(1),
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -459,9 +459,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, replicationFactorChange.Status.Conditions)
 		cond := replicationFactorChange.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
-		assert.Equal(t, v1alpha1.FailedReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.FailedReason, cond.Reason)
 		assert.NotEqual(t, 0, len(replicationFactorChange.Status.TopicConfiguration))
 	})
 	t.Run("delete_a_key`s_config_value", func(t *testing.T) {
@@ -470,19 +470,19 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		testPropertyValue := "87678987"
 
 		// given topic custom resource
-		removeProperty := v1alpha1.Topic{
+		removeProperty := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      removeTopicPropertyName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig: map[string]*string{
 					testPropertyKey: ptr.To(testPropertyValue),
 					"segment.bytes": ptr.To("7654321"),
 				},
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -545,9 +545,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, removeProperty.Status.Conditions)
 		cond := removeProperty.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(removeProperty.Status.TopicConfiguration))
 	})
 	t.Run("both_tiered_storage_property", func(t *testing.T) {
@@ -558,12 +558,12 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		// https://github.com/redpanda-data/redpanda/issues/4499
 		twoTieredStorageConfTopicName := "both-tiered-storage-conf" // nolint:gosec // this is not credentials
 
-		tieredStorageConf := v1alpha1.Topic{
+		tieredStorageConf := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      twoTieredStorageConfTopicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig: map[string]*string{
@@ -571,7 +571,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 					"redpanda.remote.write": ptr.To("true"),
 					"segment.bytes":         ptr.To("7654321"),
 				},
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -648,25 +648,25 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, tieredStorageConf.Status.Conditions)
 		cond := tieredStorageConf.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(tieredStorageConf.Status.TopicConfiguration))
 	})
 	t.Run("check_status_after_reconciliation", func(t *testing.T) {
 		topicName := "topic-cr-status"
 
-		topicStatus := v1alpha1.Topic{
+		topicStatus := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       topicName,
 				Namespace:  testNamespace,
 				Generation: 1,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig:  nil,
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -695,9 +695,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.Equal(t, topicStatus.Generation, topicStatus.Status.ObservedGeneration)
 		cond := topicStatus.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.Equal(t, topicStatus.Generation, cond.ObservedGeneration)
 		assert.NotEqual(t, 0, len(topicStatus.Status.TopicConfiguration))
 	})
@@ -707,19 +707,19 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, updateTopicName)
 		require.NoError(t, err)
 
-		updateTopic := v1alpha1.Topic{
+		updateTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      updateTopicName,
 				Namespace: testNamespace,
 			},
-			Spec: v1alpha1.TopicSpec{
+			Spec: redpandav1alpha2.TopicSpec{
 				Partitions:        ptr.To(3),
 				ReplicationFactor: ptr.To(1),
 				AdditionalConfig: map[string]*string{
 					"redpanda.remote.read": ptr.To("true"),
 					"segment.bytes":        ptr.To("7654321"),
 				},
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -763,9 +763,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.NotEmpty(t, updateTopic.Status.Conditions)
 		cond := updateTopic.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ReadyCondition, cond.Type)
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		assert.Equal(t, v1alpha1.SucceededReason, cond.Reason)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(updateTopic.Status.TopicConfiguration))
 	})
 	t.Run("ignore_not_found", func(t *testing.T) {
@@ -785,7 +785,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	})
 	t.Run("empty_kafka_api_spec", func(t *testing.T) {
 		topicName := "test-empty-kafka-api-spec"
-		testTopic := v1alpha1.Topic{
+		testTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      topicName,
 				Namespace: testNamespace,
@@ -810,14 +810,14 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, deleteTopicName)
 		require.NoError(t, err)
 
-		deleteTopic := v1alpha1.Topic{
+		deleteTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       deleteTopicName,
 				Namespace:  testNamespace,
 				Finalizers: []string{FinalizerKey},
 			},
-			Spec: v1alpha1.TopicSpec{
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+			Spec: redpandav1alpha2.TopicSpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
@@ -854,15 +854,15 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	t.Run("delete_none_existent_topic_k8s_meta_deletion_timestamp", func(t *testing.T) {
 		deleteNoneExistentTopicName := "delete-none-existent-test-topic"
 
-		noneExistentTestTopic := v1alpha1.Topic{
+		noneExistentTestTopic := redpandav1alpha2.Topic{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       deleteNoneExistentTopicName,
 				Namespace:  testNamespace,
 				Finalizers: []string{FinalizerKey},
 			},
 
-			Spec: v1alpha1.TopicSpec{
-				KafkaAPISpec: &v1alpha1.KafkaAPISpec{
+			Spec: redpandav1alpha2.TopicSpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
 					Brokers: []string{seedBroker},
 				},
 			},
