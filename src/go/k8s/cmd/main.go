@@ -527,6 +527,12 @@ func main() {
 				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaConversion")
 				os.Exit(1)
 			}
+
+			setupLog.Info("Setup Topic conversion webhook")
+			if err = (&redpandav1alpha2.Topic{}).SetupWebhookWithManager(mgr); err != nil {
+				setupLog.Error(err, "Unable to create webhook", "webhook", "TopicConversion")
+				os.Exit(1)
+			}
 		}
 
 	case ClusterControllerMode:
