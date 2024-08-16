@@ -18,7 +18,6 @@ patches:
 # patches here are for enabling the conversion webhook for each CRD
 - path: patches/webhook_in_clusters.yaml
 - path: patches/webhook_in_redpanda_consoles.yaml
-- path: patches/webhook_in_cluster.redpanda.com_topics.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
