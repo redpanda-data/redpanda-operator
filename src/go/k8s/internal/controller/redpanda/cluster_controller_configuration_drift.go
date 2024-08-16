@@ -12,6 +12,7 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/fluxcd/pkg/runtime/logger"
@@ -24,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
@@ -152,14 +154,13 @@ func (r *ClusterConfigurationDriftReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("could not get cluster configuration to check drifts: %w", err)
 	}
 
-	// Since config is in sync, we assume that the current desired configuration is equal to the lastAppliedConfig and there are no invalid properties
-	patch := configuration.ThreeWayMerge(log, lastAppliedConfig, clusterConfig, lastAppliedConfig, nil, schema)
-	if patch.Empty() {
+	diff, hasDrift := hasDrift(log, lastAppliedConfig, clusterConfig, schema)
+	if !hasDrift {
 		// Nothing to do, everything in sync
 		return ctrl.Result{RequeueAfter: r.getDriftCheckPeriod()}, nil
 	}
 
-	log.Info("Detected configuration drift in the cluster")
+	log.Info("Detected configuration drift in the cluster", "patch", diff)
 
 	// Signal drift by setting the condition to False
 	redpandaCluster.Status.SetCondition(
@@ -173,6 +174,30 @@ func (r *ClusterConfigurationDriftReconciler) Reconcile(
 	}
 
 	return ctrl.Result{RequeueAfter: r.getDriftCheckPeriod()}, nil
+}
+
+// hasDrift checks if a drift between desired and actual config has occurred.
+// It ignores config properties flagged with is_secret in the schema.
+func hasDrift(log logr.Logger, desired, actual map[string]any, schema map[string]rpadmin.ConfigPropertyMetadata) (configuration.CentralConfigurationPatch, bool) {
+	// Make copy of desired, actual, so callers not surprised that items are removed by this function.
+	copiedDesired := make(map[string]any)
+	copiedActual := make(map[string]any)
+	maps.Copy(copiedDesired, desired)
+	maps.Copy(copiedActual, actual)
+
+	for k, v := range schema { //nolint:gocritic // ignore rangeValCopy - this is the type returned by Admin API client.
+		if v.IsSecret {
+			delete(copiedDesired, k)
+			delete(copiedActual, k)
+		}
+	}
+
+	// Since config is in sync, we assume that the current desired configuration is equal to the lastAppliedConfig and there are no invalid properties
+	patch := configuration.ThreeWayMerge(log, copiedDesired, copiedActual, copiedDesired, nil, schema)
+	if patch.Empty() {
+		return configuration.CentralConfigurationPatch{}, false
+	}
+	return patch, true
 }
 
 // SetupWithManager sets up the controller with the Manager.
