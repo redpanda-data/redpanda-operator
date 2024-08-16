@@ -19,8 +19,8 @@ var _ conversion.Hub = &Topic{}
 func (*Topic) Hub() {}
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks
-func (in *Topic) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (t *Topic) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(in).
+		For(t).
 		Complete()
 }
