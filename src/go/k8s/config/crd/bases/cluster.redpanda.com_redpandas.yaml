@@ -1251,11 +1251,21 @@ spec:
                               resource.
                             type: object
                           namespaceSelector:
-                            additionalProperties:
-                              type: string
                             description: Adds custom namespaceSelector to monitoring
                               resources
+                            properties:
+                              any:
+                                description: |-
+                                  Boolean describing whether all namespaces are selected in contrast to a
+                                  list restricting them.
+                                type: boolean
+                              matchNames:
+                                description: List of namespace names to select from.
+                                items:
+                                  type: string
+                                type: array
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           scrapeInterval:
                             description: Specifies how often to scrape metrics.
                             type: string
@@ -1264,6 +1274,14 @@ spec:
                         description: Specifies a custom name for the Redpanda Console
                           resources, overriding the default naming convention.
                         type: string
+                      service:
+                        description: Specifies service details
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      serviceAccount:
+                        description: Specifies service account details
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       storage:
                         description: Specifies storage information
                         type: object
@@ -1271,8 +1289,13 @@ spec:
                       test:
                         description: Specifies whether to create Helm tests.
                         properties:
-                          enabled:
+                          create:
                             description: Specifies whether to create the resource.
+                            type: boolean
+                          enabled:
+                            description: |-
+                              Deprecated: this field exists for storage backwards compatibility and is
+                              never used. Prefer Create.
                             type: boolean
                         type: object
                       tolerations:
@@ -1327,14 +1350,33 @@ spec:
                       annotations:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      automountServiceAccountToken:
+                        description: Automount API credentials for the Service Account
+                          into the pod.
+                        type: boolean
                       autoscaling:
                         description: Configures Horizontal Pod Autoscaling (HPA) for
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      commonLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                       configMap:
                         description: Specifies whether a ConfigMap should be created
                           for Redpanda Console.
+                        properties:
+                          create:
+                            description: Indicates whether the corresponding Kubernetes
+                              object (ConfigMap, Secret, or Deployment) should be
+                              created.
+                            type: boolean
+                        type: object
+                      configmap:
+                        description: |-
+                          Deprecated: this field exists for storage backwards compatibility and is
+                          never used. Prefer ConfigMap (configmap).
                         properties:
                           create:
                             description: Indicates whether the corresponding Kubernetes
@@ -1349,17 +1391,18 @@ spec:
                       deployment:
                         description: Specifies whether a Deployment should be created
                           for Redpanda Console.
-                        properties:
-                          create:
-                            description: Indicates whether the corresponding Kubernetes
-                              object (ConfigMap, Secret, or Deployment) should be
-                              created.
-                            type: boolean
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       enabled:
                         description: Specifies whether the Redpanda Console subchart
                           should be deployed.
                         type: boolean
+                      enterprise:
+                        description: |-
+                          Settings for license key, as an alternative to secret.enterprise when a
+                          license secret is available
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       extraContainers:
                         description: Adds extra containers to the Pods that run Redpanda
                           Console.
@@ -1428,6 +1471,27 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      livenessProbe:
+                        description: Settings for console's Deployment's liveness
+                          probe.
+                        properties:
+                          failureThreshold:
+                            description: Sets the number of consecutive failures required
+                              to consider a Pod as not live.
+                            type: integer
+                          initialDelaySeconds:
+                            description: Specifies the time in seconds to wait before
+                              the first probe is initiated.
+                            type: integer
+                          periodSeconds:
+                            description: Determines the frequency in seconds of performing
+                              the probe.
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          timeoutSeconds:
+                            type: integer
+                        type: object
                       nameOverride:
                         description: Specifies a custom name for the Redpanda Console
                           resources, overriding the default naming convention.
@@ -1453,6 +1517,27 @@ spec:
                         description: Specifies the priority class name for the Pods
                           that run Redpanda Console.
                         type: string
+                      readinessProbe:
+                        description: Settings for console's Deployment's readiness
+                          probe.
+                        properties:
+                          failureThreshold:
+                            description: Defines the threshold for how many times
+                              the probe can fail before the Pod is marked Unready.
+                            type: integer
+                          initialDelaySeconds:
+                            description: Sets the initial delay before the readiness
+                              probe is initiated, in seconds.
+                            type: integer
+                          periodSeconds:
+                            description: Configures the period, in seconds, between
+                              each readiness check.
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          timeoutSeconds:
+                            type: integer
+                        type: object
                       replicaCount:
                         description: Sets the number of replicas for the Redpanda
                           Console Deployment resource.
@@ -1465,13 +1550,8 @@ spec:
                       secret:
                         description: Specifies whether a Secret should be created
                           for Redpanda Console.
-                        properties:
-                          create:
-                            description: Indicates whether the corresponding Kubernetes
-                              object (ConfigMap, Secret, or Deployment) should be
-                              created.
-                            type: boolean
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       secretMounts:
                         description: Mounts additional Secret resources inside the
                           containers that run Redpanda Console.
@@ -1495,6 +1575,16 @@ spec:
                           that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      strategy:
+                        description: Configures console's Deployment's update strategy.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      tests:
+                        description: Controls the creation of helm tests for console.
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
                       tolerations:
                         description: Specifies tolerations for scheduling Pods onto
                           Nodes with taints.
@@ -10438,11 +10528,21 @@ spec:
                               resource.
                             type: object
                           namespaceSelector:
-                            additionalProperties:
-                              type: string
                             description: Adds custom namespaceSelector to monitoring
                               resources
+                            properties:
+                              any:
+                                description: |-
+                                  Boolean describing whether all namespaces are selected in contrast to a
+                                  list restricting them.
+                                type: boolean
+                              matchNames:
+                                description: List of namespace names to select from.
+                                items:
+                                  type: string
+                                type: array
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           scrapeInterval:
                             description: Specifies how often to scrape metrics.
                             type: string
@@ -10451,6 +10551,14 @@ spec:
                         description: Specifies a custom name for the Redpanda Console
                           resources, overriding the default naming convention.
                         type: string
+                      service:
+                        description: Specifies service details
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      serviceAccount:
+                        description: Specifies service account details
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       storage:
                         description: Specifies storage information
                         type: object
@@ -10458,8 +10566,13 @@ spec:
                       test:
                         description: Specifies whether to create Helm tests.
                         properties:
-                          enabled:
+                          create:
                             description: Specifies whether to create the resource.
+                            type: boolean
+                          enabled:
+                            description: |-
+                              Deprecated: this field exists for storage backwards compatibility and is
+                              never used. Prefer Create.
                             type: boolean
                         type: object
                       tolerations:
@@ -10514,14 +10627,33 @@ spec:
                       annotations:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      automountServiceAccountToken:
+                        description: Automount API credentials for the Service Account
+                          into the pod.
+                        type: boolean
                       autoscaling:
                         description: Configures Horizontal Pod Autoscaling (HPA) for
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      commonLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                       configMap:
                         description: Specifies whether a ConfigMap should be created
                           for Redpanda Console.
+                        properties:
+                          create:
+                            description: Indicates whether the corresponding Kubernetes
+                              object (ConfigMap, Secret, or Deployment) should be
+                              created.
+                            type: boolean
+                        type: object
+                      configmap:
+                        description: |-
+                          Deprecated: this field exists for storage backwards compatibility and is
+                          never used. Prefer ConfigMap (configmap).
                         properties:
                           create:
                             description: Indicates whether the corresponding Kubernetes
@@ -10536,17 +10668,18 @@ spec:
                       deployment:
                         description: Specifies whether a Deployment should be created
                           for Redpanda Console.
-                        properties:
-                          create:
-                            description: Indicates whether the corresponding Kubernetes
-                              object (ConfigMap, Secret, or Deployment) should be
-                              created.
-                            type: boolean
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       enabled:
                         description: Specifies whether the Redpanda Console subchart
                           should be deployed.
                         type: boolean
+                      enterprise:
+                        description: |-
+                          Settings for license key, as an alternative to secret.enterprise when a
+                          license secret is available
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       extraContainers:
                         description: Adds extra containers to the Pods that run Redpanda
                           Console.
@@ -10615,6 +10748,27 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      livenessProbe:
+                        description: Settings for console's Deployment's liveness
+                          probe.
+                        properties:
+                          failureThreshold:
+                            description: Sets the number of consecutive failures required
+                              to consider a Pod as not live.
+                            type: integer
+                          initialDelaySeconds:
+                            description: Specifies the time in seconds to wait before
+                              the first probe is initiated.
+                            type: integer
+                          periodSeconds:
+                            description: Determines the frequency in seconds of performing
+                              the probe.
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          timeoutSeconds:
+                            type: integer
+                        type: object
                       nameOverride:
                         description: Specifies a custom name for the Redpanda Console
                           resources, overriding the default naming convention.
@@ -10640,6 +10794,27 @@ spec:
                         description: Specifies the priority class name for the Pods
                           that run Redpanda Console.
                         type: string
+                      readinessProbe:
+                        description: Settings for console's Deployment's readiness
+                          probe.
+                        properties:
+                          failureThreshold:
+                            description: Defines the threshold for how many times
+                              the probe can fail before the Pod is marked Unready.
+                            type: integer
+                          initialDelaySeconds:
+                            description: Sets the initial delay before the readiness
+                              probe is initiated, in seconds.
+                            type: integer
+                          periodSeconds:
+                            description: Configures the period, in seconds, between
+                              each readiness check.
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          timeoutSeconds:
+                            type: integer
+                        type: object
                       replicaCount:
                         description: Sets the number of replicas for the Redpanda
                           Console Deployment resource.
@@ -10652,13 +10827,8 @@ spec:
                       secret:
                         description: Specifies whether a Secret should be created
                           for Redpanda Console.
-                        properties:
-                          create:
-                            description: Indicates whether the corresponding Kubernetes
-                              object (ConfigMap, Secret, or Deployment) should be
-                              created.
-                            type: boolean
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       secretMounts:
                         description: Mounts additional Secret resources inside the
                           containers that run Redpanda Console.
@@ -10682,6 +10852,16 @@ spec:
                           that run Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      strategy:
+                        description: Configures console's Deployment's update strategy.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      tests:
+                        description: Controls the creation of helm tests for console.
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
                       tolerations:
                         description: Specifies tolerations for scheduling Pods onto
                           Nodes with taints.
