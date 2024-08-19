@@ -10,6 +10,7 @@
 package v1alpha2
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/apiutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -169,7 +170,8 @@ type RedpandaConsole struct {
 	// Specifies a custom name for the Redpanda Console resources, overriding the default naming convention.
 	NameOverride *string `json:"nameOverride,omitempty"`
 	// Specifies a full custom name, which overrides the entire naming convention including release name and chart name.
-	FullNameOverride *string `json:"fullnameOverride,omitempty"`
+	FullNameOverride *string           `json:"fullnameOverride,omitempty"`
+	CommonLabels     map[string]string `json:"commonLabels,omitempty"`
 	// Specifies the priority class name for the Pods that run Redpanda Console.
 	PriorityClassName *string `json:"priorityClassName,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -239,22 +241,41 @@ type RedpandaConsole struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Mounts additional Secret resources inside the containers that run Redpanda Console.
 	SecretMounts []*runtime.RawExtension `json:"secretMounts,omitempty"`
+	// Deprecated: this field exists for storage backwards compatibility and is
+	// never used. Prefer ConfigMap (configmap).
+	DeprecatedConfigMap *ConsoleCreateObj `json:"configmap,omitempty"`
 	// Specifies whether a ConfigMap should be created for Redpanda Console.
 	ConfigMap *ConsoleCreateObj `json:"configMap,omitempty"`
 	// Specifies whether a Secret should be created for Redpanda Console.
-	Secret *ConsoleCreateObj `json:"secret,omitempty"`
-	// Specifies whether a Deployment should be created for Redpanda Console.
-	Deployment *ConsoleCreateObj `json:"deployment,omitempty"`
-
 	// +kubebuilder:pruning:PreserveUnknownFields
+	Secret *runtime.RawExtension `json:"secret,omitempty"`
+	// Specifies whether a Deployment should be created for Redpanda Console.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Deployment *runtime.RawExtension `json:"deployment,omitempty"`
 	// Configures custom settings for Redpanda Console.
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Console *runtime.RawExtension `json:"console,omitempty"`
+	// Configures console's Deployment's update strategy.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Strategy *runtime.RawExtension `json:"strategy,omitempty"`
+	// Settings for license key, as an alternative to secret.enterprise when a
+	// license secret is available
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Enterprise *runtime.RawExtension `json:"enterprise,omitempty"`
+	// Automount API credentials for the Service Account into the pod.
+	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
+	// Settings for console's Deployment's readiness probe.
+	ReadinessProbe *ReadinessProbe `json:"readinessProbe,omitempty"`
+	// Settings for console's Deployment's liveness probe.
+	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
+	// Controls the creation of helm tests for console.
+	Tests *Enablable `json:"tests,omitempty"`
 }
 
 // ConsoleCreateObj represents configuration options for creating Kubernetes objects such as ConfigMaps, Secrets, and Deployments.
 type ConsoleCreateObj struct {
 	// Indicates whether the corresponding Kubernetes object (ConfigMap, Secret, or Deployment) should be created.
-	Create bool `json:"create,omitempty"`
+	Create *bool `json:"create,omitempty"`
 }
 
 // RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a package that includes Kafka Connect and built-in connectors, sometimes known as plugins. See https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/k-deploy-connectors/.
@@ -297,12 +318,21 @@ type RedpandaConnectors struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies logging details
 	Logging *runtime.RawExtension `json:"logging,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies service details
+	Service *runtime.RawExtension `json:"service,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Specifies service account details
+	ServiceAccount *runtime.RawExtension `json:"serviceAccount,omitempty"`
 }
 
 // ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
 type ConnectorsCreateObj struct {
 	// Specifies whether to create the resource.
-	Create *bool `json:"enabled,omitempty"`
+	Create *bool `json:"create,omitempty"`
+	// Deprecated: this field exists for storage backwards compatibility and is
+	// never used. Prefer Create.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // Auth configures authentication in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/authentication/sasl-kubernetes/.
@@ -1064,7 +1094,7 @@ type Monitoring struct {
 // ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
 type ConnectorMonitoring struct {
 	// Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Adds custom labels to the ServiceMonitor resource.
 	Labels map[string]string `json:"labels,omitempty"`
 	// Specifies how often to scrape metrics.
@@ -1072,7 +1102,8 @@ type ConnectorMonitoring struct {
 	// Adds custom Annotations to the ServiceMonitor resource.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Adds custom namespaceSelector to monitoring resources
-	NamespaceSelector map[string]string `json:"namespaceSelector,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	NamespaceSelector *monitoringv1.NamespaceSelector `json:"namespaceSelector,omitempty"`
 }
 
 // ExternalDNS configures externalDNS.
