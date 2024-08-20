@@ -58,19 +58,6 @@ type TopicSpec struct {
 	SynchronizationInterval *metav1.Duration `json:"interval,omitempty"`
 }
 
-// KafkaTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
-type KafkaTLS struct {
-	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
-	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
-	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
-	Cert *SecretKeyRef `json:"certSecretRef,omitempty"`
-	// Key is the reference for client private certificate to establish mTLS connection to Redpanda
-	Key *SecretKeyRef `json:"keySecretRef,omitempty"`
-	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
-	// +optional
-	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify"`
-}
-
 // TopicStatus defines the observed state of the Topic resource.
 type TopicStatus struct {
 	// ObservedGeneration is the last observed generation of the Topic.

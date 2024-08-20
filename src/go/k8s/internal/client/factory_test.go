@@ -23,9 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	chartVersion = ""
-)
+var chartVersion = ""
 
 func ensureMapAndSetValue(values map[string]any, name, key string, value any) {
 	if v, ok := values[name]; ok {

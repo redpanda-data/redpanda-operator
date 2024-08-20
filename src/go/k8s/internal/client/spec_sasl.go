@@ -23,6 +23,7 @@ func (c *clientFactory) configureAdminSpecSASL(ctx context.Context, namespace st
 		return "", "", "", nil
 	}
 
+	//nolint:exhaustive // we don't need this to be exhaustive, as we only support 3 auth mechanisms in this API.
 	switch spec.SASL.Mechanism {
 	// SCRAM
 	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
