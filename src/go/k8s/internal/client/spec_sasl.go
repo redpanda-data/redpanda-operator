@@ -18,7 +18,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
-func (c *clientFactory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username string, password string, token string, err error) {
+func (c *clientFactory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username, password, token string, err error) {
 	if spec.SASL == nil {
 		return "", "", "", nil
 	}

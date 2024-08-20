@@ -82,18 +82,19 @@ func (c *clientFactory) redpandaAdminForSpec(ctx context.Context, namespace stri
 		return nil, err
 	}
 
-	if username != "" {
+	switch {
+	case username != "":
 		auth = &rpadmin.BasicAuth{
 			Username: username,
 			Password: password,
 		}
-	} else if token != "" {
+	case token != "":
 		auth = &rpadmin.BearerToken{
 			Token: token,
 		}
-	} else {
+	default:
 		auth = &rpadmin.NopAuth{}
 	}
 
-	return rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, rpadmin.DialContextFunc(c.dialer))
+	return rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer)
 }

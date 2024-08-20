@@ -190,9 +190,9 @@ func TestClientFactory(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, json.Unmarshal(data, cluster.Spec.ClusterSpec))
 
-				client, err := factory.KafkaClient(ctx, &cluster)
+				kafkaClient, err := factory.KafkaClient(ctx, &cluster)
 				require.NoError(t, err)
-				metadata, err := kadm.NewClient(client).BrokerMetadata(ctx)
+				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
 			})
@@ -231,9 +231,9 @@ func TestClientFactory(t *testing.T) {
 						InsecureSkipTLSVerify: true,
 					}
 				}
-				client, err := factory.KafkaClient(ctx, wrapSpec(name, &spec))
+				kafkaClient, err := factory.KafkaClient(ctx, wrapSpec(name, &spec))
 				require.NoError(t, err)
-				metadata, err := kadm.NewClient(client).BrokerMetadata(ctx)
+				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
 			})

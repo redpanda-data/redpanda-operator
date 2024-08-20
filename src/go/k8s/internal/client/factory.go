@@ -79,13 +79,13 @@ func NewClientFactory(config *rest.Config) (ClientFactory, error) {
 		return nil, err
 	}
 
-	client, err := client.New(config, client.Options{Scheme: s})
+	c, err := client.New(config, client.Options{Scheme: s})
 	if err != nil {
 		return nil, err
 	}
 
 	return &clientFactory{
-		Client: client,
+		Client: c,
 		config: config,
 		logger: logr.Discard(),
 	}, nil

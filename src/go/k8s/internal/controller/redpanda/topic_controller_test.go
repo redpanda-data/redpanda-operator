@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -57,7 +56,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 			err := os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 			require.NoError(t, err)
 		}
-		container, err := redpanda.RunContainer(ctx, testcontainers.WithImage("docker.redpanda.com/redpandadata/redpanda:v23.2.8"))
+		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8")
 		require.NoError(t, err)
 
 		t.Cleanup(func() {
