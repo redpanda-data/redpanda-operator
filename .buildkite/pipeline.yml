@@ -48,8 +48,6 @@ steps:
             - json-key: .
               secret-id: sdlc/prod/buildkite/grafana_token
             - json-key: .
-              secret-id: sdlc/prod/buildkite/quill
-            - json-key: .
               secret-id: sdlc/prod/buildkite/redpanda_sample_license
             - json-key: .
               secret-id: sdlc/prod/buildkite/redpanda_second_sample_license

@@ -6,7 +6,7 @@ tasks:
     desc: release go binaries using the .goreleaser.yml file in given directory
     deps:
       - task: :dev:install-goreleaser
-      - task: :dev:install-quill
+      - task: :k8s:generate
     env:
       GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
       GITHUB_TOKEN:
@@ -17,14 +17,9 @@ tasks:
         mkdir -p /tmp
         echo "" >> "$EMPTY_NOTES"
 
-        export PATH="{{.GORELEASER_INSTALL_DIR}}:{{.QUILL_INSTALL_DIR}}:$PATH"
+        export PATH="{{.GORELEASER_INSTALL_DIR}}:$PATH"
         goreleaser release --clean --release-notes "$EMPTY_NOTES"
     preconditions:
-      - test -n "$QUILL_SIGN_P12"
-      - test -n "$QUILL_SIGN_PASSWORD"
-      - test -n "$QUILL_NOTARY_KEY_ID"
-      - test -n "$QUILL_NOTARY_KEY"
-      - test -n "$QUILL_NOTARY_ISSUER"
       - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
       - test -n "{{.TAG_NAME}}"
 
@@ -34,6 +29,7 @@ tasks:
     desc: build go binaries with goreleaser and a given id
     deps:
       - task: :dev:install-goreleaser
+      - task: :k8s:generate
     env:
       GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
     cmds:
