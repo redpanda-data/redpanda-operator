@@ -33,6 +33,7 @@ tasks:
 
   k8s:
     cmds:
+      - task: :dev:install-helm
       - task: run-k8s-tests
       - task: publish-k8s-operator-images
 
