@@ -33,6 +33,7 @@ import (
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 )
 
 const (
@@ -58,7 +59,8 @@ var (
 // TopicReconciler reconciles a Topic object
 type TopicReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Factory internalclient.ClientFactory
+	Scheme  *runtime.Scheme
 	kuberecorder.EventRecorder
 }
 
@@ -555,12 +557,7 @@ func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpanda
 		return nil, ErrEmptyKafkaAPISpec
 	}
 
-	kgoOpts, err := newKgoConfig(ctx, r.Client, topic, l)
-	if err != nil {
-		return nil, fmt.Errorf("creating kgo configuration options: %w", err)
-	}
-
-	kafkaClient, err := kgo.NewClient(kgoOpts...)
+	kafkaClient, err := r.Factory.KafkaClient(ctx, topic)
 	if err != nil {
 		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)
 	}
