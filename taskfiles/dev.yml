@@ -18,10 +18,7 @@ vars:
   KUTTL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kuttl/{{.KUTTL_VERSION}}'
   GORELEASER_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/goreleaser'
   GORELEASER_VERSION: '1.20.0'
-  QUILL_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/quill'
-  QUILL_VERSION: '0.4.1'
   DOCKER_TAG_LIST_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/docker-tag-list'
-
 
 tasks:
   install-task:
@@ -186,15 +183,3 @@ tasks:
       - |
         PATH={{.GORELEASER_INSTALL_DIR}}:$PATH
         [[ $(goreleaser --version | grep -o {{.GORELEASER_VERSION}}) == {{.GORELEASER_VERSION}} ]]
-
-  install-quill:
-    desc: install quill
-    cmds:
-      - mkdir -p '{{.QUILL_INSTALL_DIR}}'
-      - |
-        curl -sSfL \
-          https://raw.githubusercontent.com/anchore/quill/main/install.sh \
-          | sh -s -- -b "{{.QUILL_INSTALL_DIR}}" "v{{.QUILL_VERSION}}"
-    status:
-      - test -f {{.QUILL_INSTALL_DIR}}/quill
-      - "[[ $({{.QUILL_INSTALL_DIR}}/quill --version | grep -o {{.QUILL_VERSION}}) == {{.QUILL_VERSION}} ]]"
