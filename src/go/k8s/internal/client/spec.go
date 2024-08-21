@@ -9,10 +9,13 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // KafkaForSpec returns a simple kgo.Client able to communicate with the given cluster specified via KafkaAPISpec.
-func (c *clientFactory) kafkaForSpec(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha2.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha2.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+	logger := log.FromContext(ctx)
+
 	if len(spec.Brokers) == 0 {
 		return nil, ErrEmptyBrokerList
 	}
@@ -25,10 +28,10 @@ func (c *clientFactory) kafkaForSpec(ctx context.Context, namespace string, metr
 		metricsLabel = *metricNamespace
 	}
 
-	hooks := newClientHooks(c.logger, metricsLabel)
+	hooks := newClientHooks(logger, metricsLabel)
 
 	// Create Logger
-	kopts = append(kopts, kgo.WithLogger(wrapLogger(c.logger)), kgo.WithHooks(hooks))
+	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
 		sasl, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
@@ -61,7 +64,7 @@ func (c *clientFactory) kafkaForSpec(ctx context.Context, namespace string, metr
 	return kgo.NewClient(append(opts, kopts...)...)
 }
 
-func (c *clientFactory) redpandaAdminForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (*rpadmin.AdminAPI, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}

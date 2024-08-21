@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/helm-charts/pkg/helm"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/helm-charts/pkg/testutil"
@@ -21,9 +22,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var chartVersion = ""
+
+func init() {
+	log.SetLogger(logr.Discard())
+}
 
 func ensureMapAndSetValue(values map[string]any, name, key string, value any) {
 	if v, ok := values[name]; ok {
@@ -90,7 +96,7 @@ func TestClientFactory(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(s))
 	require.NoError(t, redpandav1alpha2.AddToScheme(s))
 	require.NoError(t, redpandav1alpha1.AddToScheme(s))
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: s})
+	kubeClient, err := client.New(restcfg, client.Options{Scheme: s, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
 	require.NoError(t, err)
 
 	helmClient, err := helm.New(helm.Options{
@@ -112,10 +118,7 @@ func TestClientFactory(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	factory, err := NewClientFactory(restcfg)
-	require.NoError(t, err)
-
-	factory = factory.WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	type credentials struct {
 		Name      string

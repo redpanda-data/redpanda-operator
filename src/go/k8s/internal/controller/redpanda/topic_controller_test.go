@@ -41,8 +41,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	factory, err := internalclient.NewClientFactory(cfg)
-	require.NoError(t, err)
+	factory := internalclient.NewFactory(cfg, c)
 
 	var kafkaAdmCl *kadm.Client
 	var kafkaCl *kgo.Client

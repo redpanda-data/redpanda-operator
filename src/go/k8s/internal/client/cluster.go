@@ -13,7 +13,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
-func (c *clientFactory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Dot, error) {
+func (c *Factory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Dot, error) {
 	var values []byte
 	var partial redpandachart.PartialValues
 
@@ -44,7 +44,7 @@ func (c *clientFactory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Do
 }
 
 // RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *clientFactory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
 	dot, err := c.dotFor(cluster)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (c *clientFactory) redpandaAdminForCluster(ctx context.Context, cluster *re
 }
 
 // KafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *clientFactory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
 	dot, err := c.dotFor(cluster)
 	if err != nil {
 		return nil, err

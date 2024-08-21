@@ -10,6 +10,7 @@ import (
 
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func wrapTLSDialer(dialer redpanda.DialContextFunc, config *tls.Config) redpanda.DialContextFunc {
@@ -22,8 +23,10 @@ func wrapTLSDialer(dialer redpanda.DialContextFunc, config *tls.Config) redpanda
 	}
 }
 
-func (c *clientFactory) configureSpecTLS(ctx context.Context, namespace string, spec *redpandav1alpha2.CommonTLS) (*tls.Config, error) {
+func (c *Factory) configureSpecTLS(ctx context.Context, namespace string, spec *redpandav1alpha2.CommonTLS) (*tls.Config, error) {
 	var caCertPool *x509.CertPool
+
+	logger := log.FromContext(ctx)
 
 	// Root CA
 	if spec.CaCert != nil {
@@ -35,7 +38,7 @@ func (c *clientFactory) configureSpecTLS(ctx context.Context, namespace string, 
 		caCertPool = x509.NewCertPool()
 		isSuccessful := caCertPool.AppendCertsFromPEM(ca)
 		if !isSuccessful {
-			c.logger.Info("failed to append ca file to cert pool, is this a valid PEM format?")
+			logger.Info("failed to append ca file to cert pool, is this a valid PEM format?")
 		}
 	}
 

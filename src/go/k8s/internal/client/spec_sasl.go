@@ -16,9 +16,10 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/oauth"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (c *clientFactory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username, password, token string, err error) {
+func (c *Factory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username, password, token string, err error) {
 	if spec.SASL == nil {
 		return "", "", "", nil
 	}
@@ -45,7 +46,9 @@ func (c *clientFactory) configureAdminSpecSASL(ctx context.Context, namespace st
 	return "", "", "", fmt.Errorf("unsupported SASL mechanism: %s", spec.SASL.Mechanism)
 }
 
-func (c *clientFactory) configureKafkaSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (kgo.Opt, error) {
+func (c *Factory) configureKafkaSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (kgo.Opt, error) {
+	logger := log.FromContext(ctx)
+
 	switch spec.SASL.Mechanism {
 	// SASL Plain
 	case config.SASLMechanismPlain:
@@ -73,12 +76,12 @@ func (c *clientFactory) configureKafkaSpecSASL(ctx context.Context, namespace st
 		}
 
 		if spec.SASL.Mechanism == config.SASLMechanismScramSHA256 {
-			c.logger.V(traceLevel).Info("configuring SCRAM-SHA-256 mechanism")
+			logger.V(traceLevel).Info("configuring SCRAM-SHA-256 mechanism")
 			mechanism = scramAuth.AsSha256Mechanism()
 		}
 
 		if spec.SASL.Mechanism == config.SASLMechanismScramSHA512 {
-			c.logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
+			logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
 			mechanism = scramAuth.AsSha512Mechanism()
 		}
 
@@ -97,7 +100,7 @@ func (c *clientFactory) configureKafkaSpecSASL(ctx context.Context, namespace st
 
 	// Kerberos
 	case config.SASLMechanismGSSAPI:
-		c.logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
+		logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
 		var krbClient *krbclient.Client
 
 		kerbCfg, err := krbconfig.Load(spec.SASL.GSSAPIConfig.KerberosConfigPath)

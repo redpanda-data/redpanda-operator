@@ -551,13 +551,11 @@ func generateConf(
 }
 
 func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*kgo.Client, error) {
-	l.WithName("kafkaClient")
-
 	if topic.Spec.KafkaAPISpec == nil {
 		return nil, ErrEmptyKafkaAPISpec
 	}
 
-	kafkaClient, err := r.Factory.KafkaClient(ctx, topic)
+	kafkaClient, err := r.Factory.KafkaClient(log.IntoContext(ctx, l.WithName("kafkaClient")), topic)
 	if err != nil {
 		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)
 	}
