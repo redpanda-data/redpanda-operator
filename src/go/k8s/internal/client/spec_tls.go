@@ -19,6 +19,19 @@ func wrapTLSDialer(dialer redpanda.DialContextFunc, config *tls.Config) redpanda
 		if err != nil {
 			return nil, err
 		}
+
+		serverName, _, err := net.SplitHostPort(host)
+		if err != nil {
+			// we likely didn't have a port, use
+			// the whole string as the serverName
+			serverName = host
+		}
+
+		config = config.Clone()
+		if config.ServerName == "" {
+			config.ServerName = serverName
+		}
+
 		return tls.Client(conn, config), nil
 	}
 }

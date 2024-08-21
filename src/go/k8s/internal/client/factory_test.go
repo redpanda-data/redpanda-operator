@@ -227,11 +227,6 @@ func TestClientFactory(t *testing.T) {
 							Name: fmt.Sprintf("%s-default-root-certificate", name),
 							Key:  corev1.TLSCertKey,
 						},
-						// This is necessary since we don't have a way of setting a ServerName
-						// through our client initiation code and one or the other must be set
-						// according to go's TLS negotiation code. See:
-						//   https://github.com/golang/go/blob/ab4182251ba57b0d1fe9abbfd604861a6ae75463/src/crypto/tls/handshake_client.go#L46-L48
-						InsecureSkipTLSVerify: true,
 					}
 				}
 				kafkaClient, err := factory.KafkaClient(ctx, wrapSpec(name, &spec))
