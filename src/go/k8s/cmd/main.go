@@ -49,6 +49,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
@@ -307,6 +308,7 @@ func main() {
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
@@ -479,6 +481,7 @@ func main() {
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {

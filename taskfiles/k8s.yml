@@ -32,9 +32,11 @@ tasks:
   run-unit-tests:
     dir: 'src/go/k8s'
     deps:
+      - :dev:install-helm
       - generate
     cmds:
       - |
+        PATH="{{.HELM_INSTALL_DIR}}/bin:$PATH"
         source <(cd {{ .SRC_DIR }} && nix develop -c setup-envtest use -p env 1.29.x)
         go test -v ./... -coverprofile cover.out
 
