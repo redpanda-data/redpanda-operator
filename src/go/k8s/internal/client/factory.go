@@ -24,7 +24,7 @@ var (
 // ClientFactory is responsible for creating both high-level and low-level clients used in our
 // controllers.
 //
-// Calling its `Kafka*` methods will initialize a low-level kgo.Client instance
+// Calling its `Kafka*` methods will initialize a low-level [kgo.Client] instance
 // based on the connection parameters contained within the corresponding CRD struct passed in
 // at method invocation.
 //
