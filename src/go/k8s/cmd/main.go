@@ -256,13 +256,6 @@ func main() {
 	case OperatorV1Mode:
 		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
 
-		factory, err := internalclient.NewClientFactory(mgr.GetConfig())
-		if err != nil {
-			setupLog.Error(err, "Unable to create client factory")
-			os.Exit(1)
-		}
-		factory = factory.WithLogger(mgr.GetLogger().WithName("ClientFactory"))
-
 		if err = (&redpandacontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
@@ -315,7 +308,7 @@ func main() {
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       factory,
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
@@ -360,13 +353,6 @@ func main() {
 		}
 	case OperatorV2Mode:
 		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
-
-		factory, err := internalclient.NewClientFactory(mgr.GetConfig())
-		if err != nil {
-			setupLog.Error(err, "Unable to create client factory")
-			os.Exit(1)
-		}
-		factory = factory.WithLogger(mgr.GetLogger().WithName("ClientFactory"))
 
 		// if we enable these controllers then run them, otherwise, do not
 		//nolint:nestif // not really nested, required.
@@ -495,7 +481,7 @@ func main() {
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       factory,
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
