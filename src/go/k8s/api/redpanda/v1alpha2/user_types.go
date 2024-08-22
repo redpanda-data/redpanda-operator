@@ -152,7 +152,8 @@ type ACLRule struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=11
 	// +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;All;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
-	// +kubebuilder:validation:XValidation:message="operations must be unique",rule="self.all(o1, self.exists_one(o2, o1 == o2))"
+	// +kubebuilder:validation:item:MaxLength=15
+	// +kubebuilder:validation:item:UniqueItems=true
 	Operations []string `json:"operations"`
 }
 

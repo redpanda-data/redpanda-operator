@@ -227,9 +227,6 @@ spec:
                           maxItems: 11
                           minItems: 1
                           type: array
-                          x-kubernetes-validations:
-                          - message: operations must be unique
-                            rule: self.all(o1, self.exists_one(o2, o1 == o2))
                         resource:
                           description: Indicates the resource for which given ACL
                             rule applies.
