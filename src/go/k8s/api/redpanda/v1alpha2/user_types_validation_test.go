@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
@@ -36,6 +37,14 @@ func TestValidateUser(t *testing.T) {
 		},
 	}
 
+	password := Password{
+		ValueFrom: &PasswordSource{
+			SecretKeyRef: &SecretKeyRef{
+				Name: "key",
+			},
+		},
+	}
+
 	err = AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 
@@ -51,6 +60,7 @@ func TestValidateUser(t *testing.T) {
 		{
 			desc: "basic create",
 		},
+		// connection params
 		{
 			desc: "clusterRef or kafkaApiSpec and adminApiSpec - none",
 			mutate: func(user *User) {
@@ -89,6 +99,60 @@ func TestValidateUser(t *testing.T) {
 					URLs: []string{"http://1.2.3.4:0"},
 				}
 			},
+		},
+		// authentication
+		{
+			desc: "authentication type - default",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{
+					Password: password,
+				}
+			},
+		},
+		{
+			desc: "authentication type - sha-512",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{
+					Type:     ptr.To("scram-sha-512"),
+					Password: password,
+				}
+			},
+		},
+		{
+			desc: "authentication type - sha-256",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{
+					Type:     ptr.To("scram-sha-256"),
+					Password: password,
+				}
+			},
+		},
+		{
+			desc: "authentication type - invalid",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{
+					Type: ptr.To("invalid"),
+				}
+			},
+			wantErrors: []string{`spec.authentication.type: Unsupported value: "invalid": supported values: "scram-sha-256", "scram-sha-512"`},
+		},
+		{
+			desc: "authentication - no password value from",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{}
+			},
+			wantErrors: []string{`spec.authentication.password.valueFrom: Required value`},
+		},
+		{
+			desc: "authentication - no secret key ref",
+			mutate: func(user *User) {
+				user.Spec.Authentication = &UserAuthenticationSpec{
+					Password: Password{
+						ValueFrom: &PasswordSource{},
+					},
+				}
+			},
+			wantErrors: []string{`spec.authentication.password.valueFrom.secretKeyRef: Required value`},
 		},
 	}
 

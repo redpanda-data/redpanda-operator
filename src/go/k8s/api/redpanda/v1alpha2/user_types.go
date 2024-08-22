@@ -95,16 +95,15 @@ type UserTemplateSpec struct {
 // UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
 type UserAuthenticationSpec struct {
 	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512
-	// +kubebuilder:validation:Required
-	Type string `json:"type"`
+	// +default:value=scram-sha-512
+	Type *string `json:"type,omitempty"`
 	// Password specifies where a password is read from.
-	// +kubebuilder:validation:Required
 	Password Password `json:"password"`
 }
 
 type Password struct {
-	// +kubebuilder:validation:Required
-	ValueFrom PasswordSource `json:"valueFrom"`
+	// +required
+	ValueFrom *PasswordSource `json:"valueFrom"`
 }
 
 type PasswordSource struct {
@@ -112,16 +111,16 @@ type PasswordSource struct {
 	// If the Secret exists and has a value in it, then that value is used.
 	// If the Secret does not exist, or is empty, a password is generated and
 	// stored based on this configuration.
-	// +kubebuilder:validation:Required
-	SecretKeyRef SecretKeyRef `json:"secretKeyRef"`
+	// +required
+	SecretKeyRef *SecretKeyRef `json:"secretKeyRef"`
 }
 
 // UserAuthorizationSpec defines authorization rules for this user.
 type UserAuthorizationSpec struct {
 	// +kubebuilder:validation:Enum=simple
-	// +kubebuilder:default=simple
-	// +kubebuilder:validation:Required
-	Type string `json:"type"`
+	// +default:value=simple
+	// +required
+	Type *string `json:"type"`
 	// List of ACL rules which should be applied to this user.
 	// +kubebuilder:validation:MaxItems=1024
 	ACLs []ACLRule `json:"acls,omitempty"`
@@ -138,16 +137,15 @@ type UserAuthorizationSpec struct {
 // +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
 // +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule="self.type == 'cluster' ? !has(self.resource.name) : true"
 type ACLRule struct {
-	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=allow;deny
 	Type string `json:"type"`
 	// Indicates the resource for which given ACL rule applies.
-	// +kubebuilder:validation:Required
 	Resource ACLResourceSpec `json:"resource"`
 	// The host from which the action described in the ACL rule is allowed or denied.
 	// If not set, it defaults to *, allowing or denying the action from any host.
-	// +kubebuilder:default:*
-	Host string `json:"host"`
+	// +default:value=*
+	// +required
+	Host *string `json:"host"`
 	// List of operations which will be allowed or denied.
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=11
@@ -160,20 +158,21 @@ type ACLRule struct {
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
 // +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic']",rule="self.type in ['group', 'topic'] ? true : self.patternType != 'prefixed'"
 type ACLResourceSpec struct {
-	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=topic;group;cluster;delegationToken;transactionalId
-	Type string `json:"type"`
+	// +required
+	Type *string `json:"type"`
 	// Name of resource for which given ACL rule applies.
 	// Can be combined with patternType field to use prefix pattern.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name"`
 	// Describes the pattern used in the resource field. The supported types are literal
 	// and prefixed. With literal pattern type, the resource field will be used as a definition
 	// of a full topic name. With prefix pattern type, the resource name will be used only as
 	// a prefix. Default value is literal.
 	//
 	// +kubebuilder:validation:Enum=prefixed;literal
-	// +kubebuilder:default=literal
-	PatternType string `json:"patternType"`
+	// +default:value=literal
+	// +required
+	PatternType *string `json:"patternType"`
 }
 
 // UserStatus defines the observed state of a Redpanda user
