@@ -24,7 +24,7 @@ type User struct {
 	// Defines the desired state of the Redpanda user.
 	Spec UserSpec `json:"spec"`
 	// Represents the current status of the Redpanda user.
-	// +kubebuilder:default={conditions: {{type: "Synced", status: "Pending", reason:"Unreconciled", message:"Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
+	// +kubebuilder:default={conditions: {{type: "Synced", status: "Unknown", reason:"Pending", message:"Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
 	Status UserStatus `json:"status,omitempty"`
 }
 
@@ -165,7 +165,7 @@ type ACLResourceSpec struct {
 // UserStatus defines the observed state of a Redpanda user
 type UserStatus struct {
 	// Specifies the last observed generation.
-	ObservedGeneration int64 `json:"observedGeneration"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Conditions holds the conditions for the Redpanda user.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// ClusterRef is a reference to the cluster where the user was created.
