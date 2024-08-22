@@ -255,21 +255,24 @@ spec:
                               type: string
                           required:
                           - name
-                          - patternType
                           - type
                           type: object
                           x-kubernetes-validations:
                           - message: prefixed pattern type only supported for ['group',
                               'topic']
-                            rule: 'self.type in [''group'', ''topic''] ? true : self.patternType
-                              != ''prefixed'''
+                            rule: 'self.type in [''group'', ''topic''] ? true : !has(self.patternType)
+                              || self.patternType != ''prefixed'''
+                          - message: name must not be specified for type ['cluster']
+                            rule: 'self.type == "cluster" ? (self.name == "") : true'
+                          - message: acl rules on non-cluster resources must specify
+                              a name
+                            rule: 'self.type == "cluster" ? true : (self.name != "")'
                         type:
                           enum:
                           - allow
                           - deny
                           type: string
                       required:
-                      - host
                       - operations
                       - resource
                       - type
@@ -299,17 +302,12 @@ spec:
                           in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
                           ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
                           : true'
-                      - message: name must not be specified for type ['cluster']
-                        rule: 'self.type == ''cluster'' ? !has(self.resource.name)
-                          : true'
                     maxItems: 1024
                     type: array
                   type:
                     enum:
                     - simple
                     type: string
-                required:
-                - type
                 type: object
               clusterRef:
                 description: |-

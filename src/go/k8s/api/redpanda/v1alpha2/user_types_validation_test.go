@@ -154,6 +154,81 @@ func TestValidateUser(t *testing.T) {
 			},
 			wantErrors: []string{`spec.authentication.password.valueFrom.secretKeyRef: Required value`},
 		},
+		// authorization
+		{
+			desc: "authorization topic",
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "topic",
+							Name: "foo",
+						},
+						Operations: []string{"Alter", "AlterConfigs", "Create", "Delete", "Describe", "DescribeConfigs", "Read", "Write"},
+					}},
+				}
+			},
+		},
+		{
+			desc: "authorization group",
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "group",
+							Name: "foo",
+						},
+						Operations: []string{"Delete", "Describe", "Read"},
+					}},
+				}
+			},
+		},
+		{
+			desc: "authorization delegationToken",
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "delegationToken",
+							Name: "foo",
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+		},
+		{
+			desc: "authorization transactionalId",
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "transactionalId",
+							Name: "foo",
+						},
+						Operations: []string{"Describe", "Write"},
+					}},
+				}
+			},
+		},
+		{
+			desc: "authorization cluster",
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "cluster",
+						},
+						Operations: []string{"Alter", "AlterConfigs", "ClusterAction", "Create", "Describe", "DescribeConfigs", "IdempotentWrite"},
+					}},
+				}
+			},
+		},
 	}
 
 	for _, tc := range testCases {
