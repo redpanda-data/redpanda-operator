@@ -76,9 +76,6 @@ type UserSpec struct {
 	Authentication *UserAuthenticationSpec `json:"authentication,omitempty"`
 	// Authorization rules defined for this user.
 	Authorization *UserAuthorizationSpec `json:"authorization,omitempty"`
-	// Quotas on requests to control the broker resources used by clients. Network
-	// bandwidth and request rate quotas can be enforced.
-	Quotas *QuotasSpec `json:"quotas,omitempty"`
 	// Template to specify how user secrets are generated.
 	Template *UserTemplateSpec `json:"template,omitempty"`
 	// UsernameOverride allows for specifying a particular username for the
@@ -90,20 +87,6 @@ type UserSpec struct {
 type UserTemplateSpec struct {
 	// Specifies how the Secret with a user password is generated.
 	Secret *ResourceTemplate `json:"secret,omitempty"`
-}
-
-// QuotasSpec defines the quotas for a user.
-type QuotasSpec struct {
-	// A quota on the maximum bytes per-second that each client group can publish to a broker
-	// before the clients in the group are throttled. Defined on a per-broker basis.
-	ProducerByteRate *int `json:"producerByteRate,omitempty"`
-	// A quota on the maximum bytes per-second that each client group can fetch from a broker
-	// before the clients in the group are throttled. Defined on a per-broker basis.
-	ConsumerByteRate *int `json:"consumerByteRate,omitempty"`
-	// A quota on the rate at which mutations are accepted for the create topics request, the create
-	// partitions request and the delete topics request. The rate is accumulated by the number of partitions
-	// created or deleted.
-	ControllerMutationRate *int `json:"controllerMutationRate,omitempty"`
 }
 
 // UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
