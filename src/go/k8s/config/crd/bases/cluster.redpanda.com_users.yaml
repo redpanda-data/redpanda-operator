@@ -208,8 +208,11 @@ spec:
                     description: List of ACL rules which should be applied to this
                       user.
                     items:
-                      description: ACLRule defines an ACL rule applied to the given
-                        user.
+                      description: |-
+                        ACLRule defines an ACL rule applied to the given user.
+
+
+                        Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
                       properties:
                         host:
                           description: |-
@@ -221,8 +224,12 @@ spec:
                             denied.
                           items:
                             type: string
+                          maxItems: 11
                           minItems: 1
                           type: array
+                          x-kubernetes-validations:
+                          - message: operations must be unique
+                            rule: self.all(o1, self.exists_one(o2, o1 == o2))
                         resource:
                           description: Indicates the resource for which given ACL
                             rule applies.
@@ -236,11 +243,11 @@ spec:
                               default: literal
                               description: |-
                                 Describes the pattern used in the resource field. The supported types are literal
-                                and prefix. With literal pattern type, the resource field will be used as a definition
+                                and prefixed. With literal pattern type, the resource field will be used as a definition
                                 of a full topic name. With prefix pattern type, the resource name will be used only as
                                 a prefix. Default value is literal.
                               enum:
-                              - prefix
+                              - prefixed
                               - literal
                               type: string
                             type:
@@ -248,13 +255,18 @@ spec:
                               - topic
                               - group
                               - cluster
+                              - delegationToken
                               - transactionalId
                               type: string
                           required:
-                          - name
                           - patternType
                           - type
                           type: object
+                          x-kubernetes-validations:
+                          - message: prefixed pattern type only supported for ['group',
+                              'topic']
+                            rule: 'self.type in [''group'', ''topic''] ? true : self.patternType
+                              != ''prefixed'''
                         type:
                           enum:
                           - allow
@@ -266,6 +278,35 @@ spec:
                       - resource
                       - type
                       type: object
+                      x-kubernetes-validations:
+                      - message: supported topic operations are ['Alter', 'AlterConfigs',
+                          'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read',
+                          'Write']
+                        rule: 'self.type == ''topic'' ? self.operations.all(o, o in
+                          [''Alter'', ''AlterConfigs'', ''Create'', ''Delete'', ''Describe'',
+                          ''DescribeConfigs'', ''Read'', ''Write'']) : true'
+                      - message: supported group operations are ['Delete', 'Describe',
+                          'Read']
+                        rule: 'self.type == ''group'' ? self.operations.all(o, o in
+                          [''Delete'', ''Describe'', ''Read'']) : true'
+                      - message: supported delegationToken operations are ['Describe']
+                        rule: 'self.type == ''delegationToken'' ? self.operations.all(o,
+                          o in [''Describe'']) : true'
+                      - message: supported transactionalId operations are ['Describe',
+                          'Write']
+                        rule: 'self.type == ''transactionalId'' ? self.operations.all(o,
+                          o in [''Describe'', ''Write'']) : true'
+                      - message: supported cluster operations are ['Alter', 'AlterConfigs',
+                          'ClusterAction', 'Create', 'Describe', 'DescribeConfigs',
+                          'IdempotentWrite']
+                        rule: 'self.type == ''cluster'' ? self.operations.all(o, o
+                          in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
+                          ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
+                          : true'
+                      - message: name must not be specified for type ['cluster']
+                        rule: 'self.type == ''cluster'' ? !has(self.resource.name)
+                          : true'
+                    maxItems: 1024
                     type: array
                   type:
                     default: simple
@@ -543,6 +584,10 @@ spec:
                   given user rather than the calculated "<NAMESPACE>/<NAME>".
                 type: string
             type: object
+            x-kubernetes-validations:
+            - message: either clusterRef or kafkaApiSpec and adminApiSpec must be
+                set
+              rule: has(self.clusterRef) || (has(self.kafkaApiSpec) && has(self.adminApiSpec))
           status:
             default:
               conditions:

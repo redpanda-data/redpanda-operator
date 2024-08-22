@@ -61,6 +61,7 @@ func (u *User) GetClusterRef() *ClusterRef {
 }
 
 // UserSpec defines the configuration of a Redpanda user.
+// +kubebuilder:validation:XValidation:message="either clusterRef or kafkaApiSpec and adminApiSpec must be set",rule="has(self.clusterRef) || (has(self.kafkaApiSpec) && has(self.adminApiSpec))"
 type UserSpec struct {
 	// ClusterRef is a reference to the cluster where the user should be created.
 	// It is used in constructing the client created to configure a cluster.
@@ -122,10 +123,20 @@ type UserAuthorizationSpec struct {
 	// +kubebuilder:validation:Required
 	Type string `json:"type"`
 	// List of ACL rules which should be applied to this user.
+	// +kubebuilder:validation:MaxItems=1024
 	ACLs []ACLRule `json:"acls,omitempty"`
 }
 
 // ACLRule defines an ACL rule applied to the given user.
+//
+// Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
+//
+// +kubebuilder:validation:XValidation:message="supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']",rule="self.type == 'topic' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']) : true"
+// +kubebuilder:validation:XValidation:message="supported group operations are ['Delete', 'Describe', 'Read']",rule="self.type == 'group' ? self.operations.all(o, o in ['Delete', 'Describe', 'Read']) : true"
+// +kubebuilder:validation:XValidation:message="supported delegationToken operations are ['Describe']",rule="self.type == 'delegationToken' ? self.operations.all(o, o in ['Describe']) : true"
+// +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
+// +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
+// +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule="self.type == 'cluster' ? !has(self.resource.name) : true"
 type ACLRule struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=allow;deny
@@ -139,25 +150,27 @@ type ACLRule struct {
 	Host string `json:"host"`
 	// List of operations which will be allowed or denied.
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=11
 	// +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;All;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
+	// +kubebuilder:validation:XValidation:message="operations must be unique",rule="self.all(o1, self.exists_one(o2, o1 == o2))"
 	Operations []string `json:"operations"`
 }
 
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
+// +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic']",rule="self.type in ['group', 'topic'] ? true : self.patternType != 'prefixed'"
 type ACLResourceSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
+	// +kubebuilder:validation:Enum=topic;group;cluster;delegationToken;transactionalId
 	Type string `json:"type"`
 	// Name of resource for which given ACL rule applies.
 	// Can be combined with patternType field to use prefix pattern.
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	// Describes the pattern used in the resource field. The supported types are literal
-	// and prefix. With literal pattern type, the resource field will be used as a definition
+	// and prefixed. With literal pattern type, the resource field will be used as a definition
 	// of a full topic name. With prefix pattern type, the resource name will be used only as
 	// a prefix. Default value is literal.
 	//
-	// +kubebuilder:validation:Enum=prefix;literal
+	// +kubebuilder:validation:Enum=prefixed;literal
 	// +kubebuilder:default=literal
 	PatternType string `json:"patternType"`
 }
