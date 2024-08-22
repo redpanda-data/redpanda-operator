@@ -1,0 +1,672 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: users.cluster.redpanda.com
+spec:
+  group: cluster.redpanda.com
+  names:
+    kind: User
+    listKind: UserList
+    plural: users
+    shortNames:
+    - rpu
+    singular: user
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Synced")].status
+      name: Synced
+      type: string
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: User defines the CRD for a Redpanda user.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Defines the desired state of the Redpanda user.
+            properties:
+              adinApi:
+                description: |-
+                  AdminAPISpec is the configuration information for communicating with the Admin
+                  API of a Redpanda cluster where the User should be created.
+                properties:
+                  sasl:
+                    description: Defines authentication configuration settings for
+                      Redpanda clusters that have authentication enabled.
+                    properties:
+                      mechanism:
+                        description: Specifies the SASL/SCRAM authentication mechanism.
+                        type: string
+                      passwordSecretRef:
+                        description: Specifies the password.
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      token:
+                        description: |-
+                          SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                          See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      username:
+                        description: Specifies the username.
+                        type: string
+                    required:
+                    - mechanism
+                    type: object
+                  tls:
+                    description: Defines TLS configuration settings for Redpanda clusters
+                      that have TLS enabled.
+                    properties:
+                      caCertSecretRef:
+                        description: CaCert is the reference for certificate authority
+                          used to establish TLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      certSecretRef:
+                        description: Cert is the reference for client public certificate
+                          to establish mTLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      insecureSkipTlsVerify:
+                        description: InsecureSkipTLSVerify can skip verifying Redpanda
+                          self-signed certificate when establish TLS connection to
+                          Redpanda
+                        type: boolean
+                      keySecretRef:
+                        description: Key is the reference for client private certificate
+                          to establish mTLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  urls:
+                    description: Specifies a list of broker addresses in the format
+                      <host>:<port>
+                    items:
+                      type: string
+                    type: array
+                required:
+                - urls
+                type: object
+              authentication:
+                description: |-
+                  Authentication defines the authentication information for a user. If no
+                  Authentication credentials are specified, then no user will be created.
+                  This is useful when wanting to manage ACLs for an already-existing user.
+                properties:
+                  password:
+                    description: Password specifies where a password is read from.
+                    properties:
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: |-
+                              SecretKeyRef specifies the secret used in reading a User password.
+                              If the Secret exists and has a value in it, then that value is used.
+                              If the Secret does not exist, or is empty, a password is generated and
+                              stored based on this configuration.
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretKeyRef
+                        type: object
+                    required:
+                    - valueFrom
+                    type: object
+                  type:
+                    enum:
+                    - scram-sha-256
+                    - scram-sha-512
+                    type: string
+                required:
+                - password
+                - type
+                type: object
+              authorization:
+                description: Authorization rules defined for this user.
+                properties:
+                  acls:
+                    description: List of ACL rules which should be applied to this
+                      user.
+                    items:
+                      description: Defines an ACL rule applied to the given user.
+                      properties:
+                        host:
+                          description: |-
+                            The host from which the action described in the ACL rule is allowed or denied.
+                            If not set, it defaults to *, allowing or denying the action from any host.
+                          type: string
+                        operations:
+                          description: List of operations which will be allowed or
+                            denied.
+                          items:
+                            type: string
+                          minItems: 1
+                          type: array
+                        resource:
+                          description: Indicates the resource for which given ACL
+                            rule applies.
+                          properties:
+                            name:
+                              description: |-
+                                Name of resource for which given ACL rule applies.
+                                Can be combined with patternType field to use prefix pattern.
+                              type: string
+                            patternType:
+                              default: literal
+                              description: |-
+                                Describes the pattern used in the resource field. The supported types are literal
+                                and prefix. With literal pattern type, the resource field will be used as a definition
+                                of a full topic name. With prefix pattern type, the resource name will be used only as
+                                a prefix. Default value is literal.
+                              enum:
+                              - prefix
+                              - literal
+                              type: string
+                            type:
+                              enum:
+                              - topic
+                              - group
+                              - cluster
+                              - transactionalId
+                              type: string
+                          required:
+                          - name
+                          - patternType
+                          - type
+                          type: object
+                        type:
+                          enum:
+                          - allow
+                          - deny
+                          type: string
+                      required:
+                      - host
+                      - operations
+                      - resource
+                      - type
+                      type: object
+                    type: array
+                  type:
+                    default: simple
+                    enum:
+                    - simple
+                    type: string
+                required:
+                - type
+                type: object
+              clusterRef:
+                description: |-
+                  ClusterRef is a reference to the cluster where the user should be created.
+                  It is used in constructing the client created to configure a cluster.
+                  This takes precedence over KafkaAPISpec and AdminAPISpec.
+                properties:
+                  name:
+                    description: Name specifies the name of the cluster being referenced.
+                    type: string
+                required:
+                - name
+                type: object
+              kafkaApi:
+                description: |-
+                  KafkaAPISpec is the configuration information for communicating with the Kafka
+                  API of a Redpanda cluster where the User should be created.
+                properties:
+                  brokers:
+                    description: Specifies a list of broker addresses in the format
+                      <host>:<port>
+                    items:
+                      type: string
+                    type: array
+                  sasl:
+                    description: Defines authentication configuration settings for
+                      Redpanda clusters that have authentication enabled.
+                    properties:
+                      awsMskIam:
+                        description: |-
+                          KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
+                          see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+                        properties:
+                          accessKey:
+                            type: string
+                          secretKeySecretRef:
+                            description: |-
+                              SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                              See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          sessionTokenSecretRef:
+                            description: |-
+                              SessionToken, if non-empty, is a session / security token to use for authentication.
+                              See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          userAgent:
+                            description: |-
+                              UserAgent is the user agent to for the client to use when connecting
+                              to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
+
+
+                              Setting a UserAgent allows authorizing based on the aws:UserAgent
+                              condition key; see the following link for more details:
+                              https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent
+                            type: string
+                        required:
+                        - accessKey
+                        - secretKeySecretRef
+                        - sessionTokenSecretRef
+                        - userAgent
+                        type: object
+                      gssapi:
+                        description: KafkaSASLGSSAPI represents the Kafka Kerberos
+                          config.
+                        properties:
+                          authType:
+                            type: string
+                          enableFast:
+                            description: |-
+                              EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
+                              It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
+                              FAST provides increased resistance to passive password guessing attacks.
+                            type: boolean
+                          kerberosConfigPath:
+                            type: string
+                          keyTabPath:
+                            type: string
+                          passwordSecretRef:
+                            description: |-
+                              SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                              See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          realm:
+                            type: string
+                          serviceName:
+                            type: string
+                          username:
+                            type: string
+                        required:
+                        - authType
+                        - enableFast
+                        - kerberosConfigPath
+                        - keyTabPath
+                        - passwordSecretRef
+                        - realm
+                        - serviceName
+                        - username
+                        type: object
+                      mechanism:
+                        description: Specifies the SASL/SCRAM authentication mechanism.
+                        type: string
+                      oauth:
+                        description: KafkaSASLOAuthBearer is the config struct for
+                          the SASL OAuthBearer mechanism
+                        properties:
+                          tokenSecretRef:
+                            description: |-
+                              SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                              See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - tokenSecretRef
+                        type: object
+                      passwordSecretRef:
+                        description: Specifies the password.
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      username:
+                        description: Specifies the username.
+                        type: string
+                    required:
+                    - mechanism
+                    type: object
+                  tls:
+                    description: Defines TLS configuration settings for Redpanda clusters
+                      that have TLS enabled.
+                    properties:
+                      caCertSecretRef:
+                        description: CaCert is the reference for certificate authority
+                          used to establish TLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      certSecretRef:
+                        description: Cert is the reference for client public certificate
+                          to establish mTLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      insecureSkipTlsVerify:
+                        description: InsecureSkipTLSVerify can skip verifying Redpanda
+                          self-signed certificate when establish TLS connection to
+                          Redpanda
+                        type: boolean
+                      keySecretRef:
+                        description: Key is the reference for client private certificate
+                          to establish mTLS connection to Redpanda
+                        properties:
+                          key:
+                            description: Key in Secret data to get value from
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                required:
+                - brokers
+                type: object
+              quotas:
+                description: |-
+                  Quotas on requests to control the broker resources used by clients. Network
+                  bandwidth and request rate quotas can be enforced.
+                properties:
+                  consumerByteRate:
+                    description: |-
+                      A quota on the maximum bytes per-second that each client group can fetch from a broker
+                      before the clients in the group are throttled. Defined on a per-broker basis.
+                    type: integer
+                  controllerMutationRate:
+                    description: |-
+                      A quota on the rate at which mutations are accepted for the create topics request, the create
+                      partitions request and the delete topics request. The rate is accumulated by the number of partitions
+                      created or deleted.
+                    type: integer
+                  producerByteRate:
+                    description: |-
+                      A quota on the maximum bytes per-second that each client group can publish to a broker
+                      before the clients in the group are throttled. Defined on a per-broker basis.
+                    type: integer
+                type: object
+              template:
+                description: Template to specify how user secrets are generated.
+                properties:
+                  secret:
+                    description: Specifies how the Secret with a user password is
+                      generated.
+                    properties:
+                      metadata:
+                        description: Metadata specifies additional metadata to associate
+                          with a resource.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations specifies the Kubernetes annotations
+                              to apply to a managed resource.
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels specifies the Kubernetes labels to
+                              apply to a managed resource.
+                            type: object
+                        type: object
+                    required:
+                    - metadata
+                    type: object
+                type: object
+              usernameOverride:
+                description: |-
+                  UsernameOverride allows for specifying a particular username for the
+                  given user rather than the calculated "<NAMESPACE>/<NAME>".
+                type: string
+            type: object
+          status:
+            default:
+              conditions:
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: Unreconciled
+                status: Pending
+                type: Synced
+            description: Represents the current status of the Redpanda user.
+            properties:
+              clusterRef:
+                description: |-
+                  ClusterRef is a reference to the cluster where the user was created.
+                  This is used so that if a ClusterRef of a User is changed, we can
+                  properly clean up the User created in the previous cluster.
+                properties:
+                  name:
+                    description: Name specifies the name of the cluster being referenced.
+                    type: string
+                required:
+                - name
+                type: object
+              conditions:
+                description: Conditions holds the conditions for the Redpanda user.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource.\n---\nThis struct is intended for
+                    direct use as an array at the field path .status.conditions.  For
+                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
+                    observations of a foo's current state.\n\t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
+                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
+                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                    \   // other fields\n\t}"
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        ---
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                        useful (see .node.status.conditions), the ability to deconflict is important.
+                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                description: Specifies the last observed generation.
+                format: int64
+                type: integer
+            required:
+            - observedGeneration
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

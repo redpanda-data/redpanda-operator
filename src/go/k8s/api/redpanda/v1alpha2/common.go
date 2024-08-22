@@ -179,3 +179,17 @@ type ClusterRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 }
+
+// ResourceTemplate specifies additional configuration for a resource.
+type ResourceTemplate struct {
+	// Metadata specifies additional metadata to associate with a resource.
+	Metadata MetadataTemplate `json:"metadata"`
+}
+
+// MetadataTemplate defines additional metadata to associate with a resource.
+type MetadataTemplate struct {
+	// Labels specifies the Kubernetes labels to apply to a managed resource.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations specifies the Kubernetes annotations to apply to a managed resource.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
