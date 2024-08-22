@@ -66,10 +66,10 @@ type UserSpec struct {
 	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
 	// KafkaAPISpec is the configuration information for communicating with the Kafka
 	// API of a Redpanda cluster where the User should be created.
-	KafkaAPISpec *KafkaAPISpec `json:"kafkaApi,omitempty"`
+	KafkaAPISpec *KafkaAPISpec `json:"kafkaApiSpec,omitempty"`
 	// AdminAPISpec is the configuration information for communicating with the Admin
 	// API of a Redpanda cluster where the User should be created.
-	AdminAPISpec *AdminAPISpec `json:"adinApi,omitempty"`
+	AdminAPISpec *AdminAPISpec `json:"adminApiSpec,omitempty"`
 	// Authentication defines the authentication information for a user. If no
 	// Authentication credentials are specified, then no user will be created.
 	// This is useful when wanting to manage ACLs for an already-existing user.

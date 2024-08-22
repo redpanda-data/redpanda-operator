@@ -45,7 +45,7 @@ spec:
           spec:
             description: Defines the desired state of the Redpanda user.
             properties:
-              adinApi:
+              adminApiSpec:
                 description: |-
                   AdminAPISpec is the configuration information for communicating with the Admin
                   API of a Redpanda cluster where the User should be created.
@@ -286,7 +286,7 @@ spec:
                 required:
                 - name
                 type: object
-              kafkaApi:
+              kafkaApiSpec:
                 description: |-
                   KafkaAPISpec is the configuration information for communicating with the Kafka
                   API of a Redpanda cluster where the User should be created.
