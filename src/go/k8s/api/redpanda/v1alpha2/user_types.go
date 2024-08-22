@@ -28,13 +28,15 @@ type User struct {
 	Status UserStatus `json:"status,omitempty"`
 }
 
-var _ KafkaConnectedObject = (*User)(nil)
-var _ AdminConnectedObject = (*User)(nil)
-var _ ClusterReferencingObject = (*User)(nil)
+var (
+	_ KafkaConnectedObject     = (*User)(nil)
+	_ AdminConnectedObject     = (*User)(nil)
+	_ ClusterReferencingObject = (*User)(nil)
+)
 
 // RedpandaName identifies the unique username created within a Redpanda cluster
 // for a specific user based on its namespace and name in Kubernetes.
-func (u User) RedpandaName() string {
+func (u *User) RedpandaName() string {
 	if u.Spec.UsernameOverride != nil {
 		return *u.Spec.UsernameOverride
 	}
@@ -42,7 +44,7 @@ func (u User) RedpandaName() string {
 }
 
 // ACLName constructs the name of a User for defining ACLs.
-func (u User) ACLName() string {
+func (u *User) ACLName() string {
 	return "User:" + u.RedpandaName()
 }
 
@@ -113,7 +115,7 @@ type PasswordSource struct {
 	SecretKeyRef SecretKeyRef `json:"secretKeyRef"`
 }
 
-// Authorization rules for this user.
+// UserAuthorizationSpec defines authorization rules for this user.
 type UserAuthorizationSpec struct {
 	// +kubebuilder:validation:Enum=simple
 	// +kubebuilder:default=simple
@@ -123,7 +125,7 @@ type UserAuthorizationSpec struct {
 	ACLs []ACLRule `json:"acls,omitempty"`
 }
 
-// Defines an ACL rule applied to the given user.
+// ACLRule defines an ACL rule applied to the given user.
 type ACLRule struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=allow;deny
@@ -141,7 +143,7 @@ type ACLRule struct {
 	Operations []string `json:"operations"`
 }
 
-// Indicates the resource for which given ACL rule applies.
+// ACLResourceSpec indicates the resource for which given ACL rule applies.
 type ACLResourceSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
