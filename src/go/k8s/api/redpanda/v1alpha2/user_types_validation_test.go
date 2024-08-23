@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +18,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 )
 
-func TestValidateUser(t *testing.T) {
+func TestUserValidation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
@@ -376,4 +377,72 @@ func TestValidateUser(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUserDefaults(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	err = AddToScheme(scheme.Scheme)
+	require.NoError(t, err)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	require.NoError(t, c.Create(ctx, &User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "name",
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: UserSpec{
+			ClusterRef: &ClusterRef{
+				Name: "cluster",
+			},
+			Authentication: &UserAuthenticationSpec{
+				Password: Password{
+					ValueFrom: &PasswordSource{
+						SecretKeyRef: &SecretKeyRef{
+							Name: "key",
+						},
+					},
+				},
+			},
+			Authorization: &UserAuthorizationSpec{
+				ACLs: []ACLRule{{
+					Type: "allow",
+					Resource: ACLResourceSpec{
+						Type: "topic",
+						Name: "something",
+					},
+					Operations: []string{"Read"},
+				}},
+			},
+		},
+	}))
+
+	var user User
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+
+	require.Len(t, user.Status.Conditions, 1)
+	require.Equal(t, "Synced", user.Status.Conditions[0].Type)
+	require.Equal(t, metav1.ConditionUnknown, user.Status.Conditions[0].Status)
+	require.Equal(t, "Pending", user.Status.Conditions[0].Reason)
+
+	require.NotNil(t, user.Spec.Authentication.Type)
+	require.Equal(t, "scram-sha-512", *user.Spec.Authentication.Type)
+
+	require.NotNil(t, user.Spec.Authorization.Type)
+	require.Equal(t, "simple", *user.Spec.Authorization.Type)
+
+	require.NotNil(t, user.Spec.Authorization.ACLs[0].Host)
+	require.Equal(t, "*", *user.Spec.Authorization.ACLs[0].Host)
+
+	require.NotNil(t, user.Spec.Authorization.ACLs[0].Resource.PatternType)
+	require.Equal(t, "literal", *user.Spec.Authorization.ACLs[0].Resource.PatternType)
 }

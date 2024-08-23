@@ -95,7 +95,7 @@ type UserTemplateSpec struct {
 // UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
 type UserAuthenticationSpec struct {
 	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512
-	// +default:value=scram-sha-512
+	// +kubebuilder:default=scram-sha-512
 	Type *string `json:"type,omitempty"`
 	// Password specifies where a password is read from.
 	Password Password `json:"password"`
@@ -118,7 +118,7 @@ type PasswordSource struct {
 // UserAuthorizationSpec defines authorization rules for this user.
 type UserAuthorizationSpec struct {
 	// +kubebuilder:validation:Enum=simple
-	// +default:value=simple
+	// +kubebuilder:default=simple
 	Type *string `json:"type,omitempty"`
 	// List of ACL rules which should be applied to this user.
 	// +kubebuilder:validation:MaxItems=1024
@@ -140,7 +140,7 @@ type ACLRule struct {
 	Resource ACLResourceSpec `json:"resource"`
 	// The host from which the action described in the ACL rule is allowed or denied.
 	// If not set, it defaults to *, allowing or denying the action from any host.
-	// +default:value=*
+	// +kubebuilder:default=*
 	Host *string `json:"host,omitempty"`
 	// List of operations which will be allowed or denied.
 	// +kubebuilder:validation:MinItems=1
@@ -167,7 +167,7 @@ type ACLResourceSpec struct {
 	// a prefix. Default value is literal.
 	//
 	// +kubebuilder:validation:Enum=literal;prefixed
-	// +default:value=literal
+	// +kubebuilder:default=literal
 	PatternType *string `json:"patternType,omitempty"`
 }
 

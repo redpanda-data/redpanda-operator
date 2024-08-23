@@ -193,6 +193,7 @@ spec:
                     - valueFrom
                     type: object
                   type:
+                    default: scram-sha-512
                     enum:
                     - scram-sha-256
                     - scram-sha-512
@@ -214,6 +215,7 @@ spec:
                         Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
                       properties:
                         host:
+                          default: '*'
                           description: |-
                             The host from which the action described in the ACL rule is allowed or denied.
                             If not set, it defaults to *, allowing or denying the action from any host.
@@ -236,6 +238,7 @@ spec:
                                 Can be combined with patternType field to use prefix pattern.
                               type: string
                             patternType:
+                              default: literal
                               description: |-
                                 Describes the pattern used in the resource field. The supported types are literal
                                 and prefixed. With literal pattern type, the resource field will be used as a definition
@@ -303,6 +306,7 @@ spec:
                     maxItems: 1024
                     type: array
                   type:
+                    default: simple
                     enum:
                     - simple
                     type: string
