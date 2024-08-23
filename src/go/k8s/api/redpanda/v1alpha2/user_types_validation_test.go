@@ -186,6 +186,22 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']`},
 		},
+		"authorization topic - invalid any patternType with name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "topic",
+							Name:        "foo",
+							PatternType: ptr.To("any"),
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+			errors: []string{`name must not be specified for patterntype 'any'`},
+		},
 		"authorization group": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
@@ -228,6 +244,22 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 			errors: []string{`supported group operations are ['Delete', 'Describe', 'Read']`},
+		},
+		"authorization group - invalid any patternType with name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "group",
+							Name:        "foo",
+							PatternType: ptr.To("any"),
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+			errors: []string{`name must not be specified for patterntype 'any'`},
 		},
 		"authorization transactionalId": {
 			mutate: func(user *User) {
@@ -272,7 +304,7 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported transactionalId operations are ['Describe', 'Write']`},
 		},
-		"authorization transactionalId - invalid patternType": {
+		"authorization transactionalId - invalid any patternType with name": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -280,13 +312,13 @@ func TestValidateUser(t *testing.T) {
 						Resource: ACLResourceSpec{
 							Type:        "transactionalId",
 							Name:        "foo",
-							PatternType: ptr.To("prefixed"),
+							PatternType: ptr.To("any"),
 						},
 						Operations: []string{"Describe"},
 					}},
 				}
 			},
-			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
+			errors: []string{`name must not be specified for patterntype 'any'`},
 		},
 		"authorization cluster": {
 			mutate: func(user *User) {
@@ -330,7 +362,22 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']`},
 		},
-		"authorization cluster - invalid patternType": {
+		"authorization cluster - invalid patternType match": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "cluster",
+							PatternType: ptr.To("match"),
+						},
+						Operations: []string{"Alter"},
+					}},
+				}
+			},
+			errors: []string{`match pattern type only supported for ['group', 'topic', 'transactionalid']`},
+		},
+		"authorization cluster - invalid patternType prefixed": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -343,7 +390,22 @@ func TestValidateUser(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
+			errors: []string{`prefixed pattern type only supported for ['group', 'topic', 'transactionalId']`},
+		},
+		"authorization cluster - invalid patternType any": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "cluster",
+							PatternType: ptr.To("any"),
+						},
+						Operations: []string{"Alter"},
+					}},
+				}
+			},
+			errors: []string{`any pattern type only supported for ['group', 'topic', 'transactionalid']`},
 		},
 		"authorization - deny": {
 			mutate: func(user *User) {
