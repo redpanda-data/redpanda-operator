@@ -272,6 +272,22 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported delegationToken operations are ['Describe']`},
 		},
+		"authorization delegationToken - invalid patternType": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "delegationToken",
+							Name:        "foo",
+							PatternType: ptr.To("prefixed"),
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
+		},
 		"authorization transactionalId": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
@@ -315,6 +331,22 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported transactionalId operations are ['Describe', 'Write']`},
 		},
+		"authorization transactionalId - invalid patternType": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "transactionalId",
+							Name:        "foo",
+							PatternType: ptr.To("prefixed"),
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
+		},
 		"authorization cluster": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
@@ -356,6 +388,21 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 			errors: []string{`supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']`},
+		},
+		"authorization cluster - invalid patternType": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type:        "cluster",
+							PatternType: ptr.To("prefixed"),
+						},
+						Operations: []string{"Alter"},
+					}},
+				}
+			},
+			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
 		},
 		"authorization - deny": {
 			mutate: func(user *User) {
