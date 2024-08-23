@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -52,44 +53,37 @@ func TestValidateUser(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	testCases := []struct {
-		desc       string
-		mutate     func(user *User)
-		wantErrors []string
+	for name, tt := range map[string]struct {
+		mutate func(user *User)
+		errors []string
 	}{
-		{
-			desc: "basic create",
-		},
+		"basic create": {},
 		// connection params
-		{
-			desc: "clusterRef or kafkaApiSpec and adminApiSpec - none",
+		"clusterRef or kafkaApiSpec and adminApiSpec - none": {
 			mutate: func(user *User) {
 				user.Spec.ClusterRef = nil
 			},
-			wantErrors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
 		},
-		{
-			desc: "clusterRef or kafkaApiSpec and adminApiSpec - admin api spec",
+		"clusterRef or kafkaApiSpec and adminApiSpec - admin api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterRef = nil
 				user.Spec.AdminAPISpec = &AdminAPISpec{
 					URLs: []string{"http://1.2.3.4:0"},
 				}
 			},
-			wantErrors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
 		},
-		{
-			desc: "clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec",
+		"clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterRef = nil
 				user.Spec.KafkaAPISpec = &KafkaAPISpec{
 					Brokers: []string{"1.2.3.4:0"},
 				}
 			},
-			wantErrors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
 		},
-		{
-			desc: "clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec",
+		"clusterRef or kafkaApiSpec and adminApiSpec - kafka and admin api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterRef = nil
 				user.Spec.KafkaAPISpec = &KafkaAPISpec{
@@ -101,16 +95,14 @@ func TestValidateUser(t *testing.T) {
 			},
 		},
 		// authentication
-		{
-			desc: "authentication type - default",
+		"authentication type - default": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
 					Password: password,
 				}
 			},
 		},
-		{
-			desc: "authentication type - sha-512",
+		"authentication type - sha-512": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
 					Type:     ptr.To("scram-sha-512"),
@@ -118,8 +110,7 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authentication type - sha-256",
+		"authentication type - sha-256": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
 					Type:     ptr.To("scram-sha-256"),
@@ -127,24 +118,21 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authentication type - invalid",
+		"authentication type - invalid": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
 					Type: ptr.To("invalid"),
 				}
 			},
-			wantErrors: []string{`spec.authentication.type: Unsupported value: "invalid": supported values: "scram-sha-256", "scram-sha-512"`},
+			errors: []string{`spec.authentication.type: Unsupported value: "invalid": supported values: "scram-sha-256", "scram-sha-512"`},
 		},
-		{
-			desc: "authentication - no password value from",
+		"authentication - no password value from": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{}
 			},
-			wantErrors: []string{`spec.authentication.password.valueFrom: Required value`},
+			errors: []string{`spec.authentication.password.valueFrom: Required value`},
 		},
-		{
-			desc: "authentication - no secret key ref",
+		"authentication - no secret key ref": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
 					Password: Password{
@@ -152,11 +140,10 @@ func TestValidateUser(t *testing.T) {
 					},
 				}
 			},
-			wantErrors: []string{`spec.authentication.password.valueFrom.secretKeyRef: Required value`},
+			errors: []string{`spec.authentication.password.valueFrom.secretKeyRef: Required value`},
 		},
 		// authorization
-		{
-			desc: "authorization topic",
+		"authorization topic": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -170,8 +157,36 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authorization group",
+		"authorization topic - no resource name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "topic",
+						},
+						Operations: []string{"Alter", "AlterConfigs", "Create", "Delete", "Describe", "DescribeConfigs", "Read", "Write"},
+					}},
+				}
+			},
+			errors: []string{`acl rules on non-cluster resources must specify a name`},
+		},
+		"authorization topic - invalid operation": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "topic",
+							Name: "foo",
+						},
+						Operations: []string{"IdempotentWrite"},
+					}},
+				}
+			},
+			errors: []string{`supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']`},
+		},
+		"authorization group": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -185,8 +200,36 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authorization delegationToken",
+		"authorization group - no resource name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "group",
+						},
+						Operations: []string{"Delete", "Describe", "Read"},
+					}},
+				}
+			},
+			errors: []string{`acl rules on non-cluster resources must specify a name`},
+		},
+		"authorization group - invalid operation": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "group",
+							Name: "foo",
+						},
+						Operations: []string{"IdempotentWrite"},
+					}},
+				}
+			},
+			errors: []string{`supported group operations are ['Delete', 'Describe', 'Read']`},
+		},
+		"authorization delegationToken": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -200,8 +243,36 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authorization transactionalId",
+		"authorization delegationToken - no resource name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "delegationToken",
+						},
+						Operations: []string{"Describe"},
+					}},
+				}
+			},
+			errors: []string{`acl rules on non-cluster resources must specify a name`},
+		},
+		"authorization delegationToken - invalid operation": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "delegationToken",
+							Name: "foo",
+						},
+						Operations: []string{"IdempotentWrite"},
+					}},
+				}
+			},
+			errors: []string{`supported delegationToken operations are ['Describe']`},
+		},
+		"authorization transactionalId": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -215,8 +286,36 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-		{
-			desc: "authorization cluster",
+		"authorization transactionalId - no resource name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "transactionalId",
+						},
+						Operations: []string{"Describe", "Write"},
+					}},
+				}
+			},
+			errors: []string{`acl rules on non-cluster resources must specify a name`},
+		},
+		"authorization transactionalId - invalid operation": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "transactionalId",
+							Name: "foo",
+						},
+						Operations: []string{"IdempotentWrite"},
+					}},
+				}
+			},
+			errors: []string{`supported transactionalId operations are ['Describe', 'Write']`},
+		},
+		"authorization cluster": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -229,30 +328,79 @@ func TestValidateUser(t *testing.T) {
 				}
 			},
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
+		"authorization cluster - resource name": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "cluster",
+							Name: "cluster",
+						},
+						Operations: []string{"Alter", "AlterConfigs", "ClusterAction", "Create", "Describe", "DescribeConfigs", "IdempotentWrite"},
+					}},
+				}
+			},
+			errors: []string{`name must not be specified for type ['cluster']`},
+		},
+		"authorization cluster - invalid operation": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "allow",
+						Resource: ACLResourceSpec{
+							Type: "cluster",
+						},
+						Operations: []string{"Delete"},
+					}},
+				}
+			},
+			errors: []string{`supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']`},
+		},
+		"authorization - deny": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "deny",
+						Resource: ACLResourceSpec{
+							Type: "cluster",
+						},
+						Operations: []string{"Alter"},
+					}},
+				}
+			},
+		},
+		"authorization - no operations": {
+			mutate: func(user *User) {
+				user.Spec.Authorization = &UserAuthorizationSpec{
+					ACLs: []ACLRule{{
+						Type: "deny",
+						Resource: ACLResourceSpec{
+							Type: "cluster",
+						},
+					}},
+				}
+			},
+			errors: []string{`spec.authorization.acls[0].operations: Required value`},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
 			user := baseUser.DeepCopy()
 			user.Name = fmt.Sprintf("name-%v", time.Now().UnixNano())
 
-			if tc.mutate != nil {
-				tc.mutate(user)
+			if tt.mutate != nil {
+				tt.mutate(user)
 			}
 			err := c.Create(ctx, user)
 
-			if (len(tc.wantErrors) != 0) != (err != nil) {
-				t.Fatalf("Unexpected response while creating User; got err=\n%v\n;want error=%v", err, tc.wantErrors != nil)
+			if len(tt.errors) != 0 {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 
-			var missingErrorStrings []string
-			for _, wantError := range tc.wantErrors {
-				if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(wantError)) {
-					missingErrorStrings = append(missingErrorStrings, wantError)
-				}
-			}
-			if len(missingErrorStrings) != 0 {
-				t.Errorf("Unexpected response while creating User; got err=\n%v\n;missing strings within error=%q", err, missingErrorStrings)
+			for _, expected := range tt.errors {
+				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
 			}
 		})
 	}

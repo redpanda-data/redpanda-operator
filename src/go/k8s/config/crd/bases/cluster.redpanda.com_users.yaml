@@ -281,25 +281,26 @@ spec:
                       - message: supported topic operations are ['Alter', 'AlterConfigs',
                           'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read',
                           'Write']
-                        rule: 'self.type == ''topic'' ? self.operations.all(o, o in
-                          [''Alter'', ''AlterConfigs'', ''Create'', ''Delete'', ''Describe'',
-                          ''DescribeConfigs'', ''Read'', ''Write'']) : true'
+                        rule: 'self.resource.type == ''topic'' ? self.operations.all(o,
+                          o in [''Alter'', ''AlterConfigs'', ''Create'', ''Delete'',
+                          ''Describe'', ''DescribeConfigs'', ''Read'', ''Write''])
+                          : true'
                       - message: supported group operations are ['Delete', 'Describe',
                           'Read']
-                        rule: 'self.type == ''group'' ? self.operations.all(o, o in
-                          [''Delete'', ''Describe'', ''Read'']) : true'
+                        rule: 'self.resource.type == ''group'' ? self.operations.all(o,
+                          o in [''Delete'', ''Describe'', ''Read'']) : true'
                       - message: supported delegationToken operations are ['Describe']
-                        rule: 'self.type == ''delegationToken'' ? self.operations.all(o,
+                        rule: 'self.resource.type == ''delegationToken'' ? self.operations.all(o,
                           o in [''Describe'']) : true'
                       - message: supported transactionalId operations are ['Describe',
                           'Write']
-                        rule: 'self.type == ''transactionalId'' ? self.operations.all(o,
+                        rule: 'self.resource.type == ''transactionalId'' ? self.operations.all(o,
                           o in [''Describe'', ''Write'']) : true'
                       - message: supported cluster operations are ['Alter', 'AlterConfigs',
                           'ClusterAction', 'Create', 'Describe', 'DescribeConfigs',
                           'IdempotentWrite']
-                        rule: 'self.type == ''cluster'' ? self.operations.all(o, o
-                          in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
+                        rule: 'self.resource.type == ''cluster'' ? self.operations.all(o,
+                          o in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
                           ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
                           : true'
                     maxItems: 1024

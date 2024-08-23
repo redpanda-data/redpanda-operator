@@ -129,11 +129,11 @@ type UserAuthorizationSpec struct {
 //
 // Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
 //
-// +kubebuilder:validation:XValidation:message="supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']",rule="self.type == 'topic' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']) : true"
-// +kubebuilder:validation:XValidation:message="supported group operations are ['Delete', 'Describe', 'Read']",rule="self.type == 'group' ? self.operations.all(o, o in ['Delete', 'Describe', 'Read']) : true"
-// +kubebuilder:validation:XValidation:message="supported delegationToken operations are ['Describe']",rule="self.type == 'delegationToken' ? self.operations.all(o, o in ['Describe']) : true"
-// +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
-// +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
+// +kubebuilder:validation:XValidation:message="supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']",rule="self.resource.type == 'topic' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']) : true"
+// +kubebuilder:validation:XValidation:message="supported group operations are ['Delete', 'Describe', 'Read']",rule="self.resource.type == 'group' ? self.operations.all(o, o in ['Delete', 'Describe', 'Read']) : true"
+// +kubebuilder:validation:XValidation:message="supported delegationToken operations are ['Describe']",rule="self.resource.type == 'delegationToken' ? self.operations.all(o, o in ['Describe']) : true"
+// +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.resource.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
+// +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.resource.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
 type ACLRule struct {
 	// +kubebuilder:validation:Enum=allow;deny
 	Type string `json:"type"`
