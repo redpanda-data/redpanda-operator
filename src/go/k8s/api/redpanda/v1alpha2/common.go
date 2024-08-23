@@ -193,3 +193,41 @@ type MetadataTemplate struct {
 	// Annotations specifies the Kubernetes annotations to apply to a managed resource.
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
+
+type StaticConfigurationSource struct {
+	// Kafka is the configuration information for communicating with the Kafka
+	// API of a Redpanda cluster where the object should be created.
+	// +required
+	Kafka *KafkaAPISpec `json:"kafka"`
+	// AdminAPISpec is the configuration information for communicating with the Admin
+	// API of a Redpanda cluster where the object should be created.
+	// +required
+	Admin *AdminAPISpec `json:"admin"`
+}
+
+// +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
+type ClusterSource struct {
+	// ClusterRef is a reference to the cluster where the object should be created.
+	// It is used in constructing the client created to configure a cluster.
+	// This takes precedence over StaticConfigurationSource.
+	ClusterRef                *ClusterRef                `json:"clusterRef,omitempty"`
+	StaticConfigurationSource *StaticConfigurationSource `json:"staticConfiguration,omitempty"`
+}
+
+func (c *ClusterSource) GetKafkaAPISpec() *KafkaAPISpec {
+	if c.StaticConfigurationSource != nil {
+		return c.StaticConfigurationSource.Kafka
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
+	if c.StaticConfigurationSource != nil {
+		return c.StaticConfigurationSource.Admin
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetClusterRef() *ClusterRef {
+	return c.ClusterRef
+}

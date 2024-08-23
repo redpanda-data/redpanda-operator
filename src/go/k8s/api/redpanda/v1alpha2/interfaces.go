@@ -27,15 +27,6 @@ type KafkaConnectedObjectWithMetrics interface {
 	GetMetricsNamespace() *string
 }
 
-// AdminConnectedObject is an interface for an object
-// that specifies connection parameters to a Redpanda Admin API
-// in the form of an AdminAPISpec somewhere in its CRD definition.
-// +kubebuilder:object:generate=false
-type AdminConnectedObject interface {
-	client.Object
-	GetAdminAPISpec() *AdminAPISpec
-}
-
 // ClusterReferencingObject is an interface for an object
 // that specifies connection parameters to a Redpanda cluster,
 // (both the Kafka and Admin APIs) in the form of an ClusterRef
@@ -43,5 +34,5 @@ type AdminConnectedObject interface {
 // +kubebuilder:object:generate=false
 type ClusterReferencingObject interface {
 	client.Object
-	GetClusterRef() *ClusterRef
+	GetClusterSource() *ClusterSource
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -33,16 +34,20 @@ func TestUserValidation(t *testing.T) {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: UserSpec{
-			ClusterRef: &ClusterRef{
-				Name: "cluster",
+			ClusterSource: &ClusterSource{
+				ClusterRef: &ClusterRef{
+					Name: "cluster",
+				},
 			},
 		},
 	}
 
 	password := Password{
 		ValueFrom: &PasswordSource{
-			SecretKeyRef: &SecretKeyRef{
-				Name: "key",
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "key",
+				},
 			},
 		},
 	}
@@ -60,38 +65,51 @@ func TestUserValidation(t *testing.T) {
 	}{
 		"basic create": {},
 		// connection params
+		"clusterRef or kafkaApiSpec and adminApiSpec - no cluster source": {
+			mutate: func(user *User) {
+				user.Spec.ClusterSource = nil
+			},
+			errors: []string{`spec.cluster: required value`},
+		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - none": {
 			mutate: func(user *User) {
-				user.Spec.ClusterRef = nil
+				user.Spec.ClusterSource.ClusterRef = nil
 			},
-			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{`either clusterref or staticconfiguration must be set`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - admin api spec": {
 			mutate: func(user *User) {
-				user.Spec.ClusterRef = nil
-				user.Spec.AdminAPISpec = &AdminAPISpec{
-					URLs: []string{"http://1.2.3.4:0"},
+				user.Spec.ClusterSource.ClusterRef = nil
+				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+					Admin: &AdminAPISpec{
+						URLs: []string{"http://1.2.3.4:0"},
+					},
 				}
 			},
-			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{`spec.cluster.staticconfiguration.kafka: required value`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec": {
 			mutate: func(user *User) {
-				user.Spec.ClusterRef = nil
-				user.Spec.KafkaAPISpec = &KafkaAPISpec{
-					Brokers: []string{"1.2.3.4:0"},
+				user.Spec.ClusterSource.ClusterRef = nil
+				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+					Kafka: &KafkaAPISpec{
+						Brokers: []string{"1.2.3.4:0"},
+					},
 				}
+
 			},
-			errors: []string{"either clusterRef or kafkaApiSpec and adminApiSpec must be set"},
+			errors: []string{`spec.cluster.staticconfiguration.admin: required value`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka and admin api spec": {
 			mutate: func(user *User) {
-				user.Spec.ClusterRef = nil
-				user.Spec.KafkaAPISpec = &KafkaAPISpec{
-					Brokers: []string{"1.2.3.4:0"},
-				}
-				user.Spec.AdminAPISpec = &AdminAPISpec{
-					URLs: []string{"http://1.2.3.4:0"},
+				user.Spec.ClusterSource.ClusterRef = nil
+				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+					Kafka: &KafkaAPISpec{
+						Brokers: []string{"1.2.3.4:0"},
+					},
+					Admin: &AdminAPISpec{
+						URLs: []string{"http://1.2.3.4:0"},
+					},
 				}
 			},
 		},
@@ -401,14 +419,18 @@ func TestUserDefaults(t *testing.T) {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: UserSpec{
-			ClusterRef: &ClusterRef{
-				Name: "cluster",
+			ClusterSource: &ClusterSource{
+				ClusterRef: &ClusterRef{
+					Name: "cluster",
+				},
 			},
 			Authentication: &UserAuthenticationSpec{
 				Password: Password{
 					ValueFrom: &PasswordSource{
-						SecretKeyRef: &SecretKeyRef{
-							Name: "key",
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "key",
+							},
 						},
 					},
 				},

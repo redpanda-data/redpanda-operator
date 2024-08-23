@@ -1,8 +1,7 @@
 package v1alpha2
 
 import (
-	"fmt"
-
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,50 +28,25 @@ type User struct {
 }
 
 var (
-	_ KafkaConnectedObject     = (*User)(nil)
-	_ AdminConnectedObject     = (*User)(nil)
 	_ ClusterReferencingObject = (*User)(nil)
 )
 
-// RedpandaName identifies the unique username created within a Redpanda cluster
-// for a specific user based on its namespace and name in Kubernetes.
-func (u *User) RedpandaName() string {
-	if u.Spec.UsernameOverride != nil {
-		return *u.Spec.UsernameOverride
-	}
-	return fmt.Sprintf("%s/%s", u.Namespace, u.Name)
-}
-
 // ACLName constructs the name of a User for defining ACLs.
 func (u *User) ACLName() string {
-	return "User:" + u.RedpandaName()
+	return "User:" + u.Name
 }
 
-func (u *User) GetKafkaAPISpec() *KafkaAPISpec {
-	return u.Spec.KafkaAPISpec
-}
-
-func (u *User) GetAdminAPISpec() *AdminAPISpec {
-	return u.Spec.AdminAPISpec
-}
-
-func (u *User) GetClusterRef() *ClusterRef {
-	return u.Spec.ClusterRef
+func (u *User) GetClusterSource() *ClusterSource {
+	return u.Spec.ClusterSource
 }
 
 // UserSpec defines the configuration of a Redpanda user.
-// +kubebuilder:validation:XValidation:message="either clusterRef or kafkaApiSpec and adminApiSpec must be set",rule="has(self.clusterRef) || (has(self.kafkaApiSpec) && has(self.adminApiSpec))"
 type UserSpec struct {
-	// ClusterRef is a reference to the cluster where the user should be created.
+	// ClusterSource is a reference to the cluster where the user should be created.
 	// It is used in constructing the client created to configure a cluster.
 	// This takes precedence over KafkaAPISpec and AdminAPISpec.
-	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
-	// KafkaAPISpec is the configuration information for communicating with the Kafka
-	// API of a Redpanda cluster where the User should be created.
-	KafkaAPISpec *KafkaAPISpec `json:"kafkaApiSpec,omitempty"`
-	// AdminAPISpec is the configuration information for communicating with the Admin
-	// API of a Redpanda cluster where the User should be created.
-	AdminAPISpec *AdminAPISpec `json:"adminApiSpec,omitempty"`
+	// +required
+	ClusterSource *ClusterSource `json:"cluster"`
 	// Authentication defines the authentication information for a user. If no
 	// Authentication credentials are specified, then no user will be created.
 	// This is useful when wanting to manage ACLs for an already-existing user.
@@ -81,9 +55,6 @@ type UserSpec struct {
 	Authorization *UserAuthorizationSpec `json:"authorization,omitempty"`
 	// Template to specify how user secrets are generated.
 	Template *UserTemplateSpec `json:"template,omitempty"`
-	// UsernameOverride allows for specifying a particular username for the
-	// given user rather than the calculated "<NAMESPACE>/<NAME>".
-	UsernameOverride *string `json:"usernameOverride,omitempty"`
 }
 
 // UserTemplateSpec defines the template metadata for a user
@@ -101,8 +72,9 @@ type UserAuthenticationSpec struct {
 	Password Password `json:"password"`
 }
 
+// +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`self.value != "" || has(self.valueFrom)`
 type Password struct {
-	// +required
+	Value     string          `json:"value,omitempty"`
 	ValueFrom *PasswordSource `json:"valueFrom"`
 }
 
@@ -112,7 +84,7 @@ type PasswordSource struct {
 	// If the Secret does not exist, or is empty, a password is generated and
 	// stored based on this configuration.
 	// +required
-	SecretKeyRef *SecretKeyRef `json:"secretKeyRef"`
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
 }
 
 // UserAuthorizationSpec defines authorization rules for this user.
