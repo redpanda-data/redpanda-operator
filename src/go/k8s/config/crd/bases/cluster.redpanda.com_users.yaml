@@ -265,9 +265,8 @@ spec:
                           - message: name must not be specified for type ['cluster']
                             rule: 'self.type == "cluster" ? (self.name == "") : true'
                           - message: acl rules on non-cluster resources must specify
-                              a name when not using patternType 'any'
-                            rule: 'self.type == "cluster" ? true : (self.name != ""
-                              || self.patternType == ''any'')'
+                              a name
+                            rule: 'self.type == "cluster" ? true : (self.name != "")'
                         type:
                           enum:
                           - allow

@@ -154,7 +154,7 @@ type ACLRule struct {
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
 // +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId']",rule="self.type in ['group', 'topic', 'transactionalId'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
 // +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule=`self.type == "cluster" ? (self.name == "") : true`
-// +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name when not using patternType 'any'",rule=`self.type == "cluster" ? true : (self.name != "" || self.patternType == 'any')`
+// +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name",rule=`self.type == "cluster" ? true : (self.name != "")`
 type ACLResourceSpec struct {
 	// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
 	Type string `json:"type"`
