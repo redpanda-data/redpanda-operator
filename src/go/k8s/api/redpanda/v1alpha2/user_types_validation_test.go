@@ -229,65 +229,6 @@ func TestValidateUser(t *testing.T) {
 			},
 			errors: []string{`supported group operations are ['Delete', 'Describe', 'Read']`},
 		},
-		"authorization delegationToken": {
-			mutate: func(user *User) {
-				user.Spec.Authorization = &UserAuthorizationSpec{
-					ACLs: []ACLRule{{
-						Type: "allow",
-						Resource: ACLResourceSpec{
-							Type: "delegationToken",
-							Name: "foo",
-						},
-						Operations: []string{"Describe"},
-					}},
-				}
-			},
-		},
-		"authorization delegationToken - no resource name": {
-			mutate: func(user *User) {
-				user.Spec.Authorization = &UserAuthorizationSpec{
-					ACLs: []ACLRule{{
-						Type: "allow",
-						Resource: ACLResourceSpec{
-							Type: "delegationToken",
-						},
-						Operations: []string{"Describe"},
-					}},
-				}
-			},
-			errors: []string{`acl rules on non-cluster resources must specify a name`},
-		},
-		"authorization delegationToken - invalid operation": {
-			mutate: func(user *User) {
-				user.Spec.Authorization = &UserAuthorizationSpec{
-					ACLs: []ACLRule{{
-						Type: "allow",
-						Resource: ACLResourceSpec{
-							Type: "delegationToken",
-							Name: "foo",
-						},
-						Operations: []string{"IdempotentWrite"},
-					}},
-				}
-			},
-			errors: []string{`supported delegationToken operations are ['Describe']`},
-		},
-		"authorization delegationToken - invalid patternType": {
-			mutate: func(user *User) {
-				user.Spec.Authorization = &UserAuthorizationSpec{
-					ACLs: []ACLRule{{
-						Type: "allow",
-						Resource: ACLResourceSpec{
-							Type:        "delegationToken",
-							Name:        "foo",
-							PatternType: ptr.To("prefixed"),
-						},
-						Operations: []string{"Describe"},
-					}},
-				}
-			},
-			errors: []string{`prefixed pattern type only supported for ['group', 'topic']`},
-		},
 		"authorization transactionalId": {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{

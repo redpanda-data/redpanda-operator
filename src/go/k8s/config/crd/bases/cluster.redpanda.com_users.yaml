@@ -250,7 +250,6 @@ spec:
                               - topic
                               - group
                               - cluster
-                              - delegationToken
                               - transactionalId
                               type: string
                           required:
@@ -289,9 +288,6 @@ spec:
                           'Read']
                         rule: 'self.resource.type == ''group'' ? self.operations.all(o,
                           o in [''Delete'', ''Describe'', ''Read'']) : true'
-                      - message: supported delegationToken operations are ['Describe']
-                        rule: 'self.resource.type == ''delegationToken'' ? self.operations.all(o,
-                          o in [''Describe'']) : true'
                       - message: supported transactionalId operations are ['Describe',
                           'Write']
                         rule: 'self.resource.type == ''transactionalId'' ? self.operations.all(o,

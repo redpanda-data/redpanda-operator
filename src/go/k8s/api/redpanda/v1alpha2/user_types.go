@@ -131,7 +131,6 @@ type UserAuthorizationSpec struct {
 //
 // +kubebuilder:validation:XValidation:message="supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']",rule="self.resource.type == 'topic' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']) : true"
 // +kubebuilder:validation:XValidation:message="supported group operations are ['Delete', 'Describe', 'Read']",rule="self.resource.type == 'group' ? self.operations.all(o, o in ['Delete', 'Describe', 'Read']) : true"
-// +kubebuilder:validation:XValidation:message="supported delegationToken operations are ['Describe']",rule="self.resource.type == 'delegationToken' ? self.operations.all(o, o in ['Describe']) : true"
 // +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.resource.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
 // +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.resource.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
 type ACLRule struct {
@@ -157,7 +156,7 @@ type ACLRule struct {
 // +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule=`self.type == "cluster" ? (self.name == "") : true`
 // +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name",rule=`self.type == "cluster" ? true : (self.name != "")`
 type ACLResourceSpec struct {
-	// +kubebuilder:validation:Enum=topic;group;cluster;delegationToken;transactionalId
+	// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
 	Type string `json:"type"`
 	// Name of resource for which given ACL rule applies.
 	// Can be combined with patternType field to use prefix pattern.
