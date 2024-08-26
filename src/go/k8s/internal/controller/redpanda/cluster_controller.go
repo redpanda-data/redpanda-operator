@@ -110,7 +110,7 @@ type ClusterReconciler struct {
 //nolint:funlen,gocyclo // todo break down
 func (r *ClusterReconciler) Reconcile(
 	c context.Context, req ctrl.Request,
-) (ctrl.Result, error) {
+) (result ctrl.Result, err error) {
 	ctx, done := context.WithCancel(c)
 	defer done()
 	log := ctrl.LoggerFrom(ctx).WithName("ClusterReconciler.Reconcile")
@@ -132,6 +132,32 @@ func (r *ClusterReconciler) Reconcile(
 		}
 		return ctrl.Result{}, fmt.Errorf("unable to retrieve Cluster resource: %w", err)
 	}
+
+	// After every reconciliation, update status:
+	// - Set observedGeneration. The reconciler finished, every action
+	//   performed in this run - including updating status - has been finished, and has
+	//   observed this generation.
+	// - Set OperatorQuiescent condition, based on our best knowledge if there is
+	//   any outstanding work to do for the controller.
+	defer func() {
+		_, patchErr := patchStatus(ctx, r.Client, &vectorizedCluster, func(cluster *vectorizedv1alpha1.Cluster) {
+			// Set quiescent
+			cond := getQuiescentCondition(cluster)
+
+			flipped := cluster.Status.SetCondition(cond.Type, cond.Status, cond.Reason, cond.Message)
+			if flipped {
+				log.Info("Changing OperatorQuiescent condition after reconciliation", "status", cond.Status, "reason", cond.Reason, "message", cond.Message)
+			}
+
+			// Only set observedGeneration if there's no error.
+			if err == nil {
+				cluster.Status.ObservedGeneration = vectorizedCluster.Generation
+			}
+		})
+		if patchErr != nil {
+			log.Error(patchErr, "failed to patchStatus with observedGeneration and quiescent")
+		}
+	}()
 
 	// Previous usage of finalizer handlers was unreliable in the case of
 	// flipping Kubernetes Nodes ready status. Local SSD disks that could be
@@ -1102,4 +1128,46 @@ func isRedpandaClusterVersionManaged(
 		return false
 	}
 	return true
+}
+
+func patchStatus(ctx context.Context, c client.Client, observedCluster *vectorizedv1alpha1.Cluster, mutator func(cluster *vectorizedv1alpha1.Cluster)) (vectorizedv1alpha1.ClusterStatus, error) {
+	clusterPatch := client.MergeFrom(observedCluster.DeepCopy())
+	mutator(observedCluster)
+
+	if err := c.Status().Patch(ctx, observedCluster, clusterPatch); err != nil {
+		return vectorizedv1alpha1.ClusterStatus{}, fmt.Errorf("failed to update cluster status: %w", err)
+	}
+
+	return observedCluster.Status, nil
+}
+
+func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectorizedv1alpha1.ClusterCondition {
+	condition := vectorizedv1alpha1.ClusterCondition{
+		Type: vectorizedv1alpha1.OperatorQuiescentConditionType,
+	}
+
+	if redpandaCluster.Status.Restarting {
+		condition.Status = corev1.ConditionFalse
+		condition.Reason = "Restarting"
+		condition.Message = "Cluster is restarting"
+		return condition
+	}
+
+	if redpandaCluster.Status.DecommissioningNode != nil {
+		condition.Status = corev1.ConditionFalse
+		condition.Reason = "DecommissioningInProgress"
+		condition.Message = fmt.Sprintf("Decommissioning of node_id=%d in progress", redpandaCluster.Status.DecommissioningNode)
+		return condition
+	}
+
+	if redpandaCluster.Spec.Version != redpandaCluster.Status.Version && redpandaCluster.Status.Version != "" {
+		condition.Status = corev1.ConditionFalse
+		condition.Reason = "UpgradeInProgress"
+		condition.Message = fmt.Sprintf("Upgrade from %s to %s in progress", redpandaCluster.Spec.Version, redpandaCluster.Status.Version)
+		return condition
+	}
+
+	// No reason found (no early return), so claim the controller is quiescent.
+	condition.Status = corev1.ConditionTrue
+	return condition
 }
