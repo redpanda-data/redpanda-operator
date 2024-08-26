@@ -27,7 +27,7 @@ func (in *ACLResourceSpec) DeepCopyInto(out *ACLResourceSpec) {
 	*out = *in
 	if in.PatternType != nil {
 		in, out := &in.PatternType, &out.PatternType
-		*out = new(string)
+		*out = new(PatternType)
 		**out = **in
 	}
 }
@@ -53,7 +53,7 @@ func (in *ACLRule) DeepCopyInto(out *ACLRule) {
 	}
 	if in.Operations != nil {
 		in, out := &in.Operations, &out.Operations
-		*out = make([]string, len(*in))
+		*out = make([]ACLOperation, len(*in))
 		copy(*out, *in)
 	}
 }
@@ -389,8 +389,8 @@ func (in *ClusterSource) DeepCopyInto(out *ClusterSource) {
 		*out = new(ClusterRef)
 		**out = **in
 	}
-	if in.StaticConfigurationSource != nil {
-		in, out := &in.StaticConfigurationSource, &out.StaticConfigurationSource
+	if in.StaticConfiguration != nil {
+		in, out := &in.StaticConfiguration, &out.StaticConfiguration
 		*out = new(StaticConfigurationSource)
 		(*in).DeepCopyInto(*out)
 	}
@@ -4104,7 +4104,7 @@ func (in *UserAuthenticationSpec) DeepCopyInto(out *UserAuthenticationSpec) {
 	*out = *in
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
-		*out = new(string)
+		*out = new(SASLMechanism)
 		**out = **in
 	}
 	in.Password.DeepCopyInto(&out.Password)
@@ -4125,7 +4125,7 @@ func (in *UserAuthorizationSpec) DeepCopyInto(out *UserAuthorizationSpec) {
 	*out = *in
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
-		*out = new(string)
+		*out = new(AuthorizationType)
 		**out = **in
 	}
 	if in.ACLs != nil {

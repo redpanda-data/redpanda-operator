@@ -80,7 +80,7 @@ func TestUserValidation(t *testing.T) {
 		"clusterRef or kafkaApiSpec and adminApiSpec - admin api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterSource.ClusterRef = nil
-				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+				user.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Admin: &AdminAPISpec{
 						URLs: []string{"http://1.2.3.4:0"},
 					},
@@ -91,7 +91,7 @@ func TestUserValidation(t *testing.T) {
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterSource.ClusterRef = nil
-				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+				user.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Kafka: &KafkaAPISpec{
 						Brokers: []string{"1.2.3.4:0"},
 					},
@@ -103,7 +103,7 @@ func TestUserValidation(t *testing.T) {
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka and admin api spec": {
 			mutate: func(user *User) {
 				user.Spec.ClusterSource.ClusterRef = nil
-				user.Spec.ClusterSource.StaticConfigurationSource = &StaticConfigurationSource{
+				user.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Kafka: &KafkaAPISpec{
 						Brokers: []string{"1.2.3.4:0"},
 					},
@@ -124,7 +124,7 @@ func TestUserValidation(t *testing.T) {
 		"authentication type - sha-512": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
-					Type:     ptr.To("scram-sha-512"),
+					Type:     ptr.To(SASLMechanismScramSHA512),
 					Password: password,
 				}
 			},
@@ -132,7 +132,7 @@ func TestUserValidation(t *testing.T) {
 		"authentication type - sha-256": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
-					Type:     ptr.To("scram-sha-256"),
+					Type:     ptr.To(SASLMechanismScramSHA256),
 					Password: password,
 				}
 			},
@@ -140,10 +140,10 @@ func TestUserValidation(t *testing.T) {
 		"authentication type - invalid": {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{
-					Type: ptr.To("invalid"),
+					Type: ptr.To(SASLMechanismGSSAPI),
 				}
 			},
-			errors: []string{`spec.authentication.type: Unsupported value: "invalid": supported values: "scram-sha-256", "scram-sha-512"`},
+			errors: []string{`spec.authentication.type: Unsupported value: "gssapi": supported values: "scram-sha-256", "scram-sha-512"`},
 		},
 		"authentication - no password value from": {
 			mutate: func(user *User) {
@@ -166,12 +166,16 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "topic",
+							Type: ResourceTypeTopic,
 							Name: "foo",
 						},
-						Operations: []string{"Alter", "AlterConfigs", "Create", "Delete", "Describe", "DescribeConfigs", "Read", "Write"},
+						Operations: []ACLOperation{
+							ACLOperationAlter, ACLOperationAlterConfigs, ACLOperationCreate,
+							ACLOperationDelete, ACLOperationDescribe, ACLOperationDescribeConfigs,
+							ACLOperationRead, ACLOperationWrite,
+						},
 					}},
 				}
 			},
@@ -180,11 +184,15 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "topic",
+							Type: ResourceTypeTopic,
 						},
-						Operations: []string{"Alter", "AlterConfigs", "Create", "Delete", "Describe", "DescribeConfigs", "Read", "Write"},
+						Operations: []ACLOperation{
+							ACLOperationAlter, ACLOperationAlterConfigs, ACLOperationCreate,
+							ACLOperationDelete, ACLOperationDescribe, ACLOperationDescribeConfigs,
+							ACLOperationRead, ACLOperationWrite,
+						},
 					}},
 				}
 			},
@@ -194,12 +202,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "topic",
+							Type: ResourceTypeTopic,
 							Name: "foo",
 						},
-						Operations: []string{"IdempotentWrite"},
+						Operations: []ACLOperation{
+							ACLOperationIdempotentWrite,
+						},
 					}},
 				}
 			},
@@ -209,12 +219,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "group",
+							Type: ResourceTypeGroup,
 							Name: "foo",
 						},
-						Operations: []string{"Delete", "Describe", "Read"},
+						Operations: []ACLOperation{
+							ACLOperationDelete, ACLOperationDescribe, ACLOperationRead,
+						},
 					}},
 				}
 			},
@@ -223,11 +235,13 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "group",
+							Type: ResourceTypeGroup,
 						},
-						Operations: []string{"Delete", "Describe", "Read"},
+						Operations: []ACLOperation{
+							ACLOperationDelete, ACLOperationDescribe, ACLOperationRead,
+						},
 					}},
 				}
 			},
@@ -237,12 +251,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "group",
+							Type: ResourceTypeGroup,
 							Name: "foo",
 						},
-						Operations: []string{"IdempotentWrite"},
+						Operations: []ACLOperation{
+							ACLOperationIdempotentWrite,
+						},
 					}},
 				}
 			},
@@ -252,12 +268,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "transactionalId",
+							Type: ResourceTypeTransactionalID,
 							Name: "foo",
 						},
-						Operations: []string{"Describe", "Write"},
+						Operations: []ACLOperation{
+							ACLOperationDescribe, ACLOperationWrite,
+						},
 					}},
 				}
 			},
@@ -266,11 +284,13 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "transactionalId",
+							Type: ResourceTypeTransactionalID,
 						},
-						Operations: []string{"Describe", "Write"},
+						Operations: []ACLOperation{
+							ACLOperationDescribe, ACLOperationWrite,
+						},
 					}},
 				}
 			},
@@ -280,12 +300,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "transactionalId",
+							Type: ResourceTypeTransactionalID,
 							Name: "foo",
 						},
-						Operations: []string{"IdempotentWrite"},
+						Operations: []ACLOperation{
+							ACLOperationIdempotentWrite,
+						},
 					}},
 				}
 			},
@@ -295,11 +317,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "cluster",
+							Type: ResourceTypeCluster,
 						},
-						Operations: []string{"Alter", "AlterConfigs", "ClusterAction", "Create", "Describe", "DescribeConfigs", "IdempotentWrite"},
+						Operations: []ACLOperation{
+							ACLOperationAlter, ACLOperationAlterConfigs, ACLOperationClusterAction, ACLOperationCreate,
+							ACLOperationDescribe, ACLOperationDescribeConfigs, ACLOperationIdempotentWrite,
+						},
 					}},
 				}
 			},
@@ -308,12 +333,15 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "cluster",
+							Type: ResourceTypeCluster,
 							Name: "cluster",
 						},
-						Operations: []string{"Alter", "AlterConfigs", "ClusterAction", "Create", "Describe", "DescribeConfigs", "IdempotentWrite"},
+						Operations: []ACLOperation{
+							ACLOperationAlter, ACLOperationAlterConfigs, ACLOperationClusterAction, ACLOperationCreate,
+							ACLOperationDescribe, ACLOperationDescribeConfigs, ACLOperationIdempotentWrite,
+						},
 					}},
 				}
 			},
@@ -323,11 +351,13 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type: "cluster",
+							Type: ResourceTypeCluster,
 						},
-						Operations: []string{"Delete"},
+						Operations: []ACLOperation{
+							ACLOperationDelete,
+						},
 					}},
 				}
 			},
@@ -337,12 +367,14 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "allow",
+						Type: ACLTypeAllow,
 						Resource: ACLResourceSpec{
-							Type:        "cluster",
-							PatternType: ptr.To("prefixed"),
+							Type:        ResourceTypeCluster,
+							PatternType: ptr.To(PatternTypePrefixed),
 						},
-						Operations: []string{"Alter"},
+						Operations: []ACLOperation{
+							ACLOperationAlter,
+						},
 					}},
 				}
 			},
@@ -352,11 +384,13 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authorization = &UserAuthorizationSpec{
 					ACLs: []ACLRule{{
-						Type: "deny",
+						Type: ACLTypeDeny,
 						Resource: ACLResourceSpec{
-							Type: "cluster",
+							Type: ResourceTypeCluster,
 						},
-						Operations: []string{"Alter"},
+						Operations: []ACLOperation{
+							ACLOperationAlter,
+						},
 					}},
 				}
 			},
@@ -437,12 +471,12 @@ func TestUserDefaults(t *testing.T) {
 			},
 			Authorization: &UserAuthorizationSpec{
 				ACLs: []ACLRule{{
-					Type: "allow",
+					Type: ACLTypeAllow,
 					Resource: ACLResourceSpec{
-						Type: "topic",
+						Type: ResourceTypeTopic,
 						Name: "something",
 					},
-					Operations: []string{"Read"},
+					Operations: []ACLOperation{ACLOperationRead},
 				}},
 			},
 		},
@@ -457,14 +491,14 @@ func TestUserDefaults(t *testing.T) {
 	require.Equal(t, "Pending", user.Status.Conditions[0].Reason)
 
 	require.NotNil(t, user.Spec.Authentication.Type)
-	require.Equal(t, "scram-sha-512", *user.Spec.Authentication.Type)
+	require.True(t, user.Spec.Authentication.Type.Equals(SASLMechanismScramSHA512))
 
 	require.NotNil(t, user.Spec.Authorization.Type)
-	require.Equal(t, "simple", *user.Spec.Authorization.Type)
+	require.Equal(t, AuthorizationTypeSimple, *user.Spec.Authorization.Type)
 
 	require.NotNil(t, user.Spec.Authorization.ACLs[0].Host)
 	require.Equal(t, "*", *user.Spec.Authorization.ACLs[0].Host)
 
 	require.NotNil(t, user.Spec.Authorization.ACLs[0].Resource.PatternType)
-	require.Equal(t, "literal", *user.Spec.Authorization.ACLs[0].Resource.PatternType)
+	require.Equal(t, PatternTypeLiteral, *user.Spec.Authorization.ACLs[0].Resource.PatternType)
 }

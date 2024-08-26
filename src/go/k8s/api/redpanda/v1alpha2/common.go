@@ -3,6 +3,7 @@ package v1alpha2
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/redpanda-data/console/backend/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -49,6 +50,12 @@ const (
 	SASLMechanismOAuthBearer            SASLMechanism = config.SASLMechanismOAuthBearer
 	SASLMechanismAWSManagedStreamingIAM SASLMechanism = config.SASLMechanismAWSManagedStreamingIAM
 )
+
+// Equals determines if the given SASLMechanism is equal to this
+// mechanism, it does so in a case-insensitive way.
+func (s SASLMechanism) Equals(other SASLMechanism) bool {
+	return strings.EqualFold(string(s), string(other))
+}
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 type KafkaSASLOAuthBearer struct {
@@ -194,6 +201,8 @@ type MetadataTemplate struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// StaticConfigurationSource configures connections to a Redpanda cluster via hard-coded
+// connection strings and manually configured TLS and authentication parameters.
 type StaticConfigurationSource struct {
 	// Kafka is the configuration information for communicating with the Kafka
 	// API of a Redpanda cluster where the object should be created.
@@ -205,25 +214,27 @@ type StaticConfigurationSource struct {
 	Admin *AdminAPISpec `json:"admin"`
 }
 
+// ClusterSource defines how to connect to a particular Redpanda cluster.
 // +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
 type ClusterSource struct {
 	// ClusterRef is a reference to the cluster where the object should be created.
 	// It is used in constructing the client created to configure a cluster.
 	// This takes precedence over StaticConfigurationSource.
-	ClusterRef                *ClusterRef                `json:"clusterRef,omitempty"`
-	StaticConfigurationSource *StaticConfigurationSource `json:"staticConfiguration,omitempty"`
+	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
+	// StaticConfiguration holds connection parameters to Kafka and Admin APIs.
+	StaticConfiguration *StaticConfigurationSource `json:"staticConfiguration,omitempty"`
 }
 
 func (c *ClusterSource) GetKafkaAPISpec() *KafkaAPISpec {
-	if c.StaticConfigurationSource != nil {
-		return c.StaticConfigurationSource.Kafka
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Kafka
 	}
 	return nil
 }
 
 func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
-	if c.StaticConfigurationSource != nil {
-		return c.StaticConfigurationSource.Admin
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Admin
 	}
 	return nil
 }

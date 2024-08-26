@@ -27,9 +27,7 @@ type User struct {
 	Status UserStatus `json:"status,omitempty"`
 }
 
-var (
-	_ ClusterReferencingObject = (*User)(nil)
-)
+var _ ClusterReferencingObject = (*User)(nil)
 
 // ACLName constructs the name of a User for defining ACLs.
 func (u *User) ACLName() string {
@@ -65,9 +63,9 @@ type UserTemplateSpec struct {
 
 // UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
 type UserAuthenticationSpec struct {
-	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512
+	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512;SCRAM-SHA-256;SCRAM-SHA-512
 	// +kubebuilder:default=scram-sha-512
-	Type *string `json:"type,omitempty"`
+	Type *SASLMechanism `json:"type,omitempty"`
 	// Password specifies where a password is read from.
 	Password Password `json:"password"`
 }
@@ -87,15 +85,45 @@ type PasswordSource struct {
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
 }
 
+// +kubebuilder:validation:Enum=simple
+type AuthorizationType string
+
+const (
+	AuthorizationTypeSimple AuthorizationType = "simple"
+)
+
 // UserAuthorizationSpec defines authorization rules for this user.
 type UserAuthorizationSpec struct {
-	// +kubebuilder:validation:Enum=simple
 	// +kubebuilder:default=simple
-	Type *string `json:"type,omitempty"`
+	Type *AuthorizationType `json:"type,omitempty"`
 	// List of ACL rules which should be applied to this user.
 	// +kubebuilder:validation:MaxItems=1024
 	ACLs []ACLRule `json:"acls,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=allow;deny
+type ACLType string
+
+const (
+	ACLTypeAllow ACLType = "allow"
+	ACLTypeDeny  ACLType = "deny"
+)
+
+// +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
+type ACLOperation string
+
+const (
+	ACLOperationRead            ACLOperation = "Read"
+	ACLOperationWrite           ACLOperation = "Write"
+	ACLOperationDelete          ACLOperation = "Delete"
+	ACLOperationAlter           ACLOperation = "Alter"
+	ACLOperationDescribe        ACLOperation = "Describe"
+	ACLOperationIdempotentWrite ACLOperation = "IdempotentWrite"
+	ACLOperationClusterAction   ACLOperation = "ClusterAction"
+	ACLOperationCreate          ACLOperation = "Create"
+	ACLOperationAlterConfigs    ACLOperation = "AlterConfigs"
+	ACLOperationDescribeConfigs ACLOperation = "DescribeConfigs"
+)
 
 // ACLRule defines an ACL rule applied to the given user.
 //
@@ -106,8 +134,7 @@ type UserAuthorizationSpec struct {
 // +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.resource.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
 // +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.resource.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
 type ACLRule struct {
-	// +kubebuilder:validation:Enum=allow;deny
-	Type string `json:"type"`
+	Type ACLType `json:"type"`
 	// Indicates the resource for which given ACL rule applies.
 	Resource ACLResourceSpec `json:"resource"`
 	// The host from which the action described in the ACL rule is allowed or denied.
@@ -117,19 +144,35 @@ type ACLRule struct {
 	// List of operations which will be allowed or denied.
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=11
-	// +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
 	// +kubebuilder:validation:item:MaxLength=15
 	// +kubebuilder:validation:item:UniqueItems=true
-	Operations []string `json:"operations"`
+	Operations []ACLOperation `json:"operations"`
 }
+
+// +kubebuilder:validation:Enum=literal;prefixed
+type PatternType string
+
+const (
+	PatternTypeLiteral  PatternType = "literal"
+	PatternTypePrefixed PatternType = "prefixed"
+)
+
+// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
+type ResourceType string
+
+const (
+	ResourceTypeTopic           ResourceType = "topic"
+	ResourceTypeGroup           ResourceType = "group"
+	ResourceTypeCluster         ResourceType = "cluster"
+	ResourceTypeTransactionalID ResourceType = "transactionalId"
+)
 
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
 // +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId']",rule="self.type in ['group', 'topic', 'transactionalId'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
 // +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule=`self.type == "cluster" ? (self.name == "") : true`
 // +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name",rule=`self.type == "cluster" ? true : (self.name != "")`
 type ACLResourceSpec struct {
-	// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
-	Type string `json:"type"`
+	Type ResourceType `json:"type"`
 	// Name of resource for which given ACL rule applies.
 	// Can be combined with patternType field to use prefix pattern.
 	Name string `json:"name"`
@@ -138,9 +181,8 @@ type ACLResourceSpec struct {
 	// of a full topic name. With prefix pattern type, the resource name will be used only as
 	// a prefix. Default value is literal.
 	//
-	// +kubebuilder:validation:Enum=literal;prefixed
 	// +kubebuilder:default=literal
-	PatternType *string `json:"patternType,omitempty"`
+	PatternType *PatternType `json:"patternType,omitempty"`
 }
 
 // UserStatus defines the observed state of a Redpanda user
