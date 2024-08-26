@@ -502,3 +502,42 @@ func TestUserDefaults(t *testing.T) {
 	require.NotNil(t, user.Spec.Authorization.ACLs[0].Resource.PatternType)
 	require.Equal(t, PatternTypeLiteral, *user.Spec.Authorization.ACLs[0].Resource.PatternType)
 }
+
+func TestUserImmutableFields(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	err = AddToScheme(scheme.Scheme)
+	require.NoError(t, err)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	require.NoError(t, c.Create(ctx, &User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "name",
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: UserSpec{
+			ClusterSource: &ClusterSource{
+				ClusterRef: &ClusterRef{
+					Name: "cluster",
+				},
+			},
+		},
+	}))
+
+	var user User
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+
+	user.Spec.ClusterSource.ClusterRef.Name = "other"
+	err = c.Update(ctx, &user)
+
+	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster.clusterRef: Invalid value: "object": clusterRef is immutable`)
+}

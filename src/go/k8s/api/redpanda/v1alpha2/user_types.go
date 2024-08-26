@@ -191,10 +191,6 @@ type UserStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Conditions holds the conditions for the Redpanda user.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	// ClusterRef is a reference to the cluster where the user was created.
-	// This is used so that if a ClusterRef of a User is changed, we can
-	// properly clean up the User created in the previous cluster.
-	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
 }
 
 // UserList contains a list of Redpanda user objects.

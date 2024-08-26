@@ -232,6 +232,9 @@ spec:
                     required:
                     - name
                     type: object
+                    x-kubernetes-validations:
+                    - message: clusterRef is immutable
+                      rule: self == oldSelf
                   staticConfiguration:
                     description: StaticConfiguration holds connection parameters to
                       Kafka and Admin APIs.
@@ -625,18 +628,6 @@ spec:
                 type: Synced
             description: Represents the current status of the Redpanda user.
             properties:
-              clusterRef:
-                description: |-
-                  ClusterRef is a reference to the cluster where the user was created.
-                  This is used so that if a ClusterRef of a User is changed, we can
-                  properly clean up the User created in the previous cluster.
-                properties:
-                  name:
-                    description: Name specifies the name of the cluster being referenced.
-                    type: string
-                required:
-                - name
-                type: object
               conditions:
                 description: Conditions holds the conditions for the Redpanda user.
                 items:
