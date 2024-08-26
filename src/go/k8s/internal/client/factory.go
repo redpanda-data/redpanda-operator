@@ -109,17 +109,20 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 }
 
 func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
-	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
-		if source := o.GetClusterSource(); source != nil {
-			if ref := source.GetClusterRef(); ref != nil {
-				var cluster redpandav1alpha2.Redpanda
+	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
 
-				if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
-					return nil, err
-				}
+	if source := o.GetClusterSource(); source != nil {
+		if ref := source.GetClusterRef(); ref != nil {
+			var cluster redpandav1alpha2.Redpanda
 
-				return &cluster, nil
+			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				return nil, err
 			}
+
+			return &cluster, nil
 		}
 	}
 

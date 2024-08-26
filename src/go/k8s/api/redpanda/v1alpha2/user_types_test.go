@@ -96,7 +96,6 @@ func TestUserValidation(t *testing.T) {
 						Brokers: []string{"1.2.3.4:0"},
 					},
 				}
-
 			},
 			errors: []string{`spec.cluster.staticconfiguration.admin: required value`},
 		},

@@ -70,6 +70,7 @@ type UserAuthenticationSpec struct {
 	Password Password `json:"password"`
 }
 
+// Password specifies a password for the user.
 // +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`self.value != "" || has(self.valueFrom)`
 type Password struct {
 	Value     string          `json:"value,omitempty"`
@@ -85,6 +86,7 @@ type PasswordSource struct {
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
 }
 
+// AuthorizationType specifies the type of authorization to use in creating a user.
 // +kubebuilder:validation:Enum=simple
 type AuthorizationType string
 
@@ -101,6 +103,7 @@ type UserAuthorizationSpec struct {
 	ACLs []ACLRule `json:"acls,omitempty"`
 }
 
+// ACLType specifies the type, either allow or deny of an ACL rule.
 // +kubebuilder:validation:Enum=allow;deny
 type ACLType string
 
@@ -109,6 +112,7 @@ const (
 	ACLTypeDeny  ACLType = "deny"
 )
 
+// ACLOperation specifies the type of operation for an ACL.
 // +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
 type ACLOperation string
 
@@ -149,6 +153,7 @@ type ACLRule struct {
 	Operations []ACLOperation `json:"operations"`
 }
 
+// PatternType specifies the type of pattern applied for ACL resource matching.
 // +kubebuilder:validation:Enum=literal;prefixed
 type PatternType string
 
@@ -157,6 +162,7 @@ const (
 	PatternTypePrefixed PatternType = "prefixed"
 )
 
+// ResourceType specifies the type of resource an ACL is applied to.
 // +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
 type ResourceType string
 
