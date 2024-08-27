@@ -225,7 +225,6 @@ spec:
                 description: |-
                   ClusterSource is a reference to the cluster where the user should be created.
                   It is used in constructing the client created to configure a cluster.
-                  This takes precedence over KafkaAPISpec and AdminAPISpec.
                 properties:
                   clusterRef:
                     description: |-

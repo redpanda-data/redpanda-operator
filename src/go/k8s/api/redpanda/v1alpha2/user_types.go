@@ -42,7 +42,6 @@ func (u *User) GetClusterSource() *ClusterSource {
 type UserSpec struct {
 	// ClusterSource is a reference to the cluster where the user should be created.
 	// It is used in constructing the client created to configure a cluster.
-	// This takes precedence over KafkaAPISpec and AdminAPISpec.
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
 	// Authentication defines the authentication information for a user. If no
@@ -55,7 +54,8 @@ type UserSpec struct {
 	Template *UserTemplateSpec `json:"template,omitempty"`
 }
 
-// UserTemplateSpec defines the template metadata for a user
+// UserTemplateSpec defines the template metadata (labels and annotations)
+// for any subresources, such as Secrets, created by a User object.
 type UserTemplateSpec struct {
 	// Specifies how the Secret with a user password is generated.
 	Secret *ResourceTemplate `json:"secret,omitempty"`
