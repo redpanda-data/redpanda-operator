@@ -13,24 +13,6 @@ tasks:
     preconditions:
       - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
 
-  push-image-cache:
-    desc: push builder cache
-    summary: |
-      Pushes from CI environments, but restricted to jobs that correspond to
-      merges into upstream branches. The PULL_REQUEST variable takes the
-      value of the PR number when the build is triggered from a PR, and
-      takes a value of 'false' for merges to branches.
-
-      NOTE: In addition to the conditional execution of this task,
-            buildkite pipelines for the redpanda project are
-            configured in such a way that only a subset of branches
-            from the upstream repo trigger jobs.
-    cmds:
-      - docker tag {{.DOCKER_IMAGE}} {{.DOCKER_IMAGE}}-{{.IMAGE_CACHE_TAG_SUFFIX}}
-      - docker push {{.DOCKER_IMAGE}}-{{.IMAGE_CACHE_TAG_SUFFIX}}
-    status:
-      - test "$CI" != "true" -o "$PULL_REQUEST" != "false"
-
   k8s:
     cmds:
       - task: run-k8s-tests
@@ -51,12 +33,12 @@ tasks:
     cmds:
       - 'echo "~~~ Running operator v2 e2e tests :k8s:"'
       - task: configure-git-private-repo
+      - task: :k8s:run-golangci-lint
+      - task: :k8s:generate
+      - task: assert-no-diffs
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
-      - task: chown-buildkite-agent
-        vars:
-          DIR: '{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
@@ -68,9 +50,6 @@ tasks:
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-helm-test.yaml
-      - task: chown-buildkite-agent
-        vars:
-          DIR: '{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
@@ -80,13 +59,12 @@ tasks:
       - 'echo "~~~ Linting operator code :golangci-lint:"'
       - task: configure-git-private-repo
       - task: :k8s:run-golangci-lint
+      - task: :k8s:generate
+      - task: assert-no-diffs
       - 'echo "~~~ Run operator code unit tests :golang:"'
       - task: :k8s:run-unit-tests
       - 'echo "~~~ Running operator e2e tests :k8s:"'
       - task: :k8s:run-kuttl-tests
-      - task: chown-buildkite-agent
-        vars:
-          DIR: '{{.SRC_DIR}}/src/go/k8s'
       - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
@@ -101,10 +79,12 @@ tasks:
     status:
       - test -z '{{.TAG_NAME}}' # only run for tagged commits
 
-  chown-buildkite-agent:
+  assert-no-diffs:
+    desc: "Fail on any unexpected diffs to generated files (CI only)"
     cmds:
-      - chown -R 2000:2000 '{{.DIR}}'
-    preconditions:
-      - test -n '{{.DIR}}'
+    - ls -lah # Debugging
+    - ls -lah .git # Debugging
+    - git status # Debugging
+    - git diff --exit-code
     status:
-      - test "$CI" != "true" # run only in CI
+      - test "$CI" != "true" # run only in CI as local runs may have unstaged changes.
