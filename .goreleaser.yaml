@@ -15,17 +15,32 @@ builds:
       - amd64
       - arm64
 
-  - id: configurator
-    dir: ./src/go/k8s/
-    main: ./cmd/configurator/main.go
+  - id: manager-alias
+    dir: ./alias
+    main: ./main.go
+    binary: manager-{{ .Os }}-{{ .Arch }}
+    no_unique_dist_dir: true
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+    - -X "main.AliasTo=/redpanda-operator run"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+  - id: confiurator-alias
+    dir: ./alias
+    main: ./main.go
     binary: configurator-{{ .Os }}-{{ .Arch }}
     no_unique_dist_dir: true
     env:
       - CGO_ENABLED=0
-      - GOPRIVATE=github.com/redpanda-data/flux-controller-shim
+    ldflags:
+    - -X "main.AliasTo=/redpanda-operator configure"
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64

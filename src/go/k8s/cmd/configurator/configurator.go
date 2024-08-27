@@ -7,7 +7,10 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package main
+// Package configurator contains exports a subcommand that configures the
+// redpanda.yaml for V1 clusters based on Pod metadata and environment
+// variables.
+package configurator
 
 import (
 	"context"
@@ -22,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/moby/sys/mountinfo"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,7 +115,16 @@ func (c *configuratorConfig) String() string {
 
 var errorMissingEnvironmentVariable = errors.New("missing environment variable")
 
-func main() {
+func Command() *cobra.Command {
+	return &cobra.Command{
+		Use:     "configurator",
+		Short:   "Configure redpanda.yaml based on Pod metadata",
+		Aliases: []string{"configure"},
+		Run:     run,
+	}
+}
+
+func run(cmd *cobra.Command, args []string) {
 	log.Print("The redpanda configurator is starting")
 
 	c, err := checkEnvVars()
