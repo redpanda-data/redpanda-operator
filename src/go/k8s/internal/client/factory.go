@@ -109,8 +109,13 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 }
 
 func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
-	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
-		if ref := o.GetClusterRef(); ref != nil {
+	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetClusterSource(); source != nil {
+		if ref := source.GetClusterRef(); ref != nil {
 			var cluster redpandav1alpha2.Redpanda
 
 			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
@@ -125,6 +130,14 @@ func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav
 }
 
 func (c *Factory) getKafkaSpec(obj client.Object) *redpandav1alpha2.KafkaAPISpec {
+	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
+		if source := o.GetClusterSource(); source != nil {
+			if spec := source.GetKafkaAPISpec(); spec != nil {
+				return spec
+			}
+		}
+	}
+
 	if o, ok := obj.(redpandav1alpha2.KafkaConnectedObject); ok {
 		return o.GetKafkaAPISpec()
 	}
@@ -139,8 +152,11 @@ func (c *Factory) getKafkaMetricNamespace(obj client.Object) *string {
 }
 
 func (c *Factory) getAdminSpec(obj client.Object) *redpandav1alpha2.AdminAPISpec {
-	if o, ok := obj.(redpandav1alpha2.AdminConnectedObject); ok {
-		return o.GetAdminAPISpec()
+	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
+		if source := o.GetClusterSource(); source != nil {
+			return source.GetAdminAPISpec()
+		}
 	}
+
 	return nil
 }

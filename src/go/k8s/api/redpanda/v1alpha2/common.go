@@ -3,6 +3,7 @@ package v1alpha2
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/redpanda-data/console/backend/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -49,6 +50,12 @@ const (
 	SASLMechanismOAuthBearer            SASLMechanism = config.SASLMechanismOAuthBearer
 	SASLMechanismAWSManagedStreamingIAM SASLMechanism = config.SASLMechanismAWSManagedStreamingIAM
 )
+
+// Equals determines if the given SASLMechanism is equal to this
+// mechanism, it does so in a case-insensitive way.
+func (s SASLMechanism) Equals(other SASLMechanism) bool {
+	return strings.EqualFold(string(s), string(other))
+}
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 type KafkaSASLOAuthBearer struct {
@@ -178,4 +185,61 @@ type ClusterRef struct {
 	// Name specifies the name of the cluster being referenced.
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+}
+
+// ResourceTemplate specifies additional configuration for a resource.
+type ResourceTemplate struct {
+	// Metadata specifies additional metadata to associate with a resource.
+	Metadata MetadataTemplate `json:"metadata"`
+}
+
+// MetadataTemplate defines additional metadata to associate with a resource.
+type MetadataTemplate struct {
+	// Labels specifies the Kubernetes labels to apply to a managed resource.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations specifies the Kubernetes annotations to apply to a managed resource.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+// StaticConfigurationSource configures connections to a Redpanda cluster via hard-coded
+// connection strings and manually configured TLS and authentication parameters.
+type StaticConfigurationSource struct {
+	// Kafka is the configuration information for communicating with the Kafka
+	// API of a Redpanda cluster where the object should be created.
+	// +required
+	Kafka *KafkaAPISpec `json:"kafka"`
+	// AdminAPISpec is the configuration information for communicating with the Admin
+	// API of a Redpanda cluster where the object should be created.
+	// +required
+	Admin *AdminAPISpec `json:"admin"`
+}
+
+// ClusterSource defines how to connect to a particular Redpanda cluster.
+// +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
+// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
+type ClusterSource struct {
+	// ClusterRef is a reference to the cluster where the object should be created.
+	// It is used in constructing the client created to configure a cluster.
+	// This takes precedence over StaticConfigurationSource.
+	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
+	// StaticConfiguration holds connection parameters to Kafka and Admin APIs.
+	StaticConfiguration *StaticConfigurationSource `json:"staticConfiguration,omitempty"`
+}
+
+func (c *ClusterSource) GetKafkaAPISpec() *KafkaAPISpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Kafka
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Admin
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetClusterRef() *ClusterRef {
+	return c.ClusterRef
 }
