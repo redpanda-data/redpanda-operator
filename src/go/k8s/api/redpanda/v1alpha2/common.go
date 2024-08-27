@@ -216,11 +216,11 @@ type StaticConfigurationSource struct {
 
 // ClusterSource defines how to connect to a particular Redpanda cluster.
 // +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
+// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 type ClusterSource struct {
 	// ClusterRef is a reference to the cluster where the object should be created.
 	// It is used in constructing the client created to configure a cluster.
 	// This takes precedence over StaticConfigurationSource.
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="clusterRef is immutable"
 	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
 	// StaticConfiguration holds connection parameters to Kafka and Admin APIs.
 	StaticConfiguration *StaticConfigurationSource `json:"staticConfiguration,omitempty"`

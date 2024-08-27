@@ -538,5 +538,18 @@ func TestUserImmutableFields(t *testing.T) {
 	user.Spec.ClusterSource.ClusterRef.Name = "other"
 	err = c.Update(ctx, &user)
 
-	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster.clusterRef: Invalid value: "object": clusterRef is immutable`)
+	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+	user.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
+		Kafka: &KafkaAPISpec{
+			Brokers: []string{"test:123"},
+		},
+		Admin: &AdminAPISpec{
+			URLs: []string{"http://test:123"},
+		},
+	}
+	err = c.Update(ctx, &user)
+
+	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 }

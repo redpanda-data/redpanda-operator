@@ -126,6 +126,8 @@ spec:
                           description: List of operations which will be allowed or
                             denied.
                           items:
+                            description: ACLOperation specifies the type of operation
+                              for an ACL.
                             type: string
                           maxItems: 11
                           minItems: 1
@@ -151,6 +153,8 @@ spec:
                               - prefixed
                               type: string
                             type:
+                              description: ResourceType specifies the type of resource
+                                an ACL is applied to.
                               enum:
                               - topic
                               - group
@@ -173,6 +177,8 @@ spec:
                               a name
                             rule: 'self.type == "cluster" ? true : (self.name != "")'
                         type:
+                          description: ACLType specifies the type, either allow or
+                            deny of an ACL rule.
                           enum:
                           - allow
                           - deny
@@ -209,6 +215,8 @@ spec:
                     type: array
                   type:
                     default: simple
+                    description: AuthorizationType specifies the type of authorization
+                      to use in creating a user.
                     enum:
                     - simple
                     type: string
@@ -232,9 +240,6 @@ spec:
                     required:
                     - name
                     type: object
-                    x-kubernetes-validations:
-                    - message: clusterRef is immutable
-                      rule: self == oldSelf
                   staticConfiguration:
                     description: StaticConfiguration holds connection parameters to
                       Kafka and Admin APIs.
@@ -587,6 +592,8 @@ spec:
                 x-kubernetes-validations:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
+                - message: ClusterSource is immutable
+                  rule: self == oldSelf
               template:
                 description: Template to specify how user secrets are generated.
                 properties:
