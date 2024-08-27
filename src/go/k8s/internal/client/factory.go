@@ -41,6 +41,10 @@ type ClientFactory interface {
 	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface of the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	RedpandaAdminClient(ctx context.Context, object client.Object) (*rpadmin.AdminAPI, error)
+
+	// UserClient returns a high-level client that wraps the Kafka admin and Redpanda REST Admin APIs for
+	// user and ACL management.
+	UserClient(ctx context.Context, user *redpandav1alpha2.User, opts ...kgo.Opt) (UserClient, error)
 }
 
 type Factory struct {

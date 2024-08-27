@@ -2,13 +2,17 @@ package v1alpha2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var ErrUnsupportedSASLMechanism = errors.New("unsupported SASL mechanism")
 
 // KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
 type KafkaAPISpec struct {
@@ -55,6 +59,21 @@ const (
 // mechanism, it does so in a case-insensitive way.
 func (s SASLMechanism) Equals(other SASLMechanism) bool {
 	return strings.EqualFold(string(s), string(other))
+}
+
+func (s *SASLMechanism) ScramToKafka() (kadm.ScramMechanism, error) {
+	if s == nil {
+		return 0, ErrUnsupportedSASLMechanism
+	}
+
+	switch {
+	case s.Equals(SASLMechanismScramSHA256):
+		return kadm.ScramSha256, nil
+	case s.Equals(SASLMechanismScramSHA512):
+		return kadm.ScramSha512, nil
+	}
+
+	return 0, ErrUnsupportedSASLMechanism
 }
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism

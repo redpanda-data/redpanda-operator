@@ -1,6 +1,10 @@
 package v1alpha2
 
 import (
+	"errors"
+	"strings"
+
+	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -8,6 +12,10 @@ import (
 func init() {
 	SchemeBuilder.Register(&User{}, &UserList{})
 }
+
+var (
+	ErrUnsupportedResourceType = errors.New("unsupported resource type")
+)
 
 // User defines the CRD for a Redpanda user.
 // +kubebuilder:object:root=true
@@ -112,6 +120,10 @@ const (
 	ACLTypeDeny  ACLType = "deny"
 )
 
+func (t ACLType) ToKafka() (kmsg.ACLPermissionType, error) {
+	return kmsg.ParseACLPermissionType(string(t))
+}
+
 // ACLOperation specifies the type of operation for an ACL.
 // +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
 type ACLOperation string
@@ -128,6 +140,10 @@ const (
 	ACLOperationAlterConfigs    ACLOperation = "AlterConfigs"
 	ACLOperationDescribeConfigs ACLOperation = "DescribeConfigs"
 )
+
+func (a ACLOperation) ToKafka() (kmsg.ACLOperation, error) {
+	return kmsg.ParseACLOperation(strings.ToLower(string(a)))
+}
 
 // ACLRule defines an ACL rule applied to the given user.
 //
@@ -162,6 +178,14 @@ const (
 	PatternTypePrefixed PatternType = "prefixed"
 )
 
+func (p *PatternType) ToKafka() (kmsg.ACLResourcePatternType, error) {
+	if p == nil {
+		return kmsg.ACLResourcePatternTypeLiteral, nil
+	}
+
+	return kmsg.ParseACLResourcePatternType(string(*p))
+}
+
 // ResourceType specifies the type of resource an ACL is applied to.
 // +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
 type ResourceType string
@@ -172,6 +196,14 @@ const (
 	ResourceTypeCluster         ResourceType = "cluster"
 	ResourceTypeTransactionalID ResourceType = "transactionalId"
 )
+
+func (t *ResourceType) ToKafka() (kmsg.ACLResourceType, error) {
+	if t == nil {
+		return 0, ErrUnsupportedResourceType
+	}
+
+	return kmsg.ParseACLResourceType(string(*t))
+}
 
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
 // +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId']",rule="self.type in ['group', 'topic', 'transactionalId'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
