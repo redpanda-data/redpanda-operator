@@ -191,6 +191,11 @@ type ACLResourceSpec struct {
 	PatternType *PatternType `json:"patternType,omitempty"`
 }
 
+const (
+	UserConditionTypeSynced    = "Synced"
+	UserConditionReasonPending = "Pending"
+)
+
 // UserStatus defines the observed state of a Redpanda user
 type UserStatus struct {
 	// Specifies the last observed generation.

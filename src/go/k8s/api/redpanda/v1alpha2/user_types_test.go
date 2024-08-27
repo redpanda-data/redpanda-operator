@@ -485,9 +485,9 @@ func TestUserDefaults(t *testing.T) {
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
 
 	require.Len(t, user.Status.Conditions, 1)
-	require.Equal(t, "Synced", user.Status.Conditions[0].Type)
+	require.Equal(t, UserConditionTypeSynced, user.Status.Conditions[0].Type)
 	require.Equal(t, metav1.ConditionUnknown, user.Status.Conditions[0].Status)
-	require.Equal(t, "Pending", user.Status.Conditions[0].Reason)
+	require.Equal(t, UserConditionReasonPending, user.Status.Conditions[0].Reason)
 
 	require.NotNil(t, user.Spec.Authentication.Type)
 	require.True(t, user.Spec.Authentication.Type.Equals(SASLMechanismScramSHA512))
