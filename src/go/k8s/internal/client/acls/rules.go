@@ -16,7 +16,7 @@ type rule struct {
 	PermissionType      kmsg.ACLPermissionType
 }
 
-func rulesFromV1Alpha2ACL(principal string, r redpandav1alpha2.ACLRule) ([]rule, error) {
+func rulesFromV1Alpha2ACL(principal string, r redpandav1alpha2.ACLRule) ([]rule, error) { //nolint:gocritic // pass by value here is fine
 	rules := []rule{}
 	for _, operation := range r.Operations {
 		rules = append(rules, rule{

@@ -46,13 +46,13 @@ func TestSyncer(t *testing.T) {
 	broker, err := container.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
 
-	client, err := kgo.NewClient(kgo.SeedBrokers(broker), kgo.SASL(scram.Auth{
+	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(broker), kgo.SASL(scram.Auth{
 		User: "user",
 		Pass: "password",
 	}.AsSha256Mechanism()))
 	require.NoError(t, err)
 
-	syncer := NewSyncer(client)
+	syncer := NewSyncer(kafkaClient)
 
 	sortACLs := func(acls []v1alpha2.ACLRule) {
 		sort.SliceStable(acls, func(i, j int) bool {

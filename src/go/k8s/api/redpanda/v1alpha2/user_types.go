@@ -14,9 +14,7 @@ func init() {
 	SchemeBuilder.Register(&User{}, &UserList{})
 }
 
-var (
-	ErrUnsupportedResourceType = errors.New("unsupported resource type")
-)
+var ErrUnsupportedResourceType = errors.New("unsupported resource type")
 
 // User defines the CRD for a Redpanda user.
 // +kubebuilder:object:root=true
@@ -240,11 +238,11 @@ type ACLRule struct {
 	Operations []ACLOperation `json:"operations"`
 }
 
-func (r ACLRule) GetHost() string {
+func (r *ACLRule) GetHost() string {
 	return ptr.Deref(r.Host, "*")
 }
 
-func (r ACLRule) Equals(other ACLRule) bool {
+func (r *ACLRule) Equals(other ACLRule) bool { //nolint:gocritic // pass by value here is fine
 	if r.Type != other.Type {
 		return false
 	}

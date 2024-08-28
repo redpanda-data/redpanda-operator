@@ -27,7 +27,7 @@ type Client struct {
 }
 
 // NewClient returns a high-level client that is able to manage users in a Redpanda cluster.
-func NewClient(ctx context.Context, client client.Client, kafkaAdminClient *kadm.Client, adminClient *rpadmin.AdminAPI) (*Client, error) {
+func NewClient(ctx context.Context, kubeClient client.Client, kafkaAdminClient *kadm.Client, adminClient *rpadmin.AdminAPI) (*Client, error) {
 	brokerAPI, err := kafkaAdminClient.ApiVersions(ctx)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func NewClient(ctx context.Context, client client.Client, kafkaAdminClient *kadm
 	}
 
 	return &Client{
-		client:            client,
+		client:            kubeClient,
 		kafkaAdminClient:  kafkaAdminClient,
 		adminClient:       adminClient,
 		scramAPISupported: scramAPISupported,
@@ -134,7 +134,7 @@ func (c *Client) getPassword(ctx context.Context, user *redpandav1alpha2.User) (
 	// 4. If it doesn't we either dump the user provided
 	//    password into the secret or dump a randomly
 	//    generated password into the secret
-	if auth.Password.ValueFrom != nil {
+	if auth.Password.ValueFrom != nil { //nolint:nestif // this is fine
 		secret := auth.Password.ValueFrom.SecretKeyRef.Name
 		key := auth.Password.ValueFrom.SecretKeyRef.Key
 		if key == "" {

@@ -65,7 +65,7 @@ func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 	return nil
 }
 
-func (s *Syncer) sync(ctx context.Context, principal string, rules []redpandav1alpha2.ACLRule) (int, int, error) {
+func (s *Syncer) sync(ctx context.Context, principal string, rules []redpandav1alpha2.ACLRule) (created, deleted int, err error) {
 	acls, err := s.listACLs(ctx, principal)
 	if err != nil {
 		return 0, 0, err

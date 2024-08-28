@@ -118,12 +118,12 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 }
 
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
-	client, err := c.KafkaClient(ctx, obj, opts...)
+	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return acls.NewSyncer(client), nil
+	return acls.NewSyncer(kafkaClient), nil
 }
 
 func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error) {

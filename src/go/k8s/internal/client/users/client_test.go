@@ -65,7 +65,7 @@ func TestClient(t *testing.T) {
 	}, nil)
 	require.NoError(t, err)
 
-	client, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
+	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
 	require.NoError(t, err)
 
 	for _, mechanism := range []kadm.ScramMechanism{
@@ -74,21 +74,21 @@ func TestClient(t *testing.T) {
 		t.Run(mechanism.String(), func(t *testing.T) {
 			username := "testuser" + strconv.Itoa(int(time.Now().UnixNano()))
 
-			ok, err := client.has(ctx, username)
+			ok, err := usersClient.has(ctx, username)
 			require.NoError(t, err)
 			require.False(t, ok)
 
-			err = client.create(ctx, username, "password", mechanism)
+			err = usersClient.create(ctx, username, "password", mechanism)
 			require.NoError(t, err)
 
-			ok, err = client.has(ctx, username)
+			ok, err = usersClient.has(ctx, username)
 			require.NoError(t, err)
 			require.True(t, ok)
 
-			err = client.delete(ctx, username)
+			err = usersClient.delete(ctx, username)
 			require.NoError(t, err)
 
-			ok, err = client.has(ctx, username)
+			ok, err = usersClient.has(ctx, username)
 			require.NoError(t, err)
 			require.False(t, ok)
 		})
@@ -138,7 +138,7 @@ func TestClientPasswordCreation(t *testing.T) {
 	}, nil)
 	require.NoError(t, err)
 
-	client, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
+	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
 	require.NoError(t, err)
 
 	runTest := func(t *testing.T, username, password, secret string) {
@@ -186,7 +186,7 @@ func TestClientPasswordCreation(t *testing.T) {
 		}
 
 		require.NoError(t, c.Create(ctx, user))
-		require.NoError(t, client.Create(ctx, user))
+		require.NoError(t, usersClient.Create(ctx, user))
 
 		var secretObject corev1.Secret
 		require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: secret}, &secretObject))
