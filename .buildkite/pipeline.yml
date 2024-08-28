@@ -14,8 +14,12 @@ steps:
       - github_commit_status:
           context: k8s-operator
     commands:
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s
+      - TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s
+      # Docker runs as the root user which will prevent buildkite from
+      # picking up artifacts. The nix docker image doesn't play nicely with
+      # --user, so as a final step, chown everything back to the buildkite
+      # user.
+      - sudo chown -R $(id -u):$(id -g) .
     agents:
       queue: v6-amd64-builders
     artifact_paths:
@@ -146,6 +150,11 @@ steps:
               context: k8s-operator-v2
         commands:
           - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2
+          # Docker runs as the root user which will prevent buildkite from
+          # picking up artifacts. The nix docker image doesn't play nicely with
+          # --user, so as a final step, chown everything back to the buildkite
+          # user.
+          - sudo chown -R $(id -u):$(id -g) .
         agents:
           queue: v6-amd64-builders
         artifact_paths:

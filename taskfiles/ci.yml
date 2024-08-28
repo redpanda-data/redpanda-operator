@@ -101,9 +101,6 @@ tasks:
   assert-no-diffs:
     desc: "Fail on any unexpected diffs to generated files (CI only)"
     cmds:
-    - ls -lah # Debugging
-    - ls -lah .git # Debugging
-    - git status # Debugging
     - git diff --exit-code
     status:
       - test "$CI" != "true" # run only in CI as local runs may have unstaged changes.
