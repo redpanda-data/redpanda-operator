@@ -36,3 +36,13 @@ type ClusterReferencingObject interface {
 	client.Object
 	GetClusterSource() *ClusterSource
 }
+
+// AuthorizedObject is an interface for an object
+// that specifies ACLs, currently only Users are supported,
+// but this can also be used for groups.
+// +kubebuilder:object:generate=false
+type AuthorizedObject interface {
+	client.Object
+	GetACLs() []ACLRule
+	GetPrincipal() string
+}

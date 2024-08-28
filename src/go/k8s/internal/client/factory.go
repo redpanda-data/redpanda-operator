@@ -7,6 +7,9 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/acls"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -41,6 +44,12 @@ type ClientFactory interface {
 	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface of the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	RedpandaAdminClient(ctx context.Context, object client.Object) (*rpadmin.AdminAPI, error)
+
+	// ACLs returns a high-level client for synchronizing ACLs.
+	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
+
+	// Users returns a high-level client for managing users.
+	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
 }
 
 type Factory struct {
@@ -106,6 +115,29 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
+}
+
+func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
+	client, err := c.KafkaClient(ctx, obj, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return acls.NewSyncer(client), nil
+}
+
+func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error) {
+	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return users.NewClient(ctx, c.Client, kadm.NewClient(kafkaClient), adminClient)
 }
 
 func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
