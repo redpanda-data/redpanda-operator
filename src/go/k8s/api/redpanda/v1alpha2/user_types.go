@@ -1,7 +1,6 @@
 package v1alpha2
 
 import (
-	"errors"
 	"slices"
 
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -13,8 +12,6 @@ import (
 func init() {
 	SchemeBuilder.Register(&User{}, &UserList{})
 }
-
-var ErrUnsupportedResourceType = errors.New("unsupported resource type")
 
 // User defines the CRD for a Redpanda user.
 // +kubebuilder:object:root=true
