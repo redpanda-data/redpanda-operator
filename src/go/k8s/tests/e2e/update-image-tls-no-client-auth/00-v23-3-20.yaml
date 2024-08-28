@@ -3,8 +3,8 @@ kind: Cluster
 metadata:
   name: up-img-admin-tls
 spec:
-  image: "vectorized/redpanda"
-  version: "v23.2.29"
+  image: "redpandadata/redpanda"
+  version: "v23.3.20"
   replicas: 3
   resources:
     requests:
@@ -29,3 +29,4 @@ spec:
       default-log-level: trace
       dump-memory-diagnostics-on-alloc-failure-kind: all
       reserve-memory: 100M
+      logger-log-level=exception=info:io: info

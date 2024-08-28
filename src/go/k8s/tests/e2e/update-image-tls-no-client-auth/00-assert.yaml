@@ -55,7 +55,7 @@ kind: Cluster
 metadata:
   name: up-img-admin-tls
 status:
-  version: "v23.2.29"
+  version: "v23.3.20"
   readyReplicas: 3
   replicas: 3
   upgrading: false

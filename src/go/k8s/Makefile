@@ -124,7 +124,7 @@ push-to-kind: kind-create certmanager-install
 
 # Execute end to end tests
 e2e-tests:
-	cd ../../.. && nix develop -c ./task k8s:run-k8s-tests
+	cd ../../.. && nix develop -c ./task k8s:run-kuttl-tests
 
 # Execute end to end tests v2
 e2e-tests-v2: kuttl
