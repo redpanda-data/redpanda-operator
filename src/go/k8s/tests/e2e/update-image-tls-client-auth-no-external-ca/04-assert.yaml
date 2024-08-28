@@ -1,58 +1,14 @@
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: up-img-admin-mtls
+  name: wait-for-tip-of-the-dev-mtls
 status:
-  readyReplicas: 3
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: up-img-admin-mtls-0
-spec:
-  containers:
-    - name: redpanda
-      image: "localhost/redpanda:dev"
-status:
-  phase: "Running"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: up-img-admin-mtls-1
-spec:
-  containers:
-    - name: redpanda
-      image: "localhost/redpanda:dev"
-status:
-  phase: "Running"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: up-img-admin-mtls-2
-spec:
-  containers:
-    - name: redpanda
-      image: "localhost/redpanda:dev"
-status:
-  phase: "Running"
+  conditions:
+    - status: "True"
+      type: Complete
+  succeeded: 1
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:
   - command: ../../../hack/get-redpanda-info.sh
----
-apiVersion: redpanda.vectorized.io/v1alpha1
-kind: Cluster
-metadata:
-  name: up-img-admin-mtls
-status:
-  version: "dev"
-  readyReplicas: 3
-  replicas: 3
-  upgrading: false
-  restarting: false
-  conditions:
-    - type: ClusterConfigured
-      status: "True"

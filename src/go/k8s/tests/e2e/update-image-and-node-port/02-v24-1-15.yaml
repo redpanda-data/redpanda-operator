@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  archival-update-image-and-node-port: WA==
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: archival-update-image-and-node-port
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: update-image-cluster-and-node-port
+spec:
+  version: "v24.1.15"

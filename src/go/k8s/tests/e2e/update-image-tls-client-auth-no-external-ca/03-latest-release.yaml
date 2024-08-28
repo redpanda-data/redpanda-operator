@@ -1,7 +1,7 @@
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: update-image-cluster-and-node-port
+  name: up-img-admin-mtls
 spec:
   image: "localhost/redpanda"
   version: "dev"
@@ -10,3 +10,4 @@ spec:
       default-log-level: trace
       dump-memory-diagnostics-on-alloc-failure-kind: all
       reserve-memory: 0M
+      logger-log-level=exception=info:io: info
