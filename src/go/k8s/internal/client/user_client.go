@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -36,7 +37,7 @@ type UserClient interface {
 	DeleteUser(ctx context.Context) error
 	// SyncACLs synchronizes all the ACLs specified by a v1alpha2.User, deleting an creating
 	// ACLs as necessary.
-	SyncACLs(ctx context.Context) error
+	SyncACLs(ctx context.Context) (int, int, error)
 }
 
 type userClient struct {
@@ -130,6 +131,11 @@ func (c *userClient) ListACLs(ctx context.Context) ([]kmsg.DescribeACLsResponseR
 		return nil, errors.New(*response.ErrorMessage)
 	}
 
+	// we have an error code but no error message
+	if response.ErrorCode != 0 {
+		return nil, fmt.Errorf("error code: %d", response.ErrorCode)
+	}
+
 	return response.Resources, nil
 }
 
@@ -149,6 +155,11 @@ func (c *userClient) CreateACLs(ctx context.Context, acls []kmsg.CreateACLsReque
 	for _, result := range creation.Results {
 		if result.ErrorMessage != nil {
 			return errors.New(*result.ErrorMessage)
+		}
+
+		// we have an error code but no error message
+		if result.ErrorCode != 0 {
+			return fmt.Errorf("error code: %d", result.ErrorCode)
 		}
 	}
 
@@ -197,6 +208,11 @@ func (c *userClient) DeleteAllACLs(ctx context.Context) error {
 	for _, result := range response.Results {
 		if result.ErrorMessage != nil {
 			return errors.New(*result.ErrorMessage)
+		}
+
+		// we have an error code but no error message
+		if result.ErrorCode != 0 {
+			return fmt.Errorf("error code: %d", result.ErrorCode)
 		}
 	}
 
@@ -315,23 +331,23 @@ func (c *userClient) DeleteUser(ctx context.Context) error {
 	return c.adminClient.DeleteUser(ctx, c.username())
 }
 
-func (c *userClient) SyncACLs(ctx context.Context) error {
+func (c *userClient) SyncACLs(ctx context.Context) (int, int, error) {
 	acls, err := c.ListACLs(ctx)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	creations, deletions, err := calculateACLs(c.user, acls)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	if err := c.CreateACLs(ctx, creations); err != nil {
-		return err
+		return 0, 0, err
 	}
 	if err := c.DeleteACLs(ctx, deletions); err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return nil
+	return len(creations), len(deletions), nil
 }

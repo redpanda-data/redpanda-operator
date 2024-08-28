@@ -18,40 +18,34 @@ type aclRule struct {
 
 func aclRulesFromUserACL(principal string, rule redpandav1alpha2.ACLRule) ([]aclRule, error) {
 	rules := []aclRule{}
-
-	resourceType, err := rule.Resource.Type.ToKafka()
-	if err != nil {
-		return nil, err
-	}
-
-	permType, err := rule.Type.ToKafka()
-	if err != nil {
-		return nil, err
-	}
-
-	patternType, err := rule.Resource.PatternType.ToKafka()
-	if err != nil {
-		return nil, err
-	}
-
 	for _, operation := range rule.Operations {
-		op, err := operation.ToKafka()
-		if err != nil {
-			return nil, err
-		}
-
 		rules = append(rules, aclRule{
 			Principal:           principal,
-			ResourceType:        resourceType,
-			ResourceName:        rule.Resource.Name,
-			ResourcePatternType: patternType,
+			ResourceType:        rule.Resource.Type.ToKafka(),
+			ResourceName:        rule.Resource.GetName(),
+			ResourcePatternType: rule.Resource.PatternType.ToKafka(),
 			Host:                ptr.Deref(rule.Host, "*"),
-			Operation:           op,
-			PermissionType:      permType,
+			Operation:           operation.ToKafka(),
+			PermissionType:      rule.Type.ToKafka(),
 		})
 	}
 
 	return rules, nil
+}
+
+func (r aclRule) toRule() redpandav1alpha2.ACLRule {
+	return redpandav1alpha2.ACLRule{
+		Type: redpandav1alpha2.ACLTypeFromKafka(r.PermissionType),
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type:        redpandav1alpha2.ResourceTypeFromKafka(r.ResourceType),
+			Name:        r.ResourceName,
+			PatternType: ptr.To(redpandav1alpha2.ACLPatternTypeFromKafka(r.ResourcePatternType)),
+		},
+		Host: &r.Host,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationFromKafka(r.Operation),
+		},
+	}
 }
 
 func (r aclRule) toDeletionFilter() kmsg.DeleteACLsRequestFilter {
@@ -107,6 +101,14 @@ func (s aclRuleset) Clone() aclRuleset {
 		set[r] = struct{}{}
 	}
 	return set
+}
+
+func (s aclRuleset) AsRules() []redpandav1alpha2.ACLRule {
+	filters := []redpandav1alpha2.ACLRule{}
+	for rule := range s {
+		filters = append(filters, rule.toRule())
+	}
+	return filters
 }
 
 func (s aclRuleset) AsDeletions() []kmsg.DeleteACLsRequestFilter {
