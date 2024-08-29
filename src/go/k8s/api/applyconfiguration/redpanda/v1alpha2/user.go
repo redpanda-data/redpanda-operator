@@ -33,7 +33,7 @@ func User(name, namespace string) *UserApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("User")
-	b.WithAPIVersion("redpanda/v1alpha2")
+	b.WithAPIVersion("cluster.redpanda.com/v1alpha2")
 	return b
 }
 
@@ -209,20 +209,4 @@ func (b *UserApplyConfiguration) WithSpec(value *UserSpecApplyConfiguration) *Us
 func (b *UserApplyConfiguration) WithStatus(value *UserStatusApplyConfiguration) *UserApplyConfiguration {
 	b.Status = value
 	return b
-}
-
-func (ac *UserApplyConfiguration) GetName() string {
-	ac.ensureObjectMetaApplyConfigurationExists()
-	if ac.Name == nil {
-		return ""
-	}
-	return *ac.Name
-}
-
-func (ac *UserApplyConfiguration) GetNamespace() string {
-	ac.ensureObjectMetaApplyConfigurationExists()
-	if ac.Namespace == nil {
-		return ""
-	}
-	return *ac.Namespace
 }

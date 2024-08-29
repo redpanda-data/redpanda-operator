@@ -20,7 +20,7 @@ tasks:
       - :dev:install-k8s-controller-gen
       - :dev:install-k8s-applyconfiguration-gen
     cmds:
-      - rm -rf api/applyconfiguration/redpanda
+      # - rm -rf api/applyconfiguration
       - |
         {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
@@ -36,8 +36,8 @@ tasks:
         --output-dir "api/applyconfiguration" \
         --output-pkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/applyconfiguration" \
         ./api/redpanda/v1alpha2
+      - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
-      - go run -tags applyconfiguration ./hack/applyconfiguration.go
 
 
   run-unit-tests:
