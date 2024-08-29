@@ -40,14 +40,18 @@ func (p *passwordGenerator) Generate() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	password.WriteByte(p.firstCharacters[index])
+	if err := password.WriteByte(p.firstCharacters[index]); err != nil {
+		return "", err
+	}
 
-	for i := 0; i < p.length; i++ {
+	for i := 1; i < p.length; i++ {
 		index, err := nextIndex(len(p.alphabet))
 		if err != nil {
 			return "", err
 		}
-		password.WriteByte(p.alphabet[index])
+		if err := password.WriteByte(p.alphabet[index]); err != nil {
+			return "", err
+		}
 	}
 
 	return password.String(), nil

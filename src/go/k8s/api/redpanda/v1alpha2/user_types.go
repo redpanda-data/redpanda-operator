@@ -120,9 +120,9 @@ type UserAuthorizationSpec struct {
 type ACLType string
 
 const (
+	ACLTypeUnknown ACLType = ""
 	ACLTypeAllow   ACLType = "allow"
 	ACLTypeDeny    ACLType = "deny"
-	ACLTypeUnknown ACLType = "unknown"
 )
 
 var (
@@ -157,6 +157,7 @@ func (t ACLType) ToKafka() kmsg.ACLPermissionType {
 type ACLOperation string
 
 const (
+	ACLOperationUnknown         ACLOperation = ""
 	ACLOperationRead            ACLOperation = "Read"
 	ACLOperationWrite           ACLOperation = "Write"
 	ACLOperationDelete          ACLOperation = "Delete"
@@ -167,7 +168,6 @@ const (
 	ACLOperationCreate          ACLOperation = "Create"
 	ACLOperationAlterConfigs    ACLOperation = "AlterConfigs"
 	ACLOperationDescribeConfigs ACLOperation = "DescribeConfigs"
-	ACLOperationUnknown         ACLOperation = "Unknown"
 )
 
 var (
@@ -276,9 +276,9 @@ func (r *ACLRule) Equals(other ACLRule) bool { //nolint:gocritic // pass by valu
 type PatternType string
 
 const (
+	PatternTypeUnknown  PatternType = ""
 	PatternTypeLiteral  PatternType = "literal"
 	PatternTypePrefixed PatternType = "prefixed"
-	PatternTypeUnknown  PatternType = "Unknown"
 )
 
 var (
@@ -318,11 +318,11 @@ func (p *PatternType) ToKafka() kmsg.ACLResourcePatternType {
 type ResourceType string
 
 const (
+	ResourceTypeUnknown         ResourceType = ""
 	ResourceTypeTopic           ResourceType = "topic"
 	ResourceTypeGroup           ResourceType = "group"
 	ResourceTypeCluster         ResourceType = "cluster"
 	ResourceTypeTransactionalID ResourceType = "transactionalId"
-	ResourceTypeUnknown         ResourceType = "unknown"
 )
 
 var (

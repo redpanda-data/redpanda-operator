@@ -2,37 +2,21 @@ package acls
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
-	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestSyncer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = v1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
 		redpanda.WithEnableKafkaAuthorization(),
@@ -74,7 +58,7 @@ func TestSyncer(t *testing.T) {
 		sortACLs(actual)
 
 		for i := 0; i < len(actual); i++ {
-			require.True(t, actual[i].Equals(acls[i]), fmt.Sprintf("%+v != %+v", actual[i], acls[i]))
+			require.True(t, actual[i].Equals(acls[i]), "%+v != %+v", actual[i], acls[i])
 		}
 	}
 

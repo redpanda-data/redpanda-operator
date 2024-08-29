@@ -44,7 +44,7 @@ func (s ruleset) asDeletionFilters() []kmsg.DeleteACLsRequestFilter {
 	return filters
 }
 
-func (s ruleset) asCreationRequestss() []kmsg.CreateACLsRequestCreation {
+func (s ruleset) asCreationRequests() []kmsg.CreateACLsRequestCreation {
 	creations := []kmsg.CreateACLsRequestCreation{}
 	for rule := range s {
 		creations = append(creations, rule.toCreationRequest())
@@ -102,5 +102,5 @@ func calculateACLs(principal string, rules []redpandav1alpha2.ACLRule, existing 
 		}
 	}
 
-	return toCreate.asCreationRequestss(), toDelete.asDeletionFilters(), nil
+	return toCreate.asCreationRequests(), toDelete.asDeletionFilters(), nil
 }

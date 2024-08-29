@@ -553,3 +553,27 @@ func TestUserImmutableFields(t *testing.T) {
 
 	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 }
+
+func TestACLTypeMapsInvertible(t *testing.T) {
+	t.Run("acl permission type", func(t *testing.T) {
+		requireMapInverts(t, aclTypeFromKafka, aclTypeToKafka)
+	})
+	t.Run("acl operations", func(t *testing.T) {
+		requireMapInverts(t, aclOperationsFromKafka, aclOperationsToKafka)
+	})
+	t.Run("pattern types", func(t *testing.T) {
+		requireMapInverts(t, patternTypeFromKafka, patternTypeToKafka)
+	})
+	t.Run("resource types", func(t *testing.T) {
+		requireMapInverts(t, resourceTypeFromKafka, resourceTypeToKafka)
+	})
+}
+
+func requireMapInverts[T, U comparable](t *testing.T, a map[T]U, b map[U]T) {
+	for key, value := range a {
+		require.Equal(t, key, b[value])
+	}
+	for key, value := range b {
+		require.Equal(t, key, a[value])
+	}
+}
