@@ -128,8 +128,6 @@ spec:
                         - userAgent
                         type: object
                       gssapi:
-                        description: KafkaSASLGSSAPI represents the Kafka Kerberos
-                          config.
                         properties:
                           authType:
                             type: string
@@ -179,8 +177,6 @@ spec:
                         description: Specifies the SASL/SCRAM authentication mechanism.
                         type: string
                       oauth:
-                        description: KafkaSASLOAuthBearer is the config struct for
-                          the SASL OAuthBearer mechanism
                         properties:
                           tokenSecretRef:
                             description: |-
@@ -593,8 +589,6 @@ spec:
                         - userAgent
                         type: object
                       gssapi:
-                        description: KafkaSASLGSSAPI represents the Kafka Kerberos
-                          config.
                         properties:
                           authType:
                             type: string
@@ -644,8 +638,6 @@ spec:
                         description: Specifies the SASL/SCRAM authentication mechanism.
                         type: string
                       oauth:
-                        description: KafkaSASLOAuthBearer is the config struct for
-                          the SASL OAuthBearer mechanism
                         properties:
                           tokenSecretRef:
                             description: |-

@@ -10,6 +10,7 @@ func init() {
 }
 
 // User defines the CRD for a Redpanda user.
+// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=users
@@ -77,6 +78,7 @@ type Password struct {
 	ValueFrom *PasswordSource `json:"valueFrom"`
 }
 
+// PasswordSource contains the source for a password.
 type PasswordSource struct {
 	// SecretKeyRef specifies the secret used in reading a User password.
 	// If the Secret exists and has a value in it, then that value is used.
