@@ -122,15 +122,6 @@ tasks:
       - :dev:install-kustomize
       - :dev:install-kuttl
       - :dev:install-yq
-      - task: set-aio-max
-        vars:
-          USE_SUDO: "false"
-      - task: set-inotify-watches
-        vars:
-          USE_SUDO: "false"
-      - task: set-inotify-instances
-        vars:
-          USE_SUDO: "false"
       - task: fetch-latest-redpanda
       - task: build-operator-images
     cmds:

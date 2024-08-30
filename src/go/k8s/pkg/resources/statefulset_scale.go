@@ -27,6 +27,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
 
@@ -448,28 +449,13 @@ func setCurrentReplicas(
 
 	log.Info("Scaling StatefulSet", "replicas", replicas)
 
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		cluster := &vectorizedv1alpha1.Cluster{}
-		err := c.Get(ctx, types.NamespacedName{
-			Name:      pandaCluster.Name,
-			Namespace: pandaCluster.Namespace,
-		}, cluster)
-		if err != nil {
-			return err
-		}
-
+	result, err := patch.PatchStatus(ctx, c, pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
 		cluster.Status.CurrentReplicas = replicas
-
-		err = c.Status().Update(ctx, cluster)
-		if err == nil {
-			// sync original cluster variable to avoid conflicts on subsequent operations
-			pandaCluster.Status = cluster.Status
-		}
-		return err
 	})
 	if err != nil {
 		return fmt.Errorf("could not scale cluster %s to %d replicas: %w", pandaCluster.Name, pandaCluster.GetCurrentReplicas(), err)
 	}
+	pandaCluster.Status = result
 
 	log.Info("StatefulSet scaled", "replicas", replicas)
 	return nil
