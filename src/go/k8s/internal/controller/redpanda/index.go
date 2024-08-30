@@ -38,7 +38,6 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 	err := c.List(ctx, childList, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(userClusterIndex, nn.String()),
 	})
-
 	if err != nil {
 		return nil, err
 	}
