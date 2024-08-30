@@ -8,15 +8,18 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/acls"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
+	ErrInvalidClusterRef           = errors.New("clusterRef refers to a cluster that does not exist")
 	ErrEmptyBrokerList             = errors.New("empty broker list")
 	ErrEmptyURLList                = errors.New("empty url list")
 	ErrInvalidKafkaClientObject    = errors.New("cannot initialize Kafka API client from given object")
@@ -35,6 +38,10 @@ var (
 // based on the connection parameters contained within the corresponding CRD struct passed in
 // at method invocation.
 type ClientFactory interface {
+	// KubernetesClient initializes a kubernetes.Client that just wraps the underlying client with
+	// an Apply method.
+	KubernetesClient() kubernetes.Client
+
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
 	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface of the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
@@ -54,7 +61,8 @@ type ClientFactory interface {
 
 type Factory struct {
 	client.Client
-	config *rest.Config
+	kubernetesClient *kubernetes.KubernetesClient
+	config           *rest.Config
 
 	dialer redpanda.DialContextFunc
 }
@@ -63,14 +71,19 @@ var _ ClientFactory = (*Factory)(nil)
 
 func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 	return &Factory{
-		config: rest.CopyConfig(config),
-		Client: kubeclient,
+		config:           rest.CopyConfig(config),
+		Client:           kubeclient,
+		kubernetesClient: kubernetes.Wrap(kubeclient),
 	}
 }
 
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 	c.dialer = dialer
 	return c
+}
+
+func (c *Factory) KubernetesClient() kubernetes.Client {
+	return c.kubernetesClient
 }
 
 func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kgo.Opt) (*kgo.Client, error) {
@@ -151,6 +164,9 @@ func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav
 			var cluster redpandav1alpha2.Redpanda
 
 			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
 				return nil, err
 			}
 

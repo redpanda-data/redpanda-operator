@@ -10,6 +10,8 @@ vars:
   KIND_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kind/{{.KIND_VERSION}}'
   K8S_CONTROLLER_GEN_VERSION: 'v0.15.0'
   K8S_CONTROLLER_GEN_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-controller-gen/{{.K8S_CONTROLLER_GEN_VERSION}}'
+  K8S_APPLYCONFIGURATION_GEN_VERSION: 'v0.30.0'
+  K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/k8s-applyconfiguration-gen/{{.K8S_APPLYCONFIGURATION_GEN_VERSION}}'
   KUSTOMIZE_VERSION: 'v5.1.1'
   KUSTOMIZE_INSTALL_DIR: '{{.BUILD_ROOT}}/tools/kustomize/{{.KUSTOMIZE_VERSION}}'
   YQ_VERSION: '4.35.2'
@@ -84,6 +86,22 @@ tasks:
       - rm -rf '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/src'
     status:
       - test -f '{{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen'
+
+  install-k8s-applyconfiguration-gen:
+    desc: install k8s-applyconfiguration-gen
+    cmds:
+      - rm -rf '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/src'
+      - mkdir -p '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/bin'
+      - mkdir -p '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/src'
+      - |
+        PATH={{.GOLANG_INSTALL_DIR}}/bin/:$PATH
+        export GOBIN={{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/bin
+        cd '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/src'
+        go mod init tmp
+        go install k8s.io/code-generator/cmd/applyconfiguration-gen@{{.K8S_APPLYCONFIGURATION_GEN_VERSION}}
+      - rm -rf '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/src'
+    status:
+      - test -f '{{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/bin/applyconfiguration-gen'
 
   start-podman-socket-service:
     desc: start podman.socket service

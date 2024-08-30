@@ -44,6 +44,7 @@ type KafkaSASL struct {
 	AWSMskIam KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
+// SASLMechanism specifies a SASL auth mechanism.
 type SASLMechanism string
 
 const (
@@ -77,11 +78,13 @@ func (s *SASLMechanism) ScramToKafka() (kadm.ScramMechanism, error) {
 }
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
+
 type KafkaSASLOAuthBearer struct {
 	Token SecretKeyRef `json:"tokenSecretRef"`
 }
 
 // KafkaSASLGSSAPI represents the Kafka Kerberos config.
+
 type KafkaSASLGSSAPI struct {
 	AuthType           string       `json:"authType"`
 	KeyTabPath         string       `json:"keyTabPath"`

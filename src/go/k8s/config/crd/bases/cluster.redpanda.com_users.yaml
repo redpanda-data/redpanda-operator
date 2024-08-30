@@ -20,6 +20,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Synced")].status
       name: Synced
       type: string
+    - jsonPath: .status.managedUser
+      name: Managing User
+      type: boolean
+    - jsonPath: .status.managedAcls
+      name: Managing ACLs
+      type: boolean
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -57,6 +63,7 @@ spec:
                       value:
                         type: string
                       valueFrom:
+                        description: PasswordSource contains the source for a password.
                         properties:
                           secretKeyRef:
                             description: |-
@@ -94,6 +101,7 @@ spec:
                       rule: self.value != "" || has(self.valueFrom)
                   type:
                     default: scram-sha-512
+                    description: SASLMechanism specifies a SASL auth mechanism.
                     enum:
                     - scram-sha-256
                     - scram-sha-512
@@ -429,8 +437,6 @@ spec:
                                 - userAgent
                                 type: object
                               gssapi:
-                                description: KafkaSASLGSSAPI represents the Kafka
-                                  Kerberos config.
                                 properties:
                                   authType:
                                     type: string
@@ -482,8 +488,6 @@ spec:
                                   mechanism.
                                 type: string
                               oauth:
-                                description: KafkaSASLOAuthBearer is the config struct
-                                  for the SASL OAuthBearer mechanism
                                 properties:
                                   tokenSecretRef:
                                     description: |-
@@ -704,6 +708,16 @@ spec:
                   - type
                   type: object
                 type: array
+              managedAcls:
+                description: |-
+                  ManagedACLs returns whether the user has managed ACLs that need
+                  to be cleaned up.
+                type: boolean
+              managedUser:
+                description: |-
+                  ManagedUser returns whether the user has a managed SCRAM user that need
+                  to be cleaned up.
+                type: boolean
               observedGeneration:
                 description: Specifies the last observed generation.
                 format: int64
