@@ -71,6 +71,22 @@ tasks:
     status:
       - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
 
+  run-k8s-tests-with-flags:
+    cmds:
+      - task: configure-git-private-repo
+      - task: :k8s:generate
+      - task: assert-no-diffs
+      - 'echo "~~~ Running operator e2e tests :k8s:"'
+      - task: :k8s:run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
+      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      # fail explicitly if stable operator tests failed
+      - "grep -q '0' ./k8s-stable-test-exit-code"
+    status:
+      - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
+
+
   publish-k8s-operator-images:
     cmds:
       - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'

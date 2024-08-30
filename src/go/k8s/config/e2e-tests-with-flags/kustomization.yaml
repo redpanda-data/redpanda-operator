@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../e2e-tests
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --auto-delete-pvcs
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: controller-manager

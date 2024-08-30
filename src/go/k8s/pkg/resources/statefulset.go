@@ -346,13 +346,12 @@ func (r *StatefulSetResource) obj(
 	// In any case, configure PersistentVolumeClaimRetentionPolicy
 	// Default to old behavior: Retain PVC
 	// If auto-remove-pvcs flag is set, active new behavior: switch to Delete for both WhenScaled and WhenDeleted.
-	var pvcReclaimRetentionPolicy appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
+	var pvcReclaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
 	if r.autoDeletePVCs {
-		pvcReclaimRetentionPolicy.WhenScaled = appsv1.DeletePersistentVolumeClaimRetentionPolicyType
-		pvcReclaimRetentionPolicy.WhenDeleted = appsv1.DeletePersistentVolumeClaimRetentionPolicyType
-	} else {
-		pvcReclaimRetentionPolicy.WhenScaled = appsv1.RetainPersistentVolumeClaimRetentionPolicyType
-		pvcReclaimRetentionPolicy.WhenDeleted = appsv1.RetainPersistentVolumeClaimRetentionPolicyType
+		pvcReclaimRetentionPolicy = &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+			WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+			WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		}
 	}
 
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
@@ -368,7 +367,7 @@ func (r *StatefulSetResource) obj(
 			APIVersion: "apps/v1",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			PersistentVolumeClaimRetentionPolicy: &pvcReclaimRetentionPolicy,
+			PersistentVolumeClaimRetentionPolicy: pvcReclaimRetentionPolicy,
 			Replicas:                             &replicas,
 			PodManagementPolicy:                  appsv1.ParallelPodManagement,
 			Selector:                             clusterLabels.AsAPISelector(),

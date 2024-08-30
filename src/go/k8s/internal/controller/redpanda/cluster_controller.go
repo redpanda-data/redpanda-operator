@@ -44,6 +44,7 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/networking"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
@@ -141,7 +142,7 @@ func (r *ClusterReconciler) Reconcile(
 	// - Set OperatorQuiescent condition, based on our best knowledge if there is
 	//   any outstanding work to do for the controller.
 	defer func() {
-		_, patchErr := patchStatus(ctx, r.Client, &vectorizedCluster, func(cluster *vectorizedv1alpha1.Cluster) {
+		_, patchErr := patch.PatchStatus(ctx, r.Client, &vectorizedCluster, func(cluster *vectorizedv1alpha1.Cluster) {
 			// Set quiescent
 			cond := getQuiescentCondition(cluster)
 
@@ -361,9 +362,9 @@ func (r *ClusterReconciler) removePodFinalizer(
 	log := l.WithName("removePodFinalizer")
 	if controllerutil.ContainsFinalizer(pod, FinalizerKey) {
 		log.V(logger.DebugLevel).WithValues("namespace", pod.Namespace, "name", pod.Name).Info("removing finalizer")
-		patch := client.MergeFrom(pod.DeepCopy())
+		p := client.MergeFrom(pod.DeepCopy())
 		controllerutil.RemoveFinalizer(pod, FinalizerKey)
-		if err := r.Patch(ctx, pod, patch); err != nil {
+		if err := r.Patch(ctx, pod, p); err != nil {
 			return fmt.Errorf("unable to remove pod (%s/%s) finalizer: %w", pod.Namespace, pod.Name, err)
 		}
 	}
@@ -765,9 +766,9 @@ func (r *ClusterReconciler) removeFinalizers(
 
 	if controllerutil.ContainsFinalizer(redpandaCluster, FinalizerKey) {
 		log.V(logger.DebugLevel).Info("removing finalizers from cluster custom resource")
-		patch := client.MergeFrom(redpandaCluster.DeepCopy())
+		p := client.MergeFrom(redpandaCluster.DeepCopy())
 		controllerutil.RemoveFinalizer(redpandaCluster, FinalizerKey)
-		if err := r.Patch(ctx, redpandaCluster, patch); err != nil {
+		if err := r.Patch(ctx, redpandaCluster, p); err != nil {
 			return fmt.Errorf("unable to remove Cluster finalizer: %w", err)
 		}
 	}
@@ -1129,17 +1130,6 @@ func isRedpandaClusterVersionManaged(
 		return false
 	}
 	return true
-}
-
-func patchStatus(ctx context.Context, c client.Client, observedCluster *vectorizedv1alpha1.Cluster, mutator func(cluster *vectorizedv1alpha1.Cluster)) (vectorizedv1alpha1.ClusterStatus, error) {
-	clusterPatch := client.MergeFrom(observedCluster.DeepCopy())
-	mutator(observedCluster)
-
-	if err := c.Status().Patch(ctx, observedCluster, clusterPatch); err != nil {
-		return vectorizedv1alpha1.ClusterStatus{}, fmt.Errorf("failed to update cluster status: %w", err)
-	}
-
-	return observedCluster.Status, nil
 }
 
 func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectorizedv1alpha1.ClusterCondition {
