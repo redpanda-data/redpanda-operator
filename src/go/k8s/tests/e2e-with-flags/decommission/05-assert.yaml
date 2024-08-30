@@ -8,29 +8,10 @@ commands:
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: kafka-api-cluster-service-internal
+  name: decommission
 status:
-  replicas: 1
-  restarting: false
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: kafka-api-cluster-service-internal
-status:
-  readyReplicas: 1
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-api-cluster-service-internal-cluster
-spec:
-  ports:
-    - name: kafka
-      port: 9092
-      protocol: TCP
-      targetPort: 9092
-  type: ClusterIP
+  replicas: 2
+  currentReplicas: 2
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

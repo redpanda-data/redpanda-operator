@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=delete pvc/datadir-decommission-2 --timeout 0s -n redpanda --namespace $NAMESPACE
