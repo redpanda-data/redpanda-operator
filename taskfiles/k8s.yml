@@ -60,21 +60,6 @@ tasks:
           --load
           ./dist
 
-  fetch-latest-nightly-redpanda:
-    desc: fetch the latest redpanda nightly build and tag it localhost/redpanda:dev
-    summary: |
-      pulls down the latest redpanda nightly build and tag it localhost/repdanda:dev
-      to allow us to skip building redpanda with every CI run.
-    dir: src/go/k8s
-    deps:
-      - :dev:install-docker-tag-list
-    cmds:
-      - task: fetch-latest-redpanda
-        vars:
-          CONSTRAINT: '~0.0.0-0'
-          REPO: 'docker.redpanda.com/redpandadata/redpanda-nightly'
-
-
   fetch-latest-redpanda:
     desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
     summary: |
@@ -140,7 +125,6 @@ tasks:
       - task: set-aio-max
         vars:
           USE_SUDO: "false"
-      - build-operator-images
       - task: set-inotify-watches
         vars:
           USE_SUDO: "false"

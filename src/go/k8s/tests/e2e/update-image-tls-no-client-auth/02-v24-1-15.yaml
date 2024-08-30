@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  archival-update-image-tls: WA==
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: archival-update-image-tls
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: up-img-admin-tls
+spec:
+  version: "v24.1.15"

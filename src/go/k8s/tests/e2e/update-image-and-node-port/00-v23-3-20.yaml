@@ -23,7 +23,7 @@ metadata:
   name: update-image-cluster-and-node-port
 spec:
   image: "vectorized/redpanda"
-  version: "v23.2.29"
+  version: "v23.3.20"
   replicas: 3
   restartConfig:
     underReplicatedPartitionThreshold: 0
@@ -49,5 +49,7 @@ spec:
           enabled: true
     developerMode: true
     additionalCommandlineArguments:
+      default-log-level: trace
       dump-memory-diagnostics-on-alloc-failure-kind: all
       reserve-memory: 100M
+      logger-log-level=exception=info:io: info
