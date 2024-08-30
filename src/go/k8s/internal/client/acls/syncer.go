@@ -52,13 +52,8 @@ func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 	}
 
 	for _, result := range response.Results {
-		var errMessage string
-		if result.ErrorMessage != nil {
-			errMessage = "Error: " + *result.ErrorMessage + ";"
-		}
-
-		if result.ErrorCode != 0 {
-			return fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(result.ErrorCode))
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
 	}
 
@@ -108,13 +103,9 @@ func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.Describ
 	if err != nil {
 		return nil, err
 	}
-	var errMessage string
-	if response.ErrorMessage != nil {
-		errMessage = "Error: " + *response.ErrorMessage + ";"
-	}
 
-	if response.ErrorCode != 0 {
-		return nil, fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(response.ErrorCode))
+	if err := checkError(response.ErrorMessage, response.ErrorCode); err != nil {
+		return nil, err
 	}
 
 	return response.Resources, nil
@@ -134,13 +125,8 @@ func (s *Syncer) createACLs(ctx context.Context, acls []kmsg.CreateACLsRequestCr
 	}
 
 	for _, result := range creation.Results {
-		var errMessage string
-		if result.ErrorMessage != nil {
-			errMessage = "Error: " + *result.ErrorMessage + ";"
-		}
-
-		if result.ErrorCode != 0 {
-			return fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(result.ErrorCode))
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
 	}
 
@@ -161,14 +147,22 @@ func (s *Syncer) deleteACLs(ctx context.Context, deletions []kmsg.DeleteACLsRequ
 	}
 
 	for _, result := range response.Results {
-		var errMessage string
-		if result.ErrorMessage != nil {
-			errMessage = "Error: " + *result.ErrorMessage + ";"
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
+	}
 
-		if result.ErrorCode != 0 {
-			return fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(result.ErrorCode))
-		}
+	return nil
+}
+
+func checkError(message *string, code int16) error {
+	var errMessage string
+	if message != nil {
+		errMessage = "Error: " + *message + "; "
+	}
+
+	if code != 0 {
+		return fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(code))
 	}
 
 	return nil

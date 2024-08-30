@@ -97,7 +97,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, errors.Join(err, syncError)
 }
 
-func (r *UserReconciler) syncUser(ctx context.Context, user *redpandav1alpha2.User) (metav1.Condition, bool, bool, error) {
+func (r *UserReconciler) syncUser(ctx context.Context, user *redpandav1alpha2.User) (condition metav1.Condition, managedUser, managedACLs bool, err error) {
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
 

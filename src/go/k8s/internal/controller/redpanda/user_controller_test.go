@@ -45,7 +45,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	require.NotNil(t, cfg)
 
 	t.Cleanup(func() {
-		testEnv.Stop()
+		_ = testEnv.Stop()
 	})
 
 	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
@@ -57,7 +57,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		container.Terminate(context.Background())
+		_ = container.Terminate(context.Background())
 	})
 
 	broker, err := container.KafkaSeedBroker(ctx)
@@ -303,7 +303,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			require.Equal(t, tt.expectedCondition.Status, user.Status.Conditions[0].Status)
 			require.Equal(t, tt.expectedCondition.Reason, user.Status.Conditions[0].Reason)
 
-			if tt.expectedCondition.Status == metav1.ConditionTrue {
+			if tt.expectedCondition.Status == metav1.ConditionTrue { //nolint:nestif // ignore
 				syncer, err := factory.ACLs(ctx, user)
 				require.NoError(t, err)
 				userClient, err := factory.Users(ctx, user)

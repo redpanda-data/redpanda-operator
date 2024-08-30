@@ -11,9 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	userClusterIndex = "__user_referencing_cluster"
-)
+const userClusterIndex = "__user_referencing_cluster"
 
 func userCluster(user *redpandav1alpha2.User) types.NamespacedName {
 	return types.NamespacedName{Namespace: user.Namespace, Name: user.Spec.ClusterSource.ClusterRef.Name}
@@ -46,7 +44,7 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 	}
 
 	requests := []reconcile.Request{}
-	for _, item := range childList.Items {
+	for _, item := range childList.Items { //nolint:gocritic // this is necessary
 		requests = append(requests, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: item.GetNamespace(),

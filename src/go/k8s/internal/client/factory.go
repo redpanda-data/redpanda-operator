@@ -159,7 +159,7 @@ func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav
 		return nil, nil
 	}
 
-	if source := o.GetClusterSource(); source != nil {
+	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil {
 			var cluster redpandav1alpha2.Redpanda
 

@@ -1,3 +1,4 @@
+// Package kubernetes holds logic for doing server side applies with a controller-runtime client.
 package kubernetes
 
 import (

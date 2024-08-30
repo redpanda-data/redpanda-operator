@@ -46,7 +46,7 @@ func StatusConditionConfigs(existing []metav1.Condition, generation int64, condi
 	return configurations
 }
 
-func conditionToConfig(generation int64, now metav1.Time, condition metav1.Condition) *metav1ac.ConditionApplyConfiguration {
+func conditionToConfig(generation int64, now metav1.Time, condition metav1.Condition) *metav1ac.ConditionApplyConfiguration { //nolint:gocritic // this is necessary
 	return metav1ac.Condition().
 		WithType(condition.Type).
 		WithStatus(condition.Status).
