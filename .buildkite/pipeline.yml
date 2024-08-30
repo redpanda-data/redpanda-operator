@@ -1,3 +1,4 @@
+
 env:
   BRANCH_NAME: $BUILDKITE_BRANCH
   PULL_REQUEST: $BUILDKITE_PULL_REQUEST
@@ -69,7 +70,7 @@ steps:
             failed: true
             branches:
               - main
-  - key: k8s-operator-with-flags
+  - key: k8s-operator-tests-with-flags
     label: K8s Operator tests with flags
     timeout_in_minutes: 180
     notify:
@@ -82,7 +83,7 @@ steps:
       queue: amd64-builders
     artifact_paths:
       - src/go/k8s/*.tar.gz
-      - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
+      - src/go/k8s/tests/_e2e_with_flags_artifacts/kuttl-report.xml
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -132,8 +133,6 @@ steps:
             failed: true
             branches:
               - main
-
-
   - group: K8s Operator v2 Jobs
     if: |
       build.tag == null ||
@@ -224,3 +223,4 @@ steps:
           queue: k8s-builders
         depends_on: k8s-operator-v2-helm
         allow_dependency_failure: true
+
