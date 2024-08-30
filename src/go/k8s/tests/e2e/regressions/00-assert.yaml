@@ -7,9 +7,13 @@ status:
   replicas: 1
   upgrading: false
   restarting: false
-  conditions:
-    - type: ClusterConfigured
-      status: "True"
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/cluster-sasl-no-calls --timeout 300s --namespace $NAMESPACE
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

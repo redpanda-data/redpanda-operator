@@ -1,3 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
+    kubectl wait --for=condition=OperatorQuiescent=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -53,6 +60,3 @@ status:
   replicas: 3
   upgrading: false
   restarting: false
-  conditions:
-    - type: ClusterConfigured
-      status: "True"
