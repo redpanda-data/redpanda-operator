@@ -20,7 +20,6 @@ tasks:
       - :dev:install-k8s-controller-gen
       - :dev:install-k8s-applyconfiguration-gen
     cmds:
-      # - rm -rf api/applyconfiguration
       - |
         {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
