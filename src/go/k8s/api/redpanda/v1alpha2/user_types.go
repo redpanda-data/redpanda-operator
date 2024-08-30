@@ -1,8 +1,12 @@
 package v1alpha2
 
 import (
+	"slices"
+
+	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func init() {
@@ -29,9 +33,17 @@ type User struct {
 
 var _ ClusterReferencingObject = (*User)(nil)
 
-// ACLName constructs the name of a User for defining ACLs.
-func (u *User) ACLName() string {
+// GetPrincipal constructs the principal of a User for defining ACLs.
+func (u *User) GetPrincipal() string {
 	return "User:" + u.Name
+}
+
+func (u *User) GetACLs() []ACLRule {
+	if u.Spec.Authorization == nil {
+		return nil
+	}
+
+	return u.Spec.Authorization.ACLs
 }
 
 func (u *User) GetClusterSource() *ClusterSource {
@@ -108,15 +120,44 @@ type UserAuthorizationSpec struct {
 type ACLType string
 
 const (
-	ACLTypeAllow ACLType = "allow"
-	ACLTypeDeny  ACLType = "deny"
+	ACLTypeUnknown ACLType = ""
+	ACLTypeAllow   ACLType = "allow"
+	ACLTypeDeny    ACLType = "deny"
 )
+
+var (
+	aclTypeFromKafka = map[kmsg.ACLPermissionType]ACLType{
+		kmsg.ACLPermissionTypeAllow: ACLTypeAllow,
+		kmsg.ACLPermissionTypeDeny:  ACLTypeDeny,
+	}
+	aclTypeToKafka = map[ACLType]kmsg.ACLPermissionType{
+		ACLTypeAllow: kmsg.ACLPermissionTypeAllow,
+		ACLTypeDeny:  kmsg.ACLPermissionTypeDeny,
+	}
+)
+
+func ACLTypeFromKafka(t kmsg.ACLPermissionType) ACLType {
+	if aclType, exists := aclTypeFromKafka[t]; exists {
+		return aclType
+	}
+
+	return ACLTypeUnknown
+}
+
+func (t ACLType) ToKafka() kmsg.ACLPermissionType {
+	if aclType, exists := aclTypeToKafka[t]; exists {
+		return aclType
+	}
+
+	return kmsg.ACLPermissionTypeUnknown
+}
 
 // ACLOperation specifies the type of operation for an ACL.
 // +kubebuilder:validation:item:Enum=Read;Write;Delete;Alter;Describe;IdempotentWrite;ClusterAction;Create;AlterConfigs;DescribeConfigs
 type ACLOperation string
 
 const (
+	ACLOperationUnknown         ACLOperation = ""
 	ACLOperationRead            ACLOperation = "Read"
 	ACLOperationWrite           ACLOperation = "Write"
 	ACLOperationDelete          ACLOperation = "Delete"
@@ -128,6 +169,47 @@ const (
 	ACLOperationAlterConfigs    ACLOperation = "AlterConfigs"
 	ACLOperationDescribeConfigs ACLOperation = "DescribeConfigs"
 )
+
+var (
+	aclOperationsFromKafka = map[kmsg.ACLOperation]ACLOperation{
+		kmsg.ACLOperationRead:            ACLOperationRead,
+		kmsg.ACLOperationWrite:           ACLOperationWrite,
+		kmsg.ACLOperationDelete:          ACLOperationDelete,
+		kmsg.ACLOperationAlter:           ACLOperationAlter,
+		kmsg.ACLOperationDescribe:        ACLOperationDescribe,
+		kmsg.ACLOperationIdempotentWrite: ACLOperationIdempotentWrite,
+		kmsg.ACLOperationClusterAction:   ACLOperationClusterAction,
+		kmsg.ACLOperationCreate:          ACLOperationCreate,
+		kmsg.ACLOperationAlterConfigs:    ACLOperationAlterConfigs,
+		kmsg.ACLOperationDescribeConfigs: ACLOperationDescribeConfigs,
+	}
+	aclOperationsToKafka = map[ACLOperation]kmsg.ACLOperation{
+		ACLOperationRead:            kmsg.ACLOperationRead,
+		ACLOperationWrite:           kmsg.ACLOperationWrite,
+		ACLOperationDelete:          kmsg.ACLOperationDelete,
+		ACLOperationAlter:           kmsg.ACLOperationAlter,
+		ACLOperationDescribe:        kmsg.ACLOperationDescribe,
+		ACLOperationIdempotentWrite: kmsg.ACLOperationIdempotentWrite,
+		ACLOperationClusterAction:   kmsg.ACLOperationClusterAction,
+		ACLOperationCreate:          kmsg.ACLOperationCreate,
+		ACLOperationAlterConfigs:    kmsg.ACLOperationAlterConfigs,
+		ACLOperationDescribeConfigs: kmsg.ACLOperationDescribeConfigs,
+	}
+)
+
+func ACLOperationFromKafka(op kmsg.ACLOperation) ACLOperation {
+	if operation, exists := aclOperationsFromKafka[op]; exists {
+		return operation
+	}
+	return ACLOperationUnknown
+}
+
+func (a ACLOperation) ToKafka() kmsg.ACLOperation {
+	if operation, exists := aclOperationsToKafka[a]; exists {
+		return operation
+	}
+	return kmsg.ACLOperationUnknown
+}
 
 // ACLRule defines an ACL rule applied to the given user.
 //
@@ -153,25 +235,126 @@ type ACLRule struct {
 	Operations []ACLOperation `json:"operations"`
 }
 
+func (r *ACLRule) GetHost() string {
+	return ptr.Deref(r.Host, "*")
+}
+
+func (r *ACLRule) Equals(other ACLRule) bool { //nolint:gocritic // pass by value here is fine
+	if r.Type != other.Type {
+		return false
+	}
+
+	if !r.Resource.Equals(other.Resource) {
+		return false
+	}
+
+	if r.GetHost() != other.GetHost() {
+		return false
+	}
+
+	if len(r.Operations) != len(other.Operations) {
+		return false
+	}
+
+	for _, operation := range r.Operations {
+		if !slices.Contains(other.Operations, operation) {
+			return false
+		}
+	}
+
+	for _, operation := range other.Operations {
+		if !slices.Contains(r.Operations, operation) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // PatternType specifies the type of pattern applied for ACL resource matching.
 // +kubebuilder:validation:Enum=literal;prefixed
 type PatternType string
 
 const (
+	PatternTypeUnknown  PatternType = ""
 	PatternTypeLiteral  PatternType = "literal"
 	PatternTypePrefixed PatternType = "prefixed"
 )
+
+var (
+	patternTypeFromKafka = map[kmsg.ACLResourcePatternType]PatternType{
+		kmsg.ACLResourcePatternTypeLiteral:  PatternTypeLiteral,
+		kmsg.ACLResourcePatternTypePrefixed: PatternTypePrefixed,
+	}
+	patternTypeToKafka = map[PatternType]kmsg.ACLResourcePatternType{
+		PatternTypeLiteral:  kmsg.ACLResourcePatternTypeLiteral,
+		PatternTypePrefixed: kmsg.ACLResourcePatternTypePrefixed,
+	}
+)
+
+func ACLPatternTypeFromKafka(p kmsg.ACLResourcePatternType) PatternType {
+	if patternType, exists := patternTypeFromKafka[p]; exists {
+		return patternType
+	}
+
+	return PatternTypeUnknown
+}
+
+func (p *PatternType) ToKafka() kmsg.ACLResourcePatternType {
+	if p == nil {
+		// Literal is what we default to
+		return kmsg.ACLResourcePatternTypeLiteral
+	}
+
+	if patternType, exists := patternTypeToKafka[*p]; exists {
+		return patternType
+	}
+
+	return kmsg.ACLResourcePatternTypeUnknown
+}
 
 // ResourceType specifies the type of resource an ACL is applied to.
 // +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
 type ResourceType string
 
 const (
+	ResourceTypeUnknown         ResourceType = ""
 	ResourceTypeTopic           ResourceType = "topic"
 	ResourceTypeGroup           ResourceType = "group"
 	ResourceTypeCluster         ResourceType = "cluster"
 	ResourceTypeTransactionalID ResourceType = "transactionalId"
 )
+
+var (
+	resourceTypeFromKafka = map[kmsg.ACLResourceType]ResourceType{
+		kmsg.ACLResourceTypeTopic:           ResourceTypeTopic,
+		kmsg.ACLResourceTypeGroup:           ResourceTypeGroup,
+		kmsg.ACLResourceTypeCluster:         ResourceTypeCluster,
+		kmsg.ACLResourceTypeTransactionalId: ResourceTypeTransactionalID,
+	}
+	resourceTypeToKafka = map[ResourceType]kmsg.ACLResourceType{
+		ResourceTypeTopic:           kmsg.ACLResourceTypeTopic,
+		ResourceTypeGroup:           kmsg.ACLResourceTypeGroup,
+		ResourceTypeCluster:         kmsg.ACLResourceTypeCluster,
+		ResourceTypeTransactionalID: kmsg.ACLResourceTypeTransactionalId,
+	}
+)
+
+func ResourceTypeFromKafka(t kmsg.ACLResourceType) ResourceType {
+	if resourceType, exists := resourceTypeFromKafka[t]; exists {
+		return resourceType
+	}
+
+	return ResourceTypeUnknown
+}
+
+func (t ResourceType) ToKafka() kmsg.ACLResourceType {
+	if resourceType, exists := resourceTypeToKafka[t]; exists {
+		return resourceType
+	}
+
+	return kmsg.ACLResourceTypeUnknown
+}
 
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
 // +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId']",rule="self.type in ['group', 'topic', 'transactionalId'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
@@ -189,6 +372,31 @@ type ACLResourceSpec struct {
 	//
 	// +kubebuilder:default=literal
 	PatternType *PatternType `json:"patternType,omitempty"`
+}
+
+func (s ACLResourceSpec) Equals(other ACLResourceSpec) bool {
+	if s.Type != other.Type {
+		return false
+	}
+
+	if s.GetName() != other.GetName() {
+		return false
+	}
+
+	return s.GetPatternType() == other.GetPatternType()
+}
+
+func (s ACLResourceSpec) GetPatternType() PatternType {
+	return ptr.Deref(s.PatternType, PatternTypeLiteral)
+}
+
+func (s ACLResourceSpec) GetName() string {
+	if s.Type == ResourceTypeCluster {
+		// return the singleton name
+		return "kafka-cluster"
+	}
+
+	return s.Name
 }
 
 const (
