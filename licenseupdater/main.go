@@ -39,7 +39,7 @@ var (
 		Year: time.Now().Year(),
 	}
 
-	writer fileWriter = &fsWriter{}
+	writer *fsWriter
 )
 
 func init() {
@@ -63,13 +63,27 @@ func dieOnError(err error) {
 
 func main() {
 	var configFile string
+	var check bool
 	flag.StringVar(&configFile, "config", ".licenseupdater.yaml", "path to config file")
+	flag.BoolVar(&check, "check", false, "check diffs and exit")
 
 	flag.Parse()
+
+	writer = &fsWriter{write: !check}
+	if check {
+		writer.differ = diffChecker()
+	}
 
 	config, err := loadConfig(configFile)
 	dieOnError(err)
 	dieOnError(doMain(config))
+
+	if check {
+		if err := writer.differ.error(); err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
+		}
+	}
 }
 
 func doMain(config *config) error {

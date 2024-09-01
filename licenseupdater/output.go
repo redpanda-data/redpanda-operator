@@ -12,32 +12,26 @@ package main
 import (
 	"io/fs"
 	"os"
-	"sync"
 )
 
-type fileWriter interface {
-	Write(name string, data []byte, perm fs.FileMode) error
-}
-
-type fsWriter struct{}
-
-func (f *fsWriter) Write(name string, data []byte, perm fs.FileMode) error {
-	return os.WriteFile(name, data, perm)
-}
-
-type testWriter struct {
-	data   map[string][]byte
-	mutex  sync.Mutex
+type fsWriter struct {
 	suffix string
 	write  bool
+	differ *checkDiffs
 }
 
-func (f *testWriter) Write(name string, data []byte, perm fs.FileMode) error {
-	f.mutex.Lock()
-	f.data[name+f.suffix] = data
-	f.mutex.Unlock()
+func (f *fsWriter) Write(name string, data []byte, perm fs.FileMode) error {
+	name = name + f.suffix
+
 	if f.write {
-		return os.WriteFile(name+f.suffix, data, perm)
+		return os.WriteFile(name, data, perm)
 	}
+
+	if f.differ != nil {
+		if err := f.differ.diff(name, data); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
