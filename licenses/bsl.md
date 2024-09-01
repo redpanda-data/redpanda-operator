@@ -4,7 +4,7 @@ Redpanda Business Source License 1.1
 
 <u>Licensor</u>: Redpanda Data, Inc.
 
-<u>Licensed Work</u>: Redpanda The Licensed Work is © 2020
+<u>Licensed Work</u>: Redpanda The Licensed Work is © 2024
 Redpanda Data, Inc.
 
 <u>Additional Use Grant</u>: You may make use of the Licensed Work,
