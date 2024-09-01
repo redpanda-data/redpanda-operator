@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -28,32 +27,8 @@ type diff struct {
 }
 
 func (d *diff) string(differ *diffmatchpatch.DiffMatchPatch) string {
-	var diffString strings.Builder
-	lineNumber := 0
-	for _, diff := range differ.DiffCleanupSemantic(d.diffs) {
-		lines := strings.Split(diff.Text, "\n")
-		if lines[len(lines)-1] == "" {
-			lines = lines[:len(lines)-1]
-		}
-
-		var prefix string
-		switch diff.Type {
-		case diffmatchpatch.DiffDelete:
-			prefix = "-"
-		case diffmatchpatch.DiffInsert:
-			prefix = "+"
-		default:
-			lineNumber++
-			diffString.WriteString(strconv.Itoa(lineNumber) + "\t" + lines[0] + "\n")
-			lineNumber += (len(lines) - 1)
-			continue
-		}
-		for _, line := range lines {
-			lineNumber++
-			diffString.WriteString(strconv.Itoa(lineNumber) + "\t" + prefix + line + "\n")
-		}
-	}
-	return fmt.Sprintf("%s:\n%s", d.path, diffString.String())
+	diff := differ.DiffPrettyText(d.diffs)
+	return fmt.Sprintf("%s:\n%s", d.path, diff)
 }
 
 type checkDiffs struct {
