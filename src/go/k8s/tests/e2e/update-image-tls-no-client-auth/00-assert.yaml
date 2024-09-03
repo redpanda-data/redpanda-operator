@@ -60,6 +60,9 @@ status:
   replicas: 3
   upgrading: false
   restarting: false
-  conditions:
-    - type: ClusterConfigured
-      status: "True"
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE

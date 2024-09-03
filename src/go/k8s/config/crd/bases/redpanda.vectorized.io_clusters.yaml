@@ -1361,6 +1361,7 @@ spec:
                       description: Type is the type of the condition
                       enum:
                       - ClusterConfigured
+                      - OperatorQuiescent
                       type: string
                   required:
                   - status
@@ -1496,6 +1497,11 @@ spec:
                         type: string
                     type: object
                 type: object
+              observedGeneration:
+                description: If set, this represents the .metadata.generation that
+                  was observed by the controller.
+                format: int64
+                type: integer
               readyReplicas:
                 description: ReadyReplicas is the number of Pods belonging to the
                   cluster that have a Ready Condition.

@@ -101,7 +101,9 @@ func TestEnsure_StatefulSet(t *testing.T) {
 		adminutils.NewInternalAdminAPI,
 		time.Second,
 		ctrl.Log.WithName("test"),
-		0)
+		0,
+		true,
+	)
 
 	err = sts.Ensure(context.Background())
 	assert.NoError(t, err)

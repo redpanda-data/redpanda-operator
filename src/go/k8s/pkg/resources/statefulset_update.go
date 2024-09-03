@@ -435,7 +435,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		}
 
 		if err = utils.DeletePodPVCs(ctx, r.Client, pod, log); err != nil {
-			return fmt.Errorf(`unable to remove VPCs for pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
+			return fmt.Errorf(`unable to remove PVCs for pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
 		}
 
 		log.Info("deleting pod")

@@ -5,9 +5,13 @@ metadata:
 status:
   replicas: 2
   restarting: false
-  conditions:
-    - type: ClusterConfigured
-      status: "True"
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/cluster-for-console-with-admin --timeout 300s --namespace $NAMESPACE
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
