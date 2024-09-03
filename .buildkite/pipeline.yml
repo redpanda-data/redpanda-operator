@@ -171,7 +171,7 @@ steps:
               report-slowest: 5
         timeout_in_minutes: 0
         agents:
-          queue: k8s-builders
+          queue: v6-k8s-builders
         depends_on: k8s-operator-v2
         allow_dependency_failure: true
 
@@ -220,7 +220,7 @@ steps:
               report-slowest: 5
         timeout_in_minutes: 0
         agents:
-          queue: k8s-builders
+          queue: v6-k8s-builders
         depends_on: k8s-operator-v2-helm
         allow_dependency_failure: true
 
