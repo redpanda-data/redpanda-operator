@@ -17,7 +17,7 @@ steps:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s
     agents:
-      queue: amd64-builders
+      queue: v6-amd64-builders
     artifact_paths:
       - src/go/k8s/*.tar.gz
       - src/go/k8s/tests/_e2e_artifacts/kuttl-report.xml
@@ -80,7 +80,7 @@ steps:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:run-k8s-tests-with-flags
     agents:
-      queue: amd64-builders
+      queue: v6-amd64-builders
     artifact_paths:
       - src/go/k8s/*.tar.gz
       - src/go/k8s/tests/_e2e_with_flags_artifacts/kuttl-report.xml
@@ -147,7 +147,7 @@ steps:
         commands:
           - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2
         agents:
-          queue: amd64-builders
+          queue: v6-amd64-builders
         artifact_paths:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_artifacts_v2/kuttl-report.xml
@@ -196,7 +196,7 @@ steps:
           - touch src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
         agents:
-          queue: amd64-builders
+          queue: v6-amd64-builders
         artifact_paths:
           - src/go/k8s/*.tar.gz
           - src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
