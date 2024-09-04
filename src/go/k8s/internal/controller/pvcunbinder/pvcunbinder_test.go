@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func TestPVCUnbinderShouldRemediate(t *testing.T) {
@@ -220,6 +221,7 @@ func TestPVCUnbinder(t *testing.T) {
 
 	// Start up our manager
 	mgr, err := manager.New(cluster.RESTConfig(), manager.Options{
+		Metrics: metricsserver.Options{BindAddress: "0"},
 		BaseContext: func() context.Context {
 			return log.IntoContext(ctx, logger)
 		},
