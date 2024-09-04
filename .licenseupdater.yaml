@@ -1,0 +1,23 @@
+licenses: ["BSL", "RCL"]
+ignore:
+  - extension: .yaml
+    match: /test(s){0,1}/
+  - match: generated
+  - directory: .build
+  - directory: .buildkite
+  - directory: .github
+  - directory: .task
+  - directory: dist
+  - directory: src/go/k8s/api/applyconfiguration
+files:
+  - name: licenses/boilerplate.go.txt
+    type: go
+    license: BSL
+matches:
+  - extension: .yaml
+    directory: src/go/k8s/helm-chart/charts/redpanda-operator/templates
+    type: helm
+    license: BSL
+  - extension: .go
+    type: go
+    license: BSL

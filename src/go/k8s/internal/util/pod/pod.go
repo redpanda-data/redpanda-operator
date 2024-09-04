@@ -1,20 +1,17 @@
-/*
-Copyright 2018 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2024 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
 
 package pod
+
+// Some functions in this file Copyright 2018 The Kubernetes Authors under the Apache License, Version 2.0.
+// see: https://github.com/kubernetes/kubernetes/blob/49ffd6192f1608e0a2980548390b2c5431d6af8a/pkg/scheduler/util/utils.go#L103-L134
+// and: https://github.com/kubernetes/kubernetes/blob/49ffd6192f1608e0a2980548390b2c5431d6af8a/pkg/api/v1/pod/util.go#L347-L368
 
 import (
 	"bytes"
