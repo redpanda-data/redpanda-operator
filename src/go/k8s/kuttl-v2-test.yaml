@@ -9,7 +9,7 @@ kindConfig: ./kind-for-v2.yaml
 kindNodeCache: false
 commands:
   - command: mkdir -p tests/_e2e_artifacts_v2
-  - command: kubectl taint nodes -l node-role.kubernetes.io/master= node-role.kubernetes.io/master:NoSchedule-
+  - command: kubectl taint nodes -l node-role.kubernetes.io/master:NoSchedule-
     ignoreFailure: true
   - command: ./hack/install-cert-manager.sh tests/_e2e_artifacts_v2
   - script: kubectl kustomize ./config/crd | kubectl apply --server-side -f -
