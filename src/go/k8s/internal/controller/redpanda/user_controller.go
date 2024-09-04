@@ -226,7 +226,7 @@ func (r *UserReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager)
 		Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 			requests, err := usersForCluster(ctx, r, client.ObjectKeyFromObject(o))
 			if err != nil {
-				mgr.GetLogger().V(1).Info("skipping reconciliation due to fetching error", "error", err)
+				mgr.GetLogger().V(1).Info("possibly skipping user reconciliation due to failure to fetch users associated with cluster", "error", err)
 				return nil
 			}
 			return requests
