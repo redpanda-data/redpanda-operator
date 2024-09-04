@@ -194,6 +194,11 @@ preStopHook () {
 	echo "Setting maintenance mode on node ${NODE_ID}"
 	until [ "${status:-}" = "200" ]; do
 		status=$(%s)
+		if [ "${status:-}" = "404" ]; then
+			echo "Got 404 when enabling maintenance mode, giving up because node does not exist anymore."
+			return 0
+		fi
+		echo "Got ${status} for enabling maint. mode"
 		sleep 0.5
 	done
 	until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
