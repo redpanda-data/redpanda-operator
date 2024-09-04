@@ -75,7 +75,7 @@ steps:
     timeout_in_minutes: 180
     notify:
       - github_commit_status:
-          context: k8s-operator
+          context: k8s-operator-tests-with-flags
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:run-k8s-tests-with-flags
