@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/juju/mutex/v2"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -30,6 +31,22 @@ type Cluster struct {
 }
 
 func NewCluster(name string) (*Cluster, error) {
+	// K3d appears to have a race condition which stalls cluster creation when
+	// clusters are created at (or close to) the same time. To prevent tests
+	// from stalling out, we wrap this function in a machine wide mutext
+	// (powered by a lockfile under the hood).
+	releaser, err := mutex.Acquire(mutex.Spec{
+		Name:    "k3d-go-test-mutex",
+		Clock:   systemClock{},
+		Timeout: 10 * time.Minute,
+		Delay:   5 * time.Second,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to acquire machine wide mutext: %w", err)
+	}
+
+	defer releaser.Release()
+
 	name = strings.ToLower(name)
 
 	image := DefaultK3sImage
@@ -45,6 +62,7 @@ func NewCluster(name string) (*Cluster, error) {
 		fmt.Sprintf("--agents=%d", 3),
 		fmt.Sprintf("--timeout=%s", 30*time.Second),
 		fmt.Sprintf("--image=%s", image),
+		`--kubeconfig-switch-context=false`,
 		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
 		// As the formatting is QUITE finicky.
 		// Halve the node-monitor-grace-period to speed up tests that rely on dead node detection.
@@ -129,4 +147,16 @@ func (c *Cluster) Cleanup() error {
 		c.Name,
 	).CombinedOutput()
 	return err
+}
+
+type systemClock struct{}
+
+var _ mutex.Clock = systemClock{}
+
+func (systemClock) After(d time.Duration) <-chan time.Time {
+	return time.After(d)
+}
+
+func (systemClock) Now() time.Time {
+	return time.Now()
 }
