@@ -54,6 +54,9 @@ func NewCluster(name string) (*Cluster, error) {
 		fmt.Sprintf("--agents=%d", 3),
 		fmt.Sprintf("--timeout=%s", 30*time.Second),
 		fmt.Sprintf("--image=%s", image),
+		// If k3d cluster create will fail please uncomment no-rollback flag
+		// "--no-rollback",
+
 		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
 		// As the formatting is QUITE finicky.
 		// Halve the node-monitor-grace-period to speed up tests that rely on dead node detection.
@@ -64,6 +67,17 @@ func NewCluster(name string) (*Cluster, error) {
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
 	).CombinedOutput()
 	if err != nil {
+		// If k3d cluster create will fail please uncomment the following debug logs from containers
+		// containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-0", name)).CombinedOutput()
+		// fmt.Printf("Agent-0 logs:\n%s\n", string(containerLogs))
+		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-1", name)).CombinedOutput()
+		// fmt.Printf("Agent-1 logs:\n%s\n", string(containerLogs))
+		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-2", name)).CombinedOutput()
+		// fmt.Printf("Agent-2 logs:\n%s\n", string(containerLogs))
+		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
+		// fmt.Printf("serrver-0 logs:\n%s\n", string(containerLogs))
+		// containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
+		// fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
 		return nil, fmt.Errorf("%w: %s", err, out)
 	}
 
