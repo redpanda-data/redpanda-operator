@@ -35,6 +35,10 @@ set -e
 # Build the base image and grab the SHA.
 IMAGE_SHA=$(docker build --quiet -f ./ci/docker/nix.Dockerfile .)
 
+# NB: --user 0:$(id -g) runs the nix process (and subproccesses) with the same
+# group as the host. This allows the host (buildkite in most cases) to access
+# build artifacts.
+# The nix image in use doesn't work if run as a non-root user.
 docker run --rm -it \
 	-e DOCKER_HOST=unix:///var/run/docker.sock \
 	-e PWD \
@@ -51,6 +55,7 @@ docker run --rm -it \
 	-e GITHUB_API_TOKEN \
 	-e RPK_TEST_CLIENT_ID \
 	-e RPK_TEST_CLIENT_SECRET \
+	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
 	--ipc=host \
