@@ -66,6 +66,7 @@ const (
 	defaultDatadirCapacity       = "100Gi"
 	trueString                   = "true"
 
+	// PodAnnotationNodeIDKey is identical to its label counterpart.
 	PodAnnotationNodeIDKey = "operator.redpanda.com/node-id"
 )
 
@@ -115,6 +116,8 @@ type StatefulSetResource struct {
 	metricsTimeout           time.Duration
 
 	LastObservedState *appsv1.StatefulSet
+
+	autoDeletePVCs bool
 }
 
 // NewStatefulSet creates StatefulSetResource
@@ -134,6 +137,7 @@ func NewStatefulSet(
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,
+	autoDeletePVCs bool,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
 		client,
@@ -153,6 +157,7 @@ func NewStatefulSet(
 		logger.WithName("StatefulSetResource"),
 		defaultAdminAPITimeout,
 		nil,
+		autoDeletePVCs,
 	}
 	if metricsTimeout != 0 {
 		ssr.metricsTimeout = metricsTimeout
@@ -338,6 +343,17 @@ func (r *StatefulSetResource) obj(
 			fmt.Sprintf("--admin-api-tls-key %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.ClientCAMountDir, "tls.key")))
 	}
 
+	// In any case, configure PersistentVolumeClaimRetentionPolicy
+	// Default to old behavior: Retain PVC
+	// If auto-remove-pvcs flag is set, active new behavior: switch to Delete for both WhenScaled and WhenDeleted.
+	var pvcReclaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
+	if r.autoDeletePVCs {
+		pvcReclaimRetentionPolicy = &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+			WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+			WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		}
+	}
+
 	// We set statefulset replicas via status.currentReplicas in order to control it from the handleScaling function
 	replicas := r.pandaCluster.GetCurrentReplicas()
 	ss := &appsv1.StatefulSet{
@@ -351,9 +367,10 @@ func (r *StatefulSetResource) obj(
 			APIVersion: "apps/v1",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas:            &replicas,
-			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            clusterLabels.AsAPISelector(),
+			PersistentVolumeClaimRetentionPolicy: pvcReclaimRetentionPolicy,
+			Replicas:                             &replicas,
+			PodManagementPolicy:                  appsv1.ParallelPodManagement,
+			Selector:                             clusterLabels.AsAPISelector(),
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},

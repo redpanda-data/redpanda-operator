@@ -19,12 +19,15 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/featuregates"
 )
 
@@ -211,9 +214,26 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 	}
 
 	if broker == nil {
-		log.Info("broker does not exist in the cluster")
-		r.pandaCluster.SetDecommissionBrokerID(nil)
-		return r.Status().Update(ctx, r.pandaCluster)
+		log.Info("Broker has finished decommissioning")
+
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			cluster := &vectorizedv1alpha1.Cluster{}
+			err := r.Get(ctx, types.NamespacedName{
+				Name:      r.pandaCluster.Name,
+				Namespace: r.pandaCluster.Namespace,
+			}, cluster)
+			if err != nil {
+				return err
+			}
+			cluster.Status.DecommissioningNode = nil
+			err = r.Status().Update(ctx, cluster)
+			if err == nil {
+				log.Info("Cleared decomm broker ID from status")
+				// sync original cluster variable to avoid conflicts on subsequent operations
+				r.pandaCluster.Status = cluster.Status
+			}
+			return err
+		})
 	}
 
 	if broker.MembershipStatus == rpadmin.MembershipStatusDraining {
@@ -428,10 +448,15 @@ func setCurrentReplicas(
 	}
 
 	log.Info("Scaling StatefulSet", "replicas", replicas)
-	pandaCluster.Status.CurrentReplicas = replicas
-	if err := c.Status().Update(ctx, pandaCluster); err != nil {
-		return fmt.Errorf("could not scale cluster %s to %d replicas: %w", pandaCluster.Name, replicas, err)
+
+	result, err := patch.PatchStatus(ctx, c, pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
+		cluster.Status.CurrentReplicas = replicas
+	})
+	if err != nil {
+		return fmt.Errorf("could not scale cluster %s to %d replicas: %w", pandaCluster.Name, pandaCluster.GetCurrentReplicas(), err)
 	}
+	pandaCluster.Status = result
+
 	log.Info("StatefulSet scaled", "replicas", replicas)
 	return nil
 }

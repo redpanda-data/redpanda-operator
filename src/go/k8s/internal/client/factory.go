@@ -20,12 +20,14 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
+	ErrInvalidClusterRef           = errors.New("clusterRef refers to a cluster that does not exist")
 	ErrEmptyBrokerList             = errors.New("empty broker list")
 	ErrEmptyURLList                = errors.New("empty url list")
 	ErrInvalidKafkaClientObject    = errors.New("cannot initialize Kafka API client from given object")
@@ -155,11 +157,14 @@ func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav
 		return nil, nil
 	}
 
-	if source := o.GetClusterSource(); source != nil {
+	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil {
 			var cluster redpandav1alpha2.Redpanda
 
 			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
 				return nil, err
 			}
 

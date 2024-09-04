@@ -388,6 +388,9 @@ type ClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// If set, this represents the .metadata.generation that was observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Replicas show how many nodes have been created for the cluster
 	// +optional
 	Replicas int32 `json:"replicas"`
@@ -436,13 +439,15 @@ type ClusterCondition struct {
 }
 
 // ClusterConditionType is a valid value for ClusterCondition.Type
-// +kubebuilder:validation:Enum=ClusterConfigured
+// +kubebuilder:validation:Enum=ClusterConfigured;OperatorQuiescent
 type ClusterConditionType string
 
 // These are valid conditions of the cluster.
 const (
 	// ClusterConfiguredConditionType indicates whether the Redpanda cluster configuration is in sync with the desired one
 	ClusterConfiguredConditionType ClusterConditionType = "ClusterConfigured"
+	// OperatorQuiescentConditionType indicates that the operator has no outstanding work to do, based on the observedGeneration.
+	OperatorQuiescentConditionType ClusterConditionType = "OperatorQuiescent"
 )
 
 // GetCondition return the condition of the given type

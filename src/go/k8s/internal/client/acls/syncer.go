@@ -11,10 +11,10 @@ package acls
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 )
@@ -61,13 +61,8 @@ func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 	}
 
 	for _, result := range response.Results {
-		if result.ErrorMessage != nil {
-			return errors.New(*result.ErrorMessage)
-		}
-
-		// we have an error code but no error message
-		if result.ErrorCode != 0 {
-			return fmt.Errorf("error code: %d", result.ErrorCode)
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
 	}
 
@@ -95,6 +90,15 @@ func (s *Syncer) sync(ctx context.Context, principal string, rules []redpandav1a
 	return len(creations), len(deletions), nil
 }
 
+func (s *Syncer) ListACLs(ctx context.Context, principal string) ([]redpandav1alpha2.ACLRule, error) {
+	describeResponse, err := s.listACLs(ctx, principal)
+	if err != nil {
+		return nil, err
+	}
+
+	return rulesetFromDescribeResponse(describeResponse).asV1Alpha2Rules(), nil
+}
+
 func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.DescribeACLsResponseResource, error) {
 	ptrUsername := kmsg.StringPtr(principal)
 
@@ -108,13 +112,9 @@ func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.Describ
 	if err != nil {
 		return nil, err
 	}
-	if response.ErrorMessage != nil {
-		return nil, errors.New(*response.ErrorMessage)
-	}
 
-	// we have an error code but no error message
-	if response.ErrorCode != 0 {
-		return nil, fmt.Errorf("error code: %d", response.ErrorCode)
+	if err := checkError(response.ErrorMessage, response.ErrorCode); err != nil {
+		return nil, err
 	}
 
 	return response.Resources, nil
@@ -134,13 +134,8 @@ func (s *Syncer) createACLs(ctx context.Context, acls []kmsg.CreateACLsRequestCr
 	}
 
 	for _, result := range creation.Results {
-		if result.ErrorMessage != nil {
-			return errors.New(*result.ErrorMessage)
-		}
-
-		// we have an error code but no error message
-		if result.ErrorCode != 0 {
-			return fmt.Errorf("error code: %d", result.ErrorCode)
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
 	}
 
@@ -161,9 +156,22 @@ func (s *Syncer) deleteACLs(ctx context.Context, deletions []kmsg.DeleteACLsRequ
 	}
 
 	for _, result := range response.Results {
-		if result.ErrorMessage != nil {
-			return errors.New(*result.ErrorMessage)
+		if err := checkError(result.ErrorMessage, result.ErrorCode); err != nil {
+			return err
 		}
+	}
+
+	return nil
+}
+
+func checkError(message *string, code int16) error {
+	var errMessage string
+	if message != nil {
+		errMessage = "Error: " + *message + "; "
+	}
+
+	if code != 0 {
+		return fmt.Errorf("%s%w", errMessage, kerr.ErrorForCode(code))
 	}
 
 	return nil

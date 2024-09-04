@@ -57,10 +57,9 @@ func TestSyncer(t *testing.T) {
 	principalTwo := "User:testuser2"
 
 	expectACLsMatch := func(t *testing.T, principal string, acls []v1alpha2.ACLRule) {
-		describeResponse, err := syncer.listACLs(ctx, principal)
+		actual, err := syncer.ListACLs(ctx, principal)
 		require.NoError(t, err)
 
-		actual := rulesetFromDescribeResponse(describeResponse).asV1Alpha2Rules()
 		require.Len(t, actual, len(acls))
 
 		sortACLs(acls)

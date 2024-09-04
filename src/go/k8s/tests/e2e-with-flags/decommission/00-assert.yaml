@@ -1,0 +1,36 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
+    kubectl wait --for=condition=OperatorQuiescent=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: decommission-0
+status:
+  phase: Running
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: decommission
+status:
+  replicas: 3
+  currentReplicas: 3
+  readyReplicas: 3
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: decommission
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

@@ -88,10 +88,13 @@ func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, er
 
 func (c *Client) delete(ctx context.Context, username string) error {
 	if c.scramAPISupported {
-		_, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, []kadm.DeleteSCRAM{{
+		resp, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, []kadm.DeleteSCRAM{{
 			User: username,
 		}}, nil)
-		return err
+		if err != nil {
+			return err
+		}
+		return resp.Error()
 	}
 
 	return c.adminClient.DeleteUser(ctx, username)
@@ -99,12 +102,15 @@ func (c *Client) delete(ctx context.Context, username string) error {
 
 func (c *Client) create(ctx context.Context, username, password string, mechanism kadm.ScramMechanism) error {
 	if c.scramAPISupported {
-		_, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, nil, []kadm.UpsertSCRAM{{
+		resp, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, nil, []kadm.UpsertSCRAM{{
 			User:      username,
 			Password:  password,
 			Mechanism: mechanism,
 		}})
-		return err
+		if err != nil {
+			return err
+		}
+		return resp.Error()
 	}
 
 	return c.adminClient.CreateUser(ctx, username, password, mechanism.String())
@@ -116,6 +122,10 @@ func (c *Client) has(ctx context.Context, username string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+		if err := scrams.Error(); err != nil {
+			return false, err
+		}
+
 		return len(scrams) == 0, nil
 	}
 

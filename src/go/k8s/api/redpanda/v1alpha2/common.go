@@ -53,6 +53,7 @@ type KafkaSASL struct {
 	AWSMskIam KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
+// SASLMechanism specifies a SASL auth mechanism.
 type SASLMechanism string
 
 const (
