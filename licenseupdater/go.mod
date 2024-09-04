@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/licenseupdater
 
-go 1.22.6
+go 1.22.4
 
 require (
 	github.com/sergi/go-diff v1.3.1
