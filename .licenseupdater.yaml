@@ -3,6 +3,11 @@ ignore:
   - extension: .yaml
     match: /test(s){0,1}/
   - match: generated
+  - directory: .build
+  - directory: .buildkite
+  - directory: .github
+  - directory: .task
+  - directory: dist
   - directory: src/go/k8s/api/applyconfiguration
 files:
   - name: licenses/boilerplate.go.txt
