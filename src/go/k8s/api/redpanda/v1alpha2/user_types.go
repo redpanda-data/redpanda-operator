@@ -1,6 +1,7 @@
 package v1alpha2
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -14,11 +15,14 @@ func init() {
 }
 
 // User defines the CRD for a Redpanda user.
+// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=users
 // +kubebuilder:resource:shortName=rpu
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=`.status.conditions[?(@.type=="Synced")].status`
+// +kubebuilder:printcolumn:name="Managing User",type="boolean",JSONPath=`.status.managedUser`
+// +kubebuilder:printcolumn:name="Managing ACLs",type="boolean",JSONPath=`.status.managedAcls`
 // +kubebuilder:storageversion
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -48,6 +52,22 @@ func (u *User) GetACLs() []ACLRule {
 
 func (u *User) GetClusterSource() *ClusterSource {
 	return u.Spec.ClusterSource
+}
+
+func (u *User) ShouldManageUser() bool {
+	return u.Spec.Authentication != nil
+}
+
+func (u *User) HasManagedUser() bool {
+	return u.Status.ManagedUser
+}
+
+func (u *User) ShouldManageACLs() bool {
+	return u.Spec.Authorization != nil
+}
+
+func (u *User) HasManagedACLs() bool {
+	return u.Status.ManagedACLs
 }
 
 // UserSpec defines the configuration of a Redpanda user.
@@ -89,6 +109,7 @@ type Password struct {
 	ValueFrom *PasswordSource `json:"valueFrom"`
 }
 
+// PasswordSource contains the source for a password.
 type PasswordSource struct {
 	// SecretKeyRef specifies the secret used in reading a User password.
 	// If the Secret exists and has a value in it, then that value is used.
@@ -400,9 +421,33 @@ func (s ACLResourceSpec) GetName() string {
 }
 
 const (
-	UserConditionTypeSynced    = "Synced"
-	UserConditionReasonPending = "Pending"
+	UserConditionTypeSynced = "Synced"
+
+	UserConditionReasonPending              = "Pending"
+	UserConditionReasonSynced               = "Synced"
+	UserConditionReasonClusterRefInvalid    = "ClusterRefInvalid"
+	UserConditionReasonConfigurationInvalid = "ConfigurationInvalid"
+	UserConditionReasonTerminalClientError  = "TerminalClientError"
+	UserConditionReasonUnexpectedError      = "UnexpectedError"
 )
+
+func UserSyncedCondition(name string) metav1.Condition {
+	return metav1.Condition{
+		Type:    UserConditionTypeSynced,
+		Status:  metav1.ConditionTrue,
+		Reason:  UserConditionReasonSynced,
+		Message: fmt.Sprintf("User %q successfully synced to cluster.", name),
+	}
+}
+
+func UserNotSyncedCondition(reason string, err error) metav1.Condition {
+	return metav1.Condition{
+		Type:    UserConditionTypeSynced,
+		Status:  metav1.ConditionFalse,
+		Reason:  reason,
+		Message: fmt.Sprintf("Error: %v", err),
+	}
+}
 
 // UserStatus defines the observed state of a Redpanda user
 type UserStatus struct {
@@ -410,6 +455,12 @@ type UserStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Conditions holds the conditions for the Redpanda user.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// ManagedACLs returns whether the user has managed ACLs that need
+	// to be cleaned up.
+	ManagedACLs bool `json:"managedAcls,omitempty"`
+	// ManagedUser returns whether the user has a managed SCRAM user that need
+	// to be cleaned up.
+	ManagedUser bool `json:"managedUser,omitempty"`
 }
 
 // UserList contains a list of Redpanda user objects.
