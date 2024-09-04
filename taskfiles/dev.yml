@@ -190,6 +190,10 @@ tasks:
       - docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 --platform linux/amd64,linux/arm64 --name v-builder --use
       - '{{if eq ARCH "amd64"}} docker run --rm --privileged linuxkit/binfmt:v0.8 {{else}} echo "" {{end}}'
 
+  update-licenses:
+    cmds:
+      - go run ./licenseupdater
+
   install-goreleaser:
     desc: install goreleaser
     cmds:
