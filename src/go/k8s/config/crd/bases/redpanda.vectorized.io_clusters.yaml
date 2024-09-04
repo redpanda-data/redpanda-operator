@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: clusters.redpanda.vectorized.io
 spec:
   group: redpanda.vectorized.io
@@ -46,12 +46,10 @@ spec:
                   For configuration parameters not exposed, a map can be provided for string values.
                   Such values are passed transparently to Redpanda. The key format is "<subsystem>.field", e.g.,
 
-
                   additionalConfiguration:
                     redpanda.enable_idempotence: "true"
                     redpanda.default_topic_partitions: "3"
                     pandaproxy_client.produce_batch_size_bytes: "2097152"
-
 
                   Notes:
                   1. versioning is not supported for map keys
@@ -59,7 +57,6 @@ spec:
                   3. updating this map requires a manual restart of the Redpanda pods. Please be aware of
                   sync period when one Redpanda POD is restarted
                   4. cannot have keys that conflict with existing struct fields - it leads to panic
-
 
                   By default if Replicas is 3 or more and redpanda.default_topic_partitions is not set
                   default webhook is setting redpanda.default_topic_partitions to 3.
@@ -141,7 +138,6 @@ spec:
                           the event) or if no container name is specified "spec.containers[2]" (container with
                           index 2 in this pod). This syntax is chosen only to have some well-defined way of
                           referencing a part of an object.
-                          TODO: this design is not final and this field is subject to change in the future.
                         type: string
                       kind:
                         description: |-
@@ -230,7 +226,6 @@ spec:
                                 The following variables are available to the template:
                                 - Index: the Redpanda broker progressive number
                                 - HostIP: the ip address of the Node, as reported in pod status
-
 
                                 Common template functions from Sprig (http://masterminds.github.io/sprig/)
                                 are also available. The set of available functions is limited to hermetic
@@ -333,7 +328,6 @@ spec:
                                     the event) or if no container name is specified "spec.containers[2]" (container with
                                     index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                     referencing a part of an object.
-                                    TODO: this design is not final and this field is subject to change in the future.
                                   type: string
                                 kind:
                                   description: |-
@@ -423,7 +417,6 @@ spec:
                                 The following variables are available to the template:
                                 - Index: the Redpanda broker progressive number
                                 - HostIP: the ip address of the Node, as reported in pod status
-
 
                                 Common template functions from Sprig (http://masterminds.github.io/sprig/)
                                 are also available. The set of available functions is limited to hermetic
@@ -526,7 +519,6 @@ spec:
                                     the event) or if no container name is specified "spec.containers[2]" (container with
                                     index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                     referencing a part of an object.
-                                    TODO: this design is not final and this field is subject to change in the future.
                                   type: string
                                 kind:
                                   description: |-
@@ -610,7 +602,6 @@ spec:
                                 The following variables are available to the template:
                                 - Index: the Redpanda broker progressive number
                                 - HostIP: the ip address of the Node, as reported in pod status
-
 
                                 Common template functions from Sprig (http://masterminds.github.io/sprig/)
                                 are also available. The set of available functions is limited to hermetic
@@ -731,7 +722,6 @@ spec:
                                     the event) or if no container name is specified "spec.containers[2]" (container with
                                     index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                     referencing a part of an object.
-                                    TODO: this design is not final and this field is subject to change in the future.
                                   type: string
                                 kind:
                                   description: |-
@@ -825,7 +815,6 @@ spec:
                               The following variables are available to the template:
                               - Index: the Redpanda broker progressive number
                               - HostIP: the ip address of the Node, as reported in pod status
-
 
                               Common template functions from Sprig (http://masterminds.github.io/sprig/)
                               are also available. The set of available functions is limited to hermetic
@@ -932,7 +921,6 @@ spec:
                                   the event) or if no container name is specified "spec.containers[2]" (container with
                                   index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                   referencing a part of an object.
-                                  TODO: this design is not final and this field is subject to change in the future.
                                 type: string
                               kind:
                                 description: |-
@@ -997,15 +985,11 @@ spec:
                 description: |-
                   Enable authorization for Kafka connections. Values are:
 
-
                   - `nil`: Ignored. Authorization is enabled with `enable_sasl: true`
-
 
                   - `true`: authorization is required
 
-
                   - `false`: authorization is disabled;
-
 
                   See also `enableSasl` and `configuration.kafkaApi[].authenticationMethod`
                 type: boolean
@@ -1094,10 +1078,8 @@ spec:
                       Claims lists the names of resources, defined in spec.resourceClaims,
                       that are used by this container.
 
-
                       This is an alpha field and requires enabling the
                       DynamicResourceAllocation feature gate.
-
 
                       This field is immutable. It can only be set for containers.
                     items:
@@ -1166,7 +1148,6 @@ spec:
                       UnderReplicatedPartitionThreshold controls when rolling update will continue with
                       restarts. The procedure can be described as follows:
 
-
                       1. Rolling update checks if Pod specification needs to be replaced and deletes it
                       2. Deleted Redpanda Pod is put into maintenance mode (postStart hook will disable
                          maintenance mode when new Pod starts)
@@ -1176,13 +1157,10 @@ spec:
                       6. Using UnderReplicatedPartitionThreshold each under replicated partition metric is compared with the threshold
                       7. Rolling update moves to the next Redpanda pod
 
-
                       The metric `vectorized_cluster_partition_under_replicated_replicas` is used in the comparison
-
 
                       Mentioned metrics has the following help description:
                       `vectorized_cluster_partition_under_replicated_replicas` Number of under replicated replicas
-
 
                       By default, the UnderReplicatedPartitionThreshold will be 0, which means all partitions needs to catch up without any lag.
                     type: integer
@@ -1213,10 +1191,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1436,8 +1412,6 @@ spec:
                                         CamelCase names
                                       - cloud provider specific error values must have names that comply with the
                                         format foo.example.com/CamelCase.
-                                      ---
-                                      The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                                     maxLength: 316
                                     pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                                     type: string
@@ -1447,12 +1421,12 @@ spec:
                                     format: int32
                                     type: integer
                                   protocol:
-                                    default: TCP
                                     description: |-
                                       Protocol is the protocol of the service port of which status is recorded here
                                       The supported values are: "TCP", "UDP", "SCTP"
                                     type: string
                                 required:
+                                - error
                                 - port
                                 - protocol
                                 type: object
@@ -1480,7 +1454,6 @@ spec:
                         description: |-
                           External address should be registered in DNS provider using
                           all public IP of a nodes that Redpanda is scheduled on.
-
 
                           The External is empty when subdomain is not provided.
                         type: string

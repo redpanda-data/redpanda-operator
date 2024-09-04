@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: topics.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
@@ -115,7 +115,6 @@ spec:
                             description: |-
                               UserAgent is the user agent to for the client to use when connecting
                               to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
-
 
                               Setting a UserAgent allows authorizing based on the aws:UserAgent
                               condition key; see the following link for more details:
@@ -313,16 +312,8 @@ spec:
               conditions:
                 description: Conditions holds the conditions for the Topic.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource.\n---\nThis struct is intended for
-                    direct use as an array at the field path .status.conditions.  For
-                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
-                    observations of a foo's current state.\n\t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
-                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                    \   // other fields\n\t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -363,12 +354,7 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: |-
-                        type of condition in CamelCase or in foo.example.com/CamelCase.
-                        ---
-                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                        useful (see .node.status.conditions), the ability to deconflict is important.
-                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -441,14 +427,12 @@ spec:
                       description: |-
                         ReadOnly signifies whether this is not a dynamic config option.
 
-
                         Note that this field is not always correct, and you may need to check
                         whether the Source is any dynamic enum. See franz-go#91 for more details.
                       type: boolean
                     source:
                       description: |-
                         Source is where this config entry is from.
-
 
                         This field has a default of -1.
                       type: string
@@ -581,7 +565,6 @@ spec:
                               UserAgent is the user agent to for the client to use when connecting
                               to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
 
-
                               Setting a UserAgent allows authorizing based on the aws:UserAgent
                               condition key; see the following link for more details:
                               https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent
@@ -778,16 +761,8 @@ spec:
               conditions:
                 description: Conditions holds the conditions for the Topic.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource.\n---\nThis struct is intended for
-                    direct use as an array at the field path .status.conditions.  For
-                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
-                    observations of a foo's current state.\n\t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
-                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                    \   // other fields\n\t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -828,12 +803,7 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: |-
-                        type of condition in CamelCase or in foo.example.com/CamelCase.
-                        ---
-                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                        useful (see .node.status.conditions), the ability to deconflict is important.
-                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -906,14 +876,12 @@ spec:
                       description: |-
                         ReadOnly signifies whether this is not a dynamic config option.
 
-
                         Note that this field is not always correct, and you may need to check
                         whether the Source is any dynamic enum. See franz-go#91 for more details.
                       type: boolean
                     source:
                       description: |-
                         Source is where this config entry is from.
-
 
                         This field has a default of -1.
                       type: string

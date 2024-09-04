@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: redpandas.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
@@ -1221,7 +1221,6 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -1724,7 +1723,6 @@ spec:
                           description: |-
                             Name of the referent.
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -1804,7 +1802,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -1825,7 +1822,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -1848,7 +1844,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -1887,7 +1882,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -1908,7 +1902,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -1930,7 +1923,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -2005,7 +1997,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -2026,7 +2017,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -2049,7 +2039,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -2099,7 +2088,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -2120,7 +2108,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -2142,7 +2129,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -2214,7 +2200,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -2235,7 +2220,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -2258,7 +2242,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -2304,7 +2287,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -2325,7 +2307,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -2347,7 +2328,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -2387,7 +2367,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -2408,7 +2387,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -2430,7 +2408,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -2506,7 +2483,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -2527,7 +2503,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -2550,7 +2525,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -2593,7 +2567,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -2614,7 +2587,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -2636,7 +2608,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -3690,7 +3661,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -3760,7 +3730,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -3906,7 +3875,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -3965,11 +3933,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -4057,7 +4023,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -4142,10 +4107,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -4316,7 +4279,6 @@ spec:
                                 description: |-
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
-
 
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
@@ -5315,7 +5277,6 @@ spec:
                                       description: |-
                                         Name of the referent.
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -5378,7 +5339,6 @@ spec:
                                       description: |-
                                         Name of the referent.
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -5408,7 +5368,6 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap must
@@ -5427,7 +5386,6 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the Secret must be
@@ -5503,7 +5461,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -5573,7 +5530,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -5719,7 +5675,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -5778,11 +5733,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -5870,7 +5823,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -5955,10 +5907,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -6129,7 +6079,6 @@ spec:
                                 description: |-
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
-
 
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
@@ -6380,10 +6329,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -6450,10 +6397,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -6520,10 +6465,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -6585,10 +6528,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -6665,10 +6606,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -7191,7 +7130,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -7261,7 +7199,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -7407,7 +7344,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -7466,11 +7402,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -7557,7 +7491,6 @@ spec:
                                         description: |-
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
-
 
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
@@ -7790,7 +7723,6 @@ spec:
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
 
-
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
                                   Unconfined - no profile should be applied.
@@ -7858,10 +7790,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -8034,7 +7964,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -8116,10 +8045,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -8297,7 +8224,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -8354,10 +8280,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -8530,7 +8454,6 @@ spec:
                                         description: |-
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
-
 
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
@@ -8863,7 +8786,6 @@ spec:
                             description: |-
                               mountType can be one of:
 
-
                               - `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory.
                               - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on.
                               - `emptyDir`: Mounts an empty directory every time the Pod starts.
@@ -9053,10 +8975,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -9176,16 +9096,8 @@ spec:
               conditions:
                 description: Conditions holds the conditions for the Redpanda.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource.\n---\nThis struct is intended for
-                    direct use as an array at the field path .status.conditions.  For
-                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
-                    observations of a foo's current state.\n\t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
-                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                    \   // other fields\n\t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -9226,12 +9138,7 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: |-
-                        type of condition in CamelCase or in foo.example.com/CamelCase.
-                        ---
-                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                        useful (see .node.status.conditions), the ability to deconflict is important.
-                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -10498,7 +10405,6 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -11001,7 +10907,6 @@ spec:
                           description: |-
                             Name of the referent.
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -11081,7 +10986,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -11102,7 +11006,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -11125,7 +11028,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -11164,7 +11066,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -11185,7 +11086,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -11207,7 +11107,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -11282,7 +11181,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -11303,7 +11201,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -11326,7 +11223,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -11376,7 +11272,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -11397,7 +11292,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -11419,7 +11313,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -11491,7 +11384,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -11512,7 +11404,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -11535,7 +11426,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -11581,7 +11471,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -11602,7 +11491,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -11624,7 +11512,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -11664,7 +11551,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -11685,7 +11571,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -11707,7 +11592,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -11783,7 +11667,6 @@ spec:
                                       description: |-
                                         References a Secret resource containing TLS credentials for the listener.
 
-
                                         Deprecated: Setting SecretRef has no affect and will be removed in
                                         future releases.
                                       type: string
@@ -11804,7 +11687,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the ConfigMap
@@ -11827,7 +11709,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                             optional:
                                               description: Specify whether the Secret
@@ -11870,7 +11751,6 @@ spec:
                                 description: |-
                                   References a Secret resource containing TLS credentials for the listener.
 
-
                                   Deprecated: Setting SecretRef has no affect and will be removed in
                                   future releases.
                                 type: string
@@ -11891,7 +11771,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -11913,7 +11792,6 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -12967,7 +12845,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -13037,7 +12914,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -13183,7 +13059,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -13242,11 +13117,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -13334,7 +13207,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -13419,10 +13291,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -13593,7 +13463,6 @@ spec:
                                 description: |-
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
-
 
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
@@ -14592,7 +14461,6 @@ spec:
                                       description: |-
                                         Name of the referent.
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -14655,7 +14523,6 @@ spec:
                                       description: |-
                                         Name of the referent.
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -14685,7 +14552,6 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap must
@@ -14704,7 +14570,6 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the Secret must be
@@ -14780,7 +14645,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -14850,7 +14714,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -14996,7 +14859,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -15055,11 +14917,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -15147,7 +15007,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -15232,10 +15091,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -15406,7 +15263,6 @@ spec:
                                 description: |-
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
-
 
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
@@ -15657,10 +15513,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -15727,10 +15581,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -15797,10 +15649,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -15862,10 +15712,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -15942,10 +15790,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -16468,7 +16314,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -16538,7 +16383,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -16684,7 +16528,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -16743,11 +16586,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                       Note that this field cannot be set when spec.os.name is windows.
@@ -16834,7 +16675,6 @@ spec:
                                         description: |-
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
-
 
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
@@ -17067,7 +16907,6 @@ spec:
                                   type indicates which kind of seccomp profile will be applied.
                                   Valid options are:
 
-
                                   Localhost - a profile defined in a file on the node should be used.
                                   RuntimeDefault - the container runtime default profile should be used.
                                   Unconfined - no profile should be applied.
@@ -17135,10 +16974,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -17311,7 +17148,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -17393,10 +17229,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -17574,7 +17408,6 @@ spec:
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
 
-
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
@@ -17631,10 +17464,8 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
-
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -17807,7 +17638,6 @@ spec:
                                         description: |-
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
-
 
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
@@ -18140,7 +17970,6 @@ spec:
                             description: |-
                               mountType can be one of:
 
-
                               - `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory.
                               - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on.
                               - `emptyDir`: Mounts an empty directory every time the Pod starts.
@@ -18330,10 +18159,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -18453,16 +18280,8 @@ spec:
               conditions:
                 description: Conditions holds the conditions for the Redpanda.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource.\n---\nThis struct is intended for
-                    direct use as an array at the field path .status.conditions.  For
-                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
-                    observations of a foo's current state.\n\t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
-                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                    \   // other fields\n\t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -18503,12 +18322,7 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: |-
-                        type of condition in CamelCase or in foo.example.com/CamelCase.
-                        ---
-                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                        useful (see .node.status.conditions), the ability to deconflict is important.
-                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
