@@ -101,6 +101,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
 
 	reconciler := UserReconciler{
+		Client:        c,
 		ClientFactory: factory,
 		extraOptions:  []kgo.Opt{timeoutOption},
 	}

@@ -25,6 +25,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/acls"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/utils"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -36,6 +37,7 @@ const fieldOwner client.FieldOwner = "redpanda-operator"
 
 // UserReconciler reconciles a Topic object
 type UserReconciler struct {
+	client.Client
 	internalclient.ClientFactory
 
 	// extraOptions can be overridden in tests
@@ -64,7 +66,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	l.Info("Starting reconcile loop")
 
 	user := &redpandav1alpha2.User{}
-	if err := r.KubernetesClient().Get(ctx, req.NamespacedName, user); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -72,27 +74,31 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err := r.deleteUser(ctx, user); err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{}, r.KubernetesClient().ClearFinalizer(ctx, user, FinalizerKey)
+		if controllerutil.RemoveFinalizer(user, FinalizerKey) {
+			return ctrl.Result{}, r.Update(ctx, user)
+		}
+		return ctrl.Result{}, nil
 	}
 
 	config := redpandav1alpha2ac.User(user.Name, user.Namespace)
 
 	if !controllerutil.ContainsFinalizer(user, FinalizerKey) {
-		if err := r.KubernetesClient().Apply(ctx, config.WithFinalizers(FinalizerKey), fieldOwner); err != nil {
+		patch := kubernetes.ApplyPatch(config.WithFinalizers(FinalizerKey))
+		if err := r.Patch(ctx, user, patch, client.ForceOwnership, fieldOwner); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	syncCondition, manageUser, manageACLs, err := r.syncUser(ctx, user)
 
-	syncError := r.KubernetesClient().ApplyStatus(ctx, config.WithStatus(redpandav1alpha2ac.UserStatus().
+	patch := kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.UserStatus().
 		WithObservedGeneration(user.Generation).
 		WithManagedUser(manageUser).
 		WithManagedACLs(manageACLs).
 		WithConditions(utils.StatusConditionConfigs(user.Status.Conditions, user.Generation, []metav1.Condition{
 			syncCondition,
-		})...),
-	), fieldOwner)
+		})...)))
+	syncError := r.Status().Patch(ctx, user, patch, client.ForceOwnership, fieldOwner)
 
 	return ctrl.Result{}, errors.Join(err, syncError)
 }
@@ -218,7 +224,7 @@ func (r *UserReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager)
 		For(&redpandav1alpha2.User{}).
 		Owns(&corev1.Secret{}).
 		Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			requests, err := usersForCluster(ctx, r.KubernetesClient(), client.ObjectKeyFromObject(o))
+			requests, err := usersForCluster(ctx, r, client.ObjectKeyFromObject(o))
 			if err != nil {
 				mgr.GetLogger().V(1).Info("skipping reconciliation due to fetching error", "error", err)
 				return nil

@@ -8,7 +8,6 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/acls"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -38,10 +37,6 @@ var (
 // based on the connection parameters contained within the corresponding CRD struct passed in
 // at method invocation.
 type ClientFactory interface {
-	// KubernetesClient initializes a kubernetes.Client that just wraps the underlying client with
-	// an Apply method.
-	KubernetesClient() kubernetes.Client
-
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
 	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface of the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
@@ -61,8 +56,7 @@ type ClientFactory interface {
 
 type Factory struct {
 	client.Client
-	kubernetesClient *kubernetes.KubernetesClient
-	config           *rest.Config
+	config *rest.Config
 
 	dialer redpanda.DialContextFunc
 }
@@ -71,19 +65,14 @@ var _ ClientFactory = (*Factory)(nil)
 
 func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 	return &Factory{
-		config:           rest.CopyConfig(config),
-		Client:           kubeclient,
-		kubernetesClient: kubernetes.Wrap(kubeclient),
+		config: rest.CopyConfig(config),
+		Client: kubeclient,
 	}
 }
 
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 	c.dialer = dialer
 	return c
-}
-
-func (c *Factory) KubernetesClient() kubernetes.Client {
-	return c.kubernetesClient
 }
 
 func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kgo.Opt) (*kgo.Client, error) {
