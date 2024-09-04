@@ -5,103 +5,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cert-manager.io
-  resources:
-  - certificates
-  - issuers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cert-manager.io
-  resources:
-  - clusterissuers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - topics
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - topics/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - topics/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - users
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - users/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -117,6 +20,9 @@ rules:
   - ""
   resources:
   - events
+  - secrets
+  - serviceaccounts
+  - services
   verbs:
   - create
   - get
@@ -145,16 +51,6 @@ rules:
   - ""
   resources:
   - persistentvolumes
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - delete
@@ -167,49 +63,64 @@ rules:
   - ""
   resources:
   - pods/finalizers
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
   - pods/status
   verbs:
   - patch
   - update
 - apiGroups:
-  - ""
+  - apps
   resources:
-  - secrets
+  - deployments
+  - statefulsets
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
   - update
   - watch
 - apiGroups:
-  - ""
+  - cert-manager.io
   resources:
-  - serviceaccounts
+  - certificates
+  - clusterissuers
+  - issuers
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
   - update
   - watch
 - apiGroups:
-  - ""
+  - cluster.redpanda.com
   resources:
-  - services
+  - topics
+  - users
   verbs:
-  - create
   - get
   - list
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics/status
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -250,6 +161,7 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters
+  - consoles
   verbs:
   - create
   - delete
@@ -269,35 +181,16 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/status
+  - consoles/status
   verbs:
   - get
   - patch
   - update
-- apiGroups:
-  - redpanda.vectorized.io
-  resources:
-  - consoles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
   - consoles/finalizers
   verbs:
-  - update
-- apiGroups:
-  - redpanda.vectorized.io
-  resources:
-  - consoles/status
-  verbs:
-  - get
-  - patch
   - update
 - apiGroups:
   - scheduling.k8s.io
@@ -317,7 +210,11 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - pods
+  - secrets
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -326,33 +223,36 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - apps
   resources:
   - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - replicasets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - statefulsets
   verbs:
   - create
@@ -385,15 +285,6 @@ rules:
   - cert-manager.io
   resources:
   - certificates
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cert-manager.io
-  resources:
   - issuers
   verbs:
   - create
@@ -417,12 +308,16 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas/finalizers
+  - topics/finalizers
+  - users/finalizers
   verbs:
   - update
 - apiGroups:
   - cluster.redpanda.com
   resources:
   - redpandas/status
+  - topics/status
+  - users/status
   verbs:
   - get
   - patch
@@ -431,29 +326,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - topics
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - topics/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - topics/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
   - users
   verbs:
   - get
@@ -462,107 +334,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - users/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
   verbs:
   - create
   - delete
@@ -637,17 +411,6 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - rolebindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - roles
   verbs:
   - create
@@ -661,15 +424,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - redpanda.vectorized.io
-  resources:
   - consoles
   verbs:
   - get
@@ -681,89 +435,9 @@ rules:
   - source.toolkit.fluxcd.io
   resources:
   - buckets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
   - gitrepositories
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
   - gitrepository
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
-  - gitrepository/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
-  - gitrepository/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
   - helmcharts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
-  - helmcharts/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
-  - helmcharts/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - source.toolkit.fluxcd.io
-  resources:
   - helmrepositories
   verbs:
   - create
@@ -776,6 +450,8 @@ rules:
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
+  - gitrepository/finalizers
+  - helmcharts/finalizers
   - helmrepositories/finalizers
   verbs:
   - create
@@ -786,6 +462,8 @@ rules:
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
+  - gitrepository/status
+  - helmcharts/status
   - helmrepositories/status
   verbs:
   - get
