@@ -9,6 +9,10 @@
 
 package pod
 
+// Some functions in this file Copyright 2018 The Kubernetes Authors under the Apache License, Version 2.0.
+// see: https://github.com/kubernetes/kubernetes/blob/49ffd6192f1608e0a2980548390b2c5431d6af8a/pkg/scheduler/util/utils.go#L103-L134
+// and: https://github.com/kubernetes/kubernetes/blob/49ffd6192f1608e0a2980548390b2c5431d6af8a/pkg/api/v1/pod/util.go#L347-L368
+
 import (
 	"bytes"
 	"context"
