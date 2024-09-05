@@ -26,9 +26,8 @@
           pkgs = import nixpkgs {
             inherit system;
             overlays = [
-              (final: prev: {
-                setup-envtest = pkgs.callPackage ./ci/setup-envtest.nix { };
-              })
+              # Load in various overrides for custom packages and version pinning.
+              (import ./ci/overlay.nix { pkgs = pkgs; })
             ];
           };
         in
@@ -46,7 +45,7 @@
               pkgs.gawk # GNU awk, used by some build scripts.
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
-              pkgs.go_1_22
+              pkgs.go_1_22_7
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.k3d # Kind alternative that allows adding/removing Nodes.
@@ -54,7 +53,6 @@
               pkgs.setup-envtest # Kubernetes provided test utilities
               # TODO(chrisseto): Migrate taskfile to using dependencies from
               # this flake.
-              # pkgs.goreleaser
               # pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               # pkgs.goreleaser
               # pkgs.gotools
