@@ -608,12 +608,17 @@ func (cm *ConfigMap) genKafka(username string) config.Kafka {
 
 func getBrokers(clusterobj *vectorizedv1alpha1.Cluster) []string {
 	if l := clusterobj.KafkaListener(); !l.External.Enabled {
-		brokers := []string{}
-		for _, host := range clusterobj.Status.Nodes.Internal {
-			port := fmt.Sprintf("%d", l.Port)
-			brokers = append(brokers, net.JoinHostPort(host, port))
+		// ClusterIP service works only if TLS is disabled, as the broker will respond with a per-broker cert (eg. my-broker-0.redpanda.svc.cluster.local).
+		if !l.TLS.Enabled {
+			return []string{fmt.Sprintf("%s-cluster.%s.svc.cluster.local:%d", clusterobj.Name, clusterobj.Namespace, l.Port)}
+		} else {
+			var brokers []string
+			for _, host := range clusterobj.Status.Nodes.Internal {
+				port := fmt.Sprintf("%d", l.Port)
+				brokers = append(brokers, net.JoinHostPort(host, port))
+			}
+			return brokers
 		}
-		return brokers
 	}
 	// External hosts already have ports in them
 	return clusterobj.Status.Nodes.External
