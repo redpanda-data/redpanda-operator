@@ -1014,6 +1014,161 @@ spec:
                 - name
                 - namespace
                 type: object
+              nodePools:
+                description: |-
+                  NodePools runs a StatefulSet for every NodePool. All these produce pods,
+                  that join the cluster, but are steered independently (especially replica
+                  count).
+                items:
+                  description: |-
+                    NodePoolSpec defines a NodePool. NodePools have their own:
+                    NodeSelector, so they can be scheduled on specific cloud provider Node Pools.
+                    Storage, as different NodePools may have different disk shapes.
+                    Replicas, so they can be controlled independently
+                    Resources, because this is tied strongly to the actual machine shape backing the NodePool.
+                  properties:
+                    name:
+                      type: string
+                    nodeSelector:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        If specified, Redpanda Pod node selectors. For reference please visit
+                        https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
+                      type: object
+                    replicas:
+                      description: Replicas determine how big the node pool will be.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    resources:
+                      description: |-
+                        Resources used by redpanda process running in container. Beware that
+                        there are multiple containers running in the redpanda pod and these can
+                        be enabled/disabled and configured from the `sidecars` field. These
+                        containers have separate resources settings and the amount of resources
+                        assigned to these containers will be required on the cluster on top of
+                        the resources defined here
+                      properties:
+                        claims:
+                          description: |-
+                            Claims lists the names of resources, defined in spec.resourceClaims,
+                            that are used by this container.
+
+                            This is an alpha field and requires enabling the
+                            DynamicResourceAllocation feature gate.
+
+                            This field is immutable. It can only be set for containers.
+                          items:
+                            description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                            properties:
+                              name:
+                                description: |-
+                                  Name must match the name of one entry in pod.spec.resourceClaims of
+                                  the Pod where this field is used. It makes that resource available
+                                  inside a container.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        limits:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            Limits describes the maximum amount of compute resources allowed.
+                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          type: object
+                        redpanda:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            Redpanda describes the amount of compute resources passed to redpanda.
+                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          type: object
+                        requests:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            Requests describes the minimum amount of compute resources required.
+                            If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                            otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          type: object
+                      type: object
+                    storage:
+                      description: Storage spec for cluster
+                      properties:
+                        capacity:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: Storage capacity requested
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        storageClassName:
+                          description: Storage class name - https://kubernetes.io/docs/concepts/storage/storage-classes/
+                          type: string
+                      type: object
+                    tolerations:
+                      description: If specified, Redpanda Pod tolerations
+                      items:
+                        description: |-
+                          The pod this Toleration is attached to tolerates any taint that matches
+                          the triple <key,value,effect> using the matching operator <operator>.
+                        properties:
+                          effect:
+                            description: |-
+                              Effect indicates the taint effect to match. Empty means match all taint effects.
+                              When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                            type: string
+                          key:
+                            description: |-
+                              Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                              If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                            type: string
+                          operator:
+                            description: |-
+                              Operator represents a key's relationship to the value.
+                              Valid operators are Exists and Equal. Defaults to Equal.
+                              Exists is equivalent to wildcard for value, so that a pod can
+                              tolerate all taints of a particular category.
+                            type: string
+                          tolerationSeconds:
+                            description: |-
+                              TolerationSeconds represents the period of time the toleration (which must be
+                              of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                              it is not set, which means tolerate the taint forever (do not evict). Zero and
+                              negative values will be treated as 0 (evict immediately) by the system.
+                            format: int64
+                            type: integer
+                          value:
+                            description: |-
+                              Value is the taint value the toleration matches to.
+                              If the operator is Exists, the value should be empty, otherwise just a regular string.
+                            type: string
+                        type: object
+                      type: array
+                  required:
+                  - name
+                  - resources
+                  type: object
+                type: array
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -1305,8 +1460,6 @@ spec:
               version:
                 description: Version is the Redpanda container tag
                 type: string
-            required:
-            - resources
             type: object
           status:
             description: ClusterStatus defines the observed state of Cluster
@@ -1354,6 +1507,25 @@ spec:
                   from the cluster and provides its ordinal number
                 format: int32
                 type: integer
+              nodePools:
+                additionalProperties:
+                  description: NodePoolStatus describes the status of the NodePool.
+                  properties:
+                    currentReplicas:
+                      format: int32
+                      type: integer
+                    readyReplicas:
+                      format: int32
+                      type: integer
+                    replicas:
+                      format: int32
+                      type: integer
+                    restarting:
+                      description: Indicates that a nodePool's pods are restarting.
+                      type: boolean
+                  type: object
+                description: Every NodePool has its own status.
+                type: object
               nodes:
                 description: Nodes of the provisioned redpanda nodes
                 properties:
