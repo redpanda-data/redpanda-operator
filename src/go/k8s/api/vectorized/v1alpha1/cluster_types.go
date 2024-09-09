@@ -116,7 +116,7 @@ type ClusterSpec struct {
 	// containers have separate resources settings and the amount of resources
 	// assigned to these containers will be required on the cluster on top of
 	// the resources defined here
-	Resources RedpandaResourceRequirements `json:"resources"`
+	Resources RedpandaResourceRequirements `json:"resources,omitempty"`
 	// Sidecars is list of sidecars run alongside redpanda container
 	Sidecars Sidecars `json:"sidecars,omitempty"`
 	// Configuration represent redpanda specific configuration
@@ -183,6 +183,37 @@ type ClusterSpec struct {
 
 	// The name of the ServiceAccount to be used by the Redpanda pods
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+
+	// NodePools runs a StatefulSet for every NodePool. All these produce pods,
+	// that join the cluster, but are steered independently (especially replica
+	// count).
+	NodePools []*NodePoolSpec `json:"nodePools,omitempty"`
+}
+
+// NodePoolSpec defines a NodePool. NodePools have their own:
+// NodeSelector, so they can be scheduled on specific cloud provider Node Pools.
+// Storage, as different NodePools may have different disk shapes.
+// Replicas, so they can be controlled independently
+// Resources, because this is tied strongly to the actual machine shape backing the NodePool.
+type NodePoolSpec struct {
+	Name string `json:"name"`
+	// Replicas determine how big the node pool will be.
+	// +kubebuilder:validation:Minimum=0
+	Replicas *int32 `json:"replicas,omitempty"`
+	// If specified, Redpanda Pod tolerations
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If specified, Redpanda Pod node selectors. For reference please visit
+	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Storage spec for cluster
+	Storage StorageSpec `json:"storage,omitempty"`
+	// Resources used by redpanda process running in container. Beware that
+	// there are multiple containers running in the redpanda pod and these can
+	// be enabled/disabled and configured from the `sidecars` field. These
+	// containers have separate resources settings and the amount of resources
+	// assigned to these containers will be required on the cluster on top of
+	// the resources defined here
+	Resources RedpandaResourceRequirements `json:"resources"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
@@ -419,6 +450,8 @@ type ClusterStatus struct {
 	// Current state of the cluster.
 	// +optional
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	// Every NodePool has its own status.
+	NodePools map[string]NodePoolStatus `json:"nodePools,omitempty"`
 }
 
 // ClusterCondition contains details for the current conditions of the cluster
@@ -664,6 +697,16 @@ type SchemaRegistryStatus struct {
 // by the load balancer core service
 type LoadBalancerStatus struct {
 	corev1.LoadBalancerStatus `json:""`
+}
+
+// NodePoolStatus describes the status of the NodePool.
+type NodePoolStatus struct {
+	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
+	Replicas        int32 `json:"replicas,omitempty"`
+	ReadyReplicas   int32 `json:"readyReplicas,omitempty"`
+	// Indicates that a nodePool's pods are restarting.
+	// +optional
+	Restarting bool `json:"restarting"`
 }
 
 // KafkaAPITLS configures TLS for redpanda Kafka API
