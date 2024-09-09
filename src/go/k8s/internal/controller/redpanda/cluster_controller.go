@@ -1158,6 +1158,13 @@ func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectoriz
 		return condition
 	}
 
+	if redpandaCluster.Status.CurrentReplicas != redpandaCluster.Status.Replicas || redpandaCluster.Status.Replicas != redpandaCluster.Status.ReadyReplicas {
+		condition.Status = corev1.ConditionFalse
+		condition.Reason = "ReplicasNotSynced"
+		condition.Message = fmt.Sprintf("Replicas are not synced. currentReplicas=%d,replicas=%d,readyReplicas=%d. All must be equal.", redpandaCluster.Status.CurrentReplicas, redpandaCluster.Status.Replicas, redpandaCluster.Status.ReadyReplicas)
+		return condition
+	}
+
 	// No reason found (no early return), so claim the controller is quiescent.
 	condition.Status = corev1.ConditionTrue
 	return condition
