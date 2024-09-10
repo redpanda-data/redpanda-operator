@@ -1158,10 +1158,10 @@ func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectoriz
 		return condition
 	}
 
-	if redpandaCluster.Status.CurrentReplicas != redpandaCluster.Status.Replicas || redpandaCluster.Status.Replicas != redpandaCluster.Status.ReadyReplicas {
+	if redpandaCluster.Status.CurrentReplicas != redpandaCluster.Status.Replicas || redpandaCluster.Status.Replicas != redpandaCluster.Status.ReadyReplicas || (redpandaCluster.Spec.Replicas != nil && *redpandaCluster.Spec.Replicas != redpandaCluster.Status.Replicas) {
 		condition.Status = corev1.ConditionFalse
 		condition.Reason = "ReplicasNotSynced"
-		condition.Message = fmt.Sprintf("Replicas are not synced. currentReplicas=%d,replicas=%d,readyReplicas=%d. All must be equal.", redpandaCluster.Status.CurrentReplicas, redpandaCluster.Status.Replicas, redpandaCluster.Status.ReadyReplicas)
+		condition.Message = fmt.Sprintf("Replicas are not synced. spec.replicas=%d status.currentReplicas=%d,status.replicas=%d,status.readyReplicas=%d. All must be equal.", ptr.Deref(redpandaCluster.Spec.Replicas, 0), redpandaCluster.Status.CurrentReplicas, redpandaCluster.Status.Replicas, redpandaCluster.Status.ReadyReplicas)
 		return condition
 	}
 
