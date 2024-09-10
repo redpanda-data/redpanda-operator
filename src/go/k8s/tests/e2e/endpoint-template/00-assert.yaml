@@ -6,6 +6,8 @@ status:
   replicas: 3
   readyReplicas: 3
   restarting: false
+  currentReplicas: 3
+  restarting: false
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
