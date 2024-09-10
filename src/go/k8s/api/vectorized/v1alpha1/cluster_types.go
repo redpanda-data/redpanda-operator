@@ -187,7 +187,7 @@ type ClusterSpec struct {
 	// NodePools runs a StatefulSet for every NodePool. All these produce pods,
 	// that join the cluster, but are steered independently (especially replica
 	// count).
-	NodePools []*NodePoolSpec `json:"nodePools,omitempty"`
+	NodePools []NodePoolSpec `json:"nodePools,omitempty"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:
