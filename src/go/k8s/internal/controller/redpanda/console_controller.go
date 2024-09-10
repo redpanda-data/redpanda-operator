@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/distribution/reference"
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -135,7 +134,7 @@ func (r *ConsoleReconciler) Reconcile(
 		}
 	}
 
-	r.Log.V(logger.DebugLevel).Info("console", "observed generation", console.Status.ObservedGeneration, "generation", console.GetGeneration())
+	r.Log.V(DebugLevel).Info("console", "observed generation", console.Status.ObservedGeneration, "generation", console.GetGeneration())
 
 	if !isConsoleManaged(r.Log, console) {
 		return ctrl.Result{}, nil
@@ -219,14 +218,14 @@ func (r *Reconciling) Do(
 		if err := each.Ensure(ctx); err != nil { //nolint:gocritic // more readable
 			var ra *resources.RequeueAfterError
 			if errors.As(err, &ra) {
-				log.V(logger.DebugLevel).Info(fmt.Sprintf("Requeue ensuring resource after %d: %s", ra.RequeueAfter, ra.Msg))
+				log.V(DebugLevel).Info(fmt.Sprintf("Requeue ensuring resource after %d: %s", ra.RequeueAfter, ra.Msg))
 				// RequeueAfterError is used to delay retry
 				log.Info(fmt.Sprintf("Ensuring resource failed, requeueing after %s: %s", ra.RequeueAfter, ra.Msg))
 				return ctrl.Result{RequeueAfter: ra.RequeueAfter}, nil
 			}
 			var r *resources.RequeueError
 			if errors.As(err, &r) {
-				log.V(logger.DebugLevel).Info(fmt.Sprintf("Requeue ensuring resource: %s", r.Msg))
+				log.V(DebugLevel).Info(fmt.Sprintf("Requeue ensuring resource: %s", r.Msg))
 				// RequeueError is used to skip controller logging the error and using default retry backoff
 				// Don't return the error, as it is most likely not an actual error
 				return ctrl.Result{Requeue: true}, nil
@@ -312,7 +311,7 @@ func (r *ConsoleReconciler) handleSpecChange(
 ) error {
 	log := r.Log.WithName("handleSpecChange")
 	if console.Status.ConfigMapRef != nil {
-		log.V(logger.DebugLevel).WithValues("config map name", console.Status.ConfigMapRef.Name, "config map namespace", console.Status.ConfigMapRef.Namespace).Info("handle spec change")
+		log.V(DebugLevel).WithValues("config map name", console.Status.ConfigMapRef.Name, "config map namespace", console.Status.ConfigMapRef.Namespace).Info("handle spec change")
 		// We are creating new ConfigMap for every spec change so Deployment can detect changes and redeploy Pods
 		// Unset Status.ConfigMapRef so we can delete the previous unused ConfigMap
 		previousConfigMapRef := fmt.Sprintf("%s/%s", console.Status.ConfigMapRef.Namespace, console.Status.ConfigMapRef.Name)

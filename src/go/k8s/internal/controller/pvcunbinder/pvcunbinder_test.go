@@ -16,8 +16,8 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/k3d"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -231,7 +231,7 @@ func TestPVCUnbinder(t *testing.T) {
 	r := Reconciler{Client: c}
 	require.NoError(t, r.SetupWithManager(mgr))
 
-	tgo(t, ctx, func(ctx context.Context) error {
+	testutils.TGo(t, ctx, func(ctx context.Context) error {
 		return mgr.Start(log.IntoContext(ctx, logger))
 	})
 
@@ -333,23 +333,6 @@ func stsSpec(labels map[string]string, volumeType string) appsv1.StatefulSetSpec
 			},
 		},
 	}
-}
-
-// tgo is a helper for ensuring that goroutines spawned in test cases are
-// appropriately shutdown.
-func tgo(t *testing.T, ctx context.Context, fn func(context.Context) error) {
-	doneCh := make(chan struct{})
-	ctx, cancel := context.WithCancel(ctx)
-
-	t.Cleanup(func() {
-		cancel()
-		<-doneCh
-	})
-
-	go func() {
-		assert.NoError(t, fn(ctx))
-		close(doneCh)
-	}()
 }
 
 func withLabels(lbs map[string]string) func(*corev1.Pod) {
