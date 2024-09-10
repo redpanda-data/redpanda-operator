@@ -537,7 +537,7 @@ func (r *ClusterReconciler) reportStatus(
 			err = r.Status().Update(ctx, cluster)
 			if err == nil {
 				// sync original cluster variable to avoid conflicts on subsequent operations
-				*redpandaCluster = *cluster
+				redpandaCluster.Status = cluster.Status
 			}
 			return err
 		})
