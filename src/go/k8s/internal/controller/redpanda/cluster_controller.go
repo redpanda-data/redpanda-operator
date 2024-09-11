@@ -1158,11 +1158,19 @@ func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectoriz
 		return condition
 	}
 
-	if redpandaCluster.Status.CurrentReplicas != redpandaCluster.Status.Replicas || redpandaCluster.Status.Replicas != redpandaCluster.Status.ReadyReplicas || (redpandaCluster.Spec.Replicas != nil && *redpandaCluster.Spec.Replicas != redpandaCluster.Status.Replicas) {
-		condition.Status = corev1.ConditionFalse
-		condition.Reason = "ReplicasNotSynced"
-		condition.Message = fmt.Sprintf("Replicas are not synced. spec.replicas=%d status.currentReplicas=%d,status.replicas=%d,status.readyReplicas=%d. All must be equal.", ptr.Deref(redpandaCluster.Spec.Replicas, 0), redpandaCluster.Status.CurrentReplicas, redpandaCluster.Status.Replicas, redpandaCluster.Status.ReadyReplicas)
-		return condition
+	{
+		// Use status.replicas as base; we want all fields about replicas to match it.
+		// If any one is not matching it, we have a discrepancy, and replicas are not synced.
+		currentReplicasMatch := redpandaCluster.Status.CurrentReplicas == redpandaCluster.Status.Replicas
+		readyReplicasMatch := redpandaCluster.Status.ReadyReplicas == redpandaCluster.Status.Replicas
+		specReplicasMatch := ptr.Deref(redpandaCluster.Spec.Replicas, 0) == redpandaCluster.Status.Replicas
+
+		if !currentReplicasMatch || !readyReplicasMatch || !specReplicasMatch {
+			condition.Status = corev1.ConditionFalse
+			condition.Reason = "ReplicasNotSynced"
+			condition.Message = fmt.Sprintf("Replicas are not synced. spec.replicas=%d status.currentReplicas=%d,status.replicas=%d,status.readyReplicas=%d. All must be equal.", ptr.Deref(redpandaCluster.Spec.Replicas, 0), redpandaCluster.Status.CurrentReplicas, redpandaCluster.Status.Replicas, redpandaCluster.Status.ReadyReplicas)
+			return condition
+		}
 	}
 
 	// No reason found (no early return), so claim the controller is quiescent.
