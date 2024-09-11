@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/configurator"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/run"
 	"github.com/spf13/cobra"
 )
@@ -24,8 +25,9 @@ var rootCmd = cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(
-		run.Command(),
 		configurator.Command(),
+		envsubst.Command(),
+		run.Command(),
 	)
 }
 
