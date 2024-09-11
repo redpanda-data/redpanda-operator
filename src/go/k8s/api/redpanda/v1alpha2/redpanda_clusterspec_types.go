@@ -351,6 +351,17 @@ type SASL struct {
 	SecretRef *string `json:"secretRef,omitempty"`
 	// Specifies a list of superuser credentials.
 	Users []UsersItems `json:"users,omitempty"`
+	// Specifies configuration about the bootstrap user.
+	BootstrapUser *BootstrapUser `json:"bootstrapUser,omitempty"`
+}
+
+// BootstrapUser configures the user used to bootstrap Redpanda when SASL is enabled.
+type BootstrapUser struct {
+	// Specifies the location where the generated password will be written or a pre-existing
+	// password will be read from.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+	Mechanism *string `json:"mechanism,omitempty"`
 }
 
 // UsersItems configures a list of superusers in the Helm values.
