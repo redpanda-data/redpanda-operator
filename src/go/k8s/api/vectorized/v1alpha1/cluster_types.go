@@ -210,7 +210,7 @@ type NodePoolSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Storage spec for cluster
 	// +required
-	Storage StorageSpec `json:"storage,omitempty"`
+	Storage StorageSpec `json:"storage"`
 	// Resources used by redpanda process running in container. Beware that
 	// there are multiple containers running in the redpanda pod and these can
 	// be enabled/disabled and configured from the `sidecars` field. These
