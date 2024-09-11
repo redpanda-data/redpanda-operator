@@ -1028,6 +1028,9 @@ spec:
                     Resources, because this is tied strongly to the actual machine shape backing the NodePool.
                   properties:
                     name:
+                      description: Name of the NodePool. Must be unique, and must
+                        not be "default".
+                      minLength: 3
                       type: string
                     nodeSelector:
                       additionalProperties:
@@ -1167,6 +1170,7 @@ spec:
                   required:
                   - name
                   - resources
+                  - storage
                   type: object
                 type: array
               nodeSelector:
