@@ -196,6 +196,9 @@ type ClusterSpec struct {
 // Replicas, so they can be controlled independently
 // Resources, because this is tied strongly to the actual machine shape backing the NodePool.
 type NodePoolSpec struct {
+	// Name of the NodePool. Must be unique, and must not be "default".
+	// +kubebuilder:validation:MinLength=3
+	// +required
 	Name string `json:"name"`
 	// Replicas determine how big the node pool will be.
 	// +kubebuilder:validation:Minimum=0
@@ -206,6 +209,7 @@ type NodePoolSpec struct {
 	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Storage spec for cluster
+	// +required
 	Storage StorageSpec `json:"storage,omitempty"`
 	// Resources used by redpanda process running in container. Beware that
 	// there are multiple containers running in the redpanda pod and these can
@@ -213,6 +217,7 @@ type NodePoolSpec struct {
 	// containers have separate resources settings and the amount of resources
 	// assigned to these containers will be required on the cluster on top of
 	// the resources defined here
+	// +required
 	Resources RedpandaResourceRequirements `json:"resources"`
 }
 
