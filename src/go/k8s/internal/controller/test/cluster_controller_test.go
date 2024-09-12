@@ -770,10 +770,10 @@ var _ = Describe("RedPandaCluster controller", func() {
 			configMapHash := sts.Annotations[res.ConfigMapHashAnnotationKey]
 			var existingCluster v1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &existingCluster)).Should(Succeed())
-
+			latest := existingCluster.DeepCopy()
 			var newReplicas int32 = replicas + 2
 			existingCluster.Spec.Replicas = &newReplicas
-			Expect(k8sClient.Update(context.Background(), &existingCluster)).Should(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &existingCluster, client.MergeFrom(latest))).Should(Succeed())
 
 			// verify scale-out completed and the configmap hash did not change
 			var newSts appsv1.StatefulSet

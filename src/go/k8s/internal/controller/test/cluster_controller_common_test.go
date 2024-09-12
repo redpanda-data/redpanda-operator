@@ -84,8 +84,9 @@ func clusterUpdater(
 		if err := k8sClient.Get(context.Background(), clusterNamespacedName, cl); err != nil {
 			return err
 		}
+		latest := cl.DeepCopy()
 		upd(cl)
-		return k8sClient.Update(context.Background(), cl)
+		return k8sClient.Patch(context.Background(), cl, client.MergeFrom(latest))
 	}
 }
 
@@ -97,8 +98,9 @@ func consoleUpdater(
 		if err := k8sClient.Get(context.Background(), consoleNamespacedName, con); err != nil {
 			return err
 		}
+		latest := con.DeepCopy()
 		upd(con)
-		return k8sClient.Update(context.Background(), con)
+		return k8sClient.Patch(context.Background(), con, client.MergeFrom(latest))
 	}
 }
 
@@ -111,6 +113,7 @@ func statefulSetReplicasReconciler(
 		if err != nil {
 			return err
 		}
+		latest := sts.DeepCopy()
 
 		// Aligning Pods first
 		var podList corev1.PodList
@@ -165,7 +168,7 @@ func statefulSetReplicasReconciler(
 		sts.Status.Replicas = *sts.Spec.Replicas
 		sts.Status.ReadyReplicas = sts.Status.Replicas
 		log.Info("update sts", "sts", sts)
-		return k8sClient.Status().Update(context.Background(), &sts)
+		return k8sClient.Status().Patch(context.Background(), &sts, client.MergeFrom(latest))
 	}
 }
 
