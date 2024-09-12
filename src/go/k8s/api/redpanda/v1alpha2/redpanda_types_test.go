@@ -154,6 +154,9 @@ func TestHelmValuesCompat(t *testing.T) {
 					return ptr.To(time.Duration(*dur).String())
 				}).AsAny(),
 			},
+			reflect.TypeFor[redpanda.PartialBootstrapUser](): {
+				"Password": rapid.Just[any](nil), // This field is intentionally not documented or added to the CRD
+			},
 		},
 	}
 
