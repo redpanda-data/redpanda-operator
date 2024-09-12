@@ -123,11 +123,12 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			testAdminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			var cluster v1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.non-restarting"] = "the-val"
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Sending the new property to the admin API")
 			Eventually(testAdminAPI.PropertyGetter("non-restarting"), timeout, interval).Should(Equal("the-val"))
@@ -180,11 +181,12 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			testAdminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			var cluster v1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.p0"] = "v0"
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the field with the admin API")
 			Eventually(testAdminAPI.PropertyGetter("p0"), timeout, interval).Should(Equal("v0"))
@@ -196,12 +198,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			testAdminAPI.RegisterPropertySchema("p1", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			testAdminAPI.RegisterPropertySchema("p2", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest = cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.p1"] = "v1"
 			cluster.Spec.AdditionalConfiguration["redpanda.p2"] = "v2"
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Adding two fields to the config at once")
 			Eventually(testAdminAPI.PropertyGetter("p1")).Should(Equal("v1"))
@@ -221,12 +224,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting a deletion and a change")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest = cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.p1"] = "v1x"
 			delete(cluster.Spec.AdditionalConfiguration, "redpanda.p2")
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Producing the right patch")
 			Eventually(testAdminAPI.PropertyGetter("p1")).Should(Equal("v1x"))
@@ -248,10 +252,10 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Adding configuration of array type")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
-
+			latest = cluster.DeepCopy()
 			testAdminAPI.RegisterPropertySchema("kafka_nodelete_topics", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "array", Items: rpadmin.ConfigPropertyItems{Type: "string"}})
 			cluster.Spec.AdditionalConfiguration["redpanda.kafka_nodelete_topics"] = "[_internal_connectors_configs _internal_connectors_offsets _internal_connectors_status _audit __consumer_offsets _redpanda_e2e_probe _schemas]"
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			Eventually(testAdminAPI.PropertyGetter("kafka_nodelete_topics")).Should(Equal([]string{
 				"__consumer_offsets",
@@ -301,12 +305,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			testAdminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true})
 			var cluster v1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			const propValue = "the-value"
 			cluster.Spec.AdditionalConfiguration["redpanda.prop-restart"] = propValue
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the field with the admin API")
 			Eventually(testAdminAPI.PropertyGetter("prop-restart"), timeout, interval).Should(Equal(propValue))
@@ -323,9 +328,10 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Accepting another change that would not require restart")
 			testAdminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest = cluster.DeepCopy()
 			const propValue2 = "the-value2"
 			cluster.Spec.AdditionalConfiguration["redpanda.prop-no-restart"] = propValue2
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the new field with the admin API")
 			Eventually(testAdminAPI.PropertyGetter("prop-no-restart"), timeout, interval).Should(Equal(propValue2))
@@ -342,8 +348,9 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting a change in a node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest = cluster.DeepCopy()
 			cluster.Spec.Configuration.DeveloperMode = !cluster.Spec.Configuration.DeveloperMode
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Changing the hash because of the node property change")
 			Eventually(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeout, interval).ShouldNot(Equal(initialConfigMapHash))
@@ -357,11 +364,12 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting another change to a redpanda node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
+			latest = cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_directory"] = "/tmp" // node property
-			Expect(k8sClient.Update(context.Background(), &cluster)).To(Succeed())
+			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Changing the hash because of the node property change")
 			Eventually(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeout, interval).ShouldNot(Equal(configMapHash2))
