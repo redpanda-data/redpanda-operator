@@ -193,18 +193,18 @@ func (t *TestingT) SetNamespace(namespace string) {
 
 // IsolateNamespace creates a temporary namespace for the tests in this scope to run.
 func (t *TestingT) IsolateNamespace(ctx context.Context) string {
-	namespace := AddSuffix("testing")
+	namespace := AddRandomSuffixTo("testing")
 
 	require.NoError(t, createNamespace(ctx, t.options.SchemeRegisterers, namespace, t.options.KubectlOptions))
 
 	oldNamespace := t.options.KubectlOptions.Namespace
 	t.options.KubectlOptions.Namespace = namespace
-	t.Logf("Switiching namespace %q --> %q", oldNamespace, namespace)
+	t.Logf("Switching to newly created namespace %q --> %q", oldNamespace, namespace)
 
 	t.Cleanup(func(ctx context.Context) {
 		require.NoError(t, deleteNamespace(ctx, t.options.SchemeRegisterers, namespace, t.options.KubectlOptions))
 		t.options.KubectlOptions.Namespace = oldNamespace
-		t.Logf("Switiching namespace %q --> %q", namespace, oldNamespace)
+		t.Logf("Switching namespaces after deleting %q --> %q", namespace, oldNamespace)
 	})
 
 	return namespace

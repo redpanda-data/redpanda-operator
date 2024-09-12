@@ -10,6 +10,7 @@
 package framework
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -40,6 +41,7 @@ type helmChart struct {
 
 type SuiteBuilder struct {
 	testingOpts     *internaltesting.TestingOptions
+	output          string
 	opts            godog.Options
 	registry        *internaltesting.TagRegistry
 	providers       map[string]Provider
@@ -55,12 +57,19 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 	godogOpts := godog.Options{Output: colors.Colored(os.Stdout)}
 
 	var config string
+	var output string
 	options := &internaltesting.TestingOptions{}
 
+	// TODO: Consider adding an -always-retain flag that doesn't actually delete anything. If
+	// we add something like that we'll still have to do some "stateful" cleanup in the lifecycle,
+	// i.e. switching namespaces even if we don't delete the old one depending on when namespace
+	// isolation occurs, so consider if it would make sense to add something like a T.AlwaysCleanup
+	// or something that allows us to switch between "optional" and "required" test cleanup.
 	flag.BoolVar(&options.RetainOnFailure, "retain", false, "retain resources when a scenario fails")
 	flag.DurationVar(&options.CleanupTimeout, "cleanup-timeout", 0, "timeout for running any cleanup routines after a scenario")
 	flag.DurationVar(&options.Timeout, "timeout", 0, "timeout for running any individual test")
 	flag.StringVar(&config, "kube-config", "", "path to kube-config to use for scenario runs")
+	flag.StringVar(&output, "output", "", "path to write test formatter output to")
 	flag.StringVar(&options.Provider, "provider", "", "provider for the test suite")
 	flag.StringVar(&godogOpts.Format, "output-format", "pretty", "godog output format")
 	flag.BoolVar(&godogOpts.NoColors, "no-color", false, "print only in black and white")
@@ -76,6 +85,7 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 	registry := internaltesting.NewTagRegistry()
 	builder := &SuiteBuilder{
 		testingOpts: options,
+		output:      output,
 		opts:        godogOpts,
 		registry:    registry,
 		providers:   make(map[string]Provider),
@@ -146,9 +156,10 @@ func (b *SuiteBuilder) WithCRDDirectory(directory string) *SuiteBuilder {
 	return b
 }
 
-func setupErrorCheck(err error) {
+func setupErrorCheck(ctx context.Context, err error, cleanupFn func(ctx context.Context)) {
 	if err != nil {
-		fmt.Printf("error setting up test suite: %v\n", err)
+		fmt.Printf("setting up test suite: %v\n", err)
+		cleanupFn(ctx)
 		os.Exit(1)
 	}
 }
@@ -159,6 +170,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 
 	providerName := b.testingOpts.Provider
 	if providerName == "" {
+		b.testingOpts.Provider = b.defaultProvider
 		providerName = b.defaultProvider
 	}
 
@@ -187,43 +199,14 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 	}
 
 	return &Suite{
+		output: b.output,
 		suite: &godog.TestSuite{
 			Name: "acceptance",
 			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
-				suiteContext.BeforeSuite(func() {
-					provider.Setup(ctx)
-					setupErrorCheck(err)
-
-					// now add helm charts
-					for _, chart := range b.helmCharts {
-						err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
-						setupErrorCheck(err)
-
-						_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
-						setupErrorCheck(err)
-					}
-
-					// and finally any crds
-					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlApply(ctx, directory, b.testingOpts.KubectlOptions)
-						setupErrorCheck(err)
-					}
-				})
-				suiteContext.AfterSuite(func() {
-					cancel := func() {}
-					cleanupTimeout := b.testingOpts.CleanupTimeout
-					if cleanupTimeout != 0 {
-						ctx, cancel = context.WithTimeout(ctx, cleanupTimeout)
-					}
-					defer cancel()
-
-					if tracker.SuiteFailed() && b.testingOpts.RetainOnFailure {
-						fmt.Println("skipping cleanup due to test failure and retain flag being set")
-						return
-					}
+				cleanup := func(ctx context.Context) {
 					// teardown in reverse order from setup
 					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlApply(ctx, directory, b.testingOpts.KubectlOptions)
+						_, err := internaltesting.KubectlDelete(ctx, directory, b.testingOpts.KubectlOptions)
 						if err != nil {
 							fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
 						}
@@ -239,6 +222,41 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 					if err := provider.Teardown(ctx); err != nil {
 						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
 					}
+
+				}
+
+				suiteContext.BeforeSuite(func() {
+					err = provider.Setup(ctx)
+					setupErrorCheck(ctx, err, cleanup)
+
+					// now add helm charts
+					for _, chart := range b.helmCharts {
+						err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
+						setupErrorCheck(ctx, err, cleanup)
+
+						_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
+						setupErrorCheck(ctx, err, cleanup)
+					}
+
+					// and finally any crds
+					for _, directory := range b.crdDirectories {
+						_, err := internaltesting.KubectlApply(ctx, directory, b.testingOpts.KubectlOptions)
+						setupErrorCheck(ctx, err, cleanup)
+					}
+				})
+				suiteContext.AfterSuite(func() {
+					cancel := func() {}
+					cleanupTimeout := b.testingOpts.CleanupTimeout
+					if cleanupTimeout != 0 {
+						ctx, cancel = context.WithTimeout(ctx, cleanupTimeout)
+					}
+					defer cancel()
+
+					if tracker.SuiteFailed() && b.testingOpts.RetainOnFailure {
+						fmt.Println("skipping cleanup due to test failure and retain flag being set")
+						return
+					}
+					cleanup(ctx)
 				})
 			},
 			ScenarioInitializer: func(ctx *godog.ScenarioContext) {
@@ -266,21 +284,49 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 }
 
 type Suite struct {
+	output  string
 	suite   *godog.TestSuite
 	options *internaltesting.TestingOptions
 }
 
 func (s *Suite) RunM(m *testing.M) {
+	var testLog bytes.Buffer
+	if s.output != "" {
+		s.suite.Options.Output = &testLog
+		s.suite.Options.NoColors = true
+	}
+
 	status := s.suite.Run()
 
 	if st := m.Run(); st > status {
 		status = st
 	}
 
+	if s.output != "" {
+		writeTestLog(testLog, s.output)
+	}
+
 	os.Exit(status)
 }
 
 func (s *Suite) RunT(t *testing.T) {
+	var testLog bytes.Buffer
+	if s.output != "" {
+		s.suite.Options.Output = &testLog
+		s.suite.Options.NoColors = true
+	}
+
 	s.suite.Options.TestingT = t
 	s.suite.Run()
+
+	if s.output != "" {
+		writeTestLog(testLog, s.output)
+	}
+}
+
+func writeTestLog(buffer bytes.Buffer, path string) {
+	if err := os.WriteFile(path, buffer.Bytes(), 0644); err != nil {
+		fmt.Println("Error writing test output log to disk, writing to stdout")
+		fmt.Println(buffer.String())
+	}
 }

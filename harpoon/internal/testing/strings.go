@@ -29,6 +29,6 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func AddSuffix(s string) string {
+func AddRandomSuffixTo(s string) string {
 	return s + "-" + randomString(10)
 }

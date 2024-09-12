@@ -69,7 +69,7 @@ Included is a "stub" test suite example, but here's a slightly more complex suit
 			CreateNamespace: true,
 		}).
 		WithCRDDirectory("path/to/crds").
-=		OnFeature(func(ctx context.Context, t framework.TestingT) {
+		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			t.Log("Installing some helm chart")
 			t.InstallHelmChart(ctx, "http://some.host.local", "some", "chart", helm.InstallOptions{
 				Name:      "chart",
