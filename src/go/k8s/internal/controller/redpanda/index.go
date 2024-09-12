@@ -11,8 +11,10 @@ package redpanda
 
 import (
 	"context"
+	"slices"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,7 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const userClusterIndex = "__user_referencing_cluster"
+const (
+	userClusterIndex = "__user_referencing_cluster"
+	podClusterIndex  = "__pod_referencing_cluster"
+)
 
 func userCluster(user *redpandav1alpha2.User) types.NamespacedName {
 	return types.NamespacedName{Namespace: user.Namespace, Name: user.Spec.ClusterSource.ClusterRef.Name}
@@ -62,4 +67,65 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 	}
 
 	return requests, nil
+}
+
+func registerPodClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
+	return mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podClusterIndex, indexPodCluster)
+}
+
+func clusterForPod(o client.Object) (types.NamespacedName, bool) {
+	pod := o.(*corev1.Pod)
+	clusterName := pod.Labels["app.kubernetes.io/instance"]
+	if clusterName == "" {
+		return types.NamespacedName{}, false
+	}
+
+	role := pod.Labels["app.kubernetes.io/name"]
+	if !slices.Contains([]string{"redpanda", "console"}, role) {
+		return types.NamespacedName{}, false
+	}
+
+	return types.NamespacedName{
+		Namespace: o.GetNamespace(),
+		Name:      clusterName,
+	}, true
+}
+
+func consolePodsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]corev1.Pod, error) {
+	return podsForClusterByRole(ctx, c, cluster, "console")
+}
+
+func redpandaPodsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]corev1.Pod, error) {
+	return podsForClusterByRole(ctx, c, cluster, "redpanda")
+}
+
+func podsForClusterByRole(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda, role string) ([]corev1.Pod, error) {
+	key := client.ObjectKeyFromObject(cluster).String() + "/" + role
+
+	podList := &corev1.PodList{}
+	err := c.List(ctx, podList, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(podClusterIndex, key),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return podList.Items, nil
+}
+
+func indexPodCluster(o client.Object) []string {
+	nn, found := clusterForPod(o)
+	if !found {
+		return nil
+	}
+	role := o.GetLabels()["app.kubernetes.io/name"]
+
+	// we add two cache keys:
+	// 1. namespace/name of the cluster
+	// 2. namespace/name/role to identify if this is a console or redpanda pod
+
+	baseID := nn.String()
+	roleID := baseID + "/" + role
+
+	return []string{baseID, roleID}
 }
