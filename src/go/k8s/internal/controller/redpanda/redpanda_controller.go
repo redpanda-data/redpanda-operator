@@ -958,7 +958,7 @@ func checkStatefulSetStatus(ss []*appsv1.StatefulSet) (string, bool) {
 
 type replicasExtractor[T client.Object] func(o T) (updated, available, ready, total int32)
 
-func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, name string) (string, bool) {
+func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, resource string) (string, bool) {
 	var notReady sort.StringSlice
 	for _, item := range list {
 		updated, available, ready, total := fn(item)
@@ -972,8 +972,7 @@ func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, na
 	if len(notReady) > 0 {
 		notReady.Sort()
 
-		return fmt.Sprintf("Not all replicas updated, available, and ready for %s(s) [%s].", name, strings.Join(notReady, "; ")), false
+		return fmt.Sprintf("Not all replicas updated, available, and ready for %s(s) [%s].", resource, strings.Join(notReady, "; ")), false
 	}
 	return "", true
-
 }
