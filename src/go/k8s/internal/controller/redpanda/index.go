@@ -14,6 +14,7 @@ import (
 	"slices"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,8 +24,9 @@ import (
 )
 
 const (
-	userClusterIndex = "__user_referencing_cluster"
-	podClusterIndex  = "__pod_referencing_cluster"
+	userClusterIndex        = "__user_referencing_cluster"
+	podClusterIndex         = "__pod_referencing_cluster"
+	statefulsetClusterIndex = "__statefulset_referencing_cluster"
 )
 
 func userCluster(user *redpandav1alpha2.User) types.NamespacedName {
@@ -70,22 +72,26 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 }
 
 func registerPodClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
-	return mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podClusterIndex, indexPodCluster)
+	return mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podClusterIndex, indexHelmManagedObjectCluster)
 }
 
-func clusterForPod(o client.Object) (types.NamespacedName, bool) {
-	pod := o.(*corev1.Pod)
-	clusterName := pod.Labels["app.kubernetes.io/instance"]
+func registerStatefulSetClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
+	return mgr.GetFieldIndexer().IndexField(ctx, &appsv1.StatefulSet{}, statefulsetClusterIndex, indexHelmManagedObjectCluster)
+}
+
+func clusterForHelmManagedObject(o client.Object) (types.NamespacedName, bool) {
+	labels := o.GetLabels()
+	clusterName := labels["app.kubernetes.io/instance"]
 	if clusterName == "" {
 		return types.NamespacedName{}, false
 	}
 
-	role := pod.Labels["app.kubernetes.io/name"]
+	role := labels["app.kubernetes.io/name"]
 	if !slices.Contains([]string{"redpanda", "console"}, role) {
 		return types.NamespacedName{}, false
 	}
 
-	if _, ok := pod.Labels["batch.kubernetes.io/job-name"]; ok {
+	if _, ok := labels["batch.kubernetes.io/job-name"]; ok {
 		return types.NamespacedName{}, false
 	}
 
@@ -93,6 +99,37 @@ func clusterForPod(o client.Object) (types.NamespacedName, bool) {
 		Namespace: o.GetNamespace(),
 		Name:      clusterName,
 	}, true
+}
+
+func indexHelmManagedObjectCluster(o client.Object) []string {
+	nn, found := clusterForHelmManagedObject(o)
+	if !found {
+		return nil
+	}
+	role := o.GetLabels()["app.kubernetes.io/name"]
+
+	// we add two cache keys:
+	// 1. namespace/name of the cluster
+	// 2. namespace/name/role to identify if this is a console or redpanda pod
+
+	baseID := nn.String()
+	roleID := baseID + "/" + role
+
+	return []string{baseID, roleID}
+}
+
+func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]appsv1.StatefulSet, error) {
+	key := client.ObjectKeyFromObject(cluster).String() + "/redpanda"
+
+	ssList := &appsv1.StatefulSetList{}
+	err := c.List(ctx, ssList, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(statefulsetClusterIndex, key),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ssList.Items, nil
 }
 
 func consolePodsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]corev1.Pod, error) {
@@ -115,21 +152,4 @@ func podsForClusterByRole(ctx context.Context, c client.Client, cluster *redpand
 	}
 
 	return podList.Items, nil
-}
-
-func indexPodCluster(o client.Object) []string {
-	nn, found := clusterForPod(o)
-	if !found {
-		return nil
-	}
-	role := o.GetLabels()["app.kubernetes.io/name"]
-
-	// we add two cache keys:
-	// 1. namespace/name of the cluster
-	// 2. namespace/name/role to identify if this is a console or redpanda pod
-
-	baseID := nn.String()
-	roleID := baseID + "/" + role
-
-	return []string{baseID, roleID}
 }

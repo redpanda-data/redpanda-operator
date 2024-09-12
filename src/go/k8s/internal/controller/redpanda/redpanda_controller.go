@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -126,8 +127,11 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 	if err := registerPodClusterIndex(ctx, mgr); err != nil {
 		return err
 	}
+	if err := registerStatefulSetClusterIndex(ctx, mgr); err != nil {
+		return err
+	}
 
-	helmManagedPodPredicate, err := predicate.LabelSelectorPredicate(
+	helmManagedComponentPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{{
 				Key:      "app.kubernetes.io/name", // look for only redpanda or console pods
@@ -146,17 +150,22 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		return err
 	}
 
+	managedWatchOption := builder.WithPredicates(helmManagedComponentPredicate)
+
+	enqueueRequestFromManaged := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		if nn, found := clusterForHelmManagedObject(o); found {
+			return []reconcile.Request{{NamespacedName: nn}}
+		}
+		return nil
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha2.Redpanda{}).
 		Owns(&sourcev1.HelmRepository{}).
 		Owns(&helmv2beta1.HelmRelease{}).
 		Owns(&helmv2beta2.HelmRelease{}).
-		Watches(&corev1.Pod{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			if nn, found := clusterForPod(o); found {
-				return []reconcile.Request{{NamespacedName: nn}}
-			}
-			return nil
-		}), builder.WithPredicates(helmManagedPodPredicate)).
+		Watches(&corev1.Pod{}, enqueueRequestFromManaged, managedWatchOption).
+		Watches(&appsv1.StatefulSet{}, enqueueRequestFromManaged, managedWatchOption).
 		Complete(r)
 }
 
@@ -537,12 +546,16 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		}
 	}
 
-	// pull our console pods and redpanda pods
+	// pull our console pods, redpanda pods, and stateful sets
 	consolePods, err := consolePodsForCluster(ctx, r.Client, rp)
 	if err != nil {
 		return rp, ctrl.Result{}, err
 	}
 	redpandaPods, err := redpandaPodsForCluster(ctx, r.Client, rp)
+	if err != nil {
+		return rp, ctrl.Result{}, err
+	}
+	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
 	if err != nil {
 		return rp, ctrl.Result{}, err
 	}
@@ -587,6 +600,11 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	if !isResourceReady {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
 		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), ctrl.Result{}, nil
+	}
+
+	// check to make sure that our stateful set pods are all current
+	if message, ready := checkClusteStatefulSetStatus(redpandaStatefulSets); !ready {
+		return v1alpha2.RedpandaNotReady(rp, "PodUpgradesNotReady", message), ctrl.Result{}, nil
 	}
 
 	// check to make sure we have sane pod statuses
@@ -950,7 +968,7 @@ func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
 }
 
 func checkClusterPodStatus(pods []corev1.Pod) (string, bool) {
-	notReady := []string{}
+	var notReady sort.StringSlice
 	for _, p := range pods { //nolint:gocritic // gocritic is mad that a copy of slice value is being made here
 		_, ready := pod.GetPodConditionFromList(p.Status.Conditions, corev1.PodReady)
 		if ready == nil || ready.Status == corev1.ConditionFalse {
@@ -958,7 +976,30 @@ func checkClusterPodStatus(pods []corev1.Pod) (string, bool) {
 		}
 	}
 	if len(notReady) > 0 {
+		notReady.Sort()
+
 		return fmt.Sprintf("Pods [%q] are not ready.", strings.Join(notReady, ", ")), false
+	}
+	return "", true
+}
+
+func checkClusteStatefulSetStatus(ss []appsv1.StatefulSet) (string, bool) {
+	var notReady sort.StringSlice
+	for _, set := range ss { //nolint:gocritic // gocritic is mad that a copy of slice value is being made here
+		total := ptr.Deref(set.Spec.Replicas, 0)
+
+		if set.Status.UpdatedReplicas != total || set.Status.AvailableReplicas != total {
+			name := client.ObjectKeyFromObject(&set).String() //nolint:gosec // this memory addressing is fine since its usage doesn't exceed this loop iteration
+			updated := set.Status.UpdatedReplicas
+			available := set.Status.AvailableReplicas
+			item := fmt.Sprintf("%q (updated: %d/%d, available: %d/%d)", name, updated, total, available, total)
+			notReady = append(notReady, item)
+		}
+	}
+	if len(notReady) > 0 {
+		notReady.Sort()
+
+		return fmt.Sprintf("Not all replicas updated and available for StatefulSet(s) [%s].", strings.Join(notReady, "; ")), false
 	}
 	return "", true
 }
