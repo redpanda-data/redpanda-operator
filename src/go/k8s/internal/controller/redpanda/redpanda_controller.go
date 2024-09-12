@@ -50,7 +50,6 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorzied_v1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/util/pod"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
@@ -124,10 +123,10 @@ type RedpandaReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	if err := registerPodClusterIndex(ctx, mgr); err != nil {
+	if err := registerStatefulSetClusterIndex(ctx, mgr); err != nil {
 		return err
 	}
-	if err := registerStatefulSetClusterIndex(ctx, mgr); err != nil {
+	if err := registerDeploymentClusterIndex(ctx, mgr); err != nil {
 		return err
 	}
 
@@ -164,8 +163,8 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		Owns(&sourcev1.HelmRepository{}).
 		Owns(&helmv2beta1.HelmRelease{}).
 		Owns(&helmv2beta2.HelmRelease{}).
-		Watches(&corev1.Pod{}, enqueueRequestFromManaged, managedWatchOption).
 		Watches(&appsv1.StatefulSet{}, enqueueRequestFromManaged, managedWatchOption).
+		Watches(&appsv1.Deployment{}, enqueueRequestFromManaged, managedWatchOption).
 		Complete(r)
 }
 
@@ -546,16 +545,12 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		}
 	}
 
-	// pull our console pods, redpanda pods, and stateful sets
-	consolePods, err := consolePodsForCluster(ctx, r.Client, rp)
-	if err != nil {
-		return rp, ctrl.Result{}, err
-	}
-	redpandaPods, err := redpandaPodsForCluster(ctx, r.Client, rp)
-	if err != nil {
-		return rp, ctrl.Result{}, err
-	}
+	// pull our deployments and stateful sets
 	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
+	if err != nil {
+		return rp, ctrl.Result{}, err
+	}
+	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
 	if err != nil {
 		return rp, ctrl.Result{}, err
 	}
@@ -603,24 +598,12 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	}
 
 	// check to make sure that our stateful set pods are all current
-	if message, ready := checkClusteStatefulSetStatus(redpandaStatefulSets); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "PodUpgradesNotReady", message), ctrl.Result{}, nil
+	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
+		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message), ctrl.Result{}, nil
 	}
 
-	// check to make sure we have sane pod statuses
-	if len(redpandaPods) == 0 {
-		// we need to always have some pods here or something is wrong
-		return v1alpha2.RedpandaNotReady(rp, "ClusterPodsNotReady", "cluster pods not yet created"), ctrl.Result{}, nil
-	}
-
-	if message, ready := checkClusterPodStatus(redpandaPods); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "ClusterPodsNotReady", message), ctrl.Result{}, nil
-	}
-
-	// consider console a second-class citizen for the sake of statuses, don't check to see
-	// if we are supposed to have some but they aren't yet created, but, if we do find some
-	// pods and they report a not ready status, then set the status accordingly
-	if message, ready := checkClusterPodStatus(consolePods); !ready {
+	// check to make sure that our deployment pods are all current
+	if message, ready := checkDeploymentsStatus(consoleDeployments); !ready {
 		return v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message), ctrl.Result{}, nil
 	}
 
@@ -813,13 +796,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 		timeout = &metav1.Duration{Duration: 15 * time.Minute}
 	}
 
-	rollBack := helmv2beta2.RemediationStrategy("rollback")
-
 	upgrade := &helmv2beta2.Upgrade{
-		Remediation: &helmv2beta2.UpgradeRemediation{
-			Retries:  1,
-			Strategy: &rollBack,
-		},
 		// we skip waiting since relying on the Helm release process
 		// to actually happen means that we block running any sort
 		// of pending upgrades while we are attempting the upgrade job.
@@ -967,39 +944,36 @@ func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
 	console.Annotations[managedAnnotationKey] = NotManaged
 }
 
-func checkClusterPodStatus(pods []corev1.Pod) (string, bool) {
-	var notReady sort.StringSlice
-	for _, p := range pods { //nolint:gocritic // gocritic is mad that a copy of slice value is being made here
-		_, ready := pod.GetPodConditionFromList(p.Status.Conditions, corev1.PodReady)
-		if ready == nil || ready.Status == corev1.ConditionFalse {
-			notReady = append(notReady, client.ObjectKeyFromObject(&p).String()) //nolint:gosec // this memory addressing is fine since its usage doesn't exceed this loop iteration
-		}
-	}
-	if len(notReady) > 0 {
-		notReady.Sort()
-
-		return fmt.Sprintf("Pods [%q] are not ready.", strings.Join(notReady, ", ")), false
-	}
-	return "", true
+func checkDeploymentsStatus(deployments []*appsv1.Deployment) (string, bool) {
+	return checkReplicasForList(func(o *appsv1.Deployment) (int32, int32, int32, int32) {
+		return o.Status.UpdatedReplicas, o.Status.AvailableReplicas, o.Status.ReadyReplicas, ptr.Deref(o.Spec.Replicas, 0)
+	}, deployments, "Deployment")
 }
 
-func checkClusteStatefulSetStatus(ss []appsv1.StatefulSet) (string, bool) {
-	var notReady sort.StringSlice
-	for _, set := range ss { //nolint:gocritic // gocritic is mad that a copy of slice value is being made here
-		total := ptr.Deref(set.Spec.Replicas, 0)
+func checkStatefulSetStatus(ss []*appsv1.StatefulSet) (string, bool) {
+	return checkReplicasForList(func(o *appsv1.StatefulSet) (int32, int32, int32, int32) {
+		return o.Status.UpdatedReplicas, o.Status.AvailableReplicas, o.Status.ReadyReplicas, ptr.Deref(o.Spec.Replicas, 0)
+	}, ss, "StatefulSet")
+}
 
-		if set.Status.UpdatedReplicas != total || set.Status.AvailableReplicas != total {
-			name := client.ObjectKeyFromObject(&set).String() //nolint:gosec // this memory addressing is fine since its usage doesn't exceed this loop iteration
-			updated := set.Status.UpdatedReplicas
-			available := set.Status.AvailableReplicas
-			item := fmt.Sprintf("%q (updated: %d/%d, available: %d/%d)", name, updated, total, available, total)
+type replicasExtractor[T client.Object] func(o T) (updated, available, ready, total int32)
+
+func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, name string) (string, bool) {
+	var notReady sort.StringSlice
+	for _, item := range list {
+		updated, available, ready, total := fn(item)
+
+		if updated != total || available != total || ready != total {
+			name := client.ObjectKeyFromObject(item).String()
+			item := fmt.Sprintf("%q (updated/available/ready/total: %d/%d/%d/%d)", name, updated, available, ready, total)
 			notReady = append(notReady, item)
 		}
 	}
 	if len(notReady) > 0 {
 		notReady.Sort()
 
-		return fmt.Sprintf("Not all replicas updated and available for StatefulSet(s) [%s].", strings.Join(notReady, "; ")), false
+		return fmt.Sprintf("Not all replicas updated, available, and ready for %s(s) [%s].", name, strings.Join(notReady, "; ")), false
 	}
 	return "", true
+
 }

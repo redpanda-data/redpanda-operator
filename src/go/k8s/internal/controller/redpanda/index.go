@@ -15,9 +15,9 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -25,7 +25,7 @@ import (
 
 const (
 	userClusterIndex        = "__user_referencing_cluster"
-	podClusterIndex         = "__pod_referencing_cluster"
+	deploymentClusterIndex  = "__deployment_referencing_cluster"
 	statefulsetClusterIndex = "__statefulset_referencing_cluster"
 )
 
@@ -71,8 +71,8 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 	return requests, nil
 }
 
-func registerPodClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
-	return mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podClusterIndex, indexHelmManagedObjectCluster)
+func registerDeploymentClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
+	return mgr.GetFieldIndexer().IndexField(ctx, &appsv1.Deployment{}, deploymentClusterIndex, indexHelmManagedObjectCluster)
 }
 
 func registerStatefulSetClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
@@ -110,7 +110,7 @@ func indexHelmManagedObjectCluster(o client.Object) []string {
 
 	// we add two cache keys:
 	// 1. namespace/name of the cluster
-	// 2. namespace/name/role to identify if this is a console or redpanda pod
+	// 2. namespace/name/role to identify if this is a console or redpanda component
 
 	baseID := nn.String()
 	roleID := baseID + "/" + role
@@ -118,7 +118,21 @@ func indexHelmManagedObjectCluster(o client.Object) []string {
 	return []string{baseID, roleID}
 }
 
-func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]appsv1.StatefulSet, error) {
+func consoleDeploymentsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.Deployment, error) {
+	key := client.ObjectKeyFromObject(cluster).String() + "/console"
+
+	deploymentList := &appsv1.DeploymentList{}
+	err := c.List(ctx, deploymentList, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(deploymentClusterIndex, key),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapFn(ptr.To, deploymentList.Items), nil
+}
+
+func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
 	key := client.ObjectKeyFromObject(cluster).String() + "/redpanda"
 
 	ssList := &appsv1.StatefulSetList{}
@@ -129,27 +143,13 @@ func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluste
 		return nil, err
 	}
 
-	return ssList.Items, nil
+	return mapFn(ptr.To, ssList.Items), nil
 }
 
-func consolePodsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]corev1.Pod, error) {
-	return podsForClusterByRole(ctx, c, cluster, "console")
-}
-
-func redpandaPodsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]corev1.Pod, error) {
-	return podsForClusterByRole(ctx, c, cluster, "redpanda")
-}
-
-func podsForClusterByRole(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda, role string) ([]corev1.Pod, error) {
-	key := client.ObjectKeyFromObject(cluster).String() + "/" + role
-
-	podList := &corev1.PodList{}
-	err := c.List(ctx, podList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(podClusterIndex, key),
-	})
-	if err != nil {
-		return nil, err
+func mapFn[T any, U any](fn func(T) U, a []T) []U {
+	s := make([]U, len(a))
+	for i := 0; i < len(a); i++ {
+		s[i] = fn(a[i])
 	}
-
-	return podList.Items, nil
+	return s
 }
