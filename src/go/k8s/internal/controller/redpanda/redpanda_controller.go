@@ -130,12 +130,15 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 	helmManagedPodPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{{
-				Key:      "app.kubernetes.io/name",
+				Key:      "app.kubernetes.io/name", // look for only redpanda or console pods
 				Operator: metav1.LabelSelectorOpIn,
 				Values:   []string{"redpanda", "console"},
 			}, {
-				Key:      "app.kubernetes.io/instance",
+				Key:      "app.kubernetes.io/instance", // make sure we have a cluster name
 				Operator: metav1.LabelSelectorOpExists,
+			}, {
+				Key:      "batch.kubernetes.io/job-name", // filter out the job pods since they also have name=redpanda
+				Operator: metav1.LabelSelectorOpDoesNotExist,
 			}},
 		},
 	)
@@ -145,6 +148,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha2.Redpanda{}).
+		Owns(&sourcev1.HelmRepository{}).
 		Owns(&helmv2beta1.HelmRelease{}).
 		Owns(&helmv2beta2.HelmRelease{}).
 		Watches(&corev1.Pod{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {

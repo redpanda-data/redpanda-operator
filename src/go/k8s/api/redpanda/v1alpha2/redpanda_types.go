@@ -18,6 +18,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 )
@@ -238,6 +239,7 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 		Kind:       in.Kind,
 		Name:       in.Name,
 		UID:        in.UID,
+		Controller: ptr.To(true),
 	}
 }
 

@@ -85,6 +85,10 @@ func clusterForPod(o client.Object) (types.NamespacedName, bool) {
 		return types.NamespacedName{}, false
 	}
 
+	if _, ok := pod.Labels["batch.kubernetes.io/job-name"]; ok {
+		return types.NamespacedName{}, false
+	}
+
 	return types.NamespacedName{
 		Namespace: o.GetNamespace(),
 		Name:      clusterName,
