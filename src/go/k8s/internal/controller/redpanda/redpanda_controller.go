@@ -951,10 +951,10 @@ func disableConsoleReconciliation(console *vectorzied_v1alpha1.Console) {
 
 func checkClusterPodStatus(pods []corev1.Pod) (string, bool) {
 	notReady := []string{}
-	for _, p := range pods {
+	for _, p := range pods { //nolint:gocritic // gocritic is mad that a copy of slice value is being made here
 		_, ready := pod.GetPodConditionFromList(p.Status.Conditions, corev1.PodReady)
 		if ready == nil || ready.Status == corev1.ConditionFalse {
-			notReady = append(notReady, client.ObjectKeyFromObject(&p).String())
+			notReady = append(notReady, client.ObjectKeyFromObject(&p).String()) //nolint:gosec // this memory addressing is fine since its usage doesn't exceed this loop iteration
 		}
 	}
 	if len(notReady) > 0 {
