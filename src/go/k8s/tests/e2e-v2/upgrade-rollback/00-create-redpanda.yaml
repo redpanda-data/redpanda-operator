@@ -6,6 +6,10 @@ metadata:
 spec:
   chartRef:
     chartVersion: "5.3.2"
+    upgrade:
+      remediation:
+        retries: 1
+        strategy: "rollback"
   clusterSpec:
     image:
       tag: v23.2.3
