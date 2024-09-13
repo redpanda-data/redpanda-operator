@@ -972,7 +972,7 @@ func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, re
 	if len(notReady) > 0 {
 		notReady.Sort()
 
-		return fmt.Sprintf("Not all replicas updated, available, and ready for %s(s) [%s].", resource, strings.Join(notReady, "; ")), false
+		return fmt.Sprintf("Not all %s replicas updated, available, and ready for [%s]", resource, strings.Join(notReady, "; ")), false
 	}
 	return "", true
 }
