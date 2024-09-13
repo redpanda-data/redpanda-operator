@@ -5,6 +5,9 @@ env:
   PULL_REQUEST_BASE_BRANCH_NAME: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
   PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
+  # CI run podman instead of linux. testcontainer's ryuk is reported to not
+  # work well with podman.
+  TESTCONTAINERS_RYUK_DISABLED: "true"
 
 steps:
   - key: k8s-operator

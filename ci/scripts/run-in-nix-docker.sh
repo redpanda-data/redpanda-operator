@@ -55,6 +55,7 @@ docker run --rm -it \
 	-e GITHUB_API_TOKEN \
 	-e RPK_TEST_CLIENT_ID \
 	-e RPK_TEST_CLIENT_SECRET \
+	-e TESTCONTAINERS_RYUK_DISABLED \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
