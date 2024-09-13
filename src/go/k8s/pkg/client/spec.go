@@ -89,9 +89,14 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 
 	var auth rpadmin.Auth
 	var username, password, token string
-	username, password, token, err = c.configureAdminSpecSASL(ctx, namespace, spec)
-	if err != nil {
-		return nil, err
+
+	if c.userAuth != nil {
+		username, password = c.userAuth.Username, c.userAuth.Password
+	} else {
+		username, password, token, err = c.configureAdminSpecSASL(ctx, namespace, spec)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	switch {

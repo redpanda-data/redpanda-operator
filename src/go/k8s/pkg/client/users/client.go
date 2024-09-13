@@ -86,6 +86,11 @@ func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, er
 	return c.has(ctx, user.Name)
 }
 
+// List returns a list of all users in the cluster.
+func (c *Client) List(ctx context.Context) ([]string, error) {
+	return c.adminClient.ListUsers(ctx)
+}
+
 func (c *Client) delete(ctx context.Context, username string) error {
 	if c.scramAPISupported {
 		resp, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, []kadm.DeleteSCRAM{{

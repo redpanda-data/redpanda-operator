@@ -52,10 +52,10 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
-	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/src/go/k8s/webhooks/redpanda"
@@ -546,6 +546,14 @@ func Run(
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
+			os.Exit(1)
+		}
+
+		if err = (&redpandacontrollers.UserReconciler{
+			Client:        mgr.GetClient(),
+			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+		}).SetupWithManager(ctx, mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "User")
 			os.Exit(1)
 		}
 

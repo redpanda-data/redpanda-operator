@@ -57,7 +57,7 @@ func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 
 	response, err := req.RequestWith(ctx, s.client)
 	if err != nil {
-		return err
+		return fmt.Errorf("error deleting all ACLs: %w", err)
 	}
 
 	for _, result := range response.Results {
@@ -72,19 +72,19 @@ func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 func (s *Syncer) sync(ctx context.Context, principal string, rules []redpandav1alpha2.ACLRule) (created, deleted int, err error) {
 	acls, err := s.listACLs(ctx, principal)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("error listing ACLs: %w", err)
 	}
 
 	creations, deletions, err := calculateACLs(principal, rules, acls)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("error calculating ACLs: %w", err)
 	}
 
 	if err := s.createACLs(ctx, creations); err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("error creating ACLs: %w", err)
 	}
 	if err := s.deleteACLs(ctx, deletions); err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("error deleting ACLs: %w", err)
 	}
 
 	return len(creations), len(deletions), nil
@@ -110,7 +110,7 @@ func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.Describ
 
 	response, err := req.RequestWith(ctx, s.client)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error listing ACLs: %w", err)
 	}
 
 	if err := checkError(response.ErrorMessage, response.ErrorCode); err != nil {

@@ -1,0 +1,16 @@
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: sasl
+spec:
+  clusterSpec:
+    auth:
+      sasl:
+        enabled: true
+        users:
+          - name: superuser
+            password: superpassword
+            mechanism: SCRAM-SHA-512
+    statefulset:
+      replicas: 1
