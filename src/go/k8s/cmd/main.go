@@ -16,6 +16,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/run"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/syncclusterconfig"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,7 @@ func init() {
 		configurator.Command(),
 		envsubst.Command(),
 		run.Command(),
+		syncclusterconfig.Command(),
 	)
 }
 
