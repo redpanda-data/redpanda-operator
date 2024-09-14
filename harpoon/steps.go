@@ -9,7 +9,10 @@
 
 package framework
 
-import "github.com/cucumber/godog"
+import (
+	"github.com/cucumber/godog"
+	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
+)
 
 type stepDefinition struct {
 	expression string
@@ -24,6 +27,6 @@ func RegisterStep(expression string, step interface{}) {
 
 func getSteps(ctx *godog.ScenarioContext) {
 	for _, step := range registeredSteps {
-		ctx.Step(step.expression, step.step)
+		ctx.Step(step.expression, internaltesting.WrapWithPanicHandler("", internaltesting.ExitBehaviorNone, step.step))
 	}
 }

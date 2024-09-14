@@ -28,6 +28,7 @@ func TestMain(m *testing.M) {
 	suite, err = SuiteBuilderFromFlags().
 		RegisterProvider("stub", NoopProvider).
 		WithDefaultProvider("stub").
+		ExitOnCleanupFailures().
 		Build()
 
 	if err != nil {

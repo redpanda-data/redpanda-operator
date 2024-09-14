@@ -11,6 +11,7 @@ package testing
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -25,7 +26,19 @@ import (
 
 type contextKey struct{}
 
-var testingContextKey contextKey = struct{}{}
+var (
+	testingContextKey contextKey = struct{}{}
+	TerminationChan              = make(chan string)
+)
+
+type ExitBehavior string
+
+const (
+	ExitBehaviorNone             ExitBehavior = ""
+	ExitBehaviorLog              ExitBehavior = "log"
+	ExitBehaviorTerminateProgram ExitBehavior = "exit"
+	ExitBehaviorTestFail         ExitBehavior = "fail"
+)
 
 // TestingOptions are configurable options for the testing environment
 type TestingOptions struct {
@@ -43,6 +56,8 @@ type TestingOptions struct {
 	Provider string
 	// SchemeRegisterers sets scheme registration functions for the controller-runtime client
 	SchemeRegisterers []func(s *runtime.Scheme) error
+	// ExitBehavior tells the test what to do if a test fails
+	ExitBehavior ExitBehavior
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -53,6 +68,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		KubectlOptions:    o.KubectlOptions.Clone(),
 		Provider:          o.Provider,
 		SchemeRegisterers: o.SchemeRegisterers,
+		ExitBehavior:      o.ExitBehavior,
 	}
 }
 
@@ -67,9 +83,11 @@ type TestingT struct {
 	client.Client
 	*Cleaner
 
-	restConfig *rest.Config
-	options    *TestingOptions
-	failure    bool
+	lastError     string
+	activeSubtest *TestingT
+	restConfig    *rest.Config
+	options       *TestingOptions
+	failure       bool
 }
 
 func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) *TestingT {
@@ -112,16 +130,37 @@ func (t *TestingT) IsFailure() bool {
 	return t.failure
 }
 
+func (t *TestingT) PropagateError(isFirst bool, subtest *TestingT) {
+	t.activeSubtest = subtest
+	if !isFirst && t.PriorError() != "" {
+		subtest.Error("Error in parent Feature setup: " + t.PriorError())
+	}
+}
+
+// PriorError returns the last arguments previously passed to ErrorF.
+func (t *TestingT) PriorError() string {
+	return t.lastError
+}
+
 // Error fails the current test and logs the provided arguments. Equivalent to calling Log then
 // Fail.
 func (t *TestingT) Error(args ...interface{}) {
 	t.failure = true
+	t.lastError = fmt.Sprint(args...)
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(args...)
+	}
+	t.TestingT.Error(args...)
 }
 
 // Errorf fails the current test and logs the formatted message. Equivalent to calling Logf then
 // Fail.
 func (t *TestingT) Errorf(format string, args ...interface{}) {
 	t.failure = true
+	t.lastError = fmt.Sprintf(format, args...)
+	if t.activeSubtest != nil {
+		t.activeSubtest.Errorf(format, args...)
+	}
 	t.TestingT.Errorf(format, args...)
 }
 
@@ -140,12 +179,20 @@ func (t *TestingT) FailNow() {
 // Fatal logs the provided arguments, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatal(args ...interface{}) {
 	t.failure = true
+	t.lastError = fmt.Sprint(args...)
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(args...)
+	}
 	t.TestingT.Fatal(args...)
 }
 
-// Fatal logs the formatted message, marks the test as failed and halts execution of the step.
+// Fatalf logs the formatted message, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatalf(format string, args ...interface{}) {
 	t.failure = true
+	t.lastError = fmt.Sprintf(format, args...)
+	if t.activeSubtest != nil {
+		t.activeSubtest.Errorf(format, args...)
+	}
 	t.TestingT.Fatalf(format, args...)
 }
 
@@ -213,7 +260,7 @@ func (t *TestingT) IsolateNamespace(ctx context.Context) string {
 // RequireCondition expects some condition to be found in an array of object conditions.
 func (t *TestingT) RequireCondition(expected metav1.Condition, conditions []metav1.Condition) {
 	if !t.HasCondition(expected, conditions) {
-		t.Fatal("condition: %+v not found in conditions: %+v", expected, conditions)
+		t.Fatalf("condition: %+v not found in conditions: %+v", expected, conditions)
 	}
 }
 

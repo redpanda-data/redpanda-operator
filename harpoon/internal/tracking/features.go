@@ -11,6 +11,7 @@ package tracking
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
 
@@ -23,7 +24,9 @@ import (
 type feature struct {
 	*internaltesting.Cleaner
 
+	name           string
 	opts           *internaltesting.TestingOptions
+	t              *internaltesting.TestingT
 	scenariosToRun int
 	isRunning      bool
 	hasStepFailure bool
@@ -47,7 +50,6 @@ type FeatureHookTracker struct {
 	registry    *internaltesting.TagRegistry
 	opts        *internaltesting.TestingOptions
 
-	schemas    []func()
 	onFeatures []func(context.Context, *internaltesting.TestingT)
 	features   map[string]*feature
 	mutex      sync.RWMutex
@@ -69,31 +71,32 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 
 	features := f.features[scenario.Uri]
 
-	if !features.isRunning {
+	isFirst := !features.isRunning
+	if isFirst {
 		opts := f.opts.Clone()
 
 		cleaner := internaltesting.NewCleaner(godog.T(ctx), opts)
+		t := internaltesting.NewTesting(ctx, opts, cleaner)
 
 		features.isRunning = true
 		features.opts = opts
 		features.Cleaner = cleaner
-
-		t := internaltesting.NewTesting(ctx, opts, cleaner)
+		features.t = t
 
 		// we process the configured hooks first and then tags
 		for _, fn := range f.onFeatures {
-			fn(ctx, t)
+			internaltesting.WrapWithPanicHandler("Feature Hook Failure: ", internaltesting.ExitBehaviorNone, fn)(ctx, t)
 		}
 
 		for _, fn := range f.registry.Handlers(features.tags.flatten()) {
 			// iteratively inject tag handler context
-			ctx = fn.Handler(ctx, t, fn.Arguments...)
+			ctx = internaltesting.WrapWithPanicHandler("", internaltesting.ExitBehaviorNone, fn.Handler)(ctx, t, fn.Arguments)
 		}
 
 		f.features[scenario.Uri] = features
 	}
 
-	return f.scenarios.start(ctx, scenario, features, func() {
+	return f.scenarios.start(ctx, isFirst, scenario, features, func() {
 		f.scenarioFailed(scenario)
 	})
 }
@@ -110,7 +113,9 @@ func (f *FeatureHookTracker) ScenarioFinished(ctx context.Context, scenario *god
 	f.scenarios.finish(ctx, scenario)
 	if features.scenariosToRun <= 0 {
 		delete(f.features, scenario.Uri)
-		features.DoCleanup(ctx, features.hasStepFailure)
+
+		message := fmt.Sprintf("Feature (%s) Cleanup Failure: ", features.name)
+		internaltesting.WrapWithPanicHandler(message, f.opts.ExitBehavior, features.DoCleanup)(ctx, features.hasStepFailure)
 	}
 }
 
@@ -140,6 +145,7 @@ func (f *FeatureHookTracker) Feature(doc *messages.GherkinDocument, uri string, 
 	children := FilterChildren(f.opts.Provider, doc.Feature.Children)
 
 	f.features[uri] = &feature{
+		name:           doc.Feature.Name,
 		scenariosToRun: len(children),
 		tags:           tagsForFeature(doc.Feature.Tags),
 	}

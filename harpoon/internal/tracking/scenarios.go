@@ -11,6 +11,7 @@ package tracking
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/cucumber/godog"
@@ -42,7 +43,7 @@ func newScenarioHookTracker(registry *internaltesting.TagRegistry, opts *interna
 	}
 }
 
-func (s *scenarioHookTracker) start(ctx context.Context, sc *godog.Scenario, feature *feature, onFailure func()) (context.Context, error) {
+func (s *scenarioHookTracker) start(ctx context.Context, isFirst bool, sc *godog.Scenario, feature *feature, onFailure func()) (context.Context, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -53,14 +54,16 @@ func (s *scenarioHookTracker) start(ctx context.Context, sc *godog.Scenario, fea
 	cleaner := internaltesting.NewCleaner(godog.T(ctx), opts)
 	t := internaltesting.NewTesting(ctx, opts, cleaner)
 
+	feature.t.PropagateError(isFirst, t)
+
 	// we process the configured hooks first and then tags
 	for _, fn := range s.onScenarios {
-		fn(ctx, t)
+		internaltesting.WrapWithPanicHandler("", internaltesting.ExitBehaviorNone, fn)(ctx, t)
 	}
 
 	for _, fn := range s.registry.Handlers(tags.flatten()) {
 		// iteratively inject tag handler context
-		ctx = fn.Handler(ctx, t, fn.Arguments...)
+		ctx = internaltesting.WrapWithPanicHandler("", internaltesting.ExitBehaviorNone, fn.Handler)(ctx, t, fn.Arguments)
 	}
 
 	s.scenarios[sc.Id] = &scenario{
@@ -86,7 +89,8 @@ func (s *scenarioHookTracker) finish(ctx context.Context, scenario *godog.Scenar
 	failure := scene.t.IsFailure()
 
 	// and then clean up the scenario hooks themselves
-	scene.DoCleanup(ctx, failure)
+	message := fmt.Sprintf("Scenario (%s) Cleanup Failure: ", scenario.Name)
+	internaltesting.WrapWithPanicHandler(message, s.opts.ExitBehavior, scene.DoCleanup)(ctx, failure)
 	if failure {
 		scene.onFail()
 	}
