@@ -16,7 +16,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -73,7 +72,7 @@ func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Re
 
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
-		log.V(logger.DebugLevel).Info("Redpanda resource is deleted")
+		log.V(DebugLevel).Info("Redpanda resource is deleted")
 		return ctrl.Result{}, nil
 	}
 
@@ -393,7 +392,7 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 
 		cond := utils.FindStatusPodCondition(pod.Status.Conditions, resources.ClusterUpdatePodCondition)
 		if cond == nil {
-			log.V(logger.DebugLevel).Info("pod does not have cluster update pod condition", "pod-name", pod.Name)
+			log.V(DebugLevel).Info("pod does not have cluster update pod condition", "pod-name", pod.Name)
 			continue
 		}
 
@@ -485,7 +484,7 @@ func removeManagedDecommissionAnnotation(ctx context.Context, log logr.Logger, c
 
 func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
 	if hasManagedCondition(rp) {
-		log.V(logger.DebugLevel).Info("Redpanda has managed decommission condition")
+		log.V(DebugLevel).Info("Redpanda has managed decommission condition")
 		return nil
 	}
 
@@ -510,7 +509,7 @@ func markPods(ctx context.Context, log logr.Logger, c k8sclient.Client, er recor
 		}
 	}
 
-	log.V(logger.DebugLevel).Info("Redpanda managed decommission started", "conditions", rp.GetConditions())
+	log.V(DebugLevel).Info("Redpanda managed decommission started", "conditions", rp.GetConditions())
 	er.AnnotatedEventf(rp,
 		map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
 		corev1.EventTypeNormal, v1alpha2.EventTypeTrace, "Managed Decommission started")

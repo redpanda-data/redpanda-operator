@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	controllers "github.com/fluxcd/source-controller/shim"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/action"
@@ -213,9 +212,9 @@ func Infof(log logr.Logger, format string, a ...interface{}) {
 }
 
 func Debugf(log logr.Logger, format string, a ...interface{}) {
-	log.V(logger.DebugLevel).Info(fmt.Sprintf(format, a...))
+	log.V(DebugLevel).Info(fmt.Sprintf(format, a...))
 }
 
 func Tracef(log logr.Logger, format string, a ...interface{}) {
-	log.V(logger.TraceLevel).Info(fmt.Sprintf(format, a...))
+	log.V(TraceLevel).Info(fmt.Sprintf(format, a...))
 }

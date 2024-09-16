@@ -523,6 +523,9 @@ func Run(
 			os.Exit(1)
 		}
 
+		mgr.GetConfig()
+		mgr.GetRESTMapper()
+
 		if err = (&redpandacontrollers.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),

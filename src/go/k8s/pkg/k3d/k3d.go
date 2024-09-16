@@ -38,6 +38,29 @@ type Cluster struct {
 	agentCounter int32
 }
 
+func ExistingCluster(name string) (*Cluster, error) {
+	kubeconfigYAML, err := exec.Command("k3d", "kubeconfig", "get", name).CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	kubeconfig, err := clientcmd.Load(kubeconfigYAML)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := kube.ConfigToRest(*kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Cluster{
+		Name:         name,
+		restConfig:   cfg,
+		agentCounter: 3,
+	}, nil
+}
+
 func NewCluster(name string) (*Cluster, error) {
 	name = strings.ToLower(name)
 

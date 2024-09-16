@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
@@ -159,7 +158,7 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 // nolint:funlen // the length is ok
 func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (ctrl.Result, error) {
 	log = log.WithName("verifyIfNeedDecommission")
-	log.V(logger.DebugLevel).Info("verify if we need to decommission", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
+	log.V(DebugLevel).Info("verify if we need to decommission", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
 
 	namespace := sts.Namespace
 
@@ -234,13 +233,13 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 	// strange error case here
 	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
-		log.V(logger.DebugLevel).Info("stopping decommission verification reconciliation", "requested-replicas", requestedReplicas, "nodes-registered", health.AllNodes)
+		log.V(DebugLevel).Info("stopping decommission verification reconciliation", "requested-replicas", requestedReplicas, "nodes-registered", health.AllNodes)
 		return ctrl.Result{}, nil
 	}
 
-	log.V(logger.DebugLevel).Info("cluster health", "health", health)
+	log.V(DebugLevel).Info("cluster health", "health", health)
 
-	log.V(logger.DebugLevel).Info("current state", "nodes-registered-number", len(health.AllNodes), "statefulset-spec-replicas", int(requestedReplicas))
+	log.V(DebugLevel).Info("current state", "nodes-registered-number", len(health.AllNodes), "statefulset-spec-replicas", int(requestedReplicas))
 	if len(health.AllNodes) > int(requestedReplicas) {
 		log.Info("we are downscaling, attempt to add condition with status false")
 		// we are in decommission mode, we should probably wait here some time to verify
@@ -391,7 +390,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 						errList = errors.Join(errList, fmt.Errorf("could get decommission status of broker: %w", decommStatusError))
 					}
 				}
-				log.V(logger.DebugLevel).Info("decommission status", "status", status)
+				log.V(DebugLevel).Info("decommission status", "status", status)
 
 				if doDecommission {
 					log.Info("all checks pass, attempting to decommission", "nodeID", nodeID)

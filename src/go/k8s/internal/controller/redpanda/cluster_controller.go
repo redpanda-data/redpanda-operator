@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -361,7 +360,7 @@ func (r *ClusterReconciler) removePodFinalizer(
 ) error {
 	log := l.WithName("removePodFinalizer")
 	if controllerutil.ContainsFinalizer(pod, FinalizerKey) {
-		log.V(logger.DebugLevel).WithValues("namespace", pod.Namespace, "name", pod.Name).Info("removing finalizer")
+		log.V(DebugLevel).WithValues("namespace", pod.Namespace, "name", pod.Name).Info("removing finalizer")
 		p := client.MergeFrom(pod.DeepCopy())
 		controllerutil.RemoveFinalizer(pod, FinalizerKey)
 		if err := r.Patch(ctx, pod, p); err != nil {
@@ -375,7 +374,7 @@ func (r *ClusterReconciler) setPodNodeIDAnnotation(
 	ctx context.Context, rp *vectorizedv1alpha1.Cluster, l logr.Logger, ar *attachedResources,
 ) error {
 	log := l.WithName("setPodNodeIDAnnotation")
-	log.V(logger.DebugLevel).Info("setting pod node-id annotation")
+	log.V(DebugLevel).Info("setting pod node-id annotation")
 	pods, err := r.podList(ctx, rp)
 	if err != nil {
 		return fmt.Errorf("unable to fetch PodList: %w", err)
@@ -415,7 +414,7 @@ func (r *ClusterReconciler) setPodNodeIDLabel(
 	ctx context.Context, rp *vectorizedv1alpha1.Cluster, l logr.Logger, ar *attachedResources,
 ) error {
 	log := l.WithName("setPodNodeIDLabel")
-	log.V(logger.DebugLevel).Info("setting pod node-id label")
+	log.V(DebugLevel).Info("setting pod node-id label")
 	pods, err := r.podList(ctx, rp)
 	if err != nil {
 		return fmt.Errorf("unable to fetch PodList: %w", err)
@@ -762,10 +761,10 @@ func (r *ClusterReconciler) removeFinalizers(
 	ctx context.Context, redpandaCluster *vectorizedv1alpha1.Cluster, l logr.Logger,
 ) error {
 	log := l.WithName("removeFinalizers")
-	log.V(logger.DebugLevel).Info("handling finalizer removal")
+	log.V(DebugLevel).Info("handling finalizer removal")
 
 	if controllerutil.ContainsFinalizer(redpandaCluster, FinalizerKey) {
-		log.V(logger.DebugLevel).Info("removing finalizers from cluster custom resource")
+		log.V(DebugLevel).Info("removing finalizers from cluster custom resource")
 		p := client.MergeFrom(redpandaCluster.DeepCopy())
 		controllerutil.RemoveFinalizer(redpandaCluster, FinalizerKey)
 		if err := r.Patch(ctx, redpandaCluster, p); err != nil {

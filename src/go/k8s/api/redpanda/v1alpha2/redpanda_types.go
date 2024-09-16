@@ -15,6 +15,8 @@ import (
 
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
+	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,47 +75,58 @@ type RedpandaStatus struct {
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	meta.ReconcileRequestStatus `json:",inline"`
-
 	// Conditions holds the conditions for the Redpanda.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// LastAppliedRevision is the revision of the last successfully applied source.
-	// +optional
-	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
-
-	// LastAttemptedRevision is the revision of the last reconciliation attempt.
-	// +optional
-	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
-
-	// +optional
-	HelmRelease string `json:"helmRelease,omitempty"`
-
-	// +optional
-	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
-
-	// +optional
-	HelmRepository string `json:"helmRepository,omitempty"`
-
-	// +optional
-	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
-
-	// +optional
-	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
 
 	// Failures is the reconciliation failure count against the latest desired
 	// state. It is reset after a successful reconciliation.
 	// +optional
 	Failures int64 `json:"failures,omitempty"`
 
-	// +optional
-	InstallFailures int64 `json:"installFailures,omitempty"`
-
 	// ManagedDecommissioningNode indicates that a node is currently being
 	// decommissioned from the cluster and provides its ordinal number.
 	// +optional
 	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
+
+	// Deprecated: as flux is being removed and that field was not used in previous implementation.
+	// This field will be removed in new CRD version
+	// Ref: https://fluxcd.io/flux/components/kustomize/kustomizations/#triggering-a-reconcile
+	meta.ReconcileRequestStatus `json:",inline"`
+
+	// Deprecated: Please use ObservedGeneration
+	// LastAppliedRevision is the revision of the last successfully applied source.
+	// +optional
+	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
+
+	// Deprecated: Please use ObservedGeneration
+	// LastAttemptedRevision is the revision of the last reconciliation attempt.
+	// +optional
+	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	HelmRelease string `json:"helmRelease,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	HelmRepository string `json:"helmRepository,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
+
+	// Deprecated: As flux is being removed
+	// +optional
+	InstallFailures int64 `json:"installFailures,omitempty"`
 }
 
 type RemediationStrategy string
@@ -146,6 +159,31 @@ type Redpanda struct {
 	Spec RedpandaSpec `json:"spec,omitempty"`
 	// Represents the current status of the Redpanda cluster.
 	Status RedpandaStatus `json:"status,omitempty"`
+}
+
+func (rp *Redpanda) GetDot() (*helmette.Dot, error) {
+	var partial redpanda.PartialValues
+
+	values, err := json.Marshal(rp.Spec.ClusterSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal(values, &partial); err != nil {
+		return nil, err
+	}
+
+	release := helmette.Release{
+		Name:      rp.Name,
+		Namespace: rp.Namespace,
+		// TODO What this Service is used for?
+		//Service:   "",
+		// TODO Should those fields matter in Redpanda, Console and Connectors?
+		//IsUpgrade: false,
+		//IsInstall: false,
+	}
+
+	return redpanda.Dot(release, partial)
 }
 
 // RedpandaList contains a list of Redpanda objects.

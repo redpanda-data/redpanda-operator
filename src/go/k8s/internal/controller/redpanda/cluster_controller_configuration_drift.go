@@ -15,7 +15,6 @@ import (
 	"maps"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -61,8 +60,8 @@ func (r *ClusterConfigurationDriftReconciler) Reconcile(
 
 	log := ctrl.LoggerFrom(ctx).WithName("ClusterConfigurationDriftReconciler.Reconcile")
 
-	log.V(logger.DebugLevel).Info("Starting configuration drift reconcile loop")
-	defer log.V(logger.DebugLevel).Info("Finished configuration drift reconcile loop")
+	log.V(DebugLevel).Info("Starting configuration drift reconcile loop")
+	defer log.V(DebugLevel).Info("Finished configuration drift reconcile loop")
 
 	var redpandaCluster vectorizedv1alpha1.Cluster
 	if err := r.Get(ctx, req.NamespacedName, &redpandaCluster); err != nil {
