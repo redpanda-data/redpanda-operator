@@ -44,6 +44,22 @@ type ChartRef struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// Defines how to handle upgrades, including failures.
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
+	// NOTE! Alpha feature
+	// UseFlux flag set to `false` will prevent helm controller from reconciling helm chart. The operator would be
+	// tight with `go` based Redpanda helm chart version. The rest of the ChartRef fields would be ignored.
+	//
+	// Before setting UseFlux flag to `false` please alight your ChartVersion to at least `5.9.3`
+	// version of the Redpanda chart.
+	//
+	// RedpandaStatus might not be accurate if flag is set to `false` and HelmRelease is manually deleted.
+	//
+	// To achieve dynamic switch for Flux controllers (HelmRelease and HelmRepository) the resources
+	// would not be removed, but they will be put in suspended mode (if flag is provided and set to `false`).
+	//
+	// https://fluxcd.io/flux/components/helm/helmreleases/#suspend
+	// https://fluxcd.io/flux/components/source/helmrepositories/#suspend
+	// +optional
+	UseFlux *bool `json:"useFlux,omitempty"`
 }
 
 // RedpandaSpec defines the desired state of the Redpanda cluster.
