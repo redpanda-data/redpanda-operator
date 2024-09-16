@@ -52,10 +52,10 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
-	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/src/go/k8s/webhooks/redpanda"
@@ -414,6 +414,8 @@ func Run(
 	case OperatorV2Mode:
 		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
 
+		factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient())
+
 		// if we enable these controllers then run them, otherwise, do not
 		//nolint:nestif // not really nested, required.
 		if enableHelmControllers {
@@ -540,11 +542,19 @@ func Run(
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
+			os.Exit(1)
+		}
+
+		if err = (&redpandacontrollers.UserReconciler{
+			Client:        mgr.GetClient(),
+			ClientFactory: factory,
+		}).SetupWithManager(ctx, mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "User")
 			os.Exit(1)
 		}
 

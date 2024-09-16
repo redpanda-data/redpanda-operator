@@ -33,7 +33,7 @@ import (
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
-	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
 )
 
 const (

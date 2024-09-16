@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -93,7 +94,7 @@ type AdminAPIClient interface {
 	UpdateUser(ctx context.Context, username, password, mechanism string) error
 
 	GetFeatures(ctx context.Context) (rpadmin.FeaturesResponse, error)
-	SetLicense(ctx context.Context, license interface{}) error
+	SetLicense(ctx context.Context, license io.Reader) error
 	GetLicenseInfo(ctx context.Context) (rpadmin.License, error)
 
 	Brokers(ctx context.Context) ([]rpadmin.Broker, error)

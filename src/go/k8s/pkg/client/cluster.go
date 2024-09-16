@@ -10,16 +10,18 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/console/backend/pkg/config"
 	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
 func (c *Factory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Dot, error) {
@@ -53,21 +55,57 @@ func (c *Factory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Dot, err
 }
 
 // RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
 	dot, err := c.dotFor(cluster)
 	if err != nil {
 		return nil, err
 	}
 
-	return redpanda.AdminClient(dot, c.dialer)
+	client, err := redpanda.AdminClient(dot, c.dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		client.SetAuth(&rpadmin.BasicAuth{
+			Username: c.userAuth.Username,
+			Password: c.userAuth.Password,
+		})
+	}
+
+	return client, nil
 }
 
 // KafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
 	dot, err := c.dotFor(cluster)
 	if err != nil {
 		return nil, err
 	}
 
-	return redpanda.KafkaClient(dot, c.dialer, opts...)
+	client, err := redpanda.KafkaClient(dot, c.dialer, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		auth := scram.Auth{
+			User: c.userAuth.Username,
+			Pass: c.userAuth.Password,
+		}
+
+		var mechanism sasl.Mechanism
+		switch c.userAuth.Mechanism {
+		case config.SASLMechanismScramSHA256:
+			mechanism = auth.AsSha256Mechanism()
+		case config.SASLMechanismScramSHA512:
+			mechanism = auth.AsSha512Mechanism()
+		default:
+			return nil, ErrUnsupportedSASLMechanism
+		}
+
+		return kgo.NewClient(append(client.Opts(), kgo.SASL(mechanism))...)
+	}
+
+	return client, nil
 }

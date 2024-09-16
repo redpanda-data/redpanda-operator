@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
-	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/testutils"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
