@@ -14,6 +14,7 @@ Feature: stub
     And there is a stub
     When a user updates the stub key "foo" to "bar"
     Then the stub should have "foo" equal "bar"
+    And there is no error
 
   @skip:stub
   Scenario: skipped stub

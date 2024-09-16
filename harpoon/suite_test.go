@@ -43,38 +43,33 @@ func TestSuite(t *testing.T) {
 	suite.RunT(t)
 }
 
-func stubGiven(ctx context.Context) error {
-	T(ctx).ApplyFixture(ctx, "stub")
-
-	return nil
+func stubGiven(ctx context.Context, t TestingT) {
+	t.ApplyFixture(ctx, "stub")
 }
 
-func stubWhen(ctx context.Context, key, value string) error {
-	t := T(ctx)
-
+func stubWhen(ctx context.Context, t TestingT, key, value string) {
 	var configMap corev1.ConfigMap
 	require.NoError(t, t.Get(ctx, t.ResourceKey("stub-config-map"), &configMap))
 
 	configMap.Data = map[string]string{key: value}
 
 	require.NoError(t, t.Update(ctx, &configMap))
-
-	return nil
 }
 
-func stubThen(ctx context.Context, key, value string) error {
-	t := T(ctx)
-
+func stubThen(ctx context.Context, t TestingT, key, value string) {
 	var configMap corev1.ConfigMap
 	require.NoError(t, t.Get(ctx, t.ResourceKey("stub-config-map"), &configMap))
 
 	require.Equal(t, value, configMap.Data[key])
+}
 
-	return nil
+func stubAnd(t TestingT) {
+	require.Equal(t, 1, 1)
 }
 
 func init() {
 	RegisterStep(`^there is a stub$`, stubGiven)
 	RegisterStep(`^a user updates the stub key "([^"]*)" to "([^"]*)"$`, stubWhen)
 	RegisterStep(`^the stub should have "([^"]*)" equal "([^"]*)"$`, stubThen)
+	RegisterStep(`^there is no error$`, stubAnd)
 }

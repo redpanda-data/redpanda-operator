@@ -14,7 +14,7 @@ type stringer interface {
 	String() string
 }
 
-func WrapWithPanicHandler[U any](prefix string, exitBehavior ExitBehavior, fn U) U {
+func WrapWithPanicHandler[U any](needsLog bool, exitBehavior ExitBehavior, fn U) U {
 	fnValue := reflect.ValueOf(fn)
 	return reflect.MakeFunc(fnValue.Type(), func(args []reflect.Value) (results []reflect.Value) {
 		runTestingFunc := func(fn func(t *TestingT)) {
@@ -44,19 +44,27 @@ func WrapWithPanicHandler[U any](prefix string, exitBehavior ExitBehavior, fn U)
 				switch exitBehavior {
 				case ExitBehaviorNone:
 				case ExitBehaviorLog:
-					fmt.Print(prefix + message)
+					fmt.Print(message)
 				case ExitBehaviorTerminateProgram:
-					fmt.Print(prefix + message)
+					fmt.Print(message)
 					os.Exit(1)
 				case ExitBehaviorTestFail:
-					TerminationChan <- prefix + message
+					select {
+					case TerminationChan <- TerminationError{
+						Message:  message,
+						NeedsLog: needsLog,
+					}:
+					default:
+					}
 				}
 			}
 			returnSize := fnValue.Type().NumOut()
 			results = make([]reflect.Value, returnSize)
 			for i := 0; i < returnSize; i++ {
 				outType := fnValue.Type().Out(i)
-				if len(args) > 0 && i == 0 && outType.Name() == "Context" {
+				path := outType.PkgPath()
+				name := outType.Name()
+				if len(args) > 0 && i == 0 && path == "context" && name == "Context" {
 					if ctx, ok := args[0].Interface().(context.Context); ok {
 						results[i] = reflect.ValueOf(ctx)
 						continue

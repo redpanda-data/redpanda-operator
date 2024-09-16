@@ -332,7 +332,7 @@ func (s *Suite) RunT(t *testing.T) {
 		s.suite.Options.NoColors = true
 	}
 
-	var errMessage string
+	var errMessage internaltesting.TerminationError
 	var wg sync.WaitGroup
 	if s.exitOnCleanupFailures {
 		s.options.ExitBehavior = internaltesting.ExitBehaviorTestFail
@@ -357,8 +357,11 @@ func (s *Suite) RunT(t *testing.T) {
 		writeTestLog(testLog, s.output)
 	}
 
-	if errMessage != "" {
-		t.Fatal(errMessage)
+	if errMessage.Message != "" {
+		if errMessage.NeedsLog {
+			fmt.Print(errMessage.Message)
+		}
+		t.Fail()
 	}
 }
 

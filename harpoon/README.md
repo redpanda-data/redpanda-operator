@@ -35,6 +35,41 @@ Because this is already substantially extending the footprint of `TestingT` and 
 
 Additionally, because the full suite setup of any Kubernetes operator generally has some typical steps, i.e. setting up dependencies. There are some top-level hooks exposed as a suite builder pattern that allows you to do things such as install CRDs or helm charts during suite initialization.
 
+### Step function signatures
+
+Godog heavily uses reflection to invoke test steps and allows for steps to be defined with multiple method signatures. Each test step, in addition to the step arguments, allows for passing:
+
+1. An initial `context.Context` argument.
+2. Returning an optional `error` value.
+
+Either of the above can be elided in the function signature. We extend the step definition behavior to allow for passing an additional extra argument of a `TestingT` type to make this slightly more reflective of go-based tests. What that means is you can define step definitions with the following formats:
+
+```golang
+func someStep1noError(ctx context.Context, t TestingT, ...)
+func someStep1Error(ctx context.Context, t TestingT, ...) error
+
+func someStep2noError(t TestingT, ...)
+func someStep2Error(t TestingT, ...) error
+
+func someStep3noError(ctx context.Context, ...)
+func someStep3Error(ctx context.Context, ...) error
+
+func someStep4noError(...)
+func someStep4Error(...) error
+```
+
+Out of these signatures, `someStep1noError` and `someStep2noError` are preferred alongside usage of `t.Fail` or use of something like testify's `require` or `assert` packages to keep the steps functioning similarly to typical go tests.
+
+### Better `Fail` handling
+
+Internally `godog` panics when calling `FailNow` or `SkipNow`, which, when using testify's `require` happens any time some assertion condition is not met. That becomes extremely problematic for testing cleanup. Therefore we install `panic` handlers around any sort of user called code that explicitly handles the message that `godog` panics with on a test assertion failure.
+
+There are slightly different behaviors depending on when `FailNow` is called.
+
+1. In a feature-level setup hook any sort of `FailNow` calls propagates the assertion error down to any child scenarios so that they all fail.
+2. In a scenario-level hook or test step the error is handled normally and only the scenario fails
+3. In any sort of `Cleanup` code, after the scenario/feature is already marked as successful, by default the failure backtrace is just logged and the test executions continue. If the suite is initialized with `ExitOnCleanupFailures` the test features may be marked as successful, but the overall tests will still fail with the error/backtrace from the cleanup failure.
+
 ### Feature Provider Table Generation
 
 Because of the tagging extensions above that allow you to skip tests on a per-provider basis, the `tablegenerator` package in this library implements a simple markdown-based table generator for documentation to show which features are supported by what providers. Its rendered output looks like this:

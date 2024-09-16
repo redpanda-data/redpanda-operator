@@ -26,9 +26,14 @@ import (
 
 type contextKey struct{}
 
+type TerminationError struct {
+	Message  string
+	NeedsLog bool
+}
+
 var (
 	testingContextKey contextKey = struct{}{}
-	TerminationChan              = make(chan string)
+	TerminationChan              = make(chan TerminationError)
 )
 
 type ExitBehavior string
@@ -88,6 +93,7 @@ type TestingT struct {
 	restConfig    *rest.Config
 	options       *TestingOptions
 	failure       bool
+	messagePrefix string
 }
 
 func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) *TestingT {
@@ -117,6 +123,10 @@ func (t *TestingT) IntoContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, testingContextKey, t)
 }
 
+func (t *TestingT) SetMessagePrefix(prefix string) {
+	t.messagePrefix = prefix
+}
+
 func (t *TestingT) Cleanup(fn func(context.Context)) {
 	t.Cleaner.Cleanup(fn)
 }
@@ -133,7 +143,7 @@ func (t *TestingT) IsFailure() bool {
 func (t *TestingT) PropagateError(isFirst bool, subtest *TestingT) {
 	t.activeSubtest = subtest
 	if !isFirst && t.PriorError() != "" {
-		subtest.Error("Error in parent Feature setup: " + t.PriorError())
+		subtest.Error(t.PriorError())
 	}
 }
 
@@ -146,22 +156,24 @@ func (t *TestingT) PriorError() string {
 // Fail.
 func (t *TestingT) Error(args ...interface{}) {
 	t.failure = true
-	t.lastError = fmt.Sprint(args...)
+	message := t.messagePrefix + fmt.Sprint(args...)
+	t.lastError = message
 	if t.activeSubtest != nil {
-		t.activeSubtest.Error(args...)
+		t.activeSubtest.Error(message)
 	}
-	t.TestingT.Error(args...)
+	t.TestingT.Error(message)
 }
 
 // Errorf fails the current test and logs the formatted message. Equivalent to calling Logf then
 // Fail.
 func (t *TestingT) Errorf(format string, args ...interface{}) {
 	t.failure = true
-	t.lastError = fmt.Sprintf(format, args...)
+	message := t.messagePrefix + fmt.Sprintf(format, args...)
+	t.lastError = message
 	if t.activeSubtest != nil {
-		t.activeSubtest.Errorf(format, args...)
+		t.activeSubtest.Error(message)
 	}
-	t.TestingT.Errorf(format, args...)
+	t.TestingT.Error(message)
 }
 
 // Fail marks the current test as failed, but does not halt execution of the step.
@@ -179,21 +191,23 @@ func (t *TestingT) FailNow() {
 // Fatal logs the provided arguments, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatal(args ...interface{}) {
 	t.failure = true
-	t.lastError = fmt.Sprint(args...)
+	message := t.messagePrefix + fmt.Sprint(args...)
+	t.lastError = message
 	if t.activeSubtest != nil {
-		t.activeSubtest.Error(args...)
+		t.activeSubtest.Error(message)
 	}
-	t.TestingT.Fatal(args...)
+	t.TestingT.Fatal(message)
 }
 
 // Fatalf logs the formatted message, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatalf(format string, args ...interface{}) {
 	t.failure = true
-	t.lastError = fmt.Sprintf(format, args...)
+	message := t.messagePrefix + fmt.Sprintf(format, args...)
+	t.lastError = message
 	if t.activeSubtest != nil {
-		t.activeSubtest.Errorf(format, args...)
+		t.activeSubtest.Error(message)
 	}
-	t.TestingT.Fatalf(format, args...)
+	t.TestingT.Fatal(message)
 }
 
 // ApplyManifest applies a set of kubernetes manifests via kubectl.
