@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
@@ -58,6 +59,8 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
+
+	HelmChartConstraint = "5.9.3"
 )
 
 var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
@@ -168,6 +171,11 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 	start := time.Now()
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.Reconcile")
 
+	defer func() {
+		durationMsg := fmt.Sprintf("reconciliation finished in %s", time.Since(start).String())
+		log.Info(durationMsg)
+	}()
+
 	log.Info("Starting reconcile loop")
 
 	rp := &v1alpha2.Redpanda{}
@@ -208,7 +216,15 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	rp, result, err := r.reconcile(ctx, rp)
+	rp, err := r.reconcile(ctx, rp)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = r.reconcileDefluxed(ctx, rp)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Update status after reconciliation.
 	if updateStatusErr := r.patchRedpandaStatus(ctx, rp); updateStatusErr != nil {
@@ -216,14 +232,48 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, updateStatusErr
 	}
 
-	// Log reconciliation duration
-	durationMsg := fmt.Sprintf("reconciliation finished in %s", time.Since(start).String())
-	log.Info(durationMsg)
-
-	return result, err
+	return ctrl.Result{}, nil
 }
 
-func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, ctrl.Result, error) {
+func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.WithName("RedpandaReconciler.reconcileDefluxed")
+
+	if !ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+		// TODO (Rafal) Implement Redpanda helm chart templating with Redpanda Status Report
+		// In the Redpanda.Status there will be only Conditions and Failures that would be used.
+
+		if !atLeast(rp.Spec.ChartRef.ChartVersion) {
+			log.Error(fmt.Errorf("chart version needs to be at least %s", HelmChartConstraint), "", "chart version", rp.Spec.ChartRef.ChartVersion)
+			v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
+			r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
+			// Do not error out to not requeue. User needs to first migrate helm release to at least 5.9.3 version
+			return nil
+		}
+	}
+	return nil
+}
+
+func atLeast(version string) bool {
+	if version == "" {
+		return true
+	}
+
+	c, err := semver.NewConstraint(fmt.Sprintf(">= %s", HelmChartConstraint))
+	if err != nil {
+		// Handle constraint not being parsable.
+		return false
+	}
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false
+	}
+
+	return c.Check(v)
+}
+
+func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.WithName("RedpandaReconciler.reconcile")
 
@@ -233,24 +283,24 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		rp = v1alpha2.RedpandaProgressing(rp)
 		if updateStatusErr := r.patchRedpandaStatus(ctx, rp); updateStatusErr != nil {
 			log.Error(updateStatusErr, "unable to update status after generation update")
-			return rp, ctrl.Result{}, updateStatusErr
+			return rp, updateStatusErr
 		}
 	}
 
 	// pull our deployments and stateful sets
 	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
 	if err != nil {
-		return rp, ctrl.Result{}, err
+		return rp, err
 	}
 	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
 	if err != nil {
-		return rp, ctrl.Result{}, err
+		return rp, err
 	}
 
 	// Check if HelmRepository exists or create it
 	rp, repo, err := r.reconcileHelmRepository(ctx, rp)
 	if err != nil {
-		return rp, ctrl.Result{}, err
+		return rp, err
 	}
 
 	isGenerationCurrent := repo.Generation != repo.Status.ObservedGeneration
@@ -263,17 +313,17 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	isResourceReady := r.checkIfResourceIsReady(log, msgNotReady, msgReady, resourceTypeHelmRepository, isGenerationCurrent, isStatusConditionReady, isStatusReadyNILorTRUE, isStatusReadyNILorFALSE, rp)
 	if !isResourceReady {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), ctrl.Result{}, nil
+		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
 	}
 
 	// Check if HelmRelease exists or create it also
 	rp, hr, err := r.reconcileHelmRelease(ctx, rp)
 	if err != nil {
-		return rp, ctrl.Result{}, err
+		return rp, err
 	}
 	if hr.Name == "" {
 		log.Info(fmt.Sprintf("Created HelmRelease for '%s/%s', will requeue", rp.Namespace, rp.Name))
-		return rp, ctrl.Result{}, err
+		return rp, err
 	}
 
 	isGenerationCurrent = hr.Generation != hr.Status.ObservedGeneration
@@ -286,30 +336,30 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	isResourceReady = r.checkIfResourceIsReady(log, msgNotReady, msgReady, resourceTypeHelmRelease, isGenerationCurrent, isStatusConditionReady, isStatusReadyNILorTRUE, isStatusReadyNILorFALSE, rp)
 	if !isResourceReady {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), ctrl.Result{}, nil
+		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
 	}
 
 	for _, sts := range redpandaStatefulSets {
 		decommission, err := needsDecommission(ctx, sts, log)
 		if err != nil {
-			return rp, ctrl.Result{}, err
+			return rp, err
 		}
 		if decommission {
-			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), ctrl.Result{}, nil
+			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), nil
 		}
 	}
 
 	// check to make sure that our stateful set pods are all current
 	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message), ctrl.Result{}, nil
+		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message), nil
 	}
 
 	// check to make sure that our deployment pods are all current
 	if message, ready := checkDeploymentsStatus(consoleDeployments); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message), ctrl.Result{}, nil
+		return v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message), nil
 	}
 
-	return v1alpha2.RedpandaReady(rp), ctrl.Result{}, nil
+	return v1alpha2.RedpandaReady(rp), nil
 }
 
 func (r *RedpandaReconciler) checkIfResourceIsReady(log logr.Logger, msgNotReady, msgReady, kind string, isGenerationCurrent, isStatusConditionReady, isStatusReadyNILorTRUE, isStatusReadyNILorFALSE bool, rp *v1alpha2.Redpanda) bool {
@@ -529,6 +579,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
 		},
 		Spec: helmv2beta2.HelmReleaseSpec{
+			Suspend: !ptr.Deref(rp.Spec.ChartRef.UseFlux, true),
 			Chart: helmv2beta2.HelmChartTemplate{
 				Spec: helmv2beta2.HelmChartTemplateSpec{
 					Chart:    "redpanda",
@@ -557,6 +608,7 @@ func (r *RedpandaReconciler) createHelmRepositoryFromTemplate(rp *v1alpha2.Redpa
 			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
 		},
 		Spec: sourcev1.HelmRepositorySpec{
+			Suspend:  !ptr.Deref(rp.Spec.ChartRef.UseFlux, true),
 			Interval: metav1.Duration{Duration: 30 * time.Second},
 			URL:      v1alpha2.RedpandaChartRepository,
 		},
