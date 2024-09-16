@@ -123,7 +123,7 @@ type Password struct {
 }
 
 // Fetch fetches the actual value of a password based on its configuration.
-func (p *Password) Fetch(ctx context.Context, client client.Client, namespace string) (string, error) {
+func (p *Password) Fetch(ctx context.Context, c client.Client, namespace string) (string, error) {
 	if p.Value != "" {
 		return p.Value, nil
 	}
@@ -131,7 +131,7 @@ func (p *Password) Fetch(ctx context.Context, client client.Client, namespace st
 	name := p.ValueFrom.SecretKeyRef.LocalObjectReference.Name
 
 	var secret corev1.Secret
-	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &secret)
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &secret)
 	if err != nil {
 		return "", err
 	}

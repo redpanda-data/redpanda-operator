@@ -46,12 +46,12 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
-		sasl, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
+		saslOpt, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
 		if err != nil {
 			return nil, err
 		}
 
-		kopts = append(kopts, sasl)
+		kopts = append(kopts, saslOpt)
 	}
 
 	if c.userAuth != nil {
