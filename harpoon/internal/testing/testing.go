@@ -11,6 +11,7 @@ package testing
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -25,7 +26,24 @@ import (
 
 type contextKey struct{}
 
-var testingContextKey contextKey = struct{}{}
+type TerminationError struct {
+	Message  string
+	NeedsLog bool
+}
+
+var (
+	testingContextKey contextKey = struct{}{}
+	TerminationChan              = make(chan TerminationError)
+)
+
+type ExitBehavior string
+
+const (
+	ExitBehaviorNone             ExitBehavior = ""
+	ExitBehaviorLog              ExitBehavior = "log"
+	ExitBehaviorTerminateProgram ExitBehavior = "exit"
+	ExitBehaviorTestFail         ExitBehavior = "fail"
+)
 
 // TestingOptions are configurable options for the testing environment
 type TestingOptions struct {
@@ -43,6 +61,8 @@ type TestingOptions struct {
 	Provider string
 	// SchemeRegisterers sets scheme registration functions for the controller-runtime client
 	SchemeRegisterers []func(s *runtime.Scheme) error
+	// ExitBehavior tells the test what to do if a test fails
+	ExitBehavior ExitBehavior
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -53,6 +73,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		KubectlOptions:    o.KubectlOptions.Clone(),
 		Provider:          o.Provider,
 		SchemeRegisterers: o.SchemeRegisterers,
+		ExitBehavior:      o.ExitBehavior,
 	}
 }
 
@@ -67,9 +88,12 @@ type TestingT struct {
 	client.Client
 	*Cleaner
 
-	restConfig *rest.Config
-	options    *TestingOptions
-	failure    bool
+	lastError     string
+	activeSubtest *TestingT
+	restConfig    *rest.Config
+	options       *TestingOptions
+	failure       bool
+	messagePrefix string
 }
 
 func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) *TestingT {
@@ -99,6 +123,10 @@ func (t *TestingT) IntoContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, testingContextKey, t)
 }
 
+func (t *TestingT) SetMessagePrefix(prefix string) {
+	t.messagePrefix = prefix
+}
+
 func (t *TestingT) Cleanup(fn func(context.Context)) {
 	t.Cleaner.Cleanup(fn)
 }
@@ -112,17 +140,40 @@ func (t *TestingT) IsFailure() bool {
 	return t.failure
 }
 
+func (t *TestingT) PropagateError(isFirst bool, subtest *TestingT) {
+	t.activeSubtest = subtest
+	if !isFirst && t.PriorError() != "" {
+		subtest.Error(t.PriorError())
+	}
+}
+
+// PriorError returns the last arguments previously passed to ErrorF.
+func (t *TestingT) PriorError() string {
+	return t.lastError
+}
+
 // Error fails the current test and logs the provided arguments. Equivalent to calling Log then
 // Fail.
 func (t *TestingT) Error(args ...interface{}) {
 	t.failure = true
+	message := t.messagePrefix + fmt.Sprint(args...)
+	t.lastError = message
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(message)
+	}
+	t.TestingT.Error(message)
 }
 
 // Errorf fails the current test and logs the formatted message. Equivalent to calling Logf then
 // Fail.
 func (t *TestingT) Errorf(format string, args ...interface{}) {
 	t.failure = true
-	t.TestingT.Errorf(format, args...)
+	message := t.messagePrefix + fmt.Sprintf(format, args...)
+	t.lastError = message
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(message)
+	}
+	t.TestingT.Error(message)
 }
 
 // Fail marks the current test as failed, but does not halt execution of the step.
@@ -140,13 +191,23 @@ func (t *TestingT) FailNow() {
 // Fatal logs the provided arguments, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatal(args ...interface{}) {
 	t.failure = true
-	t.TestingT.Fatal(args...)
+	message := t.messagePrefix + fmt.Sprint(args...)
+	t.lastError = message
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(message)
+	}
+	t.TestingT.Fatal(message)
 }
 
-// Fatal logs the formatted message, marks the test as failed and halts execution of the step.
+// Fatalf logs the formatted message, marks the test as failed and halts execution of the step.
 func (t *TestingT) Fatalf(format string, args ...interface{}) {
 	t.failure = true
-	t.TestingT.Fatalf(format, args...)
+	message := t.messagePrefix + fmt.Sprintf(format, args...)
+	t.lastError = message
+	if t.activeSubtest != nil {
+		t.activeSubtest.Error(message)
+	}
+	t.TestingT.Fatal(message)
 }
 
 // ApplyManifest applies a set of kubernetes manifests via kubectl.
@@ -213,7 +274,7 @@ func (t *TestingT) IsolateNamespace(ctx context.Context) string {
 // RequireCondition expects some condition to be found in an array of object conditions.
 func (t *TestingT) RequireCondition(expected metav1.Condition, conditions []metav1.Condition) {
 	if !t.HasCondition(expected, conditions) {
-		t.Fatal("condition: %+v not found in conditions: %+v", expected, conditions)
+		t.Fatalf("condition: %+v not found in conditions: %+v", expected, conditions)
 	}
 }
 

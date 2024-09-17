@@ -40,17 +40,18 @@ type helmChart struct {
 }
 
 type SuiteBuilder struct {
-	testingOpts     *internaltesting.TestingOptions
-	output          string
-	opts            godog.Options
-	registry        *internaltesting.TagRegistry
-	providers       map[string]Provider
-	defaultProvider string
-	injectors       []func(context.Context) context.Context
-	crdDirectories  []string
-	helmCharts      []helmChart
-	onFeatures      []func(context.Context, *internaltesting.TestingT)
-	onScenarios     []func(context.Context, *internaltesting.TestingT)
+	testingOpts           *internaltesting.TestingOptions
+	output                string
+	opts                  godog.Options
+	registry              *internaltesting.TagRegistry
+	providers             map[string]Provider
+	defaultProvider       string
+	injectors             []func(context.Context) context.Context
+	crdDirectories        []string
+	helmCharts            []helmChart
+	onFeatures            []func(context.Context, *internaltesting.TestingT)
+	onScenarios           []func(context.Context, *internaltesting.TestingT)
+	exitOnCleanupFailures bool
 }
 
 func SuiteBuilderFromFlags() *SuiteBuilder {
@@ -58,7 +59,7 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 
 	var config string
 	var output string
-	options := &internaltesting.TestingOptions{}
+	options := &internaltesting.TestingOptions{ExitBehavior: internaltesting.ExitBehaviorLog}
 
 	// TODO: Consider adding an -always-retain flag that doesn't actually delete anything. If
 	// we add something like that we'll still have to do some "stateful" cleanup in the lifecycle,
@@ -102,7 +103,7 @@ func (b *SuiteBuilder) WithDefaultProvider(name string) *SuiteBuilder {
 }
 
 func (b *SuiteBuilder) RegisterTag(tag string, priority int, handler TagHandler) *SuiteBuilder {
-	b.registry.Register(tag, priority, func(ctx context.Context, tt *internaltesting.TestingT, s ...string) context.Context {
+	b.registry.Register(tag, priority, func(ctx context.Context, tt *internaltesting.TestingT, s []string) context.Context {
 		// wrap since we move into the internal implementation of the interface
 		handler(ctx, tt, s...)
 		return ctx
@@ -148,6 +149,11 @@ func (b *SuiteBuilder) WithHelmChart(url, repo, chart string, options helm.Insta
 		chart:   chart,
 		options: options,
 	})
+	return b
+}
+
+func (b *SuiteBuilder) ExitOnCleanupFailures() *SuiteBuilder {
+	b.exitOnCleanupFailures = true
 	return b
 }
 
@@ -279,14 +285,16 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 			},
 			Options: &opts,
 		},
-		options: b.testingOpts,
+		options:               b.testingOpts,
+		exitOnCleanupFailures: b.exitOnCleanupFailures,
 	}, nil
 }
 
 type Suite struct {
-	output  string
-	suite   *godog.TestSuite
-	options *internaltesting.TestingOptions
+	output                string
+	suite                 *godog.TestSuite
+	options               *internaltesting.TestingOptions
+	exitOnCleanupFailures bool
 }
 
 func (s *Suite) RunM(m *testing.M) {
@@ -294,6 +302,10 @@ func (s *Suite) RunM(m *testing.M) {
 	if s.output != "" {
 		s.suite.Options.Output = &testLog
 		s.suite.Options.NoColors = true
+	}
+
+	if s.exitOnCleanupFailures {
+		s.options.ExitBehavior = internaltesting.ExitBehaviorTerminateProgram
 	}
 
 	status := s.suite.Run()
@@ -310,17 +322,46 @@ func (s *Suite) RunM(m *testing.M) {
 }
 
 func (s *Suite) RunT(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var testLog bytes.Buffer
 	if s.output != "" {
 		s.suite.Options.Output = &testLog
 		s.suite.Options.NoColors = true
 	}
 
+	var errMessage internaltesting.TerminationError
+	done := make(chan struct{})
+	if s.exitOnCleanupFailures {
+		s.options.ExitBehavior = internaltesting.ExitBehaviorTestFail
+		go func() {
+			defer close(done)
+			select {
+			case <-ctx.Done():
+				return
+			case errMessage = <-internaltesting.TerminationChan:
+			}
+		}()
+	} else {
+		close(done)
+	}
+
 	s.suite.Options.TestingT = t
+
 	s.suite.Run()
+	cancel()
+	<-done
 
 	if s.output != "" {
 		writeTestLog(testLog, s.output)
+	}
+
+	if errMessage.Message != "" {
+		if errMessage.NeedsLog {
+			fmt.Print(errMessage.Message)
+		}
+		t.Fail()
 	}
 }
 
