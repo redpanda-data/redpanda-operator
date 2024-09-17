@@ -48,9 +48,7 @@ type RedpandaSpec struct {
 	ChartRef ChartRef `json:"chartRef,omitempty"`
 	// Defines the Helm values to use to deploy the cluster.
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
-	// Migration flag that adjust Kubernetes core resources with annotation and labels, so
-	// flux controller can import resources.
-	// Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/
+	// Deprecated and Removed in v2.2.3-24.2.X. Downgrade to v2.2.2-24.2.4 perform the migration
 	Migration *Migration `json:"migration,omitempty"`
 }
 
@@ -241,56 +239,4 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 		UID:        in.UID,
 		Controller: ptr.To(true),
 	}
-}
-
-// GetMigrationConsoleName returns Console custom resource namespace which will be taken out from
-// old reconciler, so that underlying resources could be migrated.
-func (in *Redpanda) GetMigrationConsoleName() string {
-	if in.Spec.Migration == nil {
-		return ""
-	}
-	name := in.Spec.Migration.ConsoleRef.Name
-	if name == "" {
-		name = in.Name
-	}
-	return name
-}
-
-// GetMigrationConsoleNamespace returns Console custom resource name which will be taken out from
-// old reconciler, so that underlying resources could be migrated.
-func (in *Redpanda) GetMigrationConsoleNamespace() string {
-	if in.Spec.Migration == nil {
-		return ""
-	}
-	namespace := in.Spec.Migration.ConsoleRef.Namespace
-	if namespace == "" {
-		namespace = in.Namespace
-	}
-	return namespace
-}
-
-// GetMigrationClusterName returns Cluster custom resource namespace which will be taken out from
-// old reconciler, so that underlying resources could be migrated.
-func (in *Redpanda) GetMigrationClusterName() string {
-	if in.Spec.Migration == nil {
-		return ""
-	}
-	name := in.Spec.Migration.ClusterRef.Name
-	if name == "" {
-		name = in.Name
-	}
-	return name
-}
-
-// GetMigrationClusterNamespace returns Cluster custom resource name which will be taken out from
-// old reconciler, so that underlying resources could be migrated.
-func (in *Redpanda) GetMigrationClusterNamespace() string {
-	if in.Spec.Migration == nil {
-		return ""
-	}
-	namespace := in.Spec.Migration.ClusterRef.Namespace
-	if namespace == "" {
-		namespace = in.Namespace
-	}
-	return namespace
 }

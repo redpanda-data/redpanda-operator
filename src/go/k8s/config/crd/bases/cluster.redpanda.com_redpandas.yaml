@@ -9618,10 +9618,8 @@ spec:
                     type: object
                 type: object
               migration:
-                description: |-
-                  Migration flag that adjust Kubernetes core resources with annotation and labels, so
-                  flux controller can import resources.
-                  Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/
+                description: Deprecated and Removed in v2.2.3-24.2.X. Downgrade to
+                  v2.2.2-24.2.4 perform the migration
                 properties:
                   clusterRef:
                     description: |-
@@ -19381,10 +19379,8 @@ spec:
                     type: object
                 type: object
               migration:
-                description: |-
-                  Migration flag that adjust Kubernetes core resources with annotation and labels, so
-                  flux controller can import resources.
-                  Doc: https://docs.redpanda.com/current/upgrade/migrate/kubernetes/operator/
+                description: Deprecated and Removed in v2.2.3-24.2.X. Downgrade to
+                  v2.2.2-24.2.4 perform the migration
                 properties:
                   clusterRef:
                     description: |-
