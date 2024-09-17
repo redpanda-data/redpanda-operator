@@ -88,13 +88,21 @@ func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 }
 
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
-	c.dialer = dialer
-	return c
+	return &Factory{
+		Client:   c.Client,
+		config:   c.config,
+		userAuth: c.userAuth,
+		dialer:   dialer,
+	}
 }
 
 func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
-	c.userAuth = userAuth
-	return c
+	return &Factory{
+		Client:   c.Client,
+		config:   c.config,
+		dialer:   c.dialer,
+		userAuth: userAuth,
+	}
 }
 
 func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kgo.Opt) (*kgo.Client, error) {
