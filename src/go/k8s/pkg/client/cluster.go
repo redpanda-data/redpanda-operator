@@ -10,13 +10,8 @@
 package client
 
 import (
-	"encoding/json"
-
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -24,39 +19,9 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
-func (c *Factory) dotFor(cluster *redpandav1alpha2.Redpanda) (*helmette.Dot, error) {
-	var values []byte
-	var partial redpandachart.PartialValues
-
-	values, err := json.Marshal(cluster.Spec.ClusterSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(values, &partial); err != nil {
-		return nil, err
-	}
-
-	release := helmette.Release{
-		Name:      cluster.Name,
-		Namespace: cluster.Namespace,
-		Service:   "redpanda",
-		IsInstall: true,
-	}
-
-	dot, err := redpandachart.Dot(release, partial)
-	if err != nil {
-		return nil, err
-	}
-
-	dot.KubeConfig = kube.RestToConfig(c.config)
-
-	return dot, nil
-}
-
 // RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
-	dot, err := c.dotFor(cluster)
+	dot, err := cluster.GetDot(c.config)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +43,7 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 
 // KafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
-	dot, err := c.dotFor(cluster)
+	dot, err := cluster.GetDot(c.config)
 	if err != nil {
 		return nil, err
 	}
