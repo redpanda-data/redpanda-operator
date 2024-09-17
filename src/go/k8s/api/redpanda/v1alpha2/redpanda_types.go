@@ -15,9 +15,13 @@ import (
 
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
+	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/helm-charts/pkg/kube"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
@@ -239,4 +243,28 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 		UID:        in.UID,
 		Controller: ptr.To(true),
 	}
+}
+
+func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
+	var values []byte
+	var partial redpandachart.PartialValues
+
+	values, err := json.Marshal(in.Spec.ClusterSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(values, &partial); err != nil {
+		return nil, err
+	}
+
+	release := helmette.Release{
+		Name:      in.Name,
+		Namespace: in.Namespace,
+		Service:   "redpanda",
+		IsInstall: true,
+		IsUpgrade: true,
+	}
+
+	return redpandachart.Dot(release, partial, kube.RestToConfig(restConfig))
 }
