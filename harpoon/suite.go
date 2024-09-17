@@ -15,7 +15,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -333,25 +332,26 @@ func (s *Suite) RunT(t *testing.T) {
 	}
 
 	var errMessage internaltesting.TerminationError
-	var wg sync.WaitGroup
+	done := make(chan struct{})
 	if s.exitOnCleanupFailures {
 		s.options.ExitBehavior = internaltesting.ExitBehaviorTestFail
-		wg.Add(1)
 		go func() {
-			defer wg.Done()
+			defer close(done)
 			select {
 			case <-ctx.Done():
 				return
 			case errMessage = <-internaltesting.TerminationChan:
 			}
 		}()
+	} else {
+		close(done)
 	}
 
 	s.suite.Options.TestingT = t
 
 	s.suite.Run()
 	cancel()
-	wg.Wait()
+	<-done
 
 	if s.output != "" {
 		writeTestLog(testLog, s.output)

@@ -34,8 +34,6 @@ func getSteps(ctx *godog.ScenarioContext) {
 	}
 }
 
-type empty struct{}
-
 func injectTestingT(fn interface{}) interface{} {
 	fnValue := reflect.ValueOf(fn)
 	fnType := fnValue.Type()
@@ -48,10 +46,8 @@ func injectTestingT(fn interface{}) interface{} {
 		outTypes = append(outTypes, fnType.Out(i))
 	}
 
-	path := reflect.TypeOf(empty{}).PkgPath()
-
-	// handle the case of ctx.Context, TestingT...
-	if len(inTypes) > 1 && isType("context", "Context", inTypes[0]) && isType(path, "TestingT", inTypes[1]) {
+	// handle the case of func(ctx.Context, TestingT, ...)
+	if len(inTypes) > 1 && reflect.TypeFor[context.Context]() == inTypes[0] && reflect.TypeFor[TestingT]() == inTypes[1] {
 		inTypes = append([]reflect.Type{inTypes[0]}, inTypes[2:]...)
 		fnType := reflect.FuncOf(inTypes, outTypes, false)
 		newFn := reflect.MakeFunc(fnType, func(args []reflect.Value) (results []reflect.Value) {
@@ -63,8 +59,8 @@ func injectTestingT(fn interface{}) interface{} {
 		return newFn
 	}
 
-	// handle the case of TestingT
-	if len(inTypes) > 0 && isType(path, "TestingT", inTypes[0]) {
+	// handle the case of func(TestingT, ...)
+	if len(inTypes) > 0 && reflect.TypeFor[TestingT]() == inTypes[0] {
 		// inject a ctx.Context, pull TestingT out, and then drop the context
 		inTypes = append([]reflect.Type{reflect.TypeFor[context.Context]()}, inTypes[1:]...)
 		fnType := reflect.FuncOf(inTypes, outTypes, false)
@@ -78,8 +74,4 @@ func injectTestingT(fn interface{}) interface{} {
 	}
 
 	return fn
-}
-
-func isType(pkg, name string, typ reflect.Type) bool {
-	return typ.PkgPath() == pkg && name == typ.Name()
 }
