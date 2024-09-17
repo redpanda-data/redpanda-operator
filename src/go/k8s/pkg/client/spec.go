@@ -16,8 +16,11 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/console/backend/pkg/config"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -43,12 +46,31 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
-		sasl, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
+		saslOpt, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
 		if err != nil {
 			return nil, err
 		}
 
-		kopts = append(kopts, sasl)
+		kopts = append(kopts, saslOpt)
+	}
+
+	if c.userAuth != nil {
+		auth := scram.Auth{
+			User: c.userAuth.Username,
+			Pass: c.userAuth.Password,
+		}
+
+		var mechanism sasl.Mechanism
+		switch c.userAuth.Mechanism {
+		case config.SASLMechanismScramSHA256:
+			mechanism = auth.AsSha256Mechanism()
+		case config.SASLMechanismScramSHA512:
+			mechanism = auth.AsSha512Mechanism()
+		default:
+			return nil, ErrUnsupportedSASLMechanism
+		}
+
+		kopts = append(kopts, kgo.SASL(mechanism))
 	}
 
 	if spec.TLS != nil {
@@ -108,5 +130,17 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 		auth = &rpadmin.NopAuth{}
 	}
 
-	return rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer)
+	client, err := rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		client.SetAuth(&rpadmin.BasicAuth{
+			Username: c.userAuth.Username,
+			Password: c.userAuth.Password,
+		})
+	}
+
+	return client, nil
 }

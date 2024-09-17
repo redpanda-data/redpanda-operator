@@ -16,8 +16,8 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/acls"
-	"github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/client/users"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +34,13 @@ var (
 	ErrInvalidRedpandaClientObject = errors.New("cannot initialize Redpanda Admin API client from given object")
 	ErrUnsupportedSASLMechanism    = errors.New("unsupported SASL mechanism")
 )
+
+// UserAuth allows you to override the auth credentials used in establishing a client connection
+type UserAuth struct {
+	Username  string
+	Password  string
+	Mechanism string
+}
 
 // ClientFactory is responsible for creating both high-level and low-level clients used in our
 // controllers.
@@ -67,7 +74,8 @@ type Factory struct {
 	client.Client
 	config *rest.Config
 
-	dialer redpanda.DialContextFunc
+	dialer   redpanda.DialContextFunc
+	userAuth *UserAuth
 }
 
 var _ ClientFactory = (*Factory)(nil)
@@ -84,10 +92,15 @@ func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 	return c
 }
 
+func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
+	c.userAuth = userAuth
+	return c
+}
+
 func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kgo.Opt) (*kgo.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.kafkaForCluster(ctx, cluster, opts...)
+		return c.kafkaForCluster(cluster, opts...)
 	}
 
 	cluster, err := c.getCluster(ctx, obj)
@@ -96,7 +109,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kg
 	}
 
 	if cluster != nil {
-		return c.kafkaForCluster(ctx, cluster, opts...)
+		return c.kafkaForCluster(cluster, opts...)
 	}
 
 	if spec := c.getKafkaSpec(obj); spec != nil {
@@ -109,7 +122,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kg
 func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*rpadmin.AdminAPI, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.redpandaAdminForCluster(ctx, cluster)
+		return c.redpandaAdminForCluster(cluster)
 	}
 
 	cluster, err := c.getCluster(ctx, obj)
@@ -118,7 +131,7 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 	}
 
 	if cluster != nil {
-		return c.redpandaAdminForCluster(ctx, cluster)
+		return c.redpandaAdminForCluster(cluster)
 	}
 
 	if spec := c.getAdminSpec(obj); spec != nil {

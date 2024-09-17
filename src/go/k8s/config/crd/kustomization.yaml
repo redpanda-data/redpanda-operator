@@ -9,6 +9,7 @@ resources:
 - bases/redpanda.vectorized.io_consoles.yaml
 - bases/cluster.redpanda.com_redpandas.yaml
 - bases/cluster.redpanda.com_topics.yaml
+- bases/cluster.redpanda.com_users.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 - bases/toolkit.fluxcd.io/helm-controller.yaml
 - bases/toolkit.fluxcd.io/source-controller.yaml

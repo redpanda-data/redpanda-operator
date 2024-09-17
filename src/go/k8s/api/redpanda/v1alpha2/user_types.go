@@ -10,13 +10,17 @@
 package v1alpha2
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func init() {
@@ -116,6 +120,32 @@ type UserAuthenticationSpec struct {
 type Password struct {
 	Value     string          `json:"value,omitempty"`
 	ValueFrom *PasswordSource `json:"valueFrom"`
+}
+
+// Fetch fetches the actual value of a password based on its configuration.
+func (p *Password) Fetch(ctx context.Context, c client.Client, namespace string) (string, error) {
+	if p.Value != "" {
+		return p.Value, nil
+	}
+
+	name := p.ValueFrom.SecretKeyRef.LocalObjectReference.Name
+
+	var secret corev1.Secret
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &secret)
+	if err != nil {
+		return "", err
+	}
+
+	key := p.ValueFrom.SecretKeyRef.Key
+	if key == "" {
+		key = "password"
+	}
+
+	password, ok := secret.Data[key]
+	if !ok {
+		return "", errors.New("password not found in secret")
+	}
+	return string(password), nil
 }
 
 // PasswordSource contains the source for a password.

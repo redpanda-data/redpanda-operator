@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"sync"
@@ -236,7 +237,7 @@ func (m *MockAdminAPI) GetFeatures(
 	}, nil
 }
 
-func (m *MockAdminAPI) SetLicense(_ context.Context, _ interface{}) error {
+func (m *MockAdminAPI) SetLicense(_ context.Context, _ io.Reader) error {
 	m.Log.WithName("SetLicense").Info("called")
 	m.monitor.Lock()
 	defer m.monitor.Unlock()
