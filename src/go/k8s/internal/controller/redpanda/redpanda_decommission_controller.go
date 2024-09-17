@@ -746,11 +746,10 @@ func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Lo
 		return false, fmt.Errorf("error creating adminAPI: %w", err)
 	}
 
-	health, err := watchClusterHealth(ctx, adminAPI)
+	health, err := adminAPI.GetHealthOverview(ctx)
 	if err != nil {
 		return false, fmt.Errorf("could not make request to admin-api: %w", err)
 	}
-
 	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
 		return false, nil
 	}
