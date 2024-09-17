@@ -725,3 +725,35 @@ func getConditionOfTypeAndListWithout(conditionType appsv1.StatefulSetConditionT
 
 	return oldCondition, newConditions
 }
+
+func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (bool, error) {
+	namespace := sts.Namespace
+
+	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
+	if !ok {
+		log.Info("could not find instance label to retrieve releaseName", "label", K8sInstanceLabelKey)
+		return false, nil
+	}
+
+	requestedReplicas := ptr.Deref(sts.Spec.Replicas, 0)
+	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	if err != nil {
+		return false, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
+	}
+
+	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
+	if err != nil {
+		return false, fmt.Errorf("error creating adminAPI: %w", err)
+	}
+
+	health, err := watchClusterHealth(ctx, adminAPI)
+	if err != nil {
+		return false, fmt.Errorf("could not make request to admin-api: %w", err)
+	}
+
+	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
+		return false, nil
+	}
+
+	return len(health.AllNodes) > int(requestedReplicas), nil
+}
