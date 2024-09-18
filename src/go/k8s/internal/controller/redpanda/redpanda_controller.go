@@ -597,6 +597,16 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), ctrl.Result{}, nil
 	}
 
+	for _, sts := range redpandaStatefulSets {
+		decommission, err := needsDecommission(ctx, sts, log)
+		if err != nil {
+			return rp, ctrl.Result{}, err
+		}
+		if decommission {
+			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), ctrl.Result{}, nil
+		}
+	}
+
 	// check to make sure that our stateful set pods are all current
 	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
 		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message), ctrl.Result{}, nil
