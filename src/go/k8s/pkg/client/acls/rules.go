@@ -42,7 +42,7 @@ func rulesFromV1Alpha2ACL(principal string, r redpandav1alpha2.ACLRule) ([]rule,
 	return rules, nil
 }
 
-func (r rule) toV1Alpha2Rule() redpandav1alpha2.ACLRule {
+func ruleToV1Alpha2Rule(r rule) redpandav1alpha2.ACLRule {
 	return redpandav1alpha2.ACLRule{
 		Type: redpandav1alpha2.ACLTypeFromKafka(r.PermissionType),
 		Resource: redpandav1alpha2.ACLResourceSpec{
@@ -57,7 +57,7 @@ func (r rule) toV1Alpha2Rule() redpandav1alpha2.ACLRule {
 	}
 }
 
-func (r rule) toDeletionFilter() kmsg.DeleteACLsRequestFilter {
+func ruleToDeletionFilter(r rule) kmsg.DeleteACLsRequestFilter {
 	return kmsg.DeleteACLsRequestFilter{
 		ResourceType:        r.ResourceType,
 		ResourceName:        &r.ResourceName,
@@ -69,7 +69,7 @@ func (r rule) toDeletionFilter() kmsg.DeleteACLsRequestFilter {
 	}
 }
 
-func (r rule) toCreationRequest() kmsg.CreateACLsRequestCreation {
+func ruleToCreationRequest(r rule) kmsg.CreateACLsRequestCreation {
 	return kmsg.CreateACLsRequestCreation{
 		ResourceType:        r.ResourceType,
 		ResourceName:        r.ResourceName,
