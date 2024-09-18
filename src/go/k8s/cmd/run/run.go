@@ -28,7 +28,6 @@ import (
 	"github.com/fluxcd/pkg/runtime/client"
 	helper "github.com/fluxcd/pkg/runtime/controller"
 	"github.com/fluxcd/pkg/runtime/events"
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/fluxcd/pkg/runtime/metrics"
 	sourceControllerAPIv1 "github.com/fluxcd/source-controller/api/v1"
 	sourceControllerAPIv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
@@ -103,7 +102,6 @@ var (
 
 	clientOptions  client.Options
 	kubeConfigOpts client.KubeConfigOptions
-	logOptions     logger.Options
 
 	storageAdvAddr string
 
@@ -215,7 +213,6 @@ func Command() *cobra.Command {
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 
-	logOptions.BindFlags(cmd.Flags())
 	clientOptions.BindFlags(cmd.Flags())
 	kubeConfigOpts.BindFlags(cmd.Flags())
 
@@ -246,8 +243,6 @@ func Run(
 	unbindPVCsAfter time.Duration,
 	autoDeletePVCs bool,
 ) {
-	ctrl.SetLogger(logger.NewLogger(logOptions))
-
 	// set the managedFields owner for resources reconciled from Helm charts
 	kube.ManagedFieldsManager = controllerName
 

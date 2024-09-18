@@ -13,16 +13,28 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/cmd/syncclusterconfig"
 	"github.com/spf13/cobra"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var rootCmd = cobra.Command{
-	Use: "redpanda-operator",
-}
+var (
+	rootCmd = cobra.Command{
+		Use: "redpanda-operator",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Configure logging consistently for all sub-commands.
+			// NB: If a subcommand relies on outputting to stdout, logging may
+			// cause issues as it's default output it stdout.
+			ctrl.SetLogger(logger.NewLogger(logOptions))
+		},
+	}
+
+	logOptions logger.Options
+)
 
 func init() {
 	rootCmd.AddCommand(
@@ -31,6 +43,8 @@ func init() {
 		run.Command(),
 		syncclusterconfig.Command(),
 	)
+
+	logOptions.BindFlags(rootCmd.PersistentFlags())
 }
 
 func main() {
