@@ -17,6 +17,7 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/external"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -68,6 +69,9 @@ type ClientFactory interface {
 
 	// Users returns a high-level client for managing users.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
+
+	// ClusterHealthFetcher returns a cluster fetcher for the given cluster
+	ClusterHealthFetcher(cluster *redpandav1alpha2.Redpanda) external.ResourceFetcher[rpadmin.ClusterHealthOverview]
 }
 
 type Factory struct {
