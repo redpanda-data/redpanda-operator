@@ -57,3 +57,17 @@ tasks:
   generate:
     cmds:
       - task: k8s:generate
+
+  build:
+    cmds:
+      - task: build:binaries
+
+  build:binaries:
+    cmds:
+      # TODO(chrisseto): Ditch goreleaser in favor of just go build in task
+      # files. We're not using it for anything other than an arch build matrix.
+      - task: goreleaser:build-operator-binaries
+
+  build:images:
+    cmds:
+      - task: k8s:build-operator-images

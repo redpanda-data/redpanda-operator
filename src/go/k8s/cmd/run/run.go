@@ -315,11 +315,13 @@ func Run(
 	case OperatorV1Mode:
 		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
 
+		adminAPIClientFactory := adminutils.CachedAdminAPIClientFactory(adminutils.NewInternalAdminAPI)
+
 		if err = (&redpandacontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminutils.NewInternalAdminAPI,
+			AdminAPIClientFactory:     adminAPIClientFactory,
 			DecommissionWaitInterval:  decommissionWaitInterval,
 			MetricsTimeout:            metricsTimeout,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
@@ -334,7 +336,7 @@ func Run(
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("ClusterConfigurationDrift"),
 			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminutils.NewInternalAdminAPI,
+			AdminAPIClientFactory:     adminAPIClientFactory,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 		}).WithClusterDomain(clusterDomain).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "ClusterConfigurationDrift")
@@ -351,7 +353,7 @@ func Run(
 			Client:                  mgr.GetClient(),
 			Scheme:                  mgr.GetScheme(),
 			Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
-			AdminAPIClientFactory:   adminutils.NewInternalAdminAPI,
+			AdminAPIClientFactory:   adminAPIClientFactory,
 			Store:                   consolepkg.NewStore(mgr.GetClient(), mgr.GetScheme()),
 			EventRecorder:           mgr.GetEventRecorderFor("Console"),
 			KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
