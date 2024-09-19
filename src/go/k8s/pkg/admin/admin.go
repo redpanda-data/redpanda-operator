@@ -15,10 +15,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/scalalang2/golang-fifo/sieve"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources/types"
@@ -29,6 +30,44 @@ type NoInternalAdminAPI struct{}
 
 func (n *NoInternalAdminAPI) Error() string {
 	return "no internal admin API defined for cluster"
+}
+
+// CachedAdminAPIClientFactory wraps an [AdminAPIClientFactory] with a caching
+// layer to prevent leakage of memory.
+//
+// Memory can be easily leaked by [AdminAPIClient]s due to [http.Client]s
+// connection pooling behavior and their lack of being exposed directly.
+func CachedAdminAPIClientFactory(factory AdminAPIClientFactory) AdminAPIClientFactory {
+	// Mildly paranoid defaults, expire the client every 5 minutes so the
+	// operator will continue to limp along in case something strange happens
+	// (looking at you, coredns).
+	cache := sieve.New[string, AdminAPIClient](75, 5*time.Minute)
+
+	return func(
+		ctx context.Context,
+		k8sClient client.Reader,
+		redpandaCluster *vectorizedv1alpha1.Cluster,
+		fqdn string,
+		adminTLSProvider types.AdminTLSConfigProvider,
+		ordinals ...int32,
+	) (AdminAPIClient, error) {
+		// Most importantly, Generation is part of the cache key. Anytime .Spec
+		// changes, Generation will increment meaning we may need to
+		// reconfigure the client due to changes in TLS/Auth/Etc.
+		key := fmt.Sprintf("%s-%s-%d-%s-%v", redpandaCluster.Namespace, redpandaCluster.Name, redpandaCluster.Generation, fqdn, ordinals)
+
+		if client, ok := cache.Get(key); ok { //nolint:gocritic // Shadowing client isn't a big deal in a wrapper.
+			return client, nil
+		}
+
+		client, err := factory(ctx, k8sClient, redpandaCluster, fqdn, adminTLSProvider, ordinals...) //nolint:gocritic // Same as above.
+		if err != nil {
+			return nil, err
+		}
+
+		cache.Set(key, client)
+		return client, nil
+	}
 }
 
 // NewInternalAdminAPI is used to construct an admin API client that talks to the cluster via

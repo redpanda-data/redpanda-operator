@@ -29,6 +29,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/helm-charts v0.0.0-20240916201426-9ca3b128bb8e
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
+	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
