@@ -100,11 +100,10 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f, err := os.Open("testdata/metrics.golden.txt")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(cfg).NotTo(BeNil())
+		defer f.Close()
 
 		_, err = io.Copy(w, f)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(cfg).NotTo(BeNil())
 	}))
 
 	resources.UnderReplicatedPartitionsHostOverwrite = ts.Listener.Addr().String()
