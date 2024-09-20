@@ -1,0 +1,56 @@
+-- go --
+# go version | cut -d ' ' -f 1-3
+go version go1.22.7
+
+-- goreleaser --
+# goreleaser --version | awk 'NR>2 {print last} {last=$0}'
+ / ___| ___ |  _ \ ___| | ___  __ _ ___  ___ _ __
+| |  _ / _ \| |_) / _ \ |/ _ \/ _` / __|/ _ \ '__|
+| |_| | (_) |  _ <  __/ |  __/ (_| \__ \  __/ |
+ \____|\___/|_| \_\___|_|\___|\__,_|___/\___|_|
+goreleaser: Deliver Go Binaries as fast and easily as possible
+https://goreleaser.com
+
+GitVersion:    1.24.0
+GitCommit:     unknown
+GitTreeState:  unknown
+BuildDate:     unknown
+BuiltBy:       nixpkgs
+GoVersion:     go1.22.1
+Compiler:      gc
+ModuleSum:     unknown
+
+-- helm --
+# helm version
+version.BuildInfo{Version:"v3.14.3", GitCommit:"v3.14.3", GitTreeState:"", GoVersion:"go1.22.1"}
+
+-- k3d --
+# k3d version
+k3d version v5.6.0
+k3s version v1.21.7-k3s1 (default)
+
+-- kind --
+# kind version | cut -d ' ' -f 1-3
+kind v0.22.0 go1.22.1
+
+-- kubectl --
+# kubectl version --client=true
+Client Version: v1.29.3
+Kustomize Version: v5.0.4-0.20230601165947-6ce0bf390ce3
+
+-- kustomize --
+# kustomize version
+5.3.0
+
+-- kuttl --
+# kuttl version | cut -d ' ' -f 1-7
+KUTTL Version: version.Info{GitVersion:"0.19.0", GitCommit:"733ad16", BuildDate:"2024-09-02T08:15:28Z", GoVersion:"go1.22.1", Compiler:"gc",
+
+-- task --
+# task --version
+Task version: 3.35.1
+
+-- yq --
+# yq --version
+yq (https://github.com/mikefarah/yq/) version v4.43.1
+

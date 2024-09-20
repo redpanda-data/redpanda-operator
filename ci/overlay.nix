@@ -1,6 +1,9 @@
 { pkgs
 }: (final: prev: {
-  # Custom package for Kubernetes' setup-envtest.
+  applyconfiguration-gen = pkgs.callPackage ./applyconfiguration-gen.nix { };
+  controller-gen = pkgs.callPackage ./controller-gen.nix { };
+  docker-tag-list = pkgs.callPackage ./docker-tag-list.nix { };
+  kuttl = pkgs.callPackage ./kuttl.nix { };
   setup-envtest = pkgs.callPackage ./setup-envtest.nix { };
 
   # Pin to 1.22.7 (latest at time of writing) to support go.work files with

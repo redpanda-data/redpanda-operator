@@ -16,12 +16,9 @@ tasks:
     aliases:
     - generate-controller-code
     - generate-manifests
-    deps:
-      - :dev:install-k8s-controller-gen
-      - :dev:install-k8s-applyconfiguration-gen
     cmds:
       - |
-        {{.K8S_CONTROLLER_GEN_INSTALL_DIR}}/bin/controller-gen \
+        controller-gen \
           object:headerFile="../../../licenses/boilerplate.go.txt" \
           paths='./...' \
           crd \
@@ -30,7 +27,7 @@ tasks:
           output:crd:artifacts:config=config/crd/bases \
           output:rbac:artifacts:config=config/rbac/bases/operator
       - |
-        {{.K8S_APPLYCONFIGURATION_GEN_INSTALL_DIR}}/bin/applyconfiguration-gen \
+        applyconfiguration-gen \
         --go-header-file "../../../licenses/boilerplate.go.txt" \
         --output-dir "api/applyconfiguration" \
         --output-pkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/applyconfiguration" \
@@ -42,12 +39,9 @@ tasks:
   run-unit-tests:
     dir: 'src/go/k8s'
     deps:
-      - :dev:install-helm
       - generate
     cmds:
       - |
-        PATH="{{.HELM_INSTALL_DIR}}/bin:$PATH"
-        source <(cd {{ .SRC_DIR }} && nix develop -c setup-envtest use -p env 1.29.x)
         go test -v ./... -coverprofile cover.out
 
   build-operator-images:
@@ -79,11 +73,9 @@ tasks:
     vars:
       CONSTRAINT: '{{.CONSTRAINT | default ""}}'
       REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
-    deps:
-      - :dev:install-docker-tag-list
     cmds:
       - |
-        TAG=$("{{.DOCKER_TAG_LIST_INSTALL_DIR}}/docker-tag-list" -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
+        TAG=$(docker-tag-list -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
         docker pull "{{.REPO}}":"${TAG}"
         docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
 
@@ -126,12 +118,6 @@ tasks:
         sh: |
           cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
     deps:
-      - :dev:install-helm
-      - :dev:install-kind
-      - :dev:install-kubectl
-      - :dev:install-kustomize
-      - :dev:install-kuttl
-      - :dev:install-yq
       - task: set-aio-max
         vars:
           USE_SUDO: "false"
@@ -147,7 +133,6 @@ tasks:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - docker image list
       - |
-        PATH="{{.HELM_INSTALL_DIR}}"/bin:"{{.KIND_INSTALL_DIR}}"/bin:"{{.KUBECTL_INSTALL_DIR}}"/bin:"{{.KUTTL_INSTALL_DIR}}"/bin:"{{.KUSTOMIZE_INSTALL_DIR}}"/bin:"{{.YQ_INSTALL_DIR}}"/bin:$PATH
         KUTTL_EXIT_CODE=0
         kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}} || KUTTL_EXIT_CODE=$?
         echo "$KUTTL_EXIT_CODE" > kuttl-exit-code
@@ -289,6 +274,4 @@ tasks:
     dir: 'src/go/k8s'
     cmds:
       - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
-      - |
-        PATH={{.HELM_INSTALL_DIR}}/bin:{{.YQ_INSTALL_DIR}}/bin:$PATH
-        ./hack/v2-helm-setup.sh
+      - ./hack/v2-helm-setup.sh

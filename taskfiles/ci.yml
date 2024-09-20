@@ -20,8 +20,6 @@ tasks:
 
   k8s-v2-helm:
     cmds:
-      - task: :dev:install-yq
-      - task: :dev:install-helm
       - task: :k8s:create-v2-helm-tests
       - task: run-k8s-v2-helm-tests
 

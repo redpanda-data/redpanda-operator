@@ -18,7 +18,7 @@ steps:
           context: k8s-operator
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
     agents:
       queue: v6-amd64-builders
     artifact_paths:
@@ -81,7 +81,7 @@ steps:
           context: k8s-operator-tests-with-flags
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh ./task ci:run-k8s-tests-with-flags
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:run-k8s-tests-with-flags
     agents:
       queue: v6-amd64-builders
     artifact_paths:
@@ -148,7 +148,7 @@ steps:
           - github_commit_status:
               context: k8s-operator-v2
         commands:
-          - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2
+          - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2
         agents:
           queue: v6-amd64-builders
         artifact_paths:
@@ -194,7 +194,7 @@ steps:
            # generated too many test cases after introduction files with the `-novalues.yaml`
            # suffix. Those would not be taken by chart testing (`ct`) program, but
            # `hack/v2-helm-setup.sh` takes all files currently and disables only handful of them.
-#          - ./ci/scripts/run-in-nix-docker.sh ./task ci:k8s-v2-helm
+#          - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2-helm
           - mkdir -p src/go/k8s/tests/_e2e_helm_artifacts_v2
           - touch src/go/k8s/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
