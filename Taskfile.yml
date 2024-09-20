@@ -8,32 +8,12 @@ vars:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
-  BIN_DIR: '{{.BUILD_ROOT}}/bin'
 
 env:
   # Redpanda maintains a few private forks of fluxcd repositories (See go.mod
   # files). GOPRIVATE ensures that go mod commands will understand how to
   # access them.
   GOPRIVATE: 'github.com/redpanda-data/*'
-  _PATH:
-    # HACK: A serve limitation of task is that is cannot override
-    # shell environment variables. See https://github.com/go-task/task/issues/1038.
-    # Ergo $PATH cannot be configured to utilize locally a mixture of
-    # system and locally installed binaries. Without being able to do
-    # so, it's difficult to utilize task for both development and CI.
-    #
-    # Task is currently used to manage the environment and run tasks,
-    # which is what creates this unique painpoint. As a temporary work
-    # around, task should be launched via the ./task wrapper script or
-    # .build/bin should be appended to $PATH by some other means
-    # (direnv). This line will cause task to fail at startup if we
-    # detect that $PATH is not configured correctly. Eventually, we'll
-    # provide an alternative tool for environment management.
-    sh: 'echo $PATH | grep -o .build/bin; echo "PATH is not correctly configured. Please run task via ./task."'
-    # TODO(chrisseto): Task < 3.33.1 has a bug that breaks propagation
-    # of variables. Update to the commented out line once we upgrade
-    # See https://github.com/go-task/task/issues/1435
-    # sh: 'echo $PATH | grep -o {{.BIN_DIR}}; echo "PATH is not correctly configured. Please run task via ./task."'
 
 includes:
   ci: taskfiles/ci.yml
@@ -52,11 +32,12 @@ tasks:
 
   fmt:
     cmds:
-      - nix develop -c gofumpt -w ./
+      - gofumpt -w ./
 
   generate:
     cmds:
       - task: k8s:generate
+      - task: dev:update-licenses
 
   build:
     cmds:
