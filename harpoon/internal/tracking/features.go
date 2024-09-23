@@ -164,18 +164,25 @@ func (f *FeatureHookTracker) RegisterFormatter(opts godog.Options) godog.Options
 // This is all boilerplate to satisfy the formatters.Formatter interface
 
 func (f *FeatureHookTracker) TestRunStarted() {}
+
 func (f *FeatureHookTracker) Defined(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
+
 func (f *FeatureHookTracker) Pickle(pickle *messages.Pickle) {
 }
+
 func (f *FeatureHookTracker) Failed(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition, error) {
 }
+
 func (f *FeatureHookTracker) Passed(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
+
 func (f *FeatureHookTracker) Skipped(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
+
 func (f *FeatureHookTracker) Undefined(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
+
 func (f *FeatureHookTracker) Pending(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
 func (f *FeatureHookTracker) Summary() {}

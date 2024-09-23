@@ -25,6 +25,7 @@ func main() {
 	to := strings.Split(AliasTo, " ")
 	argv := append(to, os.Args[1:]...)
 
+	//nolint:gosec // there's not a safe way to do this.
 	if err := syscall.Exec(to[0], argv, os.Environ()); err != nil {
 		panic(err)
 	}

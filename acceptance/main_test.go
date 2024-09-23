@@ -78,7 +78,6 @@ func TestMain(m *testing.M) {
 		RegisterTag("cluster", 1, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
-
 	if err != nil {
 		fmt.Printf("error running test suite: %v\n", err)
 		os.Exit(1)

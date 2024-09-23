@@ -228,7 +228,6 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 					if err := provider.Teardown(ctx); err != nil {
 						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
 					}
-
 				}
 
 				suiteContext.BeforeSuite(func() {
@@ -366,7 +365,7 @@ func (s *Suite) RunT(t *testing.T) {
 }
 
 func writeTestLog(buffer bytes.Buffer, path string) {
-	if err := os.WriteFile(path, buffer.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(path, buffer.Bytes(), 0o644); err != nil {
 		fmt.Println("Error writing test output log to disk, writing to stdout")
 		fmt.Println(buffer.String())
 	}
