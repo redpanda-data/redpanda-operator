@@ -41,7 +41,7 @@ all: build
 
 # Run tests
 test: manifests generate fmt
-	cd ../../.. && nix develop -c ./task k8s:run-unit-tests
+	cd ../../.. && nix develop -c task k8s:run-unit-tests
 
 # Build manager binary
 .PHONY: manager
@@ -58,7 +58,7 @@ build: manager configurator
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
-	cd ../../.. && nix develop -c ./task fmt
+	cd ../../.. && nix develop -c task fmt
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate vet manifests fmt
@@ -92,12 +92,12 @@ undeploy:
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests:
-	cd ../../.. && nix develop -c ./task k8s:generate-manifests
+	cd ../../.. && nix develop -c task k8s:generate-manifests
 
 # Generate code
 .PHONY: generate
 generate:
-	cd ../../.. && nix develop -c ./task k8s:generate-controller-code
+	cd ../../.. && nix develop -c task k8s:generate-controller-code
 
 # Creates kind cluster
 kind-create:
@@ -110,12 +110,12 @@ certmanager-install: kind-create
 # Build the docker image
 docker-build:
 	echo "~~~ Building operator image :docker:"
-	cd ../../.. && ./task k8s:build-operator-images
+	cd ../../.. && task k8s:build-operator-images
 
 # Build the docker image
 docker-build-configurator:
 	echo "~~~ Building configurator image :docker:"
-	cd ../../.. && ./task k8s:build-operator-images
+	cd ../../.. && task k8s:build-operator-images
 
 # Preload controller image to kind cluster
 push-to-kind: kind-create certmanager-install
@@ -124,11 +124,11 @@ push-to-kind: kind-create certmanager-install
 
 # Execute end to end tests
 e2e-tests:
-	cd ../../.. && nix develop -c ./task k8s:run-kuttl-tests
+	cd ../../.. && nix develop -c task k8s:run-kuttl-tests
 
 # Execute end to end tests v2
 e2e-tests-v2: kuttl
-	cd ../../.. && nix develop -c ./task k8s:run-k8s-v2-tests
+	cd ../../.. && nix develop -c task k8s:run-k8s-v2-tests
 
 # Create resources for the e2e-tests-v2-ci
 create-e2e-tests-v2-helm:
@@ -137,7 +137,7 @@ create-e2e-tests-v2-helm:
 # Execute end to end tests v2
 e2e-tests-v2-helm:
 	echo "~~~ Running kuttl tests :k8s:redpanda"
-	cd ../../.. && nix develop -c ./task k8s:run-k8s-v2-helm-tests
+	cd ../../.. && nix develop -c task k8s:run-k8s-v2-helm-tests
 
 ##@ Build Dependencies
 
@@ -160,11 +160,11 @@ $(KUSTOMIZE): $(LOCALBIN)
 
 .PHONY: lint
 lint: 
-	cd ../../.. && nix develop -c ./task lint
+	cd ../../.. && nix develop -c task lint
 
 .PHONY: lint-fix
 lint-fix:
-	cd ../../.. && nix develop -c ./task lint-fix
+	cd ../../.. && nix develop -c task lint-fix
 
 .PHONY: install-prometheus
 install-prometheus:
