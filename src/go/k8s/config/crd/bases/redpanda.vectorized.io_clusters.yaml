@@ -1027,6 +1027,21 @@ spec:
                     Replicas, so they can be controlled independently
                     Resources, because this is tied strongly to the actual machine shape backing the NodePool.
                   properties:
+                    cloudCacheStorage:
+                      description: Cache directory that will be mounted for Cloud
+                        Storage.
+                      properties:
+                        capacity:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: Storage capacity requested
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        storageClassName:
+                          description: Storage class name - https://kubernetes.io/docs/concepts/storage/storage-classes/
+                          type: string
+                      type: object
                     name:
                       description: Name of the NodePool. Must be unique, and must
                         not be "default".
@@ -1168,6 +1183,7 @@ spec:
                         type: object
                       type: array
                   required:
+                  - cloudCacheStorage
                   - name
                   - resources
                   - storage
