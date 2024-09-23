@@ -219,6 +219,9 @@ type NodePoolSpec struct {
 	// the resources defined here
 	// +required
 	Resources RedpandaResourceRequirements `json:"resources"`
+	// Cache directory that will be mounted for Cloud Storage.
+	// +required
+	CloudCacheStorage StorageSpec `json:"cloudCacheStorage"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
