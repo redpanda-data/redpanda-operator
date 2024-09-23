@@ -310,7 +310,7 @@ func (c *config) writeTopLevelLicense() error {
 		return err
 	}
 
-	if err := writer.Write("LICENSE", buf.Bytes(), 0644); err != nil {
+	if err := writer.Write("LICENSE", buf.Bytes(), 0o644); err != nil {
 		return err
 	}
 
@@ -329,7 +329,7 @@ func (c *config) writeStaticFiles() error {
 			getHeaderLicenseTemplate(f.License),
 			headerName(f.License),
 			f.getDelimiter(), false,
-			f.Name, 0644, nil,
+			f.Name, 0o644, nil,
 		)
 		if err != nil {
 			return err
@@ -346,7 +346,7 @@ func (c *config) writeLicenses() error {
 
 	directory := c.getLicenseDirectory()
 
-	if err := os.MkdirAll(directory, 0755); err != nil {
+	if err := os.MkdirAll(directory, 0o755); err != nil {
 		return err
 	}
 
@@ -359,7 +359,7 @@ func (c *config) writeLicenses() error {
 			return err
 		}
 
-		if err := writer.Write(filename, buf.Bytes(), 0644); err != nil {
+		if err := writer.Write(filename, buf.Bytes(), 0o644); err != nil {
 			return err
 		}
 	}

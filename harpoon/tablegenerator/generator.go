@@ -181,5 +181,5 @@ func RunGenerator(template, tag, headerDepth string, providers ...string) {
 		return
 	}
 
-	os.WriteFile(template, buffer.Bytes(), 0644)
+	exitOnError(os.WriteFile(template, buffer.Bytes(), 0o644))
 }

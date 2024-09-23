@@ -51,7 +51,7 @@
               pkgs.gawk # GNU awk, used by some build scripts.
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
-              pkgs.go_1_22_7
+              pkgs.go_1_23
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.goreleaser

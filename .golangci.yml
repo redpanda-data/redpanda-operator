@@ -1,0 +1,23 @@
+linters:
+  # Disable all linters, we explicitly opt into ones we want.
+  disable-all: true
+
+  enable:
+  - errcheck
+  - gofumpt
+  - goimports
+  - gosec
+  - gosimple
+  - govet
+  - ineffassign
+  - misspell
+  - staticcheck
+  - unused
+
+linters-settings:
+  gosec:
+    excludes:
+    - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
+
+    config:
+      G306: "0644" # Maximum allowed os.WriteFile Permissions

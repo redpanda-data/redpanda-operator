@@ -30,7 +30,6 @@ func TestMain(m *testing.M) {
 		WithDefaultProvider("stub").
 		ExitOnCleanupFailures().
 		Build()
-
 	if err != nil {
 		fmt.Printf("error running test suite: %v\n", err)
 		os.Exit(1)
