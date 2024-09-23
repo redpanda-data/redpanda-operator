@@ -14,6 +14,7 @@ import (
 	"fmt"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/collections"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -96,7 +97,9 @@ func (s *Syncer) ListACLs(ctx context.Context, principal string) ([]redpandav1al
 		return nil, fmt.Errorf("listing ACLs: %w", err)
 	}
 
-	return rulesetFromDescribeResponse(describeResponse).asV1Alpha2Rules(), nil
+	rules := collections.MapSet(rulesetFromDescribeResponse(describeResponse), ruleToV1Alpha2Rule)
+
+	return rules, nil
 }
 
 func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.DescribeACLsResponseResource, error) {

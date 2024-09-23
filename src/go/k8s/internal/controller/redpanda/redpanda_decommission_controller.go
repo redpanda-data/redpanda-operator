@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/collections"
 )
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;
@@ -354,9 +355,9 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 		}
 
-		nodesDownMap := map[int]any{}
+		nodesDownMap := collections.NewSet[int]()
 		for _, node := range health.NodesDown {
-			nodesDownMap[node] = struct{}{}
+			nodesDownMap.Add(node)
 		}
 
 		// perform decommission on down down-nodes but only if down nodes match count of all-nodes-replicas
@@ -373,10 +374,10 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 					log.Error(nodeErr, "getting node configuration", "pod-ordinal", podOrdinal)
 					return ctrl.Result{}, fmt.Errorf("getting node configuration from pod (%d): %w", podOrdinal, nodeErr)
 				}
-				delete(nodesDownMap, nodeCfg.NodeID)
+				nodesDownMap.Delete(nodeCfg.NodeID)
 			}
 
-			for nodeID := range nodesDownMap {
+			for _, nodeID := range nodesDownMap.Values() {
 				// Now we check the decommission status before continuing
 				doDecommission := false
 				status, decommStatusError := adminAPI.DecommissionBrokerStatus(ctx, nodeID)

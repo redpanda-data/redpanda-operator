@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/collections"
 )
 
 var (
@@ -57,16 +58,16 @@ func init() {
 // ClusterMetricController provides metrics for nodes and cluster
 type ClusterMetricController struct {
 	client.Client
-	currentLabels              map[string]struct{}
-	currentConfigurationLabels map[string]struct{}
+	currentLabels              collections.Set[string]
+	currentConfigurationLabels collections.Set[string]
 }
 
 // NewClusterMetricsController creates ClusterMetricController
 func NewClusterMetricsController(c client.Client) *ClusterMetricController {
 	return &ClusterMetricController{
 		Client:                     c,
-		currentLabels:              make(map[string]struct{}),
-		currentConfigurationLabels: make(map[string]struct{}),
+		currentLabels:              collections.NewConcurrentSet[string](),
+		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 	}
 }
 
@@ -85,7 +86,7 @@ func (r *ClusterMetricController) Reconcile(
 
 	redpandaClusters.Set(float64(len(cl.Items)))
 
-	curLabels := map[string]struct{}{}
+	curLabels := collections.NewSet[string]()
 
 	for i := range cl.Items {
 		g, err := desireRedpandaNodes.GetMetricWithLabelValues(cl.Items[i].Name)
@@ -99,13 +100,12 @@ func (r *ClusterMetricController) Reconcile(
 			return ctrl.Result{}, err
 		}
 		g.Set(float64(cl.Items[i].Status.ReadyReplicas))
-		curLabels[cl.Items[i].Name] = struct{}{}
-		r.currentLabels[cl.Items[i].Name] = struct{}{}
+		curLabels.Add(cl.Items[i].Name)
+		r.currentLabels.Add(cl.Items[i].Name)
 	}
 
-	for key := range r.currentLabels {
-		_, exist := curLabels[key]
-		if !exist {
+	for _, key := range r.currentLabels.Values() {
+		if !curLabels.HasAny(key) {
 			desireRedpandaNodes.DeleteLabelValues(key)
 			actualRedpandaNodes.DeleteLabelValues(key)
 		}
@@ -125,9 +125,9 @@ func (r *ClusterMetricController) Reconcile(
 			return ctrl.Result{}, err
 		}
 		g.Set(float64(c))
-		r.currentConfigurationLabels[k] = struct{}{}
+		r.currentConfigurationLabels.Add(k)
 	}
-	for k := range r.currentConfigurationLabels {
+	for _, k := range r.currentConfigurationLabels.Values() {
 		if _, exists := misconfiguredClustersCount[k]; !exists {
 			misconfiguredClusters.DeleteLabelValues(k)
 		}
