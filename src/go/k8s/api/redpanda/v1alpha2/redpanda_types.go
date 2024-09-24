@@ -203,13 +203,12 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 
 // RedpandaNotReady registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
-	newCondition := metav1.Condition{
+	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
 		Type:    meta.ReadyCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: message,
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
+	})
 	return rp
 }
 
@@ -218,19 +217,23 @@ func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 // 'Unknown' for meta.ProgressingReason.
 func RedpandaProgressing(rp *Redpanda) *Redpanda {
 	rp.Status.Conditions = []metav1.Condition{}
-	newCondition := metav1.Condition{
+	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
 		Type:    meta.ReadyCondition,
 		Status:  metav1.ConditionUnknown,
 		Reason:  meta.ProgressingReason,
 		Message: "Reconciliation in progress",
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
+	})
 	return rp
 }
 
 // GetConditions returns the status conditions of the object.
 func (in *Redpanda) GetConditions() *[]metav1.Condition {
 	return &in.Status.Conditions
+}
+
+// IsReady returns the whether the cluster has a Ready status.
+func (in *Redpanda) IsReady() bool {
+	return apimeta.IsStatusConditionTrue(in.Status.Conditions, meta.ReadyCondition)
 }
 
 func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {

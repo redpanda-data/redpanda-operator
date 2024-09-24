@@ -18,6 +18,7 @@ import (
 	"maps"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,8 +49,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorzied_v1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
+	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/external"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 )
@@ -72,7 +76,9 @@ var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Factory internalclient.ClientFactory
+	Manager *external.ResourceWatchManager[rpadmin.ClusterHealthOverview]
+	Scheme  *runtime.Scheme
 	kuberecorder.EventRecorder
 }
 
@@ -165,6 +171,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		Owns(&helmv2beta2.HelmRelease{}).
 		Watches(&appsv1.StatefulSet{}, enqueueRequestFromManaged, managedWatchOption).
 		Watches(&appsv1.Deployment{}, enqueueRequestFromManaged, managedWatchOption).
+		WatchesRawSource(r.Manager.Source()).
 		Complete(r)
 }
 
@@ -184,10 +191,12 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
+		r.Manager.Unwatch(req)
 		return r.reconcileDelete(ctx, rp)
 	}
 
 	if !isRedpandaManaged(ctx, rp) {
+		r.Manager.Unwatch(req)
 		if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 			// if no longer managed by us, attempt to remove the finalizer
 			controllerutil.RemoveFinalizer(rp, FinalizerKey)
@@ -222,6 +231,22 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 	}
 
 	rp, result, err := r.reconcile(ctx, rp)
+	r.Manager.Watch(req, r.Factory.ClusterHealthFetcher(rp))
+	if rp.IsReady() {
+		// only fetch the status if we're actually marked as "ready" as a final
+		// check -- this allows us to hijack the node decommissioning code.
+		overview, err := r.Manager.Fetch(ctx, req)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if len(overview.NodesDown) > 0 {
+			nodes := []string{}
+			for _, node := range overview.NodesDown {
+				nodes = append(nodes, strconv.Itoa(node))
+			}
+			rp = v1alpha2.RedpandaNotReady(rp, "UnhealthyClusterNodes", fmt.Sprintf("Cluster nodes [%s] are unhealthy", strings.Join(nodes, ", ")))
+		}
+	}
 
 	// Update status after reconciliation.
 	if updateStatusErr := r.patchRedpandaStatus(ctx, rp); updateStatusErr != nil {

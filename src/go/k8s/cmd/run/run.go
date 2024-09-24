@@ -49,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/vectorized/v1alpha1"
@@ -56,6 +57,7 @@ import (
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/src/go/k8s/internal/controller/redpanda"
 	adminutils "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/client/external"
 	consolepkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/src/go/k8s/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/src/go/k8s/webhooks/redpanda"
@@ -527,6 +529,8 @@ func Run(
 
 		if err = (&redpandacontrollers.RedpandaReconciler{
 			Client:        mgr.GetClient(),
+			Factory:       factory,
+			Manager:       external.NewResourceWatchManager[rpadmin.ClusterHealthOverview](mgr.GetLogger(), 30*time.Second),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: redpandaEventRecorder,
 		}).SetupWithManager(ctx, mgr); err != nil {
