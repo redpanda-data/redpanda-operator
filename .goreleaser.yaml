@@ -1,7 +1,7 @@
 project_name: redpanda-operator
 builds:
   - id: redpanda-operator
-    dir: ./src/go/k8s/
+    dir: ./operator/
     main: ./cmd/main.go
     binary: redpanda-operator-{{ .Os }}-{{ .Arch }}
     no_unique_dist_dir: true

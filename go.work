@@ -4,5 +4,5 @@ use (
 	./acceptance
 	./harpoon
 	./licenseupdater
-	./src/go/k8s
+	./operator
 )

@@ -8,7 +8,7 @@ require (
 	github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b
 	github.com/redpanda-data/helm-charts v0.0.0-20240916201426-9ca3b128bb8e
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/src/go/k8s v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 	github.com/twmb/franz-go v1.16.1
 	k8s.io/api v0.29.5
@@ -208,5 +208,5 @@ require (
 
 replace (
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
-	github.com/redpanda-data/redpanda-operator/src/go/k8s => ../src/go/k8s
+	github.com/redpanda-data/redpanda-operator/operator => ../operator
 )
