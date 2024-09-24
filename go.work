@@ -2,6 +2,7 @@ go 1.22.7
 
 use (
 	./acceptance
+	./alias
 	./harpoon
 	./licenseupdater
 	./operator

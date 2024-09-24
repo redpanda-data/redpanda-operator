@@ -11,6 +11,7 @@ _e2e_artifacts/
 _e2e_with_flags_artifacts/
 _e2e_unstable_artifacts/
 _helm_e2e_artifacts/
+alias/dog
 operator/testbin/*
 operator/cm-verifier
 operator/*.tar.gz
