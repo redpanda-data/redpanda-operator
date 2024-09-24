@@ -1,0 +1,31 @@
+Manually crafted test cases for TestTemplate
+-- default-values --
+# Intentionally left blank. (test of default values)
+
+-- operator-cluster-scoped --
+scope: Cluster
+
+webhook:
+  enabled: true
+
+-- operator-namespaced-scoped-with-secuirty-context --
+
+podTemplate:
+  spec:
+    securityContext:
+      runAsUser: 888
+      runAsGroup: 777
+      supplementalGroups:
+      - 555
+      - 444
+      fsGroup: 222
+      fsGroupChangePolicy: Always
+    containers:
+    - name: manager
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+    - name: kube-rbac-proxy
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true

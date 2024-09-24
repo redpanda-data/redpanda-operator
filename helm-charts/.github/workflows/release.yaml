@@ -1,0 +1,110 @@
+---
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# FOR MORE DETAILS ON CR AND ENVIRONMENT VARS:
+# https://github.com/helm/chart-releaser#environment-variables
+
+name: Release
+on:
+  push:
+    branches: [main]
+defaults:
+  run:
+    shell: nix develop --impure --command bash {0}
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.RP_AWS_CRED_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
+      - uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          secret-ids: |
+            ,sdlc/prod/github/actions_bot_token
+          parse-json-secrets: true
+      - uses: cachix/install-nix-action@V28
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      # Cache the nix store.
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      # Try to checkout a branch with the same name as provided in the dispatch
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ env.ACTIONS_BOT_TOKEN }}
+        continue-on-error: true
+      # If we couldn't checkout the provided branch, we will checkout the
+      # default branch instead. We assume that the branch does not yet exist,
+      # but we will create it, when we commit the updated dependencies.
+      - uses: actions/checkout@v4
+        if: ${{ steps.checkout.outcome != 'success' }}
+        with:
+          token: ${{ env.ACTIONS_BOT_TOKEN }}
+          fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config --global user.name 'vbotbuildovich'
+          git config --global user.email 'vbotbuildovich@users.noreply.github.com'
+          git config --global --add --bool push.autoSetupRemote true
+      - run: helm repo add redpanda https://charts.redpanda.com
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@a917fd15b20e8b64b94d9158ad54cd6345335584  # v1.6.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_SKIP_EXISTING: true
+          CR_GENERATE_RELEASE_NOTES: true
+      - name: Update testdata
+        run: go test ./charts/redpanda -update -short
+      - name: Commit changes for testdata golden files
+        run: |
+          git add charts/redpanda/testdata
+          git commit -m "[Auto Commit] Update testdata golden files"
+          git push
+      - name: Checkout kustomize
+        uses: actions/checkout@v4
+        with:
+          ref: kustomize
+          path: kustomize
+      - name: Build dependencies for the operator chart
+        run: |
+          mkdir -p kustomize/operator
+          helm repo add prometheus https://prometheus-community.github.io/helm-charts
+          helm dependency build charts/operator
+      - name: Template the operator chart
+        run: helm template -n redpanda operator charts/operator --no-hooks > kustomize/operator/resources.yaml
+      - name: Build kustomization for operator
+        run: |
+          cd kustomize/operator
+          rm kustomization.yaml
+          kustomize create --resources resources.yaml
+          cd ..
+          if [[ $(git status --porcelain) ]] ; then
+            git config --global user.name 'vbotbuildovich'
+            git config --global user.email 'vbotbuildovich@users.noreply.github.com'
+            git config --global --add --bool push.autoSetupRemote true
+            git add .
+            git commit -m 'update kustomize/operator'
+            git push
+          fi
