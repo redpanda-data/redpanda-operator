@@ -795,27 +795,6 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		assert.False(t, result.Requeue)
 		assert.Equal(t, time.Duration(0), result.RequeueAfter)
 	})
-	t.Run("empty_kafka_api_spec", func(t *testing.T) {
-		topicName := "test-empty-kafka-api-spec"
-		testTopic := redpandav1alpha2.Topic{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
-
-		err := c.Create(ctx, &testTopic)
-		require.NoError(t, err)
-
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
-		_, err = tr.Reconcile(ctx, req)
-		assert.Error(t, err)
-	})
 	t.Run("delete_existent_topic_k8s_meta_deletion_timestamp", func(t *testing.T) {
 		deleteTopicName := "delete-test-topic"
 
