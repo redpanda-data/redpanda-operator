@@ -27,6 +27,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,6 +112,41 @@ func (c *clusterClients) ExpectNoUser(ctx context.Context, user string) {
 	t.Logf("Checking that user %q does not exist in cluster %q", user, c.cluster)
 	c.checkUser(ctx, user, false, fmt.Sprintf("User %q still exists in cluster %q", user, c.cluster))
 	t.Logf("Found no user %q in cluster %q", user, c.cluster)
+}
+
+func (c *clusterClients) ExpectTopic(ctx context.Context, topic string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking that topic %q exists in cluster %q", topic, c.cluster)
+	c.checkTopic(ctx, topic, true, fmt.Sprintf("Topic %q does not exist in cluster %q", topic, c.cluster))
+	t.Logf("Found topic %q in cluster %q", topic, c.cluster)
+}
+
+func (c *clusterClients) ExpectNoTopic(ctx context.Context, topic string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking that topic %q does not exist in cluster %q", topic, c.cluster)
+	c.checkTopic(ctx, topic, false, fmt.Sprintf("Topic %q still exists in cluster %q", topic, c.cluster))
+	t.Logf("Found no topic %q in cluster %q", topic, c.cluster)
+}
+
+func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bool, message string) {
+	t := framework.T(ctx)
+
+	var topics kadm.TopicDetails
+	var err error
+
+	if !assert.Eventually(t, func() bool {
+		t.Logf("Pulling list of topics from cluster")
+		admin := kadm.NewClient(c.Kafka(ctx))
+		topics, err = admin.ListTopics(ctx)
+		require.NoError(t, err)
+		require.NoError(t, topics.Error())
+
+		return exists == topics.Has(topic)
+	}, 10*time.Second, 1*time.Second, message) {
+		t.Errorf("Final list of topics: %v", topics.Names())
+	}
 }
 
 func (c *clusterClients) checkUser(ctx context.Context, user string, exists bool, message string) {

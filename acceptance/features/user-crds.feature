@@ -42,7 +42,7 @@ Feature: User CRDs
                         name: jason-password
                         key: password
     """
-    And "jason" is successfully synced
+    And user "jason" is successfully synced
     And I delete the CRD user "jason"
     Then there should be ACLs in the cluster "sasl" for user "jason"
 
@@ -71,6 +71,6 @@ Feature: User CRDs
                     patternType: prefixed
                 operations: [Read]
     """
-    And "travis" is successfully synced
+    And user "travis" is successfully synced
     And I delete the CRD user "travis"
     Then "travis" should be able to authenticate to the "sasl" cluster with password "password" and mechanism "SCRAM-SHA-256"

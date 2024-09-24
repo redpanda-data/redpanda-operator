@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isSuccessfullySynced(ctx context.Context, t framework.TestingT, user string) {
+func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user string) {
 	var userObject redpandav1alpha2.User
 	require.NoError(t, t.Get(ctx, t.ResourceKey(user), &userObject))
 

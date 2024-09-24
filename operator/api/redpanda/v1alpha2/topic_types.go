@@ -16,6 +16,7 @@ import (
 )
 
 // TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
+// +kubebuilder:validation:XValidation:message="cluster must be specified if kafkaApiSpec is not",rule=`has(self.cluster) || has(self.kafkaApiSpec)`
 type TopicSpec struct {
 	// Specifies the number of topic shards that are distributed across the brokers in a cluster.
 	// This number cannot be decreased after topic creation.
@@ -40,6 +41,10 @@ type TopicSpec struct {
 	// `redpanda.remote.recovery=true`
 	// `redpanda.remote.delete=true`
 	AdditionalConfig map[string]*string `json:"additionalConfig,omitempty"`
+
+	// ClusterSource is a reference to the cluster where the user should be created.
+	// It is used in constructing the client created to configure a cluster.
+	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 
 	// Defines client configuration for connecting to Redpanda brokers.
 	KafkaAPISpec *KafkaAPISpec `json:"kafkaApiSpec,omitempty"`
@@ -142,6 +147,10 @@ type Topic struct {
 }
 
 var _ KafkaConnectedObjectWithMetrics = (*Topic)(nil)
+
+func (t *Topic) GetClusterSource() *ClusterSource {
+	return t.Spec.ClusterSource
+}
 
 func (t *Topic) GetKafkaAPISpec() *KafkaAPISpec {
 	return t.Spec.KafkaAPISpec
