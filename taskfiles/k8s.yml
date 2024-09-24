@@ -19,7 +19,7 @@ tasks:
     cmds:
       - |
         controller-gen \
-          object:headerFile="../../../licenses/boilerplate.go.txt" \
+          object:headerFile="../licenses/boilerplate.go.txt" \
           paths='./...' \
           crd \
           webhook \
@@ -28,7 +28,7 @@ tasks:
           output:rbac:artifacts:config=config/rbac/bases/operator
       - |
         applyconfiguration-gen \
-        --go-header-file "../../../licenses/boilerplate.go.txt" \
+        --go-header-file "../licenses/boilerplate.go.txt" \
         --output-dir "api/applyconfiguration" \
         --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
         ./api/redpanda/v1alpha2
