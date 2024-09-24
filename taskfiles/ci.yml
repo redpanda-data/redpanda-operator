@@ -38,7 +38,7 @@ tasks:
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
-      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
 
@@ -49,7 +49,7 @@ tasks:
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-helm-test.yaml
-      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
 
@@ -76,7 +76,7 @@ tasks:
       - task: :k8s:run-unit-tests
       - 'echo "~~~ Running operator e2e tests :k8s:"'
       - task: :k8s:run-kuttl-tests
-      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
     status:
@@ -92,7 +92,7 @@ tasks:
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
-      - cp "{{.SRC_DIR}}/src/go/k8s/kuttl-exit-code" ./k8s-stable-test-exit-code
+      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
       # fail explicitly if stable operator tests failed
       - "grep -q '0' ./k8s-stable-test-exit-code"
     status:

@@ -12,7 +12,7 @@ env:
 tasks:
 
   generate:
-    dir: 'src/go/k8s'
+    dir: 'operator'
     aliases:
     - generate-controller-code
     - generate-manifests
@@ -30,14 +30,14 @@ tasks:
         applyconfiguration-gen \
         --go-header-file "../../../licenses/boilerplate.go.txt" \
         --output-dir "api/applyconfiguration" \
-        --output-pkg "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/applyconfiguration" \
+        --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
         ./api/redpanda/v1alpha2
       - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
 
 
   run-unit-tests:
-    dir: 'src/go/k8s'
+    dir: 'operator'
     deps:
       - generate
     cmds:
@@ -51,14 +51,14 @@ tasks:
       # TODO(chrisseto): Get multiplatform builds working.
       - docker buildx build
           --platform linux/{{ARCH}}
-          --file src/go/k8s/Dockerfile
+          --file operator/Dockerfile
           --target=manager
           --tag localhost/redpanda-operator:dev
           --load
           ./dist
       - docker buildx build
           --platform linux/{{ARCH}}
-          --file src/go/k8s/Dockerfile
+          --file operator/Dockerfile
           --target=configurator
           --tag localhost/configurator:dev
           --load
@@ -69,7 +69,7 @@ tasks:
     summary: |
       pulls down the latest redpanda nightly build and tag it localhost/repdanda:dev
       to allow us to skip building redpanda with every CI run.
-    dir: src/go/k8s
+    dir: operator
     vars:
       CONSTRAINT: '{{.CONSTRAINT | default ""}}'
       REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
@@ -111,7 +111,7 @@ tasks:
       When kuttl fails, the artifacts dir specified in the `artifactsDir` kuttl
       configuration option is compressed. The name of the tarball is the same as
       basename of the `artifactsDir` variable, with the `.tar.gz` suffix.
-    dir: 'src/go/k8s'
+    dir: 'operator'
     vars:
       KUTTL_CONFIG_FILE: '{{default "kuttl-test.yaml" .KUTTL_CONFIG_FILE}}'
       KUTTL_ARTIFACTS_DIR:
@@ -171,14 +171,14 @@ tasks:
 
   run-golangci-lint:
     desc: run golangci-lint
-    dir: 'src/go/k8s'
+    dir: 'operator'
     cmds:
       - |
         golangci-lint run --timeout 8m -v
 
   run-golangci-lint-fix:
     desc: run golangci-lint
-    dir: 'src/go/k8s'
+    dir: 'operator'
     cmds:
       - |
         golangci-lint run --timeout 8m -v --fix
@@ -233,7 +233,7 @@ tasks:
         silent: true
       - docker buildx build
           --platform linux/arm64,linux/amd64
-          --file src/go/k8s/Dockerfile
+          --file operator/Dockerfile
           --target manager
           --tag docker.io/vectorized/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
           --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
@@ -241,7 +241,7 @@ tasks:
           ./dist
       - docker buildx build
           --platform linux/arm64,linux/amd64
-          --file src/go/k8s/Dockerfile
+          --file operator/Dockerfile
           --target configurator
           --tag docker.io/vectorized/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
           --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
@@ -252,14 +252,14 @@ tasks:
       #   silent: true
       # - docker buildx build
       #     --platform linux/arm64,linux/amd64
-      #     --file src/go/k8s/Dockerfile
+      #     --file operator/Dockerfile
       #     --target manager
       #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
       #     --push
       #     ./dist
       # - docker buildx build
       #     --platform linux/arm64,linux/amd64
-      #     --file src/go/k8s/Dockerfile
+      #     --file operator/Dockerfile
       #     --target configurator
       #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
       #     --push
@@ -271,7 +271,7 @@ tasks:
       - test -n "$CLOUDSMITH_API_KEY"
 
   create-v2-helm-tests:
-    dir: 'src/go/k8s'
+    dir: 'operator'
     cmds:
       - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
       - ./hack/v2-helm-setup.sh

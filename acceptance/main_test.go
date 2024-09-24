@@ -20,8 +20,8 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/helm"
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
-	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha1"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/src/go/k8s/api/redpanda/v1alpha2"
+	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -53,8 +53,8 @@ func TestMain(m *testing.M) {
 				"installCRDs": true,
 			},
 		}).
-		WithCRDDirectory("../src/go/k8s/config/crd/bases").
-		WithCRDDirectory("../src/go/k8s/config/crd/bases/toolkit.fluxcd.io").
+		WithCRDDirectory("../operator/config/crd/bases").
+		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			t.Log("Installing Redpanda operator chart")
 			t.InstallHelmChart(ctx, "https://charts.redpanda.com", "redpanda", "operator", helm.InstallOptions{
