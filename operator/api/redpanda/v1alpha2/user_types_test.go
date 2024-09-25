@@ -28,6 +28,36 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
+type copyableObject[T client.Object] interface {
+	client.Object
+	DeepCopy() T
+}
+
+type validationTestCase[T copyableObject[T]] struct {
+	mutate func(object T)
+	errors []string
+}
+
+func runValidationTest[T copyableObject[T]](ctx context.Context, t *testing.T, tt validationTestCase[T], c client.Client, object T) {
+	objectCopy := object.DeepCopy()
+	objectCopy.SetName(fmt.Sprintf("name-%v", time.Now().UnixNano()))
+
+	if tt.mutate != nil {
+		tt.mutate(objectCopy)
+	}
+	err := c.Create(ctx, objectCopy)
+
+	if len(tt.errors) != 0 {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+
+	for _, expected := range tt.errors {
+		assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
+	}
+}
+
 func TestUserValidation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
@@ -68,10 +98,7 @@ func TestUserValidation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	for name, tt := range map[string]struct {
-		mutate func(user *User)
-		errors []string
-	}{
+	for name, tt := range map[string]validationTestCase[*User]{
 		"basic create": {},
 		// connection params
 		"clusterRef or kafkaApiSpec and adminApiSpec - no cluster source": {
@@ -418,23 +445,7 @@ func TestUserValidation(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			user := baseUser.DeepCopy()
-			user.Name = fmt.Sprintf("name-%v", time.Now().UnixNano())
-
-			if tt.mutate != nil {
-				tt.mutate(user)
-			}
-			err := c.Create(ctx, user)
-
-			if len(tt.errors) != 0 {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-
-			for _, expected := range tt.errors {
-				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
-			}
+			runValidationTest(ctx, t, tt, c, &baseUser)
 		})
 	}
 }

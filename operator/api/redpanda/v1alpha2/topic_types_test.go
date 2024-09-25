@@ -11,12 +11,9 @@ package v1alpha2
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -55,10 +52,7 @@ func TestTopicValidation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	for name, tt := range map[string]struct {
-		mutate func(topic *Topic)
-		errors []string
-	}{
+	for name, tt := range map[string]validationTestCase[*Topic]{
 		"basic create": {},
 		// connection params
 		"clusterRef or kafkaApiSpec - no cluster source": {
@@ -100,23 +94,7 @@ func TestTopicValidation(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			topic := baseTopic.DeepCopy()
-			topic.Name = fmt.Sprintf("name-%v", time.Now().UnixNano())
-
-			if tt.mutate != nil {
-				tt.mutate(topic)
-			}
-			err := c.Create(ctx, topic)
-
-			if len(tt.errors) != 0 {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-
-			for _, expected := range tt.errors {
-				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
-			}
+			runValidationTest(ctx, t, tt, c, &baseTopic)
 		})
 	}
 }
