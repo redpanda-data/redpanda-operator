@@ -413,7 +413,6 @@ spec:
                         - brokers
                         type: object
                     required:
-                    - admin
                     - kafka
                     type: object
                 type: object
@@ -430,8 +429,10 @@ spec:
                 format: duration
                 type: string
               kafkaApiSpec:
-                description: Defines client configuration for connecting to Redpanda
-                  brokers.
+                description: |-
+                  Defines client configuration for connecting to Redpanda brokers.
+                  Deprecated: Use cluster.staticConfiguration.kafkaApiSpec if explicit connection
+                  configuration is required. Otherwise, prefer cluster.clusterRef.
                 properties:
                   brokers:
                     description: Specifies a list of broker addresses in the format
@@ -1236,7 +1237,6 @@ spec:
                         - brokers
                         type: object
                     required:
-                    - admin
                     - kafka
                     type: object
                 type: object
@@ -1253,8 +1253,10 @@ spec:
                 format: duration
                 type: string
               kafkaApiSpec:
-                description: Defines client configuration for connecting to Redpanda
-                  brokers.
+                description: |-
+                  Defines client configuration for connecting to Redpanda brokers.
+                  Deprecated: Use cluster.staticConfiguration.kafkaApiSpec if explicit connection
+                  configuration is required. Otherwise, prefer cluster.clusterRef.
                 properties:
                   brokers:
                     description: Specifies a list of broker addresses in the format

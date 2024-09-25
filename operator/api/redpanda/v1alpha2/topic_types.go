@@ -47,6 +47,8 @@ type TopicSpec struct {
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 
 	// Defines client configuration for connecting to Redpanda brokers.
+	// Deprecated: Use cluster.staticConfiguration.kafkaApiSpec if explicit connection
+	// configuration is required. Otherwise, prefer cluster.clusterRef.
 	KafkaAPISpec *KafkaAPISpec `json:"kafkaApiSpec,omitempty"`
 
 	// Overwrites the fully-qualified
