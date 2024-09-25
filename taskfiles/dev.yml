@@ -3,7 +3,7 @@ version: '3'
 tasks:
   retry-task:
     vars:
-      TASK_EXEC: '{{default "./task" .TASK_EXEC}}'
+      TASK_EXEC: '{{default "task" .TASK_EXEC}}'
       RETRY_COUNT: '{{default 3 .RETRY_COUNT}}'
       SLEEP_INTERVAL: '{{default 3 .SLEEP_INTERVAL}}'
     cmds:
