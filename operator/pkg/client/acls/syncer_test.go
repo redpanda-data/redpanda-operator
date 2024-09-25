@@ -121,10 +121,26 @@ func TestSyncer(t *testing.T) {
 		Type: v1alpha2.ACLTypeAllow,
 		Host: ptr.To("*"),
 		Resource: v1alpha2.ACLResourceSpec{
-			Type: v1alpha2.ResourceTypeCluster,
+			Type:        v1alpha2.ResourceTypeTopic,
+			Name:        "mytopic",
+			PatternType: ptr.To(v1alpha2.PatternTypePrefixed),
 		},
 		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationClusterAction,
+			v1alpha2.ACLOperationRead,
+		},
+	}}, 1, 1)
+
+	// update acl again
+	expectACLUpdate(t, principalOne, []v1alpha2.ACLRule{{
+		Type: v1alpha2.ACLTypeAllow,
+		Host: ptr.To("*"),
+		Resource: v1alpha2.ACLResourceSpec{
+			Type:        v1alpha2.ResourceTypeTopic,
+			Name:        "mytopic2",
+			PatternType: ptr.To(v1alpha2.PatternTypePrefixed),
+		},
+		Operations: []v1alpha2.ACLOperation{
+			v1alpha2.ACLOperationRead,
 		},
 	}}, 1, 1)
 

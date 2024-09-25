@@ -110,6 +110,7 @@ func (s *Syncer) listACLs(ctx context.Context, principal string) ([]kmsg.Describ
 	req.ResourceType = kmsg.ACLResourceTypeAny
 	req.Principal = ptrUsername
 	req.Operation = kmsg.ACLOperationAny
+	req.ResourcePatternType = kmsg.ACLResourcePatternTypeAny
 
 	response, err := req.RequestWith(ctx, s.client)
 	if err != nil {
