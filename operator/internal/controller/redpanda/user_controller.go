@@ -13,6 +13,7 @@ package redpanda
 import (
 	"context"
 	"errors"
+	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,7 +64,11 @@ type UserReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("UserReconciler.Reconcile")
-	l.Info("Starting reconcile loop")
+	l.V(1).Info("Starting reconcile loop")
+	start := time.Now()
+	defer func() {
+		l.V(1).Info("Finished reconciling", "elapsed", time.Since(start))
+	}()
 
 	user := &redpandav1alpha2.User{}
 	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
@@ -160,6 +165,9 @@ func (r *UserReconciler) syncUser(ctx context.Context, user *redpandav1alpha2.Us
 }
 
 func (r *UserReconciler) deleteUser(ctx context.Context, user *redpandav1alpha2.User) error {
+	l := log.FromContext(ctx).WithName("UserReconciler.Reconcile")
+	l.V(2).Info("Deleting user data from cluster")
+
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 
 	ignoreAllConnectionErrors := func(err error) error {
@@ -170,6 +178,10 @@ func (r *UserReconciler) deleteUser(ctx context.Context, user *redpandav1alpha2.
 		if internalclient.IsTerminalClientError(err) ||
 			internalclient.IsConfigurationError(err) ||
 			internalclient.IsInvalidClusterError(err) {
+			// We use Info rather than Error here because we don't want
+			// to ignore the verbosity settings. This is really only for
+			// debugging purposes.
+			l.V(2).Info("Ignoring non-retryable client error", "error", err)
 			return nil
 		}
 		return err
@@ -181,12 +193,14 @@ func (r *UserReconciler) deleteUser(ctx context.Context, user *redpandav1alpha2.
 	}
 
 	if hasUser && hasManagedUser {
+		l.V(2).Info("Deleting managed user")
 		if err := usersClient.Delete(ctx, user); err != nil {
 			return ignoreAllConnectionErrors(err)
 		}
 	}
 
 	if hasManagedACLs {
+		l.V(2).Info("Deleting managed acls")
 		if err := syncer.DeleteAll(ctx, user); err != nil {
 			return ignoreAllConnectionErrors(err)
 		}
