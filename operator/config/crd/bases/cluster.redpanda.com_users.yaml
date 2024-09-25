@@ -593,11 +593,12 @@ spec:
                         - brokers
                         type: object
                     required:
-                    - admin
                     - kafka
                     type: object
                 type: object
                 x-kubernetes-validations:
+                - message: 'spec.cluster.staticConfiguration.admin: required value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.admin)'
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable

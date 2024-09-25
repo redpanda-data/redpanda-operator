@@ -11,6 +11,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 	github.com/twmb/franz-go v1.17.0
+	github.com/twmb/franz-go/pkg/kadm v1.12.0
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
@@ -156,7 +157,6 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/twmb/franz-go/pkg/kadm v1.12.0 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.8.0 // indirect
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect

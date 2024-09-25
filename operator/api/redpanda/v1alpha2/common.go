@@ -239,8 +239,7 @@ type StaticConfigurationSource struct {
 	Kafka *KafkaAPISpec `json:"kafka"`
 	// AdminAPISpec is the configuration information for communicating with the Admin
 	// API of a Redpanda cluster where the object should be created.
-	// +required
-	Admin *AdminAPISpec `json:"admin"`
+	Admin *AdminAPISpec `json:"admin,omitempty"`
 }
 
 // ClusterSource defines how to connect to a particular Redpanda cluster.

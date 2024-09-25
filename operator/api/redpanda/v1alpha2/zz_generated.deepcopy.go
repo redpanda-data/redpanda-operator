@@ -3891,6 +3891,11 @@ func (in *TopicSpec) DeepCopyInto(out *TopicSpec) {
 			(*out)[key] = outVal
 		}
 	}
+	if in.ClusterSource != nil {
+		in, out := &in.ClusterSource, &out.ClusterSource
+		*out = new(ClusterSource)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.KafkaAPISpec != nil {
 		in, out := &in.KafkaAPISpec, &out.KafkaAPISpec
 		*out = new(KafkaAPISpec)

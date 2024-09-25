@@ -49,7 +49,6 @@ const (
 )
 
 var (
-	ErrEmptyKafkaAPISpec           = errors.New("empty kafka api spec")
 	ErrScaleDownPartitionCount     = errors.New("unable to scale down number of partition in topic")
 	ErrEmptyTopicConfigDescription = errors.New("topic config description response is empty")
 	ErrEmptyMetadataTopic          = errors.New("metadata topic response is empty")
@@ -551,10 +550,6 @@ func generateConf(
 }
 
 func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*kgo.Client, error) {
-	if topic.Spec.KafkaAPISpec == nil {
-		return nil, ErrEmptyKafkaAPISpec
-	}
-
 	kafkaClient, err := r.Factory.KafkaClient(log.IntoContext(ctx, l.WithName("kafkaClient")), topic)
 	if err != nil {
 		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)

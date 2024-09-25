@@ -87,6 +87,7 @@ func (u *User) HasManagedACLs() bool {
 type UserSpec struct {
 	// ClusterSource is a reference to the cluster where the user should be created.
 	// It is used in constructing the client created to configure a cluster.
+	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.admin: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.admin)`
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
 	// Authentication defines the authentication information for a user. If no
