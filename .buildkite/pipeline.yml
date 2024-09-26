@@ -74,6 +74,9 @@ steps:
             branches:
               - main
   - key: k8s-operator-tests-with-flags
+    if: |
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
     label: K8s Operator tests with flags
     timeout_in_minutes: 180
     notify:
