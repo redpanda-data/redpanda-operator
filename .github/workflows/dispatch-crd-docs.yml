@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/go/k8s/api/**'
+      - 'operator/api/**'
 jobs:
   dispatch:
     runs-on: ubuntu-latest
