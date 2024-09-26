@@ -45,7 +45,7 @@ Feature: User CRDs
             secretKeyRef:
               name: jason-password
               key: password
-# end::manage-auth-only-manifest[]
+# end::manage-authn-only-manifest[]
     """
     And user "jason" is successfully synced
     And I delete the CRD user "jason"
