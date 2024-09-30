@@ -1104,6 +1104,10 @@ func collectClusterPorts(
 		port := redpandaPorts.KafkaAPI.Internal.Port
 		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.InternalListenerName, Port: port})
 	}
+	if redpandaPorts.AdminAPI.Internal != nil {
+		port := redpandaPorts.AdminAPI.Internal.Port
+		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.AdminPortName, Port: port})
+	}
 
 	return clusterPorts
 }
