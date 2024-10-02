@@ -258,7 +258,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
-	apiextensionsv1.AddToScheme(scheme.Scheme)
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme.Scheme))
 
 	reconciler := &testReconciler{}
 	redpandav1alpha2.SchemeBuilder.Register(&testObject{})
