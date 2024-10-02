@@ -49,6 +49,10 @@ import (
 )
 
 const (
+	FinalizerKey = "operator.redpanda.com/finalizer"
+
+	NotManaged = "false"
+
 	resourceReadyStrFmt    = "%s '%s/%s' is ready"
 	resourceNotReadyStrFmt = "%s '%s/%s' is not ready"
 

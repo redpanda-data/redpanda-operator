@@ -8,7 +8,7 @@
 // by the Apache License, Version 2.0
 
 // Package redpanda contains reconciliation logic for redpanda.vectorized.io CRD
-package redpanda
+package vectorized
 
 import (
 	"context"
@@ -56,6 +56,8 @@ const (
 	SecretAnnotationExternalCAKey = "operator.redpanda.com/external-ca"
 
 	NotManaged = "false"
+
+	managedPath = "/managed"
 )
 
 var (

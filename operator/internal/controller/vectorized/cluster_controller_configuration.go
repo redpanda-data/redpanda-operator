@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package vectorized
 
 import (
 	"context"
@@ -71,13 +71,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider())
 	if err != nil {
 		return errorWithContext(err, "error creating the admin API client")
-	}
-	if err != nil {
-		log.Info("Waiting for admin API to be available before syncing the configuration")
-		return &resources.RequeueAfterError{
-			RequeueAfter: resources.RequeueDuration,
-			Msg:          "admin API is not available yet",
-		}
 	}
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated

@@ -37,7 +37,7 @@ import (
 
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -127,7 +127,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 	require.NoError(t, err)
 	hookServer := mgr.GetWebhookServer()
 
-	err = (&redpandacontrollers.ConsoleReconciler{
+	err = (&vectorizedcontrollers.ConsoleReconciler{
 		Client:                  mgr.GetClient(),
 		Scheme:                  mgr.GetScheme(),
 		Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
