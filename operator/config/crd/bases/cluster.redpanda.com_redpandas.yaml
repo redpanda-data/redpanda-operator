@@ -1129,6 +1129,11 @@ spec:
                                   to use for the bootstrap user. Options are `SCRAM-SHA-256`
                                   and `SCRAM-SHA-512`.
                                 type: string
+                              name:
+                                description: |-
+                                  Specifies the username to use for a bootstrap user when SASL is enabled. If unspecified,
+                                  user will be named "kubernetes-controller".
+                                type: string
                               secretKeyRef:
                                 description: |-
                                   Specifies the location where the generated password will be written or a pre-existing
@@ -10906,6 +10911,11 @@ spec:
                                 description: Specifies the authentication mechanism
                                   to use for the bootstrap user. Options are `SCRAM-SHA-256`
                                   and `SCRAM-SHA-512`.
+                                type: string
+                              name:
+                                description: |-
+                                  Specifies the username to use for a bootstrap user when SASL is enabled. If unspecified,
+                                  user will be named "kubernetes-controller".
                                 type: string
                               secretKeyRef:
                                 description: |-
