@@ -31,9 +31,9 @@ func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user st
 
 	// make sure it's synchronized
 	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.UserConditionTypeSynced,
+		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
 		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.UserConditionReasonSynced,
+		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
 	}, userObject.Status.Conditions)
 }
 

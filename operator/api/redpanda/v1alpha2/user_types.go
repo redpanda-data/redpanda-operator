@@ -12,9 +12,9 @@ package v1alpha2
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -460,35 +460,6 @@ func (s ACLResourceSpec) GetName() string {
 	return s.Name
 }
 
-const (
-	UserConditionTypeSynced = "Synced"
-
-	UserConditionReasonPending              = "Pending"
-	UserConditionReasonSynced               = "Synced"
-	UserConditionReasonClusterRefInvalid    = "ClusterRefInvalid"
-	UserConditionReasonConfigurationInvalid = "ConfigurationInvalid"
-	UserConditionReasonTerminalClientError  = "TerminalClientError"
-	UserConditionReasonUnexpectedError      = "UnexpectedError"
-)
-
-func UserSyncedCondition(name string) metav1.Condition {
-	return metav1.Condition{
-		Type:    UserConditionTypeSynced,
-		Status:  metav1.ConditionTrue,
-		Reason:  UserConditionReasonSynced,
-		Message: fmt.Sprintf("User %q successfully synced to cluster.", name),
-	}
-}
-
-func UserNotSyncedCondition(reason string, err error) metav1.Condition {
-	return metav1.Condition{
-		Type:    UserConditionTypeSynced,
-		Status:  metav1.ConditionFalse,
-		Reason:  reason,
-		Message: fmt.Sprintf("Error: %v", err),
-	}
-}
-
 // UserStatus defines the observed state of a Redpanda user
 type UserStatus struct {
 	// Specifies the last observed generation.
@@ -510,4 +481,8 @@ type UserList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Redpanda user resources.
 	Items []User `json:"items"`
+}
+
+func (u *UserList) GetItems() []*User {
+	return functional.MapFn(ptr.To, u.Items)
 }

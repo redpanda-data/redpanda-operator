@@ -40,9 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -124,10 +122,10 @@ type RedpandaReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	if err := registerStatefulSetClusterIndex(ctx, mgr); err != nil {
+	if err := registerHelmReferencedIndex(ctx, mgr, "statefulset", &appsv1.StatefulSet{}); err != nil {
 		return err
 	}
-	if err := registerDeploymentClusterIndex(ctx, mgr); err != nil {
+	if err := registerHelmReferencedIndex(ctx, mgr, "deployment", &appsv1.Deployment{}); err != nil {
 		return err
 	}
 
@@ -152,20 +150,13 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 
 	managedWatchOption := builder.WithPredicates(helmManagedComponentPredicate)
 
-	enqueueRequestFromManaged := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		if nn, found := clusterForHelmManagedObject(o); found {
-			return []reconcile.Request{{NamespacedName: nn}}
-		}
-		return nil
-	})
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha2.Redpanda{}).
 		Owns(&sourcev1.HelmRepository{}).
 		Owns(&helmv2beta1.HelmRelease{}).
 		Owns(&helmv2beta2.HelmRelease{}).
-		Watches(&appsv1.StatefulSet{}, enqueueRequestFromManaged, managedWatchOption).
-		Watches(&appsv1.Deployment{}, enqueueRequestFromManaged, managedWatchOption).
+		Watches(&appsv1.StatefulSet{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
+		Watches(&appsv1.Deployment{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
 		Complete(r)
 }
 

@@ -12,15 +12,7 @@ package redpanda
 
 import (
 	"context"
-	"errors"
 	"time"
-
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -32,20 +24,9 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const fieldOwner client.FieldOwner = "redpanda-operator"
-
-// UserReconciler reconciles a Topic object
-type UserReconciler struct {
-	client.Client
-	internalclient.ClientFactory
-
-	// extraOptions can be overridden in tests
-	// to change the way the underlying clients
-	// function, i.e. setting low timeouts
-	extraOptions []kgo.Opt
-}
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=users,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=users/status,verbs=get;update;patch
@@ -57,165 +38,116 @@ type UserReconciler struct {
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=users/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=users/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	l := log.FromContext(ctx).WithName("UserReconciler.Reconcile")
-	l.V(1).Info("Starting reconcile loop")
-	start := time.Now()
-	defer func() {
-		l.V(1).Info("Finished reconciling", "elapsed", time.Since(start))
-	}()
-
-	user := &redpandav1alpha2.User{}
-	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if !user.DeletionTimestamp.IsZero() {
-		if err := r.deleteUser(ctx, user); err != nil {
-			return ctrl.Result{}, err
-		}
-		if controllerutil.RemoveFinalizer(user, FinalizerKey) {
-			return ctrl.Result{}, r.Update(ctx, user)
-		}
-		return ctrl.Result{}, nil
-	}
-
-	config := redpandav1alpha2ac.User(user.Name, user.Namespace)
-
-	if !controllerutil.ContainsFinalizer(user, FinalizerKey) {
-		patch := kubernetes.ApplyPatch(config.WithFinalizers(FinalizerKey))
-		if err := r.Patch(ctx, user, patch, client.ForceOwnership, fieldOwner); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	syncCondition, manageUser, manageACLs, err := r.syncUser(ctx, user)
-
-	patch := kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.UserStatus().
-		WithObservedGeneration(user.Generation).
-		WithManagedUser(manageUser).
-		WithManagedACLs(manageACLs).
-		WithConditions(utils.StatusConditionConfigs(user.Status.Conditions, user.Generation, []metav1.Condition{
-			syncCondition,
-		})...)))
-	syncError := r.Status().Patch(ctx, user, patch, client.ForceOwnership, fieldOwner)
-
-	return ctrl.Result{}, errors.Join(err, syncError)
+// UserReconciler reconciles a User object
+type UserReconciler struct {
+	// extraOptions can be overridden in tests
+	// to change the way the underlying clients
+	// function, i.e. setting low timeouts
+	extraOptions []kgo.Opt
 }
 
-func (r *UserReconciler) syncUser(ctx context.Context, user *redpandav1alpha2.User) (condition metav1.Condition, managedUser, managedACLs bool, err error) {
+func (r *UserReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.User]) client.Patch {
+	user := request.object
+	config := redpandav1alpha2ac.User(user.Name, user.Namespace)
+	return kubernetes.ApplyPatch(config.WithFinalizers(FinalizerKey))
+}
+
+func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (client.Patch, error) {
+	user := request.object
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
 
-	handleErrors := func(err error) (metav1.Condition, bool, bool, error) {
-		// If we have a known terminal error, just set the sync condition and don't re-run reconciliation.
-		if internalclient.IsInvalidClusterError(err) {
-			return redpandav1alpha2.UserNotSyncedCondition(redpandav1alpha2.UserConditionReasonClusterRefInvalid, err), hasManagedUser, hasManagedACLs, nil
-		}
-		if internalclient.IsConfigurationError(err) {
-			return redpandav1alpha2.UserNotSyncedCondition(redpandav1alpha2.UserConditionReasonConfigurationInvalid, err), hasManagedUser, hasManagedACLs, nil
-		}
-		if internalclient.IsTerminalClientError(err) {
-			return redpandav1alpha2.UserNotSyncedCondition(redpandav1alpha2.UserConditionReasonTerminalClientError, err), hasManagedUser, hasManagedACLs, nil
+	createPatch := func(err error) (client.Patch, error) {
+		var syncCondition metav1.Condition
+		config := redpandav1alpha2ac.User(user.Name, user.Namespace)
+
+		if err != nil {
+			syncCondition, err = handleResourceSyncErrors(err)
+		} else {
+			syncCondition = redpandav1alpha2.ResourceSyncedCondition(user.Name)
 		}
 
-		// otherwise, set a generic unexpected error and return an error so we can re-reconcile.
-		return redpandav1alpha2.UserNotSyncedCondition(redpandav1alpha2.UserConditionReasonUnexpectedError, err), hasManagedUser, hasManagedACLs, err
+		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.UserStatus().
+			WithObservedGeneration(user.Generation).
+			WithManagedUser(hasManagedUser).
+			WithManagedACLs(hasManagedACLs).
+			WithConditions(utils.StatusConditionConfigs(user.Status.Conditions, user.Generation, []metav1.Condition{
+				syncCondition,
+			})...))), err
 	}
 
-	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, user)
+	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, request)
 	if err != nil {
-		return handleErrors(err)
+		return createPatch(err)
 	}
 
 	if !hasUser && shouldManageUser {
 		if err := usersClient.Create(ctx, user); err != nil {
-			return handleErrors(err)
+			return createPatch(err)
 		}
 		hasManagedUser = true
 	}
 
 	if hasUser && !shouldManageUser {
 		if err := usersClient.Delete(ctx, user); err != nil {
-			return handleErrors(err)
+			return createPatch(err)
 		}
 		hasManagedUser = false
 	}
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, user); err != nil {
-			return handleErrors(err)
+			return createPatch(err)
 		}
 		hasManagedACLs = true
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
 		if err := syncer.DeleteAll(ctx, user); err != nil {
-			return handleErrors(err)
+			return createPatch(err)
 		}
 		hasManagedACLs = false
 	}
 
-	return redpandav1alpha2.UserSyncedCondition(user.Name), hasManagedUser, hasManagedACLs, nil
+	return createPatch(nil)
 }
 
-func (r *UserReconciler) deleteUser(ctx context.Context, user *redpandav1alpha2.User) error {
-	l := log.FromContext(ctx).WithName("UserReconciler.Reconcile")
-	l.V(2).Info("Deleting user data from cluster")
+func (r *UserReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) error {
+	request.logger.V(2).Info("Deleting user data from cluster")
 
+	user := request.object
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 
-	ignoreAllConnectionErrors := func(err error) error {
-		// If we have known errors where we're unable to actually establish
-		// a connection to the cluster due to say, invalid connection parameters
-		// we're going to just skip the cleanup phase since we likely won't be
-		// able to clean ourselves up anyway.
-		if internalclient.IsTerminalClientError(err) ||
-			internalclient.IsConfigurationError(err) ||
-			internalclient.IsInvalidClusterError(err) {
-			// We use Info rather than Error here because we don't want
-			// to ignore the verbosity settings. This is really only for
-			// debugging purposes.
-			l.V(2).Info("Ignoring non-retryable client error", "error", err)
-			return nil
-		}
-		return err
-	}
-
-	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, user)
+	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, request)
 	if err != nil {
-		return ignoreAllConnectionErrors(err)
+		return ignoreAllConnectionErrors(request.logger, err)
 	}
 
 	if hasUser && hasManagedUser {
-		l.V(2).Info("Deleting managed user")
+		request.logger.V(2).Info("Deleting managed user")
 		if err := usersClient.Delete(ctx, user); err != nil {
-			return ignoreAllConnectionErrors(err)
+			return ignoreAllConnectionErrors(request.logger, err)
 		}
 	}
 
 	if hasManagedACLs {
-		l.V(2).Info("Deleting managed acls")
+		request.logger.V(2).Info("Deleting managed acls")
 		if err := syncer.DeleteAll(ctx, user); err != nil {
-			return ignoreAllConnectionErrors(err)
+			return ignoreAllConnectionErrors(request.logger, err)
 		}
 	}
 
 	return nil
 }
 
-func (r *UserReconciler) userAndACLClients(ctx context.Context, user *redpandav1alpha2.User) (*users.Client, *acls.Syncer, bool, error) {
-	usersClient, err := r.Users(ctx, user, r.extraOptions...)
+func (r *UserReconciler) userAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (*users.Client, *acls.Syncer, bool, error) {
+	user := request.object
+	usersClient, err := request.factory.Users(ctx, user, r.extraOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	syncer, err := r.ACLs(ctx, user, r.extraOptions...)
+	syncer, err := request.factory.ACLs(ctx, user, r.extraOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -228,22 +160,23 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, user *redpandav1
 	return usersClient, syncer, hasUser, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *UserReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	if err := registerUserClusterIndex(ctx, mgr); err != nil {
+func SetupUserController(ctx context.Context, mgr ctrl.Manager) error {
+	c := mgr.GetClient()
+	config := mgr.GetConfig()
+	factory := internalclient.NewFactory(config, c)
+	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")
+
+	enqueueUser, err := registerClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+	if err != nil {
 		return err
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.User{}).
 		Owns(&corev1.Secret{}).
-		Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			requests, err := usersForCluster(ctx, r, client.ObjectKeyFromObject(o))
-			if err != nil {
-				mgr.GetLogger().V(1).Info("possibly skipping user reconciliation due to failure to fetch users associated with cluster", "error", err)
-				return nil
-			}
-			return requests
-		})).
-		Complete(r)
+		Watches(&redpandav1alpha2.Redpanda{}, enqueueUser).
+		// Every 5 minutes try and check to make sure no manual modifications
+		// happened on the resource synced to the cluster and attempt to correct
+		// any drift.
+		Complete(controller.PeriodicallyReconcile(5 * time.Minute))
 }

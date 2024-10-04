@@ -11,55 +11,70 @@ package redpanda
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 	"slices"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	userClusterIndex        = "__user_referencing_cluster"
-	deploymentClusterIndex  = "__deployment_referencing_cluster"
-	statefulsetClusterIndex = "__statefulset_referencing_cluster"
-)
-
-func userCluster(user *redpandav1alpha2.User) types.NamespacedName {
-	return types.NamespacedName{Namespace: user.Namespace, Name: user.Spec.ClusterSource.ClusterRef.Name}
+type clientList[T client.Object] interface {
+	client.ObjectList
+	GetItems() []T
 }
 
-func registerUserClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
-	return mgr.GetFieldIndexer().IndexField(ctx, &redpandav1alpha2.User{}, userClusterIndex, indexUserCluster)
+func clusterReferenceIndexName(name string) string {
+	return fmt.Sprintf("__%s_referencing_cluster", name)
 }
 
-func indexUserCluster(o client.Object) []string {
-	user := o.(*redpandav1alpha2.User)
-	source := user.Spec.ClusterSource
+func registerClusterSourceIndex[T client.Object, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
+	indexName := clusterReferenceIndexName(name)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource); err != nil {
+		return nil, err
+	}
+	return enqueueFromSourceCluster(mgr, name, l), nil
+}
+
+func registerHelmReferencedIndex[T client.Object](ctx context.Context, mgr ctrl.Manager, name string, o T) error {
+	indexName := clusterReferenceIndexName(name)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexHelmManagedObjectCluster); err != nil {
+		return err
+	}
+	return nil
+}
+
+func indexByClusterSource(o client.Object) []string {
+	clusterReferencingObject := o.(redpandav1alpha2.ClusterReferencingObject)
+	source := clusterReferencingObject.GetClusterSource()
 
 	clusters := []string{}
 	if source != nil && source.ClusterRef != nil {
-		clusters = append(clusters, userCluster(user).String())
+		cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: source.ClusterRef.Name}
+		clusters = append(clusters, cluster.String())
 	}
 
 	return clusters
 }
 
-func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedName) ([]reconcile.Request, error) {
-	childList := &redpandav1alpha2.UserList{}
-	err := c.List(ctx, childList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(userClusterIndex, nn.String()),
+func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c client.Client, list U, name string, nn types.NamespacedName) ([]reconcile.Request, error) {
+	err := c.List(ctx, list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), nn.String()),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	requests := []reconcile.Request{}
-	for _, item := range childList.Items { //nolint:gocritic // this is necessary
+	for _, item := range list.GetItems() { //nolint:gocritic // this is necessary
 		requests = append(requests, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: item.GetNamespace(),
@@ -71,12 +86,16 @@ func usersForCluster(ctx context.Context, c client.Client, nn types.NamespacedNa
 	return requests, nil
 }
 
-func registerDeploymentClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
-	return mgr.GetFieldIndexer().IndexField(ctx, &appsv1.Deployment{}, deploymentClusterIndex, indexHelmManagedObjectCluster)
-}
-
-func registerStatefulSetClusterIndex(ctx context.Context, mgr ctrl.Manager) error {
-	return mgr.GetFieldIndexer().IndexField(ctx, &appsv1.StatefulSet{}, statefulsetClusterIndex, indexHelmManagedObjectCluster)
+func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
+		requests, err := sourceClusters(ctx, mgr.GetClient(), list, name, client.ObjectKeyFromObject(o))
+		if err != nil {
+			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
+			return nil
+		}
+		return requests
+	})
 }
 
 func clusterForHelmManagedObject(o client.Object) (types.NamespacedName, bool) {
@@ -101,6 +120,15 @@ func clusterForHelmManagedObject(o client.Object) (types.NamespacedName, bool) {
 	}, true
 }
 
+func enqueueClusterFromHelmManagedObject() handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		if nn, found := clusterForHelmManagedObject(o); found {
+			return []reconcile.Request{{NamespacedName: nn}}
+		}
+		return nil
+	})
+}
+
 func indexHelmManagedObjectCluster(o client.Object) []string {
 	nn, found := clusterForHelmManagedObject(o)
 	if !found {
@@ -123,13 +151,13 @@ func consoleDeploymentsForCluster(ctx context.Context, c client.Client, cluster 
 
 	deploymentList := &appsv1.DeploymentList{}
 	err := c.List(ctx, deploymentList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(deploymentClusterIndex, key),
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("deployment"), key),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return mapFn(ptr.To, deploymentList.Items), nil
+	return functional.MapFn(ptr.To, deploymentList.Items), nil
 }
 
 func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
@@ -137,19 +165,11 @@ func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluste
 
 	ssList := &appsv1.StatefulSetList{}
 	err := c.List(ctx, ssList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(statefulsetClusterIndex, key),
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("statefulset"), key),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return mapFn(ptr.To, ssList.Items), nil
-}
-
-func mapFn[T any, U any](fn func(T) U, a []T) []U {
-	s := make([]U, len(a))
-	for i := 0; i < len(a); i++ {
-		s[i] = fn(a[i])
-	}
-	return s
+	return functional.MapFn(ptr.To, ssList.Items), nil
 }

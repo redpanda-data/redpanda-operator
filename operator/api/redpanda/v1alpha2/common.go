@@ -18,6 +18,7 @@ import (
 	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -270,4 +271,33 @@ func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
 
 func (c *ClusterSource) GetClusterRef() *ClusterRef {
 	return c.ClusterRef
+}
+
+const (
+	ResourceConditionTypeSynced = "Synced"
+
+	ResourceConditionReasonPending              = "Pending"
+	ResourceConditionReasonSynced               = "Synced"
+	ResourceConditionReasonClusterRefInvalid    = "ClusterRefInvalid"
+	ResourceConditionReasonConfigurationInvalid = "ConfigurationInvalid"
+	ResourceConditionReasonTerminalClientError  = "TerminalClientError"
+	ResourceConditionReasonUnexpectedError      = "UnexpectedError"
+)
+
+func ResourceSyncedCondition(name string) metav1.Condition {
+	return metav1.Condition{
+		Type:    ResourceConditionTypeSynced,
+		Status:  metav1.ConditionTrue,
+		Reason:  ResourceConditionReasonSynced,
+		Message: fmt.Sprintf("Successfully %q synced to cluster.", name),
+	}
+}
+
+func ResourceNotSyncedCondition(reason string, err error) metav1.Condition {
+	return metav1.Condition{
+		Type:    ResourceConditionTypeSynced,
+		Status:  metav1.ConditionFalse,
+		Reason:  reason,
+		Message: fmt.Sprintf("Error: %v", err),
+	}
 }
