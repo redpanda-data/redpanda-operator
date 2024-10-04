@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package pvcunbinder
+package vectorized
 
 import (
 	"context"
@@ -108,7 +108,7 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 		},
 	}
 
-	r := &Reconciler{
+	r := &PVCUnbinderReconciler{
 		Timeout: 30 * time.Second,
 		Selector: labels.SelectorFromSet(labels.Set{
 			"key": "value",
@@ -228,7 +228,7 @@ func TestPVCUnbinder(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	r := Reconciler{Client: c}
+	r := PVCUnbinderReconciler{Client: c}
 	require.NoError(t, r.SetupWithManager(mgr))
 
 	tgo(t, ctx, func(ctx context.Context) error {

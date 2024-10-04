@@ -7,9 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package pvcunbinder implements a reconciler that allows StatefulSet Pods to
-// reschedule in the event of a lost HostPath PersistentVolume.
-package pvcunbinder
+package vectorized
 
 import (
 	"context"
@@ -33,7 +31,7 @@ import (
 
 var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
 
-// Reconciler is a Kubernetes Reconciler that watches for Pods stuck in a
+// PVCUnbinderReconciler is a Kubernetes Reconciler that watches for Pods stuck in a
 // Pending state due to volume affinities and attempts a remediation.
 //
 // It watches for Pod events rather than Node events because:
@@ -52,7 +50,7 @@ var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|
 //     NodeAffinity. By "recycling" we permit Flakey Nodes to rejoin the cluster
 //     which _might_ reclaim the now freed volume.
 //  5. Deleting the Pod to re-trigger PVC creation and rebinding.
-type Reconciler struct {
+type PVCUnbinderReconciler struct {
 	Client client.Client
 	// Timeout is the duration a Pod must be stuck in Pending before
 	// remediation is attempted.
@@ -62,7 +60,7 @@ type Reconciler struct {
 	Selector labels.Selector
 }
 
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PVCUnbinderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}, builder.WithPredicates(predicate.NewPredicateFuncs(pvcUnbinderPredicate))).Complete(r)
 }
 
@@ -74,7 +72,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 // ResourceVersions to inform us about changes from external actors, in which
 // case we'll re-queue.
 // TODO use an in memory timeout to prevent complete unbinding of Pods.
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *PVCUnbinderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx).WithName("PVCUnbinder")
 	ctx = log.IntoContext(ctx, logger)
 
@@ -215,7 +213,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) ensureRetainPolicy(ctx context.Context, pv *corev1.PersistentVolume) error {
+func (r *PVCUnbinderReconciler) ensureRetainPolicy(ctx context.Context, pv *corev1.PersistentVolume) error {
 	if pv.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimRetain {
 		return nil
 	}
@@ -233,7 +231,7 @@ func (r *Reconciler) ensureRetainPolicy(ctx context.Context, pv *corev1.Persiste
 // recyclePersistentVolume "recycles" a released PV by clearing it's .ClaimRef
 // which makes it available for binding once again.
 // This strategy is only valid for volumes that utilize .HostPath.
-func (r *Reconciler) recyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume) error {
+func (r *PVCUnbinderReconciler) recyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume) error {
 	if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
 		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for recycling: %q", pv, pv.Name)
 	}
@@ -256,7 +254,7 @@ func (r *Reconciler) recyclePersistentVolume(ctx context.Context, pv *corev1.Per
 	return nil
 }
 
-func (r *Reconciler) shouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
+func (r *PVCUnbinderReconciler) shouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
 	if r.Selector != nil && !r.Selector.Matches(labels.Set(pod.Labels)) {
 		log.FromContext(ctx).Info("selector not satisfied; skipping", "name", pod.Name, "labels", pod.Labels, "selector", r.Selector.String())
 		return false, 0

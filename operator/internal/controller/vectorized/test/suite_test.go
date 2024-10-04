@@ -47,6 +47,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -237,7 +238,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		return testKafkaAdmin, nil
 	}
 
-	err = (&redpanda.ClusterReconciler{
+	err = (&vectorized.ClusterReconciler{
 		Client:                   k8sManager.GetClient(),
 		Log:                      l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
 		Scheme:                   k8sManager.GetScheme(),
@@ -251,7 +252,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 
 	driftCheckPeriod := 500 * time.Millisecond
-	err = (&redpanda.ClusterConfigurationDriftReconciler{
+	err = (&vectorized.ClusterConfigurationDriftReconciler{
 		Client:                k8sManager.GetClient(),
 		Log:                   l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
 		Scheme:                k8sManager.GetScheme(),
@@ -260,7 +261,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&redpanda.ConsoleReconciler{
+	err = (&vectorized.ConsoleReconciler{
 		Client:                  k8sManager.GetClient(),
 		Scheme:                  k8sManager.GetScheme(),
 		Log:                     l.WithName("controllers").WithName("redpanda").WithName("Console"),

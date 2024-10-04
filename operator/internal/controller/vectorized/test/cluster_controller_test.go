@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	types2 "github.com/onsi/gomega/types"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
@@ -812,7 +812,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			// so neither redpanda Cluster object or CRB or any other object
 			// exists. This verifies that these situations are handled
 			// gracefully and without error
-			r := &redpanda.ClusterReconciler{
+			r := &vectorized.ClusterReconciler{
 				Client:                   fake.NewClientBuilder().Build(),
 				Log:                      ctrl.Log,
 				Scheme:                   scheme.Scheme,
@@ -833,7 +833,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			restrictedVersion := "v23.1.2"
 			key, redpandaCluster := getVersionedRedpanda("restricted-redpanda-negative", restrictedVersion)
 			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).Build()
-			r := &redpanda.ClusterReconciler{
+			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
 				Scheme:                    scheme.Scheme,
@@ -862,7 +862,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 				objects = append(objects, pods[i])
 			}
 			fc := fake.NewClientBuilder().WithObjects(objects...).WithStatusSubresource(objects...).Build()
-			r := &redpanda.ClusterReconciler{
+			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
 				Scheme:                    scheme.Scheme,
@@ -890,7 +890,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		r := &redpanda.ClusterReconciler{
+		r := &vectorized.ClusterReconciler{
 			Client:                   fake.NewClientBuilder().Build(),
 			Log:                      ctrl.Log,
 			Scheme:                   scheme.Scheme,

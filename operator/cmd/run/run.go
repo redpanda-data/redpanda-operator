@@ -51,8 +51,8 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -312,7 +312,7 @@ func Run(
 
 		adminAPIClientFactory := adminutils.CachedAdminAPIClientFactory(adminutils.NewInternalAdminAPI)
 
-		if err = (&redpandacontrollers.ClusterReconciler{
+		if err = (&vectorizedcontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
@@ -327,7 +327,7 @@ func Run(
 			os.Exit(1)
 		}
 
-		if err = (&redpandacontrollers.ClusterConfigurationDriftReconciler{
+		if err = (&vectorizedcontrollers.ClusterConfigurationDriftReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("ClusterConfigurationDrift"),
 			Scheme:                    mgr.GetScheme(),
@@ -338,13 +338,13 @@ func Run(
 			os.Exit(1)
 		}
 
-		if err = redpandacontrollers.NewClusterMetricsController(mgr.GetClient()).
+		if err = vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).
 			SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "ClustersMetrics")
 			os.Exit(1)
 		}
 
-		if err = (&redpandacontrollers.ConsoleReconciler{
+		if err = (&vectorizedcontrollers.ConsoleReconciler{
 			Client:                  mgr.GetClient(),
 			Scheme:                  mgr.GetScheme(),
 			Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
@@ -378,7 +378,7 @@ func Run(
 		} else {
 			setupLog.Info("starting PVCUnbinder controller", "flag", unbindPVCsAfter)
 
-			if err := (&pvcunbinder.Reconciler{
+			if err := (&vectorizedcontrollers.PVCUnbinderReconciler{
 				Client:  mgr.GetClient(),
 				Timeout: unbindPVCsAfter,
 			}).SetupWithManager(mgr); err != nil {
