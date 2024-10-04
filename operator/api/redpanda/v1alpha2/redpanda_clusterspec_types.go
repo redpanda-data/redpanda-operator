@@ -357,6 +357,9 @@ type SASL struct {
 
 // BootstrapUser configures the user used to bootstrap Redpanda when SASL is enabled.
 type BootstrapUser struct {
+	// Specifies the username to use for a bootstrap user when SASL is enabled. If unspecified,
+	// user will be named "kubernetes-controller".
+	Name *string `json:"name,omitempty"`
 	// Specifies the location where the generated password will be written or a pre-existing
 	// password will be read from.
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
