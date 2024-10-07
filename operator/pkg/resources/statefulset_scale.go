@@ -122,24 +122,21 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error getting broker ID for pod with ordinal %d when downscaling cluster: %w", targetOrdinal, err)
 	}
-	nonExistantBroker := int32(-1)
+
 	if targetBroker == nil {
 		// The target pod isn't in the broker list. Just select a non-existing broker for decommission so the next
 		// reconcile loop will succeed.
-		targetBroker = &nonExistantBroker
-	}
-	log.WithValues("ordinal", targetOrdinal, "node_id", targetBroker).Info("start decommission broker")
-	r.pandaCluster.SetDecommissionBrokerID(targetBroker)
-	err = r.Status().Update(ctx, r.pandaCluster)
-	if err != nil {
-		return err
-	}
-	if *targetBroker == nonExistantBroker {
+		// Previously, this was accepted, and status.decommissionBrokerID was cleared.
+		// However, this is dangerous.
+		// Broker ID could be missing for a variety of reasons? If we just ignore this, and remove the pod anyway and skip decom'ing..we may remove pod w/ ghost broker left.
+		// Instead, we only decommission, if both pod and brokerID are present. This effectively means, our "state machine" requires upscaling to have finished (pod started + broker registered), before we consider downscaling.
 		return &RequeueAfterError{
 			RequeueAfter: RequeueDuration,
 			Msg:          fmt.Sprintf("the broker for pod with ordinal %d is not registered with the cluster. Requeuing.", targetOrdinal),
 		}
 	}
+
+	podName := fmt.Sprintf("%s-%d", r.LastObservedState.Name, targetOrdinal)
 	return nil
 }
 
