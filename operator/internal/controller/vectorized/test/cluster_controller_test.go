@@ -37,6 +37,10 @@ import (
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
+const (
+	redpandaContainerTag = "24.2.5"
+)
+
 var _ = Describe("RedPandaCluster controller", func() {
 	const (
 		timeout  = time.Second * 30
