@@ -234,7 +234,7 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	result, errs := ar.Ensure()
-	if !result.IsZero() {
+	if !result.IsZero() && errs == nil {
 		return result, nil
 	}
 	if errs != nil {
