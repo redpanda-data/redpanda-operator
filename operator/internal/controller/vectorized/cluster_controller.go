@@ -907,10 +907,16 @@ func (r *ClusterReconciler) decommissionGhostBrokers(c context.Context, vCluster
 		return
 	}
 
-	if int32(len(pods.Items)) != ptr.Deref(vCluster.Spec.Replicas, 0) {
-		log.Info("can not calculate which broker should be decommissioned as not all Pods are running",
-			"replica-number", ptr.Deref(vCluster.Spec.Replicas, 0),
+	// Only consider pods that are running and healthy
+	pods.Items = slices.DeleteFunc(pods.Items, func(p corev1.Pod) bool {
+		return p.Status.Phase != corev1.PodRunning
+	})
+
+	if int32(len(pods.Items)) != vCluster.Status.Replicas {
+		log.Info("skipping ghost broker detection, because not all pods are ready.",
+			"replica-number", vCluster.Status.Replicas,
 			"pod-len", len(pods.Items))
+		return
 	}
 
 	// Create map of existing Redpanda IDs from Redpanda Pod Annotations.
@@ -919,6 +925,7 @@ func (r *ClusterReconciler) decommissionGhostBrokers(c context.Context, vCluster
 		pod := &pods.Items[i]
 		if pod.Annotations == nil {
 			log.Error(&missingBrokerIDError{}, "missing annotations in pod", "pod-name", pod.Name)
+			return
 		}
 
 		nodeIDStrAnnotation, annotationExist := pod.Annotations[resources.PodAnnotationNodeIDKey]
