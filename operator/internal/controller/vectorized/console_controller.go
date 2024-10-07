@@ -46,7 +46,7 @@ type ConsoleReconciler struct {
 	client.Client
 	Scheme                  *runtime.Scheme
 	Log                     logr.Logger
-	AdminAPIClientFactory   adminutils.AdminAPIClientFactory
+	AdminAPIClientFactory   adminutils.NodePoolAdminAPIClientFactory
 	clusterDomain           string
 	Store                   *consolepkg.Store
 	EventRecorder           record.EventRecorder

@@ -46,7 +46,7 @@ type ClusterConfigurationDriftReconciler struct {
 	clusterDomain             string
 	Scheme                    *runtime.Scheme
 	DriftCheckPeriod          *time.Duration
-	AdminAPIClientFactory     adminutils.AdminAPIClientFactory
+	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
 	RestrictToRedpandaVersion string
 }
 

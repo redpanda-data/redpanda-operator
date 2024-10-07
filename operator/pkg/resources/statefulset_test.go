@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -45,6 +46,18 @@ const (
 	redpandaContainerName = "redpanda"
 )
 
+type NopReader struct{}
+
+func (NopReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	// No-op
+	return nil
+}
+
+func (NopReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	// No-op
+	return nil
+}
+
 //nolint:funlen // Test function can have more than 100 lines
 func TestEnsure(t *testing.T) {
 	testEnv := &testutils.RedpandaTestEnv{}
@@ -58,12 +71,14 @@ func TestEnsure(t *testing.T) {
 	cluster := pandaCluster()
 	stsResource := stsFromCluster(cluster)
 
+	defaultNpCluster := cluster.DeepCopy()
+
 	newResources := corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("1111"),
 		corev1.ResourceMemory: resource.MustParse("2222Gi"),
 	}
 	resourcesUpdatedCluster := cluster.DeepCopy()
-	resourcesUpdatedCluster.Spec.Resources.Requests = newResources
+	resourcesUpdatedCluster.Spec.NodePools[0].Resources.Requests = newResources
 	resourcesUpdatedSts := stsFromCluster(cluster).DeepCopy()
 	resourcesUpdatedSts.Spec.Template.Spec.InitContainers[0].Resources.Requests = newResources
 	resourcesUpdatedSts.Spec.Template.Spec.Containers[0].Resources.Requests = newResources
@@ -96,16 +111,18 @@ func TestEnsure(t *testing.T) {
 		expectedObject *v1.StatefulSet
 		clusterHealth  bool
 		expectedError  error
+		nodePoolName   string
 	}{
-		{"none existing", nil, cluster, stsResource, true, nil},
-		{"update resources", stsResource, resourcesUpdatedCluster, resourcesUpdatedSts, true, nil},
-		{"update redpanda resources", stsResource, resourcesUpdatedRedpandaCluster, resourcesUpdatedSts, true, nil},
-		{"disabled sidecar", nil, noSidecarCluster, noSidecarSts, true, nil},
-		{"cluster without shadow index cache dir", stsResource, withoutShadowIndexCacheDirectory, stsWithoutSecondPersistentVolume, true, nil},
+		{"none existing", nil, cluster, stsResource, true, nil, "first"},
+		{"none existing, default nodePool", nil, defaultNpCluster, defaultNodePoolstsFromCluster(cluster), true, nil, "default"},
+		{"update resources", stsResource, resourcesUpdatedCluster, resourcesUpdatedSts, true, nil, "first"},
+		{"update redpanda resources", stsResource, resourcesUpdatedRedpandaCluster, resourcesUpdatedSts, true, nil, "first"},
+		{"disabled sidecar", nil, noSidecarCluster, noSidecarSts, true, nil, "first"},
+		{"cluster without shadow index cache dir", stsResource, withoutShadowIndexCacheDirectory, stsWithoutSecondPersistentVolume, true, nil, "first"},
 		{"update non healthy cluster", stsResource, unhealthyRedpandaCluster, stsResource, false, &resources.RequeueAfterError{
 			RequeueAfter: resources.RequeueDuration,
 			Msg:          "wait for cluster to become healthy (cluster restarting)",
-		}},
+		}, "first"},
 	}
 
 	for _, tt := range tests {
@@ -127,6 +144,13 @@ func TestEnsure(t *testing.T) {
 			err = c.Create(context.Background(), tt.pandaCluster)
 			assert.NoError(t, err, tt.name)
 
+			nps, err := tt.pandaCluster.GetNodePools(context.Background(), &NopReader{})
+			assert.NoError(t, err)
+
+			npIndex := slices.IndexFunc(nps, func(np *vectorizedv1alpha1.NodePoolSpecWithDeleted) bool {
+				return np.Name == tt.nodePoolName
+			})
+			assert.NotEqual(t, -1, npIndex, "could not find nodePool")
 			sts := resources.NewStatefulSet(
 				c,
 				tt.pandaCluster,
@@ -143,7 +167,7 @@ func TestEnsure(t *testing.T) {
 					ImagePullPolicy:       "Always",
 				},
 				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, ordinals ...int32) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
 					adminAPI.SetClusterHealth(health)
@@ -152,7 +176,7 @@ func TestEnsure(t *testing.T) {
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
-				true)
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: nps[npIndex].NodePoolSpec}, true)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 
@@ -228,7 +252,7 @@ func TestEnsure(t *testing.T) {
 	_ = testEnv.Stop()
 }
 
-func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
+func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 	fileSystemMode := corev1.PersistentVolumeFilesystem
 
 	sts := &v1.StatefulSet{
@@ -304,8 +328,10 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 								corev1.ResourceStorage: pandaCluster.Spec.CloudStorage.CacheStorage.Capacity,
 							},
 						},
-						StorageClassName: &pandaCluster.Spec.CloudStorage.CacheStorage.StorageClassName,
-						VolumeMode:       &fileSystemMode,
+
+						StorageClassName: &pandaCluster.Spec.Storage.StorageClassName,
+
+						VolumeMode: &fileSystemMode,
 					},
 					Status: corev1.PersistentVolumeClaimStatus{
 						Phase: "Pending",
@@ -324,6 +350,105 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 	return sts
 }
 
+func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
+	fileSystemMode := corev1.PersistentVolumeFilesystem
+
+	sts := &v1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: pandaCluster.Namespace,
+			Name:      pandaCluster.Name,
+		},
+		Spec: v1.StatefulSetSpec{
+			Replicas: pandaCluster.Spec.NodePools[0].Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"testlabel": "statefulset_test",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pandaCluster.Name,
+					Namespace: pandaCluster.Namespace,
+					Labels: map[string]string{
+						"testlabel": "statefulset_test",
+					},
+				},
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{
+						Name:  "redpanda-configurator",
+						Image: "vectorized/configurator:latest",
+						Resources: corev1.ResourceRequirements{
+							Limits:   pandaCluster.Spec.NodePools[0].Resources.Limits,
+							Requests: pandaCluster.Spec.NodePools[0].Resources.Requests,
+						},
+					}},
+					Containers: []corev1.Container{
+						{
+							Name:  "redpanda",
+							Image: "image:latest",
+							Resources: corev1.ResourceRequirements{
+								Limits:   pandaCluster.Spec.NodePools[0].Resources.Limits,
+								Requests: pandaCluster.Spec.NodePools[0].Resources.Requests,
+							},
+						},
+					},
+				},
+			},
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: pandaCluster.Namespace,
+						Name:      "datadir",
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+						Resources: corev1.VolumeResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: pandaCluster.Spec.NodePools[0].Storage.Capacity,
+							},
+						},
+						StorageClassName: &pandaCluster.Spec.NodePools[0].Storage.StorageClassName,
+						VolumeMode:       &fileSystemMode,
+					},
+					Status: corev1.PersistentVolumeClaimStatus{
+						Phase: "Pending",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: pandaCluster.Namespace,
+						Name:      "shadow-index-cache",
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+						Resources: corev1.VolumeResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: pandaCluster.Spec.NodePools[0].CloudCacheStorage.Capacity,
+							},
+						},
+
+						StorageClassName: &pandaCluster.Spec.NodePools[0].Storage.StorageClassName,
+
+						VolumeMode: &fileSystemMode,
+					},
+					Status: corev1.PersistentVolumeClaimStatus{
+						Phase: "Pending",
+					},
+				},
+			},
+		},
+	}
+	if pandaCluster.Spec.Sidecars.RpkStatus.Enabled {
+		sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, corev1.Container{
+			Name:      "rpk-status",
+			Image:     "image:latest",
+			Resources: *pandaCluster.Spec.Sidecars.RpkStatus.Resources,
+		})
+	}
+	return sts
+}
+
+// pandaCluster creates a test cluster CR with both a default nodePool and a dedicated nodePool.
 func pandaCluster() *vectorizedv1alpha1.Cluster {
 	var replicas int32 = 1
 
@@ -346,9 +471,8 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 			UID: "ff2770aa-c919-43f0-8b4a-30cb7cfdaf79",
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
-			Image:    "image",
-			Version:  "v22.3.0",
-			Replicas: ptr.To(replicas),
+			Image:   "image",
+			Version: "v22.3.0",
 			CloudStorage: vectorizedv1alpha1.CloudStorageConfig{
 				Enabled: true,
 				CacheStorage: &vectorizedv1alpha1.StorageSpec{
@@ -364,13 +488,6 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 345}},
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
 			},
-			Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
-				ResourceRequirements: corev1.ResourceRequirements{
-					Limits:   res,
-					Requests: res,
-				},
-				Redpanda: nil,
-			},
 			Sidecars: vectorizedv1alpha1.Sidecars{
 				RpkStatus: &vectorizedv1alpha1.Sidecar{
 					Enabled: true,
@@ -380,9 +497,38 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 					},
 				},
 			},
+			Replicas: ptr.To(replicas),
+			Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+				ResourceRequirements: corev1.ResourceRequirements{
+					Limits:   res,
+					Requests: res,
+				},
+				Redpanda: nil,
+			},
 			Storage: vectorizedv1alpha1.StorageSpec{
-				Capacity:         resource.MustParse("10Gi"),
-				StorageClassName: "storage-class",
+				Capacity:         resource.MustParse("2Gi"),
+				StorageClassName: "local",
+			},
+			NodePools: []vectorizedv1alpha1.NodePoolSpec{
+				{
+					Name:     "first",
+					Replicas: ptr.To(replicas),
+					CloudCacheStorage: vectorizedv1alpha1.StorageSpec{
+						Capacity:         resource.MustParse("10Gi"),
+						StorageClassName: "storage-class",
+					},
+					Storage: vectorizedv1alpha1.StorageSpec{
+						Capacity:         resource.MustParse("2Gi"),
+						StorageClassName: "storage-class",
+					},
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+						ResourceRequirements: corev1.ResourceRequirements{
+							Limits:   res,
+							Requests: res,
+						},
+						Redpanda: nil,
+					},
+				},
 			},
 		},
 	}
@@ -479,50 +625,52 @@ func TestCurrentVersion(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		c := fake.NewClientBuilder().Build()
-		for i := range tt.pods {
-			pod := tt.pods[i]
-			pod.Labels = labels.ForCluster(redpanda)
-			assert.NoError(t, c.Create(context.TODO(), &pod))
-		}
-		sts := resources.NewStatefulSet(c, redpanda, scheme.Scheme,
-			"cluster.local",
-			"servicename",
-			types.NamespacedName{Name: "test", Namespace: "test"},
-			TestStatefulsetTLSVolumeProvider{},
-			TestAdminTLSConfigProvider{},
-			"",
-			resources.ConfiguratorSettings{
-				ConfiguratorBaseImage: "vectorized/configurator",
-				ConfiguratorTag:       "latest",
-				ImagePullPolicy:       "Always",
-			},
-			func(ctx context.Context) (string, error) { return hash, nil },
-			func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, ordinals ...int32) (adminutils.AdminAPIClient, error) {
-				return nil, nil
-			},
-			time.Second,
-			ctrl.Log.WithName("test"),
-			0,
-			true,
-		)
-		sts.LastObservedState = &v1.StatefulSet{
-			Spec: v1.StatefulSetSpec{
-				Replicas: &tests[i].expectedReplicas,
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}},
+		t.Run(tt.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().Build()
+			for i := range tt.pods {
+				pod := tt.pods[i]
+				pod.Labels = labels.ForCluster(redpanda).WithNodePool(redpanda.Spec.NodePools[0].Name)
+				assert.NoError(t, c.Create(context.TODO(), &pod))
+			}
+			sts := resources.NewStatefulSet(c, redpanda, scheme.Scheme,
+				"cluster.local",
+				"servicename",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestStatefulsetTLSVolumeProvider{},
+				TestAdminTLSConfigProvider{},
+				"",
+				resources.ConfiguratorSettings{
+					ConfiguratorBaseImage: "vectorized/configurator",
+					ConfiguratorTag:       "latest",
+					ImagePullPolicy:       "Always",
+				},
+				func(ctx context.Context) (string, error) { return hash, nil },
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
+					return nil, nil
+				},
+				time.Second,
+				ctrl.Log.WithName("test"),
+				0,
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: redpanda.Spec.NodePools[0]},
+				true)
+			sts.LastObservedState = &v1.StatefulSet{
+				Spec: v1.StatefulSetSpec{
+					Replicas: &tests[i].expectedReplicas,
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}},
+						},
 					},
 				},
-			},
-		}
-		v, err := sts.CurrentVersion(context.TODO())
-		assert.Equal(t, tt.expectedVersion, v)
-		if tt.shouldError {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
+			}
+			v, err := sts.CurrentVersion(context.TODO())
+			assert.Equal(t, tt.expectedVersion, v)
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
@@ -757,7 +905,9 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 				tt.fields.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				tt.fields.logger,
-				time.Hour, true)
+				time.Hour,
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))}},
+				true)
 			got, err := r.IsManagedDecommission()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StatefulSetResource.IsManagedDecommission() error = %v, wantErr %v", err, tt.wantErr)
@@ -782,8 +932,13 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "no kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas:                &replicas,
 					AdditionalConfiguration: map[string]string{},
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 				},
 			},
 			expectedContainerPorts: []corev1.ContainerPort{},
@@ -792,7 +947,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api": "[{'name':'pl-kafka','address':'0.0.0.0','port': {{30092 | add .Index}}}]",
 					},
@@ -808,7 +968,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka and panda proxy listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api":        "[{'name':'pl-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"pandaproxy.advertised_pandaproxy_api": "[{'name':'pl-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
@@ -828,7 +993,12 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 			name: "additional kafka and panda proxy listeners with longer name",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.advertised_kafka_api":        "[{'name':'private-link-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"pandaproxy.advertised_pandaproxy_api": "[{'name':'private-link-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
@@ -851,7 +1021,9 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				tt.pandaCluster,
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
-				time.Hour, true)
+				time.Hour,
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
+				true)
 			containerPorts := r.GetPortsForListenersInAdditionalConfig()
 			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
 			for _, cp := range containerPorts {
@@ -880,8 +1052,13 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "no additional listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas:                &replicas,
 					AdditionalConfiguration: map[string]string{},
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 				},
 			},
 			expectedEnvValue: "",
@@ -890,7 +1067,12 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "additional kafka listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.kafka_api": "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 					},
@@ -902,7 +1084,12 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			name: "additional listeners have all",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: &replicas,
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
 					AdditionalConfiguration: map[string]string{
 						"redpanda.kafka_api":                   "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 						"redpanda.advertised_kafka_api":        "[{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
@@ -926,6 +1113,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
 				logger,
 				time.Hour,
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
 				true)
 			envs := r.AdditionalListenersEnvVars()
 

@@ -1,0 +1,45 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: nodepool-cluster
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  nodePools:
+    - name: nodepool1
+      replicas: 3
+      resources:
+        requests:
+          cpu: "100m"
+          memory: 256Mi
+        limits:
+          cpu: "100m"
+          memory: 256Mi
+    - name: nodepool2
+      replicas: 3
+      resources:
+        requests:
+          cpu: "100m"
+          memory: 256Mi
+        limits:
+          cpu: "100m"
+          memory: 256Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+    adminApi:
+      - port: 9644
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
+  resources: {}
+status:
+  nodePools:
+    nodepool1:
+      replicas: 0
+    nodepool1:
+      replicas: 3
+

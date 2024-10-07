@@ -5,6 +5,9 @@ redpanda:
         - host:
             address: cluster-0.cluster.local
             port: 33145
+        - host:
+            address: cluster-first-0.cluster.local
+            port: 33145
     rpc_server:
         address: 0.0.0.0
         port: 33145
