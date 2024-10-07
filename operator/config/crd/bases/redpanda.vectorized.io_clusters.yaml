@@ -1543,6 +1543,10 @@ spec:
                     restarting:
                       description: Indicates that a nodePool's pods are restarting.
                       type: boolean
+                  required:
+                  - currentReplicas
+                  - readyReplicas
+                  - replicas
                   type: object
                 description: Every NodePool has its own status.
                 type: object
