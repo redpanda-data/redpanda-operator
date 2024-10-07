@@ -212,7 +212,7 @@ var _ = Describe("Redpanda node pool scale", func() {
 				Namespace: "default",
 			}
 
-			redpandaCluster.Spec.Version = featuregates.V22_2_1.String()
+			redpandaCluster.Spec.Version = featuregates.V22_3.String()
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 			By("Keeping the StatefulSet at single replica until initialized")
 			var sts appsv1.StatefulSet
@@ -254,7 +254,7 @@ func getClusterWithReplicas(
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:    "vectorized/redpanda",
-			Version:  "dev",
+			Version:  redpandaContainerTag,
 			Replicas: ptr.To(replicas),
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
@@ -314,7 +314,7 @@ func getClusterWithNodePool(
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:   "vectorized/redpanda",
-			Version: "dev",
+			Version: redpandaContainerTag,
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 					{
