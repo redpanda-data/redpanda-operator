@@ -30,6 +30,11 @@ const (
 	PartOfKey = "app.kubernetes.io/part-of"
 	// The tool being used to manage the operation of an application
 	ManagedByKey = "app.kubernetes.io/managed-by"
+	// NodePoolKey is used to document the node pool associated with the StatefulSet.
+	NodePoolKey = "cluster.redpanda.com/nodepool"
+
+	// PodLabelNodeIDKey
+	PodLabelNodeIDKey = "operator.redpanda.com/node-id"
 
 	nameKeyRedpandaVal   = "redpanda"
 	nameKeyConsoleVal    = "redpanda-console"
@@ -63,10 +68,24 @@ func (cl CommonLabels) AsClientSelector() k8slabels.Selector {
 	return k8slabels.SelectorFromSet(cl.selectorLabels())
 }
 
+// AsClientSelectorForNodePool returns label selector made out of subset of common labels: name, instance, component
+// return type is apimachinery labels selector, which is used when constructing client calls
+func (cl CommonLabels) AsClientSelectorForNodePool() k8slabels.Selector {
+	return k8slabels.SelectorFromSet(cl.nodePoolSelectorLabels())
+}
+
 // AsAPISelector returns label selector made out of subset of common labels: name, instance, component
 // return type is metav1.LabelSelector type which is used in resource definition
 func (cl CommonLabels) AsAPISelector() *metav1.LabelSelector {
 	return metav1.SetAsLabelSelector(cl.selectorLabels())
+}
+
+// AsAPISelectorForNodePool returns label selector made out of subset of common labels: name, instance, component, nodepool.
+// return type is metav1.LabelSelector type which is used in resource definition
+// This selector selects all pods of a specific nodepool.
+// To select all pods for the cluster, across nodepools, use AsAPISelector.
+func (cl CommonLabels) AsAPISelectorForNodePool() *metav1.LabelSelector {
+	return metav1.SetAsLabelSelector(cl.nodePoolSelectorLabels())
 }
 
 // AsSet returns common labels with types labels.Set
@@ -81,6 +100,21 @@ func (cl CommonLabels) selectorLabels() k8slabels.Set {
 		InstanceKey:  cl[InstanceKey],
 		ComponentKey: cl[ComponentKey],
 	}
+}
+
+func (cl CommonLabels) nodePoolSelectorLabels() k8slabels.Set {
+	return k8slabels.Set{
+		NameKey:      cl[NameKey],
+		InstanceKey:  cl[InstanceKey],
+		ComponentKey: cl[ComponentKey],
+		NodePoolKey:  cl[NodePoolKey],
+	}
+}
+
+func (cl CommonLabels) WithNodePool(nodePool string) CommonLabels {
+	return merge(cl, map[string]string{
+		"cluster.redpanda.com/nodepool": nodePool,
+	})
 }
 
 // merge merges two sets of labels

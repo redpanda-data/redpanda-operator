@@ -25,9 +25,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -344,7 +346,6 @@ func (r *ConfigMapResource) CreateConfiguration(
 	if err := r.PrepareSeedServerList(cr); err != nil {
 		return nil, fmt.Errorf("preparing seed server list: %w", err)
 	}
-
 	r.preparePandaproxy(cfg.NodeConfiguration)
 	r.preparePandaproxyTLS(cfg.NodeConfiguration, mountPoints)
 	err := r.preparePandaproxyClient(ctx, cfg, mountPoints)
@@ -451,7 +452,12 @@ func (r *ConfigMapResource) prepareCloudStorage(
 	if featuregates.ShadowIndex(r.pandaCluster.Spec.Version) {
 		cfg.NodeConfiguration.Redpanda.CloudStorageCacheDirectory = archivalCacheIndexDirectory
 
-		if r.pandaCluster.Spec.CloudStorage.CacheStorage != nil && r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 {
+		// Only set cache_size (in bytes) if no percentage based cluster property is set.
+		// This avoids problems with multiple node pools: bytes-based is very different if disk size changes (move between different tiers in cloud, for example).
+		// Percentage based is kept stable mostly (even exactly the same most of the time, 15% typically), and will not cause immediate churn on the old nodePool if disk size is going down.
+		_, cloudStoragePercentageConfigured := r.pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
+
+		if r.pandaCluster.Spec.CloudStorage.CacheStorage != nil && r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {
 			size := strconv.FormatInt(r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value(), 10)
 			cfg.SetAdditionalRedpandaProperty("cloud_storage_cache_size", size)
 		}
@@ -807,30 +813,59 @@ func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
 	return nil
 }
 
+// PrepareSeedServerList - supports only > 22.3 (featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version)
 func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig) error {
-	c := r.pandaCluster.Spec.Configuration
-	replicas := r.pandaCluster.GetCurrentReplicas()
+	r.logger.Info("New seed list")
+	var addresses []string
 
-	// make this the default when v22.2 is no longer supported
-	if featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version) {
-		cr.EmptySeedStartsCluster = new(bool) // default to false
-		if r.pandaCluster.Spec.Replicas != nil {
-			replicas = *r.pandaCluster.Spec.Replicas
+	for npName, npStatus := range r.pandaCluster.Status.NodePools {
+		prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, npName)
+		if npName == nodepools.DefaultNodePoolName {
+			prefix = r.pandaCluster.Name
 		}
-		if replicas == 0 {
-			//nolint:goerr113 // out of scope for this PR
-			return fmt.Errorf("cannot create seed list for cluster with 0 replicas")
+
+		for i := int32(0); i < npStatus.CurrentReplicas; i++ {
+			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN))
 		}
 	}
 
-	for i := int32(0); i < replicas; i++ {
+	// If no addresses found (based on status), use ones from the spec.
+	// This is necessary on initial creation, as status may be empty.
+	if len(addresses) == 0 {
+		for i := int32(0); i < ptr.Deref(r.pandaCluster.Spec.Replicas, 0); i++ {
+			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN))
+		}
+		nps, err := r.pandaCluster.GetNodePools(context.Background(), r)
+		if err != nil {
+			return err
+		}
+		for _, np := range nps {
+			if np.Name == nodepools.DefaultNodePoolName {
+				continue
+			}
+			prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
+			for i := int32(0); i < ptr.Deref(np.Replicas, 0); i++ {
+				addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN))
+			}
+		}
+	}
+
+	for _, address := range addresses {
 		cr.SeedServers = append(cr.SeedServers, config.SeedServer{
 			Host: config.SocketAddress{
 				// Example address: cluster-sample-0.cluster-sample.default.svc.cluster.local
-				Address: fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN),
-				Port:    clusterCRPortOrRPKDefault(c.RPCServer.Port, cr.RPCServer.Port),
+				Address: address,
+				Port:    clusterCRPortOrRPKDefault(r.pandaCluster.Spec.Configuration.RPCServer.Port, cr.RPCServer.Port),
 			},
 		})
 	}
+
+	// We require >= 22.3 so we can configure empty_seed_starts_clusters.
+	cr.EmptySeedStartsCluster = new(bool) // default to false
+
+	if len(cr.SeedServers) == 0 {
+		return fmt.Errorf("ended up with empty seed list, aborting. require at least one replica")
+	}
+
 	return nil
 }

@@ -1,18 +1,20 @@
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: centralized-configuration-tls
+  name: nodepool-cluster
 spec:
   image: "localhost/redpanda"
   version: "dev"
-  replicas: 2
-  resources:
-    requests:
-      cpu: "100m"
-      memory: 256Mi
-    limits:
-      cpu: "100m"
-      memory: 256Mi
+  nodePools:
+    - name: nodepool1
+      replicas: 3
+      resources:
+        requests:
+          cpu: "100m"
+          memory: 256Mi
+        limits:
+          cpu: "100m"
+          memory: 256Mi
   configuration:
     rpcServer:
       port: 33145
@@ -20,13 +22,8 @@ spec:
       - port: 9092
     adminApi:
       - port: 9644
-        tls:
-          enabled: true
-    pandaproxyApi:
-      - port: 8082
     developerMode: true
     additionalCommandlineArguments:
       dump-memory-diagnostics-on-alloc-failure-kind: all
       abort-on-seastar-bad-alloc: ''
-  additionalConfiguration:
-    redpanda.segment_appender_flush_timeout_ms: "2003"
+  resources: {}

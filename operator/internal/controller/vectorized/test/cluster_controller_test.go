@@ -33,6 +33,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
@@ -143,6 +144,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app.kubernetes.io/component": "redpanda",
 						"app.kubernetes.io/instance":  "redpanda-test",
 						"app.kubernetes.io/name":      "redpanda",
+						labels.NodePoolKey:            "default",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -422,6 +424,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app.kubernetes.io/component": "redpanda",
 						"app.kubernetes.io/instance":  "internal-redpanda",
 						"app.kubernetes.io/name":      "redpanda",
+						labels.NodePoolKey:            "default",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -506,6 +509,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app.kubernetes.io/component": "redpanda",
 						"app.kubernetes.io/instance":  "internal-redpanda",
 						"app.kubernetes.io/name":      "redpanda",
+						labels.NodePoolKey:            "default",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -578,6 +582,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app.kubernetes.io/component": "redpanda",
 						"app.kubernetes.io/instance":  "preferred-address-redpanda",
 						"app.kubernetes.io/name":      "redpanda",
+						labels.NodePoolKey:            "default",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -677,6 +682,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app.kubernetes.io/component": "redpanda",
 						"app.kubernetes.io/instance":  "bootstrap-redpanda",
 						"app.kubernetes.io/name":      "redpanda",
+						labels.NodePoolKey:            "default",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -920,6 +926,7 @@ func readyPodsForCluster(cluster *v1alpha1.Cluster) []*corev1.Pod {
 					"app.kubernetes.io/component": "redpanda",
 					"app.kubernetes.io/instance":  cluster.Name,
 					"app.kubernetes.io/name":      "redpanda",
+					labels.NodePoolKey:            "default",
 				},
 			},
 			Spec: corev1.PodSpec{

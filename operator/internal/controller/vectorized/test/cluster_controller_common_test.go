@@ -131,7 +131,7 @@ func statefulSetReplicasReconciler(
 		}
 
 		for i := int32(0); i < *sts.Spec.Replicas; i++ {
-			pod := generatePodFromStatefulSet(&sts, i, labels.ForCluster(cluster))
+			pod := generatePodFromStatefulSet(&sts, i)
 			j, ok := pods[pod.GetName()]
 			if ok {
 				if podList.Items[j].Name == pod.GetName() {
@@ -172,12 +172,12 @@ func statefulSetReplicasReconciler(
 	}
 }
 
-func generatePodFromStatefulSet(sts *appsv1.StatefulSet, ordinal int32, l labels.CommonLabels) *corev1.Pod {
+func generatePodFromStatefulSet(sts *appsv1.StatefulSet, ordinal int32) *corev1.Pod {
 	pod := &corev1.Pod{}
 
 	pod.Name = fmt.Sprintf("%s-%d", sts.GetName(), ordinal)
 	pod.Namespace = sts.GetNamespace()
-	pod.Labels = l
+	pod.Labels = sts.Spec.Template.Labels
 	pod.Annotations = sts.Spec.Template.Annotations
 	pod.Spec = sts.Spec.Template.Spec
 	return pod

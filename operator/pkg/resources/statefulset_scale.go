@@ -13,6 +13,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strconv"
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
@@ -22,11 +24,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
-	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/utils/ptr"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
@@ -71,53 +74,50 @@ const (
 //
 //nolint:nestif // for clarity
 func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
-	log := r.logger.WithName("handleScaling")
+	log := r.logger.WithName("handleScaling").WithValues("nodepool", r.nodePool.Name)
 
+	// This is special - we allow only one decom at a time, ACROSS ALL nodePools. It's not per nodepool.
 	// if a decommission is already in progress, handle it first. If it's not finished, it will return an error
-	// which will requeue the reconciliation. We can't do any further scaling until it's finished.
+	// which will requeue the reconciliation. We can't (and don't want to) do any further scaling until it's finished.
+	// handleDecommissionInProgress is supposed to exit with error if a decom is already in progress, so we don't start another decom.
 	if err := r.handleDecommissionInProgress(ctx, log); err != nil {
 		return err
 	}
 
-	if r.pandaCluster.Status.CurrentReplicas == 0 {
-		// Initialize the currentReplicas field, so that it can be later controlled
-		r.pandaCluster.Status.CurrentReplicas = r.pandaCluster.ComputeInitialCurrentReplicasField()
+	npStatus := r.getNodePoolStatus()
+	if npStatus.CurrentReplicas == 0 && ptr.Deref(r.nodePool.Replicas, 0) != 0 && !r.nodePool.Deleted {
+		// Initialize the currentReplicas field.
+		npStatus.CurrentReplicas = *r.nodePool.Replicas
+		r.pandaCluster.Status.NodePools[r.nodePool.Name] = npStatus
+		log.Info("updating current replicas during handleScaling", "current replicas", npStatus.CurrentReplicas)
 		return r.Status().Update(ctx, r.pandaCluster)
 	}
 
-	if *r.pandaCluster.Spec.Replicas == r.pandaCluster.Status.CurrentReplicas {
-		r.logger.V(logger.DebugLevel).Info("No scaling changes required", "replicas", *r.pandaCluster.Spec.Replicas)
-		// No changes to replicas, we do nothing here
+	npCurrentReplicas := r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas
+
+	if ptr.Deref(r.nodePool.Replicas, 0) > npCurrentReplicas {
+		r.logger.Info("Upscaling cluster", "replicas", r.pandaCluster.GetReplicas(), "nodepool replicas", ptr.Deref(r.nodePool.Replicas, 0), "npcurrentreplicas", npCurrentReplicas)
+
+		log.Info("upscaling setCurrentreplicas request", "replicas", r.nodePool.Replicas, "np", r.nodePool.Name)
+		// Upscaling request: this is already handled by Redpanda, so we just increase status currentReplicas
+		return r.setCurrentReplicas(ctx, *r.nodePool.Replicas, r.nodePool.Name, r.logger)
+	}
+
+	if ptr.Deref(r.nodePool.Replicas, 0) == npCurrentReplicas && !r.nodePool.Deleted {
+		log.V(logger.DebugLevel).Info("No scaling changes required for this nodepool", "replicas", *r.nodePool.Replicas, "spec replicas", *r.LastObservedState.Spec.Replicas) // No changes to replicas, we do nothing here
+
 		return nil
 	}
 
-	if *r.pandaCluster.Spec.Replicas > r.pandaCluster.Status.CurrentReplicas {
-		r.logger.Info("Upscaling cluster", "replicas", *r.pandaCluster.Spec.Replicas)
-
-		// We care about upscaling only when the cluster is moving off 1 replica, which happen e.g. at cluster startup
-		if r.pandaCluster.Status.CurrentReplicas == 1 {
-			r.logger.Info("Waiting for first node to form a cluster before upscaling")
-			formed, err := r.isClusterFormed(ctx)
-			if err != nil {
-				return err
-			}
-			if !formed {
-				return &RequeueAfterError{
-					RequeueAfter: wait.Jitter(r.decommissionWaitInterval, decommissionWaitJitterFactor),
-					Msg:          fmt.Sprintf("Waiting for cluster to be formed before upscaling to %d replicas", *r.pandaCluster.Spec.Replicas),
-				}
-			}
-			r.logger.Info("Initial cluster has been formed")
-		}
-
-		// Upscaling request: this is already handled by Redpanda, so we just increase status currentReplicas
-		return setCurrentReplicas(ctx, r, r.pandaCluster, *r.pandaCluster.Spec.Replicas, r.logger)
+	if npCurrentReplicas == 0 {
+		// we 're done here
+		return nil
 	}
 
 	// User required replicas is lower than current replicas (currentReplicas): start the decommissioning process
-	r.logger.Info("Downscaling cluster", "replicas", *r.pandaCluster.Spec.Replicas)
+	r.logger.Info("Downscaling cluster", "replicas", r.pandaCluster.GetReplicas())
 
-	targetOrdinal := r.pandaCluster.Status.CurrentReplicas - 1 // Always decommission last node
+	targetOrdinal := npStatus.CurrentReplicas - 1 // Always decommission last node
 	targetBroker, err := r.getBrokerIDForPod(ctx, targetOrdinal)
 	if err != nil {
 		return fmt.Errorf("error getting broker ID for pod with ordinal %d when downscaling cluster: %w", targetOrdinal, err)
@@ -137,16 +137,71 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	}
 
 	podName := fmt.Sprintf("%s-%d", r.LastObservedState.Name, targetOrdinal)
+	log.WithValues("pod", podName, "ordinal", targetOrdinal, "node_id", targetBroker).Info("start decommission broker")
+
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		cluster := &vectorizedv1alpha1.Cluster{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      r.pandaCluster.Name,
+			Namespace: r.pandaCluster.Namespace,
+		}, cluster)
+		if err != nil {
+			return err
+		}
+		cluster.SetDecommissionBrokerID(targetBroker)
+		err = r.Status().Update(ctx, cluster)
+		if err == nil {
+			// sync original cluster variable to avoid conflicts on subsequent operations
+			r.pandaCluster.SetDecommissionBrokerID(targetBroker)
+		}
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// getDecomPod finds the pod that belongs to *THIS* StatefulSet. If none is found - nil,nil is returned.
+func (r *StatefulSetResource) getDecomPod(ctx context.Context, brokerID *int32) (*corev1.Pod, error) {
+	var brokerPod *corev1.Pod
+	// Get all pods of *THIS* nodePool
+	podList, err := r.getPodList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Filter out those where NodeID != DecomNodeID.
+	podList.Items = slices.DeleteFunc(podList.Items, func(pod corev1.Pod) bool {
+		return pod.Annotations[labels.PodLabelNodeIDKey] != strconv.Itoa(int(*brokerID))
+	})
+	if len(podList.Items) > 0 {
+		brokerPod = &podList.Items[0]
+	}
+
+	return brokerPod, nil
+}
+
 func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, l logr.Logger) error {
-	log := l.WithName("handleDecommissionInProgress")
-	if r.pandaCluster.GetDecommissionBrokerID() == nil {
+	log := l.WithName("handleDecommissionInProgress").WithValues("nodepool", r.nodePool.Name)
+	brokerID := r.pandaCluster.GetDecommissionBrokerID()
+	if brokerID == nil {
 		return nil
 	}
 
-	if *r.pandaCluster.Spec.Replicas >= r.pandaCluster.GetCurrentReplicas() {
+	brokerPod, err := r.getDecomPod(ctx, brokerID)
+	if err != nil {
+		return fmt.Errorf("failed to get decom pod: %w", err)
+	}
+
+	// Decom Pod is from another NodePool. Super important to early exit here, as it's not our business (in this StatefulSet handler).
+	if brokerPod == nil {
+		log.Info("decom on other in progress")
+		return fmt.Errorf("decommission on other NodePool in progress, can't handle decom for this one yet")
+	}
+
+	if !r.nodePool.Deleted && *r.nodePool.Replicas >= r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas { // NodePool name is NOT equal to STS name, or not supposed to be.
+		log.Info("recom", "replicas", &r.nodePool.Replicas, "npCur", r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas)
 		// Decommissioning can also be canceled and we need to recommission
 		err := r.handleRecommission(ctx)
 		if !errors.Is(err, &RecommissionFatalError{}) {
@@ -155,28 +210,29 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 		// if it's impossible to recommission, fall through and let the decommission complete
 		log.WithValues("node_id", r.pandaCluster.GetDecommissionBrokerID()).Info("cannot recommission broker", "error", err)
 	}
+
 	// handleDecommission will return an error until the decommission is completed
 	if err := r.handleDecommission(ctx, log); err != nil {
 		return err
 	}
 
 	// Broker is now removed
-	targetReplicas := r.pandaCluster.GetCurrentReplicas() - 1
-	log.WithValues("targetReplicas", targetReplicas).Info("broker decommission complete: scaling down StatefulSet")
+	npReplicas := r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas - 1
+	log.WithValues("targetReplicas", npReplicas, "currentReplicas", r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas).Info("broker decommission complete: scaling down StatefulSet")
 
 	// We set status.currentReplicas accordingly to trigger scaling down of the statefulset
-	if err := setCurrentReplicas(ctx, r, r.pandaCluster, targetReplicas, r.logger); err != nil {
+	if err := r.setCurrentReplicas(ctx, npReplicas, r.nodePool.Name, r.logger); err != nil {
 		return err
 	}
 
-	scaledDown, err := r.verifyRunningCount(ctx, targetReplicas)
+	scaledDown, err := r.verifyRunningCount(ctx, npReplicas)
 	if err != nil {
 		return err
 	}
 	if !scaledDown {
 		return &RequeueAfterError{
 			RequeueAfter: wait.Jitter(r.decommissionWaitInterval, decommissionWaitJitterFactor),
-			Msg:          fmt.Sprintf("Waiting for statefulset to downscale to %d replicas", targetReplicas),
+			Msg:          fmt.Sprintf("Waiting for statefulset to downscale to %d replicas", npReplicas),
 		}
 	}
 	return nil
@@ -193,13 +249,26 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 // Before completing the process, it double-checks if the node is still not registered, for handling cases where the node was
 // about to start when the decommissioning process started. If the broker is found, the process is restarted.
 func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Logger) error {
+	// FIXME TODO make sure this pod belongs to this STS.
 	brokerID := r.pandaCluster.GetDecommissionBrokerID()
 	if brokerID == nil {
 		return nil
 	}
+
 	log := l.WithName("handleDecommission").WithValues("node_id", *brokerID)
 	log.Info("handling broker decommissioning")
 
+	decomPod, err := r.getDecomPod(ctx, brokerID)
+	if err != nil {
+		return fmt.Errorf("failed to get decom pod: %w", err)
+	}
+
+	// Ignore - decom pod is from another NodePool
+	if decomPod == nil {
+		return fmt.Errorf("handleDecommission invoked but decomPod not found")
+	}
+
+	log.Info("Getting admin api client")
 	adminAPI, err := r.getAdminAPIClient(ctx)
 	if err != nil {
 		return err
@@ -316,24 +385,9 @@ func (r *StatefulSetResource) handleRecommission(ctx context.Context) error {
 }
 
 func (r *StatefulSetResource) getAdminAPIClient(
-	ctx context.Context, ordinals ...int32,
+	ctx context.Context, pods ...string,
 ) (adminutils.AdminAPIClient, error) {
-	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, ordinals...)
-}
-
-func (r *StatefulSetResource) isClusterFormed(
-	ctx context.Context,
-) (bool, error) {
-	rootNodeAdminAPI, err := r.getAdminAPIClient(ctx, 0)
-	if err != nil {
-		return false, err
-	}
-	brokers, err := rootNodeAdminAPI.Brokers(ctx)
-	if err != nil {
-		// Eat the error and return that the cluster is not formed
-		return false, nil
-	}
-	return len(brokers) > 0, nil
+	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, pods...)
 }
 
 // disableMaintenanceModeOnDecommissionedNodes can be used to put a cluster in a consistent state, disabling maintenance mode on
@@ -401,11 +455,7 @@ func (r *StatefulSetResource) verifyRunningCount(
 		return false, nil
 	}
 
-	var podList corev1.PodList
-	err := r.List(ctx, &podList, &k8sclient.ListOptions{
-		Namespace:     r.pandaCluster.Namespace,
-		LabelSelector: labels.ForCluster(r.pandaCluster).AsClientSelector(),
-	})
+	podList, err := r.GetNodePoolPods(ctx)
 	if err != nil {
 		return false, fmt.Errorf("could not list pods for checking replicas: %w", err)
 	}
@@ -431,30 +481,40 @@ func getBrokerByBrokerID(
 
 // setCurrentReplicas allows to set the number of status.currentReplicas in the CR, which in turns controls the replicas
 // assigned to the StatefulSet
-func setCurrentReplicas(
+func (r *StatefulSetResource) setCurrentReplicas(
 	ctx context.Context,
-	c k8sclient.Client,
-	pandaCluster *vectorizedv1alpha1.Cluster,
-	replicas int32,
+	npReplicas int32,
+	npName string,
 	l logr.Logger,
 ) error {
 	log := l.WithName("setCurrentReplicas")
-	if pandaCluster.Status.CurrentReplicas == replicas {
-		// Skip if already done
-		return nil
-	}
+	log.Info("setting currentReplicas", "npReplicas", npReplicas, "np", npName)
 
-	log.Info("Scaling StatefulSet", "replicas", replicas)
+	var newReplicas int32
+	result, err := patch.PatchStatus(ctx, r, r.pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
+		if cluster.Status.NodePools == nil {
+			cluster.Status.NodePools = make(map[string]vectorizedv1alpha1.NodePoolStatus)
+		}
+		npStatus, ok := cluster.Status.NodePools[npName]
+		if !ok {
+			npStatus = vectorizedv1alpha1.NodePoolStatus{}
+			cluster.Status.NodePools[npName] = npStatus
+		}
 
-	result, err := patch.PatchStatus(ctx, c, pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
-		cluster.Status.CurrentReplicas = replicas
+		if r.nodePool.Deleted {
+			npStatus.Replicas = npReplicas
+		} else {
+			npStatus.Replicas = *r.nodePool.Replicas
+		}
+		npStatus.CurrentReplicas = npReplicas
+		newReplicas = npStatus.CurrentReplicas
+		cluster.Status.NodePools[npName] = npStatus
 	})
 	if err != nil {
-		return fmt.Errorf("could not scale cluster %s to %d replicas: %w", pandaCluster.Name, pandaCluster.GetCurrentReplicas(), err)
+		return fmt.Errorf("could not scale cluster %s nodePool %s to %d replicas: %w", r.pandaCluster.Name, npName, npReplicas, err)
 	}
-	pandaCluster.Status = result
-
-	log.Info("StatefulSet scaled", "replicas", replicas)
+	r.pandaCluster.Status = result
+	log.Info("StatefulSet scaled", "replicas", newReplicas)
 	return nil
 }
 
