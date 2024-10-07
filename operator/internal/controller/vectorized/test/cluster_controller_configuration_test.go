@@ -528,6 +528,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			testutils.DeleteAllInNamespace(testEnv, k8sClient, namespace)
 		})
 
+		// KO: YOU ARE HERE: fix this test
 		It("Should be able to upgrade and change a cluster even if the admin API is unavailable", func() {
 			testAdminAPI.SetUnavailable(true)
 

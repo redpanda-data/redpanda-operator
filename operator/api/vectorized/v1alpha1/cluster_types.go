@@ -10,18 +10,24 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
+	"slices"
+	"strings"
 	"time"
 
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 )
 
 const (
@@ -1214,36 +1220,20 @@ func (s *ClusterStatus) SetRestarting(restarting bool) {
 	s.DeprecatedUpgrading = restarting
 }
 
-// GetCurrentReplicas returns the current number of replicas that the controller wants to run.
-// It returns 1 when not initialized (as fresh clusters start from 1 replica)
-func (r *Cluster) GetCurrentReplicas() int32 {
-	if r == nil {
+func (r *Cluster) GetReplicas() int32 {
+	nps := r.getNodePoolsFromSpec() // FIXME - may want to use nodePools-with-removed
+	if r == nil || len(nps) == 0 {
 		return 0
 	}
-	if r.Status.CurrentReplicas <= 0 {
-		// Not initialized, let's give the computed value
-		return r.ComputeInitialCurrentReplicasField()
-	}
-	return r.Status.CurrentReplicas
-}
 
-// ComputeInitialCurrentReplicasField calculates the initial value for status.currentReplicas.
-//
-// It needs to consider the following cases:
-// - EmptySeedStartCluster is supported: we use spec.replicas as the starting point
-// - Fresh cluster: we start from 1 replicas, then upscale if needed (initialization to bypass https://github.com/redpanda-data/redpanda/issues/333)
-// - Existing clusters: we keep spec.replicas as starting point
-func (r *Cluster) ComputeInitialCurrentReplicasField() int32 {
-	if r == nil {
-		return 0
-	}
-	if r.Status.Replicas > 1 || r.Status.ReadyReplicas > 1 || len(r.Status.Nodes.Internal) > 1 || featuregates.EmptySeedStartCluster(r.Spec.Version) {
-		// A cluster seems to be already running, we start from the existing amount of replicas
-		return *r.Spec.Replicas
+	replicas := int32(0)
+
+	for i := range nps {
+		np := nps[i]
+		replicas += ptr.Deref(np.Replicas, 0)
 	}
 
-	// Clusters start from a single replica, then upscale
-	return 1
+	return replicas
 }
 
 // TLSConfig is a generic TLS configuration
@@ -1421,4 +1411,156 @@ func (r *Cluster) GetDecommissionBrokerID() *int32 {
 
 func (r *Cluster) SetDecommissionBrokerID(id *int32) {
 	r.Status.DecommissioningNode = id
+}
+
+// getNodePoolsFromSpec returns the NodePools defined in the spec.
+// This contains the primary NodePool (driven by spec.replicas for example), and the
+// NodePools driven by the nodePools field.
+func (r *Cluster) getNodePoolsFromSpec() []NodePoolSpec {
+	out := make([]NodePoolSpec, 0)
+	if r.Spec.Replicas != nil {
+		defaultNodePool := NodePoolSpec{
+			Name:         nodepools.DefaultNodePoolName,
+			Replicas:     r.Spec.Replicas,
+			Tolerations:  r.Spec.Tolerations,
+			NodeSelector: r.Spec.NodeSelector,
+			Storage:      r.Spec.Storage,
+			Resources:    r.Spec.Resources,
+		}
+		if r.Spec.CloudStorage.CacheStorage != nil {
+			defaultNodePool.CloudCacheStorage = *r.Spec.CloudStorage.CacheStorage
+		}
+		out = append(out, defaultNodePool)
+	}
+	out = append(out, r.Spec.NodePools...)
+
+	return out
+}
+
+func (r *Cluster) CalculateCurrentReplicas() int32 {
+	var result int32
+	for _, np := range r.Status.NodePools {
+		result += np.CurrentReplicas
+	}
+	return result
+}
+
+func (r *Cluster) GetNodePools(ctx context.Context, k8sClient client.Reader) ([]*NodePoolSpecWithDeleted, error) {
+	var nodePoolsWithDeleted []*NodePoolSpecWithDeleted
+
+	nps := r.getNodePoolsFromSpec()
+	for i := range nps {
+		np := nps[i]
+
+		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &NodePoolSpecWithDeleted{
+			NodePoolSpec: np,
+		})
+	}
+
+	// Also add "virtual NodePools" based on StatefulSets found.
+	// These represent deleted NodePools - they will not show up in spec.NodePools.
+	var stsList appsv1.StatefulSetList
+	err := k8sClient.List(context.TODO(), &stsList)
+	if err != nil {
+		return nil, err
+	}
+outer:
+	for i := range stsList.Items {
+		sts := stsList.Items[i]
+
+		if !strings.HasPrefix(sts.Name, r.Name) {
+			continue
+		}
+
+		for _, ownerRef := range sts.OwnerReferences {
+			if ownerRef.UID != r.UID {
+				continue outer
+			}
+		}
+
+		var npName string
+		if strings.EqualFold(r.Name, sts.Name) {
+			npName = nodepools.DefaultNodePoolName
+		} else {
+			npName = sts.Name[len(r.Name)+1:]
+		}
+
+		// Have seen it in NodePoolSpec
+		if slices.ContainsFunc(nps, func(np NodePoolSpec) bool {
+			return np.Name == npName
+		}) {
+			continue
+		}
+
+		replicas := sts.Spec.Replicas
+		if st, ok := r.Status.NodePools[npName]; ok {
+			replicas = &st.CurrentReplicas
+		}
+
+		var redpandaContainer *corev1.Container
+		for i := range sts.Spec.Template.Spec.Containers {
+			container := sts.Spec.Template.Spec.Containers[i]
+			if container.Name == "redpanda" {
+				redpandaContainer = &container
+				break
+			}
+		}
+		if redpandaContainer == nil {
+			return nil, fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
+		}
+
+		var datadirVcCapacity resource.Quantity
+		var datadirVcStorageClassName string
+
+		var cacheVcExists bool
+		var cacheVcCapacity resource.Quantity
+		var cacheVcStorageClassName string
+
+		for i := range sts.Spec.VolumeClaimTemplates {
+			vct := sts.Spec.VolumeClaimTemplates[i]
+			if vct.Name == "datadir" {
+				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+				if vct.Spec.StorageClassName != nil {
+					datadirVcStorageClassName = *vct.Spec.StorageClassName
+				}
+			}
+			if vct.Name == "shadow-index-cache" {
+				cacheVcExists = true
+				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+				if vct.Spec.StorageClassName != nil {
+					cacheVcStorageClassName = *vct.Spec.StorageClassName
+				}
+			}
+		}
+
+		np := NodePoolSpecWithDeleted{
+			NodePoolSpec: NodePoolSpec{
+				Name:     npName,
+				Replicas: replicas,
+				Resources: RedpandaResourceRequirements{
+					ResourceRequirements: redpandaContainer.Resources,
+				},
+				Tolerations:  sts.Spec.Template.Spec.Tolerations,
+				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
+				Storage: StorageSpec{
+					Capacity:         datadirVcCapacity,
+					StorageClassName: datadirVcStorageClassName,
+				},
+			},
+			Deleted: true,
+		}
+		if cacheVcExists {
+			np.CloudCacheStorage = StorageSpec{
+				Capacity:         cacheVcCapacity,
+				StorageClassName: cacheVcStorageClassName,
+			}
+		}
+		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &np)
+	}
+	return nodePoolsWithDeleted, nil
+}
+
+type NodePoolSpecWithDeleted struct {
+	NodePoolSpec
+	Deleted bool
 }

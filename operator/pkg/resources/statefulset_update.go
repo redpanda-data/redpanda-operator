@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -32,8 +33,10 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -52,6 +55,21 @@ var (
 	errRedpandaNotReady         = errors.New("redpanda not ready")
 	errUnderReplicatedPartition = errors.New("partition under replicated")
 )
+
+func (r *StatefulSetResource) getNodePoolStatus() vectorizedv1alpha1.NodePoolStatus {
+	if r.pandaCluster.Status.NodePools == nil {
+		r.pandaCluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{}
+	}
+
+	npStatus, ok := r.pandaCluster.Status.NodePools[r.nodePool.Name] // FIXME use NP name not STS name.
+	if !ok {
+		npStatus = vectorizedv1alpha1.NodePoolStatus{
+			CurrentReplicas: *r.nodePool.Replicas,
+		}
+		r.pandaCluster.Status.NodePools[r.nodePool.Name] = npStatus
+	}
+	return npStatus
+}
 
 // runUpdate handles image changes and additional storage in the redpanda cluster
 // CR by removing statefulset with orphans Pods. The stateful set is then recreated
@@ -72,7 +90,8 @@ var (
 func (r *StatefulSetResource) runUpdate(
 	ctx context.Context, current, modified *appsv1.StatefulSet,
 ) error {
-	log := r.logger.WithName("runUpdate")
+	log := r.logger.WithName("runUpdate").WithValues("nodepool", r.nodePool.Name)
+
 	// Keep existing central config hash annotation during standard reconciliation
 	if ann, ok := current.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey]; ok {
 		if modified.Spec.Template.Annotations == nil {
@@ -80,6 +99,8 @@ func (r *StatefulSetResource) runUpdate(
 		}
 		modified.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey] = ann
 	}
+
+	// Check if we should run update on this specific STS.
 
 	log.V(logger.DebugLevel).Info("Checking that we should update")
 	update, err := r.shouldUpdate(current, modified)
@@ -91,12 +112,17 @@ func (r *StatefulSetResource) runUpdate(
 		return nil
 	}
 
-	if !r.getRestartingStatus() {
-		log.V(logger.DebugLevel).Info("restarting is required. Updating Cluster restarting status")
+	// At this point, we have seen a diff and want to update the StatefulSet.
+	npStatus := r.getNodePoolStatus()
+
+	// If NodePool is not yet flagged as Restarting, do it.
+	if !npStatus.Restarting {
+		log.V(logger.DebugLevel).Info("NodePool is not yet flagged as restarting, but has modifications. Setting restarting to true.")
 		if err = r.updateRestartingStatus(ctx, true); err != nil {
 			return fmt.Errorf("unable to turn on restarting status in cluster custom resource: %w", err)
 		}
-		log.V(logger.DebugLevel).Info("updating restarting status on pods")
+
+		log.V(logger.DebugLevel).Info("Setting ClusterUpdate condition on pods")
 		if err = r.MarkPodsForUpdate(ctx); err != nil {
 			return fmt.Errorf("unable to mark pods for update: %w", err)
 		}
@@ -107,6 +133,7 @@ func (r *StatefulSetResource) runUpdate(
 		return err
 	}
 
+	// Cluster must be healthy before doing a rolling update.
 	log.V(logger.DebugLevel).Info("checking if cluster is healthy")
 	if err = r.isClusterHealthy(ctx); err != nil {
 		return err
@@ -175,11 +202,33 @@ func (r *StatefulSetResource) getPodList(ctx context.Context) (*corev1.PodList, 
 	var podList corev1.PodList
 	err := r.List(ctx, &podList, &k8sclient.ListOptions{
 		Namespace:     r.pandaCluster.Namespace,
+		LabelSelector: labels.ForCluster(r.pandaCluster).WithNodePool(r.nodePool.Name).AsClientSelectorForNodePool(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to list pods: %w", err)
+	}
+
+	return sortPodList(&podList, r.pandaCluster), nil
+}
+
+// getPodListWithoutNodePoolLabel is required for migration from pre-nodepool to nodepool only.
+func (r *StatefulSetResource) getPodListWithoutNodePoolLabel(ctx context.Context) (*corev1.PodList, error) {
+	var podList corev1.PodList
+	err := r.List(ctx, &podList, &k8sclient.ListOptions{
+		Namespace:     r.pandaCluster.Namespace,
 		LabelSelector: labels.ForCluster(r.pandaCluster).AsClientSelector(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to list pods: %w", err)
 	}
+
+	podList.Items = slices.DeleteFunc(podList.Items, func(pod corev1.Pod) bool {
+		if _, ok := pod.GetObjectMeta().GetLabels()[labels.NodePoolKey]; ok {
+			return true
+		}
+
+		return false
+	})
 
 	return sortPodList(&podList, r.pandaCluster), nil
 }
@@ -198,6 +247,11 @@ func (r *StatefulSetResource) MarkPodsForUpdate(ctx context.Context) error {
 	podList, err := r.getPodList(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting pods %w", err)
+	}
+
+	// Handle legacy nodepool not having NP label possibly.
+	if err := r.maybeAddLegacyPods(ctx, podList); err != nil {
+		return err
 	}
 
 	for i := range podList.Items {
@@ -232,13 +286,33 @@ func (r *StatefulSetResource) areAllPodsUpdated(ctx context.Context) (bool, erro
 	return true, nil
 }
 
-func (r *StatefulSetResource) rollingUpdate(
-	ctx context.Context, template *corev1.PodTemplateSpec,
-) error {
+func (r *StatefulSetResource) maybeAddLegacyPods(ctx context.Context, podList *corev1.PodList) error {
+	log := r.logger.WithName("addLegacyPods")
+
+	// Special case: if there's still pods w/o nodepool annotation, mark these.
+	// We can just mark them, because at this point the STS has been modified accordingly already, and the label was added to pod template
+	if r.nodePool.Name == nodepools.DefaultNodePoolName {
+		withoutPodLabels, err := r.getPodListWithoutNodePoolLabel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get pods without nodePool labels: %w", err)
+		}
+		podList.Items = append(podList.Items, withoutPodLabels.Items...)
+		if len(withoutPodLabels.Items) > 0 {
+			log.Info("Added additional pods from unmigrated default pool", "len", len(withoutPodLabels.Items))
+		}
+	}
+
+	return nil
+}
+
+func (r *StatefulSetResource) rollingUpdate(ctx context.Context, template *corev1.PodTemplateSpec) error {
 	log := r.logger.WithName("rollingUpdate")
 	podList, err := r.getPodList(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting pods %w", err)
+	}
+	if err := r.maybeAddLegacyPods(ctx, podList); err != nil {
+		return err
 	}
 
 	updateItems, maintenanceItems := r.listPodsForUpdateOrMaintenance(log, podList)
@@ -355,11 +429,7 @@ func (r *StatefulSetResource) listPodsForUpdateOrMaintenance(l logr.Logger, podL
 func (r *StatefulSetResource) checkMaintenanceModeForPods(ctx context.Context, maintenanceItems []*corev1.Pod) error {
 	for i := range maintenanceItems {
 		pod := maintenanceItems[i]
-		ordinal, err := utils.GetPodOrdinal(pod.GetName(), r.pandaCluster.GetName())
-		if err != nil {
-			return fmt.Errorf("cannot convert pod name to ordinal: %w", err)
-		}
-		if err = r.checkMaintenanceMode(ctx, ordinal); err != nil {
+		if err := r.checkMaintenanceMode(ctx, pod.Name); err != nil {
 			return &RequeueAfterError{
 				RequeueAfter: RequeueDuration,
 				Msg:          fmt.Sprintf("checking maintenance node %q: %v", pod.GetName(), err),
@@ -412,7 +482,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return fmt.Errorf("cluster %s: cannot convert pod name (%s) to ordinal: %w", r.pandaCluster.Name, pod.Name, err)
 	}
 
-	if *r.pandaCluster.Spec.Replicas == 1 {
+	if *r.nodePool.Replicas == 1 {
 		log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
 			"pod-name", pod.Name,
 			"patch", patchResult.Patch)
@@ -447,7 +517,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 	}
 
 	log.Info("Put broker into maintenance mode", "patch", patchResult.Patch)
-	if err = r.putInMaintenanceMode(ctx, ordinal); err != nil {
+	if err = r.putInMaintenanceMode(ctx, pod.Name); err != nil {
 		// As maintenance mode can not be easily watched using controller runtime the requeue error
 		// is always returned. That way a rolling update will not finish when operator waits for
 		// maintenance mode finished.
@@ -471,8 +541,8 @@ var (
 	ErrMaintenanceMissing     = errors.New("maintenance definition not returned")
 )
 
-func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, ordinal int32) error {
-	adminAPIClient, err := r.getAdminAPIClient(ctx, ordinal)
+func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, pod string) error {
+	adminAPIClient, err := r.getAdminAPIClient(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("creating admin API client: %w", err)
 	}
@@ -503,12 +573,17 @@ func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, ordinal 
 	return nil
 }
 
-func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, ordinal int32) error {
-	if *r.pandaCluster.Spec.Replicas <= 1 {
+func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, pod string) error {
+	if r.pandaCluster.GetReplicas() <= 1 {
 		return nil
 	}
 
-	adminAPIClient, err := r.getAdminAPIClient(ctx, ordinal)
+	// Remove maint. mode for in-decom nodes - these may fail to get decom'd otherwise.
+	if err := r.disableMaintenanceModeOnDecommissionedNodes(ctx); err != nil {
+		return err
+	}
+
+	adminAPIClient, err := r.getAdminAPIClient(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("creating admin API client: %w", err)
 	}
@@ -520,11 +595,14 @@ func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, ordinal 
 
 	br, err := adminAPIClient.Broker(ctx, nodeConf.NodeID)
 	if err != nil {
+		if e := new(rpadmin.HTTPResponseError); errors.As(err, &e) && e.Response.StatusCode == http.StatusNotFound {
+			return nil
+		}
 		return fmt.Errorf("getting broker info: %w", err)
 	}
 
 	if br.Maintenance != nil && br.Maintenance.Draining {
-		r.logger.Info("Disable broker maintenance", "pod-ordinal", ordinal)
+		r.logger.Info("Disable broker maintenance", "pod-ordinal", pod)
 		err = adminAPIClient.DisableMaintenanceMode(ctx, nodeConf.NodeID, false)
 		if err != nil {
 			return fmt.Errorf("disabling maintenance mode: %w", err)
@@ -567,11 +645,15 @@ func (r *StatefulSetResource) updateStatefulSet(
 func (r *StatefulSetResource) shouldUpdate(
 	current, modified *appsv1.StatefulSet,
 ) (bool, error) {
+	log := r.logger.WithName("shouldUpdate")
 	managedDecommission, err := r.IsManagedDecommission()
 	if err != nil {
-		r.logger.WithName("shouldUpdate").Error(err, "isManagedDecommission")
+		log.Error(err, "isManagedDecommission")
 	}
-	if managedDecommission || r.getRestartingStatus() {
+
+	npStatus := r.getNodePoolStatus()
+
+	if managedDecommission || npStatus.Restarting || r.pandaCluster.Status.Restarting {
 		return true, nil
 	}
 	prepareResourceForPatch(current, modified)
@@ -585,6 +667,7 @@ func (r *StatefulSetResource) shouldUpdate(
 	if err != nil || patchResult.IsEmpty() {
 		return false, err
 	}
+	log.Info("Detected diff", "patchResult", string(patchResult.Patch))
 	return true, nil
 }
 
@@ -592,12 +675,23 @@ func (r *StatefulSetResource) getRestartingStatus() bool {
 	return r.pandaCluster.Status.IsRestarting()
 }
 
-func (r *StatefulSetResource) updateRestartingStatus(
-	ctx context.Context, restarting bool,
-) error {
-	if !reflect.DeepEqual(restarting, r.getRestartingStatus()) {
-		r.pandaCluster.Status.SetRestarting(restarting)
+func (r *StatefulSetResource) updateRestartingStatus(ctx context.Context, restarting bool) error {
+	npStatus := r.getNodePoolStatus()
+
+	if !reflect.DeepEqual(restarting, npStatus.Restarting) {
+		npStatus.Restarting = restarting
+		// Since NodePools is map-to-struct (non pointer) we need to set the entire struct.
+		r.pandaCluster.Status.NodePools[r.nodePool.Name] = npStatus
+
+		// If any NP is restarting, flag the entire cluster as restarting.
+		var globalRestarting bool
+		for _, np := range r.pandaCluster.Status.NodePools {
+			globalRestarting = globalRestarting || np.Restarting
+		}
+		r.pandaCluster.Status.SetRestarting(globalRestarting)
+
 		r.logger.Info("Status updated",
+			"nodePool", r.nodePool.Name,
 			"restarting", restarting,
 			"resource name", r.pandaCluster.Name)
 		if err := r.Status().Update(ctx, r.pandaCluster); err != nil {
