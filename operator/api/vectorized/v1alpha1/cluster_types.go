@@ -713,9 +713,9 @@ type LoadBalancerStatus struct {
 
 // NodePoolStatus describes the status of the NodePool.
 type NodePoolStatus struct {
-	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
-	Replicas        int32 `json:"replicas,omitempty"`
-	ReadyReplicas   int32 `json:"readyReplicas,omitempty"`
+	CurrentReplicas int32 `json:"currentReplicas"`
+	Replicas        int32 `json:"replicas"`
+	ReadyReplicas   int32 `json:"readyReplicas"`
 	// Indicates that a nodePool's pods are restarting.
 	// +optional
 	Restarting bool `json:"restarting"`
