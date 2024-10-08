@@ -8,13 +8,13 @@ spec:
   replicas: 1
   resources:
     requests:
-      cpu: 1
-      memory: 1Gi
+      cpu: "100m"
+      memory: 256Mi
     limits:
-      cpu: 1
-      memory: 1Gi
+      cpu: "100m"
+      memory: 256Mi
     redpanda:
-      memory: 850Mi
+      memory: 217Mi
   configuration:
     rpcServer:
       port: 33145
