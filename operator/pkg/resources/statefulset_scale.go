@@ -163,8 +163,9 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	return nil
 }
 
-// getDecomPod finds the pod that belongs to *THIS* StatefulSet. If none is found - nil,nil is returned.
-func (r *StatefulSetResource) getDecomPod(ctx context.Context, brokerID *int32) (*corev1.Pod, error) {
+// getDecommissioningPod finds the pod that belongs to *THIS* StatefulSet. If none is found - nil,nil is returned.
+// This may be the case, if the pod belongs to a different STS.
+func (r *StatefulSetResource) getDecommissioningPod(ctx context.Context, brokerID *int32) (*corev1.Pod, error) {
 	var brokerPod *corev1.Pod
 	// Get all pods of *THIS* nodePool
 	podList, err := r.getPodList(ctx)
@@ -189,7 +190,7 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 		return nil
 	}
 
-	brokerPod, err := r.getDecomPod(ctx, brokerID)
+	brokerPod, err := r.getDecommissioningPod(ctx, brokerID)
 	if err != nil {
 		return fmt.Errorf("failed to get decom pod: %w", err)
 	}
@@ -249,7 +250,6 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 // Before completing the process, it double-checks if the node is still not registered, for handling cases where the node was
 // about to start when the decommissioning process started. If the broker is found, the process is restarted.
 func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Logger) error {
-	// FIXME TODO make sure this pod belongs to this STS.
 	brokerID := r.pandaCluster.GetDecommissionBrokerID()
 	if brokerID == nil {
 		return nil
@@ -258,7 +258,7 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 	log := l.WithName("handleDecommission").WithValues("node_id", *brokerID)
 	log.Info("handling broker decommissioning")
 
-	decomPod, err := r.getDecomPod(ctx, brokerID)
+	decomPod, err := r.getDecommissioningPod(ctx, brokerID)
 	if err != nil {
 		return fmt.Errorf("failed to get decom pod: %w", err)
 	}
