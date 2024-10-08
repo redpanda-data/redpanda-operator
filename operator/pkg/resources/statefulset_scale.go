@@ -96,7 +96,7 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	npCurrentReplicas := r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas
 
 	if ptr.Deref(r.nodePool.Replicas, 0) > npCurrentReplicas {
-		r.logger.Info("Upscaling cluster", "replicas", r.pandaCluster.GetReplicas(), "nodepool replicas", ptr.Deref(r.nodePool.Replicas, 0), "npcurrentreplicas", npCurrentReplicas)
+		r.logger.Info("Upscaling cluster", "nodepool replicas", ptr.Deref(r.nodePool.Replicas, 0), "npcurrentreplicas", npCurrentReplicas)
 
 		log.Info("upscaling setCurrentreplicas request", "replicas", r.nodePool.Replicas, "np", r.nodePool.Name)
 		// Upscaling request: this is already handled by Redpanda, so we just increase status currentReplicas
@@ -115,7 +115,7 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	}
 
 	// User required replicas is lower than current replicas (currentReplicas): start the decommissioning process
-	r.logger.Info("Downscaling cluster", "replicas", r.pandaCluster.GetReplicas())
+	r.logger.Info("Downscaling cluster", "nodepool_replicas", ptr.Deref(r.nodePool.Replicas, 0), "nodepool_current_replicas", npCurrentReplicas)
 
 	targetOrdinal := npStatus.CurrentReplicas - 1 // Always decommission last node
 	targetBroker, err := r.getBrokerIDForPod(ctx, targetOrdinal)

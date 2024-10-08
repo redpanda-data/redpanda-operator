@@ -61,10 +61,10 @@ func (r *StatefulSetResource) getNodePoolStatus() vectorizedv1alpha1.NodePoolSta
 		r.pandaCluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{}
 	}
 
-	npStatus, ok := r.pandaCluster.Status.NodePools[r.nodePool.Name] // FIXME use NP name not STS name.
+	npStatus, ok := r.pandaCluster.Status.NodePools[r.nodePool.Name]
 	if !ok {
 		npStatus = vectorizedv1alpha1.NodePoolStatus{
-			CurrentReplicas: *r.nodePool.Replicas,
+			CurrentReplicas: ptr.Deref(r.nodePool.Replicas, 0),
 		}
 		r.pandaCluster.Status.NodePools[r.nodePool.Name] = npStatus
 	}
