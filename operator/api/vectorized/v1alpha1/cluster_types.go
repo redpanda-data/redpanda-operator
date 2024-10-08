@@ -1221,16 +1221,27 @@ func (s *ClusterStatus) SetRestarting(restarting bool) {
 }
 
 func (r *Cluster) GetReplicas() int32 {
-	nps := r.getNodePoolsFromSpec() // FIXME - may want to use nodePools-with-removed
+	nps := r.getNodePoolsFromSpec()
 	if r == nil || len(nps) == 0 {
 		return 0
 	}
 
 	replicas := int32(0)
 
+	var npNamesSeen []string
+
 	for i := range nps {
 		np := nps[i]
 		replicas += ptr.Deref(np.Replicas, 0)
+		npNamesSeen = append(npNamesSeen, np.Name)
+	}
+
+	// We may have nodepools deleted from spec - but they are not yet fully deleted (in scale-down).
+	// Source these from the status instead.
+	for npName, npStatus := range r.Status.NodePools {
+		if !slices.Contains(npNamesSeen, npName) {
+			replicas += npStatus.Replicas
+		}
 	}
 
 	return replicas
