@@ -636,6 +636,7 @@ func (r *StatefulSetResource) obj(
 								},
 							}, r.getPorts()...),
 							ReadinessProbe: &corev1.Probe{
+								TimeoutSeconds: 5,
 								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{"bash", "-xc", fmt.Sprintf("rpk cluster health %s| grep 'Healthy:.*true'", strings.Join(rpkFlags, " "))},
