@@ -37,7 +37,7 @@ type KafkaSA struct {
 	consoleobj         *vectorizedv1alpha1.Console
 	clusterobj         *vectorizedv1alpha1.Cluster
 	clusterDomain      string
-	adminAPI           adminutils.AdminAPIClientFactory
+	adminAPI           adminutils.NodePoolAdminAPIClientFactory
 	superUsersResource *resources.SuperUsersResource
 	log                logr.Logger
 }
@@ -49,7 +49,7 @@ func NewKafkaSA(
 	consoleobj *vectorizedv1alpha1.Console,
 	clusterobj *vectorizedv1alpha1.Cluster,
 	clusterDomain string,
-	adminAPI adminutils.AdminAPIClientFactory,
+	adminAPI adminutils.NodePoolAdminAPIClientFactory,
 	log logr.Logger,
 ) *KafkaSA {
 	su := resources.NewSuperUsers(cl, consoleobj, scheme, GenerateSASLUsername(consoleobj.GetName()), resources.ConsoleSuffix, log)

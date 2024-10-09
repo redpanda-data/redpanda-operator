@@ -73,11 +73,6 @@ func TestEnsureConfigMap(t *testing.T) {
           enabled: true`,
 		},
 		{
-			name:             "Absent empty_seed_starts_cluster",
-			cluster:          *clusterWithVersion22_2,
-			unExpectedString: "empty_seed_starts_cluster",
-		},
-		{
 			name:           "Disable empty_seed_starts_cluster",
 			cluster:        *clusterWithVersion22_3,
 			expectedString: "empty_seed_starts_cluster: false",
@@ -224,7 +219,7 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
-							Address: "onenode-0.domain.dom",
+							Address: "onenode-first-0.domain.dom",
 							Port:    33145,
 						},
 					},
@@ -241,19 +236,19 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				SeedServers: []config.SeedServer{
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-0.domain.dom",
+							Address: "threenode-first-0.domain.dom",
 							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-1.domain.dom",
+							Address: "threenode-first-1.domain.dom",
 							Port:    33145,
 						},
 					},
 					{
 						Host: config.SocketAddress{
-							Address: "threenode-2.domain.dom",
+							Address: "threenode-first-2.domain.dom",
 							Port:    33145,
 						},
 					},
@@ -266,7 +261,8 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 			wantErr:  true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			c := fake.NewClientBuilder().Build()
 
@@ -276,7 +272,12 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 					Namespace: "namespace",
 				},
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Replicas: ptr.To(tt.replicas),
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "first",
+							Replicas: &tt.replicas,
+						},
+					},
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
