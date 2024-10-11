@@ -442,6 +442,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
+replace github.com/redpanda-data/helm-charts => /Users/chrisseto/Documents/redpanda-data/helm-charts
+
 replace github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
 
 replace github.com/cyphar/filepath-securejoin => github.com/cyphar/filepath-securejoin v0.2.4

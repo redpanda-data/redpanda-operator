@@ -29,6 +29,7 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
+	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -235,18 +239,87 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	log := ctrl.LoggerFrom(ctx)
 	log.WithName("RedpandaReconciler.reconcileDefluxed")
 
-	if !ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
-		// TODO (Rafal) Implement Redpanda helm chart templating with Redpanda Status Report
-		// In the Redpanda.Status there will be only Conditions and Failures that would be used.
+	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+		log.Info("useFlux is true; skipping non-flux reconciliation...")
+		return nil
+	}
 
-		if !atLeast(rp.Spec.ChartRef.ChartVersion) {
-			log.Error(fmt.Errorf("chart version needs to be at least %s", HelmChartConstraint), "", "chart version", rp.Spec.ChartRef.ChartVersion)
-			v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
-			r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
-			// Do not error out to not requeue. User needs to first migrate helm release to at least 5.9.3 version
-			return nil
+	// TODO (Rafal) Implement Redpanda helm chart templating with Redpanda Status Report
+	// In the Redpanda.Status there will be only Conditions and Failures that would be used.
+
+	if !atLeast(rp.Spec.ChartRef.ChartVersion) {
+		log.Error(fmt.Errorf("chart version needs to be at least %s", HelmChartConstraint), "", "chart version", rp.Spec.ChartRef.ChartVersion)
+		v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
+		r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
+		// Do not error out to not requeue. User needs to first migrate helm release to at least 5.9.3 version
+		return nil
+	}
+
+	// Should probably export metadata from the chart and use it to pin
+	// ChartRef.ChartVersion?
+
+	values := rp.Spec.ClusterSpec.DeepCopy()
+
+	objs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
+		Namespace: rp.Namespace,
+		Name:      rp.GetHelmReleaseName(),
+		Service:   "Helm",
+	}, values)
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		obj.SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(rp, rp.GroupVersionKind()),
+		})
+
+		annos := obj.GetAnnotations()
+		if annos == nil {
+			annos = map[string]string{}
+		}
+
+		// Needed for interop with flux.
+		// Without these the flux controller will refuse to take ownership.
+		annos["meta.helm.sh/release-name"] = rp.GetHelmReleaseName()
+		annos["meta.helm.sh/release-namespace"] = rp.Namespace
+
+		obj.SetAnnotations(annos)
+
+		switch obj.(type) {
+		case *batchv1.Job:
+			// GC jobs that may have been created by flux.
+			// The operator handles this itself now.
+			err := r.Client.Delete(ctx, obj)
+
+			if apierrors.IsNotFound(err) {
+				log.Info(fmt.Sprintf("removed %T: %q", obj, obj.GetName()))
+			} else if err != nil {
+				return err
+			}
+
+		default:
+			log.Info(fmt.Sprintf("deploying %T: %q", obj, obj.GetName()))
+
+			// How to handle immutable issues?
+			if err := r.Client.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("redpanda-operator")); err != nil {
+				return err
+			}
 		}
 	}
+
+	// TODO how to handle deletions/cleanup? Will probably have to list all
+	// resource types and then cross reference for anything not in objs.
+
+	// We'll probably want to do a check on ObservedGeneration and Generation
+	// to determine if we want to update the cluster config.
+	// Actually, gating this entire function behind that might be good choice.
+
+	// Just have to run the contents of the job here.
+	// AFTER everything is confirmed to be healthy/ready.
+	// We could fairly easily use the return values of r.Client.Patch to fill
+	// out status.
+
 	return nil
 }
 

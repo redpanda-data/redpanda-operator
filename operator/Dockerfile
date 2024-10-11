@@ -2,11 +2,12 @@
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot AS manager
+# FROM gcr.io/distroless/static:nonroot AS manager
+FROM golang:1.23 AS manager
 ARG TARGETARCH
 ARG TARGETOS
 WORKDIR /
-USER 65532:65532
+# USER 65532:65532
 
 # For backwards compatibility with deployments that specify the
 # entrypoint/command.
