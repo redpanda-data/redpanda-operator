@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"strings"
 	"time"
 
@@ -86,9 +85,8 @@ const (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-	getters  = getter.Providers{
+	scheme  = runtime.NewScheme()
+	getters = getter.Providers{
 		getter.Provider{
 			Schemes: []string{"http", "https"},
 			New:     getter.NewHTTPGetter,
@@ -101,8 +99,6 @@ var (
 
 	clientOptions  client.Options
 	kubeConfigOpts client.KubeConfigOptions
-
-	storageAdvAddr string
 
 	availableControllers = []string{
 		NodeController.toString(),
@@ -155,13 +151,13 @@ func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Run the redpanda operator",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
 			// Always run a pprof server to facilitate debugging.
 			go runPProfServer(ctx, pprofAddr)
 
-			Run(
+			return Run(
 				ctx,
 				clusterDomain,
 				metricsAddr,
@@ -246,7 +242,9 @@ func Run(
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
 	autoDeletePVCs bool,
-) {
+) error {
+	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
+
 	// set the managedFields owner for resources reconciled from Helm charts
 	kube.ManagedFieldsManager = controllerName
 
@@ -265,8 +263,7 @@ func Run(
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "Unable to start manager")
-		// nolint:gocritic // this exits without closing the context. That's ok.
-		os.Exit(1)
+		return err
 	}
 
 	configurator := resources.ConfiguratorSettings{
@@ -308,7 +305,7 @@ func Run(
 			AutoDeletePVCs:            autoDeletePVCs,
 		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&vectorizedcontrollers.ClusterConfigurationDriftReconciler{
@@ -319,13 +316,13 @@ func Run(
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 		}).WithClusterDomain(clusterDomain).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "ClusterConfigurationDrift")
-			os.Exit(1)
+			return err
 		}
 
 		if err = vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).
 			SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "ClustersMetrics")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&vectorizedcontrollers.ConsoleReconciler{
@@ -338,13 +335,13 @@ func Run(
 			KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
 		}).WithClusterDomain(clusterDomain).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Console")
-			os.Exit(1)
+			return err
 		}
 
 		var topicEventRecorder *events.Recorder
 		if topicEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "TopicReconciler"); err != nil {
 			setupLog.Error(err, "unable to create event recorder for: TopicReconciler")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&redpandacontrollers.TopicReconciler{
@@ -354,7 +351,7 @@ func Run(
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
-			os.Exit(1)
+			return err
 		}
 
 		if unbindPVCsAfter <= 0 {
@@ -367,7 +364,7 @@ func Run(
 				Timeout: unbindPVCsAfter,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
-				os.Exit(1)
+				return err
 			}
 		}
 
@@ -376,7 +373,7 @@ func Run(
 			setupLog.Info("Setup webhook")
 			if err = (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
 				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaCluster")
-				os.Exit(1)
+				return err
 			}
 			hookServer := mgr.GetWebhookServer()
 			hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
@@ -401,7 +398,7 @@ func Run(
 		//nolint:nestif // not really nested, required.
 		if enableHelmControllers {
 			storageAddr := ":9090"
-			storageAdvAddr = redpandacontrollers.DetermineAdvStorageAddr(storageAddr, setupLog)
+			storageAdvAddr := redpandacontrollers.DetermineAdvStorageAddr(storageAddr, setupLog)
 			storage := redpandacontrollers.MustInitStorage("/tmp", storageAdvAddr, 60*time.Second, 2, setupLog)
 
 			metricsH := helper.NewMetrics(mgr, metrics.MustMakeRecorder())
@@ -417,7 +414,7 @@ func Run(
 			var helmReleaseEventRecorder *events.Recorder
 			if helmReleaseEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmReleaseReconciler"); err != nil {
 				setupLog.Error(err, "unable to create event recorder for: HelmReleaseReconciler")
-				os.Exit(1)
+				return err
 			}
 
 			// Helm Release Controller
@@ -432,13 +429,14 @@ func Run(
 			}
 			if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
 				setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
+				return err
 			}
 
 			// Helm Chart Controller
 			var helmChartEventRecorder *events.Recorder
 			if helmChartEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmChartReconciler"); err != nil {
 				setupLog.Error(err, "unable to create event recorder for: HelmChartReconciler")
-				os.Exit(1)
+				return err
 			}
 
 			cacheRecorder := helmSourceController.MustMakeCacheMetrics()
@@ -464,13 +462,14 @@ func Run(
 			}
 			if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
 				setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
+				return err
 			}
 
 			// Helm Repository Controller
 			var helmRepositoryEventRecorder *events.Recorder
 			if helmRepositoryEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmRepositoryReconciler"); err != nil {
 				setupLog.Error(err, "unable to create event recorder for: HelmRepositoryReconciler")
-				os.Exit(1)
+				return err
 			}
 
 			helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
@@ -487,6 +486,7 @@ func Run(
 
 			if err = helmRepository.SetupWithManager(ctx, mgr, repoOpts); err != nil {
 				setupLog.Error(err, "Unable to create controller", "controller", "HelmRepository")
+				return err
 			}
 
 			go func() {
@@ -503,7 +503,7 @@ func Run(
 		var redpandaEventRecorder *events.Recorder
 		if redpandaEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "RedpandaReconciler"); err != nil {
 			setupLog.Error(err, "unable to create event recorder for: RedpandaReconciler")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&redpandacontrollers.RedpandaReconciler{
@@ -512,13 +512,13 @@ func Run(
 			EventRecorder: redpandaEventRecorder,
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
-			os.Exit(1)
+			return err
 		}
 
 		var topicEventRecorder *events.Recorder
 		if topicEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "TopicReconciler"); err != nil {
 			setupLog.Error(err, "unable to create event recorder for: TopicReconciler")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&redpandacontrollers.TopicReconciler{
@@ -528,18 +528,18 @@ func Run(
 			EventRecorder: topicEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
-			os.Exit(1)
+			return err
 		}
 
 		if err = redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "User")
-			os.Exit(1)
+			return err
 		}
 
 		var managedDecommissionEventRecorder *events.Recorder
 		if managedDecommissionEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "ManagedDecommissionReconciler"); err != nil {
 			setupLog.Error(err, "unable to create event recorder for: ManagedDecommissionReconciler")
-			os.Exit(1)
+			return err
 		}
 
 		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
@@ -547,7 +547,7 @@ func Run(
 			EventRecorder: managedDecommissionEventRecorder,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
-			os.Exit(1)
+			return err
 		}
 
 		if runThisController(NodeController, additionalControllers) {
@@ -556,7 +556,7 @@ func Run(
 				OperatorMode: operatorMode,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				os.Exit(1)
+				return err
 			}
 		}
 
@@ -567,7 +567,7 @@ func Run(
 				DecommissionWaitInterval: decommissionWaitInterval,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				os.Exit(1)
+				return err
 			}
 		}
 
@@ -575,14 +575,14 @@ func Run(
 			setupLog.Info("Setup Redpanda conversion webhook")
 			if err = (&redpandav1alpha2.Redpanda{}).SetupWebhookWithManager(mgr); err != nil {
 				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaConversion")
-				os.Exit(1)
+				return err
 			}
 		}
 
 	case ClusterControllerMode:
 		ctrl.Log.Info("running as a cluster controller", "mode", ClusterControllerMode)
 		setupLog.Error(err, "unable to create cluster controllers, not supported")
-		os.Exit(1)
+		return err
 	case NamespaceControllerMode:
 		ctrl.Log.Info("running as a namespace controller", "mode", NamespaceControllerMode, "namespace", namespace)
 		if runThisController(NodeController, additionalControllers) {
@@ -591,7 +591,7 @@ func Run(
 				OperatorMode: operatorMode,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				os.Exit(1)
+				return err
 			}
 		}
 
@@ -602,44 +602,47 @@ func Run(
 				DecommissionWaitInterval: decommissionWaitInterval,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				os.Exit(1)
+				return err
 			}
 		}
 	default:
 		setupLog.Error(err, "unable unknown state, not supported")
-		os.Exit(1)
+		return err
 	}
 
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
 		setupLog.Error(err, "Unable to set up health check")
-		os.Exit(1)
+		return err
 	}
 
 	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
 		setupLog.Error(err, "Unable to set up ready check")
-		os.Exit(1)
+		return err
 	}
 
 	if webhookEnabled {
 		hookServer := mgr.GetWebhookServer()
 		if err := mgr.AddReadyzCheck("webhook", hookServer.StartedChecker()); err != nil {
 			setupLog.Error(err, "unable to create ready check")
-			os.Exit(1)
+			return err
 		}
 
 		if err := mgr.AddHealthzCheck("webhook", hookServer.StartedChecker()); err != nil {
 			setupLog.Error(err, "unable to create health check")
-			os.Exit(1)
+			return err
 		}
 	}
+
 	setupLog.Info("Starting manager")
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Problem running manager")
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }
 
 func runThisController(rc RedpandaController, controllers []string) bool {
