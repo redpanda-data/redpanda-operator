@@ -17,6 +17,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"github.com/twmb/franz-go/pkg/sr"
 )
 
 // RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
@@ -36,6 +37,28 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 			Username: c.userAuth.Username,
 			Password: c.userAuth.Password,
 		})
+	}
+
+	return client, nil
+}
+
+// schemaRegistryForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
+func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (*sr.Client, error) {
+	dot, err := cluster.GetDot(c.config)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := redpanda.SchemaRegistryClient(dot, c.dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		client, err = sr.NewClient(append(client.Opts(), sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return client, nil

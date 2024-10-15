@@ -23,6 +23,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -74,10 +75,33 @@ func TestMain(m *testing.M) {
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")
+
+			// hack to patch the RBAC policies we'll need for schemas
+			var role rbacv1.Role
+			require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &role))
+			role.Rules = append(role.Rules, []rbacv1.PolicyRule{
+				{
+					Verbs:     []string{"get", "list", "patch", "update", "watch"},
+					APIGroups: []string{"cluster.redpanda.com"},
+					Resources: []string{"schemas"},
+				},
+				{
+					Verbs:     []string{"update"},
+					APIGroups: []string{"cluster.redpanda.com"},
+					Resources: []string{"schemas/finalizers"},
+				},
+				{
+					Verbs:     []string{"get", "patch", "update"},
+					APIGroups: []string{"cluster.redpanda.com"},
+					Resources: []string{"schemas/status"},
+				},
+			}...)
+			require.NoError(t, t.Update(ctx, &role))
 		}).
 		RegisterTag("cluster", 1, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
+
 	if err != nil {
 		fmt.Printf("error running test suite: %v\n", err)
 		os.Exit(1)

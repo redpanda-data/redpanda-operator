@@ -282,5 +282,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 		IsUpgrade: true,
 	}
 
-	return redpandachart.Dot(release, partial, kube.RestToConfig(restConfig))
+	return redpandachart.Chart.Dot(kube.RestToConfig(restConfig), release, partial)
 }

@@ -14,8 +14,9 @@ package v1alpha2
 // StaticConfigurationSourceApplyConfiguration represents an declarative configuration of the StaticConfigurationSource type for use
 // with apply.
 type StaticConfigurationSourceApplyConfiguration struct {
-	Kafka *KafkaAPISpecApplyConfiguration `json:"kafka,omitempty"`
-	Admin *AdminAPISpecApplyConfiguration `json:"admin,omitempty"`
+	Kafka          *KafkaAPISpecApplyConfiguration       `json:"kafka,omitempty"`
+	Admin          *AdminAPISpecApplyConfiguration       `json:"admin,omitempty"`
+	SchemaRegistry *SchemaRegistrySpecApplyConfiguration `json:"schemaRegistry,omitempty"`
 }
 
 // StaticConfigurationSourceApplyConfiguration constructs an declarative configuration of the StaticConfigurationSource type for use with
@@ -37,5 +38,13 @@ func (b *StaticConfigurationSourceApplyConfiguration) WithKafka(value *KafkaAPIS
 // If called multiple times, the Admin field is set to the value of the last call.
 func (b *StaticConfigurationSourceApplyConfiguration) WithAdmin(value *AdminAPISpecApplyConfiguration) *StaticConfigurationSourceApplyConfiguration {
 	b.Admin = value
+	return b
+}
+
+// WithSchemaRegistry sets the SchemaRegistry field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SchemaRegistry field is set to the value of the last call.
+func (b *StaticConfigurationSourceApplyConfiguration) WithSchemaRegistry(value *SchemaRegistrySpecApplyConfiguration) *StaticConfigurationSourceApplyConfiguration {
+	b.SchemaRegistry = value
 	return b
 }
