@@ -145,6 +145,17 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
 			},
+			SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+				URLs: []string{schemaRegistry},
+				SASL: &redpandav1alpha2.SchemaRegistrySASL{
+					Username: "superuser",
+					Password: redpandav1alpha2.SecretKeyRef{
+						Name: "superuser",
+						Key:  "password",
+					},
+					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+				},
+			},
 		},
 	}
 
@@ -172,6 +183,17 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
 			},
+			SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+				URLs: []string{schemaRegistry},
+				SASL: &redpandav1alpha2.SchemaRegistrySASL{
+					Username: "superuser",
+					Password: redpandav1alpha2.SecretKeyRef{
+						Name: "invalidsuperuser",
+						Key:  "password",
+					},
+					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+				},
+			},
 		},
 	}
 
@@ -182,6 +204,9 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 			},
 			Admin: &redpandav1alpha2.AdminAPISpec{
 				URLs: []string{adminAPI},
+			},
+			SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+				URLs: []string{schemaRegistry},
 			},
 		},
 	}

@@ -210,6 +210,32 @@ type AdminSASL struct {
 	AuthToken SecretKeyRef `json:"token,omitempty"`
 }
 
+// SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
+type SchemaRegistrySpec struct {
+	// Specifies a list of broker addresses in the format <host>:<port>
+	URLs []string `json:"urls"`
+	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
+	// +optional
+	TLS *CommonTLS `json:"tls,omitempty"`
+	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
+	// +optional
+	SASL *SchemaRegistrySASL `json:"sasl,omitempty"`
+}
+
+// SchemaRegistrySASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+type SchemaRegistrySASL struct {
+	// Specifies the username.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Specifies the password.
+	// +optional
+	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Specifies the SASL/SCRAM authentication mechanism.
+	Mechanism SASLMechanism `json:"mechanism"`
+	// +optional
+	AuthToken SecretKeyRef `json:"token,omitempty"`
+}
+
 // ClusterRef represents a reference to a cluster that is being targeted.
 type ClusterRef struct {
 	// Name specifies the name of the cluster being referenced.
@@ -236,11 +262,13 @@ type MetadataTemplate struct {
 type StaticConfigurationSource struct {
 	// Kafka is the configuration information for communicating with the Kafka
 	// API of a Redpanda cluster where the object should be created.
-	// +required
-	Kafka *KafkaAPISpec `json:"kafka"`
+	Kafka *KafkaAPISpec `json:"kafka,omitempty"`
 	// AdminAPISpec is the configuration information for communicating with the Admin
 	// API of a Redpanda cluster where the object should be created.
 	Admin *AdminAPISpec `json:"admin,omitempty"`
+	// SchemaRegistry is the configuration information for communicating with the Schema Registry
+	// API of a Redpanda cluster where the object should be created.
+	SchemaRegistry *SchemaRegistrySpec `json:"schemaRegistry,omitempty"`
 }
 
 // ClusterSource defines how to connect to a particular Redpanda cluster.
@@ -265,6 +293,13 @@ func (c *ClusterSource) GetKafkaAPISpec() *KafkaAPISpec {
 func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
 	if c.StaticConfiguration != nil {
 		return c.StaticConfiguration.Admin
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetSchemaRegistrySpec() *SchemaRegistrySpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.SchemaRegistry
 	}
 	return nil
 }
