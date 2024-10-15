@@ -157,6 +157,9 @@ func TestHelmValuesCompat(t *testing.T) {
 			reflect.TypeFor[redpanda.PartialBootstrapUser](): {
 				"Password": rapid.Just[any](nil), // This field is intentionally not documented or added to the CRD
 			},
+			reflect.TypeFor[redpanda.PartialServiceAccountCfg](): {
+				"AutomountServiceAccountToken": rapid.Just[any](nil),
+			},
 		},
 	}
 
