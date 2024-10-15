@@ -14,7 +14,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -148,7 +147,6 @@ func Command() *cobra.Command {
 		additionalControllers       []string
 		operatorMode                bool
 		enableHelmControllers       bool
-		debug                       bool
 		ghostbuster                 bool
 		unbindPVCsAfter             time.Duration
 		autoDeletePVCs              bool
@@ -158,11 +156,16 @@ func Command() *cobra.Command {
 		Use:   "run",
 		Short: "Run the redpanda operator",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := cmd.Context()
+
+			// Always run a pprof server to facilitate debugging.
+			go runPProfServer(ctx, pprofAddr)
+
 			Run(
+				ctx,
 				clusterDomain,
 				metricsAddr,
 				probeAddr,
-				pprofAddr,
 				enableLeaderElection,
 				webhookEnabled,
 				configuratorBaseImage,
@@ -176,7 +179,6 @@ func Command() *cobra.Command {
 				additionalControllers,
 				operatorMode,
 				enableHelmControllers,
-				debug,
 				ghostbuster,
 				unbindPVCsAfter,
 				autoDeletePVCs,
@@ -203,7 +205,6 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
 	cmd.Flags().StringVar(&restrictToRedpandaVersion, "restrict-redpanda-version", "", "Restrict management of clusters to those with this version")
 	cmd.Flags().StringVar(&vectorizedv1alpha1.SuperUsersPrefix, "superusers-prefix", "", "Prefix to add in username of superusers managed by operator. This will only affect new clusters, enabling this will not add prefix to existing clusters (alpha feature)")
-	cmd.Flags().BoolVar(&debug, "debug", false, "Set to enable debugging")
 	cmd.Flags().StringVar(&namespace, "namespace", "", "If namespace is set to not empty value, it changes scope of Redpanda operator to work in single namespace")
 	cmd.Flags().BoolVar(&ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
@@ -213,18 +214,22 @@ func Command() *cobra.Command {
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 
+	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
 	kubeConfigOpts.BindFlags(cmd.Flags())
+
+	// Deprecated flags.
+	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
 
 	return cmd
 }
 
 //nolint:funlen,gocyclo // length looks good
 func Run(
+	ctx context.Context,
 	clusterDomain string,
 	metricsAddr string,
 	probeAddr string,
-	pprofAddr string,
 	enableLeaderElection bool,
 	webhookEnabled bool,
 	configuratorBaseImage string,
@@ -238,33 +243,12 @@ func Run(
 	additionalControllers []string,
 	operatorMode bool,
 	enableHelmControllers bool,
-	debug bool,
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
 	autoDeletePVCs bool,
 ) {
 	// set the managedFields owner for resources reconciled from Helm charts
 	kube.ManagedFieldsManager = controllerName
-
-	if debug {
-		go func() {
-			pprofMux := http.NewServeMux()
-			pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-			pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-			pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-			pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-			pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-			pprofServer := &http.Server{
-				Addr:              pprofAddr,
-				Handler:           pprofMux,
-				ReadHeaderTimeout: 3 * time.Second,
-			}
-			log.Fatal(pprofServer.ListenAndServe())
-		}()
-	}
-
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
 
 	mgrOptions := ctrl.Options{
 		Scheme:                  scheme,
@@ -669,4 +653,25 @@ func runThisController(rc RedpandaController, controllers []string) bool {
 		}
 	}
 	return false
+}
+
+func runPProfServer(ctx context.Context, listenAddr string) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	pprofServer := &http.Server{
+		Addr:              listenAddr,
+		Handler:           pprofMux,
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+
+	logger.Info("starting pprof server...", "addr", listenAddr)
+	if err := pprofServer.ListenAndServe(); err != nil {
+		logger.Error(err, "failed to run pprof server")
+	}
 }
