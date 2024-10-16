@@ -142,8 +142,8 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 // actually exists in the bootstrap.yaml.
 func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path string) {
 	if path == "" {
-		// we have no path to a users.txt, so don't do anything
-		logger.Info("--users-txt not specified. Skipping superusers merge.")
+		// we have no path to a users directory, so don't do anything
+		logger.Info("--users-directory not specified. Skipping superusers merge.")
 		return
 	}
 
@@ -156,7 +156,7 @@ func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path
 
 	superusers, err := loadUsersFiles(logger, path)
 	if err != nil {
-		logger.Info(fmt.Sprintf("Error reading users.txt file %q: %v. Skipping superusers merge.", path, err))
+		logger.Info(fmt.Sprintf("Error reading users directory %q: %v. Skipping superusers merge.", path, err))
 		return
 	}
 
@@ -186,7 +186,8 @@ func loadUsersFiles(logger logr.Logger, path string) ([]string, error) {
 
 		usersFile, err := os.ReadFile(filename)
 		if err != nil {
-			return nil, err
+			logger.Info(fmt.Sprintf("Cannot read user file %q: %v. Skipping.", filename, err))
+			continue
 		}
 
 		scanner := bufio.NewScanner(bytes.NewReader(usersFile))
