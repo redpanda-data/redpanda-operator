@@ -17,10 +17,14 @@
 package syncclusterconfig
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkadminapi "github.com/redpanda-data/redpanda/src/go/rpk/pkg/adminapi"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
@@ -31,15 +35,17 @@ import (
 )
 
 const (
-	licenseEnvvar = "REDPANDA_LICENSE"
+	licenseEnvvar   = "REDPANDA_LICENSE"
+	superusersEntry = "superusers"
 )
 
 func Command() *cobra.Command {
+	var usersTxtPath string
 	var redpandaYAMLPath string
 	var bootstrapYAMLPath string
 
 	cmd := &cobra.Command{
-		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file]",
+		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-txt file]",
 		Long: fmt.Sprintf(`sync-cluster-config patches a cluster's configuration with values from the provided bootstrap.yaml.
 If present and not empty, the $%s environment variable will be set as the cluster's license.
 `, licenseEnvvar),
@@ -67,6 +73,9 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
+			// do conditional merge of users.txt and bootstrap.yaml
+			maybeMergeSuperusers(logger, clusterConfig, usersTxtPath)
+
 			// NB: remove must be an empty slice NOT nil.
 			result, err := client.PatchClusterConfig(ctx, clusterConfig, []string{})
 			if err != nil {
@@ -88,6 +97,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 		},
 	}
 
+	cmd.Flags().StringVar(&usersTxtPath, "users-txt", "/etc/secrets/users/users.txt", "Path to users.txt")
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml")
 	cmd.Flags().StringVar(&bootstrapYAMLPath, "bootstrap-yaml", "/etc/redpanda/.bootstrap.yaml", "Path to .bootstrap.yaml")
 
@@ -124,4 +134,84 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 	}
 
 	return config, nil
+}
+
+// maybeMergeSuperusers merges the values found in users.txt into our superusers
+// list found in our bootstrap.yaml. This only occurs if an entry for superusers
+// actually exists in the bootstrap.yaml.
+func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path string) {
+	if path == "" {
+		// we have no path to a users.txt, so don't do anything
+		logger.Info("--users-txt not specified. Skipping superusers merge.")
+		return
+	}
+
+	superusersConfig, ok := clusterConfig[superusersEntry]
+	if !ok {
+		// we have no superusers configuration, so don't do anything
+		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
+		return
+	}
+
+	superusers, err := loadUsersTxt(path)
+	if err != nil {
+		logger.Info(fmt.Sprintf("Error reading users.txt file %q: %v. Skipping superusers merge.", path, err))
+		return
+	}
+
+	superusersAny, ok := superusersConfig.([]any)
+	if !ok {
+		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
+		return
+	}
+
+	clusterConfig[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](superusersAny)...))
+}
+
+func loadUsersTxt(path string) ([]string, error) {
+	usersTxt, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	users := []string{}
+	scanner := bufio.NewScanner(bytes.NewReader(usersTxt))
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.Split(line, ":")
+		if len(tokens) != 3 {
+			continue
+		}
+		users = append(users, tokens[0])
+	}
+
+	return users, nil
+}
+
+// normalizeSuperusers de-duplicates and sorts the superusers
+func normalizeSuperusers(entries []string) []string {
+	var sorted sort.StringSlice
+
+	unique := make(map[string]struct{})
+	for _, value := range entries {
+		if _, ok := unique[value]; !ok {
+			sorted = append(sorted, value)
+		}
+		unique[value] = struct{}{}
+	}
+
+	sorted.Sort()
+
+	return sorted
+}
+
+func mapConvertibleTo[T any](array []any) []T {
+	converted := []T{}
+	for _, value := range array {
+		if cast, ok := value.(T); ok {
+			converted = append(converted, cast)
+		}
+	}
+	return converted
 }
