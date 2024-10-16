@@ -384,6 +384,7 @@ func Run(
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
+			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err

@@ -32,6 +32,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -51,6 +52,9 @@ import (
 // NB: This test setup is largely incompatible with webhooks. Though we might
 // be able to figure something freaky out.
 func TestRedpandaController(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long running test as -short was specified")
+	}
 	suite.Run(t, new(RedpandaControllerSuite))
 }
 
@@ -68,8 +72,6 @@ var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
 // Annotations of all objects created by the controller are stable across flux
 // and de-fluxed.
 func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
-	s.T().Skip("not currently implemented")
-
 	isStable := func(a, b client.Object) {
 		assert.Equal(s.T(), a.GetUID(), b.GetUID(), "%T %q's UID changed (Something recreated it)", a, a.GetName())
 		assert.Equal(s.T(), a.GetLabels(), b.GetLabels(), "%T %q's Labels changed", a, a.GetName())
@@ -163,11 +165,15 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			}
 		}
 
+		dialer := kube.NewPodDialer(mgr.GetConfig())
+		clientFactory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory: clientFactory,
 		}).SetupWithManager(s.ctx, mgr)
 	})
 }

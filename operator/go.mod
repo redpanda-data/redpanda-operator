@@ -28,7 +28,7 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/helm-charts v0.0.0-20241025092026-69353dfce9a1
+	github.com/redpanda-data/helm-charts v0.0.0-20241030170802-ad1edfc56b70
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.11.0
@@ -42,6 +42,7 @@ require (
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/sync v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
@@ -411,7 +412,6 @@ require (
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
