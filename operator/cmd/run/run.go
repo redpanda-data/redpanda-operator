@@ -22,22 +22,16 @@ import (
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmControllerAPIv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	helmController "github.com/fluxcd/helm-controller/shim"
 	"github.com/fluxcd/pkg/runtime/client"
-	helper "github.com/fluxcd/pkg/runtime/controller"
-	"github.com/fluxcd/pkg/runtime/metrics"
 	sourceControllerAPIv1 "github.com/fluxcd/source-controller/api/v1"
 	sourceControllerAPIv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
-	helmSourceController "github.com/fluxcd/source-controller/shim"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -48,6 +42,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -84,18 +79,7 @@ const (
 )
 
 var (
-	scheme  = runtime.NewScheme()
-	getters = getter.Providers{
-		getter.Provider{
-			Schemes: []string{"http", "https"},
-			New:     getter.NewHTTPGetter,
-		},
-		getter.Provider{
-			Schemes: []string{"oci"},
-			New:     getter.NewOCIGetter,
-		},
-	}
-
+	scheme         = runtime.NewScheme()
 	clientOptions  client.Options
 	kubeConfigOpts client.KubeConfigOptions
 
@@ -382,91 +366,17 @@ func Run(
 	case OperatorV2Mode:
 		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
 
-		factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient())
-
 		// if we enable these controllers then run them, otherwise, do not
 		//nolint:nestif // not really nested, required.
 		if enableHelmControllers {
-			storageAddr := ":9090"
-			storageAdvAddr := redpandacontrollers.DetermineAdvStorageAddr(storageAddr, setupLog)
-			storage := redpandacontrollers.MustInitStorage("/tmp", storageAdvAddr, 60*time.Second, 2, setupLog)
+			controllers := flux.NewFluxControllers(mgr, clientOptions, kubeConfigOpts)
 
-			metricsH := helper.NewMetrics(mgr, metrics.MustMakeRecorder())
-
-			// TODO fill this in with options
-			helmOpts := helmController.HelmReleaseReconcilerOptions{
-				DependencyRequeueInterval: 30 * time.Second, // The interval at which failing dependencies are reevaluated.
-				HTTPRetry:                 9,                // The maximum number of retries when failing to fetch artifacts over HTTP.
-				RateLimiter:               workqueue.NewItemExponentialFailureRateLimiter(30*time.Second, 60*time.Second),
+			for _, controller := range controllers {
+				if err := controller.SetupWithManager(ctx, mgr); err != nil {
+					setupLog.Error(err, "Unable to create flux controller")
+					return err
+				}
 			}
-
-			// Helm Release Controller
-			helmRelease := helmController.HelmReleaseReconcilerFactory{
-				Client:           mgr.GetClient(),
-				EventRecorder:    mgr.GetEventRecorderFor("HelmReleaseReconciler"),
-				ClientOpts:       clientOptions,
-				KubeConfigOpts:   kubeConfigOpts,
-				FieldManager:     helmReleaseControllerName,
-				Metrics:          metricsH,
-				GetClusterConfig: ctrl.GetConfig,
-			}
-			if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
-				setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
-				return err
-			}
-
-			cacheRecorder := helmSourceController.MustMakeCacheMetrics()
-			indexTTL := 15 * time.Minute
-			helmIndexCache := helmSourceController.NewCache(0, indexTTL)
-			chartOpts := helmSourceController.HelmChartReconcilerOptions{
-				RateLimiter: helper.GetDefaultRateLimiter(),
-			}
-			repoOpts := helmSourceController.HelmRepositoryReconcilerOptions{
-				RateLimiter: helper.GetDefaultRateLimiter(),
-			}
-			helmChart := helmSourceController.HelmChartReconcilerFactory{
-				Cache:                   helmIndexCache,
-				CacheRecorder:           cacheRecorder,
-				TTL:                     indexTTL,
-				Client:                  mgr.GetClient(),
-				RegistryClientGenerator: redpandacontrollers.ClientGenerator,
-				Getters:                 getters,
-				Metrics:                 metricsH,
-				Storage:                 storage,
-				EventRecorder:           mgr.GetEventRecorderFor("HelmChartReconciler"),
-				ControllerName:          helmChartControllerName,
-			}
-			if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
-				setupLog.Error(err, "Unable to create controller", "controller", "HelmChart")
-				return err
-			}
-
-			// Helm Repository Controller
-			helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
-				Client:         mgr.GetClient(),
-				EventRecorder:  mgr.GetEventRecorderFor("HelmReleaseReconciler"),
-				Getters:        getters,
-				ControllerName: helmRepositoryControllerName,
-				Cache:          helmIndexCache,
-				CacheRecorder:  cacheRecorder,
-				TTL:            indexTTL,
-				Metrics:        metricsH,
-				Storage:        storage,
-			}
-
-			if err = helmRepository.SetupWithManager(ctx, mgr, repoOpts); err != nil {
-				setupLog.Error(err, "Unable to create controller", "controller", "HelmRepository")
-				return err
-			}
-
-			go func() {
-				// Block until our controller manager is elected leader. We presume our
-				// entire process will terminate if we lose leadership, so we don't need
-				// to handle that.
-				<-mgr.Elected()
-
-				redpandacontrollers.StartFileServer(storage.BasePath, storageAddr, setupLog)
-			}()
 		}
 
 		// Redpanda Reconciler
@@ -481,7 +391,7 @@ func Run(
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       factory,
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 		}).SetupWithManager(mgr); err != nil {

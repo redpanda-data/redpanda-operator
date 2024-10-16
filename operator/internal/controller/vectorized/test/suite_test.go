@@ -22,21 +22,16 @@ import (
 	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIV2Beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmControllerAPIV2Beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	helmController "github.com/fluxcd/helm-controller/shim"
-	helper "github.com/fluxcd/pkg/runtime/controller"
-	"github.com/fluxcd/pkg/runtime/metrics"
+	fluxclient "github.com/fluxcd/pkg/runtime/client"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	sourcev1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
-	helmSourceController "github.com/fluxcd/source-controller/shim"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.uber.org/zap/zapcore"
-	"helm.sh/helm/v3/pkg/getter"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
@@ -46,6 +41,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -72,17 +68,6 @@ var (
 
 	ctx              context.Context
 	controllerCancel context.CancelFunc
-
-	getters = getter.Providers{
-		getter.Provider{
-			Schemes: []string{"http", "https"},
-			New:     getter.NewHTTPGetter,
-		},
-		getter.Provider{
-			Schemes: []string{"oci"},
-			New:     getter.NewOCIGetter,
-		},
-	}
 )
 
 func TestAPIs(t *testing.T) {
@@ -148,71 +133,9 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	ctx = ctrl.SetupSignalHandler()
 	ctx, controllerCancel = context.WithCancel(ctx)
 
-	storageAddr := ":9090"
-	storageAdvAddr := redpanda.DetermineAdvStorageAddr(storageAddr, logf.Log.WithName("controllers").WithName("core").WithName("Redpanda"))
-	storage := redpanda.MustInitStorage("/tmp", storageAdvAddr, 60*time.Second, 2, logf.Log.WithName("controllers").WithName("core").WithName("Redpanda"))
-
-	metricsH := helper.NewMetrics(k8sManager, metrics.MustMakeRecorder())
-	// TODO fill this in with options
-	helmOpts := helmController.HelmReleaseReconcilerOptions{
-		DependencyRequeueInterval: 30 * time.Second, // The interval at which failing dependencies are reevaluated.
-		HTTPRetry:                 9,                // The maximum number of retries when failing to fetch artifacts over HTTP.
-		RateLimiter:               workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 5*time.Second),
+	for _, controller := range flux.NewFluxControllers(k8sManager, fluxclient.Options{}, fluxclient.KubeConfigOptions{}) {
+		Expect(controller.SetupWithManager(ctx, k8sManager)).ToNot(HaveOccurred())
 	}
-
-	// Helm Release Controller
-	helmRelease := helmController.HelmReleaseReconcilerFactory{
-		Client:        k8sManager.GetClient(),
-		EventRecorder: k8sManager.GetEventRecorderFor("HelmReleaseReconciler"),
-		Metrics:       metricsH,
-		GetClusterConfig: func() (*rest.Config, error) {
-			return k8sManager.GetConfig(), nil
-		},
-		FieldManager: "application/apply-patch",
-	}
-	err = helmRelease.SetupWithManager(ctx, k8sManager, helmOpts)
-	Expect(err).ToNot(HaveOccurred())
-
-	cacheRecorder := helmSourceController.MustMakeCacheMetrics()
-	indexTTL := 45 * time.Second
-	helmIndexCache := helmSourceController.NewCache(1, indexTTL)
-
-	// Helm Chart Controller
-	chartOpts := helmSourceController.HelmChartReconcilerOptions{
-		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 5*time.Second),
-	}
-	repoOpts := helmSourceController.HelmRepositoryReconcilerOptions{
-		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 5*time.Second),
-	}
-	helmChart := helmSourceController.HelmChartReconcilerFactory{
-		Client:                  k8sManager.GetClient(),
-		EventRecorder:           k8sManager.GetEventRecorderFor("HelmChartReconciler"),
-		Metrics:                 metricsH,
-		RegistryClientGenerator: redpanda.ClientGenerator,
-		Getters:                 getters,
-		Storage:                 storage,
-		ControllerName:          "redpanda-controller-helm-chart",
-		Cache:                   helmIndexCache,
-		CacheRecorder:           cacheRecorder,
-		TTL:                     indexTTL,
-	}
-	err = helmChart.SetupWithManager(ctx, k8sManager, chartOpts)
-	Expect(err).ToNot(HaveOccurred())
-
-	// Helm Repository Controller
-	helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
-		Client:         k8sManager.GetClient(),
-		EventRecorder:  k8sManager.GetEventRecorderFor("HelmRepositoryReconciler"),
-		Metrics:        metricsH,
-		Getters:        getters,
-		Storage:        storage,
-		ControllerName: "redpanda-controller-helm-repository",
-		Cache:          helmIndexCache,
-		CacheRecorder:  cacheRecorder,
-		TTL:            indexTTL,
-	}
-	err = helmRepository.SetupWithManager(ctx, k8sManager, repoOpts)
-	Expect(err).ToNot(HaveOccurred())
 
 	testAdminAPI = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI")}
 	testAdminAPIFactory = func(
@@ -271,15 +194,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		KafkaAdminClientFactory: testKafkaAdminFactory,
 	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		// Block until our controller manager is elected leader. We presume our
-		// entire process will terminate if we lose leadership, so we don't need
-		// to handle that.
-		<-k8sManager.Elected()
-
-		redpanda.StartFileServer(storage.BasePath, storageAddr, l.WithName("controllers").WithName("core").WithName("Redpanda"))
-	}()
 
 	// Redpanda Reconciler
 	err = (&redpanda.RedpandaReconciler{
