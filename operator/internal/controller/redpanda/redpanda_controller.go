@@ -26,6 +26,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
 	appsv1 "k8s.io/api/apps/v1"
+	// batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -250,6 +253,111 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 		return nil
 	}
 
+	// TODO (Rafal) Implement Redpanda helm chart templating with Redpanda Status Report
+	// In the Redpanda.Status there will be only Conditions and Failures that would be used.
+
+	// DeepCopy values to prevent any accidental mutations that may occur
+	// within the chart itself.
+	values := rp.Spec.ClusterSpec.DeepCopy()
+
+	objs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
+		Namespace: rp.Namespace,
+		Name:      rp.GetHelmReleaseName(),
+		Service:   "Helm",
+	}, values)
+	if err != nil {
+		return err
+	}
+
+	// Is there something in Scheme that can convert between Obj and ObjList (to support dynamic listing and deletions).
+	// What status'es are reported from the operator that could be used to write tests?
+
+	// Could also hook the ownership up to some rando object that's minted per
+	// .Generation (e.g. name-generation). Once all children are
+	// created/updated with the new owner, delete the old object to let
+	// Kubernetes handle the GC.
+	// That might be a bit dangerous as endusers might delete such an object
+	// and would break the queueing cycle for some things.
+	// Though we could directly own objects we know will always exist such as Deployments and StatefulSets.
+	// Console deployment won't exist all the time. So that's kinda out.
+
+	// Would need to special case Deployments and StatefulSets but we'll also
+	// need a new field in Status to track previous revisions.
+	// VS searching for any objects that are owned by this redpanda itself.
+
+	// We might be able to set two owners on some objects (Deployments and STSs) so we still get events.
+
+	for _, obj := range objs {
+		obj.SetOwnerReferences([]metav1.OwnerReference{
+			rp.OwnerShipRefObj(),
+		})
+
+		gvk, err := r.Client.GroupVersionKindFor(obj)
+		if err != nil {
+			return err
+		}
+
+		gvk.Kind += "List"
+
+		list, err := r.Scheme.New(gvk)
+		if err != nil {
+			return err
+		}
+
+		if err := r.Client.List(ctx, list.(client.ObjectList)); err != nil {
+			return err
+		}
+
+		annos := obj.GetAnnotations()
+		if annos == nil {
+			annos = map[string]string{}
+		}
+
+		// Needed for interop with flux.
+		// Without these the flux controller will refuse to take ownership.
+		annos["meta.helm.sh/release-name"] = rp.GetHelmReleaseName()
+		annos["meta.helm.sh/release-namespace"] = rp.Namespace
+
+		// Seems like flux injects some labels too.
+		//  helm.toolkit.fluxcd.io/name: managed-decommission                                                                                                                                                                │
+		//  helm.toolkit.fluxcd.io/namespace: redpanda                                                                                                                                                                       │
+
+		obj.SetAnnotations(annos)
+
+		// switch obj.(type) {
+		// case *batchv1.Job:
+		// 	// GC jobs that may have been created by flux.
+		// 	// The operator handles this itself now.
+		// 	err := r.Client.Delete(ctx, obj, client.PropagationPolicy(metav1.DeletePropagationBackground))
+		//
+		// 	if apierrors.IsNotFound(err) {
+		// 		log.Info(fmt.Sprintf("removed %T: %q", obj, obj.GetName()))
+		// 	} else if err != nil {
+		// 		return err
+		// 	}
+		//
+		// default:
+		log.Info(fmt.Sprintf("deploying %T: %q", obj, obj.GetName()))
+
+		// TODO: how to handle immutable issues?
+		if err := r.apply(ctx, obj); err != nil {
+			return err
+		}
+		// }
+	}
+
+	// TODO how to handle deletions/cleanup? Will probably have to list all
+	// resource types and then cross reference for anything not in objs.
+
+	// We'll probably want to do a check on ObservedGeneration and Generation
+	// to determine if we want to update the cluster config.
+	// Actually, gating this entire function behind that might be good choice.
+
+	// Just have to run the contents of the job here.
+	// AFTER everything is confirmed to be healthy/ready.
+	// We could fairly easily use the return values of r.Client.Patch to fill
+	// out status.
+
 	return nil
 }
 
@@ -289,15 +397,19 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
 	}
 
-	for _, sts := range redpandaStatefulSets {
-		decommission, err := needsDecommission(ctx, sts, log)
-		if err != nil {
-			return rp, err
-		}
-		if decommission {
-			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), nil
-		}
-	}
+	// TODO this breaks due to the use of getValues. It and "other controllers"
+	// won't work with de-flux right now. It also doesn't work in the controller outside of cluster test.
+	// if !ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+	// 	for _, sts := range redpandaStatefulSets {
+	// 		decommission, err := needsDecommission(ctx, sts, log)
+	// 		if err != nil {
+	// 			return rp, err
+	// 		}
+	// 		if decommission {
+	// 			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), nil
+	// 		}
+	// 	}
+	// }
 
 	// check to make sure that our stateful set pods are all current
 	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
@@ -325,6 +437,14 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 	isGenerationCurrent := hr.Generation == hr.Status.ObservedGeneration
 	isStatusConditionReady := apimeta.IsStatusConditionTrue(hr.Status.Conditions, meta.ReadyCondition) || apimeta.IsStatusConditionTrue(hr.Status.Conditions, helmv2beta2.RemediatedCondition)
 
+	// When UseFlux is false, we suspend the HelmRelease which completely
+	// disables the controller. In such cases, we have to lie a bit to keep
+	// everything else chugging along as expected.
+	if hr.Spec.Suspend {
+		isGenerationCurrent = true
+		isStatusConditionReady = true
+	}
+
 	rp.Status.HelmRelease = hr.Name
 	rp.Status.HelmReleaseReady = ptr.To(isGenerationCurrent && isStatusConditionReady)
 
@@ -341,7 +461,15 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1
 	isGenerationCurrent := repo.Generation == repo.Status.ObservedGeneration
 	isStatusConditionReady := apimeta.IsStatusConditionTrue(repo.Status.Conditions, meta.ReadyCondition)
 
-	rp.Status.HelmRepository = rp.GetHelmRepositoryName()
+	// When UseFlux is false, we suspend the HelmRepository which completely
+	// disables the controller. In such cases, we have to lie a bit to keep
+	// everything else chugging along as expected.
+	if repo.Spec.Suspend {
+		isGenerationCurrent = true
+		isStatusConditionReady = true
+	}
+
+	rp.Status.HelmRepository = repo.Name
 	rp.Status.HelmRepositoryReady = ptr.To(isStatusConditionReady && isGenerationCurrent)
 
 	return nil
