@@ -25,7 +25,6 @@ import (
 	helmController "github.com/fluxcd/helm-controller/shim"
 	"github.com/fluxcd/pkg/runtime/client"
 	helper "github.com/fluxcd/pkg/runtime/controller"
-	"github.com/fluxcd/pkg/runtime/events"
 	"github.com/fluxcd/pkg/runtime/metrics"
 	sourceControllerAPIv1 "github.com/fluxcd/source-controller/api/v1"
 	sourceControllerAPIv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
@@ -139,7 +138,6 @@ func Command() *cobra.Command {
 		metricsTimeout              time.Duration
 		restrictToRedpandaVersion   string
 		namespace                   string
-		eventsAddr                  string
 		additionalControllers       []string
 		operatorMode                bool
 		enableHelmControllers       bool
@@ -171,7 +169,6 @@ func Command() *cobra.Command {
 				metricsTimeout,
 				restrictToRedpandaVersion,
 				namespace,
-				eventsAddr,
 				additionalControllers,
 				operatorMode,
 				enableHelmControllers,
@@ -182,7 +179,6 @@ func Command() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&eventsAddr, "events-addr", "", "The address of the events receiver.")
 	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	cmd.Flags().StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
@@ -216,6 +212,7 @@ func Command() *cobra.Command {
 
 	// Deprecated flags.
 	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
+	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
 
 	return cmd
 }
@@ -235,7 +232,6 @@ func Run(
 	metricsTimeout time.Duration,
 	restrictToRedpandaVersion string,
 	namespace string,
-	eventsAddr string,
 	additionalControllers []string,
 	operatorMode bool,
 	enableHelmControllers bool,
@@ -338,17 +334,11 @@ func Run(
 			return err
 		}
 
-		var topicEventRecorder *events.Recorder
-		if topicEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "TopicReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: TopicReconciler")
-			return err
-		}
-
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
 			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			Scheme:        mgr.GetScheme(),
-			EventRecorder: topicEventRecorder,
+			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
@@ -411,16 +401,9 @@ func Run(
 			}
 
 			// Helm Release Controller
-			var helmReleaseEventRecorder *events.Recorder
-			if helmReleaseEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmReleaseReconciler"); err != nil {
-				setupLog.Error(err, "unable to create event recorder for: HelmReleaseReconciler")
-				return err
-			}
-
-			// Helm Release Controller
 			helmRelease := helmController.HelmReleaseReconcilerFactory{
 				Client:           mgr.GetClient(),
-				EventRecorder:    helmReleaseEventRecorder,
+				EventRecorder:    mgr.GetEventRecorderFor("HelmReleaseReconciler"),
 				ClientOpts:       clientOptions,
 				KubeConfigOpts:   kubeConfigOpts,
 				FieldManager:     helmReleaseControllerName,
@@ -429,13 +412,6 @@ func Run(
 			}
 			if err = helmRelease.SetupWithManager(ctx, mgr, helmOpts); err != nil {
 				setupLog.Error(err, "Unable to create controller", "controller", "HelmRelease")
-				return err
-			}
-
-			// Helm Chart Controller
-			var helmChartEventRecorder *events.Recorder
-			if helmChartEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmChartReconciler"); err != nil {
-				setupLog.Error(err, "unable to create event recorder for: HelmChartReconciler")
 				return err
 			}
 
@@ -457,7 +433,7 @@ func Run(
 				Getters:                 getters,
 				Metrics:                 metricsH,
 				Storage:                 storage,
-				EventRecorder:           helmChartEventRecorder,
+				EventRecorder:           mgr.GetEventRecorderFor("HelmChartReconciler"),
 				ControllerName:          helmChartControllerName,
 			}
 			if err = helmChart.SetupWithManager(ctx, mgr, chartOpts); err != nil {
@@ -466,15 +442,9 @@ func Run(
 			}
 
 			// Helm Repository Controller
-			var helmRepositoryEventRecorder *events.Recorder
-			if helmRepositoryEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "HelmRepositoryReconciler"); err != nil {
-				setupLog.Error(err, "unable to create event recorder for: HelmRepositoryReconciler")
-				return err
-			}
-
 			helmRepository := helmSourceController.HelmRepositoryReconcilerFactory{
 				Client:         mgr.GetClient(),
-				EventRecorder:  helmRepositoryEventRecorder,
+				EventRecorder:  mgr.GetEventRecorderFor("HelmReleaseReconciler"),
 				Getters:        getters,
 				ControllerName: helmRepositoryControllerName,
 				Cache:          helmIndexCache,
@@ -500,24 +470,12 @@ func Run(
 		}
 
 		// Redpanda Reconciler
-		var redpandaEventRecorder *events.Recorder
-		if redpandaEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "RedpandaReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: RedpandaReconciler")
-			return err
-		}
-
 		if err = (&redpandacontrollers.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
-			EventRecorder: redpandaEventRecorder,
+			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
-			return err
-		}
-
-		var topicEventRecorder *events.Recorder
-		if topicEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "TopicReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: TopicReconciler")
 			return err
 		}
 
@@ -525,7 +483,7 @@ func Run(
 			Client:        mgr.GetClient(),
 			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
-			EventRecorder: topicEventRecorder,
+			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
@@ -536,15 +494,9 @@ func Run(
 			return err
 		}
 
-		var managedDecommissionEventRecorder *events.Recorder
-		if managedDecommissionEventRecorder, err = events.NewRecorder(mgr, ctrl.Log, eventsAddr, "ManagedDecommissionReconciler"); err != nil {
-			setupLog.Error(err, "unable to create event recorder for: ManagedDecommissionReconciler")
-			return err
-		}
-
 		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
 			Client:        mgr.GetClient(),
-			EventRecorder: managedDecommissionEventRecorder,
+			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
 			return err
