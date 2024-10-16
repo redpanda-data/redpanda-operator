@@ -17,10 +17,15 @@
 package syncclusterconfig
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkadminapi "github.com/redpanda-data/redpanda/src/go/rpk/pkg/adminapi"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
@@ -31,15 +36,17 @@ import (
 )
 
 const (
-	licenseEnvvar = "REDPANDA_LICENSE"
+	licenseEnvvar   = "REDPANDA_LICENSE"
+	superusersEntry = "superusers"
 )
 
 func Command() *cobra.Command {
+	var usersDirectoryPath string
 	var redpandaYAMLPath string
 	var bootstrapYAMLPath string
 
 	cmd := &cobra.Command{
-		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file]",
+		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-directory file]",
 		Long: fmt.Sprintf(`sync-cluster-config patches a cluster's configuration with values from the provided bootstrap.yaml.
 If present and not empty, the $%s environment variable will be set as the cluster's license.
 `, licenseEnvvar),
@@ -67,6 +74,9 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
+			// do conditional merge of users.txt and bootstrap.yaml
+			maybeMergeSuperusers(logger, clusterConfig, usersDirectoryPath)
+
 			// NB: remove must be an empty slice NOT nil.
 			result, err := client.PatchClusterConfig(ctx, clusterConfig, []string{})
 			if err != nil {
@@ -88,6 +98,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 		},
 	}
 
+	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted")
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml")
 	cmd.Flags().StringVar(&bootstrapYAMLPath, "bootstrap-yaml", "/etc/redpanda/.bootstrap.yaml", "Path to .bootstrap.yaml")
 
@@ -124,4 +135,108 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 	}
 
 	return config, nil
+}
+
+// maybeMergeSuperusers merges the values found in users.txt into our superusers
+// list found in our bootstrap.yaml. This only occurs if an entry for superusers
+// actually exists in the bootstrap.yaml.
+func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path string) {
+	if path == "" {
+		// we have no path to a users directory, so don't do anything
+		logger.Info("--users-directory not specified. Skipping superusers merge.")
+		return
+	}
+
+	superusersConfig, ok := clusterConfig[superusersEntry]
+	if !ok {
+		// we have no superusers configuration, so don't do anything
+		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
+		return
+	}
+
+	superusers, err := loadUsersFiles(logger, path)
+	if err != nil {
+		logger.Info(fmt.Sprintf("Error reading users directory %q: %v. Skipping superusers merge.", path, err))
+		return
+	}
+
+	superusersAny, ok := superusersConfig.([]any)
+	if !ok {
+		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
+		return
+	}
+
+	clusterConfig[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
+}
+
+func loadUsersFiles(logger logr.Logger, path string) ([]string, error) {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	users := []string{}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filename := filepath.Join(path, file.Name())
+
+		usersFile, err := os.ReadFile(filename)
+		if err != nil {
+			logger.Info(fmt.Sprintf("Cannot read user file %q: %v. Skipping.", filename, err))
+			continue
+		}
+
+		scanner := bufio.NewScanner(bytes.NewReader(usersFile))
+
+		i := 0
+		for scanner.Scan() {
+			i++
+
+			line := scanner.Text()
+			tokens := strings.Split(line, ":")
+			if len(tokens) != 2 && len(tokens) != 3 {
+				logger.Info(fmt.Sprintf("Skipping malformatted line number %d in file %q", i, filename))
+				continue
+			}
+			users = append(users, tokens[0])
+		}
+	}
+
+	return users, nil
+}
+
+// normalizeSuperusers de-duplicates and sorts the superusers
+func normalizeSuperusers(entries []string) []string {
+	var sorted sort.StringSlice
+
+	unique := make(map[string]struct{})
+	for _, value := range entries {
+		if _, ok := unique[value]; !ok {
+			sorted = append(sorted, value)
+		}
+		unique[value] = struct{}{}
+	}
+
+	sorted.Sort()
+
+	return sorted
+}
+
+func mapConvertibleTo[T any](logger logr.Logger, array []any) []T {
+	var v T
+
+	converted := []T{}
+	for _, value := range array {
+		if cast, ok := value.(T); ok {
+			converted = append(converted, cast)
+		} else {
+			logger.Info("Unable to cast value from %T to %T, skipping.", value, v)
+		}
+	}
+
+	return converted
 }
