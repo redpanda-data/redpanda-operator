@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -40,12 +41,12 @@ const (
 )
 
 func Command() *cobra.Command {
-	var usersTxtPath string
+	var usersDirectoryPath string
 	var redpandaYAMLPath string
 	var bootstrapYAMLPath string
 
 	cmd := &cobra.Command{
-		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-txt file]",
+		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-directory file]",
 		Long: fmt.Sprintf(`sync-cluster-config patches a cluster's configuration with values from the provided bootstrap.yaml.
 If present and not empty, the $%s environment variable will be set as the cluster's license.
 `, licenseEnvvar),
@@ -74,7 +75,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 			}
 
 			// do conditional merge of users.txt and bootstrap.yaml
-			maybeMergeSuperusers(logger, clusterConfig, usersTxtPath)
+			maybeMergeSuperusers(logger, clusterConfig, usersDirectoryPath)
 
 			// NB: remove must be an empty slice NOT nil.
 			result, err := client.PatchClusterConfig(ctx, clusterConfig, []string{})
@@ -97,7 +98,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 		},
 	}
 
-	cmd.Flags().StringVar(&usersTxtPath, "users-txt", "/etc/secrets/users/users.txt", "Path to users.txt")
+	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted")
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml")
 	cmd.Flags().StringVar(&bootstrapYAMLPath, "bootstrap-yaml", "/etc/redpanda/.bootstrap.yaml", "Path to .bootstrap.yaml")
 
@@ -153,7 +154,7 @@ func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path
 		return
 	}
 
-	superusers, err := loadUsersTxt(path)
+	superusers, err := loadUsersFiles(logger, path)
 	if err != nil {
 		logger.Info(fmt.Sprintf("Error reading users.txt file %q: %v. Skipping superusers merge.", path, err))
 		return
@@ -165,25 +166,43 @@ func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path
 		return
 	}
 
-	clusterConfig[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](superusersAny)...))
+	clusterConfig[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
 }
 
-func loadUsersTxt(path string) ([]string, error) {
-	usersTxt, err := os.ReadFile(path)
+func loadUsersFiles(logger logr.Logger, path string) ([]string, error) {
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
 
 	users := []string{}
-	scanner := bufio.NewScanner(bytes.NewReader(usersTxt))
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.Split(line, ":")
-		if len(tokens) != 3 {
+	for _, file := range files {
+		if file.IsDir() {
 			continue
 		}
-		users = append(users, tokens[0])
+
+		filename := filepath.Join(path, file.Name())
+
+		usersFile, err := os.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+
+		scanner := bufio.NewScanner(bytes.NewReader(usersFile))
+
+		i := 0
+		for scanner.Scan() {
+			i++
+
+			line := scanner.Text()
+			tokens := strings.Split(line, ":")
+			if len(tokens) != 2 && len(tokens) != 3 {
+				logger.Info(fmt.Sprintf("Skipping malformatted line number %d in file %q", i, filename))
+				continue
+			}
+			users = append(users, tokens[0])
+		}
 	}
 
 	return users, nil
@@ -206,12 +225,17 @@ func normalizeSuperusers(entries []string) []string {
 	return sorted
 }
 
-func mapConvertibleTo[T any](array []any) []T {
+func mapConvertibleTo[T any](logger logr.Logger, array []any) []T {
+	var v T
+
 	converted := []T{}
 	for _, value := range array {
 		if cast, ok := value.(T); ok {
 			converted = append(converted, cast)
+		} else {
+			logger.Info("Unable to cast value from %T to %T, skipping.", value, v)
 		}
 	}
+
 	return converted
 }

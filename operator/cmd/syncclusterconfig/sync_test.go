@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -170,7 +171,7 @@ func TestSync(t *testing.T) {
 
 		cmd := Command()
 		cmd.SetArgs([]string{
-			"--users-txt", usersTxtYAMLPath,
+			"--users-directory", filepath.Dir(usersTxtYAMLPath),
 			"--redpanda-yaml", redpandaYAMLPath,
 			"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
 		})
