@@ -357,6 +357,8 @@ type SASL struct {
 
 // BootstrapUser configures the user used to bootstrap Redpanda when SASL is enabled.
 type BootstrapUser struct {
+	// Name could overwrite the default `kubernetes-controller` bootstrap user.
+	Name *string `json:"name,omitempty"`
 	// Specifies the location where the generated password will be written or a pre-existing
 	// password will be read from.
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
@@ -1030,6 +1032,8 @@ type RBAC struct {
 
 // ServiceAccount configures Service Accounts.
 type ServiceAccount struct {
+	// Specifies whether a service account should automount API-Credentials
+	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
 	// Adds custom annotations to the ServiceAccount resources.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether a ServiceAccount should be created.

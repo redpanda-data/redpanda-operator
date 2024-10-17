@@ -1129,6 +1129,10 @@ spec:
                                   to use for the bootstrap user. Options are `SCRAM-SHA-256`
                                   and `SCRAM-SHA-512`.
                                 type: string
+                              name:
+                                description: Name could overwrite the default `kubernetes-controller`
+                                  bootstrap user.
+                                type: string
                               secretKeyRef:
                                 description: |-
                                   Specifies the location where the generated password will be written or a pre-existing
@@ -6680,6 +6684,10 @@ spec:
                         description: Adds custom annotations to the ServiceAccount
                           resources.
                         type: object
+                      automountServiceAccountToken:
+                        description: Specifies whether a service account should automount
+                          API-Credentials
+                        type: boolean
                       create:
                         description: Specifies whether a ServiceAccount should be
                           created.
@@ -10907,6 +10915,10 @@ spec:
                                   to use for the bootstrap user. Options are `SCRAM-SHA-256`
                                   and `SCRAM-SHA-512`.
                                 type: string
+                              name:
+                                description: Name could overwrite the default `kubernetes-controller`
+                                  bootstrap user.
+                                type: string
                               secretKeyRef:
                                 description: |-
                                   Specifies the location where the generated password will be written or a pre-existing
@@ -16458,6 +16470,10 @@ spec:
                         description: Adds custom annotations to the ServiceAccount
                           resources.
                         type: object
+                      automountServiceAccountToken:
+                        description: Specifies whether a service account should automount
+                          API-Credentials
+                        type: boolean
                       create:
                         description: Specifies whether a ServiceAccount should be
                           created.
