@@ -109,6 +109,9 @@ type UserTemplateSpec struct {
 
 // UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
 type UserAuthenticationSpec struct {
+	// SASL mechanism to use for the user credentials. Valid values are:
+	// - scram-sha-512
+	// - scram-sha-256
 	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512;SCRAM-SHA-256;SCRAM-SHA-512
 	// +kubebuilder:default=scram-sha-512
 	Type *SASLMechanism `json:"type,omitempty"`
@@ -119,7 +122,10 @@ type UserAuthenticationSpec struct {
 // Password specifies a password for the user.
 // +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`self.value != "" || has(self.valueFrom)`
 type Password struct {
-	Value     string          `json:"value,omitempty"`
+	// Value is a hardcoded value to use for the given password. It should only be used for testing purposes while
+	// in production ValueFrom is preferred.
+	Value string `json:"value,omitempty"`
+	// ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
 	ValueFrom *PasswordSource `json:"valueFrom"`
 }
 
@@ -169,6 +175,8 @@ const (
 
 // UserAuthorizationSpec defines authorization rules for this user.
 type UserAuthorizationSpec struct {
+	// Type specifies the type of authorization to use for User ACLs. If unspecified, defaults to `simple`. Valid values are:
+	// - simple
 	// +kubebuilder:default=simple
 	Type *AuthorizationType `json:"type,omitempty"`
 	// List of ACL rules which should be applied to this user.
@@ -281,6 +289,9 @@ func (a ACLOperation) ToKafka() kmsg.ACLOperation {
 // +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.resource.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
 // +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.resource.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
 type ACLRule struct {
+	// Type specifies the type of ACL rule to create. Valid values are:
+	// - allow
+	// - deny
 	Type ACLType `json:"type"`
 	// Indicates the resource for which given ACL rule applies.
 	Resource ACLResourceSpec `json:"resource"`
@@ -288,7 +299,17 @@ type ACLRule struct {
 	// If not set, it defaults to *, allowing or denying the action from any host.
 	// +kubebuilder:default=*
 	Host *string `json:"host,omitempty"`
-	// List of operations which will be allowed or denied.
+	// List of operations which will be allowed or denied. Valid values are resource type dependent, but include:
+	// - Read
+	// - Write
+	// - Delete
+	// - Alter
+	// - Describe
+	// - IdempotentWrite
+	// - ClusterAction
+	// - Create
+	// - AlterConfigs
+	// - DescribeConfigs
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=11
 	// +kubebuilder:validation:item:MaxLength=15
@@ -422,14 +443,22 @@ func (t ResourceType) ToKafka() kmsg.ACLResourceType {
 // +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule=`self.type == "cluster" ? (self.name == "") : true`
 // +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name",rule=`self.type == "cluster" ? true : (self.name != "")`
 type ACLResourceSpec struct {
+	// Type specifies the type of resource an ACL is applied to. Valid values:
+	// - topic
+	// - group
+	// - cluster
+	// - transactionalId
 	Type ResourceType `json:"type"`
-	// Name of resource for which given ACL rule applies.
+	// Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified.
 	// Can be combined with patternType field to use prefix pattern.
 	Name string `json:"name"`
 	// Describes the pattern used in the resource field. The supported types are literal
 	// and prefixed. With literal pattern type, the resource field will be used as a definition
 	// of a full topic name. With prefix pattern type, the resource name will be used only as
-	// a prefix. Default value is literal.
+	// a prefix. Prefixed patterns can only be specified when using types `topic`, `group`, or
+	// `transactionalId`. Default value is literal. Valid values:
+	// - literal
+	// - prefixed
 	//
 	// +kubebuilder:default=literal
 	PatternType *PatternType `json:"patternType,omitempty"`
