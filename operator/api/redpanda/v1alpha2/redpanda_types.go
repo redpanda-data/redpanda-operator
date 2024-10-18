@@ -231,21 +231,6 @@ func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	return rp
 }
 
-// RedpandaProgressing resets any failures and registers progress toward
-// reconciling the given Redpanda by setting the meta.ReadyCondition to
-// 'Unknown' for meta.ProgressingReason.
-func RedpandaProgressing(rp *Redpanda) *Redpanda {
-	rp.Status.Conditions = []metav1.Condition{}
-	newCondition := metav1.Condition{
-		Type:    meta.ReadyCondition,
-		Status:  metav1.ConditionUnknown,
-		Reason:  meta.ProgressingReason,
-		Message: "Reconciliation in progress",
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
-	return rp
-}
-
 // GetConditions returns the status conditions of the object.
 func (in *Redpanda) GetConditions() *[]metav1.Condition {
 	return &in.Status.Conditions
