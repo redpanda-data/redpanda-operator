@@ -41,10 +41,3 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	return (*Redpanda)(v1alpha2.RedpandaNotReady((*v1alpha2.Redpanda)(rp), reason, message))
 }
-
-// RedpandaProgressing resets any failures and registers progress toward
-// reconciling the given Redpanda by setting the meta.ReadyCondition to
-// 'Unknown' for meta.ProgressingReason.
-func RedpandaProgressing(rp *Redpanda) *Redpanda {
-	return (*Redpanda)(v1alpha2.RedpandaProgressing((*v1alpha2.Redpanda)(rp)))
-}
