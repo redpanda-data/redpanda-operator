@@ -62,8 +62,8 @@ spec:
                     properties:
                       value:
                         description: |-
-                          Value is a hardcoded value to use for the given password. It should only be used for testing purposes while
-                          in production ValueFrom is preferred.
+                          Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
+                          In production, use ValueFrom.
                         type: string
                       valueFrom:
                         description: ValueFrom specifies a source for a password to

@@ -122,8 +122,8 @@ type UserAuthenticationSpec struct {
 // Password specifies a password for the user.
 // +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`self.value != "" || has(self.valueFrom)`
 type Password struct {
-	// Value is a hardcoded value to use for the given password. It should only be used for testing purposes while
-	// in production ValueFrom is preferred.
+	// Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
+	// In production, use ValueFrom.
 	Value string `json:"value,omitempty"`
 	// ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
 	ValueFrom *PasswordSource `json:"valueFrom"`
