@@ -98,9 +98,8 @@ spec:
                                 - name
                                 type: object
                               token:
-                                description: |-
-                                  SecretKeyRef contains enough information to inspect or modify the referred Secret data
-                                  See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                                description: Specifies token for token-based authentication
+                                  (only used if no username/password are provided).
                                 properties:
                                   key:
                                     description: Key in Secret data to get value from

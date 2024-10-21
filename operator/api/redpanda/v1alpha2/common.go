@@ -206,6 +206,7 @@ type AdminSASL struct {
 	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
+	// Specifies token for token-based authentication (only used if no username/password are provided).
 	// +optional
 	AuthToken SecretKeyRef `json:"token,omitempty"`
 }

@@ -6685,6 +6685,10 @@ spec:
                         description: Adds custom annotations to the ServiceAccount
                           resources.
                         type: object
+                      automountServiceAccountToken:
+                        description: Specifies whether a service account should automount
+                          API-Credentials
+                        type: boolean
                       create:
                         description: Specifies whether a ServiceAccount should be
                           created.
@@ -16468,6 +16472,10 @@ spec:
                         description: Adds custom annotations to the ServiceAccount
                           resources.
                         type: object
+                      automountServiceAccountToken:
+                        description: Specifies whether a service account should automount
+                          API-Credentials
+                        type: boolean
                       create:
                         description: Specifies whether a ServiceAccount should be
                           created.

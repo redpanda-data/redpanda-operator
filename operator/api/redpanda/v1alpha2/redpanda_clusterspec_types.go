@@ -1033,6 +1033,8 @@ type RBAC struct {
 
 // ServiceAccount configures Service Accounts.
 type ServiceAccount struct {
+	// Specifies whether a service account should automount API-Credentials
+	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
 	// Adds custom annotations to the ServiceAccount resources.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Specifies whether a ServiceAccount should be created.

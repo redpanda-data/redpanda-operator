@@ -61,9 +61,13 @@ spec:
                     description: Password specifies where a password is read from.
                     properties:
                       value:
+                        description: |-
+                          Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
+                          In production, use ValueFrom.
                         type: string
                       valueFrom:
-                        description: PasswordSource contains the source for a password.
+                        description: ValueFrom specifies a source for a password to
+                          be fetched from when specifying or generating user credentials.
                         properties:
                           secretKeyRef:
                             description: |-
@@ -104,7 +108,10 @@ spec:
                       rule: self.value != "" || has(self.valueFrom)
                   type:
                     default: scram-sha-512
-                    description: SASLMechanism specifies a SASL auth mechanism.
+                    description: |-
+                      SASL mechanism to use for the user credentials. Valid values are:
+                      - scram-sha-512
+                      - scram-sha-256
                     enum:
                     - scram-sha-256
                     - scram-sha-512
@@ -133,8 +140,18 @@ spec:
                             If not set, it defaults to *, allowing or denying the action from any host.
                           type: string
                         operations:
-                          description: List of operations which will be allowed or
-                            denied.
+                          description: |-
+                            List of operations which will be allowed or denied. Valid values are resource type dependent, but include:
+                            - Read
+                            - Write
+                            - Delete
+                            - Alter
+                            - Describe
+                            - IdempotentWrite
+                            - ClusterAction
+                            - Create
+                            - AlterConfigs
+                            - DescribeConfigs
                           items:
                             description: ACLOperation specifies the type of operation
                               for an ACL.
@@ -148,7 +165,7 @@ spec:
                           properties:
                             name:
                               description: |-
-                                Name of resource for which given ACL rule applies.
+                                Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified.
                                 Can be combined with patternType field to use prefix pattern.
                               type: string
                             patternType:
@@ -157,14 +174,21 @@ spec:
                                 Describes the pattern used in the resource field. The supported types are literal
                                 and prefixed. With literal pattern type, the resource field will be used as a definition
                                 of a full topic name. With prefix pattern type, the resource name will be used only as
-                                a prefix. Default value is literal.
+                                a prefix. Prefixed patterns can only be specified when using types `topic`, `group`, or
+                                `transactionalId`. Default value is literal. Valid values:
+                                - literal
+                                - prefixed
                               enum:
                               - literal
                               - prefixed
                               type: string
                             type:
-                              description: ResourceType specifies the type of resource
-                                an ACL is applied to.
+                              description: |-
+                                Type specifies the type of resource an ACL is applied to. Valid values:
+                                - topic
+                                - group
+                                - cluster
+                                - transactionalId
                               enum:
                               - topic
                               - group
@@ -187,8 +211,10 @@ spec:
                               a name
                             rule: 'self.type == "cluster" ? true : (self.name != "")'
                         type:
-                          description: ACLType specifies the type, either allow or
-                            deny of an ACL rule.
+                          description: |-
+                            Type specifies the type of ACL rule to create. Valid values are:
+                            - allow
+                            - deny
                           enum:
                           - allow
                           - deny
@@ -225,8 +251,9 @@ spec:
                     type: array
                   type:
                     default: simple
-                    description: AuthorizationType specifies the type of authorization
-                      to use in creating a user.
+                    description: |-
+                      Type specifies the type of authorization to use for User ACLs. If unspecified, defaults to `simple`. Valid values are:
+                      - simple
                     enum:
                     - simple
                     type: string
@@ -281,9 +308,8 @@ spec:
                                 - name
                                 type: object
                               token:
-                                description: |-
-                                  SecretKeyRef contains enough information to inspect or modify the referred Secret data
-                                  See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                                description: Specifies token for token-based authentication
+                                  (only used if no username/password are provided).
                                 properties:
                                   key:
                                     description: Key in Secret data to get value from

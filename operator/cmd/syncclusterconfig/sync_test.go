@@ -13,6 +13,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr/testr"
@@ -27,6 +29,7 @@ import (
 
 func TestSync(t *testing.T) {
 	const user = "syncer"
+	const admin = "admin"
 	const password = "password"
 	const saslMechanism = "SCRAM-SHA-256"
 
@@ -81,16 +84,34 @@ func TestSync(t *testing.T) {
 	require.NoError(t, err)
 
 	redpandaYAMLPath := testutils.WriteFile(t, "redpanda-*.yaml", rpkConfigBytes)
+	usersTxtYAMLPath := testutils.WriteFile(t, "users-*.txt", []byte(strings.Join([]string{admin, password, saslMechanism}, ":")))
 
 	cases := []struct {
 		Config   map[string]any
 		Expected map[string]any
 	}{
 		{
+			// No superusers entry, the value just gets pulled from
+			// what we initialized in our redpanda.Run call above.
 			Config: map[string]any{},
 			Expected: map[string]any{
 				"admin_api_require_auth": true,
 				"superusers":             []any{user},
+			},
+		},
+		{
+			// Passing a superusers entry to show that the value from
+			// the users.txt gets merged.
+			//
+			// Note that all subsequent runs build off of previous runs
+			// in this test, so all subsequent test cases will have both
+			// superusers.
+			Config: map[string]any{
+				"superusers": []string{user},
+			},
+			Expected: map[string]any{
+				"admin_api_require_auth": true,
+				"superusers":             []any{admin, user},
 			},
 		},
 		{
@@ -102,7 +123,7 @@ func TestSync(t *testing.T) {
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
 				"audit_queue_drain_interval_ms": 60,
-				"superusers":                    []any{user},
+				"superusers":                    []any{admin, user},
 			},
 		},
 		{
@@ -116,7 +137,7 @@ func TestSync(t *testing.T) {
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
 				"audit_queue_drain_interval_ms": 60,
-				"superusers":                    []any{user},
+				"superusers":                    []any{admin, user},
 			},
 		},
 		{
@@ -127,7 +148,7 @@ func TestSync(t *testing.T) {
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
 				"audit_queue_drain_interval_ms": 70,
-				"superusers":                    []any{user},
+				"superusers":                    []any{admin, user},
 			},
 		},
 		{
@@ -139,7 +160,7 @@ func TestSync(t *testing.T) {
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"audit_queue_drain_interval_ms": 70,
-				"superusers":                    []any{user},
+				"superusers":                    []any{admin, user},
 			},
 		},
 	}
@@ -150,6 +171,7 @@ func TestSync(t *testing.T) {
 
 		cmd := Command()
 		cmd.SetArgs([]string{
+			"--users-directory", filepath.Dir(usersTxtYAMLPath),
 			"--redpanda-yaml", redpandaYAMLPath,
 			"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
 		})
