@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
@@ -34,11 +35,8 @@ func (e *RedpandaTestEnv) StartRedpandaTestEnv(withWebhook bool) (*rest.Config, 
 		return nil, fmt.Errorf("unable to lookup path of calling function: %w", err)
 	}
 
-	e.CRDDirectoryPaths = []string{
-		filepath.Join(configPath, "crd", "bases"),
-		filepath.Join(configPath, "crd", "bases", "toolkit.fluxcd.io"),
-	}
-	e.ErrorIfCRDPathMissing = true
+	e.CRDInstallOptions.CRDs = crds.All()
+
 	if withWebhook {
 		e.WebhookInstallOptions = envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join(configPath, "webhook")},
