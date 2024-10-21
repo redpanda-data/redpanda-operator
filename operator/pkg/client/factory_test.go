@@ -112,20 +112,7 @@ func TestClientFactory(t *testing.T) {
 		KubeConfig: restcfg,
 	})
 	require.NoError(t, err)
-	require.NoError(t, helmClient.RepoAdd(ctx, "jetstack", "https://charts.jetstack.io"))
 	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
-
-	_, err = helmClient.Install(ctx, "jetstack/cert-manager", helm.InstallOptions{
-		CreateNamespace: true,
-		Name:            "cert-manager",
-		Namespace:       "cert-manager",
-		Values: map[string]any{
-			"crds": map[string]any{
-				"enabled": true,
-			},
-		},
-	})
-	require.NoError(t, err)
 
 	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
