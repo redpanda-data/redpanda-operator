@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
@@ -40,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	"github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -59,8 +59,6 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
-
-	HelmChartConstraint = "5.9.3"
 )
 
 var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
@@ -236,38 +234,28 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	log := ctrl.LoggerFrom(ctx)
 	log.WithName("RedpandaReconciler.reconcileDefluxed")
 
-	if !ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
-		// TODO (Rafal) Implement Redpanda helm chart templating with Redpanda Status Report
-		// In the Redpanda.Status there will be only Conditions and Failures that would be used.
-
-		if !atLeast(rp.Spec.ChartRef.ChartVersion) {
-			log.Error(fmt.Errorf("chart version needs to be at least %s", HelmChartConstraint), "", "chart version", rp.Spec.ChartRef.ChartVersion)
-			v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
-			r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, fmt.Sprintf("chart version needs to be at least %s. Currently it is %s", HelmChartConstraint, rp.Spec.ChartRef.ChartVersion))
-			// Do not error out to not requeue. User needs to first migrate helm release to at least 5.9.3 version
-			return nil
-		}
+	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+		log.Info("useFlux is true; skipping non-flux reconciliation...")
+		return nil
 	}
+
+	chartVersion := rp.Spec.ChartRef.ChartVersion
+	desiredChartVersion := redpanda.Chart.Metadata().Version
+
+	if !(chartVersion == "" || chartVersion == desiredChartVersion) {
+		msg := fmt.Sprintf(".spec.chartRef.chartVersion version needs to be %q or %q. got %q", desiredChartVersion, "", chartVersion)
+
+		// NB: passing `nil` as err is acceptable for log.Error.
+		log.Error(nil, msg, "chart version", rp.Spec.ChartRef.ChartVersion)
+		r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, msg)
+
+		v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", msg)
+
+		// Do not error out to not requeue. User needs to first migrate helm release to either "" or the pinned chart's version.
+		return nil
+	}
+
 	return nil
-}
-
-func atLeast(version string) bool {
-	if version == "" {
-		return true
-	}
-
-	c, err := semver.NewConstraint(fmt.Sprintf(">= %s", HelmChartConstraint))
-	if err != nil {
-		// Handle constraint not being parsable.
-		return false
-	}
-
-	v, err := semver.NewVersion(version)
-	if err != nil {
-		return false
-	}
-
-	return c.Check(v)
 }
 
 func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
@@ -426,6 +414,11 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 		timeout = &metav1.Duration{Duration: 15 * time.Minute}
 	}
 
+	chartVersion := rp.Spec.ChartRef.ChartVersion
+	if chartVersion == "" {
+		chartVersion = redpanda.Chart.Metadata().Version
+	}
+
 	upgrade := &helmv2beta2.Upgrade{
 		// we skip waiting since relying on the Helm release process
 		// to actually happen means that we block running any sort
@@ -461,7 +454,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 			Chart: helmv2beta2.HelmChartTemplate{
 				Spec: helmv2beta2.HelmChartTemplateSpec{
 					Chart:    "redpanda",
-					Version:  rp.Spec.ChartRef.ChartVersion,
+					Version:  chartVersion,
 					Interval: &metav1.Duration{Duration: 1 * time.Minute},
 					SourceRef: helmv2beta2.CrossNamespaceObjectReference{
 						Kind:      "HelmRepository",

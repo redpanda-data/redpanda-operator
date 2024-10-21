@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -63,6 +64,20 @@ var (
 		}
 	})
 )
+
+func TestDefluxedMinimumVersion(t *testing.T) {
+	crd := crds.Redpanda()
+	// 0 is v1alpha1 and 1 is v1alpha2
+	recursiveProperties := crd.Spec.Versions[1].Schema.OpenAPIV3Schema.Properties
+
+	require.Containsf(
+		t,
+		recursiveProperties["spec"].Properties["chartRef"].Properties["useFlux"].Description,
+		redpanda.Chart.Metadata().Version,
+		"'useFlux' should reference the version %q of the go.mod installed redpanda chart. Do you need to run 'task generate' or update the comment?",
+		redpanda.Chart.Metadata().Version,
+	)
+}
 
 // TestRedpanda_ValuesJSON asserts that .ValuesJSON appropriately coalesces the
 // value of CloudStorageEnabled into a boolean.
