@@ -14,9 +14,11 @@
 package testutils
 
 import (
+	"context"
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,4 +37,22 @@ func WriteFile(t *testing.T, pattern string, data []byte) string {
 	require.NoError(t, tmpFile.Close())
 
 	return tmpFile.Name()
+}
+
+// Go is a helper for ensuring that goroutines spawned in test cases are
+// appropriately shutdown.
+// If an error is returned, t.Fail will be called.
+func Go(t *testing.T, ctx context.Context, fn func(context.Context) error) {
+	doneCh := make(chan struct{})
+	ctx, cancel := context.WithCancel(ctx)
+
+	t.Cleanup(func() {
+		cancel()
+		<-doneCh
+	})
+
+	go func() {
+		assert.NoError(t, fn(ctx))
+		close(doneCh)
+	}()
 }
