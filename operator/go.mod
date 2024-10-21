@@ -8,6 +8,7 @@ require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cisco-open/k8s-objectmatcher v1.9.0
 	github.com/cloudhut/common v0.10.0
+	github.com/cockroachdb/errors v1.11.1
 	github.com/distribution/reference v0.6.0
 	github.com/fluxcd/helm-controller/api v0.37.2
 	github.com/fluxcd/helm-controller/shim v0.0.0-00010101000000-000000000000
@@ -27,7 +28,7 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/helm-charts v0.0.0-20241015140509-56e8cc7a5e8a
+	github.com/redpanda-data/helm-charts v0.0.0-20241025092026-69353dfce9a1
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.11.0
@@ -138,7 +139,6 @@ require (
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
