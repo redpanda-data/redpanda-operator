@@ -50,7 +50,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.Schema) (string, 
 			return hash, versions, err
 		}
 
-		setCompatibility = !have.CompatibilityEquals(want)
+		setCompatibility = have.CompatibilityLevel != want.CompatibilityLevel
 		createSchema = !have.SchemaEquals(want)
 	}
 
