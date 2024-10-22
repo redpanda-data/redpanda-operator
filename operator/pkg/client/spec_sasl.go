@@ -55,6 +55,33 @@ func (c *Factory) configureAdminSpecSASL(ctx context.Context, namespace string, 
 	return "", "", "", fmt.Errorf("unsupported SASL mechanism: %s", spec.SASL.Mechanism)
 }
 
+func (c *Factory) configureSchemaRegistrySpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.SchemaRegistrySpec) (username, password, token string, err error) {
+	if spec.SASL == nil {
+		return "", "", "", nil
+	}
+
+	//nolint:exhaustive // we don't need this to be exhaustive, as we only support 3 auth mechanisms in this API.
+	switch spec.SASL.Mechanism {
+	// SCRAM
+	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
+		p, err := spec.SASL.Password.GetValue(ctx, c.Client, namespace, "password")
+		if err != nil {
+			return "", "", "", fmt.Errorf("unable to fetch sasl password: %w", err)
+		}
+
+		return spec.SASL.Username, string(p), "", nil
+	// OAUTH
+	case config.SASLMechanismOAuthBearer:
+		token, err := spec.SASL.AuthToken.GetValue(ctx, c.Client, namespace, "password")
+		if err != nil {
+			return "", "", "", fmt.Errorf("unable to fetch sasl token: %w", err)
+		}
+		return "", "", string(token), nil
+	}
+
+	return "", "", "", fmt.Errorf("unsupported SASL mechanism: %s", spec.SASL.Mechanism)
+}
+
 func (c *Factory) configureKafkaSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (kgo.Opt, error) {
 	logger := log.FromContext(ctx)
 

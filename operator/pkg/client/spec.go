@@ -13,6 +13,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -21,6 +22,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"github.com/twmb/franz-go/pkg/sr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -143,4 +145,58 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	}
 
 	return client, nil
+}
+
+func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.SchemaRegistrySpec) (*sr.Client, error) {
+	if len(spec.URLs) == 0 {
+		return nil, ErrEmptyURLList
+	}
+
+	// These transport values come from the TLS client options found here:
+	// https://github.com/twmb/franz-go/blob/cea7aa5d803781e5f0162187795482ba1990c729/pkg/sr/clientopt.go#L48-L68
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   100,
+		DialContext:           c.dialer,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	var err error
+	var tlsConfig *tls.Config
+	if spec.TLS != nil {
+		tlsConfig, err = c.configureSpecTLS(ctx, namespace, spec.TLS)
+		if err != nil {
+			return nil, err
+		}
+		transport.TLSClientConfig = tlsConfig
+	}
+
+	opts := []sr.ClientOpt{
+		sr.HTTPClient(&http.Client{
+			Timeout:   5 * time.Second,
+			Transport: transport,
+		}),
+	}
+
+	var username, password, token string
+	username, password, token, err = c.configureSchemaRegistrySpecSASL(ctx, namespace, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		opts = append(opts, sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))
+	} else if username != "" {
+		opts = append(opts, sr.BasicAuth(username, password))
+	} else if token != "" {
+		opts = append(opts, sr.BearerToken(token))
+	}
+
+	opts = append(opts, sr.URLs(spec.URLs...))
+
+	return sr.NewClient(opts...)
 }
