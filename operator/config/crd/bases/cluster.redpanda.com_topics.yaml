@@ -411,11 +411,124 @@ spec:
                         required:
                         - brokers
                         type: object
-                    required:
-                    - kafka
+                      schemaRegistry:
+                        description: |-
+                          SchemaRegistry is the configuration information for communicating with the Schema Registry
+                          API of a Redpanda cluster where the object should be created.
+                        properties:
+                          sasl:
+                            description: Defines authentication configuration settings
+                              for Redpanda clusters that have authentication enabled.
+                            properties:
+                              mechanism:
+                                description: Specifies the SASL/SCRAM authentication
+                                  mechanism.
+                                type: string
+                              passwordSecretRef:
+                                description: Specifies the password.
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              token:
+                                description: |-
+                                  SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                                  See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              username:
+                                description: Specifies the username.
+                                type: string
+                            required:
+                            - mechanism
+                            type: object
+                          tls:
+                            description: Defines TLS configuration settings for Redpanda
+                              clusters that have TLS enabled.
+                            properties:
+                              caCertSecretRef:
+                                description: CaCert is the reference for certificate
+                                  authority used to establish TLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              certSecretRef:
+                                description: Cert is the reference for client public
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              insecureSkipTlsVerify:
+                                description: InsecureSkipTLSVerify can skip verifying
+                                  Redpanda self-signed certificate when establish
+                                  TLS connection to Redpanda
+                                type: boolean
+                              keySecretRef:
+                                description: Key is the reference for client private
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                          urls:
+                            description: Specifies a list of broker addresses in the
+                              format <host>:<port>
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - urls
+                        type: object
                     type: object
                 type: object
                 x-kubernetes-validations:
+                - message: 'spec.cluster.staticConfiguration.kafka: required value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
@@ -1234,11 +1347,124 @@ spec:
                         required:
                         - brokers
                         type: object
-                    required:
-                    - kafka
+                      schemaRegistry:
+                        description: |-
+                          SchemaRegistry is the configuration information for communicating with the Schema Registry
+                          API of a Redpanda cluster where the object should be created.
+                        properties:
+                          sasl:
+                            description: Defines authentication configuration settings
+                              for Redpanda clusters that have authentication enabled.
+                            properties:
+                              mechanism:
+                                description: Specifies the SASL/SCRAM authentication
+                                  mechanism.
+                                type: string
+                              passwordSecretRef:
+                                description: Specifies the password.
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              token:
+                                description: |-
+                                  SecretKeyRef contains enough information to inspect or modify the referred Secret data
+                                  See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              username:
+                                description: Specifies the username.
+                                type: string
+                            required:
+                            - mechanism
+                            type: object
+                          tls:
+                            description: Defines TLS configuration settings for Redpanda
+                              clusters that have TLS enabled.
+                            properties:
+                              caCertSecretRef:
+                                description: CaCert is the reference for certificate
+                                  authority used to establish TLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              certSecretRef:
+                                description: Cert is the reference for client public
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              insecureSkipTlsVerify:
+                                description: InsecureSkipTLSVerify can skip verifying
+                                  Redpanda self-signed certificate when establish
+                                  TLS connection to Redpanda
+                                type: boolean
+                              keySecretRef:
+                                description: Key is the reference for client private
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                          urls:
+                            description: Specifies a list of broker addresses in the
+                              format <host>:<port>
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - urls
+                        type: object
                     type: object
                 type: object
                 x-kubernetes-validations:
+                - message: 'spec.cluster.staticConfiguration.kafka: required value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable

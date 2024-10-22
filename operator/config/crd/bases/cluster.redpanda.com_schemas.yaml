@@ -4,32 +4,29 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.3
-  name: users.cluster.redpanda.com
+  name: schemas.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
   names:
-    kind: User
-    listKind: UserList
-    plural: users
+    kind: Schema
+    listKind: SchemaList
+    plural: schemas
     shortNames:
-    - rpu
-    singular: user
+    - sc
+    singular: schema
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="Synced")].status
       name: Synced
       type: string
-    - jsonPath: .status.managedUser
-      name: Managing User
-      type: boolean
-    - jsonPath: .status.managedAcls
-      name: Managing ACLs
-      type: boolean
+    - jsonPath: .status.versions[-1]
+      name: Latest Version
+      type: number
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: User defines the CRD for a Redpanda user.
+        description: Schema defines the CRD for a Redpanda schema.
         properties:
           apiVersion:
             description: |-
@@ -49,218 +46,11 @@ spec:
           metadata:
             type: object
           spec:
-            description: Defines the desired state of the Redpanda user.
+            description: Defines the desired state of the Redpanda schema.
             properties:
-              authentication:
-                description: |-
-                  Authentication defines the authentication information for a user. If no
-                  Authentication credentials are specified, then no user will be created.
-                  This is useful when wanting to manage ACLs for an already-existing user.
-                properties:
-                  password:
-                    description: Password specifies where a password is read from.
-                    properties:
-                      value:
-                        description: |-
-                          Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
-                          In production, use ValueFrom.
-                        type: string
-                      valueFrom:
-                        description: ValueFrom specifies a source for a password to
-                          be fetched from when specifying or generating user credentials.
-                        properties:
-                          secretKeyRef:
-                            description: |-
-                              SecretKeyRef specifies the secret used in reading a User password.
-                              If the Secret exists and has a value in it, then that value is used.
-                              If the Secret does not exist, or is empty, a password is generated and
-                              stored based on this configuration.
-                            properties:
-                              key:
-                                description: The key of the secret to select from.  Must
-                                  be a valid secret key.
-                                type: string
-                              name:
-                                default: ""
-                                description: |-
-                                  Name of the referent.
-                                  This field is effectively required, but due to backwards compatibility is
-                                  allowed to be empty. Instances of this type with an empty value here are
-                                  almost certainly wrong.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                              optional:
-                                description: Specify whether the Secret or its key
-                                  must be defined
-                                type: boolean
-                            required:
-                            - key
-                            type: object
-                            x-kubernetes-map-type: atomic
-                        required:
-                        - secretKeyRef
-                        type: object
-                    required:
-                    - valueFrom
-                    type: object
-                    x-kubernetes-validations:
-                    - message: valueFrom must not be empty if no value supplied
-                      rule: self.value != "" || has(self.valueFrom)
-                  type:
-                    default: scram-sha-512
-                    description: |-
-                      SASL mechanism to use for the user credentials. Valid values are:
-                      - scram-sha-512
-                      - scram-sha-256
-                    enum:
-                    - scram-sha-256
-                    - scram-sha-512
-                    - SCRAM-SHA-256
-                    - SCRAM-SHA-512
-                    type: string
-                required:
-                - password
-                type: object
-              authorization:
-                description: Authorization rules defined for this user.
-                properties:
-                  acls:
-                    description: List of ACL rules which should be applied to this
-                      user.
-                    items:
-                      description: |-
-                        ACLRule defines an ACL rule applied to the given user.
-
-                        Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
-                      properties:
-                        host:
-                          default: '*'
-                          description: |-
-                            The host from which the action described in the ACL rule is allowed or denied.
-                            If not set, it defaults to *, allowing or denying the action from any host.
-                          type: string
-                        operations:
-                          description: |-
-                            List of operations which will be allowed or denied. Valid values are resource type dependent, but include:
-                            - Read
-                            - Write
-                            - Delete
-                            - Alter
-                            - Describe
-                            - IdempotentWrite
-                            - ClusterAction
-                            - Create
-                            - AlterConfigs
-                            - DescribeConfigs
-                          items:
-                            description: ACLOperation specifies the type of operation
-                              for an ACL.
-                            type: string
-                          maxItems: 11
-                          minItems: 1
-                          type: array
-                        resource:
-                          description: Indicates the resource for which given ACL
-                            rule applies.
-                          properties:
-                            name:
-                              description: |-
-                                Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified.
-                                Can be combined with patternType field to use prefix pattern.
-                              type: string
-                            patternType:
-                              default: literal
-                              description: |-
-                                Describes the pattern used in the resource field. The supported types are literal
-                                and prefixed. With literal pattern type, the resource field will be used as a definition
-                                of a full topic name. With prefix pattern type, the resource name will be used only as
-                                a prefix. Prefixed patterns can only be specified when using types `topic`, `group`, or
-                                `transactionalId`. Default value is literal. Valid values:
-                                - literal
-                                - prefixed
-                              enum:
-                              - literal
-                              - prefixed
-                              type: string
-                            type:
-                              description: |-
-                                Type specifies the type of resource an ACL is applied to. Valid values:
-                                - topic
-                                - group
-                                - cluster
-                                - transactionalId
-                              enum:
-                              - topic
-                              - group
-                              - cluster
-                              - transactionalId
-                              type: string
-                          required:
-                          - name
-                          - type
-                          type: object
-                          x-kubernetes-validations:
-                          - message: prefixed pattern type only supported for ['group',
-                              'topic', 'transactionalId']
-                            rule: 'self.type in [''group'', ''topic'', ''transactionalId'']
-                              ? true : !has(self.patternType) || self.patternType
-                              != ''prefixed'''
-                          - message: name must not be specified for type ['cluster']
-                            rule: 'self.type == "cluster" ? (self.name == "") : true'
-                          - message: acl rules on non-cluster resources must specify
-                              a name
-                            rule: 'self.type == "cluster" ? true : (self.name != "")'
-                        type:
-                          description: |-
-                            Type specifies the type of ACL rule to create. Valid values are:
-                            - allow
-                            - deny
-                          enum:
-                          - allow
-                          - deny
-                          type: string
-                      required:
-                      - operations
-                      - resource
-                      - type
-                      type: object
-                      x-kubernetes-validations:
-                      - message: supported topic operations are ['Alter', 'AlterConfigs',
-                          'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read',
-                          'Write']
-                        rule: 'self.resource.type == ''topic'' ? self.operations.all(o,
-                          o in [''Alter'', ''AlterConfigs'', ''Create'', ''Delete'',
-                          ''Describe'', ''DescribeConfigs'', ''Read'', ''Write''])
-                          : true'
-                      - message: supported group operations are ['Delete', 'Describe',
-                          'Read']
-                        rule: 'self.resource.type == ''group'' ? self.operations.all(o,
-                          o in [''Delete'', ''Describe'', ''Read'']) : true'
-                      - message: supported transactionalId operations are ['Describe',
-                          'Write']
-                        rule: 'self.resource.type == ''transactionalId'' ? self.operations.all(o,
-                          o in [''Describe'', ''Write'']) : true'
-                      - message: supported cluster operations are ['Alter', 'AlterConfigs',
-                          'ClusterAction', 'Create', 'Describe', 'DescribeConfigs',
-                          'IdempotentWrite']
-                        rule: 'self.resource.type == ''cluster'' ? self.operations.all(o,
-                          o in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
-                          ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
-                          : true'
-                    maxItems: 1024
-                    type: array
-                  type:
-                    default: simple
-                    description: |-
-                      Type specifies the type of authorization to use for User ACLs. If unspecified, defaults to `simple`. Valid values are:
-                      - simple
-                    enum:
-                    - simple
-                    type: string
-                type: object
               cluster:
                 description: |-
-                  ClusterSource is a reference to the cluster where the user should be created.
+                  ClusterSource is a reference to the cluster hosting the schema registry.
                   It is used in constructing the client created to configure a cluster.
                 properties:
                   clusterRef:
@@ -734,44 +524,62 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-validations:
-                - message: 'spec.cluster.staticConfiguration.admin: required value'
-                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.admin)'
-                - message: 'spec.cluster.staticConfiguration.kafka: required value'
-                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
+                - message: 'spec.cluster.staticConfiguration.schemaRegistry: required
+                    value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.schemaRegistry)'
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
-              template:
-                description: Template to specify how user secrets are generated.
-                properties:
-                  secret:
-                    description: Specifies how the Secret with a user password is
-                      generated.
-                    properties:
-                      metadata:
-                        description: Metadata specifies additional metadata to associate
-                          with a resource.
-                        properties:
-                          annotations:
-                            additionalProperties:
-                              type: string
-                            description: Annotations specifies the Kubernetes annotations
-                              to apply to a managed resource.
-                            type: object
-                          labels:
-                            additionalProperties:
-                              type: string
-                            description: Labels specifies the Kubernetes labels to
-                              apply to a managed resource.
-                            type: object
-                        type: object
-                    required:
-                    - metadata
-                    type: object
-                type: object
+              compatibilityLevel:
+                default: Backward
+                description: CompatibilityLevel sets the compatibility level for the
+                  given schema
+                enum:
+                - None
+                - Backward
+                - BackwardTransitive
+                - Forward
+                - ForwardTransitive
+                - Full
+                - FullTransitive
+                type: string
+              references:
+                description: |-
+                  References declares other schemas this schema references. See the
+                  docs on SchemaReference for more details.
+                items:
+                  description: |-
+                    SchemaReference is a way for a one schema to reference another. The
+                    details for how referencing is done are type specific; for example,
+                    JSON objects that use the key "$ref" can refer to another schema via
+                    URL.
+                  properties:
+                    name:
+                      type: string
+                    subject:
+                      type: string
+                    version:
+                      type: integer
+                  required:
+                  - name
+                  - subject
+                  - version
+                  type: object
+                type: array
+              schemaType:
+                default: avro
+                description: Type is the type of a schema. The default type is avro.
+                enum:
+                - avro
+                - protobuf
+                type: string
+              text:
+                description: Text is the actual unescaped text of a schema.
+                type: string
             required:
             - cluster
+            - text
             type: object
           status:
             default:
@@ -781,10 +589,10 @@ spec:
                 reason: Pending
                 status: Unknown
                 type: Synced
-            description: Represents the current status of the Redpanda user.
+            description: Represents the current status of the Redpanda schema.
             properties:
               conditions:
-                description: Conditions holds the conditions for the Redpanda user.
+                description: Conditions holds the conditions for the Redpanda schema.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -840,20 +648,19 @@ spec:
                   - type
                   type: object
                 type: array
-              managedAcls:
-                description: |-
-                  ManagedACLs returns whether the user has managed ACLs that need
-                  to be cleaned up.
-                type: boolean
-              managedUser:
-                description: |-
-                  ManagedUser returns whether the user has a managed SCRAM user that need
-                  to be cleaned up.
-                type: boolean
               observedGeneration:
                 description: Specifies the last observed generation.
                 format: int64
                 type: integer
+              schemaHash:
+                description: SchemaHash is the hashed value of the schema synced to
+                  the cluster
+                type: string
+              versions:
+                description: Versions shows the versions of a given schema
+                items:
+                  type: integer
+                type: array
             type: object
         required:
         - spec

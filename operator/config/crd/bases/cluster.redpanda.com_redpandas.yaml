@@ -1130,8 +1130,9 @@ spec:
                                   and `SCRAM-SHA-512`.
                                 type: string
                               name:
-                                description: Name could overwrite the default `kubernetes-controller`
-                                  bootstrap user.
+                                description: |-
+                                  Name specifies the name of the bootstrap user created for the cluster, if unspecified
+                                  defaults to "kubernetes-controller".
                                 type: string
                               secretKeyRef:
                                 description: |-
@@ -10916,8 +10917,9 @@ spec:
                                   and `SCRAM-SHA-512`.
                                 type: string
                               name:
-                                description: Name could overwrite the default `kubernetes-controller`
-                                  bootstrap user.
+                                description: |-
+                                  Name specifies the name of the bootstrap user created for the cluster, if unspecified
+                                  defaults to "kubernetes-controller".
                                 type: string
                               secretKeyRef:
                                 description: |-

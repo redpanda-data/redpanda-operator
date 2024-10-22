@@ -1804,8 +1804,6 @@ github.com/redpanda-data/common-go/rpadmin v0.1.4/go.mod h1:I7umqhnMhIOSEnIA3fvL
 github.com/redpanda-data/common-go/rpadmin v0.1.5-0.20240814205445-8e6eb5806561/go.mod h1:I7umqhnMhIOSEnIA3fvLtdQU7QO/SbWGCwFfFDs3De4=
 github.com/redpanda-data/helm-charts v0.0.0-20240911060052-2bf9dd6f0996/go.mod h1:uEMmuH+gTppAsZZNYlUbh6tuxN3fqffWY0Bi8AcE2Zk=
 github.com/redpanda-data/helm-charts v0.0.0-20240916201426-9ca3b128bb8e/go.mod h1:uEMmuH+gTppAsZZNYlUbh6tuxN3fqffWY0Bi8AcE2Zk=
-github.com/redpanda-data/helm-charts v0.0.0-20241015140509-56e8cc7a5e8a h1:kNx8tH6z02nJctZS+oYt7LOWWoZgfMW4Ktees89GTh0=
-github.com/redpanda-data/helm-charts v0.0.0-20241015140509-56e8cc7a5e8a/go.mod h1:TqCaTv9K8+VbAeZHlR/OqHVksTlj0HYAzDkUEtZNyZc=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240105044330-c094966ca0cf/go.mod h1:SaSp5/JwdLHu8ZU82wFbXD8/oE4UWB+8ZkjWWreAt7Y=
 github.com/rhnvrm/simples3 v0.6.1 h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=
 github.com/rickb777/period v1.0.6 h1:f4TcHBtL/4qa4D44eqgxs7785/kfLKUjRI7XYI2HCvk=
@@ -1942,14 +1940,12 @@ github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqri
 github.com/twmb/franz-go v1.15.4/go.mod h1:rC18hqNmfo8TMc1kz7CQmHL74PLNF8KVvhflxiiJZCU=
 github.com/twmb/franz-go v1.17.1 h1:0LwPsbbJeJ9R91DPUHSEd4su82WJWcTY1Zzbgbg4CeQ=
 github.com/twmb/franz-go v1.18.0 h1:25FjMZfdozBywVX+5xrWC2W+W76i0xykKjTdEeD2ejw=
-github.com/twmb/franz-go v1.18.0/go.mod h1:zXCGy74M0p5FbXsLeASdyvfLFsBvTubVqctIaa5wQ+I=
 github.com/twmb/franz-go/pkg/kadm v1.13.0 h1:bJq4C2ZikUE2jh/wl9MtMTQ/kpmnBgVFh8XMQBEC+60=
 github.com/twmb/franz-go/pkg/kfake v0.0.0-20230703040638-f324841a32b4 h1:y5NllVZKHBJRSPLWn01cKE94pj2FU9cv6W8H5YqnJw8=
 github.com/twmb/franz-go/pkg/kfake v0.0.0-20230703040638-f324841a32b4/go.mod h1:Cj9p83ubk+71qEHi33iIT/m/53DzerdNDkMs3Lf2h+4=
 github.com/twmb/franz-go/pkg/kfake v0.0.0-20240412162337-6a58760afaa7 h1:ehifEfv6+joNOFrOZ7vRDcgeAJsOIrav2MrZbGhK2MA=
 github.com/twmb/franz-go/pkg/kfake v0.0.0-20240412162337-6a58760afaa7/go.mod h1:DCMFat7WCZfk946rqd9aVAcAmB6/rIcdMTslJSjJZgk=
 github.com/twmb/franz-go/pkg/kmsg v1.9.0 h1:JojYUph2TKAau6SBtErXpXGC7E3gg4vGZMv9xFU/B6M=
-github.com/twmb/franz-go/pkg/kmsg v1.9.0/go.mod h1:CMbfazviCyY6HM0SXuG5t9vOwYDHRCSrJJyBAe5paqg=
 github.com/twmb/franz-go/pkg/sr v0.0.0-20231231072040-c69fa0b5dc26/go.mod h1:egX+kicq83hpztv3PRCXKLNO132Ol9JTAJOCRZcqUxI=
 github.com/twmb/franz-go/pkg/sr v1.0.1 h1:hf3eRFDUWSfmR7JQCS/3JiqZEQwqbiDSS/DooewMHCE=
 github.com/twmb/franz-go/pkg/sr v1.0.1/go.mod h1:aUFRRLI5WYKpKzmWDztzZFecx5eOkCNuuamd91jUV5c=
