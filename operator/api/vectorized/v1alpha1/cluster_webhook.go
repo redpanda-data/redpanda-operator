@@ -270,16 +270,13 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 }
 
 func (r *Cluster) validateScaling() field.ErrorList {
+	replicas := r.GetReplicas()
+
 	var allErrs field.ErrorList
-	if r.Spec.Replicas == nil {
+	if replicas <= 0 {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("replicas"),
-				r.Spec.Replicas,
-				"replicas must be specified explicitly"))
-	} else if *r.Spec.Replicas <= 0 {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("replicas"),
-				r.Spec.Replicas,
+			field.Invalid(field.NewPath("spec").Child("nodepools"),
+				replicas,
 				"downscaling is not allowed to less than 1 instance"))
 	}
 
@@ -770,6 +767,32 @@ func (r *Cluster) validateRedpandaMemory() field.ErrorList {
 	}
 	var allErrs field.ErrorList
 
+	for i := range r.Spec.NodePools {
+		np := r.Spec.NodePools[i]
+
+		// Ensure a requested 2GB of memory per core
+		requests := np.Resources.Requests.DeepCopy()
+		requests.Cpu().RoundUp(0)
+		requestedCores := requests.Cpu().Value()
+		if np.Resources.Requests.Memory().Value() < requestedCores*MinimumMemoryPerCore {
+			allErrs = append(allErrs,
+				field.Invalid(
+					field.NewPath("spec").Child("nodePool").Child("resources").Child("requests").Child("memory"),
+					np.Resources.Requests.Memory(),
+					"requests.memory < 2Gi per core; either decrease requests.cpu or increase requests.memory"))
+		}
+
+		redpandaCores := np.Resources.RedpandaCPU().Value()
+		minimumMemoryPerCore := int64(math.Floor(MinimumMemoryPerCore * RedpandaMemoryAllocationRatio))
+		if !np.Resources.RedpandaMemory().IsZero() && np.Resources.RedpandaMemory().Value() < redpandaCores*minimumMemoryPerCore {
+			allErrs = append(allErrs,
+				field.Invalid(
+					field.NewPath("spec").Child("resources").Child("redpanda").Child("memory"),
+					r.Spec.Resources.Requests.Memory(),
+					"redpanda.memory < 2Gi per core; either decrease redpanda.cpu or increase redpanda.memory"))
+		}
+	}
+
 	// Ensure a requested 2GB of memory per core
 	requests := r.Spec.Resources.Requests.DeepCopy()
 	requests.Cpu().RoundUp(0)
@@ -817,6 +840,39 @@ func (r *Cluster) validateRedpandaCoreChanges(old *Cluster) field.ErrorList {
 					field.NewPath("spec").Child("resources").Child("requests").Child("cpu"),
 					r.Spec.Resources.Requests.Cpu(),
 					fmt.Sprintf("CPU request must not be decreased; increase requests.cpu or redpanda.cpu to at least %dm", minAllowedCPU)))
+		}
+	}
+
+	// Same check per NP
+	for i := range r.Spec.NodePools {
+		np := r.Spec.NodePools[i]
+		var oldNp *NodePoolSpec
+		for y := range old.Spec.NodePools {
+			old := old.Spec.NodePools[y]
+			if old.Name == np.Name {
+				oldNp = &old
+			}
+		}
+
+		if oldNp == nil {
+			continue
+		}
+
+		oldCPURequest := oldNp.Resources.RedpandaCPU()
+		newCPURequest := np.Resources.RedpandaCPU()
+
+		if oldCPURequest != nil && newCPURequest != nil {
+			oldCores := oldCPURequest.Value()
+			newCores := newCPURequest.Value()
+
+			if newCores < oldCores {
+				minAllowedCPU := (oldCores-1)*1000 + 1
+				allErrs = append(allErrs,
+					field.Invalid(
+						field.NewPath("spec").Child("resources").Child("requests").Child("cpu"),
+						np.Resources.Requests.Cpu(),
+						fmt.Sprintf("CPU request must not be decreased; increase requests.cpu or redpanda.cpu to at least %dm", minAllowedCPU)))
+			}
 		}
 	}
 

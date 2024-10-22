@@ -30,7 +30,7 @@ func TestGetPodOrdinal(t *testing.T) {
 		{"pod-0", "pod", false, 0},
 		{"pod-99", "pod", false, 99},
 		{"", "unexpected longer cluster name", true, -1},
-		{"test+0", "test", false, 0},
+		{"test+0", "test", true, -1},
 		{"without-ordinal-", "without-ordinal", true, -1},
 	}
 

@@ -271,13 +271,13 @@ func Run(
 	case OperatorV1Mode:
 		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
 
-		adminAPIClientFactory := adminutils.CachedAdminAPIClientFactory(adminutils.NewInternalAdminAPI)
+		adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
 		if err = (&vectorizedcontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminAPIClientFactory,
+			AdminAPIClientFactory:     adminutils.NewNodePoolInternalAdminAPI,
 			DecommissionWaitInterval:  decommissionWaitInterval,
 			MetricsTimeout:            metricsTimeout,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,

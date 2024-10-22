@@ -37,7 +37,7 @@ func NewAdminAPI(
 	scheme *runtime.Scheme,
 	cluster *vectorizedv1alpha1.Cluster,
 	clusterDomain string,
-	adminAPI adminutils.AdminAPIClientFactory,
+	adminAPI adminutils.NodePoolAdminAPIClientFactory,
 	log logr.Logger,
 ) (adminutils.AdminAPIClient, error) {
 	headlessSvc := resources.NewHeadlessService(cl, cluster, scheme, nil, log)

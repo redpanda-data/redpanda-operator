@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,6 +35,77 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
+
+func pandaCluster() *vectorizedv1alpha1.Cluster {
+	var replicas int32 = 1
+
+	res := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("1"),
+		corev1.ResourceMemory: resource.MustParse("2Gi"),
+	}
+
+	return &vectorizedv1alpha1.Cluster{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RedpandaCluster",
+			APIVersion: "core.vectorized.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app": "redpanda",
+			},
+			UID: "ff2770aa-c919-43f0-8b4a-30cb7cfdaf79",
+		},
+		Spec: vectorizedv1alpha1.ClusterSpec{
+			Image:   "image",
+			Version: "v22.3.0",
+			CloudStorage: vectorizedv1alpha1.CloudStorageConfig{
+				Enabled: true,
+				CacheStorage: &vectorizedv1alpha1.StorageSpec{
+					Capacity:         resource.MustParse("10Gi"),
+					StorageClassName: "local",
+				},
+				SecretKeyRef: corev1.ObjectReference{
+					Namespace: "default",
+					Name:      "archival",
+				},
+			},
+			Configuration: vectorizedv1alpha1.RedpandaConfig{
+				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 345}},
+				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
+			},
+
+			Sidecars: vectorizedv1alpha1.Sidecars{
+				RpkStatus: &vectorizedv1alpha1.Sidecar{
+					Enabled: true,
+					Resources: &corev1.ResourceRequirements{
+						Limits:   res,
+						Requests: res,
+					},
+				},
+			},
+
+			NodePools: []vectorizedv1alpha1.NodePoolSpec{
+				{
+					Name:     "first",
+					Replicas: ptr.To(replicas),
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+						ResourceRequirements: corev1.ResourceRequirements{
+							Limits:   res,
+							Requests: res,
+						},
+						Redpanda: nil,
+					},
+					Storage: vectorizedv1alpha1.StorageSpec{
+						Capacity:         resource.MustParse("10Gi"),
+						StorageClassName: "storage-class",
+					},
+				},
+			},
+		},
+	}
+}
 
 func TestShouldUpdate_AnnotationChange(t *testing.T) {
 	var replicas int32 = 1
@@ -73,9 +145,19 @@ func TestShouldUpdate_AnnotationChange(t *testing.T) {
 	stsWithAnnotation := sts.DeepCopy()
 	stsWithAnnotation.Spec.Template.Annotations = map[string]string{"test": "test2"}
 	ssres := StatefulSetResource{
+		nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{
+				Name: "default",
+			},
+		},
 		pandaCluster: &vectorizedv1alpha1.Cluster{
 			Status: vectorizedv1alpha1.ClusterStatus{
 				Restarting: false,
+				NodePools: map[string]vectorizedv1alpha1.NodePoolStatus{
+					"default": {
+						Restarting: false,
+					},
+				},
 			},
 		},
 	}
@@ -90,10 +172,12 @@ func TestShouldUpdate_AnnotationChange(t *testing.T) {
 }
 
 func TestPutInMaintenanceMode(t *testing.T) {
+	cluster := pandaCluster()
 	tcs := []struct {
 		name              string
 		maintenanceStatus *rpadmin.MaintenanceStatus
 		errorRequired     error
+		pandaCluster      *vectorizedv1alpha1.Cluster
 	}{
 		{
 			"maintenance finished",
@@ -101,6 +185,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				Finished: ptr.To(true),
 			},
 			nil,
+			cluster,
 		},
 		{
 			"maintenance draining",
@@ -108,6 +193,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				Draining: true,
 			},
 			ErrMaintenanceNotFinished,
+			cluster,
 		},
 		{
 			"maintenance failed",
@@ -115,6 +201,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				Failed: ptr.To(1),
 			},
 			ErrMaintenanceNotFinished,
+			cluster,
 		},
 		{
 			"maintenance has errors",
@@ -122,6 +209,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				Errors: ptr.To(true),
 			},
 			ErrMaintenanceNotFinished,
+			cluster,
 		},
 		{
 			"maintenance did not finished",
@@ -129,11 +217,13 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				Finished: ptr.To(false),
 			},
 			ErrMaintenanceNotFinished,
+			cluster,
 		},
 		{
 			"maintenance was not returned",
 			nil,
 			ErrMaintenanceMissing,
+			cluster,
 		},
 	}
 
@@ -146,7 +236,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 					redpandaCluster *vectorizedv1alpha1.Cluster,
 					fqdn string,
 					adminTLSProvider types.AdminTLSConfigProvider,
-					ordinals ...int32,
+					pods ...string,
 				) (adminutils.AdminAPIClient, error) {
 					return &adminutils.MockAdminAPI{
 						Log:               ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI"),
@@ -154,7 +244,8 @@ func TestPutInMaintenanceMode(t *testing.T) {
 					}, nil
 				},
 			}
-			err := ssres.putInMaintenanceMode(context.Background(), 0)
+			podName := fmt.Sprintf("%s-%s-0", tc.pandaCluster.Name, tc.pandaCluster.Spec.NodePools[0].Name)
+			err := ssres.putInMaintenanceMode(context.Background(), podName)
 			if tc.errorRequired == nil {
 				require.NoError(t, err)
 			} else {

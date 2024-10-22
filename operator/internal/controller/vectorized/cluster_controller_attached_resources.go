@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -49,6 +50,7 @@ const (
 	serviceAccount          = "ServiceAccount"
 	secret                  = "Secret"
 	statefulSet             = "StatefulSet"
+	nodePool                = "NodePool"
 )
 
 func newAttachedResources(ctx context.Context, r *ClusterReconciler, log logr.Logger, cluster *vectorizedv1alpha1.Cluster) *attachedResources {
@@ -67,6 +69,7 @@ type resourceKey string
 func (a *attachedResources) Ensure() (ctrl.Result, error) {
 	result := ctrl.Result{}
 	var errs error
+
 	for _, key := range a.order {
 		resource, ok := a.items[key]
 		if !ok {
@@ -75,6 +78,7 @@ func (a *attachedResources) Ensure() (ctrl.Result, error) {
 		if resource == nil {
 			continue
 		}
+
 		err := resource.Ensure(context.WithValue(a.ctx, resourceKey("resource"), key))
 		var e *resources.RequeueAfterError
 		if errors.As(err, &e) {
@@ -377,10 +381,6 @@ func (a *attachedResources) secret() {
 }
 
 func (a *attachedResources) statefulSet() error {
-	// if already initialized, exit immediately
-	if _, ok := a.items[statefulSet]; ok {
-		return nil
-	}
 	pki, err := a.getPKI()
 	if err != nil {
 		return err
@@ -389,30 +389,53 @@ func (a *attachedResources) statefulSet() error {
 	if err != nil {
 		return err
 	}
-	a.items[statefulSet] = resources.NewStatefulSet(
-		a.reconciler.Client,
-		a.cluster,
-		a.reconciler.Scheme,
-		a.getHeadlessServiceFQDN(),
-		a.getHeadlessServiceName(),
-		a.getNodeportServiceKey(),
-		pki.StatefulSetVolumeProvider(),
-		pki.AdminAPIConfigProvider(),
-		a.getServiceAccountName(),
-		a.reconciler.configuratorSettings,
-		cm.GetNodeConfigHash,
-		a.reconciler.AdminAPIClientFactory,
-		a.reconciler.DecommissionWaitInterval,
-		a.log,
-		a.reconciler.MetricsTimeout,
-		a.autoDeletePVCs)
-	a.order = append(a.order, statefulSet)
+
+	nps, err := a.cluster.GetNodePools(context.TODO(), a.reconciler.Client)
+	if err != nil {
+		return fmt.Errorf("while getting node pools: %w", err)
+	}
+	for _, np := range nps {
+		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
+		if _, ok := a.items[stsKey]; ok {
+			continue
+		}
+
+		a.items[stsKey] = resources.NewStatefulSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cm.GetNodeConfigHash,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			*np,
+			a.autoDeletePVCs)
+
+		a.order = append(a.order, stsKey)
+	}
+
 	return nil
 }
 
-func (a *attachedResources) getStatefulSet() (*resources.StatefulSetResource, error) {
+func (a *attachedResources) getStatefulSet() ([]*resources.StatefulSetResource, error) {
 	if err := a.statefulSet(); err != nil {
 		return nil, err
 	}
-	return a.items[statefulSet].(*resources.StatefulSetResource), nil
+	out := make([]*resources.StatefulSetResource, 0)
+	for k, sts := range a.items {
+		if !strings.HasPrefix(k, statefulSet) || sts == nil {
+			continue
+		}
+
+		out = append(out, sts.(*resources.StatefulSetResource))
+	}
+	return out, nil
 }
