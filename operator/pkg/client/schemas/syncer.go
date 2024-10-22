@@ -41,7 +41,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.Schema) (string, 
 
 	// default to creating the schema
 	createSchema := true
-	// default to setting compatibilty for the schema subject
+	// default to setting compatibility for the schema subject
 	setCompatibility := true
 
 	if !s.isInitial(o) {
@@ -81,7 +81,7 @@ func (s *Syncer) setCompatibility(ctx context.Context, sc *schema) error {
 		Level: sc.CompatibilityLevel,
 	}, sc.Subject)
 	if len(results) == 0 {
-		return errors.New("empty results returned from syncing compatability levels")
+		return errors.New("empty results returned from syncing compatibility levels")
 	}
 	if err := results[0].Err; err != nil {
 		return err

@@ -58,7 +58,7 @@ func expectSchemasMatch(t *testing.T, ctx context.Context, syncer *Syncer, schem
 	actualSchema, err := syncer.getLatest(ctx, schema)
 	require.NoError(t, err)
 
-	require.True(t, expectedSchema.CompatibilityEquals(actualSchema), "Compatability levels not equal %+v != %+v", actualSchema.CompatibilityLevel, expectedSchema.CompatibilityLevel)
+	require.True(t, expectedSchema.CompatibilityEquals(actualSchema), "Compatibility levels not equal %+v != %+v", actualSchema.CompatibilityLevel, expectedSchema.CompatibilityLevel)
 	require.Equal(t, expectedSchema.Schema, actualSchema.Schema)
 	require.True(t, expectedSchema.SchemaEquals(actualSchema), "Schemas not equal %+v != %+v", actualSchema, expectedSchema)
 }
