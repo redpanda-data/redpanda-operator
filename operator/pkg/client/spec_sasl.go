@@ -25,6 +25,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/oauth"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"github.com/twmb/franz-go/pkg/sr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -53,6 +54,33 @@ func (c *Factory) configureAdminSpecSASL(ctx context.Context, namespace string, 
 	}
 
 	return "", "", "", fmt.Errorf("unsupported SASL mechanism: %s", spec.SASL.Mechanism)
+}
+
+func (c *Factory) configureSchemaRegistrySpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.SchemaRegistrySpec) (sr.ClientOpt, error) {
+	if spec.SASL == nil {
+		return nil, nil
+	}
+
+	//nolint:exhaustive // we don't need this to be exhaustive, as we only support 3 auth mechanisms in this API.
+	switch spec.SASL.Mechanism {
+	// SCRAM
+	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
+		p, err := spec.SASL.Password.GetValue(ctx, c.Client, namespace, "password")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch sasl password: %w", err)
+		}
+
+		return sr.BasicAuth(spec.SASL.Username, string(p)), nil
+	// OAUTH
+	case config.SASLMechanismOAuthBearer:
+		token, err := spec.SASL.AuthToken.GetValue(ctx, c.Client, namespace, "password")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch sasl token: %w", err)
+		}
+		return sr.BearerToken(string(token)), nil
+	}
+
+	return nil, fmt.Errorf("unsupported SASL mechanism: %s", spec.SASL.Mechanism)
 }
 
 func (c *Factory) configureKafkaSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (kgo.Opt, error) {

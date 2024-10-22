@@ -17,9 +17,11 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -54,20 +56,28 @@ type UserAuth struct {
 // at method invocation.
 type ClientFactory interface {
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface of the v1alpha2.ClusterReferencingObject
+	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface or the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	KafkaClient(ctx context.Context, object client.Object, opts ...kgo.Opt) (*kgo.Client, error)
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface of the v1alpha2.ClusterReferencingObject
+	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface or the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	RedpandaAdminClient(ctx context.Context, object client.Object) (*rpadmin.AdminAPI, error)
+
+	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
+	// The struct *must* implement either the v1alpha2.SchemaRegistryConnectedObject interface or the v1alpha2.ClusterReferencingObject
+	// interface to properly initialize.
+	SchemaRegistryClient(ctx context.Context, object client.Object) (*sr.Client, error)
 
 	// ACLs returns a high-level client for synchronizing ACLs.
 	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
 
 	// Users returns a high-level client for managing users.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
+
+	// Schemas returns a high-level client for synchronizing Schemas.
+	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
 }
 
 type Factory struct {
@@ -149,6 +159,37 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 	return nil, ErrInvalidRedpandaClientObject
 }
 
+func (c *Factory) SchemaRegistryClient(ctx context.Context, obj client.Object) (*sr.Client, error) {
+	// if we pass in a Redpanda cluster, just use it
+	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
+		return c.schemaRegistryForCluster(cluster)
+	}
+
+	cluster, err := c.getCluster(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster != nil {
+		return c.schemaRegistryForCluster(cluster)
+	}
+
+	if spec := c.getSchemaRegistrySpec(obj); spec != nil {
+		return c.schemaRegistryForSpec(ctx, obj.GetNamespace(), spec)
+	}
+
+	return nil, ErrInvalidRedpandaClientObject
+}
+
+func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error) {
+	schemaRegistryClient, err := c.SchemaRegistryClient(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return schemas.NewSyncer(schemaRegistryClient), nil
+}
+
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
 	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
 	if err != nil {
@@ -222,6 +263,16 @@ func (c *Factory) getAdminSpec(obj client.Object) *redpandav1alpha2.AdminAPISpec
 	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
 		if source := o.GetClusterSource(); source != nil {
 			return source.GetAdminAPISpec()
+		}
+	}
+
+	return nil
+}
+
+func (c *Factory) getSchemaRegistrySpec(obj client.Object) *redpandav1alpha2.SchemaRegistrySpec {
+	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
+		if source := o.GetClusterSource(); source != nil {
+			return source.GetSchemaRegistrySpec()
 		}
 	}
 
