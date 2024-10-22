@@ -182,18 +182,15 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 		}),
 	}
 
-	var username, password, token string
-	username, password, token, err = c.configureSchemaRegistrySpecSASL(ctx, namespace, spec)
+	authOpt, err := c.configureSchemaRegistrySpecSASL(ctx, namespace, spec)
 	if err != nil {
 		return nil, err
 	}
 
 	if c.userAuth != nil {
 		opts = append(opts, sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))
-	} else if username != "" {
-		opts = append(opts, sr.BasicAuth(username, password))
-	} else if token != "" {
-		opts = append(opts, sr.BearerToken(token))
+	} else if authOpt != nil {
+		opts = append(opts, authOpt)
 	}
 
 	opts = append(opts, sr.URLs(spec.URLs...))

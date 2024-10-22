@@ -56,17 +56,17 @@ type UserAuth struct {
 // at method invocation.
 type ClientFactory interface {
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface of the v1alpha2.ClusterReferencingObject
+	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface or the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	KafkaClient(ctx context.Context, object client.Object, opts ...kgo.Opt) (*kgo.Client, error)
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface of the v1alpha2.ClusterReferencingObject
+	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface or the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	RedpandaAdminClient(ctx context.Context, object client.Object) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.SchemaRegistryConnectedObject interface of the v1alpha2.ClusterReferencingObject
+	// The struct *must* implement either the v1alpha2.SchemaRegistryConnectedObject interface or the v1alpha2.ClusterReferencingObject
 	// interface to properly initialize.
 	SchemaRegistryClient(ctx context.Context, object client.Object) (*sr.Client, error)
 

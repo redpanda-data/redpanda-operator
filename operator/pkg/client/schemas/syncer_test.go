@@ -142,10 +142,11 @@ func TestSyncer(t *testing.T) {
 	schema.Spec.CompatibilityLevel = ptr.To(v1alpha2.CompatabilityLevelFull)
 	expectSchemaUpdate(t, ctx, syncer, schema, false)
 
-	// TODO: Request from core support for the following"
-	// update metadata: metadata is not supported
+	// TODO: Request from core support for the following
+	// https://github.com/redpanda-data/redpanda/issues/23548
+	//   - update schema rules: rules not supported
+	//   - update metadata: metadata is not supported
 	// update type: JSON is not supported
-	// update schema rules: rules not supported
 	// update normalization: normalization is not supported
 
 	// delete
