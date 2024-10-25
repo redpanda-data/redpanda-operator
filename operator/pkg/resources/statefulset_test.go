@@ -319,7 +319,7 @@ func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: pandaCluster.Namespace,
-						Name:      "shadow-index-cache",
+						Name:      resources.ArchivalCacheIndexAnchorName,
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -417,7 +417,7 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: pandaCluster.Namespace,
-						Name:      "shadow-index-cache",
+						Name:      resources.ArchivalCacheIndexAnchorName,
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},

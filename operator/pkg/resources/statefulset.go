@@ -62,8 +62,8 @@ const (
 
 	scriptMountPath = "/scripts"
 
-	datadirName                  = "datadir"
-	archivalCacheIndexAnchorName = "shadow-index-cache"
+	DatadirName                  = "datadir"
+	ArchivalCacheIndexAnchorName = "shadow-index-cache"
 	defaultDatadirCapacity       = "100Gi"
 	trueString                   = "true"
 
@@ -744,13 +744,13 @@ func (r *StatefulSetResource) getHook(script string) *corev1.LifecycleHandler {
 // setVolumes manipulates v1.StatefulSet object in order to add cloud storage and
 // Redpanda data volume
 func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, data, cache vectorizedv1alpha1.StorageSpec) {
-	pvcDataDir := preparePVCResource(datadirName, cluster.Namespace, data, ss.Labels)
+	pvcDataDir := preparePVCResource(DatadirName, cluster.Namespace, data, ss.Labels)
 	ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvcDataDir)
 	vol := corev1.Volume{
-		Name: datadirName,
+		Name: DatadirName,
 		VolumeSource: corev1.VolumeSource{
 			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: datadirName,
+				ClaimName: DatadirName,
 			},
 		},
 	}
@@ -760,7 +760,7 @@ func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, dat
 	for i := range containers {
 		if containers[i].Name == redpandaContainerName {
 			volMount := corev1.VolumeMount{
-				Name:      datadirName,
+				Name:      DatadirName,
 				MountPath: dataDirectory,
 			}
 			containers[i].VolumeMounts = append(containers[i].VolumeMounts, volMount)
@@ -771,7 +771,7 @@ func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, dat
 	for i := range initContainer {
 		if initContainer[i].Name == configuratorContainerName {
 			volMount := corev1.VolumeMount{
-				Name:      datadirName,
+				Name:      DatadirName,
 				MountPath: dataDirectory,
 			}
 			initContainer[i].VolumeMounts = append(initContainer[i].VolumeMounts, volMount)
@@ -779,13 +779,13 @@ func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, dat
 	}
 
 	if cluster.Spec.CloudStorage.Enabled && featuregates.ShadowIndex(cluster.Spec.Version) {
-		pvcArchivalDir := preparePVCResource(archivalCacheIndexAnchorName, cluster.Namespace, cache, ss.Labels)
+		pvcArchivalDir := preparePVCResource(ArchivalCacheIndexAnchorName, cluster.Namespace, cache, ss.Labels)
 		ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvcArchivalDir)
 		archivalVol := corev1.Volume{
-			Name: archivalCacheIndexAnchorName,
+			Name: ArchivalCacheIndexAnchorName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: archivalCacheIndexAnchorName,
+					ClaimName: ArchivalCacheIndexAnchorName,
 				},
 			},
 		}
@@ -794,7 +794,7 @@ func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, dat
 		for i := range containers {
 			if containers[i].Name == redpandaContainerName {
 				archivalVolMount := corev1.VolumeMount{
-					Name:      archivalCacheIndexAnchorName,
+					Name:      ArchivalCacheIndexAnchorName,
 					MountPath: archivalCacheIndexDirectory,
 				}
 				containers[i].VolumeMounts = append(containers[i].VolumeMounts, archivalVolMount)
