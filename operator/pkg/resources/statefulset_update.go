@@ -36,7 +36,6 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -291,7 +290,7 @@ func (r *StatefulSetResource) maybeAddLegacyPods(ctx context.Context, podList *c
 
 	// Special case: if there's still pods w/o nodepool annotation, mark these.
 	// We can just mark them, because at this point the STS has been modified accordingly already, and the label was added to pod template
-	if r.nodePool.Name == nodepools.DefaultNodePoolName {
+	if r.nodePool.Name == vectorizedv1alpha1.DefaultNodePoolName {
 		withoutPodLabels, err := r.getPodListWithoutNodePoolLabel(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get pods without nodePool labels: %w", err)

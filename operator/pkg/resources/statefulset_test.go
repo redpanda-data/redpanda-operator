@@ -38,6 +38,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
@@ -144,7 +145,7 @@ func TestEnsure(t *testing.T) {
 			err = c.Create(context.Background(), tt.pandaCluster)
 			assert.NoError(t, err, tt.name)
 
-			nps, err := tt.pandaCluster.GetNodePools(context.Background(), &NopReader{})
+			nps, err := nodepools.GetNodePools(context.Background(), tt.pandaCluster, &NopReader{})
 			assert.NoError(t, err)
 
 			npIndex := slices.IndexFunc(nps, func(np *vectorizedv1alpha1.NodePoolSpecWithDeleted) bool {

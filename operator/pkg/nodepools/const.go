@@ -10,4 +10,131 @@
 // Package nodepools exists currently because it is required to be a separate due to import conflicts.
 package nodepools
 
-const DefaultNodePoolName = "default"
+import (
+	"context"
+	"fmt"
+	"slices"
+	"strings"
+
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	corev1 "k8s.io/api/core/v1"
+)
+
+func GetNodePools(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
+	var nodePoolsWithDeleted []*vectorizedv1alpha1.NodePoolSpecWithDeleted
+
+	nps := cluster.GetNodePoolsFromSpec()
+	for i := range nps {
+		np := nps[i]
+
+		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: np,
+		})
+	}
+
+	// Also add "virtual NodePools" based on StatefulSets found.
+	// These represent deleted NodePools - they will not show up in spec.NodePools.
+	var stsList appsv1.StatefulSetList
+	err := k8sClient.List(ctx, &stsList)
+	if err != nil {
+		return nil, err
+	}
+outer:
+	for i := range stsList.Items {
+		sts := stsList.Items[i]
+
+		if !strings.HasPrefix(sts.Name, cluster.Name) {
+			continue
+		}
+
+		for _, ownerRef := range sts.OwnerReferences {
+			if ownerRef.UID != cluster.UID {
+				continue outer
+			}
+		}
+
+		var npName string
+		if strings.EqualFold(cluster.Name, sts.Name) {
+			npName = vectorizedv1alpha1.DefaultNodePoolName
+		} else {
+			npName = sts.Name[len(cluster.Name)+1:]
+		}
+
+		// Have seen it in NodePoolSpec
+		if slices.ContainsFunc(nps, func(np vectorizedv1alpha1.NodePoolSpec) bool {
+			return np.Name == npName
+		}) {
+			continue
+		}
+
+		replicas := sts.Spec.Replicas
+		if st, ok := cluster.Status.NodePools[npName]; ok {
+			replicas = &st.CurrentReplicas
+		}
+
+		var redpandaContainer *corev1.Container
+		for i := range sts.Spec.Template.Spec.Containers {
+			container := sts.Spec.Template.Spec.Containers[i]
+			if container.Name == "redpanda" {
+				redpandaContainer = &container
+				break
+			}
+		}
+		if redpandaContainer == nil {
+			return nil, fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
+		}
+
+		var datadirVcCapacity resource.Quantity
+		var datadirVcStorageClassName string
+
+		var cacheVcExists bool
+		var cacheVcCapacity resource.Quantity
+		var cacheVcStorageClassName string
+
+		for i := range sts.Spec.VolumeClaimTemplates {
+			vct := sts.Spec.VolumeClaimTemplates[i]
+			if vct.Name == "datadir" {
+				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+				if vct.Spec.StorageClassName != nil {
+					datadirVcStorageClassName = *vct.Spec.StorageClassName
+				}
+			}
+			if vct.Name == "shadow-index-cache" {
+				cacheVcExists = true
+				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
+				if vct.Spec.StorageClassName != nil {
+					cacheVcStorageClassName = *vct.Spec.StorageClassName
+				}
+			}
+		}
+
+		np := vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{
+				Name:     npName,
+				Replicas: replicas,
+				Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
+					ResourceRequirements: redpandaContainer.Resources,
+				},
+				Tolerations:  sts.Spec.Template.Spec.Tolerations,
+				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
+				Storage: vectorizedv1alpha1.StorageSpec{
+					Capacity:         datadirVcCapacity,
+					StorageClassName: datadirVcStorageClassName,
+				},
+			},
+			Deleted: true,
+		}
+		if cacheVcExists {
+			np.CloudCacheStorage = vectorizedv1alpha1.StorageSpec{
+				Capacity:         cacheVcCapacity,
+				StorageClassName: cacheVcStorageClassName,
+			}
+		}
+		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &np)
+	}
+	return nodePoolsWithDeleted, nil
+}

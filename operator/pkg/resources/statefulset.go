@@ -36,7 +36,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
@@ -420,7 +419,7 @@ func (r *StatefulSetResource) obj(
 			}
 		}
 
-		canAddNodePoolToSelector = r.nodePool.Name != nodepools.DefaultNodePoolName || !atLeastOnePodMissingNodePoolKey
+		canAddNodePoolToSelector = r.nodePool.Name != vectorizedv1alpha1.DefaultNodePoolName || !atLeastOnePodMissingNodePoolKey
 	}
 
 	var nodePoolSelector *metav1.LabelSelector
@@ -919,7 +918,7 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
 	var name string
-	if strings.EqualFold(r.nodePool.Name, nodepools.DefaultNodePoolName) {
+	if strings.EqualFold(r.nodePool.Name, vectorizedv1alpha1.DefaultNodePoolName) {
 		name = r.pandaCluster.Name
 	} else {
 		name = fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)

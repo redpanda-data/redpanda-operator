@@ -29,11 +29,11 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -820,7 +820,7 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 
 	for npName, npStatus := range r.pandaCluster.Status.NodePools {
 		prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, npName)
-		if npName == nodepools.DefaultNodePoolName {
+		if npName == vectorizedv1alpha1.DefaultNodePoolName {
 			prefix = r.pandaCluster.Name
 		}
 
@@ -835,12 +835,12 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 		for i := int32(0); i < ptr.Deref(r.pandaCluster.Spec.Replicas, 0); i++ {
 			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN))
 		}
-		nps, err := r.pandaCluster.GetNodePools(context.Background(), r)
+		nps, err := nodepools.GetNodePools(context.Background(), r.pandaCluster, r)
 		if err != nil {
 			return err
 		}
 		for _, np := range nps {
-			if np.Name == nodepools.DefaultNodePoolName {
+			if np.Name == vectorizedv1alpha1.DefaultNodePoolName {
 				continue
 			}
 			prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
