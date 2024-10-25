@@ -103,6 +103,9 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	// but it seems overkill given that the case is rare and requires cooperation from the user.
 
 	for _, statefulSetResource := range statefulSetResources {
+		if statefulSetResource == nil {
+			continue
+		}
 		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
 		if err != nil {
 			return err
