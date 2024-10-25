@@ -36,10 +36,3 @@ spec:
       dump-memory-diagnostics-on-alloc-failure-kind: all
       abort-on-seastar-bad-alloc: ''
   resources: {}
-status:
-  nodePools:
-    nodepool1:
-      replicas: 0
-    nodepool1:
-      replicas: 3
-

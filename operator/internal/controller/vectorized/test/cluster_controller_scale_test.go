@@ -201,7 +201,7 @@ var _ = Describe("Redpanda node pool scale", func() {
 
 	Context("When starting up a fresh Redpanda cluster", func() {
 		It("Launches desired replicas immediately", func() {
-			By("Allowing creation of a new cluster with two nodepoools of 3 replicas each")
+			By("Allowing creation of a new cluster with two nodepools of 3 replicas each")
 			_, redpandaCluster := getClusterWithNodePool("np-startup", 3, 3)
 			npFirstKey := types.NamespacedName{
 				Name:      "np-startup-first",

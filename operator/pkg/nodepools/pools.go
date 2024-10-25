@@ -20,6 +20,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -102,14 +103,14 @@ outer:
 			if vct.Name == "datadir" {
 				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
 				if vct.Spec.StorageClassName != nil {
-					datadirVcStorageClassName = *vct.Spec.StorageClassName
+					datadirVcStorageClassName = ptr.Deref(vct.Spec.StorageClassName, "")
 				}
 			}
 			if vct.Name == "shadow-index-cache" {
 				cacheVcExists = true
 				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
 				if vct.Spec.StorageClassName != nil {
-					cacheVcStorageClassName = *vct.Spec.StorageClassName
+					cacheVcStorageClassName = ptr.Deref(vct.Spec.StorageClassName, "")
 				}
 			}
 		}
