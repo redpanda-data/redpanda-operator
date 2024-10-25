@@ -1472,7 +1472,7 @@ func (r *Cluster) GetNodePools(ctx context.Context, k8sClient client.Reader) ([]
 	// Also add "virtual NodePools" based on StatefulSets found.
 	// These represent deleted NodePools - they will not show up in spec.NodePools.
 	var stsList appsv1.StatefulSetList
-	err := k8sClient.List(context.TODO(), &stsList)
+	err := k8sClient.List(ctx, &stsList)
 	if err != nil {
 		return nil, err
 	}
