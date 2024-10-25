@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,17 +40,15 @@ func GetNodePools(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sC
 	// Also add "virtual NodePools" based on StatefulSets found.
 	// These represent deleted NodePools - they will not show up in spec.NodePools.
 	var stsList appsv1.StatefulSetList
-	err := k8sClient.List(ctx, &stsList)
+	err := k8sClient.List(ctx, &stsList, &client.ListOptions{
+		LabelSelector: labels.ForCluster(cluster).AsClientSelector(),
+	})
 	if err != nil {
 		return nil, err
 	}
 outer:
 	for i := range stsList.Items {
 		sts := stsList.Items[i]
-
-		if !strings.HasPrefix(sts.Name, cluster.Name) {
-			continue
-		}
 
 		for _, ownerRef := range sts.OwnerReferences {
 			if ownerRef.UID != cluster.UID {
