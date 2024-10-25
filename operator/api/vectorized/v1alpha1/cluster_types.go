@@ -10,25 +10,18 @@
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/url"
 	"slices"
-	"strings"
 	"time"
 
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
 const (
@@ -37,6 +30,8 @@ const (
 	// ExternalListenerName is name of external listener
 	ExternalListenerName = "kafka-external"
 )
+
+const DefaultNodePoolName = "default"
 
 // RedpandaResourceRequirements extends corev1.ResourceRequirements
 // to allow specification of resources directly passed to Redpanda that
@@ -1222,7 +1217,7 @@ func (s *ClusterStatus) SetRestarting(restarting bool) {
 }
 
 func (r *Cluster) SumNodePoolReplicas() int32 {
-	nps := r.getNodePoolsFromSpec()
+	nps := r.GetNodePoolsFromSpec()
 	if r == nil || len(nps) == 0 {
 		return 0
 	}
@@ -1428,11 +1423,11 @@ func (r *Cluster) SetDecommissionBrokerID(id *int32) {
 // getNodePoolsFromSpec returns the NodePools defined in the spec.
 // This contains the primary NodePool (driven by spec.replicas for example), and the
 // NodePools driven by the nodePools field.
-func (r *Cluster) getNodePoolsFromSpec() []NodePoolSpec {
+func (r *Cluster) GetNodePoolsFromSpec() []NodePoolSpec {
 	out := make([]NodePoolSpec, 0)
 	if r.Spec.Replicas != nil {
 		defaultNodePool := NodePoolSpec{
-			Name:         nodepools.DefaultNodePoolName,
+			Name:         DefaultNodePoolName,
 			Replicas:     r.Spec.Replicas,
 			Tolerations:  r.Spec.Tolerations,
 			NodeSelector: r.Spec.NodeSelector,
@@ -1455,121 +1450,6 @@ func (r *Cluster) CalculateCurrentReplicas() int32 {
 		result += np.CurrentReplicas
 	}
 	return result
-}
-
-func (r *Cluster) GetNodePools(ctx context.Context, k8sClient client.Reader) ([]*NodePoolSpecWithDeleted, error) {
-	var nodePoolsWithDeleted []*NodePoolSpecWithDeleted
-
-	nps := r.getNodePoolsFromSpec()
-	for i := range nps {
-		np := nps[i]
-
-		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &NodePoolSpecWithDeleted{
-			NodePoolSpec: np,
-		})
-	}
-
-	// Also add "virtual NodePools" based on StatefulSets found.
-	// These represent deleted NodePools - they will not show up in spec.NodePools.
-	var stsList appsv1.StatefulSetList
-	err := k8sClient.List(ctx, &stsList)
-	if err != nil {
-		return nil, err
-	}
-outer:
-	for i := range stsList.Items {
-		sts := stsList.Items[i]
-
-		if !strings.HasPrefix(sts.Name, r.Name) {
-			continue
-		}
-
-		for _, ownerRef := range sts.OwnerReferences {
-			if ownerRef.UID != r.UID {
-				continue outer
-			}
-		}
-
-		var npName string
-		if strings.EqualFold(r.Name, sts.Name) {
-			npName = nodepools.DefaultNodePoolName
-		} else {
-			npName = sts.Name[len(r.Name)+1:]
-		}
-
-		// Have seen it in NodePoolSpec
-		if slices.ContainsFunc(nps, func(np NodePoolSpec) bool {
-			return np.Name == npName
-		}) {
-			continue
-		}
-
-		replicas := sts.Spec.Replicas
-		if st, ok := r.Status.NodePools[npName]; ok {
-			replicas = &st.CurrentReplicas
-		}
-
-		var redpandaContainer *corev1.Container
-		for i := range sts.Spec.Template.Spec.Containers {
-			container := sts.Spec.Template.Spec.Containers[i]
-			if container.Name == "redpanda" {
-				redpandaContainer = &container
-				break
-			}
-		}
-		if redpandaContainer == nil {
-			return nil, fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
-		}
-
-		var datadirVcCapacity resource.Quantity
-		var datadirVcStorageClassName string
-
-		var cacheVcExists bool
-		var cacheVcCapacity resource.Quantity
-		var cacheVcStorageClassName string
-
-		for i := range sts.Spec.VolumeClaimTemplates {
-			vct := sts.Spec.VolumeClaimTemplates[i]
-			if vct.Name == resources.DatadirName {
-				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
-				if vct.Spec.StorageClassName != nil {
-					datadirVcStorageClassName = *vct.Spec.StorageClassName
-				}
-			}
-			if vct.Name == resources.ArchivalCacheIndexAnchorName {
-				cacheVcExists = true
-				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
-				if vct.Spec.StorageClassName != nil {
-					cacheVcStorageClassName = *vct.Spec.StorageClassName
-				}
-			}
-		}
-
-		np := NodePoolSpecWithDeleted{
-			NodePoolSpec: NodePoolSpec{
-				Name:     npName,
-				Replicas: replicas,
-				Resources: RedpandaResourceRequirements{
-					ResourceRequirements: redpandaContainer.Resources,
-				},
-				Tolerations:  sts.Spec.Template.Spec.Tolerations,
-				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
-				Storage: StorageSpec{
-					Capacity:         datadirVcCapacity,
-					StorageClassName: datadirVcStorageClassName,
-				},
-			},
-			Deleted: true,
-		}
-		if cacheVcExists {
-			np.CloudCacheStorage = StorageSpec{
-				Capacity:         cacheVcCapacity,
-				StorageClassName: cacheVcStorageClassName,
-			}
-		}
-		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &np)
-	}
-	return nodePoolsWithDeleted, nil
 }
 
 type NodePoolSpecWithDeleted struct {

@@ -18,6 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"k8s.io/apimachinery/pkg/types"
@@ -390,7 +391,7 @@ func (a *attachedResources) statefulSet() error {
 		return err
 	}
 
-	nps, err := a.cluster.GetNodePools(context.TODO(), a.reconciler.Client)
+	nps, err := nodepools.GetNodePools(context.TODO(), a.cluster, a.reconciler.Client)
 	if err != nil {
 		return fmt.Errorf("while getting node pools: %w", err)
 	}
