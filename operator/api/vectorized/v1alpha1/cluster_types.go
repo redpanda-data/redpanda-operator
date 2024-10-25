@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
 const (
@@ -1529,13 +1530,13 @@ outer:
 
 		for i := range sts.Spec.VolumeClaimTemplates {
 			vct := sts.Spec.VolumeClaimTemplates[i]
-			if vct.Name == "datadir" {
+			if vct.Name == resources.DatadirName {
 				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
 				if vct.Spec.StorageClassName != nil {
 					datadirVcStorageClassName = *vct.Spec.StorageClassName
 				}
 			}
-			if vct.Name == "shadow-index-cache" {
+			if vct.Name == resources.ArchivalCacheIndexAnchorName {
 				cacheVcExists = true
 				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
 				if vct.Spec.StorageClassName != nil {
