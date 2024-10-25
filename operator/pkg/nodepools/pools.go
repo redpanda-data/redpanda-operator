@@ -60,7 +60,10 @@ outer:
 		if strings.EqualFold(cluster.Name, sts.Name) {
 			npName = vectorizedv1alpha1.DefaultNodePoolName
 		} else {
-			npName = sts.Name[len(cluster.Name)+1:]
+			// STS name for a non-default NodePool is <CLUSTERNAME>-<NPNAME>.
+			// So we ignore leading cluster name and additional character (`-`) that
+			// separates cluster name with node pool name
+			npName = strings.TrimPrefix(sts.Name, fmt.Sprintf("%s-", cluster.Name))
 		}
 
 		// Have seen it in NodePoolSpec
