@@ -93,7 +93,7 @@ func (r *ClusterMetricController) Reconcile(
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		g.Set(float64(cl.Items[i].GetReplicas()))
+		g.Set(float64(cl.Items[i].SumNodePoolReplicas()))
 
 		g, err = actualRedpandaNodes.GetMetricWithLabelValues(cl.Items[i].Name)
 		if err != nil {

@@ -270,7 +270,7 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 }
 
 func (r *Cluster) validateScaling() field.ErrorList {
-	replicas := r.GetReplicas()
+	replicas := r.SumNodePoolReplicas()
 
 	var allErrs field.ErrorList
 	if replicas <= 0 {

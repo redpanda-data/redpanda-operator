@@ -574,7 +574,7 @@ func (r *StatefulSetResource) putInMaintenanceMode(ctx context.Context, pod stri
 }
 
 func (r *StatefulSetResource) checkMaintenanceMode(ctx context.Context, pod string) error {
-	if r.pandaCluster.GetReplicas() <= 1 {
+	if r.pandaCluster.SumNodePoolReplicas() <= 1 {
 		return nil
 	}
 
