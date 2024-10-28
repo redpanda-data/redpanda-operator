@@ -1427,12 +1427,13 @@ func (r *Cluster) GetNodePoolsFromSpec() []NodePoolSpec {
 	out := make([]NodePoolSpec, 0)
 	if r.Spec.Replicas != nil {
 		defaultNodePool := NodePoolSpec{
-			Name:         DefaultNodePoolName,
-			Replicas:     r.Spec.Replicas,
-			Tolerations:  r.Spec.Tolerations,
-			NodeSelector: r.Spec.NodeSelector,
-			Storage:      r.Spec.Storage,
-			Resources:    r.Spec.Resources,
+			Name:                           DefaultNodePoolName,
+			Replicas:                       r.Spec.Replicas,
+			Tolerations:                    r.Spec.Tolerations,
+			NodeSelector:                   r.Spec.NodeSelector,
+			Storage:                        r.Spec.Storage,
+			Resources:                      r.Spec.Resources,
+			AdditionalCommandlineArguments: r.Spec.Configuration.AdditionalCommandlineArguments,
 		}
 		if r.Spec.CloudStorage.CacheStorage != nil {
 			defaultNodePool.CloudCacheStorage = *r.Spec.CloudStorage.CacheStorage

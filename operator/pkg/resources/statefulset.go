@@ -594,7 +594,7 @@ func (r *StatefulSetResource) obj(
 							}, prepareAdditionalArguments(
 								r.pandaCluster.Spec.Configuration.DeveloperMode,
 								r.nodePool.Resources,
-								r.pandaCluster.Spec.Configuration.AdditionalCommandlineArguments)...),
+								r.nodePool.AdditionalCommandlineArguments)...),
 							Env: []corev1.EnvVar{
 								{
 									Name:  "REDPANDA_ENVIRONMENT",
