@@ -14,6 +14,7 @@
 package k3d
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,8 +42,12 @@ const (
 	K3sImageEnv     = `K3S_IMAGE`
 )
 
-//go:embed *.yaml
-var manifestsFS embed.FS
+var (
+	//go:embed *.yaml
+	manifestsFS embed.FS
+
+	ErrExists = errors.New("cluster with name already exists")
+)
 
 type Cluster struct {
 	Name string
@@ -49,6 +55,17 @@ type Cluster struct {
 	mu           sync.Mutex
 	restConfig   *kube.RESTConfig
 	agentCounter int32
+}
+
+func GetOrCreate(name string) (*Cluster, error) {
+	cluster, err := NewCluster(name)
+	if err != nil {
+		if errors.Is(err, ErrExists) {
+			return loadCluster(name)
+		}
+		return nil, err
+	}
+	return cluster, nil
 }
 
 func NewCluster(name string) (*Cluster, error) {
@@ -80,6 +97,10 @@ func NewCluster(name string) (*Cluster, error) {
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()
 	if err != nil {
+		if bytes.Contains(out, []byte(`because a cluster with that name already exists`)) {
+			return nil, errors.Wrapf(ErrExists, "%q", name)
+		}
+
 		// If k3d cluster create will fail please uncomment the following debug logs from containers
 		// containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-0", name)).CombinedOutput()
 		// fmt.Printf("Agent-0 logs:\n%s\n", string(containerLogs))
@@ -91,9 +112,13 @@ func NewCluster(name string) (*Cluster, error) {
 		// fmt.Printf("serrver-0 logs:\n%s\n", string(containerLogs))
 		// containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
 		// fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
-		return nil, fmt.Errorf("%w: %s", err, out)
+		return nil, errors.Wrapf(err, "%s", out)
 	}
 
+	return loadCluster(name)
+}
+
+func loadCluster(name string) (*Cluster, error) {
 	kubeconfigYAML, err := exec.Command("k3d", "kubeconfig", "get", name).CombinedOutput()
 	if err != nil {
 		return nil, err

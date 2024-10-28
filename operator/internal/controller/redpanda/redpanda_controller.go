@@ -239,7 +239,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	desiredChartVersion := redpanda.Chart.Metadata().Version
 
 	if !(chartVersion == "" || chartVersion == desiredChartVersion) {
-		msg := fmt.Sprintf(".spec.chartRef.chartVersion version needs to be %q or %q. got %q", desiredChartVersion, "", chartVersion)
+		msg := fmt.Sprintf(".spec.chartRef.chartVersion needs to be %q or %q. got %q", desiredChartVersion, "", chartVersion)
 
 		// NB: passing `nil` as err is acceptable for log.Error.
 		log.Error(nil, msg, "chart version", rp.Spec.ChartRef.ChartVersion)
