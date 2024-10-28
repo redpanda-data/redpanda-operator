@@ -380,11 +380,8 @@ func Run(
 		}
 
 		// Redpanda Reconciler
-		if err = (&redpandacontrollers.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
-		}).SetupWithManager(ctx, mgr); err != nil {
+
+		if err = redpandacontrollers.SetupRedpandaController(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -404,10 +401,7 @@ func Run(
 			return err
 		}
 
-		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
-			Client:        mgr.GetClient(),
-			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),
-		}).SetupWithManager(mgr); err != nil {
+		if err = redpandacontrollers.SetupManagedDecommissionController(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
 			return err
 		}
@@ -423,11 +417,7 @@ func Run(
 		}
 
 		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&redpandacontrollers.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             operatorMode,
-				DecommissionWaitInterval: decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
+			if err = redpandacontrollers.SetupDecommissionController(mgr, operatorMode, decommissionWaitInterval); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 				return err
 			}
@@ -458,11 +448,7 @@ func Run(
 		}
 
 		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&redpandacontrollers.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             operatorMode,
-				DecommissionWaitInterval: decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
+			if err = redpandacontrollers.SetupDecommissionController(mgr, operatorMode, decommissionWaitInterval); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 				return err
 			}

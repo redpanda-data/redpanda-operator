@@ -48,17 +48,6 @@ var DeleteEventFilter = predicate.Funcs{
 	GenericFunc: func(e event.GenericEvent) bool { return false },
 }
 
-// Check to see if the release name of a helm chart matches the name of a redpanda object
-// this is by design for the operator
-func isValidReleaseName(releaseName string, redpandaNameList []string) bool {
-	for i := range redpandaNameList {
-		if releaseName == redpandaNameList[i] {
-			return true
-		}
-	}
-	return false
-}
-
 func getHelmValues(log logr.Logger, releaseName, namespace string) (map[string]interface{}, error) {
 	settings := cli.New()
 	actionConfig := new(action.Configuration)

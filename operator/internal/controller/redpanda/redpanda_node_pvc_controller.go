@@ -17,13 +17,33 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/component-helpers/storage/volume"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
+
+var sel labels.Selector
+
+func init() {
+	nameRequirement, err := labels.NewRequirement(K8sNameLabelKey, selection.Exists, []string{})
+	if err != nil {
+		panic(err)
+	}
+
+	instanceRequirement, err := labels.NewRequirement(K8sInstanceLabelKey, selection.Exists, []string{})
+	if err != nil {
+		panic(err)
+	}
+
+	sel = labels.NewSelector()
+	sel.Add(*nameRequirement)
+	sel.Add(*instanceRequirement)
+}
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;update;patch;delete
@@ -68,54 +88,27 @@ func (r *RedpandaNodePVCReconciler) reconcile(ctx context.Context, req ctrl.Requ
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaNodePVCReconciler.reconcile")
 	Infof(log, "detected node %s deleted; checking if any PVC should be removed", req.Name)
 
-	redpandaNameList := make([]string, 0)
+	redpandasMap := map[string]*v1alpha2.Redpanda{}
 	if r.OperatorMode {
 		opts := &client.ListOptions{Namespace: req.Namespace}
-		redpandaList := &v1alpha1.RedpandaList{}
+		redpandaList := &v1alpha2.RedpandaList{}
 		if errList := r.Client.List(ctx, redpandaList, opts); errList != nil {
 			return ctrl.Result{}, fmt.Errorf("could not GET list of Redpandas in namespace: %w", errList)
 		}
 
-		for i := range redpandaList.Items {
-			item := redpandaList.Items[i]
-			redpandaNameList = append(redpandaNameList, item.Name)
+		for _, rp := range redpandaList.Items {
+			redpandasMap[rp.Name] = &rp
 		}
-	} else {
-		releaseName, ok := os.LookupEnv(EnvHelmReleaseNameKey)
-		if !ok {
-			Infof(log, "Skipping reconciliation, expected to find release-name env var: %q", EnvHelmReleaseNameKey)
-			return ctrl.Result{}, nil
-		}
-
-		redpandaNameList = append(redpandaNameList, releaseName)
 	}
 
-	opts := &client.ListOptions{Namespace: req.Namespace}
+	opts := &client.ListOptions{Namespace: req.Namespace, LabelSelector: sel}
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	if errGET := r.Client.List(ctx, pvcList, opts); errGET != nil {
 		return ctrl.Result{}, fmt.Errorf("could not GET list of PVCs: %w", errGET)
 	}
 
 	var errs error
-	// creating map of release name to sideCarEnabled
-	doTaskMap := make(map[string]bool, 0)
-	// this could be a lot of redpandas, usually 1 but may be a few
-	for i := range pvcList.Items {
-		pvc := pvcList.Items[i]
-
-		// first check if the application label is redpanda, if not continue
-		if len(pvc.Labels) == 0 {
-			continue
-		}
-
-		if _, ok := pvc.Labels[K8sNameLabelKey]; !ok {
-			continue
-		}
-
-		if len(pvc.Annotations) == 0 {
-			continue
-		}
-
+	for _, pvc := range pvcList.Items {
 		// Now we check if the node where the PVC was originally located was deleted
 		// if it is, then we change the PV to change the reclaim policy and then mark the pvc for deletion
 		workerNode, ok := pvc.Annotations[volume.AnnSelectedNode]
@@ -124,46 +117,38 @@ func (r *RedpandaNodePVCReconciler) reconcile(ctx context.Context, req ctrl.Requ
 			errs = errors.Join(errs, fmt.Errorf("worker node annotation not found or node name is empty: %q", workerNode)) //nolint:goerr113 // joining since we do not error here
 		}
 
-		// we are not being deleted, move on
+		// K8S Node label from PVC does not matches delete K8S Node event
 		if workerNode != req.Name {
 			continue
 		}
 
-		// Now check if we are allowed to operate on this pvc as there may be another controller working
-		var releaseName string
-		if val, ok := pvc.Labels[K8sInstanceLabelKey]; !ok || !isValidReleaseName(val, redpandaNameList) {
-			Infof(log, "could not find instance label or unable retrieve valid releaseName: %s", val)
-			continue
-		} else {
-			releaseName = val
-		}
+		val := pvc.Labels[K8sInstanceLabelKey]
 
-		// we are in operator mode, check if another controller has ownership here
-		// we will silently fail where we cannot find get values, parse the values file etc..
-		if r.OperatorMode { // nolint:nestif // this is ok
-			doTask, foundKey := doTaskMap[releaseName]
-			if foundKey && !doTask {
+		if r.OperatorMode {
+			rp, ok := redpandasMap[val]
+			if !ok {
+				Infof(log, "could not find Redpanda %q", val)
 				continue
 			}
 
-			if !foundKey {
-				valuesMap, err := getHelmValues(log, releaseName, req.Namespace)
-				if err != nil {
-					Infof(log, "could not retrieve values for release %q, probably not a valid managed helm release: %s", releaseName, err)
-					continue
-				}
+			// Now check if we are allowed to operate on this pvc as there may be another controller working
+			if rp.Spec.ClusterSpec.Statefulset != nil &&
+				rp.Spec.ClusterSpec.Statefulset.SideCars != nil &&
+				rp.Spec.ClusterSpec.Statefulset.SideCars.Controllers != nil &&
+				ptr.Deref(rp.Spec.ClusterSpec.Statefulset.SideCars.Controllers.Enabled, false) {
+				Infof(log, "operator can not reconcile as side-car must reconcole node delete event (%q)", req.Name)
+				continue
+			}
+		} else {
+			releaseName, ok := os.LookupEnv(EnvHelmReleaseNameKey)
+			if !ok {
+				Infof(log, "skip persistent volume %q, expected to find release-name env var: %q", pvc.Name, EnvHelmReleaseNameKey)
+				return ctrl.Result{}, nil
+			}
 
-				enabledControllerSideCar, okSideCar, errGetBool := unstructured.NestedBool(valuesMap, "statefulset", "sideCars", "controllers", "enabled")
-				if errGetBool != nil {
-					Infof(log, "could not retrieve sideCar state for release %q: %s", releaseName, errGetBool)
-					continue
-				}
-
-				doTaskMap[releaseName] = !enabledControllerSideCar
-				if okSideCar && enabledControllerSideCar {
-					log.Info("another controller has ownership, moving on")
-					continue
-				}
+			if val != releaseName {
+				Infof(log, "label %q does not match release name %q. Skipping PVC %q", val, releaseName, pvc.Name)
+				return ctrl.Result{}, nil
 			}
 		}
 

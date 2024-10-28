@@ -196,17 +196,10 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 
 	// Redpanda Reconciler
-	err = (&redpanda.RedpandaReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        k8sManager.GetScheme(),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
-	}).SetupWithManager(ctx, k8sManager)
+	err = redpanda.SetupRedpandaController(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&redpanda.DecommissionReconciler{
-		Client:       k8sManager.GetClient(),
-		OperatorMode: false,
-	}).SetupWithManager(k8sManager)
+	err = redpanda.SetupDecommissionController(k8sManager, false, time.Second)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&redpanda.RedpandaNodePVCReconciler{

@@ -11,10 +11,9 @@ package redpanda
 
 import (
 	"context"
-	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -25,12 +24,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 )
 
@@ -58,15 +59,29 @@ var ConditionUnknown = appsv1.StatefulSetCondition{
 
 type DecommissionReconciler struct {
 	client.Client
-	OperatorMode bool
+	internalclient.ClientFactory
+	operatorMode bool
 
-	DecommissionWaitInterval time.Duration
+	decommissionWaitInterval time.Duration
+	restConfig               *rest.Config
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *DecommissionReconciler) SetupWithManager(mgr ctrl.Manager) error {
+// SetupDecommissionController sets up the controller with the Manager.
+func SetupDecommissionController(mgr ctrl.Manager, operatorMode bool, decommissionWaitInterval time.Duration) error {
+	c := mgr.GetClient()
+	config := mgr.GetConfig()
+	factory := internalclient.NewFactory(config, c)
+
+	controller := &DecommissionReconciler{
+		Client:                   c,
+		ClientFactory:            factory,
+		decommissionWaitInterval: decommissionWaitInterval,
+		operatorMode:             operatorMode,
+		restConfig:               config,
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1.StatefulSet{}).WithEventFilter(UpdateEventFilter).Complete(r)
+		For(&appsv1.StatefulSet{}).WithEventFilter(UpdateEventFilter).Complete(controller)
 }
 
 func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -129,8 +144,8 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 	// Decommission status must be reconciled constantly
 	if result.RequeueAfter == 0 {
 		result.RequeueAfter = defaultReconciliation
-		if r.DecommissionWaitInterval != 0 {
-			result.RequeueAfter = r.DecommissionWaitInterval
+		if r.decommissionWaitInterval != 0 {
+			result.RequeueAfter = r.decommissionWaitInterval
 		}
 	}
 
@@ -148,6 +163,37 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 	return result, err
 }
 
+func (r *DecommissionReconciler) GetRedpanda(ctx context.Context, log logr.Logger, releaseName, namespace string) (*v1alpha2.Redpanda, error) {
+	rp := v1alpha2.Redpanda{}
+	if !r.operatorMode {
+		values, err := getHelmValues(log, releaseName, namespace)
+		if err != nil {
+			return nil, fmt.Errorf("getting helm values: %w", err)
+		}
+
+		wrappedValues := map[string]any{
+			"spec": map[string]any{
+				"clusterSpec": values,
+			},
+		}
+
+		b, err := json.Marshal(wrappedValues)
+		if err != nil {
+			return nil, fmt.Errorf("getting helm values: %w", err)
+		}
+
+		err = json.Unmarshal(b, &rp)
+		if err != nil {
+			return nil, fmt.Errorf("getting helm values: %w", err)
+		}
+	} else {
+		if err := r.Get(ctx, types.NamespacedName{Name: releaseName, Namespace: namespace}, &rp); err != nil {
+			return nil, fmt.Errorf("getting helm values: %w", err)
+		}
+	}
+	return &rp, nil
+}
+
 // verifyIfNeedDecommission checks if decommission is necessary or not.
 // The checks happen in a few steps:
 // 1. We first check whether statefulset is a redpanda statefulset or not
@@ -162,70 +208,28 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 	log = log.WithName("verifyIfNeedDecommission")
 	log.V(logger.DebugLevel).Info("verify if we need to decommission", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
 
-	namespace := sts.Namespace
-
-	if len(sts.Labels) == 0 {
+	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
+	if !ok {
+		log.Info("unable to retrieve valid releaseName", "release-name", releaseName)
 		return ctrl.Result{}, nil
 	}
 
-	// if helm is not managing it, move on.
-	if managedBy, ok := sts.Labels[K8sManagedByLabelKey]; managedBy != "Helm" || !ok {
-		log.Info("not managed by helm", "managed-by", managedBy, "found-key", ok)
-		return ctrl.Result{}, nil
-	}
-
-	redpandaNameList := make([]string, 0)
-	if r.OperatorMode {
-		opts := &client.ListOptions{Namespace: namespace}
-		redpandaList := &v1alpha1.RedpandaList{}
-		if errGET := r.Client.List(ctx, redpandaList, opts); errGET != nil {
-			return ctrl.Result{}, fmt.Errorf("could not GET list of Redpandas in namespace: %w", errGET)
-		}
-
-		for i := range redpandaList.Items {
-			item := redpandaList.Items[i]
-			redpandaNameList = append(redpandaNameList, item.Name)
-		}
-	} else {
-		releaseName, ok := os.LookupEnv(EnvHelmReleaseNameKey)
-		if !ok {
-			log.Info(fmt.Sprintf("Skipping reconciliation, expected to find release-name env var: %q", EnvHelmReleaseNameKey))
-			return ctrl.Result{}, nil
-		}
-
-		redpandaNameList = append(redpandaNameList, releaseName)
-	}
-
-	var releaseName string
-	if val, ok := sts.Labels[K8sInstanceLabelKey]; !ok || !isValidReleaseName(val, redpandaNameList) {
-		log.Info("could not find instance label or unable retrieve valid releaseName", "release-name", val)
-		return ctrl.Result{}, nil
-	} else {
-		releaseName = val
-	}
-
-	requestedReplicas := ptr.Deref(sts.Spec.Replicas, 0)
-
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	rp, err := r.GetRedpanda(ctx, log, releaseName, sts.Namespace)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
+		return ctrl.Result{}, fmt.Errorf("getting redpanda cr: %w", err)
 	}
 
-	// we are in operator mode, check if another controller has ownership here
-	if r.OperatorMode {
-		enabledControllerSideCar, ok, errGetBool := unstructured.NestedBool(valuesMap, "statefulset", "sideCars", "controllers", "enabled")
-		if errGetBool != nil {
-			return ctrl.Result{}, fmt.Errorf("could not retrieve sideCar state: %w", errGetBool)
-		}
-		if ok && enabledControllerSideCar {
-			log.Info("another controller has ownership as side car controller is enabled, moving on")
-			return ctrl.Result{}, nil
-		}
+	if rp.Spec.ClusterSpec.Statefulset != nil &&
+		rp.Spec.ClusterSpec.Statefulset.SideCars != nil &&
+		rp.Spec.ClusterSpec.Statefulset.SideCars.Controllers != nil &&
+		ptr.Deref(rp.Spec.ClusterSpec.Statefulset.SideCars.Controllers.Enabled, false) {
+		log.Info("sidecars should decommission Redpanda brokers")
+		return ctrl.Result{}, nil
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
+	adminAPI, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminapi: %w", err)
+		return ctrl.Result{}, fmt.Errorf("creating Redpanda admin client: %w", err)
 	}
 
 	health, err := watchClusterHealth(ctx, adminAPI)
@@ -233,16 +237,22 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 		return ctrl.Result{}, fmt.Errorf("could not make request to admin-api: %w", err)
 	}
 
-	// strange error case here
+	requestedReplicas := 0
+	if rp.Spec.ClusterSpec.Statefulset == nil {
+		log.Info("cluster statefulset is not set")
+	}
+	requestedReplicas = ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
 	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
-		log.V(logger.DebugLevel).Info("stopping decommission verification reconciliation", "requested-replicas", requestedReplicas, "nodes-registered", health.AllNodes)
+		log.V(logger.DebugLevel).Info("stopping decommission verification reconciliation",
+			"requested-replicas", requestedReplicas, 0,
+			"nodes-registered", health.AllNodes)
 		return ctrl.Result{}, nil
 	}
 
 	log.V(logger.DebugLevel).Info("cluster health", "health", health)
 
-	log.V(logger.DebugLevel).Info("current state", "nodes-registered-number", len(health.AllNodes), "statefulset-spec-replicas", int(requestedReplicas))
-	if len(health.AllNodes) > int(requestedReplicas) {
+	log.V(logger.DebugLevel).Info("current state", "nodes-registered-number", len(health.AllNodes), "statefulset-spec-replicas", requestedReplicas)
+	if len(health.AllNodes) > requestedReplicas {
 		log.Info("we are downscaling, attempt to add condition with status false")
 		// we are in decommission mode, we should probably wait here some time to verify
 		// that we are committed and after x amount of time perform the decommission task after.
@@ -293,8 +303,6 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 
 	log.Info("reconciling", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
 
-	namespace := sts.Namespace
-
 	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
 	if !ok {
 		log.Info("could not find instance label to retrieve releaseName", "label", K8sInstanceLabelKey)
@@ -319,14 +327,14 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
 
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	rp, err := r.GetRedpanda(ctx, log, releaseName, sts.Namespace)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
+		return ctrl.Result{}, fmt.Errorf("getting redpanda cr: %w", err)
 	}
 
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
+	adminAPI, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminAPI: %w", err)
+		return ctrl.Result{}, fmt.Errorf("creating Redpanda admin client: %w", err)
 	}
 
 	health, err := watchClusterHealth(ctx, adminAPI)
@@ -360,23 +368,36 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 			nodesDownMap.Add(node)
 		}
 
+		bl, err := adminAPI.Brokers(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("could not get brokers: %w", err)
+		}
+
+		addresses := map[string]any{}
+		for _, b := range bl {
+			addresses[b.InternalRPCAddress] = struct{}{}
+		}
+
+		replicas := 0
+		if rp.Spec.ClusterSpec.Statefulset == nil {
+			log.Info("cluster statefulset is not set")
+		}
+		replicas = ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+		if len(addresses) < replicas {
+			return ctrl.Result{}, fmt.Errorf("conservative bailout as number of addresses are lower than replication spec")
+		}
+
+		for _, b := range bl {
+			if !ptr.Deref(b.IsAlive, false) {
+				continue
+			}
+
+			nodesDownMap.Delete(b.NodeID)
+		}
+
 		// perform decommission on down down-nodes but only if down nodes match count of all-nodes-replicas
 		// the greater case takes care of the situation where we may also have additional ids here.
 		if len(health.NodesDown) >= (len(health.AllNodes) - int(requestedReplicas)) {
-			for podOrdinal := 0; podOrdinal < int(requestedReplicas); podOrdinal++ {
-				singleNodeAdminAPI, buildErr := buildAdminAPI(releaseName, namespace, requestedReplicas, &podOrdinal, valuesMap)
-				if buildErr != nil {
-					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
-					return ctrl.Result{}, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, buildErr)
-				}
-				nodeCfg, nodeErr := singleNodeAdminAPI.GetNodeConfig(ctx)
-				if nodeErr != nil {
-					log.Error(nodeErr, "getting node configuration", "pod-ordinal", podOrdinal)
-					return ctrl.Result{}, fmt.Errorf("getting node configuration from pod (%d): %w", podOrdinal, nodeErr)
-				}
-				nodesDownMap.Delete(nodeCfg.NodeID)
-			}
-
 			for _, nodeID := range nodesDownMap.Values() {
 				// Now we check the decommission status before continuing
 				doDecommission := false
@@ -407,7 +428,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 	}
 
 	// now we check pvcs
-	if err = r.reconcilePVCs(log.WithName("DecommissionReconciler.reconcilePVCs"), ctx, sts, valuesMap); err != nil {
+	if err = r.reconcilePVCs(log.WithName("DecommissionReconciler.reconcilePVCs"), ctx, sts, rp); err != nil {
 		errList = errors.Join(errList, fmt.Errorf("could not reconcile pvcs: %w", err))
 	}
 
@@ -437,17 +458,12 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 	return ctrl.Result{}, nil
 }
 
-func (r *DecommissionReconciler) reconcilePVCs(log logr.Logger, ctx context.Context, sts *appsv1.StatefulSet, valuesMap map[string]interface{}) error {
+func (r *DecommissionReconciler) reconcilePVCs(log logr.Logger, ctx context.Context, sts *appsv1.StatefulSet, rp *v1alpha2.Redpanda) error {
 	Infof(log, "reconciling: %s/%s", sts.Namespace, sts.Name)
 
 	Infof(log, "checking storage")
-	persistentStorageEnabled, ok, err := unstructured.NestedBool(valuesMap, "storage", "persistentVolume", "enabled")
-	if !ok || err != nil {
-		return fmt.Errorf("could not retrieve persistent storage settings: %w", err)
-	}
-
-	if !persistentStorageEnabled {
-		return nil
+	if rp.Spec.ClusterSpec.Storage != nil && rp.Spec.ClusterSpec.Storage.PersistentVolume != nil && ptr.Deref(rp.Spec.ClusterSpec.Storage.PersistentVolume.Enabled, false) {
+		return fmt.Errorf("could not retrieve persistent storage settings")
 	}
 
 	log.Info("persistent storage enabled, checking if we need to remove something")
@@ -500,13 +516,11 @@ func (r *DecommissionReconciler) reconcilePVCs(log logr.Logger, ctx context.Cont
 	}
 
 	pvcsBound := make(map[string]bool, 0)
-	for i := range pvcList.Items {
-		item := pvcList.Items[i]
-		pvcsBound[item.Name] = false
+	for _, pvc := range pvcList.Items {
+		pvcsBound[pvc.Name] = false
 	}
 
-	for j := range podList.Items {
-		pod := podList.Items[j]
+	for _, pod := range podList.Items {
 		// skip pods that are being terminated
 		if pod.GetDeletionTimestamp() != nil {
 			continue
@@ -550,21 +564,19 @@ func (r *DecommissionReconciler) tryToDeletePVC(log logr.Logger, ctx context.Con
 	// TODO: may want to not processes cases where we have more than 1 pvcs, so we force the 1 node at a time policy
 	// this will avoid dead locking the cluster since you cannot add new nodes, or decomm
 
-	for i := range pvcList.Items {
-		item := pvcList.Items[i]
-
-		if isBoundList[item.Name] || !isNameInList(item.Name, keys) {
+	for _, pvc := range pvcList.Items {
+		if isBoundList[pvc.Name] || !isNameInList(pvc.Name, keys) {
 			continue
 		}
 
 		// we are being deleted, before moving forward, try to update PV to avoid data loss
-		bestTrySetRetainPV(r.Client, log, ctx, item.Spec.VolumeName, item.Namespace)
+		bestTrySetRetainPV(r.Client, log, ctx, pvc.Spec.VolumeName, pvc.Namespace)
 
-		Debugf(log, "getting ready to remove %s", item.Name)
+		Debugf(log, "getting ready to remove %s", pvc.Name)
 
 		// now we are ready to delete PVC
-		if errDelete := r.Client.Delete(ctx, &item); errDelete != nil {
-			pvcErrorList = errors.Join(pvcErrorList, fmt.Errorf("could not delete PVC %q: %w", item.Name, errDelete))
+		if errDelete := r.Client.Delete(ctx, &pvc); errDelete != nil {
+			pvcErrorList = errors.Join(pvcErrorList, fmt.Errorf("could not delete PVC %q: %w", pvc.Name, errDelete))
 		}
 	}
 
@@ -578,81 +590,6 @@ func isNameInList(name string, keys []string) bool {
 		}
 	}
 	return false
-}
-
-func buildAdminAPI(releaseName, namespace string, replicas int32, podOrdinal *int, values map[string]interface{}) (*rpadmin.AdminAPI, error) {
-	tlsEnabled, ok, err := unstructured.NestedBool(values, "tls", "enabled")
-	if !ok || err != nil {
-		// probably not a correct helm release, bail
-		return nil, fmt.Errorf("tlsEnabled found not to be ok %t, err: %w", tlsEnabled, err)
-	}
-
-	internalTLSEnabled, foundInternal, err := unstructured.NestedBool(values, "listeners", "admin", "tls", "enabled")
-	if err != nil {
-		// probably not a correct helm release, bail
-		return nil, fmt.Errorf("internal admin listener configuration not found: %w", err)
-	}
-
-	// need some additional checks to see if this is a redpanda
-
-	// Now try to either use the URL if it is not empty or build the service name to get the sts information
-	// proper command, note that we are using curl and ignoring tls, we will continue
-	// curl -k https://redpanda-2.redpanda.redpanda.svc.cluster.local.:9644/v1/cluster/health_overview
-	// sample response:
-
-	// this can be <scheme>://<release-name>.<namespace>.svc.cluster.local.:<ipAddress>
-	// http scheme will be determined by tls option below:
-
-	var tlsConfig *tls.Config = nil
-	if foundInternal && internalTLSEnabled || !foundInternal && tlsEnabled {
-		//nolint:gosec // will not pull secrets unless working in chart
-		tlsConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-
-	urls, err := createBrokerURLs(releaseName, namespace, replicas, podOrdinal, values)
-	if err != nil {
-		return nil, fmt.Errorf("could not create broker url: %w", err)
-	}
-
-	// TODO we do not tls, but we may need sasl items here.
-	return rpadmin.NewAdminAPI(urls, &rpadmin.NopAuth{}, tlsConfig)
-}
-
-func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, values map[string]interface{}) ([]string, error) {
-	brokerList := make([]string, 0)
-
-	fullnameOverride, ok, err := unstructured.NestedString(values, "fullnameOverride")
-	if !ok || err != nil {
-		return brokerList, fmt.Errorf("could not retrieve fullnameOverride: %s; error %w", fullnameOverride, err)
-	}
-
-	serviceName := release
-	if fullnameOverride != "" {
-		serviceName = fullnameOverride
-	}
-
-	// unstructured things that ports are flot64 types this is by design for json conversion
-	portFloat, ok, err := unstructured.NestedFloat64(values, "listeners", "admin", "port")
-	if !ok || err != nil {
-		return brokerList, fmt.Errorf("could not retrieve admin port %f, error: %w", portFloat, err)
-	}
-
-	port := int(portFloat)
-
-	domain, ok, err := unstructured.NestedString(values, "clusterDomain")
-	if !ok || err != nil {
-		return brokerList, fmt.Errorf("could not retrieve clusterDomain: %s; error: %w", domain, err)
-	}
-
-	if ordinal == nil {
-		for i := 0; i < int(replicas); i++ {
-			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, i, serviceName, namespace, domain, port))
-		}
-	} else {
-		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, *ordinal, serviceName, namespace, domain, port))
-	}
-
-	return brokerList, nil
 }
 
 func watchClusterHealth(ctx context.Context, adminAPI *rpadmin.AdminAPI) (*rpadmin.ClusterHealthOverview, error) {
@@ -725,35 +662,4 @@ func getConditionOfTypeAndListWithout(conditionType appsv1.StatefulSetConditionT
 	}
 
 	return oldCondition, newConditions
-}
-
-func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (bool, error) {
-	namespace := sts.Namespace
-
-	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
-	if !ok {
-		log.Info("could not find instance label to retrieve releaseName", "label", K8sInstanceLabelKey)
-		return false, nil
-	}
-
-	requestedReplicas := ptr.Deref(sts.Spec.Replicas, 0)
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
-	if err != nil {
-		return false, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
-	}
-
-	adminAPI, err := buildAdminAPI(releaseName, namespace, requestedReplicas, nil, valuesMap)
-	if err != nil {
-		return false, fmt.Errorf("error creating adminAPI: %w", err)
-	}
-
-	health, err := adminAPI.GetHealthOverview(ctx)
-	if err != nil {
-		return false, fmt.Errorf("could not make request to admin-api: %w", err)
-	}
-	if requestedReplicas == 0 || len(health.AllNodes) == 0 {
-		return false, nil
-	}
-
-	return len(health.AllNodes) > int(requestedReplicas), nil
 }

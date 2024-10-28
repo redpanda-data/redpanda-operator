@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
@@ -49,7 +50,6 @@ const (
 
 	NotManaged = "false"
 
-	resourceReadyStrFmt    = "%s '%s/%s' is ready"
 	resourceNotReadyStrFmt = "%s '%s/%s' is not ready"
 
 	resourceTypeHelmRepository = "HelmRepository"
@@ -70,6 +70,7 @@ type RedpandaReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	kuberecorder.EventRecorder
+	internalclient.ClientFactory
 }
 
 // flux resources main resources
@@ -117,8 +118,16 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func SetupRedpandaController(ctx context.Context, mgr ctrl.Manager) error {
+	c := mgr.GetClient()
+	config := mgr.GetConfig()
+	factory := internalclient.NewFactory(config, c)
+	controller := &RedpandaReconciler{
+		Client:        c,
+		EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
+		ClientFactory: factory,
+	}
+
 	if err := registerHelmReferencedIndex(ctx, mgr, "statefulset", &appsv1.StatefulSet{}); err != nil {
 		return err
 	}
@@ -154,7 +163,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		Owns(&helmv2beta2.HelmRelease{}).
 		Watches(&appsv1.StatefulSet{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
 		Watches(&appsv1.Deployment{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
-		Complete(r)
+		Complete(controller)
 }
 
 func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -306,14 +315,23 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
 	}
 
-	for _, sts := range redpandaStatefulSets {
-		decommission, err := needsDecommission(ctx, sts, log)
-		if err != nil {
-			return rp, err
-		}
-		if decommission {
-			return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), nil
-		}
+	adminAPI, err := r.RedpandaAdminClient(ctx, rp)
+	if err != nil {
+		return rp, fmt.Errorf("creating Redpanda Admin API: %w", err)
+	}
+
+	health, err := adminAPI.GetHealthOverview(ctx)
+	if err != nil {
+		return rp, fmt.Errorf("getting Redpanda health overview: %w", err)
+	}
+
+	replicas := 0
+	if rp.Spec.ClusterSpec.Statefulset == nil {
+		log.Info("cluster statefulset is not set")
+	}
+	replicas = ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
+	if len(health.AllNodes) > replicas {
+		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", fmt.Sprintf("Redpanda controller should decommissioning dead nodes: all-registered-nodes (%d) replication-factor (%d)", len(health.AllNodes), replicas)), nil
 	}
 
 	// check to make sure that our stateful set pods are all current
