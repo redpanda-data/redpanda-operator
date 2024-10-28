@@ -222,6 +222,10 @@ type NodePoolSpec struct {
 	// Cache directory that will be mounted for Cloud Storage.
 	// +required
 	CloudCacheStorage StorageSpec `json:"cloudCacheStorage"`
+	// Additional command line arguments that we pass to the redpanda binary
+	// These are applied last and will override any other command line arguments that may be defined,
+	// including the ones added when setting `DeveloperMode` to `true`.
+	AdditionalCommandlineArguments map[string]string `json:"additionalCommandlineArguments,omitempty"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades
