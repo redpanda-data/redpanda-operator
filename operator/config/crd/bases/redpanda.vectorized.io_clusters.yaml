@@ -1027,6 +1027,14 @@ spec:
                     Replicas, so they can be controlled independently
                     Resources, because this is tied strongly to the actual machine shape backing the NodePool.
                   properties:
+                    additionalCommandlineArguments:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        Additional command line arguments that we pass to the redpanda binary
+                        These are applied last and will override any other command line arguments that may be defined,
+                        including the ones added when setting `DeveloperMode` to `true`.
+                      type: object
                     cloudCacheStorage:
                       description: Cache directory that will be mounted for Cloud
                         Storage.
