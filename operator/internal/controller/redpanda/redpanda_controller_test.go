@@ -37,6 +37,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -109,11 +110,49 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 }
 
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
-	s.T().Skip("not currently implemented")
-
 	rp := s.minimalRP(false)
 	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(true)
 	s.applyAndWait(rp)
+
+	// Create a list of secrets with varying labels that we expect to NOT get
+	// GC'd.
+	secrets := []*corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "no-gc-",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "no-gc-",
+				Labels: map[string]string{
+					"helm.toolkit.fluxcd.io/name":      rp.Name,
+					"helm.toolkit.fluxcd.io/namespace": rp.Namespace,
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "no-gc-",
+				Labels: map[string]string{
+					"helm.toolkit.fluxcd.io/name":      rp.Name,
+					"helm.toolkit.fluxcd.io/namespace": rp.Namespace,
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "no-gc-",
+				Labels: map[string]string{
+					"app.kubernetes.io/instance": rp.Name,
+				},
+			},
+		},
+	}
+
+	for _, secret := range secrets {
+		s.Require().NoError(s.client.Create(s.ctx, secret))
+	}
 
 	// Assert that the console deployment exists
 	var deployments appsv1.DeploymentList
@@ -126,6 +165,12 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	// Assert that the console deployment has been garbage collected.
 	s.NoError(s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
 	s.Len(deployments.Items, 0)
+
+	// Assert that our previously created secrets have not been GC'd.
+	for _, secret := range secrets {
+		key := client.ObjectKeyFromObject(secret)
+		s.Require().NoError(s.client.Get(s.ctx, key, secret))
+	}
 
 	s.deleteAndWait(rp)
 }
