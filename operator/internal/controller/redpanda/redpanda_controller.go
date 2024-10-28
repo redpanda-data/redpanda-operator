@@ -15,6 +15,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -30,6 +31,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	kuberecorder "k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
@@ -65,6 +67,11 @@ const (
 )
 
 var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
+
+type gvkKey struct {
+	GVK schema.GroupVersionKind
+	Key client.ObjectKey
+}
 
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
@@ -268,6 +275,8 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 		return err
 	}
 
+	// set for tracking which objects are expected to exist in this reconciliation run.
+	created := make(map[gvkKey]struct{}, len(objs))
 	for _, obj := range objs {
 		// Namespace is inconsistently set across all our charts. Set it
 		// explicitly here to be safe.
@@ -306,9 +315,100 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 		}
 
 		log.Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))
+
+		// Record creation
+		created[gvkKey{
+			Key: client.ObjectKeyFromObject(obj),
+			GVK: obj.GetObjectKind().GroupVersionKind(),
+		}] = struct{}{}
+	}
+
+	// If our ObservedGeneration is up to date, .Spec hasn't changed since the
+	// last successful reconciliation so everything that we'd do here is likely
+	// to be a no-op.
+	// This check could likely be hoisted above the deployment loop as well.
+	if rp.Generation == rp.Status.ObservedGeneration && rp.Generation != 0 {
+		log.Info("observed generation is up to date. skipping garbage collection", "generation", rp.Generation, "observedGeneration", rp.Status.ObservedGeneration)
+		return nil
+	}
+
+	// Garbage collect any objects that are no longer needed.
+	if err := r.reconcileDefluxGC(ctx, rp, created); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2.Redpanda, created map[gvkKey]struct{}) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	types, err := allListTypes(r.Client)
+	if err != nil {
+		return err
+	}
+
+	// For all types in the redpanda helm chart,
+	var toDelete []kube.Object
+	for _, typ := range types {
+		// Find all objects that have flux's internal label selector.
+		if err := r.Client.List(ctx, typ, client.InNamespace(rp.Namespace), client.MatchingLabels{
+			"helm.toolkit.fluxcd.io/name":      rp.GetHelmReleaseName(),
+			"helm.toolkit.fluxcd.io/namespace": rp.Namespace,
+		}); err != nil {
+			// Some types from 3rd parties (monitoring, cert-manager) may not
+			// exists. If they don't skip over them without erroring out.
+			if apimeta.IsNoMatchError(err) {
+				log.Info("Skipping unknown GVK", "gvk", typ)
+				continue
+			}
+			return err
+		}
+
+		if err := apimeta.EachListItem(typ, func(o runtime.Object) error {
+			obj := o.(client.Object)
+
+			gvk, err := r.Client.GroupVersionKindFor(obj)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			key := gvkKey{Key: client.ObjectKeyFromObject(obj), GVK: gvk}
+
+			isOwned := -1 != slices.IndexFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
+				return owner.UID == rp.UID
+			})
+
+			// If we've just created this object, don't consider it for
+			// deletion.
+			if _, ok := created[key]; ok {
+				return nil
+			}
+
+			// Similarly, if the object isn't owned by `rp`, don't consider it
+			// for deletion.
+			if !isOwned {
+				return nil
+			}
+
+			toDelete = append(toDelete, obj)
+
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+
+	log.Info(fmt.Sprintf("identified %d objects to gc", len(toDelete)))
+
+	var errs []error
+	for _, obj := range toDelete {
+		if err := r.Client.Delete(ctx, obj); err != nil {
+			errs = append(errs, errors.Wrapf(err, "gc'ing %T: %s", obj, obj.GetName()))
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
@@ -642,4 +742,25 @@ func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, re
 		return fmt.Sprintf("Not all %s replicas updated, available, and ready for [%s]", resource, strings.Join(notReady, "; ")), false
 	}
 	return "", true
+}
+
+func allListTypes(c client.Client) ([]client.ObjectList, error) {
+	// TODO: iterators would be really cool here.
+	var types []client.ObjectList
+	for _, t := range redpanda.Types() {
+		gvk, err := c.GroupVersionKindFor(t)
+		if err != nil {
+			return nil, err
+		}
+
+		gvk.Kind += "List"
+
+		list, err := c.Scheme().New(gvk)
+		if err != nil {
+			return nil, err
+		}
+
+		types = append(types, list.(client.ObjectList))
+	}
+	return types, nil
 }
