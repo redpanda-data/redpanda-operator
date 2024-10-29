@@ -295,7 +295,7 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	}
 
 	for _, sts := range redpandaStatefulSets {
-		decommission, err := needsDecommission(ctx, sts, log)
+		decommission, err := needsDecommission(ctx, sts, log, r.Client, true)
 		if err != nil {
 			return rp, err
 		}

@@ -195,7 +195,7 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 	decommissionNodeID := int(*rp.Status.ManagedDecommissioningNode)
 	log := l.WithName("decommissionStatus").WithValues("decommission-node-id", decommissionNodeID)
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
 	if err != nil {
 		return fmt.Errorf("get helm values: %w", err)
 	}
@@ -304,7 +304,7 @@ func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Cl
 		return nil, fmt.Errorf("get Redpanda Node ID pod list: %w", err)
 	}
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
 	if err != nil {
 		return nil, fmt.Errorf("get helm values: %w", err)
 	}
@@ -371,7 +371,7 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 		return err
 	}
 
-	valuesMap, err := getHelmValues(l, rp.GetHelmReleaseName(), rp.Namespace)
+	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
 	if err != nil {
 		return fmt.Errorf("get helm values: %w", err)
 	}
