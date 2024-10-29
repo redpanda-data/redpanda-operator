@@ -206,7 +206,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 	requestedReplicas := ptr.Deref(sts.Spec.Replicas, 0)
 
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	valuesMap, err := getHelmValues(ctx, r, log, releaseName, namespace, r.OperatorMode)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
 	}
@@ -319,7 +319,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
 
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	valuesMap, err := getHelmValues(ctx, r, log, releaseName, namespace, r.OperatorMode)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
 	}
@@ -727,7 +727,7 @@ func getConditionOfTypeAndListWithout(conditionType appsv1.StatefulSetConditionT
 	return oldCondition, newConditions
 }
 
-func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (bool, error) {
+func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger, c client.Client, operatorMode bool) (bool, error) {
 	namespace := sts.Namespace
 
 	releaseName, ok := sts.Labels[K8sInstanceLabelKey]
@@ -737,7 +737,7 @@ func needsDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Lo
 	}
 
 	requestedReplicas := ptr.Deref(sts.Spec.Replicas, 0)
-	valuesMap, err := getHelmValues(log, releaseName, namespace)
+	valuesMap, err := getHelmValues(ctx, c, log, releaseName, namespace, operatorMode)
 	if err != nil {
 		return false, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
 	}

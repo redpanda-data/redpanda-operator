@@ -147,7 +147,7 @@ func (r *RedpandaNodePVCReconciler) reconcile(ctx context.Context, req ctrl.Requ
 			}
 
 			if !foundKey {
-				valuesMap, err := getHelmValues(log, releaseName, req.Namespace)
+				valuesMap, err := getHelmValues(ctx, r, log, releaseName, req.Namespace, r.OperatorMode)
 				if err != nil {
 					Infof(log, "could not retrieve values for release %q, probably not a valid managed helm release: %s", releaseName, err)
 					continue

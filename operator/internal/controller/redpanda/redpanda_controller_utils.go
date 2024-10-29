@@ -16,10 +16,12 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -59,7 +61,21 @@ func isValidReleaseName(releaseName string, redpandaNameList []string) bool {
 	return false
 }
 
-func getHelmValues(log logr.Logger, releaseName, namespace string) (map[string]interface{}, error) {
+func getHelmValues(ctx context.Context, c client.Client, log logr.Logger, releaseName, namespace string, operatorMode bool) (map[string]interface{}, error) {
+	if operatorMode {
+		rp := v1alpha2.Redpanda{}
+		err := c.Get(ctx, client.ObjectKey{Name: releaseName, Namespace: namespace}, &rp)
+		if err != nil {
+			return nil, fmt.Errorf("getting Redpanda customer resource: %w", err)
+		}
+
+		d, err := rp.GetDot(&rest.Config{})
+		if err != nil {
+			return nil, fmt.Errorf("compute chart values: %w", err)
+		}
+
+		return d.Values.AsMap(), nil
+	}
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) { Debugf(log, format, v) }); err != nil {
