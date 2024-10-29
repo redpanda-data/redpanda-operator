@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
-	"path"
 	"slices"
 	"strings"
 	"sync"
@@ -29,9 +28,11 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -58,16 +59,6 @@ func NewCluster(name string) (*Cluster, error) {
 		image = override
 	}
 
-	// Dependencies get automatically installed by k3(s|d)'s helm integration.
-	// We could potentially store the tar.gz's of the charts within our
-	// embedded FS to enabled airgapped clusters.
-	// Alternatively, we could manage custom k3s images instead of using
-	// --volume.
-	certMangerVol, err := manifestVolumeMount("cert-manager.yaml")
-	if err != nil {
-		return nil, err
-	}
-
 	args := []string{
 		"cluster",
 		"create",
@@ -85,7 +76,6 @@ func NewCluster(name string) (*Cluster, error) {
 		// Pod eviction happens in a timely fashion.
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
-		`--volume`, certMangerVol,
 	}
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()
@@ -183,22 +173,30 @@ func (c *Cluster) Cleanup() error {
 	return err
 }
 
-// waitForJobs blocks until all jobs in the kube-system namespace have completed.
-// This is a course grain way to wait for k3s to finish installing it's bundled
-// dependencies via helm.
+// setupCluster applies any embedded manifests and  blocks until all jobs in
+// the kube-system namespace have completed. This is a course grain way to wait
+// for k3s to finish installing it's bundled dependencies via helm.
+// See: https://docs.k3s.io/helm, https://k3d.io/v5.7.4/usage/k3s/?h=
 func (c *Cluster) waitForJobs(ctx context.Context) error {
 	cl, err := client.New(c.restConfig, client.Options{})
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeoutCause(ctx, time.Minute, fmt.Errorf("waiting for jobs in kube-system to finish"))
-	defer cancel()
+	// NB: Originally this functionality was achieved via the --volume flag to
+	// k3d but CI runs via a docker in docker setup which makes it unreasonable
+	// to use --volume.
+	// Alternatively, we could make our own k3s images and directly copy in the
+	// manifests in the Dockerfile.
+	for _, obj := range startupManifests() {
+		if err := cl.Patch(ctx, obj, client.Apply, client.FieldOwner("k3d-setup"), client.ForceOwnership); err != nil {
+			return errors.WithStack(err)
+		}
+	}
 
 	// Wait for all bootstrapping jobs to finish running.
-	return wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	return wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		var jobs batchv1.JobList
-
 		if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
 			return false, err
 		}
@@ -217,55 +215,31 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	})
 }
 
-// manifestVolumeMount returns a string suitable for use as `--volume` to `k3d
-// cluster start` which will mount a helm chart manifest into the server's manifest store.
-// See: https://docs.k3s.io/helm, https://k3d.io/v5.7.4/usage/k3s/?h=
-func manifestVolumeMount(name string) (string, error) {
-	const manifestVolumeFmt = `%s:/var/lib/rancher/k3s/server/manifests/%s@server:*`
+// startupManifests parses the embedded FS of Kubernetes manifests as a slice
+// of [client.Object]s.
+var startupManifests = sync.OnceValue(func() []client.Object {
+	var objs []client.Object
+	if err := fs.WalkDir(manifestsFS, ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
 
-	base, err := writeManifests()
-	if err != nil {
-		return "", err
+		contents, err := fs.ReadFile(manifestsFS, p)
+		if err != nil {
+			return err
+		}
+
+		var obj unstructured.Unstructured
+		if err := yaml.Unmarshal(contents, &obj); err != nil {
+			return errors.Wrapf(err, "unmarshalling %q", p)
+		}
+
+		objs = append(objs, &obj)
+
+		return nil
+	}); err != nil {
+		panic(err)
 	}
 
-	onDisk := path.Join(base, name)
-
-	return fmt.Sprintf(manifestVolumeFmt, onDisk, name), nil
-}
-
-var writeManifests = sync.OnceValues(func() (string, error) {
-	dir, err := os.MkdirTemp(os.TempDir(), "k3d-manifests-*")
-	if err != nil {
-		return "", err
-	}
-
-	if err := writeFS(manifestsFS, dir); err != nil {
-		return "", err
-	}
-
-	return dir, nil
+	return objs
 })
-
-func writeFS(f embed.FS, dir string) error {
-	return fs.WalkDir(f, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip over the "base" directory as that's already been created.
-		if p == "." {
-			return nil
-		}
-
-		if d.IsDir() {
-			return os.Mkdir(path.Join(dir, p), 0o775)
-		}
-
-		contents, err := fs.ReadFile(f, p)
-		if err != nil {
-			return err
-		}
-
-		return os.WriteFile(path.Join(dir, p), contents, 0o775)
-	})
-}
