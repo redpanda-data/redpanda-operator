@@ -15,6 +15,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sr"
 )
 
 var (
@@ -64,6 +65,16 @@ func IsTerminalClientError(err error) bool {
 	var restError *rpadmin.HTTPResponseError
 	if errors.As(err, &restError) {
 		code := restError.Response.StatusCode
+		if code >= 400 && code < 500 {
+			// we have a terminal error
+			return true
+		}
+	}
+
+	var srError *sr.ResponseError
+	if errors.As(err, &srError) {
+		// from https://github.com/redpanda-data/redpanda/blob/8a12c560f73773d2b5606d35f3b585c7af67ca82/src/v/pandaproxy/error.h#L70-L72
+		code := srError.ErrorCode / 100
 		if code >= 400 && code < 500 {
 			// we have a terminal error
 			return true

@@ -26,7 +26,6 @@ import (
 	"github.com/go-logr/logr/testr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
@@ -39,7 +38,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -223,7 +221,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	})
 }
 
-func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *v1alpha2.Redpanda {
+func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redpanda {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	name := "rp-"
@@ -232,19 +230,19 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *v1alpha2.Redpanda {
 		name += string(alphabet[rand.Intn(len(alphabet))])
 	}
 
-	return &v1alpha2.Redpanda{
+	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: v1alpha2.RedpandaSpec{
-			ChartRef: v1alpha2.ChartRef{
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ChartRef: redpandav1alpha2.ChartRef{
 				UseFlux: ptr.To(useFlux),
 			},
-			ClusterSpec: &v1alpha2.RedpandaClusterSpec{
-				Image: &v1alpha2.RedpandaImage{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Image: &redpandav1alpha2.RedpandaImage{
 					Repository: ptr.To("redpandadata/redpanda"), // Override the default to make use of the docker-io image cache.
 				},
-				Console: &v1alpha2.RedpandaConsole{
+				Console: &redpandav1alpha2.RedpandaConsole{
 					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
 				},
 				Statefulset: &redpandav1alpha2.Statefulset{
@@ -326,14 +324,14 @@ func (s *RedpandaControllerSuite) snapshotCluster(opts ...client.ListOption) []k
 		s.NoError(err)
 
 		if err := s.client.List(s.ctx, list.(client.ObjectList), opts...); err != nil {
-			if meta.IsNoMatchError(err) {
+			if apimeta.IsNoMatchError(err) {
 				s.T().Logf("skipping unknown list type %T", list)
 				continue
 			}
 			s.NoError(err)
 		}
 
-		s.NoError(meta.EachListItem(list, func(o runtime.Object) error {
+		s.NoError(apimeta.EachListItem(list, func(o runtime.Object) error {
 			obj := o.(client.Object)
 			obj.SetManagedFields(nil)
 			objs = append(objs, obj)

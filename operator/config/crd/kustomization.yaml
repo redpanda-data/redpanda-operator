@@ -8,6 +8,7 @@ resources:
 - bases/redpanda.vectorized.io_clusters.yaml
 - bases/redpanda.vectorized.io_consoles.yaml
 - bases/cluster.redpanda.com_redpandas.yaml
+- bases/cluster.redpanda.com_schemas.yaml
 - bases/cluster.redpanda.com_topics.yaml
 - bases/cluster.redpanda.com_users.yaml
 #+kubebuilder:scaffold:crdkustomizeresource

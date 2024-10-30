@@ -405,6 +405,11 @@ func Run(
 			return err
 		}
 
+		if err = redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Schema")
+			return err
+		}
+
 		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
 			Client:        mgr.GetClient(),
 			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),

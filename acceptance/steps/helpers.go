@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -61,6 +62,14 @@ func (c *clusterClients) Kafka(ctx context.Context) *kgo.Client {
 	t := framework.T(ctx)
 
 	client, err := c.factory.KafkaClient(ctx, c.resourceTarget)
+	require.NoError(t, err)
+	return client
+}
+
+func (c *clusterClients) SchemaRegistry(ctx context.Context) *sr.Client {
+	t := framework.T(ctx)
+
+	client, err := c.factory.SchemaRegistryClient(ctx, c.resourceTarget)
 	require.NoError(t, err)
 	return client
 }
@@ -112,6 +121,40 @@ func (c *clusterClients) ExpectNoUser(ctx context.Context, user string) {
 	t.Logf("Checking that user %q does not exist in cluster %q", user, c.cluster)
 	c.checkUser(ctx, user, false, fmt.Sprintf("User %q still exists in cluster %q", user, c.cluster))
 	t.Logf("Found no user %q in cluster %q", user, c.cluster)
+}
+
+func (c *clusterClients) ExpectSchema(ctx context.Context, schema string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking that schema %q exists in cluster %q", schema, c.cluster)
+	c.checkSchema(ctx, schema, true, fmt.Sprintf("Schema %q does not exist in cluster %q", schema, c.cluster))
+	t.Logf("Found schema %q in cluster %q", schema, c.cluster)
+}
+
+func (c *clusterClients) ExpectNoSchema(ctx context.Context, schema string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking that schema %q does not exist in cluster %q", schema, c.cluster)
+	c.checkSchema(ctx, schema, false, fmt.Sprintf("Schema %q still exists in cluster %q", schema, c.cluster))
+	t.Logf("Found no schema %q in cluster %q", schema, c.cluster)
+}
+
+func (c *clusterClients) checkSchema(ctx context.Context, schema string, exists bool, message string) {
+	t := framework.T(ctx)
+
+	var subjects []string
+	var err error
+
+	if !assert.Eventually(t, func() bool {
+		t.Logf("Pulling list of schema subjects from cluster")
+		schemaRegistry := c.SchemaRegistry(ctx)
+		subjects, err = schemaRegistry.Subjects(ctx)
+		require.NoError(t, err)
+
+		return exists == slices.Contains(subjects, schema)
+	}, 10*time.Second, 1*time.Second, message) {
+		t.Errorf("Final list of schema subjects: %v", subjects)
+	}
 }
 
 func (c *clusterClients) ExpectTopic(ctx context.Context, topic string) {
