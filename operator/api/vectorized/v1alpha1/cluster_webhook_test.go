@@ -647,6 +647,8 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			corev1.ResourceMemory: resource.MustParse("2Gi"),
 			corev1.ResourceCPU:    resource.MustParse("1"),
 		}
+		one := int32(1)
+		c.Spec.Replicas = &one
 
 		_, err := c.ValidateUpdate(redpandaCluster)
 		assert.Error(t, err)
