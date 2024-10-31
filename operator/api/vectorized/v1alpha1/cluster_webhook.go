@@ -108,8 +108,19 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &Cluster{}
 
-func redpandaResourceFields(c *Cluster) redpandaResourceField {
-	return redpandaResourceField{&c.Spec.Resources, field.NewPath("spec").Child("resources")}
+func redpandaResourceFields(c *Cluster) []redpandaResourceField {
+	var result []redpandaResourceField
+	// Default NodePool
+	if c.Spec.Replicas != nil {
+		result = append(result, redpandaResourceField{&c.Spec.Resources, field.NewPath("spec").Child("resources")})
+	}
+
+	// Additional NodePools
+	for _, np := range c.Spec.NodePools {
+		result = append(result, redpandaResourceField{&np.Resources, field.NewPath("spec").Child("nodePools").Child("resources")})
+	}
+
+	return result
 }
 
 func sidecarResourceFields(c *Cluster) []resourceField {
@@ -259,7 +270,9 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 	for _, rf := range sidecarResourceFields(r) {
 		allErrs = append(allErrs, r.validateResources(rf)...)
 	}
-	allErrs = append(allErrs, r.validateRedpandaResources(redpandaResourceFields(r))...)
+	for _, rf := range redpandaResourceFields(r) {
+		allErrs = append(allErrs, r.validateRedpandaResources(rf)...)
+	}
 	allErrs = append(allErrs, r.validateArchivalStorage()...)
 	allErrs = append(allErrs, r.validatePodDisruptionBudget()...)
 	if featuregates.InternalTopicReplication(r.Spec.Version) {
@@ -793,26 +806,28 @@ func (r *Cluster) validateRedpandaMemory() field.ErrorList {
 		}
 	}
 
-	// Ensure a requested 2GB of memory per core
-	requests := r.Spec.Resources.Requests.DeepCopy()
-	requests.Cpu().RoundUp(0)
-	requestedCores := requests.Cpu().Value()
-	if r.Spec.Resources.Requests.Memory().Value() < requestedCores*MinimumMemoryPerCore {
-		allErrs = append(allErrs,
-			field.Invalid(
-				field.NewPath("spec").Child("resources").Child("requests").Child("memory"),
-				r.Spec.Resources.Requests.Memory(),
-				"requests.memory < 2Gi per core; either decrease requests.cpu or increase requests.memory"))
-	}
+	if r.Spec.Replicas != nil {
+		// Ensure a requested 2GB of memory per core
+		requests := r.Spec.Resources.Requests.DeepCopy()
+		requests.Cpu().RoundUp(0)
+		requestedCores := requests.Cpu().Value()
+		if r.Spec.Resources.Requests.Memory().Value() < requestedCores*MinimumMemoryPerCore {
+			allErrs = append(allErrs,
+				field.Invalid(
+					field.NewPath("spec").Child("resources").Child("requests").Child("memory"),
+					r.Spec.Resources.Requests.Memory(),
+					"requests.memory < 2Gi per core; either decrease requests.cpu or increase requests.memory"))
+		}
 
-	redpandaCores := r.Spec.Resources.RedpandaCPU().Value()
-	minimumMemoryPerCore := int64(math.Floor(MinimumMemoryPerCore * RedpandaMemoryAllocationRatio))
-	if !r.Spec.Resources.RedpandaMemory().IsZero() && r.Spec.Resources.RedpandaMemory().Value() < redpandaCores*minimumMemoryPerCore {
-		allErrs = append(allErrs,
-			field.Invalid(
-				field.NewPath("spec").Child("resources").Child("redpanda").Child("memory"),
-				r.Spec.Resources.Requests.Memory(),
-				"redpanda.memory < 2Gi per core; either decrease redpanda.cpu or increase redpanda.memory"))
+		redpandaCores := r.Spec.Resources.RedpandaCPU().Value()
+		minimumMemoryPerCore := int64(math.Floor(MinimumMemoryPerCore * RedpandaMemoryAllocationRatio))
+		if !r.Spec.Resources.RedpandaMemory().IsZero() && r.Spec.Resources.RedpandaMemory().Value() < redpandaCores*minimumMemoryPerCore {
+			allErrs = append(allErrs,
+				field.Invalid(
+					field.NewPath("spec").Child("resources").Child("redpanda").Child("memory"),
+					r.Spec.Resources.Requests.Memory(),
+					"redpanda.memory < 2Gi per core; either decrease redpanda.cpu or increase redpanda.memory"))
+		}
 	}
 
 	return allErrs
@@ -827,19 +842,21 @@ func (r *Cluster) validateRedpandaCoreChanges(old *Cluster) field.ErrorList {
 	}
 	var allErrs field.ErrorList
 
-	oldCPURequest := old.Spec.Resources.RedpandaCPU()
-	newCPURequest := r.Spec.Resources.RedpandaCPU()
-	if oldCPURequest != nil && newCPURequest != nil {
-		oldCores := oldCPURequest.Value()
-		newCores := newCPURequest.Value()
+	if r.Spec.Replicas != nil {
+		oldCPURequest := old.Spec.Resources.RedpandaCPU()
+		newCPURequest := r.Spec.Resources.RedpandaCPU()
+		if oldCPURequest != nil && newCPURequest != nil {
+			oldCores := oldCPURequest.Value()
+			newCores := newCPURequest.Value()
 
-		if newCores < oldCores {
-			minAllowedCPU := (oldCores-1)*1000 + 1
-			allErrs = append(allErrs,
-				field.Invalid(
-					field.NewPath("spec").Child("resources").Child("requests").Child("cpu"),
-					r.Spec.Resources.Requests.Cpu(),
-					fmt.Sprintf("CPU request must not be decreased; increase requests.cpu or redpanda.cpu to at least %dm", minAllowedCPU)))
+			if newCores < oldCores {
+				minAllowedCPU := (oldCores-1)*1000 + 1
+				allErrs = append(allErrs,
+					field.Invalid(
+						field.NewPath("spec").Child("resources").Child("requests").Child("cpu"),
+						r.Spec.Resources.Requests.Cpu(),
+						fmt.Sprintf("CPU request must not be decreased; increase requests.cpu or redpanda.cpu to at least %dm", minAllowedCPU)))
+			}
 		}
 	}
 
