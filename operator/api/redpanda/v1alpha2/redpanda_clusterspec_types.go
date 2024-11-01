@@ -11,11 +11,12 @@ package v1alpha2
 
 import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 )
 
 // RedpandaClusterSpec defines the desired state of a Redpanda cluster. These settings are the same as those defined in the Redpanda Helm chart. The values in these settings are passed to the Redpanda Helm chart through Flux. For all default values and links to more documentation, see https://docs.redpanda.com/current/reference/redpanda-helm-spec/.

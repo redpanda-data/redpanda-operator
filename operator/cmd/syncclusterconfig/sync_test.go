@@ -20,12 +20,13 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils/testutils"
 )
 
 func TestSync(t *testing.T) {

@@ -14,9 +14,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils/testutils"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCommand(t *testing.T) {

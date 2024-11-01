@@ -28,13 +28,13 @@ tasks:
     cmds:
       # NB: go list -f takes a go template string, It needs to be escaped in
       # taskfile land to get properly passed to go list.
-      - golangci-lint run $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.ARGS}}
+      - golangci-lint run $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.CLI_ARGS}}
 
   lint-fix:
     cmds:
       - task: lint
         vars:
-          ARGS: "--fix"
+          CLI_ARGS: "--fix"
 
   fmt:
     cmds:

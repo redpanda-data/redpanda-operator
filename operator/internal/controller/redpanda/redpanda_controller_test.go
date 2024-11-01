@@ -25,16 +25,6 @@ import (
 	fluxclient "github.com/fluxcd/pkg/runtime/client"
 	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
-	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,6 +40,17 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/helm-charts/pkg/kube"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 // operatorRBAC is the ClusterRole and Role generated via controller-gen and
@@ -329,10 +330,10 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	s.applyAndWait(rp)
 
 	setConfig := func(cfg map[string]any) {
-		asJson, err := json.Marshal(cfg)
+		asJSON, err := json.Marshal(cfg)
 		s.Require().NoError(err)
 
-		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJson}
+		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJSON}
 		s.applyAndWait(rp)
 		s.applyAndWaitFor(func(o client.Object) bool {
 			rp := o.(*redpandav1alpha2.Redpanda)

@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -109,7 +109,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 	err = sts.Ensure(context.Background())
 	assert.NoError(t, err)
 
-	actual := &v1.StatefulSet{}
+	actual := &appsv1.StatefulSet{}
 	err = c.Get(context.Background(), sts.Key(), actual)
 	assert.NoError(t, err)
 	originalResourceVersion := actual.ResourceVersion

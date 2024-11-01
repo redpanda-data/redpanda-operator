@@ -14,7 +14,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +52,7 @@ func NewClusterRoleBinding(
 
 // Ensure manages v1.ClusterRoleBinding that is assigned to v1.ServiceAccount used in initContainer
 func (r *ClusterRoleBindingResource) Ensure(ctx context.Context) error {
-	var crb v1.ClusterRoleBinding
+	var crb rbacv1.ClusterRoleBinding
 
 	err := r.Get(ctx, r.Key(), &crb)
 	if err != nil && !errors.IsNotFound(err) {
@@ -85,7 +85,7 @@ func (r *ClusterRoleBindingResource) Ensure(ctx context.Context) error {
 		}
 	}
 	if !found {
-		crb.Subjects = append(crb.Subjects, v1.Subject{
+		crb.Subjects = append(crb.Subjects, rbacv1.Subject{
 			Kind:      "ServiceAccount",
 			Name:      sa.Key().Name,
 			Namespace: sa.Key().Namespace,
@@ -104,7 +104,7 @@ func (r *ClusterRoleBindingResource) Obj() (k8sclient.Object, error) {
 	role := &ClusterRoleResource{}
 	sa := &ServiceAccountResource{pandaCluster: r.pandaCluster}
 
-	return &v1.ClusterRoleBinding{
+	return &rbacv1.ClusterRoleBinding{
 		// metav1.ObjectMeta can NOT have namespace set as
 		// ClusterRoleBinding is the cluster wide resource.
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,15 +115,15 @@ func (r *ClusterRoleBindingResource) Obj() (k8sclient.Object, error) {
 			Kind:       "ClusterRoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
-		Subjects: []v1.Subject{
+		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
 				Name:      sa.Key().Name,
 				Namespace: sa.Key().Namespace,
 			},
 		},
-		RoleRef: v1.RoleRef{
-			APIGroup: v1.GroupName,
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
 			Name:     role.Key().Name,
 		},
@@ -141,7 +141,7 @@ func (r *ClusterRoleBindingResource) Key() types.NamespacedName {
 func (r *ClusterRoleBindingResource) RemoveSubject(
 	ctx context.Context, cluster types.NamespacedName,
 ) error {
-	var crb v1.ClusterRoleBinding
+	var crb rbacv1.ClusterRoleBinding
 
 	err := r.Get(ctx, r.Key(), &crb)
 	if errors.IsNotFound(err) {

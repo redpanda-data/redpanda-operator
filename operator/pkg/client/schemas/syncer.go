@@ -13,8 +13,9 @@ import (
 	"context"
 	"errors"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/sr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // Syncer synchronizes Schemas for the given object to Redpanda.

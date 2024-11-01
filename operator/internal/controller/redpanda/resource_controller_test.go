@@ -17,9 +17,6 @@ import (
 	"testing"
 	"time"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +27,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {

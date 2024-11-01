@@ -18,6 +18,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/formatters"
 	messages "github.com/cucumber/messages/go/v21"
+
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
 

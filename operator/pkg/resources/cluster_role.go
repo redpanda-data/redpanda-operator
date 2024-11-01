@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,7 +57,7 @@ func (r *ClusterRoleResource) Ensure(ctx context.Context) error {
 	if err != nil || created {
 		return err
 	}
-	var cr v1.ClusterRole
+	var cr rbacv1.ClusterRole
 	err = r.Get(ctx, r.Key(), &cr)
 	if err != nil {
 		return fmt.Errorf("error while fetching ClusterRole resource: %w", err)
@@ -71,7 +71,7 @@ func (r *ClusterRoleResource) Ensure(ctx context.Context) error {
 // The cluster.redpanda.vectorized.io custom resource is namespaced resource, that's
 // why v1.ClusterRole can not have assigned controller reference.
 func (r *ClusterRoleResource) obj() k8sclient.Object {
-	return &v1.ClusterRole{
+	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			// metav1.ObjectMeta can NOT have namespace set as
 			// ClusterRole is the cluster wide resource.
@@ -82,7 +82,7 @@ func (r *ClusterRoleResource) obj() k8sclient.Object {
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
-		Rules: []v1.PolicyRule{
+		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs:     []string{"get"},
 				APIGroups: []string{corev1.GroupName},

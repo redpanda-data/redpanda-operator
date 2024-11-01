@@ -19,12 +19,6 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	framework "github.com/redpanda-data/redpanda-operator/harpoon"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -34,6 +28,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/helm-charts/pkg/kube"
+	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
 
 type clusterClients struct {

@@ -14,11 +14,6 @@ import (
 	"errors"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/helm-charts/pkg/redpanda"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
@@ -26,6 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/helm-charts/pkg/redpanda"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
 
 var (

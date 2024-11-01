@@ -14,6 +14,7 @@ import (
 	"reflect"
 
 	"github.com/cucumber/godog"
+
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
 

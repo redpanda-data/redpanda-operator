@@ -12,12 +12,13 @@ package client
 import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	"github.com/redpanda-data/helm-charts/pkg/redpanda"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
+
+	"github.com/redpanda-data/helm-charts/pkg/redpanda"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.

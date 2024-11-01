@@ -19,7 +19,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -81,7 +81,7 @@ func TestEnsureConfigMap(t *testing.T) {
 	for i, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := fake.NewClientBuilder().Build()
-			secret := v1.Secret{
+			secret := corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "archival",
 					Namespace: "default",
@@ -102,7 +102,7 @@ func TestEnsureConfigMap(t *testing.T) {
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
 
-			actual := &v1.ConfigMap{}
+			actual := &corev1.ConfigMap{}
 			err := c.Get(context.Background(), cfgRes.Key(), actual)
 			require.NoError(t, err)
 			data := actual.Data["redpanda.yaml"]
@@ -155,7 +155,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 			panda := pandaCluster().DeepCopy()
 			panda.Spec.AdditionalConfiguration = tc.additionalConfiguration
 			c := fake.NewClientBuilder().Build()
-			secret := v1.Secret{
+			secret := corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "archival",
 					Namespace: "default",
@@ -176,7 +176,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
 
-			actual := &v1.ConfigMap{}
+			actual := &corev1.ConfigMap{}
 			err := c.Get(context.Background(), cfgRes.Key(), actual)
 			require.NoError(t, err)
 			data := actual.Data["redpanda.yaml"]
@@ -338,7 +338,7 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 		{Port: 8082},
 	}
 	c := fake.NewClientBuilder().Build()
-	secret := v1.Secret{
+	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "archival",
 			Namespace: "default",
@@ -359,7 +359,7 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 		ctrl.Log.WithName("test"))
 	require.NoError(t, cfgRes.Ensure(context.TODO()))
 
-	actual := &v1.ConfigMap{}
+	actual := &corev1.ConfigMap{}
 	err := c.Get(context.Background(), cfgRes.Key(), actual)
 	require.NoError(t, err)
 	data := actual.Data["redpanda.yaml"]

@@ -14,13 +14,14 @@ import (
 	"os"
 
 	"github.com/fluxcd/pkg/runtime/logger"
+	"github.com/spf13/cobra"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
-	"github.com/spf13/cobra"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (

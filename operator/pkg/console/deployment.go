@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,7 +76,7 @@ func (d *Deployment) Ensure(ctx context.Context) error {
 	}
 
 	objLabels := labels.ForConsole(d.consoleobj)
-	obj := &v1.Deployment{
+	obj := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.consoleobj.GetName(),
 			Namespace: d.consoleobj.GetNamespace(),
@@ -86,7 +86,7 @@ func (d *Deployment) Ensure(ctx context.Context) error {
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
-		Spec: v1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &d.consoleobj.Spec.Deployment.Replicas,
 			Selector: objLabels.AsAPISelector(),
 			Template: corev1.PodTemplateSpec{
@@ -101,9 +101,9 @@ func (d *Deployment) Ensure(ctx context.Context) error {
 					ImagePullSecrets:              d.consoleobj.Spec.Deployment.ImagePullSecrets,
 				},
 			},
-			Strategy: v1.DeploymentStrategy{
-				Type: v1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &v1.RollingUpdateDeployment{
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxUnavailable: &intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: d.consoleobj.Spec.Deployment.MaxUnavailable,
@@ -129,7 +129,7 @@ func (d *Deployment) Ensure(ctx context.Context) error {
 
 	if !created {
 		// Update resource if not created.
-		var current v1.Deployment
+		var current appsv1.Deployment
 		err = d.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, &current)
 		if err != nil {
 			return fmt.Errorf("fetching Console deployment: %w", err)

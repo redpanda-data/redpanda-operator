@@ -16,14 +16,15 @@ import (
 	"github.com/cockroachdb/errors"
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
-	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+
+	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/helm-charts/pkg/kube"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )

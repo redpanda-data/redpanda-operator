@@ -13,9 +13,10 @@ import (
 	"reflect"
 	"slices"
 
+	"github.com/twmb/franz-go/pkg/sr"
+
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
-	"github.com/twmb/franz-go/pkg/sr"
 )
 
 type schema struct {

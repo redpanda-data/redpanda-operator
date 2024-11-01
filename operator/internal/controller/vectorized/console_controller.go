@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -333,7 +333,7 @@ func (r *ConsoleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}, builder.WithPredicates(utils.DeletePredicate{})).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
-		Owns(&netv1.Ingress{}).
+		Owns(&networkingv1.Ingress{}).
 		Watches(
 			&vectorizedv1alpha1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(r.reconcileConsoleForCluster),

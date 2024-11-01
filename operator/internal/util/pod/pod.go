@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -27,7 +27,7 @@ import (
 )
 
 // PatchPodStatus patches pod status. It returns true and avoids an update if the patch contains no changes.
-func PatchPodStatus(ctx context.Context, c clientset.Interface, namespace, name string, uid types.UID, oldPodStatus, newPodStatus v1.PodStatus) (*v1.Pod, []byte, bool, error) {
+func PatchPodStatus(ctx context.Context, c clientset.Interface, namespace, name string, uid types.UID, oldPodStatus, newPodStatus corev1.PodStatus) (*corev1.Pod, []byte, bool, error) {
 	patchBytes, unchanged, err := preparePatchBytesForPodStatus(namespace, name, uid, oldPodStatus, newPodStatus)
 	if err != nil {
 		return nil, nil, false, err
@@ -43,15 +43,15 @@ func PatchPodStatus(ctx context.Context, c clientset.Interface, namespace, name 
 	return updatedPod, patchBytes, false, nil
 }
 
-func preparePatchBytesForPodStatus(namespace, name string, uid types.UID, oldPodStatus, newPodStatus v1.PodStatus) ([]byte, bool, error) {
-	oldData, err := json.Marshal(v1.Pod{
+func preparePatchBytesForPodStatus(namespace, name string, uid types.UID, oldPodStatus, newPodStatus corev1.PodStatus) ([]byte, bool, error) {
+	oldData, err := json.Marshal(corev1.Pod{
 		Status: oldPodStatus,
 	})
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to Marshal oldData for pod %q/%q: %v", namespace, name, err)
 	}
 
-	newData, err := json.Marshal(v1.Pod{
+	newData, err := json.Marshal(corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{UID: uid}, // only put the uid in the new object to ensure it appears in the patch as a precondition
 		Status:     newPodStatus,
 	})
@@ -59,7 +59,7 @@ func preparePatchBytesForPodStatus(namespace, name string, uid types.UID, oldPod
 		return nil, false, fmt.Errorf("failed to Marshal newData for pod %q/%q: %v", namespace, name, err)
 	}
 
-	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newData, v1.Pod{})
+	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newData, corev1.Pod{})
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to CreateTwoWayMergePatch for pod %q/%q: %v", namespace, name, err)
 	}
@@ -67,7 +67,7 @@ func preparePatchBytesForPodStatus(namespace, name string, uid types.UID, oldPod
 }
 
 // ReplaceOrAppendPodCondition replaces the first pod condition with equal type or appends if there is none
-func ReplaceOrAppendPodCondition(conditions []v1.PodCondition, condition *v1.PodCondition) []v1.PodCondition {
+func ReplaceOrAppendPodCondition(conditions []corev1.PodCondition, condition *corev1.PodCondition) []corev1.PodCondition {
 	if i, _ := GetPodConditionFromList(conditions, condition.Type); i >= 0 {
 		conditions[i] = *condition
 	} else {
@@ -78,7 +78,7 @@ func ReplaceOrAppendPodCondition(conditions []v1.PodCondition, condition *v1.Pod
 
 // GetPodConditionFromList extracts the provided condition from the given list of condition and
 // returns the index of the condition and the condition. Returns -1 and nil if the condition is not present.
-func GetPodConditionFromList(conditions []v1.PodCondition, conditionType v1.PodConditionType) (int, *v1.PodCondition) {
+func GetPodConditionFromList(conditions []corev1.PodCondition, conditionType corev1.PodConditionType) (int, *corev1.PodCondition) {
 	if conditions == nil {
 		return -1, nil
 	}

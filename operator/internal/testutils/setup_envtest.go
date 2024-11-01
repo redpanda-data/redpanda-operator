@@ -17,9 +17,10 @@ import (
 	"runtime"
 	"strings"
 
-	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 )
 
 // /internal/testutils is a depth of 2

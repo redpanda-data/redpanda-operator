@@ -15,12 +15,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 func TestSyncer(t *testing.T) {

@@ -14,12 +14,13 @@ import (
 	"fmt"
 
 	"github.com/cucumber/godog"
-	framework "github.com/redpanda-data/redpanda-operator/harpoon"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user string) {

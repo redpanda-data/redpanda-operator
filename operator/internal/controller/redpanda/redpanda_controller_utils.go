@@ -16,7 +16,6 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 const (

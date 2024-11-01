@@ -12,9 +12,10 @@ package testing
 import (
 	"context"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
+
+	"github.com/redpanda-data/helm-charts/pkg/helm"
 )
 
 func (t *TestingT) InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions) {

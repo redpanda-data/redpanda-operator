@@ -14,8 +14,9 @@ import (
 	"os"
 
 	"github.com/cucumber/godog"
-	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/stretchr/testify/require"
+
+	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 )
 
 func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifest *godog.DocString) {

@@ -15,7 +15,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
-	netv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,7 +48,7 @@ type IngressResource struct {
 	svcName         string
 	svcPortName     string
 	annotations     map[string]string
-	TLS             []netv1.IngressTLS
+	TLS             []networkingv1.IngressTLS
 	userConfig      *vectorizedv1alpha1.IngressConfig
 	defaultEndpoint string
 	logger          logr.Logger
@@ -100,10 +100,10 @@ func (r *IngressResource) WithTLS(
 	r.annotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = trueString
 
 	if r.TLS == nil {
-		r.TLS = []netv1.IngressTLS{}
+		r.TLS = []networkingv1.IngressTLS{}
 	}
 
-	r.TLS = append(r.TLS, netv1.IngressTLS{
+	r.TLS = append(r.TLS, networkingv1.IngressTLS{
 		Hosts: []string{r.subdomain, fmt.Sprintf("*.%s", r.subdomain)},
 		// Use the Cluster wildcard certificate
 		SecretName: secretName,
@@ -168,7 +168,7 @@ func (r *IngressResource) Ensure(ctx context.Context) error {
 	if ingressDisabled || emptyHost {
 		r.logger.V(logger.DebugLevel).Info("ingress will not be created", "disabled", ingressDisabled, "empty_host", emptyHost)
 		key := r.Key()
-		ingress := netv1.Ingress{
+		ingress := networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: key.Namespace,
 				Name:      key.Name,
@@ -185,7 +185,7 @@ func (r *IngressResource) Ensure(ctx context.Context) error {
 	if err != nil || created {
 		return err
 	}
-	var ingress netv1.Ingress
+	var ingress networkingv1.Ingress
 	err = r.Get(ctx, r.Key(), &ingress)
 	if err != nil {
 		return fmt.Errorf("error while fetching Ingress resource: %w", err)
@@ -196,14 +196,14 @@ func (r *IngressResource) Ensure(ctx context.Context) error {
 
 func (r *IngressResource) obj() (k8sclient.Object, error) {
 	ingressClassName := nginx
-	pathTypePrefix := netv1.PathTypePrefix
+	pathTypePrefix := networkingv1.PathTypePrefix
 
 	objLabels, err := objectLabels(r.object)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get object labels: %w", err)
 	}
 
-	ingress := &netv1.Ingress{
+	ingress := &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Ingress",
 			APIVersion: "networking.k8s.io/v1",
@@ -214,21 +214,21 @@ func (r *IngressResource) obj() (k8sclient.Object, error) {
 			Labels:      objLabels,
 			Annotations: r.GetAnnotations(),
 		},
-		Spec: netv1.IngressSpec{
+		Spec: networkingv1.IngressSpec{
 			IngressClassName: &ingressClassName,
-			Rules: []netv1.IngressRule{
+			Rules: []networkingv1.IngressRule{
 				{
 					Host: r.host(),
-					IngressRuleValue: netv1.IngressRuleValue{
-						HTTP: &netv1.HTTPIngressRuleValue{
-							Paths: []netv1.HTTPIngressPath{
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
 								{
 									Path:     "/",
 									PathType: &pathTypePrefix,
-									Backend: netv1.IngressBackend{
-										Service: &netv1.IngressServiceBackend{
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
 											Name: r.svcName,
-											Port: netv1.ServiceBackendPort{
+											Port: networkingv1.ServiceBackendPort{
 												Name: r.svcPortName,
 											},
 										},
