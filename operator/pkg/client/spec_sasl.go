@@ -17,7 +17,6 @@ import (
 	krbconfig "github.com/jcmturner/gokrb5/v8/config"
 	"github.com/jcmturner/gokrb5/v8/keytab"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/aws"
@@ -27,6 +26,8 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 func (c *Factory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username, password, token string, err error) {

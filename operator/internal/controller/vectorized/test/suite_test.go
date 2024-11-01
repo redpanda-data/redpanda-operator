@@ -29,7 +29,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/redpanda-data/common-go/rpadmin"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -38,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"

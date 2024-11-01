@@ -23,7 +23,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kuberecorder "k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -134,7 +134,7 @@ func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
-	interval := v1.Duration{Duration: time.Second * 3}
+	interval := metav1.Duration{Duration: time.Second * 3}
 	if topic.Spec.SynchronizationInterval != nil {
 		interval = *topic.Spec.SynchronizationInterval
 	}

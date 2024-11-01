@@ -13,10 +13,11 @@ import (
 	"fmt"
 	"hash/fnv"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/twmb/franz-go/pkg/sr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 func init() {

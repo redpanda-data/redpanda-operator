@@ -12,9 +12,10 @@ package configurator
 import (
 	"testing"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
 func TestPopulateRack(t *testing.T) {

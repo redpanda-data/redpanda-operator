@@ -9,15 +9,30 @@ linters:
   - gosec
   - gosimple
   - govet
+  - importas
   - ineffassign
   - misspell
   - staticcheck
+  - stylecheck
   - unused
 
 linters-settings:
+  goimports:
+    local-prefixes: github.com/redpanda-data/redpanda-operator,github.com/redpanda-data/helm-charts
+
   gosec:
     excludes:
     - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
 
     config:
       G306: "0644" # Maximum allowed os.WriteFile Permissions
+
+  importas:
+    alias:
+    - pkg: k8s.io/api/(\w+)/(v\d)
+      alias: $1$2
+    - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+      alias: metav1
+
+  stylecheck:
+    checks: ["*", "-ST1005"]

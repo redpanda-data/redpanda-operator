@@ -50,10 +50,10 @@ func (n *ownedClient) Patch(ctx context.Context, obj client.Object, patch client
 	return n.Client.Patch(ctx, obj, patch, opts...)
 }
 
-func (c *ownedClient) maybeAddOwnerRef(obj client.Object) {
+func (n *ownedClient) maybeAddOwnerRef(obj client.Object) {
 	// We don't care about namespace objects as deleting the namespace will GC
 	// them.
-	if ok, _ := c.IsObjectNamespaced(obj); ok {
+	if ok, _ := n.IsObjectNamespaced(obj); ok {
 		return
 	}
 
@@ -63,5 +63,5 @@ func (c *ownedClient) maybeAddOwnerRef(obj client.Object) {
 	}
 
 	// Otherwise inject a reference to our owner.
-	obj.SetOwnerReferences([]metav1.OwnerReference{*c.owner.DeepCopy()})
+	obj.SetOwnerReferences([]metav1.OwnerReference{*n.owner.DeepCopy()})
 }

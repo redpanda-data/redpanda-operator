@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"

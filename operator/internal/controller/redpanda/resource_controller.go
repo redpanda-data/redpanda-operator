@@ -16,13 +16,14 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 const fieldOwner client.FieldOwner = "redpanda-operator"

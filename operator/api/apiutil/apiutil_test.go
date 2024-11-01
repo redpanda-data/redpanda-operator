@@ -14,8 +14,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	"github.com/stretchr/testify/require"
+
+	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 )
 
 func TestJSONBoolean(t *testing.T) {

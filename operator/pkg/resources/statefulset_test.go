@@ -21,7 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -109,7 +109,7 @@ func TestEnsure(t *testing.T) {
 		name           string
 		existingObject client.Object
 		pandaCluster   *vectorizedv1alpha1.Cluster
-		expectedObject *v1.StatefulSet
+		expectedObject *appsv1.StatefulSet
 		clusterHealth  bool
 		expectedError  error
 		nodePoolName   string
@@ -197,7 +197,7 @@ func TestEnsure(t *testing.T) {
 					case errors.Is(err, &resources.RequeueAfterError{RequeueAfter: resources.RequeueDuration, Msg: "wait for sts to be deleted"}):
 						// with ownerreferences, a orphan delete adds a finalizer to allow kube-controller-manager to manage the deletion.
 						// for this test, we don't need to worry about that.
-						deleteFinalizer := &v1.StatefulSet{}
+						deleteFinalizer := &appsv1.StatefulSet{}
 						err = c.Get(ctx, sts.Key(), deleteFinalizer)
 						assert.NoError(t, err)
 						deleteFinalizer.Finalizers = nil
@@ -212,7 +212,7 @@ func TestEnsure(t *testing.T) {
 			}
 			cancel()
 
-			actual := &v1.StatefulSet{}
+			actual := &appsv1.StatefulSet{}
 			err = c.Get(context.Background(), sts.Key(), actual)
 			assert.NoError(t, err, tt.name)
 
@@ -253,15 +253,15 @@ func TestEnsure(t *testing.T) {
 	_ = testEnv.Stop()
 }
 
-func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
+func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *appsv1.StatefulSet {
 	fileSystemMode := corev1.PersistentVolumeFilesystem
 
-	sts := &v1.StatefulSet{
+	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: pandaCluster.Namespace,
 			Name:      pandaCluster.Name,
 		},
-		Spec: v1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Replicas: pandaCluster.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -351,15 +351,15 @@ func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1
 	return sts
 }
 
-func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *v1.StatefulSet {
+func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *appsv1.StatefulSet {
 	fileSystemMode := corev1.PersistentVolumeFilesystem
 
-	sts := &v1.StatefulSet{
+	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: pandaCluster.Namespace,
 			Name:      pandaCluster.Name,
 		},
-		Spec: v1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Replicas: pandaCluster.Spec.NodePools[0].Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -551,8 +551,8 @@ func TestVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		sts := &resources.StatefulSetResource{
-			LastObservedState: &v1.StatefulSet{
-				Spec: v1.StatefulSetSpec{
+			LastObservedState: &appsv1.StatefulSet{
+				Spec: appsv1.StatefulSetSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: tt.Containers,
@@ -654,8 +654,8 @@ func TestCurrentVersion(t *testing.T) {
 				0,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: redpanda.Spec.NodePools[0]},
 				true)
-			sts.LastObservedState = &v1.StatefulSet{
-				Spec: v1.StatefulSetSpec{
+			sts.LastObservedState = &appsv1.StatefulSet{
+				Spec: appsv1.StatefulSetSpec{
 					Replicas: &tests[i].expectedReplicas,
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{

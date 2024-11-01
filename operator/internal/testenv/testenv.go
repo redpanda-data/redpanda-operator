@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -35,6 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 )
 
 const k3dClusterName = "testenv"

@@ -19,7 +19,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -34,7 +34,7 @@ import (
 //nolint:funlen // the subtests might causes linter to complain
 func TestClusterCertificates(t *testing.T) {
 	secret := corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-tls-secret-node-certificate",
 			Namespace: "cert-manager",
 		},
@@ -45,7 +45,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 	}
 	issuer := cmapiv1.Issuer{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "issuer",
 			Namespace: "test",
 		},
@@ -91,7 +91,7 @@ func TestClusterCertificates(t *testing.T) {
 		expectedBrokerTLS *config.ServerTLS
 	}{
 		{"kafka tls disabled", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -105,7 +105,7 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{}, 0, nil, nil},
 		{"kafka tls", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -130,7 +130,7 @@ func TestClusterCertificates(t *testing.T) {
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
 		{"kafka tls on external only", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -149,7 +149,7 @@ func TestClusterCertificates(t *testing.T) {
 			return true
 		}, nil},
 		{"kafka tls with two tls listeners", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -174,7 +174,7 @@ func TestClusterCertificates(t *testing.T) {
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
 		{"kafka tls with external node issuer", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -206,7 +206,7 @@ func TestClusterCertificates(t *testing.T) {
 			Enabled: true,
 		}},
 		{"kafka mutual tls", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -255,7 +255,7 @@ func TestClusterCertificates(t *testing.T) {
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
 		{"kafka mutual tls with two tls listeners", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					KafkaAPI: []v1alpha1.KafkaAPI{
@@ -275,7 +275,7 @@ func TestClusterCertificates(t *testing.T) {
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
 		{"admin api tls disabled", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					AdminAPI: []v1alpha1.AdminAPI{
@@ -289,7 +289,7 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{}, 0, nil, nil},
 		{"admin api tls", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					AdminAPI: []v1alpha1.AdminAPI{
@@ -303,7 +303,7 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{"test-admin-selfsigned-issuer", "test-admin-root-certificate", "test-admin-root-issuer", "test-admin-api-node"}, 1, nil, nil},
 		{"admin api mutual tls", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					AdminAPI: []v1alpha1.AdminAPI{
@@ -318,7 +318,7 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{"test-admin-selfsigned-issuer", "test-admin-root-certificate", "test-admin-root-issuer", "test-admin-api-node", "test-admin-api-client"}, 2, nil, nil},
 		{"pandaproxy api tls disabled", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					PandaproxyAPI: []v1alpha1.PandaproxyAPI{
@@ -333,7 +333,7 @@ func TestClusterCertificates(t *testing.T) {
 		}, []string{}, 0, nil, nil},
 		{
 			"pandaproxy api tls", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
@@ -351,7 +351,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"pandaproxy api mutual tls", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
@@ -371,7 +371,7 @@ func TestClusterCertificates(t *testing.T) {
 		{
 			"pandaproxy api mutual tls with external ca provided by customer",
 			&v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
@@ -394,7 +394,7 @@ func TestClusterCertificates(t *testing.T) {
 		{
 			"pandaproxy api mutual tls with external ca provided by customer and external node issuer",
 			&v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
@@ -419,7 +419,7 @@ func TestClusterCertificates(t *testing.T) {
 			2, validateVolumesFn("tlspandaproxycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{"schematregistry api tls disabled", &v1alpha1.Cluster{
-			ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 			Spec: v1alpha1.ClusterSpec{
 				Configuration: v1alpha1.RedpandaConfig{
 					SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -432,7 +432,7 @@ func TestClusterCertificates(t *testing.T) {
 		}, []string{}, 0, nil, nil},
 		{
 			"schematregistry api tls", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -448,7 +448,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"schematregistry api mutual tls", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -465,7 +465,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"schematregistry with tls, nodesecretref and without requireClientAuth", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -486,7 +486,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"kafka and schematregistry with nodesecretref", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -524,7 +524,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"schematregistry api mutual tls with external ca provided by customer", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
@@ -544,7 +544,7 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"schematregistry api mutual tls with external ca provided by customer and external node issuer", &v1alpha1.Cluster{
-				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "test"},
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
 				Spec: v1alpha1.ClusterSpec{
 					Configuration: v1alpha1.RedpandaConfig{
 						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{

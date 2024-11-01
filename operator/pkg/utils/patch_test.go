@@ -17,14 +17,14 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 func TestPatchComputation(t *testing.T) {
 	currObj := corev1.Pod{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "res",
 			Annotations: map[string]string{
 				"redpanda.vectorized.io/configmap-hash": "6fb7ad08cabb116f7c1c8dc1127997a0",
@@ -66,7 +66,7 @@ func TestStatefulSetPatchComputation(t *testing.T) {
 	sts := appsv1.StatefulSet{
 		Spec: appsv1.StatefulSetSpec{
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"a": "b",
 						"c": "d",

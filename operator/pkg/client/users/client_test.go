@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -29,6 +27,9 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestClient(t *testing.T) {

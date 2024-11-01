@@ -14,7 +14,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -75,7 +75,7 @@ func (r *KeystoreSecretResource) Ensure(ctx context.Context) error {
 // obj returns secret that consist password for jks and pkcs#12 keystores
 func (r *KeystoreSecretResource) obj() (k8sclient.Object, error) {
 	objLabels := labels.ForCluster(r.pandaCluster)
-	secret := &v1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.Key().Name,
 			Namespace: r.Key().Namespace,

@@ -14,12 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestSchemaValidation(t *testing.T) {

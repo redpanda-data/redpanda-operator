@@ -15,8 +15,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/testr"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,6 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 )
 
 func TestPVCUnbinderShouldRemediate(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 
 	//nolint:stylecheck // gomega
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -39,7 +39,7 @@ func DeleteAllInNamespace(testEnv *RedpandaTestEnv, k8sClient client.Client, nam
 		Expect(client.IgnoreNotFound(k8sClient.Delete(ctx, obj))).Should(Succeed())
 
 		//nolint:nestif // this is not as complex as it looks
-		if ns, ok := obj.(*v1.Namespace); ok {
+		if ns, ok := obj.(*corev1.Namespace); ok {
 			// Normally the kube-controller-manager would handle finalization
 			// and garbage collection of namespaces, but with envtest, we aren't
 			// running a kube-controller-manager. Instead we're gonna approximate
@@ -96,7 +96,7 @@ func DeleteAllInNamespace(testEnv *RedpandaTestEnv, k8sClient client.Client, nam
 				}
 				// remove `kubernetes` finalizer
 				const kubernetes = "kubernetes"
-				finalizers := []v1.FinalizerName{}
+				finalizers := []corev1.FinalizerName{}
 				for _, f := range ns.Spec.Finalizers {
 					if f != kubernetes {
 						finalizers = append(finalizers, f)

@@ -16,8 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 // PatchStatus persforms a mutation as done by mutator, calls k8s-api with PATCH, and then returns the

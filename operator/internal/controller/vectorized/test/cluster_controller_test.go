@@ -18,10 +18,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	types2 "github.com/onsi/gomega/types"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,6 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -226,7 +227,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Creating ClusterRole")
-			var cr v1.ClusterRole
+			var cr rbacv1.ClusterRole
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), clusterRoleKey, &cr)
 				return err == nil &&
@@ -235,7 +236,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Creating ClusterRoleBinding")
-			var crb v1.ClusterRoleBinding
+			var crb rbacv1.ClusterRoleBinding
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), clusterRoleKey, &crb)
 				found := false

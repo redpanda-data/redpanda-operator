@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/cucumber/godog"
+
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
 

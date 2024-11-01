@@ -16,13 +16,14 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type attachedResources struct {

@@ -12,8 +12,9 @@ package crds_test
 import (
 	"testing"
 
-	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/stretchr/testify/require"
+
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 )
 
 func TestCRDS(t *testing.T) {

@@ -16,10 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/helm-charts/pkg/helm"
+	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
 
 // Redefine the interfaces from the internal package

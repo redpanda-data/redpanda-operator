@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
@@ -32,7 +32,7 @@ func TestEnvExpander(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, c.Create(ctx, &corev1.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "configs",
 			Namespace: "default",
 		},
@@ -43,7 +43,7 @@ func TestEnvExpander(t *testing.T) {
 	}))
 
 	require.NoError(t, c.Create(ctx, &corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secrets",
 			Namespace: "default",
 		},
