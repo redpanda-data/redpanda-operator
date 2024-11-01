@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	"github.com/fluxcd/pkg/apis/meta"
 	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
@@ -27,7 +28,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
-var RedpandaChartRepository = "https://charts.redpanda.com/"
+const (
+	RedpandaChartRepository = "https://charts.redpanda.com/"
+
+	// ClusterConfigSynced is a condition indicating whether or not the
+	// redpanda cluster's configuration is up to date with the desired config.
+	ClusterConfigSynced = "ClusterConfigSynced"
+)
 
 type ChartRef struct {
 	// Specifies the name of the chart to deploy.
@@ -179,11 +186,6 @@ func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
 }
 
-// GetHelmRelease returns the namespace and name of the HelmRelease.
-func (in *RedpandaStatus) GetHelmRelease() string {
-	return in.HelmRelease
-}
-
 func (in *Redpanda) GetHelmReleaseName() string {
 	return in.Name
 }
@@ -204,6 +206,10 @@ func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 	values := &apiextensionsv1.JSON{Raw: vyaml}
 
 	return values, nil
+}
+
+func (in *Redpanda) GenerationObserved() bool {
+	return in.Generation != 0 && in.Generation == in.Status.ObservedGeneration
 }
 
 // RedpandaReady registers a successful reconciliation of the given HelmRelease.
@@ -244,6 +250,15 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 		UID:        in.UID,
 		Controller: ptr.To(true),
 	}
+}
+
+func (in *Redpanda) GetValues() (redpandachart.Values, error) {
+	values, err := redpandachart.Chart.LoadValues(in.Spec.ClusterSpec)
+	if err != nil {
+		return redpandachart.Values{}, errors.WithStack(err)
+	}
+
+	return helmette.Unwrap[redpandachart.Values](values), nil
 }
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
