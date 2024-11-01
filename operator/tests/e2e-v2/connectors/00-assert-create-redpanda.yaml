@@ -19,6 +19,7 @@ status:
       reason: RedpandaClusterDeployed
       status: "True"
       type: Ready
+    - type: ClusterConfigSynced
   helmRelease: rp-connectors
   helmReleaseReady: true
   helmRepository: redpanda-repository

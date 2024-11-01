@@ -27,12 +27,13 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	kuberecorder "k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,12 +41,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	opkube "github.com/redpanda-data/redpanda-operator/operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
@@ -65,8 +69,6 @@ const (
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
 )
-
-var errWaitForReleaseDeletion = errors.New("wait for helm release deletion")
 
 type gvkKey struct {
 	GVK schema.GroupVersionKind
@@ -214,13 +216,20 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	rp, err := r.reconcile(ctx, rp)
+	rp, err := r.reconcileFlux(ctx, rp)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = r.reconcileDefluxed(ctx, rp)
-	if err != nil {
+	if err := r.reconcileDefluxed(ctx, rp); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileStatus(ctx, rp); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileClusterConfig(ctx, rp); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -237,9 +246,67 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
+func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
+		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
+		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.GetHelmReleaseName())
+		_ = v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
+		return nil
+	}
+
+	if !ptr.Deref(rp.Status.HelmReleaseReady, false) {
+		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
+		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRelease, rp.GetNamespace(), rp.GetHelmReleaseName())
+		_ = v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
+		return nil
+	}
+
+	// pull our deployments and stateful sets
+	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
+	if err != nil {
+		return err
+	}
+
+	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
+	if err != nil {
+		return err
+	}
+
+	if len(redpandaStatefulSets) == 0 {
+		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created")
+		return nil
+	}
+
+	// check to make sure that our stateful set pods are all current
+	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
+		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message)
+		return nil
+	}
+
+	// check to make sure that our deployment pods are all current
+	if message, ready := checkDeploymentsStatus(consoleDeployments); !ready {
+		_ = v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message)
+		return nil
+	}
+
+	// Once we know that STS Pods are up and running, make sure that we don't
+	// need to perform a decommission.
+	needsDecommission, err := r.needsDecommission(ctx, rp, redpandaStatefulSets)
+	if err != nil {
+		return err
+	}
+
+	if needsDecommission {
+		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes")
+		return nil
+	}
+
+	_ = v1alpha2.RedpandaReady(rp)
+	return nil
+}
+
 func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
-	log.WithName("RedpandaReconciler.reconcileDefluxed")
 
 	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
 		log.Info("useFlux is true; skipping non-flux reconciliation...")
@@ -340,6 +407,150 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	return nil
 }
 
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
+			Type:               v1alpha2.ClusterConfigSynced,
+			Status:             metav1.ConditionUnknown,
+			ObservedGeneration: rp.Generation,
+			Reason:             "HandledByFlux",
+			Message:            "cluster configuration is not managed by the operator when Flux is enabled",
+		})
+		return nil
+	}
+
+	cond := apimeta.FindStatusCondition(rp.Status.Conditions, v1alpha2.ClusterConfigSynced)
+	if cond == nil {
+		cond = &metav1.Condition{
+			Type:   v1alpha2.ClusterConfigSynced,
+			Status: metav1.ConditionUnknown,
+		}
+	}
+
+	recheck := time.Since(cond.LastTransitionTime.Time) > time.Minute
+	previouslySynced := cond.Status == metav1.ConditionTrue
+	generationChanged := cond.ObservedGeneration != 0 && cond.ObservedGeneration < rp.Generation
+
+	// NB: This controller re-queues fairly frequently as is (Watching STS
+	// which watches Pods), so we're largely relying on that to ensure we eventually run our rechecks.
+	if previouslySynced && !(generationChanged || recheck) {
+		return nil
+	}
+
+	redpandaReady := !apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
+
+	if !(rp.GenerationObserved() || redpandaReady) {
+		log.Info("redpanda not yet ready. skipping cluster config reconciliation.")
+		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
+			Type:               v1alpha2.ClusterConfigSynced,
+			Status:             metav1.ConditionUnknown,
+			ObservedGeneration: rp.Generation,
+			Reason:             "RedpandaNotReady",
+			Message:            "redpanda cluster is not yet ready or up to date",
+		})
+
+		// NB: Redpanda becoming ready and/or observing it's generation will
+		// trigger a re-queue for us.
+		return nil
+	}
+
+	// TODO cache the redpanda admin client.
+	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
+	if err != nil {
+		return err
+	}
+
+	config, err := r.clusterConfigFor(ctx, rp)
+	if err != nil {
+		return err
+	}
+
+	usersTXT, err := r.usersTXTFor(ctx, rp)
+	if err != nil {
+		return err
+	}
+
+	syncer := syncclusterconfig.Syncer{Client: client}
+
+	if err := syncer.Sync(ctx, config, usersTXT); err != nil {
+		return err
+	}
+
+	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
+		Type:               v1alpha2.ClusterConfigSynced,
+		Status:             metav1.ConditionTrue,
+		ObservedGeneration: rp.Generation,
+		Reason:             "ConfigSynced",
+	})
+
+	return nil
+}
+
+func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *v1alpha2.Redpanda) (map[string][]byte, error) {
+	values, err := rp.GetValues()
+	if err != nil {
+		return nil, err
+	}
+
+	if !values.Auth.SASL.Enabled {
+		return map[string][]byte{}, nil
+	}
+
+	key := client.ObjectKey{Namespace: rp.Namespace, Name: values.Auth.SASL.SecretRef}
+
+	var users corev1.Secret
+	if err := r.Client.Get(ctx, key, &users); err != nil {
+		if apierrors.IsNotFound(err) {
+			return map[string][]byte{}, nil
+		}
+		return nil, err
+	}
+
+	return users.Data, nil
+}
+
+func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *v1alpha2.Redpanda) (_ map[string]any, err error) {
+	// Parinoided panic catch as we're calling directly into helm functions.
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Newf("recovered panic: %+v", r)
+		}
+	}()
+
+	dot, err := rp.GetDot(&rest.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	// The most reliable way to get the correct and full cluster config is to
+	// "envsubst" the bootstrap file itself as various components feed into the
+	// final cluster config and they may be referencing values stored in
+	// configmaps or secrets.
+	job := redpanda.PostInstallUpgradeJob(dot)
+	clusterConfigTemplate := redpanda.BootstrapFile(dot)
+
+	expander := opkube.EnvExpander{
+		Client:    r.Client,
+		Namespace: rp.Namespace,
+		Env:       job.Spec.Template.Spec.InitContainers[0].Env,
+		EnvFrom:   job.Spec.Template.Spec.InitContainers[0].EnvFrom,
+	}
+
+	expanded, err := expander.Expand(ctx, clusterConfigTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	var desired map[string]any
+	if err := yaml.Unmarshal([]byte(expanded), &desired); err != nil {
+		return nil, err
+	}
+
+	return desired, nil
+}
+
 func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2.Redpanda, created map[gvkKey]struct{}) error {
 	log := ctrl.LoggerFrom(ctx)
 
@@ -359,7 +570,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 			// Some types from 3rd parties (monitoring, cert-manager) may not
 			// exists. If they don't skip over them without erroring out.
 			if apimeta.IsNoMatchError(err) {
-				log.Info("Skipping unknown GVK", "gvk", typ)
+				log.Info("Skipping unknown GVK", "gvk", fmt.Sprintf("%T", typ))
 				continue
 			}
 			return err
@@ -411,19 +622,9 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 	return errors.Join(errs...)
 }
 
-func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
+func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.WithName("RedpandaReconciler.reconcile")
-
-	// pull our deployments and stateful sets
-	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
-	if err != nil {
-		return rp, err
-	}
-	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
-	if err != nil {
-		return rp, err
-	}
 
 	// Check if HelmRepository exists or create it
 	if err := r.reconcileHelmRepository(ctx, rp); err != nil {
@@ -431,9 +632,7 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 	}
 
 	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
-		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.GetHelmReleaseName())
-		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
+		return rp, nil
 	}
 
 	// Check if HelmRelease exists or create it also
@@ -441,38 +640,7 @@ func (r *RedpandaReconciler) reconcile(ctx context.Context, rp *v1alpha2.Redpand
 		return rp, err
 	}
 
-	if !ptr.Deref(rp.Status.HelmReleaseReady, false) {
-		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRelease, rp.GetNamespace(), rp.GetHelmReleaseName())
-		return v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady), nil
-	}
-
-	if len(redpandaStatefulSets) == 0 {
-		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created"), nil
-	}
-
-	// check to make sure that our stateful set pods are all current
-	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message), nil
-	}
-
-	// check to make sure that our deployment pods are all current
-	if message, ready := checkDeploymentsStatus(consoleDeployments); !ready {
-		return v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message), nil
-	}
-
-	// Once we know that STS Pods are up and running, make sure that we don't
-	// need to perform a decommission.
-	needsDecommission, err := r.needsDecommission(ctx, rp, redpandaStatefulSets)
-	if err != nil {
-		return rp, err
-	}
-
-	if needsDecommission {
-		return v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes"), nil
-	}
-
-	return v1alpha2.RedpandaReady(rp), nil
+	return rp, nil
 }
 
 func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *v1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
@@ -550,9 +718,6 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1
 }
 
 func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.Redpanda) (ctrl.Result, error) {
-	if err := r.deleteHelmRelease(ctx, rp); err != nil {
-		return ctrl.Result{}, err
-	}
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
 		if err := r.Client.Update(ctx, rp); err != nil {
@@ -560,30 +725,6 @@ func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.R
 		}
 	}
 	return ctrl.Result{}, nil
-}
-
-func (r *RedpandaReconciler) deleteHelmRelease(ctx context.Context, rp *v1alpha2.Redpanda) error {
-	if rp.Status.HelmRelease == "" {
-		return nil
-	}
-
-	var hr helmv2beta2.HelmRelease
-	hrName := rp.Status.GetHelmRelease()
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: rp.Namespace, Name: hrName}, &hr)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			rp.Status.HelmRelease = ""
-			rp.Status.HelmRepository = ""
-			return nil
-		}
-		return fmt.Errorf("failed to get HelmRelease '%s': %w", rp.Status.HelmRelease, err)
-	}
-
-	if err := r.Client.Delete(ctx, &hr, client.PropagationPolicy(metav1.DeletePropagationForeground)); err != nil {
-		return fmt.Errorf("deleting helm release connected with Redpanda (%s): %w", rp.Name, err)
-	}
-
-	return errWaitForReleaseDeletion
 }
 
 func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha2.Redpanda) (*helmv2beta2.HelmRelease, error) {

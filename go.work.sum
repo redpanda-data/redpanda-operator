@@ -1806,7 +1806,6 @@ github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b/
 github.com/redpanda-data/helm-charts v0.0.0-20240911060052-2bf9dd6f0996/go.mod h1:uEMmuH+gTppAsZZNYlUbh6tuxN3fqffWY0Bi8AcE2Zk=
 github.com/redpanda-data/helm-charts v0.0.0-20240916201426-9ca3b128bb8e/go.mod h1:uEMmuH+gTppAsZZNYlUbh6tuxN3fqffWY0Bi8AcE2Zk=
 github.com/redpanda-data/helm-charts v0.0.0-20241025092026-69353dfce9a1/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
-github.com/redpanda-data/helm-charts v0.0.0-20241030170802-ad1edfc56b70/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240105044330-c094966ca0cf/go.mod h1:SaSp5/JwdLHu8ZU82wFbXD8/oE4UWB+8ZkjWWreAt7Y=
 github.com/rhnvrm/simples3 v0.6.1 h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=
 github.com/rickb777/period v1.0.6 h1:f4TcHBtL/4qa4D44eqgxs7785/kfLKUjRI7XYI2HCvk=
