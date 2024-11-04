@@ -78,10 +78,11 @@ type gvkKey struct {
 
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
-	Client        client.Client
-	Scheme        *runtime.Scheme
-	EventRecorder kuberecorder.EventRecorder
-	ClientFactory internalclient.ClientFactory
+	Client             client.Client
+	Scheme             *runtime.Scheme
+	EventRecorder      kuberecorder.EventRecorder
+	ClientFactory      internalclient.ClientFactory
+	DefaultDisableFlux bool
 }
 
 // flux resources main resources
@@ -321,7 +322,7 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.R
 func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
 		log.V(logger.TraceLevel).Info("useFlux is true; skipping non-flux reconciliation...")
 		return nil
 	}
@@ -518,7 +519,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 }
 
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1alpha2.Redpanda) error {
-	if ptr.Deref(rp.Spec.ChartRef.UseFlux, true) {
+	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
 		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
 			Type:               v1alpha2.ClusterConfigSynced,
 			Status:             metav1.ConditionUnknown,
@@ -861,7 +862,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
 		},
 		Spec: helmv2beta2.HelmReleaseSpec{
-			Suspend: !ptr.Deref(rp.Spec.ChartRef.UseFlux, true),
+			Suspend: !r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux),
 			Chart: helmv2beta2.HelmChartTemplate{
 				Spec: helmv2beta2.HelmChartTemplateSpec{
 					Chart:    "redpanda",
@@ -890,7 +891,7 @@ func (r *RedpandaReconciler) helmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *
 			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
 		},
 		Spec: sourcev1.HelmRepositorySpec{
-			Suspend:  !ptr.Deref(rp.Spec.ChartRef.UseFlux, true),
+			Suspend:  !r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux),
 			Interval: metav1.Duration{Duration: 30 * time.Second},
 			URL:      v1alpha2.RedpandaChartRepository,
 		},
@@ -981,4 +982,8 @@ func allListTypes(c client.Client) ([]client.ObjectList, error) {
 		types = append(types, list.(client.ObjectList))
 	}
 	return types, nil
+}
+
+func (r *RedpandaReconciler) IsFluxEnabled(useFlux *bool) bool {
+	return ptr.Deref(useFlux, !r.DefaultDisableFlux)
 }

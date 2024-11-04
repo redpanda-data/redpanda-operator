@@ -32,23 +32,6 @@ status:
   replicas: 5
   updatedReplicas: 5
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta2
-kind: HelmRelease
-metadata:
-  name: decommission
-status:
-  conditions:
-
-    - reason: InstallSucceeded
-      status: "True"
-      type: Ready
-    - reason: InstallSucceeded
-      status: "True"
-      type: Released
-  helmChart: redpanda/redpanda-decommission
-  lastAppliedRevision: 5.7.9
-  lastAttemptedRevision: 5.7.9
----
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:

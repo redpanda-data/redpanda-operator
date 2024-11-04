@@ -983,6 +983,27 @@ func TestPostInstallUpgradeJobIndex(t *testing.T) {
 	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
 }
 
+func TestIsFluxEnabled(t *testing.T) {
+	for _, tc := range []struct {
+		expected          bool
+		expectedSuspended bool
+		useFluxCRD        *bool
+		forceDefluxed     bool
+	}{
+		{true, false, ptr.To(true), false},
+		{false, true, ptr.To(false), false},
+		{true, false, nil, false},
+		{true, false, ptr.To(true), true},
+		{false, true, ptr.To(false), true},
+		{false, true, nil, true},
+	} {
+		r := redpanda.RedpandaReconciler{DefaultDisableFlux: tc.forceDefluxed}
+		assert.Equal(t, tc.expected, r.IsFluxEnabled(tc.useFluxCRD))
+		// When it comes for helmrepository and helmrelease they should be suspended
+		assert.Equal(t, tc.expectedSuspended, !r.IsFluxEnabled(tc.useFluxCRD))
+	}
+}
+
 // TestControllerRBAC asserts that the declared Roles and ClusterRoles of the
 // RedpandaReconciler line up with all the resource types it needs to manage.
 func TestControllerRBAC(t *testing.T) {
