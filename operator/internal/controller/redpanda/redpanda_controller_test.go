@@ -41,6 +41,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	goclientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
@@ -171,6 +172,64 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	}
 
 	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestTPLValues() {
+	rp := s.minimalRP(false)
+
+	extraVolumeMount := ptr.To(`- name: test-extra-volume
+  mountPath: {{ upper "/fake/lifecycle" }}`)
+
+	rp.Spec.ClusterSpec.Statefulset.ExtraVolumeMounts = extraVolumeMount
+	rp.Spec.ClusterSpec.Statefulset.ExtraVolumes = ptr.To(fmt.Sprintf(`- name: test-extra-volume
+  secret:
+    secretName: %s-sts-lifecycle
+    defaultMode: 0774`, rp.Name))
+	rp.Spec.ClusterSpec.Statefulset.InitContainers = &redpandav1alpha2.InitContainers{
+		Configurator:                      &redpandav1alpha2.Configurator{ExtraVolumeMounts: extraVolumeMount},
+		FsValidator:                       &redpandav1alpha2.FsValidator{ExtraVolumeMounts: extraVolumeMount},
+		Tuning:                            &redpandav1alpha2.Tuning{ExtraVolumeMounts: extraVolumeMount},
+		SetDataDirOwnership:               &redpandav1alpha2.SetDataDirOwnership{ExtraVolumeMounts: extraVolumeMount},
+		SetTieredStorageCacheDirOwnership: &redpandav1alpha2.SetTieredStorageCacheDirOwnership{ExtraVolumeMounts: extraVolumeMount},
+		ExtraInitContainers: ptr.To(`- name: "test-init-container"
+  image: "mintel/docker-alpine-bash-curl-jq:latest"
+  command: [ "/bin/bash", "-c" ]
+  volumeMounts:
+  - name: test-extra-volume
+    mountPath: /FAKE/LIFECYCLE
+  args:
+    - |
+      set -xe
+      echo "Hello World!"`),
+	}
+	rp.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{ConfigWatcher: &redpandav1alpha2.ConfigWatcher{ExtraVolumeMounts: extraVolumeMount}}
+	s.applyAndWait(rp)
+
+	var sts appsv1.StatefulSet
+	s.NoError(s.client.Get(s.ctx, types.NamespacedName{Name: rp.Name, Namespace: rp.Namespace}, &sts))
+
+	s.Contains(sts.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: "test-extra-volume",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{DefaultMode: ptr.To(int32(508)), SecretName: fmt.Sprintf("%s-sts-lifecycle", rp.Name)},
+		},
+	})
+	for _, c := range sts.Spec.Template.Spec.InitContainers {
+		if c.Name == "bootstrap-yaml-envsubst" {
+			continue
+		}
+
+		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
+
+		if c.Name == "test-init-container" {
+			s.Equal(c.Command, []string{"/bin/bash", "-c"})
+			s.Equal(c.Args, []string{"set -xe\necho \"Hello World!\""})
+			s.Equal(c.Image, "mintel/docker-alpine-bash-curl-jq:latest")
+		}
+	}
+	for _, c := range sts.Spec.Template.Spec.Containers {
+		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
+	}
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {
