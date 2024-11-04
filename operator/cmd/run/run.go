@@ -105,6 +105,7 @@ func Command() *cobra.Command {
 		ghostbuster                 bool
 		unbindPVCsAfter             time.Duration
 		autoDeletePVCs              bool
+		forceDefluxedMode           bool
 	)
 
 	cmd := &cobra.Command{
@@ -136,6 +137,7 @@ func Command() *cobra.Command {
 				ghostbuster,
 				unbindPVCsAfter,
 				autoDeletePVCs,
+				forceDefluxedMode,
 			)
 		},
 	}
@@ -166,6 +168,7 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
+	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
 
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
@@ -199,6 +202,7 @@ func Run(
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
 	autoDeletePVCs bool,
+	forceDefluxedMode bool,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -360,10 +364,11 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
-			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			Client:             mgr.GetClient(),
+			Scheme:             mgr.GetScheme(),
+			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
+			ClientFactory:      internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			DefaultDisableFlux: forceDefluxedMode,
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err

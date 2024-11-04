@@ -32,25 +32,6 @@ status:
   replicas: 1
   updatedReplicas: 1
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta2
-kind: HelmRelease
-metadata:
-  name: redpanda-values-check
-status:
-  conditions:
-    - reason: UpgradeSucceeded
-      status: "True"
-      type: Ready
-    - reason: UpgradeSucceeded
-      status: "True"
-      type: Released
-  helmChart: redpanda/redpanda-redpanda-values-check
-  lastAppliedRevision: 5.3.2
-  lastAttemptedRevision: 5.3.2
-  lastAttemptedConfigDigest: sha256:2ba5060a47f2ee629adb0bcd117f4b6d66127e26956d417e7e4e076456c2f8f8
-  lastAttemptedGeneration: 2
-  observedGeneration: 2
----
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:

@@ -4,8 +4,6 @@ kind: Redpanda
 metadata:
   name: decommission
 spec:
-  chartRef:
-    chartVersion: "5.7.9"
   clusterSpec:
     statefulset:
       replicas: 5

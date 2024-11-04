@@ -4,8 +4,6 @@ kind: Redpanda
 metadata:
   name: rp-connectors
 spec:
-  chartRef:
-    chartVersion: "5.7.4"
   clusterSpec:
     statefulset:
       replicas: 1

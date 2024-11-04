@@ -6,8 +6,6 @@ metadata:
     - operator.redpanda.com/finalizer
   name: redpanda
 spec:
-  chartRef:
-    chartVersion: "5.5.1"
   clusterSpec:
     statefulset:
       replicas: 3

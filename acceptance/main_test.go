@@ -70,7 +70,7 @@ func TestMain(m *testing.M) {
 						"createAdditionalControllerCRs": true,
 						"createRPKBundleCRs":            true,
 					},
-					"additionalCmdFlags": []string{"--additional-controllers=all"},
+					"additionalCmdFlags": []string{"--additional-controllers=all", "--enable-helm-controllers=false", "--force-defluxed-mode"},
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")
