@@ -1,4 +1,4 @@
-
+---
 env:
   BRANCH_NAME: $BUILDKITE_BRANCH
   PULL_REQUEST: $BUILDKITE_PULL_REQUEST
@@ -8,7 +8,6 @@ env:
   # CI run podman instead of linux. testcontainer's ryuk is reported to not
   # work well with podman.
   TESTCONTAINERS_RYUK_DISABLED: "true"
-
 steps:
   - key: k8s-operator
     label: K8s Operator
@@ -167,20 +166,18 @@ steps:
                 failed: true
                 branches:
                   - main
-
       - key: annotate-v2-testresults
         label: Parse Operator v2 Test Results
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.4.1:
-              artifacts: operator/tests/_e2e_artifacts_v2/kuttl-report.xml 
+              artifacts: operator/tests/_e2e_artifacts_v2/kuttl-report.xml
               report-slowest: 5
         timeout_in_minutes: 0
         agents:
           queue: v6-k8s-builders
         depends_on: k8s-operator-v2
         allow_dependency_failure: true
-
   - group: K8s Operator v2 Helm Jobs
     if: |
       build.tag == null ||
@@ -193,12 +190,13 @@ steps:
           - github_commit_status:
               context: k8s-operator-v2-helm
         commands:
-           # The tests that are generated from `ci` folder of the Redpanda helm chart
-           # generated too many test cases after introduction files with the `-novalues.yaml`
-           # suffix. Those would not be taken by chart testing (`ct`) program, but
-           # `hack/v2-helm-setup.sh` takes all files currently and disables only handful of them.
-#          - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2-helm
+          # - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2-helm
           - mkdir -p operator/tests/_e2e_helm_artifacts_v2
+          # The tests that are generated from `ci` folder of the Redpanda helm chart
+          # generated too many test cases after introduction files with the `-novalues.yaml`
+          # suffix. Those would not be taken by chart testing (`ct`) program, but
+          # `hack/v2-helm-setup.sh` takes all files currently and disables only handful of them.
+
           - touch operator/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
         agents:
@@ -216,7 +214,6 @@ steps:
                 failed: true
                 branches:
                   - main
-
       - key: annotate-v2-helm-testresults
         label: Parse Operator v2 Helm Test Results
         plugins:
@@ -229,4 +226,3 @@ steps:
           queue: v6-k8s-builders
         depends_on: k8s-operator-v2-helm
         allow_dependency_failure: true
-
