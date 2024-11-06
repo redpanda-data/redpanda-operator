@@ -124,12 +124,12 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	}
 
 	if targetBroker == nil {
-		// The target pod isn't in the broker list. Just select a non-existing broker for decommission so the next
-		// reconcile loop will succeed.
-		// Previously, this was accepted, and status.decommissionBrokerID was cleared.
-		// However, this is dangerous.
-		// Broker ID could be missing for a variety of reasons? If we just ignore this, and remove the pod anyway and skip decom'ing..we may remove pod w/ ghost broker left.
-		// Instead, we only decommission, if both pod and brokerID are present. This effectively means, our "state machine" requires upscaling to have finished (pod started + broker registered), before we consider downscaling.
+		// The target pod isn't in the broker list.
+		// Broker ID could be missing for a variety of reasons? If we just ignore
+		// this, and remove the pod anyway and skip decom'ing..we may remove pod w/
+		// ghost broker left. Instead, we only decommission, if both pod and brokerID are present.
+		// This effectively means, our "state machine" requires upscaling to have finished
+		// (pod started + broker registered), before we consider downscaling.
 		return &RequeueAfterError{
 			RequeueAfter: RequeueDuration,
 			Msg:          fmt.Sprintf("the broker for pod with ordinal %d is not registered with the cluster. Requeuing.", targetOrdinal),
@@ -201,8 +201,7 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 		return fmt.Errorf("decommission on other NodePool in progress, can't handle decom for this one yet")
 	}
 
-	if !r.nodePool.Deleted && *r.nodePool.Replicas >= r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas { // NodePool name is NOT equal to STS name, or not supposed to be.
-		log.Info("recom", "replicas", &r.nodePool.Replicas, "npCur", r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas)
+	if !r.nodePool.Deleted && *r.nodePool.Replicas >= r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas {
 		// Decommissioning can also be canceled and we need to recommission
 		err := r.handleRecommission(ctx)
 		if !errors.Is(err, &RecommissionFatalError{}) {
