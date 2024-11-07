@@ -20,9 +20,6 @@ steps:
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
     agents:
       queue: v6-amd64-builders
-    artifact_paths:
-      - operator/*.tar.gz
-      - operator/tests/_e2e_artifacts/kuttl-report.xml
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -66,9 +63,6 @@ steps:
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:run-k8s-tests-with-flags
     agents:
       queue: v6-amd64-builders
-    artifact_paths:
-      - operator/*.tar.gz
-      - operator/tests/_e2e_with_flags_artifacts/kuttl-report.xml
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -113,9 +107,6 @@ steps:
           - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2
         agents:
           queue: v6-amd64-builders
-        artifact_paths:
-          - operator/*.tar.gz
-          - operator/tests/_e2e_artifacts_v2/kuttl-report.xml
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
@@ -158,12 +149,10 @@ steps:
           # `hack/v2-helm-setup.sh` takes all files currently and disables only handful of them.
 
           - touch operator/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
+          - buildkite-agent artifact upload operator/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
         agents:
           queue: v6-amd64-builders
-        artifact_paths:
-          - operator/*.tar.gz
-          - operator/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:

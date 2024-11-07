@@ -32,6 +32,9 @@ fi
 # Spray and pray work is done, now we want to fail on errors.
 set -e
 
+# BUILDKITE environment variables are used by `buildkite-agent` cli to upload artifact
+printenv | grep BUILDKITE > env-file-for-buildkite
+
 # Build the base image and grab the SHA.
 IMAGE_SHA=$(docker build --quiet -f ./ci/docker/nix.Dockerfile .)
 
@@ -40,6 +43,7 @@ IMAGE_SHA=$(docker build --quiet -f ./ci/docker/nix.Dockerfile .)
 # build artifacts.
 # The nix image in use doesn't work if run as a non-root user.
 docker run --rm -it \
+	--env-file env-file-for-buildkite \
 	-e DOCKER_HOST=unix:///var/run/docker.sock \
 	-e PWD \
 	-e CI \

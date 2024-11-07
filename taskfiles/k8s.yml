@@ -131,15 +131,7 @@ tasks:
       - task: build-operator-images
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
-      - docker image list
-      - |
-        KUTTL_EXIT_CODE=0
-        kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}} || KUTTL_EXIT_CODE=$?
-        echo "$KUTTL_EXIT_CODE" > kuttl-exit-code
-        if ! grep -q "0" kuttl-exit-code; then
-          echo "Kuttl returned exit code $(cat kuttl-exit-code). Creating artifacts tarball"
-          tar -czf {{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz {{.KUTTL_ARTIFACTS_DIR}}
-        fi
+      - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}
 
   set-inotify-watches:
     desc: |

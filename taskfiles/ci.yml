@@ -13,6 +13,37 @@ tasks:
     preconditions:
       - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
 
+  run-kuttl-tests:
+    cmds:
+      - defer: 'task ci:kuttl-artifact-upload EXIT_CODE={{.EXIT_CODE}} KUTTL_CONFIG_FILE={{.KUTTL_CONFIG_FILE}}'
+      - task: :k8s:run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
+
+  kuttl-artifact-upload:
+    desc: uploads artifact when kuttl fails
+    summary: |
+      kuttl-artifact-upload should be called in `defer` with EXIT_CODE.
+      https://taskfile.dev/usage/#doing-task-cleanup-with-defer
+      
+      As buildkite pipeline step are wrapped with shell script, that executes
+      docker run of a NIX container, where the permission are set to user of
+      ID 0 (root). The buildkite agent executor can not resolve glob due to
+      not sufficient permission. All invocation, within taskfile, of
+      `buildkite-agent artifact upload` will have sufficient permission.
+    vars:
+      KUTTL_CONFIG_FILE: '{{default "kuttl-test.yaml" .KUTTL_CONFIG_FILE}}'
+      KUTTL_ARTIFACTS_DIR:
+        sh: |
+          cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
+    cmds:
+      - echo "Kuttl returned exit code {{.EXIT_CODE}}. Creating artifacts tarball"
+      - tar -czf {{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz {{.KUTTL_ARTIFACTS_DIR}}
+      - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz"
+      - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR}}/kuttl-report.xml"
+    status:
+      - exit {{.EXIT_CODE}}
+
   k8s:
     cmds:
       - task: run-k8s-tests
@@ -35,23 +66,17 @@ tasks:
       - task: :k8s:generate
       - task: :dev:update-licenses
       - task: assert-no-diffs
-      - task: :k8s:run-kuttl-tests
+      - task: run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
-      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
-      # fail explicitly if stable operator tests failed
-      - "grep -q '0' ./k8s-stable-test-exit-code"
 
   run-k8s-v2-helm-tests:
     cmds:
       - 'echo "~~~ Running operator v2 helm-ci e2e tests :k8s:"'
       - task: configure-git-private-repo
-      - task: :k8s:run-kuttl-tests
+      - task: run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-helm-test.yaml
-      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
-      # fail explicitly if stable operator tests failed
-      - "grep -q '0' ./k8s-stable-test-exit-code"
 
   run-k8s-tests:
     deps:
@@ -75,10 +100,7 @@ tasks:
       - 'echo "~~~ Run operator code unit tests :golang:"'
       - task: :k8s:run-unit-tests
       - 'echo "~~~ Running operator e2e tests :k8s:"'
-      - task: :k8s:run-kuttl-tests
-      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
-      # fail explicitly if stable operator tests failed
-      - "grep -q '0' ./k8s-stable-test-exit-code"
+      - task: run-kuttl-tests
     status:
       - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
 
@@ -89,12 +111,9 @@ tasks:
       - task: :dev:update-licenses
       - task: assert-no-diffs
       - 'echo "~~~ Running operator e2e tests :k8s:"'
-      - task: :k8s:run-kuttl-tests
+      - task: run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
-      - cp "{{.SRC_DIR}}/operator/kuttl-exit-code" ./k8s-stable-test-exit-code
-      # fail explicitly if stable operator tests failed
-      - "grep -q '0' ./k8s-stable-test-exit-code"
     status:
       - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
 
