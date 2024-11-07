@@ -1,6 +1,6 @@
 -- go --
 # go version | cut -d ' ' -f 1-3
-go version go1.23.1
+go version go1.23.2
 
 -- goreleaser --
 # goreleaser --version | awk 'NR>2 {print last} {last=$0}'
@@ -11,36 +11,36 @@ go version go1.23.1
 goreleaser: Deliver Go Binaries as fast and easily as possible
 https://goreleaser.com
 
-GitVersion:    2.2.0
+GitVersion:    2.3.2
 GitCommit:     unknown
 GitTreeState:  unknown
 BuildDate:     unknown
 BuiltBy:       nixpkgs
-GoVersion:     go1.22.7
+GoVersion:     go1.23.2
 Compiler:      gc
 ModuleSum:     unknown
 
 -- helm --
 # helm version
-version.BuildInfo{Version:"v3.16.1", GitCommit:"v3.16.1", GitTreeState:"", GoVersion:"go1.22.7"}
+version.BuildInfo{Version:"v3.16.2", GitCommit:"v3.16.2", GitTreeState:"", GoVersion:"go1.23.2"}
 
 -- k3d --
 # k3d version
-k3d version v5.7.3
+k3d version v5.7.4
 k3s version v1.21.7-k3s1 (default)
 
 -- kind --
 # kind version | cut -d ' ' -f 1-3
-kind v0.24.0 go1.22.7
+kind v0.24.0 go1.23.2
 
 -- kubectl --
 # kubectl version --client=true
-Client Version: v1.31.0
+Client Version: v1.31.2
 Kustomize Version: v5.4.2
 
 -- kustomize --
 # kustomize version
-5.4.3
+5.5.0
 
 -- kuttl --
 # kuttl version | cut -d ' ' -f 1-7
@@ -48,7 +48,7 @@ KUTTL Version: version.Info{GitVersion:"0.19.0", GitCommit:"733ad16", BuildDate:
 
 -- task --
 # task --version
-Task version: 3.38.0 ()
+Task version: 3.39.2 ()
 
 -- yq --
 # yq --version
