@@ -17,15 +17,13 @@ import (
 	"io"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/scalalang2/golang-fifo/sieve"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/scalalang2/golang-fifo/sieve"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NoInternalAdminAPI signal absence of the internal admin API endpoint
