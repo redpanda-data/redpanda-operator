@@ -14,6 +14,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,7 +28,7 @@ import (
 	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	chart "github.com/redpanda-data/helm-charts/charts/redpanda"
+	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -616,11 +618,14 @@ func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Ob
 func (s *RedpandaControllerSuite) snapshotCluster(opts ...client.ListOption) []kube.Object {
 	var objs []kube.Object
 
-	// TODO export a list of object types from the redpanda chart.
-	// for _, t := range chart.Types() {
-	for _, t := range []kube.Object{} {
+	for _, t := range redpandachart.Types() {
 		gvk, err := s.client.GroupVersionKindFor(t)
 		s.NoError(err)
+		if gvk.Group == "batch" && gvk.Version == "v1" && strings.EqualFold(gvk.Kind, "Job") {
+			// ignore jobs since those differ between chart installation and direct object
+			// creation
+			continue
+		}
 
 		gvk.Kind += "List"
 
@@ -647,8 +652,6 @@ func (s *RedpandaControllerSuite) snapshotCluster(opts ...client.ListOption) []k
 }
 
 func (s *RedpandaControllerSuite) compareSnapshot(a, b []client.Object, fn func(a, b client.Object)) {
-	assert.Equal(s.T(), len(a), len(b))
-
 	getGVKName := func(o client.Object) string {
 		gvk, err := s.client.GroupVersionKindFor(o)
 		s.NoError(err)
@@ -658,10 +661,25 @@ func (s *RedpandaControllerSuite) compareSnapshot(a, b []client.Object, fn func(
 	groupedA := mapBy(a, getGVKName)
 	groupedB := mapBy(b, getGVKName)
 
+	groupedANames := sortedKeyStrings(groupedA)
+	groupedBNames := sortedKeyStrings(groupedB)
+
+	assert.JSONEq(s.T(), groupedANames, groupedBNames)
+
 	for key, a := range groupedA {
 		b := groupedB[key]
 		fn(a, b)
 	}
+}
+
+func sortedKeyStrings[T any, K ~string](items map[K]T) string {
+	var keys sort.StringSlice
+	for key := range items {
+		keys = append(keys, "\""+string(key)+"\"")
+	}
+	keys.Sort()
+
+	return fmt.Sprintf("[%s]", strings.Join(keys, ", "))
 }
 
 func mapBy[T any, K comparable](items []T, fn func(T) K) map[K]T {
@@ -677,10 +695,10 @@ func mapBy[T any, K comparable](items []T, fn func(T) K) map[K]T {
 }
 
 func TestPostInstallUpgradeJobIndex(t *testing.T) {
-	dot, err := chart.Chart.Dot(kube.Config{}, helmette.Release{}, map[string]any{})
+	dot, err := redpandachart.Chart.Dot(kube.Config{}, helmette.Release{}, map[string]any{})
 	require.NoError(t, err)
 
-	job := chart.PostInstallUpgradeJob(dot)
+	job := redpandachart.PostInstallUpgradeJob(dot)
 
 	// Assert that index 0 is the envsubst container as that's what
 	// `clusterConfigfor` utilizes.

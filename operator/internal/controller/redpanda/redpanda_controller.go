@@ -384,7 +384,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 			return errors.Wrapf(err, "deploying %T: %q", obj, obj.GetName())
 		}
 
-		log.Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))
+		log.V(logger.TraceLevel).Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))
 
 		// Record creation
 		created[gvkKey{
@@ -589,7 +589,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 
 			key := gvkKey{Key: client.ObjectKeyFromObject(obj), GVK: gvk}
 
-			isOwned := -1 != slices.IndexFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
+			isOwned := slices.ContainsFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
 				return owner.UID == rp.UID
 			})
 
@@ -613,7 +613,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 		}
 	}
 
-	log.Info(fmt.Sprintf("identified %d objects to gc", len(toDelete)))
+	log.V(logger.TraceLevel).Info(fmt.Sprintf("identified %d objects to gc", len(toDelete)))
 
 	var errs []error
 	for _, obj := range toDelete {
@@ -744,7 +744,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 	hasher.Write(values.Raw)
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 	// TODO possibly add the SHA to the status
-	log.Info(fmt.Sprintf("SHA of values file to use: %s", sha))
+	log.V(logger.TraceLevel).Info(fmt.Sprintf("SHA of values file to use: %s", sha))
 
 	timeout := rp.Spec.ChartRef.Timeout
 	if timeout == nil {
