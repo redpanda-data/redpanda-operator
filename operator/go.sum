@@ -1085,8 +1085,8 @@ github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0leargg
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/redpanda-data/common-go/net v0.1.0 h1:JnJioRJuL961r1QXiJQ1tW9+yEaJfu8FpXnUmvQbwNM=
 github.com/redpanda-data/common-go/net v0.1.0/go.mod h1:iOdNkjxM7a1T8F3cYHTaKIPFCHzzp/ia6TN+Z+7Tt5w=
-github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b h1:0rC71VXYEjo/5f9pE5oiwRVxUejkIxRrrxwpKferA/s=
-github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b/go.mod h1:I7umqhnMhIOSEnIA3fvLtdQU7QO/SbWGCwFfFDs3De4=
+github.com/redpanda-data/common-go/rpadmin v0.1.9 h1:X5a95P7Dc+7EaidU7dusWJyiG3eJmk4zJtUttfvhmc4=
+github.com/redpanda-data/common-go/rpadmin v0.1.9/go.mod h1:I7umqhnMhIOSEnIA3fvLtdQU7QO/SbWGCwFfFDs3De4=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 h1:+zsE3W1V86k2sjAGWOySIlF0xn5R1aXXQBaIdr80F48=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20/go.mod h1:DC42/3+k5PefSo4IalYbDN3yRZrVFP0b69+gC/NwGd4=
 github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240 h1:rSfpkaQSBkz3uqEMN1ftVEXBMyx0uibyXPHGCp1kRy8=

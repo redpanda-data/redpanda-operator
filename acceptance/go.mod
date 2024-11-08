@@ -5,8 +5,8 @@ go 1.22.7
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
-	github.com/redpanda-data/common-go/rpadmin v0.1.7-0.20240916201938-8d748d9ac10b
-	github.com/redpanda-data/helm-charts v0.0.0-20241030170802-ad1edfc56b70
+	github.com/redpanda-data/common-go/rpadmin v0.1.9
+	github.com/redpanda-data/helm-charts v0.0.0-20241031235426-99ca96105c9a
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
