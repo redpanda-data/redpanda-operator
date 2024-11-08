@@ -1216,7 +1216,7 @@ func (s *ClusterStatus) SetRestarting(restarting bool) {
 	s.DeprecatedUpgrading = restarting
 }
 
-func (r *Cluster) SumNodePoolReplicas() int32 {
+func (r *Cluster) GetDesiredReplicas() int32 {
 	nps := r.GetNodePoolsFromSpec()
 	if r == nil || len(nps) == 0 {
 		return 0
