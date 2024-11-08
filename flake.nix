@@ -64,6 +64,7 @@
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
+              pkgs.buildkite-agent
               # pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               # pkgs.gotools
             ] ++ lib.optionals pkgs.stdenv.isLinux [
