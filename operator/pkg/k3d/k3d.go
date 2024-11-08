@@ -57,32 +57,84 @@ type Cluster struct {
 	agentCounter int32
 }
 
-func GetOrCreate(name string) (*Cluster, error) {
-	cluster, err := NewCluster(name)
+type ClusterOpt interface {
+	apply(config *clusterConfig)
+}
+
+type clusterOpt func(config *clusterConfig)
+
+func (c clusterOpt) apply(config *clusterConfig) {
+	c(config)
+}
+
+type clusterConfig struct {
+	agents  int
+	timeout time.Duration
+	image   string
+}
+
+func defaultClusterConfig() *clusterConfig {
+	image := DefaultK3sImage
+	if override, ok := os.LookupEnv(K3sImageEnv); ok {
+		image = override
+	}
+
+	return &clusterConfig{
+		agents:  3,
+		timeout: 30 * time.Second,
+		image:   image,
+	}
+}
+
+func WithAgents(agents int) clusterOpt {
+	return func(config *clusterConfig) {
+		config.agents = agents
+	}
+}
+
+func WithImage(image string) clusterOpt {
+	return func(config *clusterConfig) {
+		config.image = image
+	}
+}
+
+func WithTimeout(timeout time.Duration) clusterOpt {
+	return func(config *clusterConfig) {
+		config.timeout = timeout
+	}
+}
+
+func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
+	config := defaultClusterConfig()
+	for _, opt := range opts {
+		opt.apply(config)
+	}
+
+	cluster, err := NewCluster(name, opts...)
 	if err != nil {
 		if errors.Is(err, ErrExists) {
-			return loadCluster(name)
+			return loadCluster(name, config)
 		}
 		return nil, err
 	}
 	return cluster, nil
 }
 
-func NewCluster(name string) (*Cluster, error) {
+func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 	name = strings.ToLower(name)
 
-	image := DefaultK3sImage
-	if override, ok := os.LookupEnv(K3sImageEnv); ok {
-		image = override
+	config := defaultClusterConfig()
+	for _, opt := range opts {
+		opt.apply(config)
 	}
 
 	args := []string{
 		"cluster",
 		"create",
 		name,
-		fmt.Sprintf("--agents=%d", 3),
-		fmt.Sprintf("--timeout=%s", 30*time.Second),
-		fmt.Sprintf("--image=%s", image),
+		fmt.Sprintf("--agents=%d", config.agents),
+		fmt.Sprintf("--timeout=%s", config.timeout),
+		fmt.Sprintf("--image=%s", config.image),
 		// If k3d cluster create will fail please uncomment no-rollback flag
 		// "--no-rollback",
 		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
@@ -102,23 +154,21 @@ func NewCluster(name string) (*Cluster, error) {
 		}
 
 		// If k3d cluster create will fail please uncomment the following debug logs from containers
-		// containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-0", name)).CombinedOutput()
-		// fmt.Printf("Agent-0 logs:\n%s\n", string(containerLogs))
-		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-1", name)).CombinedOutput()
-		// fmt.Printf("Agent-1 logs:\n%s\n", string(containerLogs))
-		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-2", name)).CombinedOutput()
-		// fmt.Printf("Agent-2 logs:\n%s\n", string(containerLogs))
+		// for i := 0; i < config.agents; i++ {
+		// 	containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-%d", name, i)).CombinedOutput()
+		// 	fmt.Printf("Agent-%d logs:\n%s\n", i, string(containerLogs))
+		// }
 		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
-		// fmt.Printf("serrver-0 logs:\n%s\n", string(containerLogs))
+		// fmt.Printf("server-0 logs:\n%s\n", string(containerLogs))
 		// containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
 		// fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
 		return nil, errors.Wrapf(err, "%s", out)
 	}
 
-	return loadCluster(name)
+	return loadCluster(name, config)
 }
 
-func loadCluster(name string) (*Cluster, error) {
+func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	kubeconfigYAML, err := exec.Command("k3d", "kubeconfig", "get", name).CombinedOutput()
 	if err != nil {
 		return nil, err
@@ -137,7 +187,7 @@ func loadCluster(name string) (*Cluster, error) {
 	cluster := &Cluster{
 		Name:         name,
 		restConfig:   cfg,
-		agentCounter: 3,
+		agentCounter: int32(config.agents),
 	}
 
 	if err := cluster.waitForJobs(context.Background()); err != nil {
@@ -198,6 +248,18 @@ func (c *Cluster) Cleanup() error {
 	return err
 }
 
+func forceCleanup(name string) {
+	// attempt to cleanup no matter what
+	// we just ignore any output in case
+	// the cluster doesn't exist, etc.
+	_, _ = exec.Command(
+		"k3d",
+		"cluster",
+		"delete",
+		name,
+	).CombinedOutput()
+}
+
 // setupCluster applies any embedded manifests and  blocks until all jobs in
 // the kube-system namespace have completed. This is a course grain way to wait
 // for k3s to finish installing it's bundled dependencies via helm.
@@ -214,7 +276,9 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	// Alternatively, we could make our own k3s images and directly copy in the
 	// manifests in the Dockerfile.
 	for _, obj := range startupManifests() {
-		if err := cl.Patch(ctx, obj, client.Apply, client.FieldOwner("k3d-setup"), client.ForceOwnership); err != nil {
+		// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
+		cloned := obj.DeepCopyObject().(client.Object)
+		if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
 			return errors.WithStack(err)
 		}
 	}
