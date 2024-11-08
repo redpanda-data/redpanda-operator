@@ -813,40 +813,27 @@ func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
 	return nil
 }
 
-// PrepareSeedServerList - supports only > 22.3 (featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version)
+// PrepareSeedServerList - supports only > 22.3 (featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version))
 func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig) error {
-	r.logger.Info("New seed list")
 	var addresses []string
 
-	for npName, npStatus := range r.pandaCluster.Status.NodePools {
-		prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, npName)
-		if npName == vectorizedv1alpha1.DefaultNodePoolName {
-			prefix = r.pandaCluster.Name
-		}
-
-		for i := int32(0); i < npStatus.CurrentReplicas; i++ {
-			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN))
-		}
+	// Add addresses based on spec. Since we call GetNodePools, deleted NodePools
+	// are included already, so there's no extra code required here to handle
+	// this case.
+	for i := int32(0); i < ptr.Deref(r.pandaCluster.Spec.Replicas, 0); i++ {
+		addresses = append(addresses, fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN))
 	}
-
-	// If no addresses found (based on status), use ones from the spec.
-	// This is necessary on initial creation, as status may be empty.
-	if len(addresses) == 0 {
-		for i := int32(0); i < ptr.Deref(r.pandaCluster.Spec.Replicas, 0); i++ {
-			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", r.pandaCluster.Name, i, r.serviceFQDN))
+	nps, err := nodepools.GetNodePools(context.Background(), r.pandaCluster, r)
+	if err != nil {
+		return err
+	}
+	for _, np := range nps {
+		if np.Name == vectorizedv1alpha1.DefaultNodePoolName {
+			continue
 		}
-		nps, err := nodepools.GetNodePools(context.Background(), r.pandaCluster, r)
-		if err != nil {
-			return err
-		}
-		for _, np := range nps {
-			if np.Name == vectorizedv1alpha1.DefaultNodePoolName {
-				continue
-			}
-			prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
-			for i := int32(0); i < ptr.Deref(np.Replicas, 0); i++ {
-				addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN))
-			}
+		prefix := fmt.Sprintf("%s-%s", r.pandaCluster.Name, np.Name)
+		for i := int32(0); i < ptr.Deref(np.Replicas, 0); i++ {
+			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, r.serviceFQDN))
 		}
 	}
 
