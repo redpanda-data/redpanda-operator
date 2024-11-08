@@ -76,6 +76,7 @@ func TestClient(t *testing.T) {
 
 	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
 	require.NoError(t, err)
+	defer usersClient.Close()
 
 	for _, mechanism := range []kadm.ScramMechanism{
 		kadm.ScramSha256, kadm.ScramSha512,
@@ -149,6 +150,7 @@ func TestClientPasswordCreation(t *testing.T) {
 
 	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
 	require.NoError(t, err)
+	defer usersClient.Close()
 
 	runTest := func(t *testing.T, username, password, secret string) {
 		annotations := map[string]string{

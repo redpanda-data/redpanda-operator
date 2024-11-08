@@ -192,6 +192,7 @@ func TestClientFactory(t *testing.T) {
 				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
+				kafkaClient.Close()
 			})
 
 			t.Run("KafkaAPISpec", func(t *testing.T) {
@@ -230,6 +231,7 @@ func TestClientFactory(t *testing.T) {
 				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
+				kafkaClient.Close()
 			})
 		})
 	}

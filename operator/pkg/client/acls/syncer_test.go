@@ -46,6 +46,7 @@ func TestSyncer(t *testing.T) {
 	require.NoError(t, err)
 
 	syncer := NewSyncer(kafkaClient)
+	defer syncer.Close()
 
 	sortACLs := func(acls []v1alpha2.ACLRule) {
 		sort.SliceStable(acls, func(i, j int) bool {

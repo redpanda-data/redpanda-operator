@@ -65,4 +65,6 @@ func iShouldBeAbleToProduceAndConsumeFrom(ctx context.Context, t framework.Testi
 	records := fetches.Records()
 	require.Len(t, records, 1)
 	require.Equal(t, string(payload), string(records[0].Value))
+	kafkaClient.Close()
+	consumerClient.Close()
 }

@@ -44,6 +44,11 @@ func (s *Syncer) Sync(ctx context.Context, o redpandav1alpha2.AuthorizedObject) 
 	return err
 }
 
+// Close closes the underlying kgo client connection.
+func (s *Syncer) Close() {
+	s.client.Close()
+}
+
 func (s *Syncer) deleteAll(ctx context.Context, principal string) error {
 	ptrUsername := kmsg.StringPtr(principal)
 

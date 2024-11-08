@@ -80,6 +80,8 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	if err != nil {
 		return createPatch(err)
 	}
+	defer usersClient.Close()
+	defer syncer.Close()
 
 	if !hasUser && shouldManageUser {
 		if err := usersClient.Create(ctx, user); err != nil {
@@ -122,6 +124,8 @@ func (r *UserReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
+	defer usersClient.Close()
+	defer syncer.Close()
 
 	if hasUser && hasManagedUser {
 		request.logger.V(2).Info("Deleting managed user")

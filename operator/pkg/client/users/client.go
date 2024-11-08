@@ -86,6 +86,11 @@ func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, er
 	return c.has(ctx, user.Name)
 }
 
+// Close closes the underlying kafka connection
+func (c *Client) Close() {
+	c.kafkaAdminClient.Close()
+}
+
 func (c *Client) delete(ctx context.Context, username string) error {
 	if c.scramAPISupported {
 		resp, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, []kadm.DeleteSCRAM{{
