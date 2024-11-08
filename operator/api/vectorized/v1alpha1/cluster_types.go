@@ -1421,7 +1421,7 @@ func (r *Cluster) SetDecommissionBrokerID(id *int32) {
 }
 
 // getNodePoolsFromSpec returns the NodePools defined in the spec.
-// This contains the primary NodePool (driven by spec.replicas for example), and the
+// This contains the default NodePool (driven by spec.replicas for example), and the
 // NodePools driven by the nodePools field.
 func (r *Cluster) GetNodePoolsFromSpec() []NodePoolSpec {
 	out := make([]NodePoolSpec, 0)
