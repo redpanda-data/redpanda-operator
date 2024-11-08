@@ -249,7 +249,10 @@ func (c *Cluster) Cleanup() error {
 }
 
 func forceCleanup(name string) {
-	exec.Command(
+	// attempt to cleanup no matter what
+	// we just ignore any output in case
+	// the cluster doesn't exist, etc.
+	_, _ = exec.Command(
 		"k3d",
 		"cluster",
 		"delete",
