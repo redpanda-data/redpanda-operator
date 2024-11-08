@@ -156,8 +156,11 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			if tt.expectedCondition.Status == metav1.ConditionTrue { //nolint:nestif // ignore
 				syncer, err := environment.Factory.ACLs(ctx, user)
 				require.NoError(t, err)
+				defer syncer.Close()
+
 				userClient, err := environment.Factory.Users(ctx, user)
 				require.NoError(t, err)
+				defer userClient.Close()
 
 				// if we're supposed to have synced, then check to make sure we properly
 				// set the management flags
@@ -184,6 +187,8 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 						Pass: "password",
 					}.AsSha512Mechanism()))
 					require.NoError(t, err)
+					defer kafkaClient.Close()
+
 					kafkaAdminClient := kadm.NewClient(kafkaClient)
 
 					// first do an operation that anyone can do just to make

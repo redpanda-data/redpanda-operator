@@ -182,6 +182,8 @@ func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bo
 	if !assert.Eventually(t, func() bool {
 		t.Logf("Pulling list of topics from cluster")
 		admin := kadm.NewClient(c.Kafka(ctx))
+		defer admin.Close()
+
 		topics, err = admin.ListTopics(ctx)
 		require.NoError(t, err)
 		require.NoError(t, topics.Error())

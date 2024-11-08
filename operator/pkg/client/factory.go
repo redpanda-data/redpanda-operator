@@ -57,7 +57,8 @@ type UserAuth struct {
 type ClientFactory interface {
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
 	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface or the v1alpha2.ClusterReferencingObject
-	// interface to properly initialize.
+	// interface to properly initialize. Callers should always call Close on the returned *kgo.Client, or it will leak
+	// goroutines.
 	KafkaClient(ctx context.Context, object client.Object, opts ...kgo.Opt) (*kgo.Client, error)
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
@@ -70,10 +71,12 @@ type ClientFactory interface {
 	// interface to properly initialize.
 	SchemaRegistryClient(ctx context.Context, object client.Object) (*sr.Client, error)
 
-	// ACLs returns a high-level client for synchronizing ACLs.
+	// ACLs returns a high-level client for synchronizing ACLs. Callers should always call Close on the returned *acls.Syncer, or it will leak
+	// goroutines.
 	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
 
-	// Users returns a high-level client for managing users.
+	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
+	// goroutines.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
 
 	// Schemas returns a high-level client for synchronizing Schemas.

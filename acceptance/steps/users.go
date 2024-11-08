@@ -85,6 +85,7 @@ func iDeleteTheCRDUser(ctx context.Context, t framework.TestingT, user string) {
 func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.TestingT, cluster string, acls *godog.Table) {
 	clients := clientsForCluster(ctx, cluster)
 	aclClient := clients.ACLs(ctx)
+	defer aclClient.Close()
 
 	for _, user := range usersFromACLTable(t, cluster, acls) {
 		user := user
@@ -108,6 +109,7 @@ func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framew
 	clients := clientsForCluster(ctx, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	usersClient := clients.Users(ctx)
+	defer usersClient.Close()
 
 	for _, user := range usersFromAuthTable(t, cluster, users) {
 		user := user
@@ -152,7 +154,10 @@ func shouldExistAndBeAbleToAuthenticateToTheCluster(ctx context.Context, t frame
 }
 
 func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.TestingT, cluster, user string) {
-	rules, err := clientsForCluster(ctx, cluster).ACLs(ctx).ListACLs(ctx, fmt.Sprintf("User:%s", user))
+	aclClient := clientsForCluster(ctx, cluster).ACLs(ctx)
+	defer aclClient.Close()
+
+	rules, err := aclClient.ListACLs(ctx, fmt.Sprintf("User:%s", user))
 	require.NoError(t, err)
 	require.NotEmpty(t, rules)
 }
