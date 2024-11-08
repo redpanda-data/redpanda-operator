@@ -11,26 +11,27 @@ package redpanda
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -43,6 +44,8 @@ const (
 	defaultDecommissionWaitInterval = 10 * time.Second
 )
 
+var ErrZeroReplicas = errors.New("redpanda replicas is zero")
+
 // +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=update;patch;delete;get;list;watch;
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods/status,verbs=update;patch
@@ -51,6 +54,7 @@ const (
 type ManagedDecommissionReconciler struct {
 	k8sclient.Client
 	record.EventRecorder
+	ClientFactory internalclient.ClientFactory
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -77,13 +81,10 @@ func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	var result ctrl.Result
-	var err error
-
-	result, err = managedDecommission(ctx, log, r.Client, r.EventRecorder, rp)
+	result, err := r.managedDecommission(ctx, rp)
 
 	// Log reconciliation duration
-	durationMsg := fmt.Sprintf("succesfull reconciliation finished in %s", time.Since(start).String())
+	durationMsg := fmt.Sprintf("successful reconciliation finished in %s", time.Since(start).String())
 	if result.RequeueAfter > 0 {
 		durationMsg = fmt.Sprintf("%s, next run in %s", durationMsg, result.RequeueAfter.String())
 	}
@@ -96,23 +97,23 @@ func (r *ManagedDecommissionReconciler) Reconcile(c context.Context, req ctrl.Re
 	return result, err
 }
 
-func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) (ctrl.Result, error) {
-	log := l.WithName("managedDecommission")
+func (r *ManagedDecommissionReconciler) managedDecommission(ctx context.Context, rp *v1alpha2.Redpanda) (ctrl.Result, error) {
+	log := ctrl.LoggerFrom(ctx).WithName("managedDecommission")
 
 	exist, err := isManagedDecommission(rp)
 	if !exist || err != nil {
-		cleanupError := cleanUp(ctx, log, c, er, rp)
+		cleanupError := r.cleanUp(ctx, rp)
 		if cleanupError != nil {
 			return ctrl.Result{}, cleanupError
 		}
 		return ctrl.Result{}, err
 	}
 
-	if err = markPods(ctx, log, c, er, rp); err != nil {
+	if err := markPods(ctx, log, r.Client, r.EventRecorder, rp); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err = decommissionStatus(ctx, log, c, er, rp); err != nil {
+	if err := r.decommissionStatus(ctx, rp); err != nil {
 		var requeueErr *resources.RequeueAfterError
 		if errors.As(err, &requeueErr) {
 			return ctrl.Result{RequeueAfter: requeueErr.RequeueAfter}, nil
@@ -120,7 +121,7 @@ func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client,
 		return ctrl.Result{}, fmt.Errorf("managed decommission status: %w", err)
 	}
 
-	if err = reconcilePodsDecommission(ctx, log, c, er, rp); err != nil {
+	if err := r.reconcilePodsDecommission(ctx, rp); err != nil {
 		var requeueErr *resources.RequeueAfterError
 		if errors.As(err, &requeueErr) {
 			log.Info(requeueErr.Error())
@@ -129,7 +130,7 @@ func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client,
 		return ctrl.Result{}, fmt.Errorf("managed decommission pod eviction: %w", err)
 	}
 
-	ok, err := areAllPodsUpdated(ctx, c, rp)
+	ok, err := r.areAllPodsUpdated(ctx, rp)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -139,23 +140,22 @@ func managedDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client,
 		}, nil
 	}
 
-	if err = removeManagedDecommissionAnnotation(ctx, log, c, rp); err != nil {
+	if err = removeManagedDecommissionAnnotation(ctx, log, r.Client, rp); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
-	log := l.WithName("cleanUp")
+func (r *ManagedDecommissionReconciler) cleanUp(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	log := ctrl.LoggerFrom(ctx).WithName("cleanUp")
 
-	err := decommissionStatus(ctx, log, c, er, rp)
-	if err != nil {
+	if err := r.decommissionStatus(ctx, rp); err != nil {
 		return err
 	}
 
 	// Clean condition from Pods
-	podList, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
+	podList, err := getPodList(ctx, r.Client, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return fmt.Errorf("cleanup listing all pods: %w", err)
 	}
@@ -166,7 +166,7 @@ func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.E
 		if cond != nil {
 			podPatch := k8sclient.MergeFrom(pod.DeepCopy())
 			utils.RemoveStatusPodCondition(&pod.Status.Conditions, resources.ClusterUpdatePodCondition)
-			if err = c.Status().Patch(ctx, pod, podPatch); err != nil {
+			if err = r.Client.Status().Patch(ctx, pod, podPatch); err != nil {
 				return fmt.Errorf("error removing pod update condition: %w", err)
 			}
 		}
@@ -176,7 +176,7 @@ func cleanUp(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.E
 
 	log.Info("Clean up", "conditions", rp.GetConditions(), "annotations", rp.GetAnnotations())
 
-	return updateRedpanda(ctx, rp, c)
+	return updateRedpanda(ctx, rp, r.Client)
 }
 
 func redpandaPodsSelector(rp *v1alpha2.Redpanda) labels.Selector {
@@ -187,25 +187,15 @@ func redpandaPodsSelector(rp *v1alpha2.Redpanda) labels.Selector {
 	return selector
 }
 
-func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
+func (r *ManagedDecommissionReconciler) decommissionStatus(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	if rp.Status.ManagedDecommissioningNode == nil {
 		return nil
 	}
 
 	decommissionNodeID := int(*rp.Status.ManagedDecommissioningNode)
-	log := l.WithName("decommissionStatus").WithValues("decommission-node-id", decommissionNodeID)
+	log := ctrl.LoggerFrom(ctx).WithName("decommissionStatus").WithValues("decommission-node-id", decommissionNodeID)
 
-	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
-	if err != nil {
-		return fmt.Errorf("get helm values: %w", err)
-	}
-
-	requestedReplicas, err := getRedpandaReplicas(ctx, c, rp)
-	if err != nil {
-		return err
-	}
-
-	adminAPI, err := buildAdminAPI(rp.GetHelmReleaseName(), rp.Namespace, int32(requestedReplicas), nil, valuesMap)
+	adminAPI, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
 		return fmt.Errorf("creating AdminAPI: %w", err)
 	}
@@ -224,18 +214,17 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 	}
 
 	log.Info("Node decommissioned")
-	er.AnnotatedEventf(rp,
+	r.EventRecorder.AnnotatedEventf(rp,
 		map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
 		corev1.EventTypeNormal, v1alpha2.EventTypeTrace, fmt.Sprintf("Node decommissioned: %d", decommissionNodeID))
 
-	err = podEvict(ctx, log, c, rp)
-	if err != nil {
+	if err := r.podEvict(ctx, rp); err != nil {
 		return err
 	}
 
 	rp.Status.ManagedDecommissioningNode = nil
 
-	if err := updateRedpanda(ctx, rp, c); err != nil {
+	if err := updateRedpanda(ctx, rp, r.Client); err != nil {
 		return err
 	}
 
@@ -247,106 +236,100 @@ func decommissionStatus(ctx context.Context, l logr.Logger, c k8sclient.Client, 
 	}
 }
 
-var ErrZeroReplicas = errors.New("redpanda replicas is zero")
-
-func getRedpandaReplicas(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Redpanda) (int, error) {
-	requestedReplicas := ptr.Deref(rp.Spec.ClusterSpec.Statefulset.Replicas, 0)
-
-	if requestedReplicas == 0 {
-		resourcesName := rp.Name
-		if override := ptr.Deref(rp.Spec.ClusterSpec.FullnameOverride, ""); override != "" {
-			resourcesName = override
-		}
-
-		var sts appsv1.StatefulSet
-		err := c.Get(ctx, types.NamespacedName{
-			Namespace: rp.Namespace,
-			Name:      resourcesName,
-		}, &sts)
-		if err != nil {
-			return 0, fmt.Errorf("getting statefulset : %w", err)
-		}
-
-		requestedReplicas = int(ptr.Deref(sts.Spec.Replicas, 0))
-	}
-
-	if requestedReplicas == 0 {
-		return 0, ErrZeroReplicas
-	}
-	return requestedReplicas, nil
-}
-
-func podEvict(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha2.Redpanda) error {
+func (r *ManagedDecommissionReconciler) podEvict(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	if rp.Status.ManagedDecommissioningNode == nil {
 		return nil
 	}
 
 	decommissionNodeID := int(*rp.Status.ManagedDecommissioningNode)
-	log := l.WithName("podEvict").WithValues("decommission-node-id", decommissionNodeID)
+	log := ctrl.LoggerFrom(ctx).WithName("podEvict").WithValues("decommission-node-id", decommissionNodeID)
 
-	pod, err := getPodFromRedpandaNodeID(ctx, l, c, rp, decommissionNodeID)
+	pod, err := r.getPodFromRedpandaNodeID(ctx, rp, decommissionNodeID)
 	if err != nil {
 		return fmt.Errorf("getting pod from node-id (%d): %w", decommissionNodeID, err)
 	}
 
+	// NB: Deleting this Pod will take an unexpectedly long time as the
+	// pre-stop hook will "spin" due to not handling decommissioned brokers.
 	log.Info("delete Pod PVC", "pod-name", pod.Name)
-	if err = utils.DeletePodPVCs(ctx, c, pod, log); err != nil {
+	if err = utils.DeletePodPVCs(ctx, r.Client, pod, log); err != nil {
 		return fmt.Errorf(`unable to remove VPCs for pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
 	}
-	return c.Delete(ctx, pod)
+	return r.Client.Delete(ctx, pod)
 }
 
-func getPodFromRedpandaNodeID(ctx context.Context, l logr.Logger, c k8sclient.Client, rp *v1alpha2.Redpanda, nodeID int) (*corev1.Pod, error) {
-	log := l.WithName("getPodFromRedpandaNodeID")
+func (r *ManagedDecommissionReconciler) getPodFromRedpandaNodeID(ctx context.Context, rp *v1alpha2.Redpanda, nodeID int) (*corev1.Pod, error) {
+	log := ctrl.LoggerFrom(ctx).WithName("getPodFromRedpandaNodeID")
 
-	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
+	pl, err := getPodList(ctx, r.Client, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return nil, fmt.Errorf("get Redpanda Node ID pod list: %w", err)
 	}
 
-	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
+	adminAPI, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return nil, fmt.Errorf("get helm values: %w", err)
+		return nil, errors.WithStack(err)
 	}
 
-	for i := range pl.Items {
-		pod := pl.Items[i]
+	brokers, err := adminAPI.Brokers(ctx)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
-		if !utils.IsPodReady(&pod) {
-			log.Info("pod is not ready",
-				"containersReady", utils.IsStatusPodConditionTrue(pod.Status.Conditions, corev1.ContainersReady),
-				"podReady", utils.IsStatusPodConditionTrue(pod.Status.Conditions, corev1.PodReady),
-				"pod-phase", pod.Status.Phase,
-				"pod-name", pod.Name)
-			return nil, &resources.RequeueAfterError{
-				RequeueAfter: wait.Jitter(defaultDecommissionWaitInterval, decommissionWaitJitterFactor),
-				Msg:          fmt.Sprintf("pod (%s) is not ready", pod.Name),
-			}
-		}
+	if len(brokers) != len(pl.Items)-1 {
+		return nil, errors.Newf("expected Pod list to be 1 short of Broker list: %d (brokers) - 1 != %d (pods)", len(brokers), len(pl.Items))
+	}
 
-		var ordinal int32
-		ordinal, err := utils.GetPodOrdinal(pod.Name, pod.GenerateName[:len(pod.GenerateName)-1])
-		if err != nil {
-			return nil, err
-		}
-		podOrdinal := int(ordinal)
-
-		singleNodeAdminAPI, err := buildAdminAPI(rp.GetHelmReleaseName(), rp.Namespace, 0, &podOrdinal, valuesMap)
-		if err != nil {
-			return nil, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, err)
-		}
-
-		nodeCfg, err := singleNodeAdminAPI.GetNodeConfig(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("getting node configuration from pod (%d): %w", podOrdinal, err)
-		}
-
-		if nodeCfg.NodeID == nodeID {
-			return &pod, nil
+	// Paranoid check to make up for the lack of an establishing a direct
+	// adminAPI connection: Assert that the decommissioned nodeID does not
+	// appear in the brokers list.
+	for _, broker := range brokers {
+		if broker.NodeID == nodeID {
+			return nil, errors.Newf("unexpectedly found a broker with NodeID %d", nodeID)
 		}
 	}
 
-	return nil, nil
+	// O(P*B) sadly but both should be fairly small. Being able to construct
+	// the entire InternalRPC URL or having a string trie would make this
+	// doable in O(P+B).
+	var pod *corev1.Pod
+	for i, p := range pl.Items {
+		_, err := findPodBroker(&p, brokers)
+		if err != nil && pod == nil {
+			pod = &pl.Items[i]
+		} else if err != nil {
+			return nil, errors.Newf("found two Pods uncorrelatable to brokers: %q and %q", pod.Name, p.Name)
+		}
+	}
+
+	if pod == nil {
+		return nil, errors.Newf("failed to find Pod for decommissioned broker with Node ID %d", nodeID)
+	}
+
+	if !utils.IsPodReady(pod) {
+		log.Info("pod is not ready",
+			"containersReady", utils.IsStatusPodConditionTrue(pod.Status.Conditions, corev1.ContainersReady),
+			"podReady", utils.IsStatusPodConditionTrue(pod.Status.Conditions, corev1.PodReady),
+			"pod-phase", pod.Status.Phase,
+			"pod-name", pod.Name)
+		return nil, &resources.RequeueAfterError{
+			RequeueAfter: wait.Jitter(defaultDecommissionWaitInterval, decommissionWaitJitterFactor),
+			Msg:          fmt.Sprintf("pod (%s) is not ready", pod.Name),
+		}
+	}
+
+	// Ideally, we'd connect directly to the adminAPI of the Broker running on
+	// this Pod and verify the it's node ID before proceeding further but we
+	// don't currently have a factory to connect to a specific broker.
+	// However, at this point we have verified that:
+	// 1. This controller is running (Decommissions are in progress and expected)
+	// 2. There is exactly 1 Pod that can't be correlated to a broker.
+	// 3. The broker with NodeID `nodeID` has been successfully decommissioned.
+	// 4. There is no broker associated with `nodeID`.
+	// Therefore it's fairly safe to assume `pod` is the broker that was
+	// previously associated with `nodeID` and it can be safely evicted.
+
+	return pod, nil
 }
 
 func updateRedpanda(ctx context.Context, rp *v1alpha2.Redpanda, c k8sclient.Client) error {
@@ -363,22 +346,29 @@ func updateRedpanda(ctx context.Context, rp *v1alpha2.Redpanda, c k8sclient.Clie
 	return nil
 }
 
-func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.Client, er record.EventRecorder, rp *v1alpha2.Redpanda) error {
-	log := l.WithName("reconcilePodsDecommission")
+func (r *ManagedDecommissionReconciler) reconcilePodsDecommission(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	log := ctrl.LoggerFrom(ctx).WithName("reconcilePodsDecommission")
 
-	pl, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
+	pl, err := getPodList(ctx, r.Client, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return err
 	}
 
-	valuesMap, err := getHelmValues(ctx, c, l, rp.GetHelmReleaseName(), rp.Namespace, true)
+	adminAPI, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return fmt.Errorf("get helm values: %w", err)
+		return err
 	}
 
-	for i := range pl.Items {
-		pod := pl.Items[i]
+	brokers, err := adminAPI.Brokers(ctx)
+	if err != nil {
+		return err
+	}
 
+	// First make sure that all Pods are ready before proceeding with a
+	// decommission. This ensures that we wait an appropriate period of time
+	// between the decommission finishing and the decommissioned Pod being
+	// rescheduled after evictions.
+	for _, pod := range pl.Items {
 		if !utils.IsPodReady(&pod) {
 			log.Info("pod is not ready",
 				"containersReady", utils.IsStatusPodConditionTrue(pod.Status.Conditions, corev1.ContainersReady),
@@ -390,60 +380,47 @@ func reconcilePodsDecommission(ctx context.Context, l logr.Logger, c k8sclient.C
 				Msg:          "pod is not ready",
 			}
 		}
+	}
 
+	for _, pod := range pl.Items {
 		cond := utils.FindStatusPodCondition(pod.Status.Conditions, resources.ClusterUpdatePodCondition)
 		if cond == nil {
 			log.V(logger.DebugLevel).Info("pod does not have cluster update pod condition", "pod-name", pod.Name)
 			continue
 		}
 
-		var ordinal int32
-		ordinal, err := utils.GetPodOrdinal(pod.Name, pod.GenerateName[:len(pod.GenerateName)-1])
+		broker, err := findPodBroker(&pod, brokers)
 		if err != nil {
 			return err
 		}
-		podOrdinal := int(ordinal)
 
-		singleNodeAdminAPI, err := buildAdminAPI(rp.GetHelmReleaseName(), rp.Namespace, 0, &podOrdinal, valuesMap)
-		if err != nil {
-			return fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, err)
+		log.Info("Node decommissioning started", "pod-name", pod.Name, "node-id", broker.NodeID)
+
+		if err := adminAPI.DecommissionBroker(ctx, broker.NodeID); err != nil {
+			return errors.Wrapf(err, "error while trying to decommission node %d", broker.NodeID)
 		}
 
-		nodeCfg, err := singleNodeAdminAPI.GetNodeConfig(ctx)
-		if err != nil {
-			return fmt.Errorf("getting node configuration from pod (%d): %w", podOrdinal, err)
-		}
-
-		log.Info("Node decommissioning started", "pod-name", pod.Name, "node-id", nodeCfg.NodeID)
-
-		err = singleNodeAdminAPI.DecommissionBroker(ctx, nodeCfg.NodeID)
-		if err != nil {
-			return fmt.Errorf("error while trying to decommission node %d: %w", nodeCfg.NodeID, err)
-		}
-
-		er.AnnotatedEventf(rp,
+		r.EventRecorder.AnnotatedEventf(rp,
 			map[string]string{v1alpha2.GroupVersion.Group + revisionPath: rp.ResourceVersion},
-			corev1.EventTypeNormal, v1alpha2.EventTypeTrace, fmt.Sprintf("Node decommissioning started: %d", nodeCfg.NodeID))
+			corev1.EventTypeNormal, v1alpha2.EventTypeTrace, fmt.Sprintf("Node decommissioning started: %d", broker.NodeID))
 
-		nodeID := int32(nodeCfg.NodeID)
-		rp.Status.ManagedDecommissioningNode = &nodeID
+		rp.Status.ManagedDecommissioningNode = ptr.To(int32(broker.NodeID))
 
-		err = updateRedpanda(ctx, rp, c)
-		if err != nil {
+		if err := updateRedpanda(ctx, rp, r.Client); err != nil {
 			return err
 		}
 
 		return &resources.RequeueAfterError{
 			RequeueAfter: wait.Jitter(defaultDecommissionWaitInterval, decommissionWaitJitterFactor),
-			Msg:          fmt.Sprintf("waiting for broker %d to be decommissioned", nodeCfg.NodeID),
+			Msg:          fmt.Sprintf("waiting for broker %d to be decommissioned", broker.NodeID),
 		}
 	}
 
 	return nil
 }
 
-func areAllPodsUpdated(ctx context.Context, c k8sclient.Client, rp *v1alpha2.Redpanda) (bool, error) {
-	podList, err := getPodList(ctx, c, rp.Namespace, redpandaPodsSelector(rp))
+func (r *ManagedDecommissionReconciler) areAllPodsUpdated(ctx context.Context, rp *v1alpha2.Redpanda) (bool, error) {
+	podList, err := getPodList(ctx, r.Client, rp.Namespace, redpandaPodsSelector(rp))
 	if err != nil {
 		return false, fmt.Errorf("check all pods have condition: %w", err)
 	}
@@ -573,4 +550,15 @@ func sortPodList(podList *corev1.PodList) *corev1.PodList {
 		return iOrdinal < jOrdinal
 	})
 	return podList
+}
+
+func findPodBroker(pod *corev1.Pod, brokers []rpadmin.Broker) (*rpadmin.Broker, error) {
+	prefix := strings.Join([]string{pod.Spec.Hostname, pod.Spec.Subdomain}, ".")
+
+	for _, broker := range brokers {
+		if strings.HasPrefix(broker.InternalRPCAddress, prefix) {
+			return &broker, nil
+		}
+	}
+	return nil, errors.Newf("broker for Pod %q not found (No brokers with %q prefixing InternalRPCAddress)", pod.Name, prefix)
 }

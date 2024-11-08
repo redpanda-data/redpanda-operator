@@ -11,6 +11,7 @@ package redpanda_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -28,6 +29,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -64,9 +66,10 @@ func TestRedpandaController(t *testing.T) {
 type RedpandaControllerSuite struct {
 	suite.Suite
 
-	ctx    context.Context
-	env    *testenv.Env
-	client client.Client
+	ctx           context.Context
+	env           *testenv.Env
+	client        client.Client
+	clientFactory internalclient.ClientFactory
 }
 
 var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
@@ -157,16 +160,21 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	}
 
 	// Assert that the console deployment exists
-	var deployments appsv1.DeploymentList
-	s.NoError(s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
-	s.Len(deployments.Items, 1)
+	s.EventuallyWithT(func(t *assert.CollectT) {
+		var deployments appsv1.DeploymentList
+		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
+		assert.Len(t, deployments.Items, 1)
+	}, time.Minute, time.Second, "console deployment not scheduled")
 
 	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(false)
 	s.applyAndWait(rp)
 
 	// Assert that the console deployment has been garbage collected.
-	s.NoError(s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
-	s.Len(deployments.Items, 0)
+	s.EventuallyWithT(func(t *assert.CollectT) {
+		var deployments appsv1.DeploymentList
+		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
+		assert.Len(t, deployments.Items, 0)
+	}, time.Minute, time.Second, "console deployment not GC'd")
 
 	// Assert that our previously created secrets have not been GC'd.
 	for _, secret := range secrets {
@@ -195,8 +203,8 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 		SetDataDirOwnership:               &redpandav1alpha2.SetDataDirOwnership{ExtraVolumeMounts: extraVolumeMount},
 		SetTieredStorageCacheDirOwnership: &redpandav1alpha2.SetTieredStorageCacheDirOwnership{ExtraVolumeMounts: extraVolumeMount},
 		ExtraInitContainers: ptr.To(`- name: "test-init-container"
-  image: "mintel/docker-alpine-bash-curl-jq:latest"
-  command: [ "/bin/bash", "-c" ]
+  image: "alpine:latest"
+  command: [ "/bin/sh", "-c" ]
   volumeMounts:
   - name: test-extra-volume
     mountPath: /FAKE/LIFECYCLE
@@ -225,14 +233,195 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
 
 		if c.Name == "test-init-container" {
-			s.Equal(c.Command, []string{"/bin/bash", "-c"})
+			s.Equal(c.Command, []string{"/bin/sh", "-c"})
 			s.Equal(c.Args, []string{"set -xe\necho \"Hello World!\""})
-			s.Equal(c.Image, "mintel/docker-alpine-bash-curl-jq:latest")
+			s.Equal(c.Image, "alpine:latest")
 		}
 	}
 	for _, c := range sts.Spec.Template.Spec.Containers {
 		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
 	}
+
+	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestManagedDecommission() {
+	rp := s.minimalRP(false)
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+
+	s.applyAndWait(rp)
+
+	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+	s.Require().NoError(err)
+
+	beforeBrokers, err := adminAPI.Brokers(s.ctx)
+	s.Require().NoError(err)
+
+	rp.Annotations = map[string]string{
+		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
+	}
+
+	s.applyAndWaitFor(rp, func(o client.Object) bool {
+		rp := o.(*redpandav1alpha2.Redpanda)
+
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == "ManagedDecommission" {
+				return cond.Status == metav1.ConditionTrue
+			}
+		}
+		return false
+	})
+
+	s.waitFor(rp, func(o client.Object) bool {
+		rp := o.(*redpandav1alpha2.Redpanda)
+
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == "ManagedDecommission" {
+				return false
+			}
+		}
+
+		_, ok := rp.Annotations["operator.redpanda.com/managed-decommission"]
+
+		return !ok // Managed decommission is finished when the annotation is removed.
+	})
+
+	afterBrokers, err := adminAPI.Brokers(s.ctx)
+	s.Require().NoError(err)
+
+	// After performing a managed decommission we should observe a complete
+	// replacement of brokers.
+	beforeIDs := map[int]struct{}{}
+	for _, broker := range beforeBrokers {
+		beforeIDs[broker.NodeID] = struct{}{}
+	}
+
+	afterIDs := map[int]struct{}{}
+	for _, broker := range afterBrokers {
+		afterIDs[broker.NodeID] = struct{}{}
+	}
+
+	for id := range beforeIDs {
+		s.NotContainsf(afterIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
+	}
+
+	for id := range afterIDs {
+		s.NotContainsf(beforeIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
+	}
+
+	s.Len(beforeIDs, 3)
+	s.Len(afterIDs, 3)
+
+	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestClusterSettings() {
+	rp := s.minimalRP(false)
+	s.applyAndWait(rp)
+
+	setConfig := func(cfg map[string]any) {
+		asJson, err := json.Marshal(cfg)
+		s.Require().NoError(err)
+
+		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJson}
+		s.applyAndWait(rp)
+		s.applyAndWaitFor(rp, func(o client.Object) bool {
+			rp := o.(*redpandav1alpha2.Redpanda)
+			for _, cond := range rp.Status.Conditions {
+				if cond.Type == redpandav1alpha2.ClusterConfigSynced {
+					return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue
+				}
+			}
+			return false
+		})
+	}
+	s.applyAndWait(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "creds",
+		},
+		Data: map[string][]byte{
+			"access_key": []byte("VURYSECRET"),
+		},
+	})
+
+	// Ensure that some superusers exist.
+	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
+		SASL: &redpandav1alpha2.SASL{
+			Enabled: ptr.To(true),
+			Users: []redpandav1alpha2.UsersItems{
+				{Name: ptr.To("bob"), Password: ptr.To("bobert")},
+				{Name: ptr.To("alice"), Password: ptr.To("alicert")},
+			},
+		},
+	}
+
+	rp.Spec.ClusterSpec.Storage = &redpandav1alpha2.Storage{
+		Tiered: &redpandav1alpha2.Tiered{
+			Config: &redpandav1alpha2.TieredConfig{
+				CloudStorageDisableTLS: ptr.To(true),
+			},
+			CredentialsSecretRef: &redpandav1alpha2.CredentialSecretRef{
+				AccessKey: &redpandav1alpha2.SecretWithConfigField{
+					Name: ptr.To("creds"),
+					Key:  ptr.To("access_key"),
+				},
+			},
+		},
+	}
+
+	cases := []struct {
+		In       map[string]any
+		Expected map[string]any
+	}{
+		{
+			In: map[string]any{
+				"admin_api_require_auth":      true,
+				"enable_schema_id_validation": "redpanda",
+				"enable_transactions":         false,
+			},
+			Expected: map[string]any{
+				"admin_api_require_auth":      true,
+				"cloud_storage_access_key":    "VURYSECRET",
+				"cloud_storage_disable_tls":   true,
+				"enable_schema_id_validation": "redpanda",
+				"enable_transactions":         false,
+				"superusers":                  []any{"alice", "bob", "kubernetes-controller"},
+			},
+		},
+		{
+			In: map[string]any{
+				"enable_transactions":         true,
+				"enable_schema_id_validation": "none",
+				// TODO: Minor bug in the helm chart here, setting superusers
+				// in cluster.config results in the bootstrap users getting
+				// excluded.
+				// "superusers":                  []any{"jimbob"},
+			},
+			Expected: map[string]any{
+				"admin_api_require_auth":    true,
+				"cloud_storage_access_key":  "VURYSECRET",
+				"cloud_storage_disable_tls": true,
+				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
+				// "superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		setConfig(c.In)
+
+		adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+		s.Require().NoError(err)
+
+		config, err := adminClient.Config(s.ctx, false)
+		s.Require().NoError(err)
+
+		// Only assert that c.Expected is a subset of the set config.
+		// The chart/operator injects a bunch of "useful" values by default.
+		s.Subset(config, c.Expected)
+	}
+
+	s.deleteAndWait(rp)
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {
@@ -271,15 +460,23 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		}
 
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		// TODO should probably run other reconcilers here.
-		return (&redpanda.RedpandaReconciler{
+		if err := (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: clientFactory,
-		}).SetupWithManager(s.ctx, mgr)
+			ClientFactory: s.clientFactory,
+		}).SetupWithManager(s.ctx, mgr); err != nil {
+			return err
+		}
+
+		return (&redpanda.ManagedDecommissionReconciler{
+			Client:        mgr.GetClient(),
+			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory: s.clientFactory,
+		}).SetupWithManager(mgr)
 	})
 }
 
@@ -294,21 +491,42 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: name, // GenerateName doesn't play nice with SSA.
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ChartRef: redpandav1alpha2.ChartRef{
 				UseFlux: ptr.To(useFlux),
 			},
+			// Any empty structs are to make setting them more ergonomic
+			// without having to worry about nil pointers.
 			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Config: &redpandav1alpha2.Config{},
+				External: &redpandav1alpha2.External{
+					// Disable NodePort creation to stop broken tests from blocking others due to port conflicts.
+					Enabled: ptr.To(false),
+				},
 				Image: &redpandav1alpha2.RedpandaImage{
-					Repository: ptr.To("redpandadata/redpanda"), // Override the default to make use of the docker-io image cache.
+					Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
 				},
 				Console: &redpandav1alpha2.RedpandaConsole{
 					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
 				},
 				Statefulset: &redpandav1alpha2.Statefulset{
 					Replicas: ptr.To(1), // Speed up tests ever so slightly.
+					PodAntiAffinity: &redpandav1alpha2.PodAntiAffinity{
+						// Disable the default "hard" affinity so we can
+						// schedule multiple redpanda Pods on a single
+						// kubernetes node. Useful for tests that require > 3
+						// brokers.
+						Type: ptr.To("soft"),
+					},
+				},
+				Resources: &redpandav1alpha2.Resources{
+					CPU: &redpandav1alpha2.CPU{
+						// Inform redpanda/seastar that it's not going to get
+						// all the resources it's promised.
+						Overprovisioned: ptr.To(true),
+					},
 				},
 			},
 		},
@@ -342,6 +560,24 @@ func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
 }
 
 func (s *RedpandaControllerSuite) applyAndWait(obj client.Object) {
+	s.applyAndWaitFor(obj, func(o client.Object) bool {
+		switch obj := obj.(type) {
+		case *redpandav1alpha2.Redpanda:
+			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
+			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+			return upToDate && ready
+
+		case *corev1.Secret, *corev1.ConfigMap:
+			return true
+
+		default:
+			s.T().Fatalf("unhandled object %T in applyAndWait", obj)
+			panic("unreachable")
+		}
+	})
+}
+
+func (s *RedpandaControllerSuite) applyAndWaitFor(obj client.Object, cond func(client.Object) bool) {
 	gvk, err := s.client.GroupVersionKindFor(obj)
 	s.NoError(err)
 
@@ -355,15 +591,23 @@ func (s *RedpandaControllerSuite) applyAndWait(obj client.Object) {
 			return false, err
 		}
 
-		switch obj := obj.(type) {
-		case *redpandav1alpha2.Redpanda:
-			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
-			return upToDate && ready, nil
+		if cond(obj) {
+			return true, nil
+		}
 
-		default:
-			s.Fail("unhandled object %T in applyAndWait", obj)
+		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
+		return false, nil
+	}))
+}
 
+func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Object) bool) {
+	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+		if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+			return false, err
+		}
+
+		if cond(obj) {
+			return true, nil
 		}
 
 		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
@@ -448,4 +692,15 @@ func mapBy[T any, K comparable](items []T, fn func(T) K) map[K]T {
 		out[key] = item
 	}
 	return out
+}
+
+func TestPostInstallUpgradeJobIndex(t *testing.T) {
+	dot, err := redpandachart.Chart.Dot(kube.Config{}, helmette.Release{}, map[string]any{})
+	require.NoError(t, err)
+
+	job := redpandachart.PostInstallUpgradeJob(dot)
+
+	// Assert that index 0 is the envsubst container as that's what
+	// `clusterConfigfor` utilizes.
+	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
 }

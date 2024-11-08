@@ -19,6 +19,7 @@ package syncclusterconfig
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -74,8 +75,16 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
-			// do conditional merge of users.txt and bootstrap.yaml
-			maybeMergeSuperusers(logger, clusterConfig, usersDirectoryPath)
+			usersTXTs, err := loadUsersFiles(ctx, usersDirectoryPath)
+			if err != nil {
+				return err
+			}
+
+			syncer := Syncer{Client: client}
+
+			if err := syncer.Sync(ctx, clusterConfig, usersTXTs); err != nil {
+				return err
+			}
 
 			// NB: remove must be an empty slice NOT nil.
 			result, err := client.PatchClusterConfig(ctx, clusterConfig, []string{})
@@ -137,45 +146,13 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 	return config, nil
 }
 
-// maybeMergeSuperusers merges the values found in users.txt into our superusers
-// list found in our bootstrap.yaml. This only occurs if an entry for superusers
-// actually exists in the bootstrap.yaml.
-func maybeMergeSuperusers(logger logr.Logger, clusterConfig map[string]any, path string) {
-	if path == "" {
-		// we have no path to a users directory, so don't do anything
-		logger.Info("--users-directory not specified. Skipping superusers merge.")
-		return
-	}
-
-	superusersConfig, ok := clusterConfig[superusersEntry]
-	if !ok {
-		// we have no superusers configuration, so don't do anything
-		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
-		return
-	}
-
-	superusers, err := loadUsersFiles(logger, path)
-	if err != nil {
-		logger.Info(fmt.Sprintf("Error reading users directory %q: %v. Skipping superusers merge.", path, err))
-		return
-	}
-
-	superusersAny, ok := superusersConfig.([]any)
-	if !ok {
-		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
-		return
-	}
-
-	clusterConfig[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
-}
-
-func loadUsersFiles(logger logr.Logger, path string) ([]string, error) {
+func loadUsersFiles(ctx context.Context, path string) (map[string][]byte, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
 
-	users := []string{}
+	users := map[string][]byte{}
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -186,27 +163,35 @@ func loadUsersFiles(logger logr.Logger, path string) ([]string, error) {
 
 		usersFile, err := os.ReadFile(filename)
 		if err != nil {
-			logger.Info(fmt.Sprintf("Cannot read user file %q: %v. Skipping.", filename, err))
+			log.FromContext(ctx).Info(fmt.Sprintf("Cannot read user file %q: %v. Skipping.", filename, err))
 			continue
 		}
 
-		scanner := bufio.NewScanner(bytes.NewReader(usersFile))
-
-		i := 0
-		for scanner.Scan() {
-			i++
-
-			line := scanner.Text()
-			tokens := strings.Split(line, ":")
-			if len(tokens) != 2 && len(tokens) != 3 {
-				logger.Info(fmt.Sprintf("Skipping malformatted line number %d in file %q", i, filename))
-				continue
-			}
-			users = append(users, tokens[0])
-		}
+		users[file.Name()] = usersFile
 	}
 
 	return users, nil
+}
+
+func loadUsersFile(ctx context.Context, filename string, usersFile []byte) []string {
+	scanner := bufio.NewScanner(bytes.NewReader(usersFile))
+
+	users := []string{}
+
+	i := 0
+	for scanner.Scan() {
+		i++
+
+		line := scanner.Text()
+		tokens := strings.Split(line, ":")
+		if len(tokens) != 2 && len(tokens) != 3 {
+			log.FromContext(ctx).Info(fmt.Sprintf("Skipping malformatted line number %d in file %q", i, filename))
+			continue
+		}
+		users = append(users, tokens[0])
+	}
+
+	return users
 }
 
 // normalizeSuperusers de-duplicates and sorts the superusers
@@ -239,4 +224,80 @@ func mapConvertibleTo[T any](logger logr.Logger, array []any) []T {
 	}
 
 	return converted
+}
+
+type Syncer struct {
+	Client *rpadmin.AdminAPI
+}
+
+func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) error {
+	logger := log.FromContext(ctx)
+
+	s.maybeMergeSuperusers(ctx, desired, usersTXT)
+
+	current, err := s.Client.Config(ctx, false)
+	if err != nil {
+		return err
+	}
+
+	var added []string
+	var changed []string
+	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
+	removed := []string{}
+
+	// TODO: Uncomment this block to make cluster config syncing fully
+	// declarative. The historical behavior has not been, so this is
+	// technically a breaking change.
+	// for key := range current {
+	// 	if _, ok := desired[key]; !ok {
+	// 		removed = append(removed, key)
+	// 	}
+	// }
+
+	for key, value := range desired {
+		if currentValue, ok := current[key]; !ok {
+			added = append(added, key)
+		} else if value != currentValue {
+			changed = append(changed, key)
+		}
+	}
+
+	logger.Info("updating cluster config", "added", added, "removed", removed, "changed", changed, "config", desired)
+
+	result, err := s.Client.PatchClusterConfig(ctx, desired, removed)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("updated cluster configuration", "config_version", result.ConfigVersion)
+
+	return nil
+}
+
+func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, usersTXT map[string][]byte) {
+	logger := log.FromContext(ctx)
+
+	if len(usersTXT) == 0 {
+		logger.Info("usersTXT not specified or empty. Skipping superusers merge.")
+	}
+
+	superusers := []string{}
+	for name, content := range usersTXT {
+		superusers = append(superusers, loadUsersFile(ctx, name, content)...)
+	}
+
+	superusersConfig, ok := config[superusersEntry]
+	if !ok {
+		// we have no superusers configuration, so don't do anything
+		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
+		return
+	}
+
+	superusersAny, ok := superusersConfig.([]any)
+	if !ok {
+		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
+		return
+	}
+
+	config[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
 }

@@ -11,6 +11,7 @@ status:
       reason: ArtifactFailed
       status: "False"
       type: Ready
+    - type: ClusterConfigSynced
   helmRelease: redpanda-rollback
   helmReleaseReady: false
   helmRepository: redpanda-repository

@@ -13,6 +13,7 @@ status:
       reason: RedpandaClusterDeployed
       status: "True"
       type: Ready
+    - type: ClusterConfigSynced
   helmRelease: redpanda-node-deleted
   helmReleaseReady: true
   helmRepository: redpanda-repository
