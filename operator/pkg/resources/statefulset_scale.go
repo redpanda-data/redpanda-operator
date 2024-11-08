@@ -172,7 +172,7 @@ func (r *StatefulSetResource) getDecommissioningPod(ctx context.Context, brokerI
 	}
 
 	for _, pod := range podList.Items {
-		if pod.Annotations[labels.PodLabelNodeIDKey] == strconv.Itoa(int(brokerID)) {
+		if pod.Annotations[labels.PodNodeIDKey] == strconv.Itoa(int(brokerID)) {
 			return &pod, nil
 		}
 	}
