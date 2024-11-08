@@ -25,11 +25,10 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 func GetNodePools(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
