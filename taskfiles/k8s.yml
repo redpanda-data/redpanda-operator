@@ -27,6 +27,21 @@ tasks:
           output:crd:artifacts:config=config/crd/bases \
           output:rbac:artifacts:config=config/rbac/bases/operator
       - |
+        controller-gen \
+          paths='./internal/controller/redpanda/...' \
+          rbac:roleName=v2-manager-role \
+          output:rbac:artifacts:config=config/rbac/v2-manager-role
+      - |
+        controller-gen \
+          paths='./internal/controller/vectorized/...' \
+          rbac:roleName=v1-manager-role \
+          output:rbac:artifacts:config=config/rbac/v1-manager-role
+      - |
+        controller-gen \
+          paths='./cmd/run/...' \
+          rbac:roleName=leader-election-role \
+          output:rbac:artifacts:config=config/rbac/leader-election-role
+      - |
         applyconfiguration-gen \
         --go-header-file "../licenses/boilerplate.go.txt" \
         --output-dir "api/applyconfiguration" \
