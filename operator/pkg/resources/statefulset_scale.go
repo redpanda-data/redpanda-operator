@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strconv"
 
 	"github.com/fluxcd/pkg/runtime/logger"
@@ -165,22 +164,20 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 
 // getDecommissioningPod finds the pod that belongs to *THIS* StatefulSet. If none is found - nil,nil is returned.
 // This may be the case, if the pod belongs to a different STS.
-func (r *StatefulSetResource) getDecommissioningPod(ctx context.Context, brokerID *int32) (*corev1.Pod, error) {
-	var brokerPod *corev1.Pod
+func (r *StatefulSetResource) getDecommissioningPod(ctx context.Context, brokerID int32) (*corev1.Pod, error) {
 	// Get all pods of *THIS* nodePool
 	podList, err := r.getPodList(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// Filter out those where NodeID != DecomNodeID.
-	podList.Items = slices.DeleteFunc(podList.Items, func(pod corev1.Pod) bool {
-		return pod.Annotations[labels.PodLabelNodeIDKey] != strconv.Itoa(int(*brokerID))
-	})
-	if len(podList.Items) > 0 {
-		brokerPod = &podList.Items[0]
+
+	for _, pod := range podList.Items {
+		if pod.Annotations[labels.PodLabelNodeIDKey] != strconv.Itoa(int(brokerID)) {
+			return &pod, nil
+		}
 	}
 
-	return brokerPod, nil
+	return nil, nil
 }
 
 func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, l logr.Logger) error {
@@ -190,7 +187,7 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 		return nil
 	}
 
-	brokerPod, err := r.getDecommissioningPod(ctx, brokerID)
+	brokerPod, err := r.getDecommissioningPod(ctx, *brokerID)
 	if err != nil {
 		return fmt.Errorf("failed to get decom pod: %w", err)
 	}
@@ -257,7 +254,7 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 	log := l.WithName("handleDecommission").WithValues("node_id", *brokerID)
 	log.Info("handling broker decommissioning")
 
-	decomPod, err := r.getDecommissioningPod(ctx, brokerID)
+	decomPod, err := r.getDecommissioningPod(ctx, *brokerID)
 	if err != nil {
 		return fmt.Errorf("failed to get decom pod: %w", err)
 	}
