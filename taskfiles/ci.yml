@@ -22,6 +22,7 @@ tasks:
 
   kuttl-artifact-upload:
     desc: uploads artifact when kuttl fails
+    dir: operator
     summary: |
       kuttl-artifact-upload should be called in `defer` with EXIT_CODE.
       https://taskfile.dev/usage/#doing-task-cleanup-with-defer
