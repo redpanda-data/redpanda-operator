@@ -8,6 +8,12 @@
 // by the Apache License, Version 2.0
 
 // Package nodepools exists currently because it is required to be a separate due to import conflicts.
+// Since nearly every package depends on vectorizedv1alpha1, we have to move
+// some functions out of it, because vectorizedv1alpha1 can not import anything
+// that depends on it (and since almost everything depends on
+// vectorizedv1alpha1, it can basically import almost nothing)
+//
+// Practically, vectorizedv1alpha1 -> pkg/labels is impossible, so we move these functions out of vectorizedv1alpha1.
 package nodepools
 
 import (
