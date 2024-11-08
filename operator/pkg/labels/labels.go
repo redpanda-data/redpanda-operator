@@ -30,7 +30,7 @@ const (
 	PartOfKey = "app.kubernetes.io/part-of"
 	// The tool being used to manage the operation of an application
 	ManagedByKey = "app.kubernetes.io/managed-by"
-	// NodePoolKey is used to document the node pool associated with the StatefulSet.
+	// NodePoolKey is used to denote the node pool associated with the StatefulSet.
 	NodePoolKey = "cluster.redpanda.com/nodepool"
 
 	// PodNodeIDKey is used to store the Redpanda NodeID of this pod.
