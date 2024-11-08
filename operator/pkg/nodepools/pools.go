@@ -31,6 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// GetNodePools gets all NodePoolSpecs within a cluster.
+// This also includes deleted node pools. These are removed from spec,
+// therefore a NodePoolSpec is synthesized by searching for existing StatefulSets.
+// To include information that a NodePool has been deleted, the NodePoolSpec is
+// wrapped into a type with an extra Deleted boolean.
 func GetNodePools(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
 	var nodePoolsWithDeleted []*vectorizedv1alpha1.NodePoolSpecWithDeleted
 
