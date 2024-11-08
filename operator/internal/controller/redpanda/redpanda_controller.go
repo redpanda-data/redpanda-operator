@@ -586,7 +586,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 
 			key := gvkKey{Key: client.ObjectKeyFromObject(obj), GVK: gvk}
 
-			isOwned := -1 != slices.IndexFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
+			isOwned := slices.ContainsFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
 				return owner.UID == rp.UID
 			})
 
