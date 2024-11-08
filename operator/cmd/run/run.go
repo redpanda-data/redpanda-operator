@@ -413,6 +413,7 @@ func Run(
 		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
 			Client:        mgr.GetClient(),
 			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),
+			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
 			return err

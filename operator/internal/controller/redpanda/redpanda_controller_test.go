@@ -61,9 +61,10 @@ func TestRedpandaController(t *testing.T) {
 type RedpandaControllerSuite struct {
 	suite.Suite
 
-	ctx    context.Context
-	env    *testenv.Env
-	client client.Client
+	ctx           context.Context
+	env           *testenv.Env
+	client        client.Client
+	clientFactory internalclient.ClientFactory
 }
 
 var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
@@ -192,8 +193,8 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 		SetDataDirOwnership:               &redpandav1alpha2.SetDataDirOwnership{ExtraVolumeMounts: extraVolumeMount},
 		SetTieredStorageCacheDirOwnership: &redpandav1alpha2.SetTieredStorageCacheDirOwnership{ExtraVolumeMounts: extraVolumeMount},
 		ExtraInitContainers: ptr.To(`- name: "test-init-container"
-  image: "mintel/docker-alpine-bash-curl-jq:latest"
-  command: [ "/bin/bash", "-c" ]
+  image: "alpine:latest"
+  command: [ "/bin/sh", "-c" ]
   volumeMounts:
   - name: test-extra-volume
     mountPath: /FAKE/LIFECYCLE
@@ -222,14 +223,83 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
 
 		if c.Name == "test-init-container" {
-			s.Equal(c.Command, []string{"/bin/bash", "-c"})
+			s.Equal(c.Command, []string{"/bin/sh", "-c"})
 			s.Equal(c.Args, []string{"set -xe\necho \"Hello World!\""})
-			s.Equal(c.Image, "mintel/docker-alpine-bash-curl-jq:latest")
+			s.Equal(c.Image, "alpine:latest")
 		}
 	}
 	for _, c := range sts.Spec.Template.Spec.Containers {
 		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
 	}
+
+	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestManagedDecommission() {
+	rp := s.minimalRP(false)
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+
+	s.applyAndWait(rp)
+
+	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+	s.Require().NoError(err)
+
+	beforeBrokers, err := adminAPI.Brokers(s.ctx)
+	s.Require().NoError(err)
+
+	rp.Annotations = map[string]string{
+		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
+	}
+
+	s.applyAndWaitFor(rp, func(o client.Object) bool {
+		rp := o.(*redpandav1alpha2.Redpanda)
+
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == "ManagedDecommission" {
+				return cond.Status == metav1.ConditionTrue
+			}
+		}
+		return false
+	})
+
+	s.waitFor(rp, func(o client.Object) bool {
+		rp := o.(*redpandav1alpha2.Redpanda)
+
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == "ManagedDecommission" {
+				return false
+			}
+		}
+		return true
+	})
+
+	afterBrokers, err := adminAPI.Brokers(s.ctx)
+	s.Require().NoError(err)
+
+	// After performing a managed decommission we should observe a complete
+	// replacement of brokers.
+	beforeIDs := map[int]struct{}{}
+	for _, broker := range beforeBrokers {
+		beforeIDs[broker.NodeID] = struct{}{}
+	}
+
+	afterIDs := map[int]struct{}{}
+	for _, broker := range afterBrokers {
+		afterIDs[broker.NodeID] = struct{}{}
+	}
+
+	for id := range beforeIDs {
+		s.NotContainsf(afterIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
+	}
+
+	for id := range afterIDs {
+		s.NotContainsf(beforeIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
+	}
+
+	s.Len(beforeIDs, 3)
+	s.Len(afterIDs, 3)
+
+	s.deleteAndWait(rp)
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {
@@ -268,15 +338,23 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		}
 
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		// TODO should probably run other reconcilers here.
-		return (&redpanda.RedpandaReconciler{
+		if err := (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: clientFactory,
-		}).SetupWithManager(s.ctx, mgr)
+			ClientFactory: s.clientFactory,
+		}).SetupWithManager(s.ctx, mgr); err != nil {
+			return err
+		}
+
+		return (&redpanda.ManagedDecommissionReconciler{
+			Client:        mgr.GetClient(),
+			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory: s.clientFactory,
+		}).SetupWithManager(mgr)
 	})
 }
 
@@ -291,21 +369,42 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: name, // GenerateName doesn't play nice with SSA.
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ChartRef: redpandav1alpha2.ChartRef{
 				UseFlux: ptr.To(useFlux),
 			},
+			// Any empty structs are to make setting them more ergonomic
+			// without having to worry about nil pointers.
 			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Config: &redpandav1alpha2.Config{},
+				External: &redpandav1alpha2.External{
+					// Disable NodePort creation to stop broken tests from blocking others due to port conflicts.
+					Enabled: ptr.To(false),
+				},
 				Image: &redpandav1alpha2.RedpandaImage{
-					Repository: ptr.To("redpandadata/redpanda"), // Override the default to make use of the docker-io image cache.
+					Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
 				},
 				Console: &redpandav1alpha2.RedpandaConsole{
 					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
 				},
 				Statefulset: &redpandav1alpha2.Statefulset{
 					Replicas: ptr.To(1), // Speed up tests ever so slightly.
+					PodAntiAffinity: &redpandav1alpha2.PodAntiAffinity{
+						// Disable the default "hard" affinity so we can
+						// schedule multiple redpanda Pods on a single
+						// kubernetes node. Useful for tests that require > 3
+						// brokers.
+						Type: ptr.To("soft"),
+					},
+				},
+				Resources: &redpandav1alpha2.Resources{
+					CPU: &redpandav1alpha2.CPU{
+						// Inform redpanda/seastar that it's not going to get
+						// all the resources it's promised.
+						Overprovisioned: ptr.To(true),
+					},
 				},
 			},
 		},
@@ -339,6 +438,24 @@ func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
 }
 
 func (s *RedpandaControllerSuite) applyAndWait(obj client.Object) {
+	s.applyAndWaitFor(obj, func(o client.Object) bool {
+		switch obj := obj.(type) {
+		case *redpandav1alpha2.Redpanda:
+			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
+			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+			return upToDate && ready
+
+		case *corev1.Secret, *corev1.ConfigMap:
+			return true
+
+		default:
+			s.T().Fatalf("unhandled object %T in applyAndWait", obj)
+			panic("unreachable")
+		}
+	})
+}
+
+func (s *RedpandaControllerSuite) applyAndWaitFor(obj client.Object, cond func(client.Object) bool) {
 	gvk, err := s.client.GroupVersionKindFor(obj)
 	s.NoError(err)
 
@@ -352,15 +469,23 @@ func (s *RedpandaControllerSuite) applyAndWait(obj client.Object) {
 			return false, err
 		}
 
-		switch obj := obj.(type) {
-		case *redpandav1alpha2.Redpanda:
-			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
-			return upToDate && ready, nil
+		if cond(obj) {
+			return true, nil
+		}
 
-		default:
-			s.Fail("unhandled object %T in applyAndWait", obj)
+		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
+		return false, nil
+	}))
+}
 
+func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Object) bool) {
+	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+		if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+			return false, err
+		}
+
+		if cond(obj) {
+			return true, nil
 		}
 
 		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())

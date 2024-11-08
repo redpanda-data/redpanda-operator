@@ -1,6 +1,0 @@
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: Redpanda
-metadata:
-  name: managed-decommission
-  annotations:
-    operator.redpanda.com/managed-decommission: "2999-12-31T00:00:00Z"
