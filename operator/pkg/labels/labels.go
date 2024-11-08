@@ -33,8 +33,8 @@ const (
 	// NodePoolKey is used to document the node pool associated with the StatefulSet.
 	NodePoolKey = "cluster.redpanda.com/nodepool"
 
-	// PodLabelNodeIDKey
-	PodLabelNodeIDKey = "operator.redpanda.com/node-id"
+	// PodNodeIDKey is used to store the Redpanda NodeID of this pod.
+	PodNodeIDKey = "operator.redpanda.com/node-id"
 
 	nameKeyRedpandaVal   = "redpanda"
 	nameKeyConsoleVal    = "redpanda-console"
