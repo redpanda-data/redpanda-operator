@@ -46,7 +46,7 @@ const (
 
 var ErrZeroReplicas = errors.New("redpanda replicas is zero")
 
-// +kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=redpandas,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=update;patch;delete;get;list;watch;
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods/status,verbs=update;patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;update;patch;delete;watch
