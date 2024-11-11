@@ -100,7 +100,7 @@ func TestClientFactory(t *testing.T) {
 
 	restcfg := cluster.RESTConfig()
 
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.GetV2Scheme(), WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
+	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
 	require.NoError(t, err)
 
 	helmClient, err := helm.New(helm.Options{

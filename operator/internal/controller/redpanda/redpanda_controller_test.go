@@ -426,7 +426,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	// rest config given to the manager.
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
-		Scheme: controller.GetV2Scheme(),
+		Scheme: controller.UnifiedScheme,
 		CRDs:   crds.All(),
 		Logger: testr.New(t),
 	})

@@ -25,12 +25,12 @@ import (
 )
 
 var (
-	V1SchemeFns = []func(s *runtime.Scheme) error{
+	v1SchemeFns = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		cmapiv1.AddToScheme,
 		vectorizedv1alpha1.AddToScheme,
 	}
-	V2SchemeFns = []func(s *runtime.Scheme) error{
+	v2SchemeFns = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		cmapiv1.AddToScheme,
 		helmControllerAPIv2beta1.AddToScheme,
@@ -41,24 +41,24 @@ var (
 		sourceControllerAPIv1beta2.AddToScheme,
 		monitoringv1.AddToScheme,
 	}
+
+	V1Scheme      *runtime.Scheme
+	V2Scheme      *runtime.Scheme
+	UnifiedScheme *runtime.Scheme
 )
 
-func GetV1Scheme() *runtime.Scheme {
-	scheme := runtime.NewScheme()
+func init() {
+	V1Scheme = runtime.NewScheme()
+	V2Scheme = runtime.NewScheme()
+	UnifiedScheme = runtime.NewScheme()
 
-	for _, fn := range V1SchemeFns {
-		utilruntime.Must(fn(scheme))
+	for _, fn := range v1SchemeFns {
+		utilruntime.Must(fn(V1Scheme))
+		utilruntime.Must(fn(UnifiedScheme))
 	}
 
-	return scheme
-}
-
-func GetV2Scheme() *runtime.Scheme {
-	scheme := runtime.NewScheme()
-
-	for _, fn := range V2SchemeFns {
-		utilruntime.Must(fn(scheme))
+	for _, fn := range v2SchemeFns {
+		utilruntime.Must(fn(V2Scheme))
+		utilruntime.Must(fn(UnifiedScheme))
 	}
-
-	return scheme
 }

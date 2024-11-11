@@ -55,6 +55,8 @@ func (m *mockKafkaAdmin) DeleteACLs(
 
 //nolint:funlen // Test using testEnv needs to be long
 func TestDoNotValidateWhenDeleted(t *testing.T) {
+	scheme := controller.UnifiedScheme
+
 	testEnv := &testutils.RedpandaTestEnv{}
 
 	cfg, err := testEnv.StartRedpandaTestEnv(true)
@@ -88,7 +90,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 		CertDir: webhookInstallOptions.LocalServingCertDir,
 	})
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         controller.GetV2Scheme(),
+		Scheme:         scheme,
 		WebhookServer:  webhookServer,
 		LeaderElection: false,
 		Metrics: metricsserver.Options{
@@ -121,13 +123,13 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 	hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 		Handler: &redpanda.ConsoleDefaulter{
 			Client:  mgr.GetClient(),
-			Decoder: admission.NewDecoder(controller.GetV2Scheme()),
+			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
 	})
 	hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 		Handler: &redpanda.ConsoleValidator{
 			Client:  mgr.GetClient(),
-			Decoder: admission.NewDecoder(controller.GetV2Scheme()),
+			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
 	})
 
@@ -154,7 +156,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 
 	conn.Close()
 
-	c, err := client.New(testEnv.Config, client.Options{Scheme: controller.GetV2Scheme()})
+	c, err := client.New(testEnv.Config, client.Options{Scheme: mgr.GetScheme()})
 	require.NoError(t, err)
 
 	one := int32(1)

@@ -28,7 +28,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -60,8 +59,6 @@ const (
 	AllControllers         = RedpandaController("all")
 	NodeController         = RedpandaController("nodeWatcher")
 	DecommissionController = RedpandaController("decommission")
-
-	OperatorUnknown = OperatorState("")
 
 	OperatorV1Mode          = OperatorState("Clustered-v1")
 	OperatorV2Mode          = OperatorState("Namespaced-v2")
@@ -226,7 +223,7 @@ func Run(
 	}
 
 	// init running state values if we are not in operator mode
-	operatorRunningState := OperatorUnknown
+	var operatorRunningState OperatorState
 	if namespace != "" {
 		operatorRunningState = NamespaceControllerMode
 	}
@@ -239,21 +236,18 @@ func Run(
 		}
 	}
 
-	var err error
-	var mgr manager.Manager
+	scheme := controller.UnifiedScheme
+	mgrOptions.Scheme = scheme
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
+	if err != nil {
+		setupLog.Error(err, "Unable to start manager")
+		return err
+	}
 
 	// Now we start different processes depending on state
 	switch operatorRunningState {
 	case OperatorV1Mode:
-		scheme := controller.GetV1Scheme()
-		mgrOptions.Scheme = scheme
-
-		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
-		if err != nil {
-			setupLog.Error(err, "Unable to start manager")
-			return err
-		}
-
 		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
 
 		adminAPIClientFactory := adminutils.CachedAdminAPIClientFactory(adminutils.NewInternalAdminAPI)
@@ -349,15 +343,6 @@ func Run(
 			})
 		}
 	case OperatorV2Mode:
-		scheme := controller.GetV2Scheme()
-		mgrOptions.Scheme = scheme
-
-		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
-		if err != nil {
-			setupLog.Error(err, "Unable to start manager")
-			return err
-		}
-
 		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
 
 		// if we enable these controllers then run them, otherwise, do not
@@ -443,15 +428,6 @@ func Run(
 		}
 
 	case NamespaceControllerMode:
-		scheme := controller.GetV2Scheme()
-		mgrOptions.Scheme = scheme
-
-		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
-		if err != nil {
-			setupLog.Error(err, "Unable to start manager")
-			return err
-		}
-
 		ctrl.Log.Info("running as a namespace controller", "mode", NamespaceControllerMode, "namespace", namespace)
 		if runThisController(NodeController, additionalControllers) {
 			if err = (&redpandacontrollers.RedpandaNodePVCReconciler{
