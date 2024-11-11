@@ -49,20 +49,23 @@ func (s *Schema) GetClusterSource() *ClusterSource {
 }
 
 // SchemaType specifies the type of the given schema.
-// +kubebuilder:validation:Enum=avro;protobuf
+// +kubebuilder:validation:Enum=avro;protobuf;json
 type SchemaType string
 
 const (
 	SchemaTypeAvro     SchemaType = "avro"
+	SchemaTypeJSON     SchemaType = "json"
 	SchemaTypeProtobuf SchemaType = "protobuf"
 )
 
 var (
 	schemaTypesFromKafka = map[sr.SchemaType]SchemaType{
+		sr.TypeJSON:     SchemaTypeJSON,
 		sr.TypeAvro:     SchemaTypeAvro,
 		sr.TypeProtobuf: SchemaTypeProtobuf,
 	}
 	schemaTypesToKafka = map[SchemaType]sr.SchemaType{
+		SchemaTypeJSON:     sr.TypeJSON,
 		SchemaTypeAvro:     sr.TypeAvro,
 		SchemaTypeProtobuf: sr.TypeProtobuf,
 	}
