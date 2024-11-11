@@ -1,0 +1,31 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+  - apiVersion: redpanda.vectorized.io/v1alpha1
+    kind: Cluster
+    name: nodepools-delete
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-0
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-1
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-2
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-3
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-4
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nodepools-delete-5
+    namespace: redpanda-system
