@@ -1,0 +1,32 @@
+# Actually delete nodepool, not just scale to zero.
+# WITHOUT scaling to zero first.
+# Ensure that it goes 3->2->1-0->gone.
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: nodepools-delete
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  nodePools:
+    - name: second
+      replicas: 3
+      resources:
+        requests:
+          cpu: "101m"
+          memory: 257Mi
+        limits:
+          cpu: "101m"
+          memory: 257Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+    adminApi:
+      - port: 9644
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
+  resources: {}
