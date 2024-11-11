@@ -21,15 +21,14 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/helm"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/redpanda-data/helm-charts/pkg/testutil"
-	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -101,11 +100,7 @@ func TestClientFactory(t *testing.T) {
 
 	restcfg := cluster.RESTConfig()
 
-	s := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(s))
-	require.NoError(t, redpandav1alpha2.AddToScheme(s))
-	require.NoError(t, redpandav1alpha1.AddToScheme(s))
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: s, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
+	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
 	require.NoError(t, err)
 
 	helmClient, err := helm.New(helm.Options{

@@ -19,20 +19,14 @@ import (
 	"testing"
 	"time"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	helmcontrollerv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-	helmcontrollerv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	fluxclient "github.com/fluxcd/pkg/runtime/client"
-	sourcecontrollerv1 "github.com/fluxcd/source-controller/api/v1"
-	sourcecontrollerv1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
-	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
@@ -48,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	goclientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -427,24 +420,13 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
 
-	scheme := runtime.NewScheme()
-	require.NoError(t, certmanagerv1.AddToScheme(scheme))
-	require.NoError(t, goclientscheme.AddToScheme(scheme))
-	require.NoError(t, helmcontrollerv2beta1.AddToScheme(scheme))
-	require.NoError(t, helmcontrollerv2beta2.AddToScheme(scheme))
-	require.NoError(t, monitoringv1.AddToScheme(scheme))
-	require.NoError(t, redpandav1alpha2.AddToScheme(scheme))
-	require.NoError(t, sourcecontrollerv1.AddToScheme(scheme))
-	require.NoError(t, sourcecontrollerv1beta1.AddToScheme(scheme))
-	require.NoError(t, sourcecontrollerv1beta2.AddToScheme(scheme))
-
 	// TODO SetupManager currently runs with admin permissions on the cluster.
 	// This will allow the operator's ClusterRole and Role to get out of date.
 	// Ideally, we should bind the declared permissions of the operator to the
 	// rest config given to the manager.
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
-		Scheme: scheme,
+		Scheme: controller.UnifiedScheme,
 		CRDs:   crds.All(),
 		Logger: testr.New(t),
 	})
