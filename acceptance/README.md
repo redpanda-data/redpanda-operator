@@ -4,18 +4,18 @@
 <!-- insert snippet -->
 ### Feature: Schema CRDs
 
-|                  SCENARIO                  | EKS | AKS | GKE | K3D |
-|--------------------------------------------|-----|-----|-----|-----|
-| Managing customer profile schema (Avro)    |     |     |     | ✅  |
-| Managing product catalog schema (Protobuf) |     |     |     | ✅  |
-| Managing order event schema (JSON)         |     |     |     | ✅  |
+|                 SCENARIO                 | EKS | AKS | GKE | K3D |
+|------------------------------------------|-----|-----|-----|-----|
+| Manage product catalog schema (Protobuf) |     |     |     | ✅  |
+| Manage order event schema (JSON)         |     |     |     | ✅  |
+| Manage customer profile schema (Avro)    |     |     |     | ✅  |
 
 
 ### Feature: Topic CRDs
 
-|    SCENARIO     | EKS | AKS | GKE | K3D |
-|-----------------|-----|-----|-----|-----|
-| Managing Topics |     |     |     | ✅  |
+|   SCENARIO    | EKS | AKS | GKE | K3D |
+|---------------|-----|-----|-----|-----|
+| Manage topics |     |     |     | ✅  |
 
 
 ### Feature: User CRDs

@@ -4,7 +4,7 @@ Feature: Schema CRDs
     Given cluster "basic" is available
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Managing customer profile schema (Avro)
+  Scenario: Manage customer profile schema (Avro)
     Given there is no schema "customer-profile" in cluster "basic"
     When I apply Kubernetes manifest:
     """
@@ -38,7 +38,7 @@ Feature: Schema CRDs
     Then I should be able to check compatibility against "customer-profile" in cluster "basic"
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Managing product catalog schema (Protobuf)
+  Scenario: Manage product catalog schema (Protobuf)
     Given there is no schema "product-catalog" in cluster "basic"
     When I apply Kubernetes manifest:
     """
@@ -71,7 +71,7 @@ Feature: Schema CRDs
     Then I should be able to check compatibility against "product-catalog" in cluster "basic"
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Managing order event schema (JSON)
+  Scenario: Manage order event schema (JSON)
     Given there is no schema "order-event" in cluster "basic"
     When I apply Kubernetes manifest:
     """
