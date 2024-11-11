@@ -573,6 +573,7 @@ spec:
                 enum:
                 - avro
                 - protobuf
+                - json
                 type: string
               text:
                 description: Text is the actual unescaped text of a schema.
