@@ -2,8 +2,8 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 commands:
 - script: |
-    kubectl wait --for=condition=ClusterConfigured=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
-    kubectl wait --for=condition=OperatorQuiescent=True cluster/up-img-admin-tls --timeout 300s --namespace $NAMESPACE
+    kubectl wait --for=condition=ClusterConfigured=True cluster/nodepool-cluster --timeout 300s --namespace $NAMESPACE
+    kubectl wait --for=condition=OperatorQuiescent=True cluster/nodepool-cluster --timeout 300s --namespace $NAMESPACE
 ---
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
