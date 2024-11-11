@@ -63,12 +63,6 @@ type TopicReconciler struct {
 	kuberecorder.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=topics,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=topics/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=topics/finalizers,verbs=update
-
-// For cluster scoped operator
-
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics/finalizers,verbs=update

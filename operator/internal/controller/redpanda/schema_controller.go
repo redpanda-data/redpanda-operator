@@ -24,12 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=schemas,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=schemas/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,namespace=default,resources=schemas/finalizers,verbs=update
-
-// For cluster scoped operator
-
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=schemas,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=schemas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=schemas/finalizers,verbs=update

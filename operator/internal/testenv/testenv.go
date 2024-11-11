@@ -11,6 +11,7 @@ package testenv
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -128,13 +129,23 @@ func (e *Env) Client() client.Client {
 	return e.wrapClient(e.client())
 }
 
-func (e *Env) SetupManager(fn func(ctrl.Manager) error) {
+func (e *Env) Namespace() string {
+	return e.namespace.Name
+}
+
+func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
+	// Bind the managers base config to a ServiceAccount via the "Impersonate"
+	// feature. This ensures that any permissions/RBAC issues get caught by
+	// theses tests as e.config has Admin permissions.
+	config := rest.CopyConfig(e.config)
+	config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
+
 	// TODO: Webhooks likely aren't going to place nicely with this method of
 	// testing. The Kube API server will have to dial out of the cluster to the
 	// local machine which could prove to be difficult across all docker/docker
 	// in docker environments.
 	// See also https://k3d.io/v5.4.6/faq/faq/?h=host#how-to-access-services-like-a-database-running-on-my-docker-host-machine
-	manager, err := ctrl.NewManager(e.config, ctrl.Options{
+	manager, err := ctrl.NewManager(config, ctrl.Options{
 		Cache: cache.Options{
 			// Limit this manager to only interacting with objects within our
 			// namespace.
@@ -163,7 +174,10 @@ func (e *Env) SetupManager(fn func(ctrl.Manager) error) {
 	require.NoError(e.t, fn(manager))
 
 	e.group.Go(func() error {
-		return manager.Start(e.ctx)
+		if err := manager.Start(e.ctx); err != nil && e.ctx.Err() != nil {
+			return err
+		}
+		return nil
 	})
 
 	// No Without leader election enabled, this is just a wait for the manager
@@ -180,13 +194,20 @@ func (e *Env) client() client.Client {
 }
 
 func (e *Env) wrapClient(c client.Client) client.Client {
+	gvk, err := c.GroupVersionKindFor(e.namespace)
+	if err != nil {
+		panic(err)
+	}
+
+	apiVersion, kind := gvk.ToAPIVersionAndKind()
+
 	// Bind all operations to this namespace. We'll delete it at the end of this test.
 	c = client.NewNamespacedClient(c, e.namespace.Name)
 	// For any non-namespaced resources, we'll attach an OwnerReference to our
 	// Namespace to ensure they get cleaned up as well.
 	c = newOwnedClient(c, metav1.OwnerReference{
-		APIVersion:         e.namespace.GetObjectKind().GroupVersionKind().GroupVersion().String(),
-		Kind:               e.namespace.GetObjectKind().GroupVersionKind().Kind,
+		APIVersion:         apiVersion,
+		Kind:               kind,
 		UID:                e.namespace.UID,
 		Name:               e.namespace.Name,
 		BlockOwnerDeletion: ptr.To(true),
@@ -195,22 +216,33 @@ func (e *Env) wrapClient(c client.Client) client.Client {
 }
 
 func (e *Env) shutdown() {
-	if !testutil.Retain() {
-		// NB: Namespace deletion MUST happen before calling e.cancel.
-		// Otherwise we risk stopping controllers that would remove finalizers
-		// from various resources in the cluster which would hang the namespace
-		// deletion forever.
-		c := e.client()
+	// Our shutdown logic is unfortunately complicated. The manager is using a
+	// ServiceAccount and roles that will be GC'd by the Namespace deletion due
+	// to the OwnedClient wrapper but the Namespace deletion could be blocked
+	// by finalizers that would need to be removed by the manager itself.
+	//
+	// For now, we'll assume that tests have cleaned all resources associated
+	// with the manager and shutdown the manager before cleaning out the
+	// namespace.
 
-		assert.NoError(e.t, c.Delete(e.ctx, e.namespace, client.PropagationPolicy(metav1.DeletePropagationForeground)))
-
-		// Poll until the namespace is fully deleted.
-		assert.NoError(e.t, wait.PollUntilContextTimeout(e.ctx, time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
-			err = c.Get(ctx, client.ObjectKeyFromObject(e.namespace), e.namespace)
-			return apierrors.IsNotFound(err), client.IgnoreNotFound(err)
-		}))
-	}
-
+	// Shutdown the manger.
 	e.cancel()
 	assert.NoError(e.t, e.group.Wait())
+
+	// Clean up our namespace.
+	if !testutil.Retain() {
+		// Mint a new ctx for NS clean up as e.ctx has been canceled.
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
+		c := e.client()
+
+		assert.NoError(e.t, c.Delete(ctx, e.namespace, client.PropagationPolicy(metav1.DeletePropagationForeground)))
+
+		// Poll until the namespace is fully deleted.
+		assert.NoErrorf(e.t, wait.PollUntilContextTimeout(ctx, time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+			err = c.Get(ctx, client.ObjectKeyFromObject(e.namespace), e.namespace)
+			return apierrors.IsNotFound(err), client.IgnoreNotFound(err)
+		}), "stalled waiting for Namespace %q to finish deleting", e.namespace.Name)
+	}
 }
