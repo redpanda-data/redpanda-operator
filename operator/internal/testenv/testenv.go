@@ -11,6 +11,7 @@ package testenv
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -128,13 +129,23 @@ func (e *Env) Client() client.Client {
 	return e.wrapClient(e.client())
 }
 
-func (e *Env) SetupManager(fn func(ctrl.Manager) error) {
+func (e *Env) Namespace() string {
+	return e.namespace.Name
+}
+
+func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
+	// Bind the managers base config to a ServiceAccount via the "Impersonate"
+	// feature. This ensures that any permissions/RBAC issues get caught by
+	// theses tests as e.config has Admin permissions.
+	config := rest.CopyConfig(e.config)
+	config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
+
 	// TODO: Webhooks likely aren't going to place nicely with this method of
 	// testing. The Kube API server will have to dial out of the cluster to the
 	// local machine which could prove to be difficult across all docker/docker
 	// in docker environments.
 	// See also https://k3d.io/v5.4.6/faq/faq/?h=host#how-to-access-services-like-a-database-running-on-my-docker-host-machine
-	manager, err := ctrl.NewManager(e.config, ctrl.Options{
+	manager, err := ctrl.NewManager(config, ctrl.Options{
 		Cache: cache.Options{
 			// Limit this manager to only interacting with objects within our
 			// namespace.
@@ -180,13 +191,20 @@ func (e *Env) client() client.Client {
 }
 
 func (e *Env) wrapClient(c client.Client) client.Client {
+	gvk, err := c.GroupVersionKindFor(e.namespace)
+	if err != nil {
+		panic(err)
+	}
+
+	apiVersion, kind := gvk.ToAPIVersionAndKind()
+
 	// Bind all operations to this namespace. We'll delete it at the end of this test.
 	c = client.NewNamespacedClient(c, e.namespace.Name)
 	// For any non-namespaced resources, we'll attach an OwnerReference to our
 	// Namespace to ensure they get cleaned up as well.
 	c = newOwnedClient(c, metav1.OwnerReference{
-		APIVersion:         e.namespace.GetObjectKind().GroupVersionKind().GroupVersion().String(),
-		Kind:               e.namespace.GetObjectKind().GroupVersionKind().Kind,
+		APIVersion:         apiVersion,
+		Kind:               kind,
 		UID:                e.namespace.UID,
 		Name:               e.namespace.Name,
 		BlockOwnerDeletion: ptr.To(true),

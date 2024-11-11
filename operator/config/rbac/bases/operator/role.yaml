@@ -155,6 +155,7 @@ rules:
   - clusterroles
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -394,6 +395,7 @@ rules:
 - apiGroups:
   - monitoring.coreos.com
   resources:
+  - podmonitors
   - servicemonitors
   verbs:
   - create

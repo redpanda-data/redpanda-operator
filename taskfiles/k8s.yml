@@ -31,6 +31,9 @@ tasks:
           paths='./internal/controller/redpanda/...' \
           rbac:roleName=v2-manager-role \
           output:rbac:artifacts:config=config/rbac/v2-manager-role
+      # controller-gen won't output to multiple directories and we need a copy
+      # of resources for tests, so cp it is.
+      - cp ./config/rbac/v2-manager-role/*.yaml ./internal/controller/redpanda/
       - |
         controller-gen \
           paths='./internal/controller/vectorized/...' \

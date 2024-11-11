@@ -11,9 +11,11 @@ package redpanda_test
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -36,6 +38,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +49,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// operatorRBAC is the ClusterRole and Role generated via controller-gen and
+// goembeded so it can be used for tests.
+//
+//go:embed role.yaml
+var operatorRBAC []byte
 
 // NB: This test setup is largely incompatible with webhooks. Though we might
 // be able to figure something freaky out.
@@ -65,7 +74,10 @@ type RedpandaControllerSuite struct {
 	clientFactory internalclient.ClientFactory
 }
 
-var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
+var (
+	_ suite.SetupAllSuite    = (*RedpandaControllerSuite)(nil)
+	_ suite.TearDownAllSuite = (*RedpandaControllerSuite)(nil)
+)
 
 // TestStableUIDAndGeneration asserts that UIDs, Generations, Labels, and
 // Annotations of all objects created by the controller are stable across flux
@@ -254,7 +266,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
 	}
 
-	s.applyAndWaitFor(rp, func(o client.Object) bool {
+	s.applyAndWaitFor(func(o client.Object) bool {
 		rp := o.(*redpandav1alpha2.Redpanda)
 
 		for _, cond := range rp.Status.Conditions {
@@ -263,7 +275,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 			}
 		}
 		return false
-	})
+	}, rp)
 
 	s.waitFor(rp, func(o client.Object) bool {
 		rp := o.(*redpandav1alpha2.Redpanda)
@@ -318,7 +330,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJson}
 		s.applyAndWait(rp)
-		s.applyAndWaitFor(rp, func(o client.Object) bool {
+		s.applyAndWaitFor(func(o client.Object) bool {
 			rp := o.(*redpandav1alpha2.Redpanda)
 			for _, cond := range rp.Status.Conditions {
 				if cond.Type == redpandav1alpha2.ClusterConfigSynced {
@@ -326,7 +338,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				}
 			}
 			return false
-		})
+		}, rp)
 	}
 	s.applyAndWait(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -426,14 +438,14 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	// rest config given to the manager.
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
-		Scheme: controller.UnifiedScheme,
+		Scheme: controller.V2Scheme,
 		CRDs:   crds.All(),
 		Logger: testr.New(t),
 	})
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
 		controllers := flux.NewFluxControllers(mgr, fluxclient.Options{}, fluxclient.KubeConfigOptions{})
 		for _, controller := range controllers {
 			if err := controller.SetupWithManager(s.ctx, mgr); err != nil {
@@ -462,18 +474,94 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	})
 }
 
-func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redpanda {
+func (s *RedpandaControllerSuite) TearDownSuite() {
+	// Due to a fun race condition in testenv, we need to clear out all the
+	// redpandas before we can let testenv shutdown. If we don't, the
+	// operator's ClusterRoles and Roles may get GC'd before all the Redpandas
+	// do which will prevent the operator from cleaning up said Redpandas.
+	var redpandas redpandav1alpha2.RedpandaList
+	s.NoError(s.env.Client().List(s.ctx, &redpandas))
+
+	for _, rp := range redpandas.Items {
+		s.deleteAndWait(&rp)
+	}
+}
+
+func (s *RedpandaControllerSuite) setupRBAC() string {
+	roles, err := kube.DecodeYAML(operatorRBAC, s.client.Scheme())
+	s.Require().NoError(err)
+
+	role := roles[1].(*rbacv1.Role)
+	clusterRole := roles[0].(*rbacv1.ClusterRole)
+
+	// Inject additional permissions required for running in testenv.
+	role.Rules = append(role.Rules, rbacv1.PolicyRule{
+		APIGroups: []string{""},
+		Resources: []string{"pods/portforward"},
+		Verbs:     []string{"*"},
+	})
+
+	name := "testenv-" + s.randString(6)
+
+	role.Name = name
+	role.Namespace = s.env.Namespace()
+	clusterRole.Name = name
+	clusterRole.Namespace = s.env.Namespace()
+
+	s.applyAndWait(roles...)
+	s.applyAndWait(
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		},
+		&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Subjects: []rbacv1.Subject{
+				{Kind: "ServiceAccount", Namespace: s.env.Namespace(), Name: name},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Role",
+				Name:     role.Name,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Subjects: []rbacv1.Subject{
+				{Kind: "ServiceAccount", Namespace: s.env.Namespace(), Name: name},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     clusterRole.Name,
+			},
+		},
+	)
+
+	return name
+}
+
+func (s *RedpandaControllerSuite) randString(length int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-	name := "rp-"
+	name := ""
 	for i := 0; i < 6; i++ {
 		//nolint:gosec // not meant to be a secure random string.
 		name += string(alphabet[rand.Intn(len(alphabet))])
 	}
 
+	return name
+}
+
+func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name, // GenerateName doesn't play nice with SSA.
+			Name: "rp-" + s.randString(6), // GenerateName doesn't play nice with SSA.
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ChartRef: redpandav1alpha2.ChartRef{
@@ -541,45 +629,50 @@ func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
 	}))
 }
 
-func (s *RedpandaControllerSuite) applyAndWait(obj client.Object) {
-	s.applyAndWaitFor(obj, func(o client.Object) bool {
+func (s *RedpandaControllerSuite) applyAndWait(objs ...client.Object) {
+	s.applyAndWaitFor(func(obj client.Object) bool {
 		switch obj := obj.(type) {
 		case *redpandav1alpha2.Redpanda:
 			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
 			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
 			return upToDate && ready
 
-		case *corev1.Secret, *corev1.ConfigMap:
+		case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
+			*rbacv1.ClusterRole, *rbacv1.Role, *rbacv1.RoleBinding, *rbacv1.ClusterRoleBinding:
 			return true
 
 		default:
 			s.T().Fatalf("unhandled object %T in applyAndWait", obj)
 			panic("unreachable")
 		}
-	})
+	}, objs...)
 }
 
-func (s *RedpandaControllerSuite) applyAndWaitFor(obj client.Object, cond func(client.Object) bool) {
-	gvk, err := s.client.GroupVersionKindFor(obj)
-	s.NoError(err)
+func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
+	for _, obj := range objs {
+		gvk, err := s.client.GroupVersionKindFor(obj)
+		s.NoError(err)
 
-	obj.SetManagedFields(nil)
-	obj.GetObjectKind().SetGroupVersionKind(gvk)
+		obj.SetManagedFields(nil)
+		obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-	s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+	}
 
-	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
-		if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
-			return false, err
-		}
+	for _, obj := range objs {
+		s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+			if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+				return false, err
+			}
 
-		if cond(obj) {
-			return true, nil
-		}
+			if cond(obj) {
+				return true, nil
+			}
 
-		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
-		return false, nil
-	}))
+			s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
+			return false, nil
+		}))
+	}
 }
 
 func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Object) bool) {
@@ -685,4 +778,60 @@ func TestPostInstallUpgradeJobIndex(t *testing.T) {
 	// Assert that index 0 is the envsubst container as that's what
 	// `clusterConfigfor` utilizes.
 	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
+}
+
+// TestControllerRBAC asserts that the declared Roles and ClusterRoles of the
+// RedpandaReconciler line up with all the resource types it needs to manage.
+func TestControllerRBAC(t *testing.T) {
+	scheme := controller.V2Scheme
+
+	expectedVerbs := []string{"create", "delete", "get", "list", "patch", "update", "watch"}
+
+	roles, err := kube.DecodeYAML(operatorRBAC, scheme)
+	require.NoError(t, err)
+
+	role := roles[1].(*rbacv1.Role)
+	clusterRole := roles[0].(*rbacv1.ClusterRole)
+
+	for _, typ := range redpandachart.Types() {
+		gkvs, _, err := scheme.ObjectKinds(typ)
+		require.NoError(t, err)
+
+		require.Len(t, gkvs, 1)
+		gvk := gkvs[0]
+
+		rules := role.Rules
+		if !isNamespaced(typ) {
+			rules = clusterRole.Rules
+		}
+
+		group := gvk.Group
+		kind := pluralize(gvk.Kind)
+
+		idx := slices.IndexFunc(rules, func(rule rbacv1.PolicyRule) bool {
+			return slices.Contains(rule.APIGroups, group) && slices.Contains(rule.Resources, kind)
+		})
+
+		require.NotEqual(t, -1, idx, "missing rules for %s %s", gvk.Group, kind)
+		require.EqualValues(t, expectedVerbs, rules[idx].Verbs, "incorrect verbs for %s %s", gvk.Group, kind)
+	}
+}
+
+func isNamespaced(obj client.Object) bool {
+	switch obj.(type) {
+	case *corev1.Namespace, *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
+		return false
+	default:
+		return true
+	}
+}
+
+func pluralize(kind string) string {
+	switch kind[len(kind)-1] {
+	case 's':
+		return strings.ToLower(kind) + "es"
+
+	default:
+		return strings.ToLower(kind) + "s"
+	}
 }
