@@ -9,7 +9,7 @@ Feature: Topic CRDs
     When I apply Kubernetes manifest:
     """
 # tag::basic-topic-example[]
-# In this example manifest, a topic called "topic1" is created in a cluster called "basic". It has a replication factor of 1 and is distributed across a single partition.
+    # In this example manifest, a topic called "topic1" is created in a cluster called "basic". It has a replication factor of 1 and is distributed across a single partition.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Topic
