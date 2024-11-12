@@ -4,7 +4,7 @@ Feature: Topic CRDs
     Given cluster "basic" is available
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Managing Topics
+  Scenario: Manage topics
     Given there is no topic "topic1" in cluster "basic"
     When I apply Kubernetes manifest:
     """
