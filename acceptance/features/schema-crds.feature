@@ -9,8 +9,8 @@ Feature: Schema CRDs
     When I apply Kubernetes manifest:
     """
 # tag::customer-profile-avro-schema-manifest[]
-# This manifest creates an Avro schema named "customer-profile" in the "basic" cluster.
-# The schema defines a record with fields for customer ID, name, and age.
+    # This manifest creates an Avro schema named "customer-profile" in the "basic" cluster.
+    # The schema defines a record with fields for customer ID, name, and age.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Schema
@@ -43,8 +43,8 @@ Feature: Schema CRDs
     When I apply Kubernetes manifest:
     """
 # tag::product-catalog-protobuf-schema-manifest[]
-# This manifest creates a Protobuf schema named "product-catalog" in the "basic" cluster.
-# The schema defines a message "Product" with fields for product ID, name, price, and category.
+    # This manifest creates a Protobuf schema named "product-catalog" in the "basic" cluster.
+    # The schema defines a message "Product" with fields for product ID, name, price, and category.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Schema
@@ -76,8 +76,8 @@ Feature: Schema CRDs
     When I apply Kubernetes manifest:
     """
 # tag::order-event-json-schema-manifest[]
-# This manifest creates a JSON schema named "order-event" in the "basic" cluster.
-# The schema requires an "order_id" (string) and a "total" (number) field, with no additional properties allowed.
+    # This manifest creates a JSON schema named "order-event" in the "basic" cluster.
+    # The schema requires an "order_id" (string) and a "total" (number) field, with no additional properties allowed.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Schema
