@@ -590,6 +590,7 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 						// brokers.
 						Type: ptr.To("soft"),
 					},
+					TerminationGracePeriodSeconds: ptr.To(10), // Speed up rolling update process
 				},
 				Resources: &redpandav1alpha2.Resources{
 					CPU: &redpandav1alpha2.CPU{
