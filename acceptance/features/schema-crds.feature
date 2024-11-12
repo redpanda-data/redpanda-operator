@@ -87,6 +87,7 @@ Feature: Schema CRDs
       cluster:
         clusterRef:
           name: basic
+      schemaType: json
       compatibilityLevel: None
       text: |
         {
