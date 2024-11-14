@@ -712,7 +712,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 		}
 
 		if externalKafkaListener != nil && externalKafkaListener.External.Subdomain != "" {
-			address, err := subdomainAddress(externalKafkaListener.External.EndpointTemplate, &pod, externalKafkaListener.External.Subdomain, getNodePort(&nodePortSvc, resources.ExternalListenerName))
+			address, err := subdomainAddress(externalKafkaListener.External.EndpointTemplate, &pod, externalKafkaListener.External.Subdomain, getNodePort(&nodePortSvc, resources.ExternalListenerName), pandaCluster)
 			if err != nil {
 				return nil, err
 			}
@@ -726,7 +726,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 		}
 
 		if externalAdminListener != nil && externalAdminListener.External.Subdomain != "" {
-			address, err := subdomainAddress(externalAdminListener.External.EndpointTemplate, &pod, externalAdminListener.External.Subdomain, getNodePort(&nodePortSvc, resources.AdminPortExternalName))
+			address, err := subdomainAddress(externalAdminListener.External.EndpointTemplate, &pod, externalAdminListener.External.Subdomain, getNodePort(&nodePortSvc, resources.AdminPortExternalName), pandaCluster)
 			if err != nil {
 				return nil, err
 			}
@@ -740,7 +740,7 @@ func (r *ClusterReconciler) createExternalNodesList(
 		}
 
 		if externalProxyListener != nil && externalProxyListener.External.Subdomain != "" {
-			address, err := subdomainAddress(externalProxyListener.External.EndpointTemplate, &pod, externalProxyListener.External.Subdomain, getNodePort(&nodePortSvc, resources.PandaproxyPortExternalName))
+			address, err := subdomainAddress(externalProxyListener.External.EndpointTemplate, &pod, externalProxyListener.External.Subdomain, getNodePort(&nodePortSvc, resources.PandaproxyPortExternalName), pandaCluster)
 			if err != nil {
 				return nil, err
 			}
@@ -1032,14 +1032,23 @@ func needExternalIP(external vectorizedv1alpha1.ExternalConnectivityConfig) bool
 }
 
 func subdomainAddress(
-	tmpl string, pod *corev1.Pod, subdomain string, port int32,
+	tmpl string, pod *corev1.Pod, subdomain string, port int32, pandaCluster *vectorizedv1alpha1.Cluster,
 ) (string, error) {
 	prefixLen := len(pod.GenerateName)
 	index, err := strconv.Atoi(pod.Name[prefixLen:])
 	if err != nil {
 		return "", fmt.Errorf("could not parse node ID from pod name %s: %w", pod.Name, err)
 	}
-	data := utils.NewEndpointTemplateData(index, pod.Status.HostIP)
+	var hostIndexOffset int
+	if val, ok := pod.GetAnnotations()[labels.NodePoolKey]; ok {
+		for _, np := range pandaCluster.GetNodePoolsFromSpec() {
+			if np.Name == val {
+				hostIndexOffset = np.HostIndexOffset
+				break
+			}
+		}
+	}
+	data := utils.NewEndpointTemplateData(index, pod.Status.HostIP, hostIndexOffset)
 	ep, err := utils.ComputeEndpoint(tmpl, data)
 	if err != nil {
 		return "", err

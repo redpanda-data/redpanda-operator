@@ -18,7 +18,7 @@ import (
 )
 
 func TestTemplateGen(t *testing.T) {
-	data := utils.NewEndpointTemplateData(2, "1.1.1.1")
+	data := utils.NewEndpointTemplateData(2, "1.1.1.1", 100)
 	tests := []struct {
 		tmpl                 string
 		endpointContainsPort bool
@@ -65,6 +65,11 @@ func TestTemplateGen(t *testing.T) {
 		{
 			tmpl:                 "'address': '{{.Index}}-{{.HostIP | sha256sum | substr 0 8}}.redpanda.com', 'port': {{30092 | add (.Index | sub .Index )}}",
 			expected:             "'address': '2-f1412386.redpanda.com', 'port': 30092",
+			endpointContainsPort: true,
+		},
+		{
+			tmpl:                 "'address': '{{.Index}}-{{.HostIP | sha256sum | substr 0 8}}.redpanda.com', 'port': {{30092 | add (.Index | sub .Index | add .HostIndexOffset )}}",
+			expected:             "'address': '2-f1412386.redpanda.com', 'port': 30192",
 			endpointContainsPort: true,
 		},
 	}

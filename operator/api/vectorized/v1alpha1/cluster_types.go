@@ -228,6 +228,12 @@ type NodePoolSpec struct {
 	// These are applied last and will override any other command line arguments that may be defined,
 	// including the ones added when setting `DeveloperMode` to `true`.
 	AdditionalCommandlineArguments map[string]string `json:"additionalCommandlineArguments,omitempty"`
+
+	// HostIndexOffset is an additional offset on top of the host index - which
+	// is practically the pod ordinal.
+	// This makes it possible to have PrivateLink separate port ranges per NodePool.
+	// +optional
+	HostIndexOffset int `json:"hostIndexOffset"`
 }
 
 // RestartConfig contains strategies to configure how the cluster behaves when restarting, because of upgrades

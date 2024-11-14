@@ -1050,6 +1050,12 @@ spec:
                           description: Storage class name - https://kubernetes.io/docs/concepts/storage/storage-classes/
                           type: string
                       type: object
+                    hostIndexOffset:
+                      description: |-
+                        HostIndexOffset is an additional offset on top of the host index - which
+                        is practically the pod ordinal.
+                        This makes it possible to have PrivateLink separate port ranges per NodePool.
+                      type: integer
                     name:
                       description: Name of the NodePool. Must be unique, and must
                         not be "default".

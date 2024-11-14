@@ -498,6 +498,10 @@ func (r *StatefulSetResource) obj(
 							ImagePullPolicy: r.configuratorSettings.ImagePullPolicy,
 							Env: append([]corev1.EnvVar{
 								{
+									Name:  "HOST_INDEX_OFFSET",
+									Value: strconv.Itoa(r.nodePool.NodePoolSpec.HostIndexOffset),
+								},
+								{
 									Name:  "SERVICE_FQDN",
 									Value: r.serviceFQDN,
 								},
@@ -1025,7 +1029,7 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 	additionalNode0Config := config.ProdDefault()
 	for _, k := range additionalListenerCfgNames {
 		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
-			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy"), false)
+			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy", 0), false)
 			if err != nil {
 				r.logger.Error(err, "failed to evaluate template", "template", v)
 				continue

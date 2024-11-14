@@ -30,13 +30,19 @@ type EndpointTemplateData struct {
 	// value of hostIP that is also available in pod status (status.hostIP,
 	// available also in Kubernetes downward API).
 	HostIP string
+
+	// HostIndexOffset is an offset based on the NodePool.
+	// This allows users to build endpoint templates, that have non-overlapping
+	// port ranges on different nodepools.
+	HostIndexOffset int
 }
 
 // NewEndpointTemplateData creates endpoint template data with all required fields.
-func NewEndpointTemplateData(index int, hostIP string) EndpointTemplateData {
+func NewEndpointTemplateData(index int, hostIP string, hostIndexOffset int) EndpointTemplateData {
 	return EndpointTemplateData{
-		Index:  index,
-		HostIP: hostIP,
+		Index:           index,
+		HostIP:          hostIP,
+		HostIndexOffset: hostIndexOffset,
 	}
 }
 
