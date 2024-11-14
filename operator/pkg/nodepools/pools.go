@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,10 +62,13 @@ outer:
 	for i := range stsList.Items {
 		sts := stsList.Items[i]
 
-		for _, ownerRef := range sts.OwnerReferences {
-			if ownerRef.UID != cluster.UID {
-				continue outer
-			}
+		// Extra paranoid sanity check so we don't touch STS we don't own.
+		if !slices.ContainsFunc(
+			sts.OwnerReferences,
+			func(ownerRef metav1.OwnerReference) bool {
+				return ownerRef.UID == cluster.UID
+			}) {
+			continue outer
 		}
 
 		var npName string
@@ -77,7 +81,8 @@ outer:
 			npName = strings.TrimPrefix(sts.Name, fmt.Sprintf("%s-", cluster.Name))
 		}
 
-		// Have seen it in NodePoolSpec
+		// Have seen it in NodePoolSpec - therefore, it's not a deleted NodePool,
+		// so we don't need to reconstruct it based on the STS.
 		if slices.ContainsFunc(nps, func(np vectorizedv1alpha1.NodePoolSpec) bool {
 			return np.Name == npName
 		}) {
