@@ -77,8 +77,8 @@
               pkgs.kuttl
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
+              pkgs.vcluster
               pkgs.yq-go
-              # pkgs.gotools
             ] ++ lib.optionals pkgs.stdenv.isLinux [
               pkgs.sysctl # Used to adjust ulimits on linux systems (Namely, CI).
             ];

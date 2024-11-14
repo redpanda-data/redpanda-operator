@@ -1216,7 +1216,9 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                     type: object
                   connectors:
-                    description: Defines Redpanda Connector settings.
+                    description: |-
+                      Defines Redpanda Connector settings.
+                      Deprecated, ignored, and unused as of v25.1.1
                     properties:
                       auth:
                         description: Specifies superuser credentials
@@ -21487,7 +21489,9 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                     type: object
                   connectors:
-                    description: Defines Redpanda Connector settings.
+                    description: |-
+                      Defines Redpanda Connector settings.
+                      Deprecated, ignored, and unused as of v25.1.1
                     properties:
                       auth:
                         description: Specifies superuser credentials

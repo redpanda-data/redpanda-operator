@@ -17,7 +17,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta1
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/spf13/cobra v1.8.1
