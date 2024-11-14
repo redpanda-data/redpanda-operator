@@ -149,6 +149,10 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 func loadUsersFiles(ctx context.Context, path string) (map[string][]byte, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			log.FromContext(ctx).Info(fmt.Sprintf("users directory doesn't exist; skipping: %q", path))
+			return nil, nil
+		}
 		return nil, err
 	}
 
