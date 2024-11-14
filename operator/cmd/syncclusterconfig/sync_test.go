@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -87,13 +88,15 @@ func TestSync(t *testing.T) {
 	usersTxtYAMLPath := testutils.WriteFile(t, "users-*.txt", []byte(strings.Join([]string{admin, password, saslMechanism}, ":")))
 
 	cases := []struct {
-		Config   map[string]any
-		Expected map[string]any
+		Config      map[string]any
+		Expected    map[string]any
+		UsersTXTDir string
 	}{
 		{
 			// No superusers entry, the value just gets pulled from
 			// what we initialized in our redpanda.Run call above.
-			Config: map[string]any{},
+			Config:      map[string]any{},
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"admin_api_require_auth": true,
 				"superusers":             []any{user},
@@ -109,6 +112,7 @@ func TestSync(t *testing.T) {
 			Config: map[string]any{
 				"superusers": []string{user},
 			},
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"admin_api_require_auth": true,
 				"superusers":             []any{admin, user},
@@ -119,6 +123,7 @@ func TestSync(t *testing.T) {
 				"abort_index_segment_size":      10,
 				"audit_queue_drain_interval_ms": 60,
 			},
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -133,6 +138,7 @@ func TestSync(t *testing.T) {
 			// Showcasing that settings are not unset if/when they're removed.
 			// This is to showcase feature parity with the helm chart's job(s).
 			// Improvements are welcome.
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -144,6 +150,7 @@ func TestSync(t *testing.T) {
 			Config: map[string]any{
 				"audit_queue_drain_interval_ms": 70,
 			},
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -157,21 +164,36 @@ func TestSync(t *testing.T) {
 				// auth is ignored if it's not required.
 				"admin_api_require_auth": false,
 			},
+			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"audit_queue_drain_interval_ms": 70,
 				"superusers":                    []any{admin, user},
 			},
 		},
+		{
+			Config: map[string]any{
+				"admin_api_require_auth": false,
+				"superusers":             []string{user},
+			},
+			UsersTXTDir: os.TempDir() + "/this-path-does-not-exist",
+			Expected: map[string]any{
+				"abort_index_segment_size":      10,
+				"audit_queue_drain_interval_ms": 70,
+				"superusers":                    []any{user},
+			},
+		},
 	}
 
-	for _, tc := range cases {
+	for i, tc := range cases {
+		t.Logf("case %d", i)
+
 		configBytes, err := yaml.Marshal(tc.Config)
 		require.NoError(t, err)
 
 		cmd := Command()
 		cmd.SetArgs([]string{
-			"--users-directory", filepath.Dir(usersTxtYAMLPath),
+			"--users-directory", tc.UsersTXTDir,
 			"--redpanda-yaml", redpandaYAMLPath,
 			"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
 		})
