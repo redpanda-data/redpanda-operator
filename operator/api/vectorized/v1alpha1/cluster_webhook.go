@@ -496,7 +496,7 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 
 func checkValidEndpointTemplate(tmpl string) error {
 	// Using an example input to ensure that the template expression is allowed
-	data := utils.NewEndpointTemplateData(0, "1.2.3.4")
+	data := utils.NewEndpointTemplateData(0, "1.2.3.4", 0)
 	_, err := utils.ComputeEndpoint(tmpl, data)
 	return err
 }

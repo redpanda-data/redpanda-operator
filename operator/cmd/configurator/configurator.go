@@ -50,6 +50,7 @@ const (
 	hostIPEnvVar                                         = "HOST_IP_ADDRESS"
 	hostNameEnvVar                                       = "HOSTNAME"
 	hostPortEnvVar                                       = "HOST_PORT"
+	hostIndexOffsetEnvVar                                = "HOST_INDEX_OFFSET"
 	nodeNameEnvVar                                       = "NODE_NAME"
 	proxyHostPortEnvVar                                  = "PROXY_HOST_PORT"
 	rackAwarenessEnvVar                                  = "RACK_AWARENESS"
@@ -79,6 +80,7 @@ type configuratorConfig struct {
 	subdomain                                      string
 	svcFQDN                                        string
 	additionalListeners                            string
+	hostIndexOffset                                int
 }
 
 func (c *configuratorConfig) String() string {
@@ -96,7 +98,8 @@ func (c *configuratorConfig) String() string {
 		"proxyHostPort: %d\n"+
 		"rackAwareness: %t\n"+
 		"validateMountedVolume: %t\n"+
-		"additionalListeners: %s\n",
+		"additionalListeners: %s\n"+
+		"hostIndexOffset: %d\n",
 		c.hostName,
 		c.svcFQDN,
 		c.configSourceDir,
@@ -110,7 +113,8 @@ func (c *configuratorConfig) String() string {
 		c.proxyHostPort,
 		c.rackAwareness,
 		c.validateMountedVolume,
-		c.additionalListeners)
+		c.additionalListeners,
+		c.hostIndexOffset)
 }
 
 var errorMissingEnvironmentVariable = errors.New("missing environment variable")
@@ -199,7 +203,7 @@ func run(cmd *cobra.Command, args []string) {
 		populateRack(cfg, zone, zoneID)
 	}
 
-	if err = setAdditionalListeners(c.additionalListeners, c.hostIP, int(hostIndex), cfg); err != nil {
+	if err = setAdditionalListeners(c.additionalListeners, c.hostIP, int(hostIndex), cfg, c.hostIndexOffset); err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to set additional listeners: %w", err))
 	}
 
@@ -343,7 +347,7 @@ func registerAdvertisedKafkaAPI(
 	}
 
 	if c.subdomain != "" {
-		data := utils.NewEndpointTemplateData(int(index), c.hostIP)
+		data := utils.NewEndpointTemplateData(int(index), c.hostIP, c.hostIndexOffset)
 		ep, err := utils.ComputeEndpoint(c.externalConnectivityKafkaEndpointTemplate, data)
 		if err != nil {
 			return err
@@ -388,7 +392,7 @@ func registerAdvertisedPandaproxyAPI(
 
 	// Pandaproxy uses the Kafka API subdomain.
 	if c.subdomain != "" {
-		data := utils.NewEndpointTemplateData(int(index), c.hostIP)
+		data := utils.NewEndpointTemplateData(int(index), c.hostIP, c.hostIndexOffset)
 		ep, err := utils.ComputeEndpoint(c.externalConnectivityPandaProxyEndpointTemplate, data)
 		if err != nil {
 			return err
@@ -434,6 +438,7 @@ func checkEnvVars() (configuratorConfig, error) {
 	var extCon string
 	var rpcPort string
 	var hostPort string
+	var hostIndexOffset string
 
 	c := configuratorConfig{}
 
@@ -489,6 +494,10 @@ func checkEnvVars() (configuratorConfig, error) {
 			value: &c.hostIP,
 			name:  hostIPEnvVar,
 		},
+		{
+			value: &hostIndexOffset,
+			name:  hostIndexOffsetEnvVar,
+		},
 	}
 	for _, envVar := range envVarList {
 		v, exist := os.LookupEnv(envVar.name)
@@ -538,6 +547,13 @@ func checkEnvVars() (configuratorConfig, error) {
 		result = errors.Join(result, fmt.Errorf("unable to convert rpc port from string to int: %w", err))
 	}
 
+	if hostIndexOffset != "" {
+		c.hostIndexOffset, err = strconv.Atoi(hostIndexOffset)
+		if err != nil {
+			result = errors.Join(result, fmt.Errorf("unable to convert HOST_INDEX_OFFSET env var from string to int: %w", err))
+		}
+	}
+
 	c.hostPort, err = strconv.Atoi(hostPort)
 	if err != nil && c.externalConnectivity {
 		result = errors.Join(result, fmt.Errorf("unable to convert host port from string to int: %w", err))
@@ -573,7 +589,7 @@ func hostIndex(hostName string) (brokerID, error) {
 // setAdditionalListeners sets the additional listeners in the input Redpanda config.
 // sample additional listeners config string:
 // {"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]","redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{30092 | add .Index}}}]","redpanda.kafka_api":"[{'name': 'private-link-kakfa', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]"}
-func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.RedpandaYaml) error {
+func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.RedpandaYaml, hostIndexOffset int) error {
 	if additionalListenersCfg == "" || additionalListenersCfg == "{}" {
 		return nil
 	}
@@ -588,7 +604,7 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 	nodeConfig := config.ProdDefault()
 	for _, k := range additionalListenerCfgNames {
 		if v, found := additionalListeners[k]; found {
-			res, err := utils.Compute(v, utils.NewEndpointTemplateData(hostIndex, hostIP), false)
+			res, err := utils.Compute(v, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
 			if err != nil {
 				return err
 			}

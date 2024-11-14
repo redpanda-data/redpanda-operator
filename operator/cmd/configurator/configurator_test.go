@@ -348,7 +348,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 	}
 	for i := 0; i < len(tests); i++ {
 		tt := &tests[i]
-		err := setAdditionalListeners(tt.addtionalListenersCfg, tt.hostIP, tt.hostIndex, &tt.nodeCfg)
+		err := setAdditionalListeners(tt.addtionalListenersCfg, tt.hostIP, tt.hostIndex, &tt.nodeCfg, 0)
 		if tt.expectedError {
 			assert.Error(t, err)
 		} else {
