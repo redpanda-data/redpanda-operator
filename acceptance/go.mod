@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
 	github.com/redpanda-data/common-go/rpadmin v0.1.9
-	github.com/redpanda-data/helm-charts v0.0.0-20241031235426-99ca96105c9a
+	github.com/redpanda-data/helm-charts v0.0.0-20241113221319-230a32adcee0
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0

@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/cucumber/messages/go/v21 v21.0.1
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/redpanda-data/helm-charts v0.0.0-20241031235426-99ca96105c9a
+	github.com/redpanda-data/helm-charts v0.0.0-20241113221319-230a32adcee0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	k8s.io/api v0.30.3
