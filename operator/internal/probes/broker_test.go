@@ -156,8 +156,6 @@ func (s *ProberSuite) SetupSuite() {
 
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
-		Name:   "probes",
-		Agents: 3,
 		Scheme: scheme,
 		Logger: log,
 	})

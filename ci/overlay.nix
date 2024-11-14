@@ -8,4 +8,5 @@
   helm-3-10-3 = pkgs.callPackage ./helm.nix { };
   kuttl = pkgs.callPackage ./kuttl.nix { };
   setup-envtest = pkgs.callPackage ./setup-envtest.nix { };
+  vcluster = pkgs.callPackage ./vcluster.nix { };
 })

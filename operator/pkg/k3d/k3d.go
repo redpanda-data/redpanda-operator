@@ -39,8 +39,9 @@ import (
 )
 
 const (
-	DefaultK3sImage = `rancher/k3s:v1.29.6-k3s2`
-	K3sImageEnv     = `K3S_IMAGE`
+	DefaultK3sImage   = `rancher/k3s:v1.29.6-k3s2`
+	K3sImageEnv       = `K3S_IMAGE`
+	SharedClusterName = "testenv"
 )
 
 var (
@@ -109,6 +110,14 @@ func WithTimeout(timeout time.Duration) clusterOpt {
 	return func(config *clusterConfig) {
 		config.timeout = timeout
 	}
+}
+
+// GetShared gets or creates the shared "testenv" k3d cluster. Most tests
+// should use this method in combination with [vcluster.New].
+//
+// If your test needs to delete Nodes, DO NOT USE THE SHARED CLUSTER.
+func GetShared() (*Cluster, error) {
+	return GetOrCreate(SharedClusterName)
 }
 
 func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
