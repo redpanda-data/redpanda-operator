@@ -212,7 +212,83 @@ func TestSync(t *testing.T) {
 	}
 }
 
-func requireJSONEq(t *testing.T, expected, actual map[string]any) {
+func TestSyncUpgradeRegressions(t *testing.T) {
+	ctx := context.Background()
+	logger := testr.New(t)
+	ctx = log.IntoContext(ctx, logger)
+
+	// No auth is easy, only test on a cluster with auth on admin API.
+	container, err := redpanda.Run(
+		ctx,
+		"docker.redpanda.com/redpandadata/redpanda:v24.2.4",
+	)
+	require.NoError(t, err)
+
+	adminAPIAddr, err := container.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	adminAPIClient, err := rpadmin.NewAdminAPI([]string{adminAPIAddr}, &rpadmin.NopAuth{}, nil)
+	require.NoError(t, err)
+
+	rpkConfigBytes, err := yaml.Marshal(map[string]any{
+		"rpk": map[string]any{
+			"admin_api": map[string]any{
+				"addresses": []string{adminAPIAddr},
+				"tls":       nil,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	redpandaYAMLPath := testutils.WriteFile(t, "redpanda-*.yaml", rpkConfigBytes)
+
+	cases := []struct {
+		Upgrades []map[string]any
+	}{
+		{
+			Upgrades: []map[string]any{{
+				"kafka_nodelete_topics": []any{"audit", "consumer_offsets"},
+				"kafka_throughput_control": []map[string]any{
+					{"name": "first_group", "client_id": "client1"},
+					{"client_id": "consumer-\\d+"},
+				},
+			}, {
+				"kafka_nodelete_topics": []any{"audit"},
+				"kafka_throughput_control": []map[string]any{
+					{"name": "first_group", "client_id": "client1"},
+				},
+			}},
+		},
+	}
+
+	for i, tc := range cases {
+		t.Logf("case %d", i)
+
+		for _, upgrade := range tc.Upgrades {
+			configBytes, err := yaml.Marshal(upgrade)
+			require.NoError(t, err)
+
+			cmd := Command()
+			cmd.SetArgs([]string{
+				"--redpanda-yaml", redpandaYAMLPath,
+				"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
+			})
+
+			require.NotPanics(t, func() {
+				require.NoError(t, cmd.ExecuteContext(ctx))
+
+				actual, err := adminAPIClient.Config(ctx, false)
+				require.NoError(t, err)
+
+				for key := range upgrade {
+					requireJSONEq(t, upgrade[key], actual[key])
+				}
+			})
+		}
+	}
+}
+
+func requireJSONEq[T any](t *testing.T, expected, actual T) {
 	expectedBytes, err := json.Marshal(expected)
 	require.NoError(t, err)
 
