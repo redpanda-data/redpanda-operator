@@ -291,12 +291,12 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 			if err != nil {
 				return err
 			}
-			cluster.Status.DecommissioningNode = nil
+			cluster.SetDecommissionBrokerID(nil)
 			err = r.Status().Update(ctx, cluster)
 			if err == nil {
 				log.Info("Cleared decomm broker ID from status")
 				// sync original cluster variable to avoid conflicts on subsequent operations
-				r.pandaCluster.Status = cluster.Status
+				r.pandaCluster.SetDecommissionBrokerID(nil)
 			}
 			return err
 		})
