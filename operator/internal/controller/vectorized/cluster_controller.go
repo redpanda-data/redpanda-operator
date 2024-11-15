@@ -233,11 +233,11 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	result, errs := ar.Ensure()
-	if !result.IsZero() && errs == nil {
-		return result, nil
-	}
 	if errs != nil {
-		return result, errs
+		return ctrl.Result{}, errs
+	}
+	if !result.IsZero() {
+		return result, nil
 	}
 
 	adminAPI, err := r.AdminAPIClientFactory(ctx, r.Client, &vectorizedCluster, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider())
