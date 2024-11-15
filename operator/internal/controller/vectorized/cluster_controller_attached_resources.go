@@ -92,7 +92,15 @@ func (a *attachedResources) Ensure() (ctrl.Result, error) {
 			errs = errors.Join(errs, err)
 		}
 	}
-	return result, errs
+	// Controller-runtime does not allow returning a result and an error at the same time.
+	// We choose to prioritize the error - if there is an error, this is more important
+	// to us to return than the reconcile.
+	// Downstream functions are expected to only return errors, if there is an
+	// actual error condition, not generally to cause a requeue (must use result for this purpose).
+	if errs != nil {
+		return ctrl.Result{}, errs
+	}
+	return result, nil
 }
 
 func (a *attachedResources) bootstrapService() {

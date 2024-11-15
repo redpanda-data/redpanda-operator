@@ -194,8 +194,12 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 
 	// Decom Pod is from another NodePool. Super important to early exit here, as it's not our business (in this StatefulSet handler).
 	if brokerPod == nil {
-		log.Info("decom on other in progress")
-		return fmt.Errorf("decommission on other NodePool in progress, can't handle decom for this one yet")
+		log.Info("decom on other NodePool in progress. asking for requeue so this nodepool can get reconciled afterwards.")
+		return &RequeueAfterError{
+			RequeueAfter: wait.Jitter(r.decommissionWaitInterval, decommissionWaitJitterFactor),
+			Msg:          "decommission on other NodePool in progress, can't handle decom for this one yet",
+		}
+
 	}
 
 	if !r.nodePool.Deleted && *r.nodePool.Replicas >= r.pandaCluster.Status.NodePools[r.nodePool.Name].CurrentReplicas {
