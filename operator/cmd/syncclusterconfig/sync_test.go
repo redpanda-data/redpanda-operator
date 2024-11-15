@@ -248,8 +248,15 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 		{
 			Upgrades: []map[string]any{{
 				"kafka_nodelete_topics": []any{"audit", "consumer_offsets"},
+				"kafka_throughput_control": []map[string]any{
+					{"name": "first_group", "client_id": "client1"},
+					{"client_id": "consumer-\\d+"},
+				},
 			}, {
 				"kafka_nodelete_topics": []any{"audit"},
+				"kafka_throughput_control": []map[string]any{
+					{"name": "first_group", "client_id": "client1"},
+				},
 			}},
 		},
 	}
@@ -272,18 +279,16 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 
 				actual, err := adminAPIClient.Config(ctx, false)
 				require.NoError(t, err)
-				// By excluding defaults we'll receive only settings modified by us
-				// _plus_ cluster_id. Remove it for the purpose of comparing.
-				delete(actual, "cluster_id")
 
-				// NB: Utilize JSON equality as go will fuss about ints vs floats.
-				requireJSONEq(t, upgrade, actual)
+				for key := range upgrade {
+					requireJSONEq(t, upgrade[key], actual[key])
+				}
 			})
 		}
 	}
 }
 
-func requireJSONEq(t *testing.T, expected, actual map[string]any) {
+func requireJSONEq[T any](t *testing.T, expected, actual T) {
 	expectedBytes, err := json.Marshal(expected)
 	require.NoError(t, err)
 
