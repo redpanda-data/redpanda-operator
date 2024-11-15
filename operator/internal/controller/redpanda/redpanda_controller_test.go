@@ -427,6 +427,88 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	s.deleteAndWait(rp)
 }
 
+func (s *RedpandaControllerSuite) TestLicense() {
+	type image struct {
+		repository string
+		tag        string
+	}
+
+	cases := []struct {
+		image    image
+		license  bool
+		expected string
+	}{{
+		image: image{
+			repository: "redpandadata/redpanda-unstable",
+			tag:        "v24.3.1-rc4",
+		},
+		license:  false,
+		expected: "Expired",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda-unstable",
+			tag:        "v24.3.1-rc4",
+		},
+		license:  true,
+		expected: "Valid",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda",
+			tag:        "v24.2.9",
+		},
+		license:  false,
+		expected: "Not Present",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda",
+			tag:        "v24.2.9",
+		},
+		license:  true,
+		expected: "Not Present",
+	}}
+
+	for _, c := range cases {
+		rp := s.minimalRP(false)
+		rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
+			Repository: ptr.To(c.image.repository),
+			Tag:        ptr.To(c.image.tag),
+		}
+		if !c.license {
+			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+				Spec: &redpandav1alpha2.PodSpec{
+					Containers: []redpandav1alpha2.Container{{
+						Name: "redpanda",
+						Env:  []corev1.EnvVar{{Name: "__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE", Value: "true"}},
+					}},
+				},
+			}
+		}
+
+		var condition metav1.Condition
+		s.applyAndWaitFor(func(o client.Object) bool {
+			rp := o.(*redpandav1alpha2.Redpanda)
+
+			for _, cond := range rp.Status.Conditions {
+				if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+					// grab the first non-unknown status
+					if cond.Status != metav1.ConditionUnknown {
+						condition = cond
+						return true
+					}
+					return false
+				}
+			}
+			return false
+		}, rp)
+
+		name := fmt.Sprintf("%s/%s (license: %t)", c.image.repository, c.image.tag, c.license)
+		message := fmt.Sprintf("%s - %s != %s", name, c.expected, condition.Message)
+		s.Require().Equal(c.expected, condition.Message, message)
+
+		s.deleteAndWait(rp)
+	}
+}
+
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
 
