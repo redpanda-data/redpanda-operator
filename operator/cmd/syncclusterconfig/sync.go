@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -261,7 +262,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	for key, value := range desired {
 		if currentValue, ok := current[key]; !ok {
 			added = append(added, key)
-		} else if value != currentValue {
+		} else if !reflect.DeepEqual(value, currentValue) {
 			changed = append(changed, key)
 		}
 	}

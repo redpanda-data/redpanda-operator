@@ -212,6 +212,77 @@ func TestSync(t *testing.T) {
 	}
 }
 
+func TestSyncUpgradeRegressions(t *testing.T) {
+	ctx := context.Background()
+	logger := testr.New(t)
+	ctx = log.IntoContext(ctx, logger)
+
+	// No auth is easy, only test on a cluster with auth on admin API.
+	container, err := redpanda.Run(
+		ctx,
+		"docker.redpanda.com/redpandadata/redpanda:v24.2.4",
+	)
+	require.NoError(t, err)
+
+	adminAPIAddr, err := container.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	adminAPIClient, err := rpadmin.NewAdminAPI([]string{adminAPIAddr}, &rpadmin.NopAuth{}, nil)
+	require.NoError(t, err)
+
+	rpkConfigBytes, err := yaml.Marshal(map[string]any{
+		"rpk": map[string]any{
+			"admin_api": map[string]any{
+				"addresses": []string{adminAPIAddr},
+				"tls":       nil,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	redpandaYAMLPath := testutils.WriteFile(t, "redpanda-*.yaml", rpkConfigBytes)
+
+	cases := []struct {
+		Upgrades []map[string]any
+	}{
+		{
+			Upgrades: []map[string]any{{
+				"kafka_nodelete_topics": []any{"audit", "consumer_offsets"},
+			}, {
+				"kafka_nodelete_topics": []any{"audit"},
+			}},
+		},
+	}
+
+	for i, tc := range cases {
+		t.Logf("case %d", i)
+
+		for _, upgrade := range tc.Upgrades {
+			configBytes, err := yaml.Marshal(upgrade)
+			require.NoError(t, err)
+
+			cmd := Command()
+			cmd.SetArgs([]string{
+				"--redpanda-yaml", redpandaYAMLPath,
+				"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
+			})
+
+			require.NotPanics(t, func() {
+				require.NoError(t, cmd.ExecuteContext(ctx))
+
+				actual, err := adminAPIClient.Config(ctx, false)
+				require.NoError(t, err)
+				// By excluding defaults we'll receive only settings modified by us
+				// _plus_ cluster_id. Remove it for the purpose of comparing.
+				delete(actual, "cluster_id")
+
+				// NB: Utilize JSON equality as go will fuss about ints vs floats.
+				requireJSONEq(t, upgrade, actual)
+			})
+		}
+	}
+}
+
 func requireJSONEq(t *testing.T, expected, actual map[string]any) {
 	expectedBytes, err := json.Marshal(expected)
 	require.NoError(t, err)
