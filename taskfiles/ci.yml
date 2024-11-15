@@ -15,7 +15,7 @@ tasks:
 
   run-kuttl-tests:
     cmds:
-      - defer: 'task ci:kuttl-artifact-upload EXIT_CODE={{.EXIT_CODE}} KUTTL_CONFIG_FILE={{.KUTTL_CONFIG_FILE}}'
+      - defer: 'task ci:kuttl-artifact-upload KUTTL_CONFIG_FILE={{.KUTTL_CONFIG_FILE}}'
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
@@ -24,7 +24,7 @@ tasks:
     desc: uploads artifact when kuttl fails
     dir: operator
     summary: |
-      kuttl-artifact-upload should be called in `defer` with EXIT_CODE.
+      kuttl-artifact-upload should be called in `defer`.
       https://taskfile.dev/usage/#doing-task-cleanup-with-defer
       
       As buildkite pipeline step are wrapped with shell script, that executes
@@ -38,12 +38,9 @@ tasks:
         sh: |
           cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
     cmds:
-      - echo "Kuttl returned exit code {{.EXIT_CODE}}. Creating artifacts tarball"
       - tar -czf {{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz {{.KUTTL_ARTIFACTS_DIR}}
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz"
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR}}/kuttl-report.xml"
-    status:
-      - exit {{.EXIT_CODE}}
 
   k8s:
     cmds:
