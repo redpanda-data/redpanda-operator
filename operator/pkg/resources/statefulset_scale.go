@@ -286,9 +286,8 @@ func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Log
 	if broker == nil {
 		log.Info("Broker has finished decommissioning")
 
-		_, err := patch.PatchStatus(ctx, r, r.pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
-			cluster.SetDecommissionBrokerID(nil)
-		})
+		r.pandaCluster.SetDecommissionBrokerID(nil)
+		err := patch.PatchStatus(ctx, r, r.pandaCluster)
 		if err != nil {
 			return fmt.Errorf("failed to patch status to clear decom broker ID: %w", err)
 		}
@@ -486,24 +485,17 @@ func (r *StatefulSetResource) setCurrentReplicas(
 	log := l.WithName("setCurrentReplicas")
 	log.Info("setting currentReplicas", "npReplicas", npReplicas, "np", npName)
 
-	_, err := patch.PatchStatus(ctx, r, r.pandaCluster, func(cluster *vectorizedv1alpha1.Cluster) {
-		if cluster.Status.NodePools == nil {
-			cluster.Status.NodePools = make(map[string]vectorizedv1alpha1.NodePoolStatus)
-		}
-		npStatus, ok := cluster.Status.NodePools[npName]
-		if !ok {
-			npStatus = vectorizedv1alpha1.NodePoolStatus{}
-			cluster.Status.NodePools[npName] = npStatus
-		}
+	npStatus := r.getNodePoolStatus()
 
-		if r.nodePool.Deleted {
-			npStatus.Replicas = npReplicas
-		} else {
-			npStatus.Replicas = *r.nodePool.Replicas
-		}
-		npStatus.CurrentReplicas = npReplicas
-		cluster.Status.NodePools[npName] = npStatus
-	})
+	if r.nodePool.Deleted {
+		npStatus.Replicas = npReplicas
+	} else {
+		npStatus.Replicas = *r.nodePool.Replicas
+	}
+	npStatus.CurrentReplicas = npReplicas
+	r.pandaCluster.Status.NodePools[npName] = npStatus
+
+	err := patch.PatchStatus(ctx, r, r.pandaCluster)
 	if err != nil {
 		return fmt.Errorf("could not scale cluster %s nodePool %s to %d replicas: %w", r.pandaCluster.Name, npName, npReplicas, err)
 	}

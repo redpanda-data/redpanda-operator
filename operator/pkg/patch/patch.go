@@ -22,13 +22,15 @@ import (
 
 // PatchStatus persforms a mutation as done by mutator, calls k8s-api with PATCH, and then returns the
 // new status.
-func PatchStatus(ctx context.Context, c client.Client, observedCluster *vectorizedv1alpha1.Cluster, mutator func(cluster *vectorizedv1alpha1.Cluster)) (vectorizedv1alpha1.ClusterStatus, error) {
-	clusterPatch := client.MergeFrom(observedCluster.DeepCopy())
-	mutator(observedCluster)
-
-	if err := c.Status().Patch(ctx, observedCluster, clusterPatch); err != nil {
-		return vectorizedv1alpha1.ClusterStatus{}, fmt.Errorf("failed to update cluster status: %w", err)
+func PatchStatus(ctx context.Context, c client.Client, cluster *vectorizedv1alpha1.Cluster) error {
+	var latest vectorizedv1alpha1.Cluster
+	if err := c.Get(ctx, client.ObjectKeyFromObject(cluster), &latest); err != nil {
+		return err
 	}
 
-	return observedCluster.Status, nil
+	if err := c.Status().Patch(ctx, cluster, client.MergeFrom(&latest)); err != nil {
+		return fmt.Errorf("failed to update cluster status: %w", err)
+	}
+
+	return nil
 }

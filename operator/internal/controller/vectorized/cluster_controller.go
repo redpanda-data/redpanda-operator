@@ -149,20 +149,20 @@ func (r *ClusterReconciler) Reconcile(
 	//   any outstanding work to do for the controller.
 	defer func() {
 		fmt.Println("dbg 3", vectorizedCluster.Status.DecommissioningNode, vectorizedCluster.GetDecommissionBrokerID())
-		_, patchErr := patch.PatchStatus(ctx, r.Client, &vectorizedCluster, func(cluster *vectorizedv1alpha1.Cluster) {
-			// Set quiescent
-			cond := getQuiescentCondition(cluster)
 
-			flipped := cluster.Status.SetCondition(cond.Type, cond.Status, cond.Reason, cond.Message)
-			if flipped {
-				log.Info("Changing OperatorQuiescent condition after reconciliation", "status", cond.Status, "reason", cond.Reason, "message", cond.Message)
-			}
+		cond := getQuiescentCondition(&vectorizedCluster)
 
-			// Only set observedGeneration if there's no error.
-			if err == nil {
-				cluster.Status.ObservedGeneration = vectorizedCluster.Generation
-			}
-		})
+		flipped := vectorizedCluster.Status.SetCondition(cond.Type, cond.Status, cond.Reason, cond.Message)
+		if flipped {
+			log.Info("Changing OperatorQuiescent condition after reconciliation", "status", cond.Status, "reason", cond.Reason, "message", cond.Message)
+		}
+
+		// Only set observedGeneration if there's no error.
+		if err == nil {
+			vectorizedCluster.Status.ObservedGeneration = vectorizedCluster.Generation
+		}
+
+		patchErr := patch.PatchStatus(ctx, r.Client, &vectorizedCluster)
 		if patchErr != nil {
 			log.Error(patchErr, "failed to patchStatus with observedGeneration and quiescent")
 		}
