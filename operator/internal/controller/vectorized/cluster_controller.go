@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -137,6 +138,9 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("unable to retrieve Cluster resource: %w", err)
 	}
 
+	fmt.Println("Start loop - status")
+	spew.Dump(vectorizedCluster.Status.NodePools)
+
 	// After every reconciliation, update status:
 	// - Set observedGeneration. The reconciler finished, every action
 	//   performed in this run - including updating status - has been finished, and has
@@ -144,6 +148,7 @@ func (r *ClusterReconciler) Reconcile(
 	// - Set OperatorQuiescent condition, based on our best knowledge if there is
 	//   any outstanding work to do for the controller.
 	defer func() {
+		fmt.Println("dbg 3", vectorizedCluster.Status.DecommissioningNode, vectorizedCluster.GetDecommissionBrokerID())
 		_, patchErr := patch.PatchStatus(ctx, r.Client, &vectorizedCluster, func(cluster *vectorizedv1alpha1.Cluster) {
 			// Set quiescent
 			cond := getQuiescentCondition(cluster)
@@ -161,6 +166,9 @@ func (r *ClusterReconciler) Reconcile(
 		if patchErr != nil {
 			log.Error(patchErr, "failed to patchStatus with observedGeneration and quiescent")
 		}
+		fmt.Println("dbg 4", vectorizedCluster.Status.DecommissioningNode, vectorizedCluster.GetDecommissionBrokerID())
+		fmt.Println("End loop - status")
+		spew.Dump(vectorizedCluster.Status.NodePools)
 	}()
 
 	// Previous usage of finalizer handlers was unreliable in the case of
