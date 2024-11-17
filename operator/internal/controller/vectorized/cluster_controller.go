@@ -69,6 +69,7 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
+	UncachedClient            client.Client
 	Log                       logr.Logger
 	configuratorSettings      resources.ConfiguratorSettings
 	clusterDomain             string
@@ -124,17 +125,25 @@ func (r *ClusterReconciler) Reconcile(
 
 	var vectorizedCluster vectorizedv1alpha1.Cluster
 	ar := newAttachedResources(ctx, r, log, &vectorizedCluster)
-	if err := r.Get(ctx, req.NamespacedName, &vectorizedCluster); err != nil {
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		if apierrors.IsNotFound(err) {
-			if removeError := ar.getClusterRoleBinding().RemoveSubject(ctx, req.NamespacedName); removeError != nil {
-				return ctrl.Result{}, fmt.Errorf("unable to remove subject in ClusterroleBinding: %w", removeError)
-			}
-			return ctrl.Result{}, nil
+	{
+		// Perform Get with uncached client, to avoid cache races, where we don't
+		// see previous changes performed via Patch/Update.
+		getClient := r.Client
+		if r.UncachedClient != nil {
+			getClient = r.UncachedClient
 		}
-		return ctrl.Result{}, fmt.Errorf("unable to retrieve Cluster resource: %w", err)
+		if err := getClient.Get(ctx, req.NamespacedName, &vectorizedCluster); err != nil {
+			// we'll ignore not-found errors, since they can't be fixed by an immediate
+			// requeue (we'll need to wait for a new notification), and we can get them
+			// on deleted requests.
+			if apierrors.IsNotFound(err) {
+				if removeError := ar.getClusterRoleBinding().RemoveSubject(ctx, req.NamespacedName); removeError != nil {
+					return ctrl.Result{}, fmt.Errorf("unable to remove subject in ClusterroleBinding: %w", removeError)
+				}
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{}, fmt.Errorf("unable to retrieve Cluster resource: %w", err)
+		}
 	}
 
 	// After every reconciliation, update status:

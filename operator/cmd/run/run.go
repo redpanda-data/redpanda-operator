@@ -27,6 +27,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -252,8 +253,15 @@ func Run(
 
 		adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
+		restConfig := mgr.GetConfig()
+		uncachedClient, err := ctrlClient.New(restConfig, ctrlClient.Options{Scheme: mgr.GetScheme(), Mapper: mgr.GetRESTMapper()})
+		if err != nil {
+			return fmt.Errorf("failed to create uncached client: %w", err)
+		}
+
 		if err = (&vectorizedcontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
+			UncachedClient:            uncachedClient,
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
 			AdminAPIClientFactory:     adminutils.NewNodePoolInternalAdminAPI,
