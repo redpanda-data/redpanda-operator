@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/redpanda-data/common-go/rpadmin"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -198,6 +199,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	// Redpanda Reconciler
 	err = (&redpanda.RedpandaReconciler{
 		Client:        k8sManager.GetClient(),
+		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
 		Scheme:        k8sManager.GetScheme(),
 		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
