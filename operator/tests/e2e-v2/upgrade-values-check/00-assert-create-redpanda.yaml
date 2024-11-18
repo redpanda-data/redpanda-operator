@@ -12,6 +12,7 @@ status:
       status: "True"
       type: Ready
     - type: ClusterConfigSynced
+    - type: ClusterLicenseValid
   helmRelease: redpanda-values-check
   helmReleaseReady: true
   helmRepository: redpanda-repository

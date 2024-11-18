@@ -20,6 +20,7 @@ status:
       status: "True"
       type: Ready
     - type: ClusterConfigSynced
+    - type: ClusterLicenseValid
   helmRelease: rp-connectors
   helmReleaseReady: true
   helmRepository: redpanda-repository
