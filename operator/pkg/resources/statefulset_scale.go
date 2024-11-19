@@ -138,6 +138,23 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	podName := fmt.Sprintf("%s-%d", r.LastObservedState.Name, targetOrdinal)
 	log.WithValues("pod", podName, "ordinal", targetOrdinal, "node_id", targetBroker).Info("start decommission broker")
 
+	// Make sure the broker we want to decommission actually exists in redpanda itself.
+	// If not, error out, it is not a supported condition, and could be result of a stale read of status.nodePools[*].currentReplicas.
+	adminClient, err := r.getAdminAPIClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create admin API client: %w", err)
+	}
+	broker, err := getBrokerByBrokerID(ctx, *targetBroker, adminClient)
+	if err != nil {
+		return fmt.Errorf("failed to get broker by broker ID: %w", err)
+	}
+	if broker == nil {
+		return &RequeueAfterError{
+			RequeueAfter: RequeueDuration,
+			Msg:          fmt.Sprintf("attempting to decommission broker %d, but redpanda reports that it does not exist", *targetBroker),
+		}
+	}
+
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		cluster := &vectorizedv1alpha1.Cluster{}
 		err := r.Get(ctx, types.NamespacedName{
