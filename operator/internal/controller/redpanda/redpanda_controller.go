@@ -434,7 +434,7 @@ func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *v1alpha
 		return true
 	}
 
-	redpandaReady := !apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
+	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
 
 	if !(rp.GenerationObserved() || redpandaReady) {
 		log.V(logger.TraceLevel).Info(fmt.Sprintf("redpanda not yet ready. skipping %s reconciliation.", conditionType))
@@ -466,6 +466,17 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 
 	features, err := client.GetEnterpriseFeatures(ctx)
 	if err != nil {
+		if internalclient.IsTerminalClientError(err) {
+			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
+				Type:               v1alpha2.ClusterLicenseValid,
+				Status:             metav1.ConditionUnknown,
+				ObservedGeneration: rp.Generation,
+				Reason:             "TerminalError",
+				Message:            err.Error(),
+			})
+
+			return nil
+		}
 		return err
 	}
 
