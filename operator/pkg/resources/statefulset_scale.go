@@ -138,25 +138,15 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	podName := fmt.Sprintf("%s-%d", r.LastObservedState.Name, targetOrdinal)
 	log.WithValues("pod", podName, "ordinal", targetOrdinal, "node_id", targetBroker).Info("start decommission broker")
 
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		cluster := &vectorizedv1alpha1.Cluster{}
-		err := r.Get(ctx, types.NamespacedName{
-			Name:      r.pandaCluster.Name,
-			Namespace: r.pandaCluster.Namespace,
-		}, cluster)
-		if err != nil {
-			return err
-		}
-		cluster.SetDecommissionBrokerID(targetBroker)
-		err = r.Status().Update(ctx, cluster)
-		if err == nil {
-			// sync original cluster variable to avoid conflicts on subsequent operations
-			r.pandaCluster.SetDecommissionBrokerID(targetBroker)
-		}
-		return err
-	})
-	if err != nil {
-		return err
+	r.pandaCluster.SetDecommissionBrokerID(targetBroker)
+	// Intentionally do not use retry-loop that is based on a fresh Get.
+	// If we did that, we'd not get a conflict error, if this Update is based on
+	// a stale status where currentReplicas is older than a previous patch that decreased it.
+	// Instead, send status update based on r.pandaCluster, so it fails if we're
+	// working based on an outdated status, and therefore outdated
+	// currentReplicas.
+	if err := r.Status().Update(ctx, r.pandaCluster); err != nil {
+		return fmt.Errorf("failed to update status with decommissionBrokerID=%d: %w", *targetBroker, err)
 	}
 
 	return nil
