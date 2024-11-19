@@ -34,6 +34,9 @@ const (
 	// ClusterConfigSynced is a condition indicating whether or not the
 	// redpanda cluster's configuration is up to date with the desired config.
 	ClusterConfigSynced = "ClusterConfigSynced"
+	// ClusterLicenseValid is a condition indicating whether or not the
+	// redpanda cluster has a valid license.
+	ClusterLicenseValid = "ClusterLicenseValid"
 )
 
 type ChartRef struct {
@@ -160,6 +163,7 @@ type HelmUpgrade struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=redpandas
 // +kubebuilder:resource:shortName=rp
+// +kubebuilder:printcolumn:name="License",type="string",JSONPath=`.status.conditions[?(@.type=="ClusterLicenseValid")].message`,description=""
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
 // +kubebuilder:storageversion

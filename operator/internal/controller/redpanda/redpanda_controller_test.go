@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fluxcd/helm-controller/api/v2beta2"
 	fluxclient "github.com/fluxcd/pkg/runtime/client"
 	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
@@ -425,6 +426,176 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestLicense() {
+	type image struct {
+		repository string
+		tag        string
+	}
+
+	cases := []struct {
+		image    image
+		license  bool
+		expected string
+	}{{
+		image: image{
+			repository: "redpandadata/redpanda-unstable",
+			tag:        "v24.3.1-rc4",
+		},
+		license:  false,
+		expected: "Expired",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda-unstable",
+			tag:        "v24.3.1-rc4",
+		},
+		license:  true,
+		expected: "Valid",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda",
+			tag:        "v24.2.9",
+		},
+		license:  false,
+		expected: "Not Present",
+	}, {
+		image: image{
+			repository: "redpandadata/redpanda",
+			tag:        "v24.2.9",
+		},
+		license:  true,
+		expected: "Not Present",
+	}}
+
+	for _, c := range cases {
+		rp := s.minimalRP(false)
+		rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
+			Repository: ptr.To(c.image.repository),
+			Tag:        ptr.To(c.image.tag),
+		}
+		if !c.license {
+			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+				Spec: &redpandav1alpha2.PodSpec{
+					Containers: []redpandav1alpha2.Container{{
+						Name: "redpanda",
+						Env:  []corev1.EnvVar{{Name: "__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE", Value: "true"}},
+					}},
+				},
+			}
+		}
+
+		var condition metav1.Condition
+		s.applyAndWaitFor(func(o client.Object) bool {
+			rp := o.(*redpandav1alpha2.Redpanda)
+
+			for _, cond := range rp.Status.Conditions {
+				if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+					// grab the first non-unknown status
+					if cond.Status != metav1.ConditionUnknown {
+						condition = cond
+						return true
+					}
+					return false
+				}
+			}
+			return false
+		}, rp)
+
+		name := fmt.Sprintf("%s/%s (license: %t)", c.image.repository, c.image.tag, c.license)
+		message := fmt.Sprintf("%s - %s != %s", name, c.expected, condition.Message)
+		s.Require().Equal(c.expected, condition.Message, message)
+
+		s.deleteAndWait(rp)
+	}
+}
+
+func (s *RedpandaControllerSuite) TestUpgradeRollback() {
+	rp := s.minimalRP(true)
+	rp.Spec.ChartRef.Upgrade = &redpandav1alpha2.HelmUpgrade{
+		Remediation: &v2beta2.UpgradeRemediation{
+			Retries:  1,
+			Strategy: ptr.To(v2beta2.RollbackRemediationStrategy),
+		},
+	}
+	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.2.3")
+
+	s.applyAndWait(rp)
+
+	// Apply a broken upgrade and make sure things rollback
+
+	rp.Spec.ChartRef.Timeout = ptr.To(metav1.Duration{Duration: 30 * time.Second})
+	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.99.99")
+
+	s.applyAndWaitFor(func(o client.Object) bool {
+		rp := o.(*redpandav1alpha2.Redpanda)
+
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == redpandav1alpha2.ReadyCondition {
+				if cond.Status == metav1.ConditionFalse && cond.Reason == "ArtifactFailed" {
+					return true
+				}
+				return false
+			}
+		}
+		return false
+	}, rp)
+
+	s.waitFor(&v2beta2.HelmRelease{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rp.GetName(),
+			Namespace: rp.GetNamespace(),
+		},
+	}, func(o client.Object) bool {
+		helmRelease := o.(*v2beta2.HelmRelease)
+
+		return helmRelease.Status.UpgradeFailures >= 1 && slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
+			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionFalse && cond.Reason == "UpgradeFailed"
+		})
+	})
+
+	s.waitFor(&appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rp.GetName(),
+			Namespace: rp.GetNamespace(),
+		},
+	}, func(o client.Object) bool {
+		statefulSet := o.(*appsv1.StatefulSet)
+
+		// check that we have a ready replica still because we've rolled back
+		return statefulSet.Status.ReadyReplicas == 1
+	})
+
+	// Apply the good upgrade
+
+	rp.Spec.ChartRef.Timeout = ptr.To(metav1.Duration{Duration: 3 * time.Minute})
+	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.2.10")
+
+	s.applyAndWait(rp)
+
+	s.waitFor(&v2beta2.HelmRelease{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rp.GetName(),
+			Namespace: rp.GetNamespace(),
+		},
+	}, func(o client.Object) bool {
+		helmRelease := o.(*v2beta2.HelmRelease)
+
+		return slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
+			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionTrue && cond.Reason == "UpgradeSucceeded"
+		})
+	})
+
+	s.waitFor(&appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rp.GetName(),
+			Namespace: rp.GetNamespace(),
+		},
+	}, func(o client.Object) bool {
+		statefulSet := o.(*appsv1.StatefulSet)
+
+		return statefulSet.Status.ReadyReplicas == 1
+	})
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {

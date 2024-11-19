@@ -17,6 +17,7 @@ status:
       reason: RedpandaClusterDeployed
       status: "True"
       type: Ready
+    - type: ClusterLicenseValid
     - type: ClusterConfigSynced
   helmRelease: redpanda
   helmReleaseReady: true
