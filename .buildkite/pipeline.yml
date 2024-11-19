@@ -122,7 +122,7 @@ steps:
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.4.1:
-              artifacts: operator/tests/_e2e_artifacts_v2/kuttl-report.xml
+              artifacts: work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml
               report-slowest: 5
         timeout_in_minutes: 0
         agents:
