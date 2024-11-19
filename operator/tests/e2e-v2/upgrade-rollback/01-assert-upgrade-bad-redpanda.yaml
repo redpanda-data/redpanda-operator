@@ -38,7 +38,10 @@ status:
   helmChart: redpanda/redpanda-redpanda-rollback
   lastAppliedRevision: 5.3.2
   lastAttemptedRevision: 5.3.2
-  upgradeFailures: 1
+  conditions:
+    - reason: UpgradeFailed
+      status: "False"
+      type: Ready
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
