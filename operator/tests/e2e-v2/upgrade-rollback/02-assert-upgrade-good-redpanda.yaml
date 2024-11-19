@@ -6,13 +6,6 @@ metadata:
     - operator.redpanda.com/finalizer
   name: redpanda-rollback
 status:
-  conditions:
-    - message: Redpanda reconciliation succeeded
-      reason: RedpandaClusterDeployed
-      status: "True"
-      type: Ready
-    - type: ClusterLicenseValid
-    - type: ClusterConfigSynced
   helmRelease: redpanda-rollback
   helmReleaseReady: true
   helmRepository: redpanda-repository
