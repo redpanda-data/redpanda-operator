@@ -145,6 +145,14 @@ func PropertiesEqual(
 	l logr.Logger, v1, v2 interface{}, metadata rpadmin.ConfigPropertyMetadata,
 ) bool {
 	log := l.WithName("PropertiesEqual")
+
+	// "null" (string) is the only way to define null as the desired value.
+	// Therefore, treat `"null"` as equal to `null` (only if `"null"` is on the k8s side)
+	if metadata.Nullable {
+		if v1 == "null" && v2 == nil {
+			return true
+		}
+	}
 	switch metadata.Type {
 	case "number":
 		if f1, f2, ok := bothFloat64(v1, v2); ok {
