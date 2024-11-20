@@ -41,4 +41,5 @@ tasks:
     deps:
       - task: :k8s:generate
     cmds:
+      - go version
       - 'goreleaser build --snapshot --clean'
