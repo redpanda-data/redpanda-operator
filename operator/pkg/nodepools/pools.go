@@ -18,6 +18,7 @@ package nodepools
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -25,8 +26,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,70 +88,22 @@ outer:
 			continue
 		}
 
-		replicas := sts.Spec.Replicas
-		if st, ok := cluster.Status.NodePools[npName]; ok {
-			replicas = &st.CurrentReplicas
-		}
-
-		var redpandaContainer *corev1.Container
-		for i := range sts.Spec.Template.Spec.Containers {
-			container := sts.Spec.Template.Spec.Containers[i]
-			if container.Name == "redpanda" {
-				redpandaContainer = &container
-				break
+		var np vectorizedv1alpha1.NodePoolSpec
+		if nodePoolSpecJSON, ok := sts.Annotations[labels.NodePoolSpecKey]; ok {
+			if err := json.Unmarshal([]byte(nodePoolSpecJSON), &np); err != nil {
+				return nil, fmt.Errorf("failed to synthesize deleted nodePool %s from its annotation %s", npName, labels.NodePoolSpecKey)
 			}
-		}
-		if redpandaContainer == nil {
-			return nil, fmt.Errorf("redpanda container not defined in STS %s template", sts.Name)
-		}
-
-		var datadirVcCapacity resource.Quantity
-		var datadirVcStorageClassName string
-
-		var cacheVcExists bool
-		var cacheVcCapacity resource.Quantity
-		var cacheVcStorageClassName string
-
-		for i := range sts.Spec.VolumeClaimTemplates {
-			vct := sts.Spec.VolumeClaimTemplates[i]
-			if vct.Name == "datadir" {
-				datadirVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
-				if vct.Spec.StorageClassName != nil {
-					datadirVcStorageClassName = ptr.Deref(vct.Spec.StorageClassName, "")
-				}
-			}
-			if vct.Name == "shadow-index-cache" {
-				cacheVcExists = true
-				cacheVcCapacity = vct.Spec.Resources.Requests[corev1.ResourceStorage]
-				if vct.Spec.StorageClassName != nil {
-					cacheVcStorageClassName = ptr.Deref(vct.Spec.StorageClassName, "")
-				}
-			}
+		} else {
+			return nil, fmt.Errorf("could not find annotation %s on StatefulSet with name %s", labels.NodePoolSpecKey, sts.Name)
 		}
 
-		np := vectorizedv1alpha1.NodePoolSpecWithDeleted{
-			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{
-				Name:     npName,
-				Replicas: replicas,
-				Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
-					ResourceRequirements: redpandaContainer.Resources,
-				},
-				Tolerations:  sts.Spec.Template.Spec.Tolerations,
-				NodeSelector: sts.Spec.Template.Spec.NodeSelector,
-				Storage: vectorizedv1alpha1.StorageSpec{
-					Capacity:         datadirVcCapacity,
-					StorageClassName: datadirVcStorageClassName,
-				},
-			},
-			Deleted: true,
-		}
-		if cacheVcExists {
-			np.CloudCacheStorage = vectorizedv1alpha1.StorageSpec{
-				Capacity:         cacheVcCapacity,
-				StorageClassName: cacheVcStorageClassName,
-			}
-		}
-		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &np)
+		// Desired replicas for deleted NodePools is always zero.
+		np.Replicas = ptr.To(int32(0))
+
+		nodePoolsWithDeleted = append(nodePoolsWithDeleted, &vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: np,
+			Deleted:      true,
+		})
 	}
 	return nodePoolsWithDeleted, nil
 }

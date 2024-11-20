@@ -102,9 +102,8 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 		return r.setCurrentReplicas(ctx, *r.nodePool.Replicas, r.nodePool.Name, r.logger)
 	}
 
-	if ptr.Deref(r.nodePool.Replicas, 0) == npCurrentReplicas && !r.nodePool.Deleted {
+	if ptr.Deref(r.nodePool.Replicas, 0) == npCurrentReplicas {
 		log.V(logger.DebugLevel).Info("No scaling changes required for this nodepool", "replicas", *r.nodePool.Replicas, "spec replicas", *r.LastObservedState.Spec.Replicas) // No changes to replicas, we do nothing here
-
 		return nil
 	}
 

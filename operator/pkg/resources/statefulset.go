@@ -428,11 +428,19 @@ func (r *StatefulSetResource) obj(
 		nodePoolSelector = clusterLabels.AsAPISelector()
 	}
 
+	nodePoolSpecJSON, err := json.Marshal(r.nodePool.NodePoolSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal NodePoolSpec as JSON: %w", err)
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.Key().Namespace,
 			Name:      r.Key().Name,
 			Labels:    nodePoolLabels,
+			Annotations: map[string]string{
+				labels.NodePoolSpecKey: string(nodePoolSpecJSON),
+			},
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
