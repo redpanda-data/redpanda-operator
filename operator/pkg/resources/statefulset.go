@@ -318,7 +318,6 @@ func preparePVCResource(
 func (r *StatefulSetResource) obj(
 	ctx context.Context,
 ) (k8sclient.Object, error) {
-	log := r.logger.WithValues("nodepool", r.nodePool.Name)
 	clusterLabels := labels.ForCluster(r.pandaCluster)
 	nodePoolLabels := labels.ForCluster(r.pandaCluster).WithNodePool(r.nodePool.Name)
 
@@ -424,10 +423,8 @@ func (r *StatefulSetResource) obj(
 
 	var nodePoolSelector *metav1.LabelSelector
 	if canAddNodePoolToSelector {
-		log.Info("!! can add np label")
 		nodePoolSelector = nodePoolLabels.AsAPISelectorForNodePool()
 	} else {
-		log.Info("!! CANNOT add np label")
 		nodePoolSelector = clusterLabels.AsAPISelector()
 	}
 
