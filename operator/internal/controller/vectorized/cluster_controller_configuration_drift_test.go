@@ -10,12 +10,92 @@
 package vectorized
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/redpanda"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+func TestDiffIntegration(t *testing.T) {
+	const user = "syncer"
+	const password = "password"
+	const saslMechanism = "SCRAM-SHA-256"
+
+	ctx := context.Background()
+	logger := testr.New(t)
+	ctx = log.IntoContext(ctx, logger)
+
+	// No auth is easy, only test on a cluster with auth on admin API.
+	container, err := redpanda.Run(
+		ctx,
+		"docker.redpanda.com/redpandadata/redpanda:v24.2.4",
+		// TODO: Upgrade to testcontainers 0.33.0 so we get
+		// WithBootstrapConfig. For whatever reason, it seems to not get along
+		// with CI.
+		// redpanda.WithBootstrapConfig("admin_api_require_auth", true),
+		redpanda.WithSuperusers("syncer"),
+		testcontainers.WithEnv(map[string]string{
+			"RP_BOOTSTRAP_USER": fmt.Sprintf("%s:%s:%s", user, password, saslMechanism),
+		}),
+	)
+	require.NoError(t, err)
+	defer func() {
+		_ = container.Stop(ctx, nil)
+	}()
+
+	// Configure the same environment as we'll be executed in within the helm
+	// chart:
+	// https://github.com/redpanda-data/helm-charts/commit/081c08b6b83ba196994ec3312a7c6011e4ef0a22#diff-84c6555620e4e5f79262384a9fa3e8f4876b36bb3a64748cbd8fbdcb66e8c1b9R966
+	t.Setenv("RPK_USER", user)
+	t.Setenv("RPK_PASS", password)
+	t.Setenv("RPK_SASL_MECHANISM", saslMechanism)
+
+	adminAPIAddr, err := container.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	adminAPIClient, err := rpadmin.NewAdminAPI([]string{adminAPIAddr}, &rpadmin.BasicAuth{
+		Username: user,
+		Password: password,
+	}, nil)
+	require.NoError(t, err)
+
+	_, err = adminAPIClient.PatchClusterConfig(ctx, map[string]any{
+		"kafka_rpc_server_tcp_send_buf": 102400,
+	}, []string{})
+	require.NoError(t, err)
+
+	schema, err := adminAPIClient.ClusterConfigSchema(ctx)
+	require.NoError(t, err)
+
+	config, err := adminAPIClient.Config(ctx, true)
+	require.NoError(t, err)
+	require.Equal(t, config["kafka_rpc_server_tcp_send_buf"].(float64), float64(102400))
+
+	_, drift := hasDrift(logr.Discard(), map[string]any{
+		"kafka_rpc_server_tcp_send_buf": "null",
+	}, config, schema)
+	require.True(t, drift, `expecting to see a drift between integer in redpanda and "null" in desired configuration`)
+
+	_, err = adminAPIClient.PatchClusterConfig(ctx, map[string]any{
+		"kafka_rpc_server_tcp_send_buf": nil,
+	}, []string{})
+	require.NoError(t, err)
+
+	config, err = adminAPIClient.Config(ctx, true)
+	require.NoError(t, err)
+
+	_, drift = hasDrift(logr.Discard(), map[string]any{
+		"kafka_rpc_server_tcp_send_buf": "null",
+	}, config, schema)
+	require.False(t, drift, `shall have no drift if we compare null against "null"`)
+}
 
 func TestDiffWithNull(t *testing.T) {
 	assert := require.New(t)
