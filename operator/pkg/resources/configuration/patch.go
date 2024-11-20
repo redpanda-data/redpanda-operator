@@ -80,7 +80,7 @@ func ThreeWayMerge(
 	for k, v := range apply {
 		if oldValue, ok := current[k]; !ok || !PropertiesEqual(log, v, oldValue, schema[k]) {
 			metadata := schema[k]
-			patch.Upsert[k] = parseConfigValueBeforeUpsert(log, v, &metadata)
+			patch.Upsert[k] = ParseConfigValueBeforeUpsert(log, v, &metadata)
 		}
 	}
 	invalidSet := make(map[string]bool, len(invalidProperties))
@@ -99,7 +99,7 @@ func ThreeWayMerge(
 	return patch
 }
 
-func parseConfigValueBeforeUpsert(log logr.Logger, value interface{}, metadata *rpadmin.ConfigPropertyMetadata) interface{} {
+func ParseConfigValueBeforeUpsert(log logr.Logger, value interface{}, metadata *rpadmin.ConfigPropertyMetadata) interface{} {
 	tempValue := fmt.Sprintf("%v", value)
 
 	//nolint:gocritic // no need to be a switch case
@@ -145,6 +145,7 @@ func PropertiesEqual(
 	l logr.Logger, v1, v2 interface{}, metadata rpadmin.ConfigPropertyMetadata,
 ) bool {
 	log := l.WithName("PropertiesEqual")
+
 	switch metadata.Type {
 	case "number":
 		if f1, f2, ok := bothFloat64(v1, v2); ok {

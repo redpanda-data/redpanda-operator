@@ -181,8 +181,17 @@ func (r *ClusterConfigurationDriftReconciler) Reconcile(
 func hasDrift(log logr.Logger, desired, actual map[string]any, schema map[string]rpadmin.ConfigPropertyMetadata) (configuration.CentralConfigurationPatch, bool) {
 	// Make copy of desired, actual, so callers not surprised that items are removed by this function.
 	copiedDesired := make(map[string]any)
+
+	for k, v := range desired {
+		s := schema[k]
+		v := v
+
+		// Before sending cluster properties to admin-api, cluster controller "sanitizes" them.
+		// Do the same for drift detection.
+		copiedDesired[k] = configuration.ParseConfigValueBeforeUpsert(log, v, &s)
+	}
+
 	copiedActual := make(map[string]any)
-	maps.Copy(copiedDesired, desired)
 	maps.Copy(copiedActual, actual)
 
 	for k, v := range schema { //nolint:gocritic // ignore rangeValCopy - this is the type returned by Admin API client.
