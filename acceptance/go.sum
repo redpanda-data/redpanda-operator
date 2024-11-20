@@ -193,12 +193,14 @@ github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSw
 github.com/fluxcd/helm-controller/api v0.37.2 h1:tkLezpRdqPDz7HoKHFu92sV+ppOCVDxkjFTh8/lpff8=
 github.com/fluxcd/helm-controller/api v0.37.2/go.mod h1:BuXZhAX9blQviil6yUN5zNM4RB753yhyBTJXxXff7Mo=
 github.com/fluxcd/pkg/apis/acl v0.1.0 h1:EoAl377hDQYL3WqanWCdifauXqXbMyFuK82NnX6pH4Q=
+github.com/fluxcd/pkg/apis/acl v0.1.0/go.mod h1:zfEZzz169Oap034EsDhmCAGgnWlcWmIObZjYMusoXS8=
 github.com/fluxcd/pkg/apis/kustomize v1.2.0 h1:vkVs+OumxaWso0jNCqdgFFfMHdh+qtZhykTkjl7OgmA=
 github.com/fluxcd/pkg/apis/kustomize v1.2.0/go.mod h1:VF7tR/WuVFeum+HaMTHwp+eCtsHiiQlY6ihgqtAnW/M=
 github.com/fluxcd/pkg/apis/meta v1.2.0 h1:O766PzGAdMdQKybSflGL8oV0+GgCNIkdsxfalRyzeO8=
 github.com/fluxcd/pkg/apis/meta v1.2.0/go.mod h1:fU/Az9AoVyIxC0oI4ihG0NVMNnvrcCzdEym3wxjIQsc=
 github.com/fluxcd/source-controller v1.2.3 h1:g+lleTMyaS2yPfOHuXGJIjQLyiIPjPxM1/m59vwMdgs=
 github.com/fluxcd/source-controller/api v1.2.3 h1:71mXv3Qg9HEhcpqOq1ObmoE+P/HuZNaAvxfI7dqZMo8=
+github.com/fluxcd/source-controller/api v1.2.3/go.mod h1:5gaIVVH7hgb8p3HKFp8P6hGmZEC8fKSt4EcrG3g5vZI=
 github.com/foxcpp/go-mockdns v1.0.0 h1:7jBqxd3WDWwi/6WhDvacvH1XsN3rOLXyHM1uhvIx6FI=
 github.com/foxcpp/go-mockdns v1.0.0/go.mod h1:lgRN6+KxQBawyIghpnl5CezHFGS9VLzvtVlwxvzXTQ4=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
@@ -641,9 +643,11 @@ github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoG
 github.com/redpanda-data/common-go/net v0.1.0 h1:JnJioRJuL961r1QXiJQ1tW9+yEaJfu8FpXnUmvQbwNM=
 github.com/redpanda-data/common-go/net v0.1.0/go.mod h1:iOdNkjxM7a1T8F3cYHTaKIPFCHzzp/ia6TN+Z+7Tt5w=
 github.com/redpanda-data/common-go/rpadmin v0.1.9 h1:X5a95P7Dc+7EaidU7dusWJyiG3eJmk4zJtUttfvhmc4=
+github.com/redpanda-data/common-go/rpadmin v0.1.9/go.mod h1:I7umqhnMhIOSEnIA3fvLtdQU7QO/SbWGCwFfFDs3De4=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 h1:+zsE3W1V86k2sjAGWOySIlF0xn5R1aXXQBaIdr80F48=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20/go.mod h1:DC42/3+k5PefSo4IalYbDN3yRZrVFP0b69+gC/NwGd4=
 github.com/redpanda-data/helm-charts v0.0.0-20241114193526-f53a0adc8f15 h1:OkWn3PL9PbIegbYfEZ9LbVAnZpQd/MzUbFdJLxWbX+s=
+github.com/redpanda-data/helm-charts v0.0.0-20241114193526-f53a0adc8f15/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8/go.mod h1:97qkjcMI3gDL+y+aY/w5o0xF2qGHFof6rCXIYjnTalM=
 github.com/rhnvrm/simples3 v0.6.1/go.mod h1:Y+3vYm2V7Y4VijFoJHHTrja6OgPrJ2cBti8dPGkC3sA=

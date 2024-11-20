@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/operator
 
-go 1.22.7
+go 1.23.2
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
