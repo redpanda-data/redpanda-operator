@@ -17,6 +17,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDiffWithNull(t *testing.T) {
+	assert := require.New(t)
+
+	schema := map[string]rpadmin.ConfigPropertyMetadata{
+		"kafka_rpc_server_tcp_send_buf": {
+			Type:         "integer",
+			Description:  "Size of the Kafka server TCP receive buffer. If `null`, the property is disabled.",
+			Nullable:     true,
+			NeedsRestart: true,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+	}
+
+	_, ok := hasDrift(logr.Discard(), map[string]any{
+		"kafka_rpc_server_tcp_send_buf": "null",
+	}, map[string]any{
+		"kafka_rpc_server_tcp_send_buf": nil,
+	}, schema)
+	assert.False(ok)
+}
+
 func TestHasDrift(t *testing.T) {
 	assert := require.New(t)
 
