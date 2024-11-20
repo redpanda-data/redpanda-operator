@@ -1,45 +1,8 @@
 version: '3'
 
 tasks:
-  release:
-    dir: '{{.SRC_DIR}}'
-    desc: release go binaries using the .goreleaser.yml file in given directory
-    deps:
-      - task: :k8s:generate
-    env:
-      GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
-      GITHUB_TOKEN:
-        sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
-    cmds:
-      - |
-        EMPTY_NOTES="/tmp/empty_notes"
-        mkdir -p /tmp
-        echo "" >> "$EMPTY_NOTES"
-
-        goreleaser release --clean --release-notes "$EMPTY_NOTES"
-    preconditions:
-      - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
-      - test -n "{{.TAG_NAME}}"
-
-  build:
-    dir: '{{.SRC_DIR}}'
-    # A .goreleaser.yml file is required at the GO_SRC_DIR
-    desc: build go binaries with goreleaser and a given id
-    deps:
-      - task: :k8s:generate
-    env:
-      GORELEASER_CURRENT_TAG: '{{.TAG_NAME}}'
-    cmds:
-      - |
-        export PATH="{{.GORELEASER_INSTALL_DIR}}:$PATH"
-        goreleaser build --clean --id {{.GORELEASER_BUILD_ID}} {{.CLI_ARGS}}
-    preconditions:
-      - test -n "{{.GORELEASER_BUILD_ID}}"
-      - test -n "{{.TAG_NAME}}"
-
   build-operator-binaries:
     deps:
       - task: :k8s:generate
     cmds:
-      - go version
-      - 'goreleaser build --snapshot --clean'
+      - 'goreleaser build --snapshot --clean {{.CLI_ARGS}}'

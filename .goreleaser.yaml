@@ -15,6 +15,10 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+    - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.version={{.Version}}"
+    - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.Commit}}"
+    - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.Date}}"
 
   - id: manager-alias
     dir: ./alias
