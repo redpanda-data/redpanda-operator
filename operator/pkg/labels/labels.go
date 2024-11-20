@@ -36,6 +36,11 @@ const (
 	// PodNodeIDKey is used to store the Redpanda NodeID of this pod.
 	PodNodeIDKey = "operator.redpanda.com/node-id"
 
+	// NodePoolSpecKey is used to store the NodePoolSpec in a StatefulSet's annotations.
+	// This allows the operator to correctly reconstruct a NodePoolSpec even
+	// after it was removed from Spec already.
+	NodePoolSpecKey = "cluster.redpanda.com/node-pool-spec"
+
 	nameKeyRedpandaVal   = "redpanda"
 	nameKeyConsoleVal    = "redpanda-console"
 	managedByOperatorVal = "redpanda-operator"
