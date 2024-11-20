@@ -18,6 +18,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -42,6 +43,7 @@ func init() {
 		envsubst.Command(),
 		run.Command(),
 		syncclusterconfig.Command(),
+		version.Command(),
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())
