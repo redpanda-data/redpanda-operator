@@ -256,7 +256,7 @@ func Run(
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminutils.NewNodePoolInternalAdminAPI,
+			AdminAPIClientFactory:     adminAPIClientFactory,
 			DecommissionWaitInterval:  decommissionWaitInterval,
 			MetricsTimeout:            metricsTimeout,
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,

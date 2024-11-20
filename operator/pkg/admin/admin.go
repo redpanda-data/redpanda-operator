@@ -52,6 +52,25 @@ func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) 
 		adminTLSProvider types.AdminTLSConfigProvider,
 		pods ...string,
 	) (AdminAPIClient, error) {
+		// If no pods are provided, list them, and do not rely on the inner uncached client to do this for us.
+		// This is important, because we want to make the pods part of the cache
+		// key, so any change in pods must invalidate the client.
+		if len(pods) == 0 {
+			var listedPods corev1.PodList
+			err := k8sClient.List(ctx, &listedPods, &client.ListOptions{
+				LabelSelector: labels.ForCluster(redpandaCluster).AsClientSelector(),
+				Namespace:     redpandaCluster.Namespace,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("unable list pods to infer admin API URLs: %w", err)
+			}
+
+			for i := range listedPods.Items {
+				pod := listedPods.Items[i]
+				pods = append(pods, pod.Name)
+			}
+		}
+
 		// Most importantly, Generation is part of the cache key. Anytime .Spec
 		// changes, Generation will increment meaning we may need to
 		// reconfigure the client due to changes in TLS/Auth/Etc.
