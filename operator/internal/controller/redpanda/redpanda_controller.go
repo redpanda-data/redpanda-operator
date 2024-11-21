@@ -140,7 +140,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 			MatchExpressions: []metav1.LabelSelectorRequirement{{
 				Key:      "app.kubernetes.io/name", // look for only redpanda or console pods
 				Operator: metav1.LabelSelectorOpIn,
-				Values:   []string{"redpanda", "console"},
+				Values:   []string{"redpanda", "console", "connectors"},
 			}, {
 				Key:      "app.kubernetes.io/instance", // make sure we have a cluster name
 				Operator: metav1.LabelSelectorOpExists,
@@ -278,6 +278,13 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.R
 		return err
 	}
 
+	connectorsDeployments, err := connectorsDeploymentsForCluster(ctx, r.Client, rp)
+	if err != nil {
+		return err
+	}
+
+	deployments := append(consoleDeployments, connectorsDeployments...)
+
 	if len(redpandaStatefulSets) == 0 {
 		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created")
 		return nil
@@ -290,7 +297,7 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.R
 	}
 
 	// check to make sure that our deployment pods are all current
-	if message, ready := checkDeploymentsStatus(consoleDeployments); !ready {
+	if message, ready := checkDeploymentsStatus(deployments); !ready {
 		_ = v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message)
 		return nil
 	}

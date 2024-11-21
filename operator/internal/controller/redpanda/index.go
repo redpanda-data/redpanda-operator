@@ -106,7 +106,7 @@ func clusterForHelmManagedObject(o client.Object) (types.NamespacedName, bool) {
 	}
 
 	role := labels["app.kubernetes.io/name"]
-	if !slices.Contains([]string{"redpanda", "console"}, role) {
+	if !slices.Contains([]string{"redpanda", "console", "connectors"}, role) {
 		return types.NamespacedName{}, false
 	}
 
@@ -148,6 +148,20 @@ func indexHelmManagedObjectCluster(o client.Object) []string {
 
 func consoleDeploymentsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.Deployment, error) {
 	key := client.ObjectKeyFromObject(cluster).String() + "/console"
+
+	deploymentList := &appsv1.DeploymentList{}
+	err := c.List(ctx, deploymentList, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("deployment"), key),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return functional.MapFn(ptr.To, deploymentList.Items), nil
+}
+
+func connectorsDeploymentsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.Deployment, error) {
+	key := client.ObjectKeyFromObject(cluster).String() + "/connectors"
 
 	deploymentList := &appsv1.DeploymentList{}
 	err := c.List(ctx, deploymentList, &client.ListOptions{
