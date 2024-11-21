@@ -96,6 +96,7 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 	// - Flux (Fresh) -> NoFlux (Toggled) -> Flux (Toggled)
 	for _, useFlux := range []bool{true, false} {
 		rp := s.minimalRP(useFlux)
+
 		s.applyAndWait(rp)
 
 		filter := client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}
@@ -121,6 +122,10 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	rp := s.minimalRP(false)
 	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(true)
+	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
+		Enabled: ptr.To(true),
+	}
+
 	s.applyAndWait(rp)
 
 	// Create a list of secrets with varying labels that we expect to NOT get
@@ -166,7 +171,7 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	// Assert that the console deployment exists
 	s.EventuallyWithT(func(t *assert.CollectT) {
 		var deployments appsv1.DeploymentList
-		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
+		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "console"}))
 		assert.Len(t, deployments.Items, 1)
 	}, time.Minute, time.Second, "console deployment not scheduled")
 
@@ -176,7 +181,7 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	// Assert that the console deployment has been garbage collected.
 	s.EventuallyWithT(func(t *assert.CollectT) {
 		var deployments appsv1.DeploymentList
-		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}))
+		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "console"}))
 		assert.Len(t, deployments.Items, 0)
 	}, time.Minute, time.Second, "console deployment not GC'd")
 
@@ -510,6 +515,17 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}
 }
 
+func (s *RedpandaControllerSuite) TestConnectorsIntegration() {
+	rp := s.minimalRP(false)
+
+	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
+		Enabled: ptr.To(true),
+	}
+
+	s.applyAndWait(rp)
+	s.deleteAndWait(rp)
+}
+
 func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 	rp := s.minimalRP(true)
 	rp.Spec.ChartRef.Upgrade = &redpandav1alpha2.HelmUpgrade{
@@ -596,6 +612,7 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 
 		return statefulSet.Status.ReadyReplicas == 1
 	})
+	s.deleteAndWait(rp)
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {
