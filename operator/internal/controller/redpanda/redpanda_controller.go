@@ -255,7 +255,7 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.GetHelmReleaseName())
+		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.Status.HelmRepository)
 		_ = v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
 		return nil
 	}
