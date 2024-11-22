@@ -1011,16 +1011,19 @@ type Memory struct {
 	Redpanda *RedpandaMemory `json:"redpanda,omitempty"`
 }
 
-// RedpandaMemory allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar. This section is omitted by default, and memory sizes are calculated automatically based on container memory. Configuring this section and setting `memory` and `reserveMemory` values will disable automatic calculation.
-// If you are setting the following values manually, keep in mind the following guidelines. Getting this wrong may lead to performance issues, instability, and loss of data: The amount of memory to allocate to a container is determined by the sum of three values:
+// RedpandaMemory allows you to optionally specify the memory size for the Redpanda process, including the Seastar subsystem. By default, this section is omitted, and memory sizes are calculated automatically based on the container's total memory allocation. When you configure this section and manually set the memory and reserveMemory values, the automatic calculation is disabled.
 //
-// 1. Redpanda (at least 2Gi per core, ~80% of the container's total memory)
-// 2. Seastar subsystem (200Mi * 0.2% of the container's total memory, 200Mi < x < 1Gi)
-// 3. Other container processes (whatever small amount remains)
+// If you are setting these values manually, follow these guidelines carefully. Incorrect settings can lead to performance degradation, instability, or even data loss. The total memory allocated to a container is determined as the sum of the following two areas:
+//
+// - Redpanda (including Seastar):
+// Defined by the `--memory` parameter. Includes the memory used by the Redpanda process and the reserved memory allocated for Seastar. A minimum of 2Gi per core is required, and this value typically accounts for ~80% of the container’s total memory. For production, allocate at least 8Gi.
+//
+// - Operating system (OS):
+// Defined by the `--reserve-memory` parameter. Represents the memory available for the operating system and other processes within the container.
 type RedpandaMemory struct {
 	// Memory for the Redpanda process. This must be lower than the container's memory (`resources.memory.container.min` if provided, otherwise `resources.memory.container.max`). Equivalent to `--memory`. For production, use 8Gi or greater.
 	Memory *resource.Quantity `json:"memory,omitempty"`
-	// Memory reserved for the Seastar subsystem. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi.
+	// Memory reserved for the OS. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi.
 	ReserveMemory *resource.Quantity `json:"reserveMemory,omitempty"`
 }
 
