@@ -6654,10 +6654,10 @@ spec:
                                 anyOf:
                                 - type: integer
                                 - type: string
-                                description: Memory reserved for the Seastar subsystem.
-                                  Any value above 1Gi will provide diminishing performance
-                                  benefits. Equivalent to `--reserve-memory`. For
-                                  production, use 1Gi.
+                                description: Memory reserved for the OS. Any value
+                                  above 1Gi will provide diminishing performance benefits.
+                                  Equivalent to `--reserve-memory`. For production,
+                                  use 1Gi.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
@@ -16444,10 +16444,10 @@ spec:
                                 anyOf:
                                 - type: integer
                                 - type: string
-                                description: Memory reserved for the Seastar subsystem.
-                                  Any value above 1Gi will provide diminishing performance
-                                  benefits. Equivalent to `--reserve-memory`. For
-                                  production, use 1Gi.
+                                description: Memory reserved for the OS. Any value
+                                  above 1Gi will provide diminishing performance benefits.
+                                  Equivalent to `--reserve-memory`. For production,
+                                  use 1Gi.
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
