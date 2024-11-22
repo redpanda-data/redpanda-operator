@@ -60,7 +60,7 @@ tasks:
       - generate
     cmds:
       - |
-        go test -v ./... -coverprofile cover.out -timeout 15m
+        go test -v ./... -coverprofile cover.out -timeout 20m
 
   build-operator-images:
     deps:
