@@ -19,15 +19,19 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"golang.org/x/sys/unix"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -128,10 +132,16 @@ func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 		opt.apply(config)
 	}
 
+	port, err := reserveEphemeralPort("tcp4")
+	if err != nil {
+		return nil, err
+	}
+
 	args := []string{
 		"cluster",
 		"create",
 		name,
+		fmt.Sprintf("--api-port=127.0.0.1:%d", port),
 		fmt.Sprintf("--agents=%d", config.agents),
 		fmt.Sprintf("--timeout=%s", config.timeout),
 		fmt.Sprintf("--image=%s", config.image),
@@ -332,3 +342,61 @@ var startupManifests = sync.OnceValue(func() []client.Object {
 
 	return objs
 })
+
+// reserveEphemeralPort attempts to "reserve" an ephemeral OS port by putting
+// it into a TIME_WAIT state which prevents the OS re-allocating it when
+// binding to port 0.
+// Big thanks to:
+// - https://github.com/libp2p/go-reuseport
+// - https://github.com/Yelp/ephemeral-port-reserve
+func reserveEphemeralPort(network string) (int, error) {
+	lc := net.ListenConfig{
+		Control: func(network, address string, c syscall.RawConn) error {
+			var optErr error
+			ctrlErr := c.Control(func(fd uintptr) {
+				// Setting SO_REUSEADDR allows this port to be rebound after we finish using it.
+				// It works roughly the same way on macos and linux.
+				optErr = unix.SetsockoptInt(int(fd), unix.SOL_SOCKET, unix.SO_REUSEADDR, 1)
+			})
+			return errors.Join(ctrlErr, optErr)
+		},
+	}
+
+	// Listen to port 0 to get an OS allocated port.
+	lis, err := lc.Listen(context.Background(), network, "127.0.0.1:0")
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	defer lis.Close()
+
+	// According to ephemeral-port-reserve, we need to accept a connection to
+	// actually put this port into the TIME_WAIT state.
+	errCh := make(chan error, 1)
+	go func() {
+		conn, err := net.Dial(lis.Addr().Network(), lis.Addr().String())
+		if err != nil {
+			errCh <- err
+			return
+		}
+		errCh <- conn.Close()
+	}()
+
+	conn, err := lis.Accept()
+	if err != nil {
+		return 0, err
+	}
+
+	defer conn.Close()
+
+	if err := <-errCh; err != nil {
+		return 0, err
+	}
+
+	_, port, err := net.SplitHostPort(lis.Addr().String())
+	if err != nil {
+		return 0, err
+	}
+
+	return strconv.Atoi(port)
+}
