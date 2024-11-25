@@ -146,6 +146,10 @@ func PropertiesEqual(
 ) bool {
 	log := l.WithName("PropertiesEqual")
 
+	if metadata.Nullable && v1 == nil && v2 == nil {
+		return true
+	}
+
 	switch metadata.Type {
 	case "number":
 		if f1, f2, ok := bothFloat64(v1, v2); ok {
