@@ -518,12 +518,16 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 
 	log.Info("Put broker into maintenance mode", "patch", patchResult.Patch)
 	if err = r.putInMaintenanceMode(ctx, pod.Name); err != nil {
-		// As maintenance mode can not be easily watched using controller runtime the requeue error
-		// is always returned. That way a rolling update will not finish when operator waits for
-		// maintenance mode finished.
-		return &RequeueAfterError{
-			RequeueAfter: RequeueDuration,
-			Msg:          fmt.Sprintf("putting node (%s) into maintenance mode: %v", pod.Name, err),
+		if e := new(rpadmin.HTTPResponseError); errors.As(err, &e) && e.Response != nil && e.Response.StatusCode != http.StatusNotFound {
+			log.Info("Enabling maintenance mode failed and returned 404. Ignoring, as broker is most likely decommissioned.", "pod", pod.Name)
+		} else {
+			// As maintenance mode can not be easily watched using controller runtime the requeue error
+			// is always returned. That way a rolling update will not finish when operator waits for
+			// maintenance mode finished.
+			return &RequeueAfterError{
+				RequeueAfter: RequeueDuration,
+				Msg:          fmt.Sprintf("putting node (%s) into maintenance mode: %v", pod.Name, err),
+			}
 		}
 	}
 	log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
