@@ -179,6 +179,8 @@ type SecretStore struct {
 	GCPSecretManager *SecretManagerGCP        `json:"gcpSecretManager,omitempty"`
 	AWSSecretManager *SecretManagerAWS        `json:"awsSecretManager,omitempty"`
 	KafkaConnect     *SecretStoreKafkaConnect `json:"kafkaConnect,omitempty"`
+	// Scopes is a list of supported secret scopes
+	Scopes []string `json:"scopes,omitempty"`
 }
 
 // SecretManagerGCP is the configuration object for using Google Cloud's secret manager.
