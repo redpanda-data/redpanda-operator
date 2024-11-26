@@ -896,6 +896,11 @@ spec:
                     - clusters
                     - enabled
                     type: object
+                  scopes:
+                    description: Scopes is a list of supported secret scopes
+                    items:
+                      type: string
+                    type: array
                   secretNamePrefix:
                     description: |-
                       SecretNamePrefix is the prefix that shall be used for each secret name

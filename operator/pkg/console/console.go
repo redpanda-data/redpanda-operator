@@ -165,6 +165,7 @@ type EnterpriseSecretStore struct {
 	GCPSecretManager EnterpriseSecretManagerGCP        `json:"gcpSecretManager" yaml:"gcpSecretManager"`
 	AWSSecretManager EnterpriseSecretManagerAWS        `json:"awsSecretManager" yaml:"awsSecretManager"`
 	KafkaConnect     EnterpriseSecretStoreKafkaConnect `json:"kafkaConnect" yaml:"kafkaConnect"`
+	Scopes           EnterpriseSecretStoreScopes       `json:"scopes" yaml:"scopes"`
 }
 
 type EnterpriseSecretManagerGCP struct {
@@ -184,6 +185,10 @@ type EnterpriseSecretManagerAWS struct {
 type EnterpriseSecretStoreKafkaConnect struct {
 	Enabled  bool                                       `json:"enabled" yaml:"enabled"`
 	Clusters []EnterpriseSecretStoreKafkaConnectCluster `json:"clusters" yaml:"clusters"`
+}
+
+type EnterpriseSecretStoreScopes struct {
+	Scopes []string `json:"scopes" yaml:"scopes"`
 }
 
 type EnterpriseSecretStoreKafkaConnectCluster struct {
