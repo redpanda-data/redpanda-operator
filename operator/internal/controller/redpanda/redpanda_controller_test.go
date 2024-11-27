@@ -441,9 +441,10 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}
 
 	cases := []struct {
-		image    image
-		license  bool
-		expected string
+		image                 image
+		license               bool
+		expected              string
+		expectedLicenseStatus *redpandav1alpha2.RedpandaLicenseStatus
 	}{{
 		image: image{
 			repository: "redpandadata/redpanda-unstable",
@@ -451,6 +452,9 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		},
 		license:  false,
 		expected: "Expired",
+		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
+			Expired: ptr.To(true),
+		},
 	}, {
 		image: image{
 			repository: "redpandadata/redpanda-unstable",
@@ -458,6 +462,11 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		},
 		license:  true,
 		expected: "Valid",
+		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
+			Expired: ptr.To(false),
+			// add a 45 day expiration, which is how we handle trial licenses
+			Expiration: ptr.To(time.Now().Add(45 * 24 * time.Hour).UTC().Format(redpanda.LicenseExpirationFormat)),
+		},
 	}, {
 		image: image{
 			repository: "redpandadata/redpanda",
@@ -492,6 +501,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		}
 
 		var condition metav1.Condition
+		var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
 		s.applyAndWaitFor(func(o client.Object) bool {
 			rp := o.(*redpandav1alpha2.Redpanda)
 
@@ -500,6 +510,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 					// grab the first non-unknown status
 					if cond.Status != metav1.ConditionUnknown {
 						condition = cond
+						licenseStatus = rp.Status.LicenseStatus
 						return true
 					}
 					return false
@@ -511,6 +522,32 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		name := fmt.Sprintf("%s/%s (license: %t)", c.image.repository, c.image.tag, c.license)
 		message := fmt.Sprintf("%s - %s != %s", name, c.expected, condition.Message)
 		s.Require().Equal(c.expected, condition.Message, message)
+
+		if c.expectedLicenseStatus == nil && licenseStatus != nil {
+			s.T().Fatalf("%s does not have a nil license %s", name, licenseStatus.String())
+		}
+
+		if c.expectedLicenseStatus != nil {
+			s.Require().NotNil(licenseStatus, "%s does has a nil license", name)
+			s.Require().Equal(*licenseStatus.Expired, *c.expectedLicenseStatus.Expired, "%s license expired field does not match")
+			s.Require().EqualValues(licenseStatus.InUseFeatures, c.expectedLicenseStatus.InUseFeatures, "%s license valid features do not match")
+
+			// only do the expiration check if the license isn't already expired
+			if !*licenseStatus.Expired {
+				expectedExpiration, err := time.Parse(redpanda.LicenseExpirationFormat, *c.expectedLicenseStatus.Expiration)
+				s.Require().NoError(err)
+				actualExpiration, err := time.Parse(redpanda.LicenseExpirationFormat, *licenseStatus.Expiration)
+				s.Require().NoError(err)
+
+				// add some fudge factor so that we don't fail with flakiness due to tests being run at
+				// the change of a couple of minutes that causes the date to be rolled over a day
+				if !expectedExpiration.Equal(actualExpiration) &&
+					!expectedExpiration.Add(24*time.Hour).Equal(actualExpiration) &&
+					!expectedExpiration.Add(-24*time.Hour).Equal(actualExpiration) {
+					s.T().Fatalf("%s does not match expected expiration: %s != %s", name, *licenseStatus.Expiration, *c.expectedLicenseStatus.Expiration)
+				}
+			}
+		}
 
 		s.deleteAndWait(rp)
 	}
@@ -749,7 +786,7 @@ func (s *RedpandaControllerSuite) randString(length int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	name := ""
-	for i := 0; i < 6; i++ {
+	for i := 0; i < length; i++ {
 		//nolint:gosec // not meant to be a secure random string.
 		name += string(alphabet[rand.Intn(len(alphabet))])
 	}

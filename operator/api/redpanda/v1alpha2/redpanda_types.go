@@ -12,6 +12,8 @@ package v1alpha2
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
@@ -143,6 +145,33 @@ type RedpandaStatus struct {
 	// decommissioned from the cluster and provides its ordinal number.
 	// +optional
 	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
+
+	// LicenseStatus contains information about the current state of any
+	// installed license in the Redpanda cluster.
+	// +optional
+	LicenseStatus *RedpandaLicenseStatus `json:"license,omitempty"`
+}
+
+type RedpandaLicenseStatus struct {
+	// +optional
+	Expired *bool `json:"expired,omitempty"`
+	// +optional
+	Expiration *string `json:"expiration,omitempty"`
+	// +optional
+	InUseFeatures []string `json:"inUseFeatures,omitempty"`
+}
+
+func (s *RedpandaLicenseStatus) String() string {
+	expired := "nil"
+	expiration := "nil"
+	if s.Expired != nil {
+		expired = strconv.FormatBool(*s.Expired)
+	}
+	if s.Expiration != nil {
+		expiration = *s.Expiration
+	}
+
+	return fmt.Sprintf("License Status: Expired(%s), Expiration(%s), Features([%s])", expired, expiration, strings.Join(s.InUseFeatures, ", "))
 }
 
 type RemediationStrategy string
