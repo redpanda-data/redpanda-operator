@@ -432,19 +432,13 @@ func (cm *ConfigMap) genSecretStore() EnterpriseSecretStore {
 			})
 		}
 	}
-	s := EnterpriseSecretStoreScopes{}
-	if ss.Scopes != nil {
-		s = EnterpriseSecretStoreScopes{
-			Scopes: ss.Scopes,
-		}
-	}
 	return EnterpriseSecretStore{
 		Enabled:          ss.Enabled,
 		SecretNamePrefix: ss.SecretNamePrefix,
 		GCPSecretManager: smGCP,
 		AWSSecretManager: smAWS,
 		KafkaConnect:     kc,
-		Scopes:           s,
+		Scopes:           ss.Scopes,
 	}
 }
 
