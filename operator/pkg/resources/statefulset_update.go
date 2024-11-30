@@ -457,6 +457,10 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		ignoreExistingVolumes(newVolumes),
 	}
 
+	if pod.DeletionTimestamp != nil {
+		return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "waiting for pod to be deleted"}
+	}
+
 	managedDecommission, err := r.IsManagedDecommission()
 	if err != nil {
 		log.Error(err, "not performing a managed decommission")
