@@ -1,3 +1,12 @@
+// Copyright 2024 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 // Package rapidutil contains utilities for working with the rapid property
 // testing library. This primarily entails providing rapid Generators for
 // Kubernetes types that would otherwise be considered invalid.
