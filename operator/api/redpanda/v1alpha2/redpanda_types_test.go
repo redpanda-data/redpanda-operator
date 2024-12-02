@@ -24,13 +24,14 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/helm-charts/charts/connectors"
-	"github.com/redpanda-data/helm-charts/charts/console"
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/console"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -133,13 +134,13 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 func TestHelmValuesCompat(t *testing.T) {
 	cfg := rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[intstr.IntOrString]():       IntOrString.AsAny(),
-			reflect.TypeFor[*resource.Quantity]():       Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():          Duration.AsAny(),
-			reflect.TypeFor[*redpanda.PartialPodSpec](): rapid.Just[any](nil), // PodSpec's serialization intentionally diverges from PartialPodSpec's so we can leverage builtin types and their validation.
-			reflect.TypeFor[any]():                      rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
-			reflect.TypeFor[*metav1.FieldsV1]():         rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[corev1.Probe]():             Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
+			reflect.TypeFor[intstr.IntOrString]():                     IntOrString.AsAny(),
+			reflect.TypeFor[*resource.Quantity]():                     Quantity.AsAny(),
+			reflect.TypeFor[metav1.Duration]():                        Duration.AsAny(),
+			reflect.TypeFor[*applycorev1.PodSpecApplyConfiguration](): rapid.Just[any](nil), // PodSpec's serialization intentionally diverges from PartialPodSpec's so we can leverage builtin types and their validation.
+			reflect.TypeFor[any]():                                    rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeFor[*metav1.FieldsV1]():                       rapid.Just[any](nil), // Return nil for K8s accounting fields.
+			reflect.TypeFor[corev1.Probe]():                           Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
 		},
 		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{
 			reflect.TypeFor[redpanda.PartialValues](): {

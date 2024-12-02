@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"

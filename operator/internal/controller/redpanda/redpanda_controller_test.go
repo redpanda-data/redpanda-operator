@@ -41,9 +41,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	redpandachart "github.com/redpanda-data/redpanda-operator/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"

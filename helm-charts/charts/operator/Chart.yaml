@@ -15,7 +15,7 @@ appVersion: v2.3.2-24.3.1
 kubeVersion: ">= 1.25.0-0"
 
 sources:
-  - https://github.com/redpanda-data/helm-charts
+  - https://github.com/redpanda-data/redpanda-operator/helm-charts
 icon: https://go.redpanda.com/hubfs/Redpandas/operator-panda.png
 maintainers:
   - name: redpanda-data

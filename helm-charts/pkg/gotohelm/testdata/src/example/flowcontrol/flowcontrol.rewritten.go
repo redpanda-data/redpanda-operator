@@ -12,7 +12,7 @@
 package flowcontrol
 
 import (
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
 )
 
 func FlowControl(dot *helmette.Dot) map[string]any {
@@ -27,7 +27,7 @@ func FlowControl(dot *helmette.Dot) map[string]any {
 
 func earlyReturn(dot *helmette.Dot) string {
 	tmp_tuple_1 :=
-		// This is trickily written on purpose.
+	// This is trickily written on purpose.
 		helmette.Compact2(helmette.DictTest[string, interface{}](dot.Values, "boolean"))
 	ok_2 := tmp_tuple_1.T2
 	b_1 := tmp_tuple_1.T1

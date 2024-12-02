@@ -13,8 +13,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
 	"github.com/stretchr/testify/require"
 )
 

@@ -13,7 +13,7 @@ package connectors
 import (
 	"fmt"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
 )
 
 func Name(dot *helmette.Dot) string {

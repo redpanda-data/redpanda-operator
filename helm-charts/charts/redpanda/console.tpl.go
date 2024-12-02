@@ -13,10 +13,10 @@ package redpanda
 import (
 	"fmt"
 
-	"github.com/redpanda-data/helm-charts/charts/connectors"
-	"github.com/redpanda-data/helm-charts/charts/console"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/console"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )

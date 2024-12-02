@@ -17,7 +17,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 
-	"github.com/redpanda-data/helm-charts/pkg/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 

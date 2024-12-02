@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
 )
 
 // Expand the name of the chart.

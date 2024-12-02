@@ -22,11 +22,11 @@ import (
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
-	"github.com/redpanda-data/helm-charts/pkg/valuesutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/valuesutil"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,8 +67,8 @@ func TestMain(m *testing.M) {
 // - helm's `tpl` helper needing .Template.BasePath to be present
 //
 // Example Issues:
-// - https://github.com/redpanda-data/helm-charts/issues/1531
-// - https://github.com/redpanda-data/helm-charts/issues/1454
+// - https://github.com/redpanda-data/redpanda-operator/helm-charts/issues/1531
+// - https://github.com/redpanda-data/redpanda-operator/helm-charts/issues/1454
 // - https://redpandadata.slack.com/archives/C01H6JRQX1S/p1728322201042639 (Kinda)
 func TestTemplateHelm310(t *testing.T) {
 	cmd := exec.Command("helm-3.10.3", "template", ".", "--generate-name")

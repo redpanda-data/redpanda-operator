@@ -10,7 +10,7 @@
 package changing_inputs
 
 import (
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
 )
 
 func ChangingInputs(dot *helmette.Dot) map[string]any {

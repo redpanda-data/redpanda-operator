@@ -1810,6 +1810,8 @@ github.com/redpanda-data/helm-charts v0.0.0-20241031235426-99ca96105c9a/go.mod h
 github.com/redpanda-data/helm-charts v0.0.0-20241113221319-230a32adcee0/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
 github.com/redpanda-data/helm-charts v0.0.0-20241121200315-d6d3364e543d h1:Uh/25ztbyKy304h+AJIiATu0oyaw2QXRLRqRHEsiG8o=
 github.com/redpanda-data/helm-charts v0.0.0-20241121200315-d6d3364e543d/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
+github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2 h1:OBCxU0Q5vhy3FVuvhw1FWxrx2pyyu5KG2arpCkccDvQ=
+github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240105044330-c094966ca0cf/go.mod h1:SaSp5/JwdLHu8ZU82wFbXD8/oE4UWB+8ZkjWWreAt7Y=
 github.com/rhnvrm/simples3 v0.6.1 h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=
 github.com/rickb777/period v1.0.6 h1:f4TcHBtL/4qa4D44eqgxs7785/kfLKUjRI7XYI2HCvk=

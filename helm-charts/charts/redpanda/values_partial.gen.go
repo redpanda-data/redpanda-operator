@@ -17,8 +17,8 @@ package redpanda
 import (
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/redpanda-data/helm-charts/charts/connectors"
-	"github.com/redpanda-data/helm-charts/charts/console"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/console"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"

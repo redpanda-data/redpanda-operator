@@ -1,9 +1,9 @@
 module example.com/example
 
-go 1.22.4
+go 1.23.2
 
 require (
-	github.com/redpanda-data/helm-charts v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/helm-charts v0.0.0-00010101000000-000000000000
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 	k8s.io/api v0.29.5
 	k8s.io/apimachinery v0.29.5
@@ -87,4 +87,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/redpanda-data/helm-charts => ../../../../../
+replace github.com/redpanda-data/redpanda-operator/helm-charts => ../../../../../

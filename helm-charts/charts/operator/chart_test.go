@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

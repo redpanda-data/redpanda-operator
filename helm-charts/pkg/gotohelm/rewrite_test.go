@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/packages"
 )
