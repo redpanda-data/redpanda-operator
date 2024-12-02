@@ -533,23 +533,6 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	})
 
 	licenseStatus := func() *v1alpha2.RedpandaLicenseStatus {
-		// make sure we can actually format the extend license properties
-		if !licenseInfo.Loaded {
-			return nil
-		}
-
-		now := time.Now()
-		expirationTime := time.Unix(licenseInfo.Properties.Expires, 0)
-
-		// if we have an expiration that is below 0 we are already expired
-		// so no need to set the expiration time
-		isExpired := licenseInfo.Properties.Expires <= 0 || expirationTime.Before(now)
-
-		var expiration *metav1.Time
-		if !isExpired {
-			expiration = &metav1.Time{Time: expirationTime.UTC()}
-		}
-
 		inUseFeatures := []string{}
 		for _, feature := range features.Features {
 			if feature.Enabled {
@@ -557,14 +540,29 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 			}
 		}
 
-		return &v1alpha2.RedpandaLicenseStatus{
-			Expired:       isExpired,
-			Expiration:    expiration,
+		status := &v1alpha2.RedpandaLicenseStatus{
 			InUseFeatures: inUseFeatures,
 			Violation:     features.Violation,
-			Type:          licenseInfo.Properties.Type,
-			Organization:  licenseInfo.Properties.Organization,
 		}
+
+		// make sure we can actually format the extend license properties
+		if !licenseInfo.Loaded {
+			return status
+		}
+
+		status.Organization = ptr.To(licenseInfo.Properties.Organization)
+		status.Type = ptr.To(licenseInfo.Properties.Type)
+		expirationTime := time.Unix(licenseInfo.Properties.Expires, 0)
+
+		// if we have an expiration that is below 0 we are already expired
+		// so no need to set the expiration time
+		status.Expired = ptr.To(licenseInfo.Properties.Expires <= 0 || expirationTime.Before(time.Now()))
+
+		if !*status.Expired {
+			status.Expiration = &metav1.Time{Time: expirationTime.UTC()}
+		}
+
+		return status
 	}
 
 	rp.Status.LicenseStatus = licenseStatus()

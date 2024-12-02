@@ -2807,6 +2807,21 @@ func (in *RedpandaLicenseStatus) DeepCopyInto(out *RedpandaLicenseStatus) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.Expired != nil {
+		in, out := &in.Expired, &out.Expired
+		*out = new(bool)
+		**out = **in
+	}
+	if in.Type != nil {
+		in, out := &in.Type, &out.Type
+		*out = new(string)
+		**out = **in
+	}
+	if in.Organization != nil {
+		in, out := &in.Organization, &out.Organization
+		*out = new(string)
+		**out = **in
+	}
 	if in.Expiration != nil {
 		in, out := &in.Expiration, &out.Expiration
 		*out = (*in).DeepCopy()

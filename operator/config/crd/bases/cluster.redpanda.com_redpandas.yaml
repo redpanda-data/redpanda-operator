@@ -9811,9 +9811,7 @@ spec:
                   violation:
                     type: boolean
                 required:
-                - expired
-                - organization
-                - type
+                - inUseFeatures
                 - violation
                 type: object
               observedGeneration:
@@ -19627,9 +19625,7 @@ spec:
                   violation:
                     type: boolean
                 required:
-                - expired
-                - organization
-                - type
+                - inUseFeatures
                 - violation
                 type: object
               observedGeneration:

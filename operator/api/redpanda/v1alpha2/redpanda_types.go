@@ -153,18 +153,24 @@ type RedpandaStatus struct {
 }
 
 type RedpandaLicenseStatus struct {
-	Expired       bool     `json:"expired"`
 	Violation     bool     `json:"violation"`
-	Type          string   `json:"type"`
-	Organization  string   `json:"organization"`
-	InUseFeatures []string `json:"inUseFeatures,omitempty"`
+	InUseFeatures []string `json:"inUseFeatures"`
+	// +optional
+	Expired *bool `json:"expired,omitempty"`
+	// +optional
+	Type *string `json:"type,omitempty"`
+	// +optional
+	Organization *string `json:"organization,omitempty"`
 	// +optional
 	Expiration *metav1.Time `json:"expiration,omitempty"`
 }
 
 func (s *RedpandaLicenseStatus) String() string {
-	expired := strconv.FormatBool(s.Expired)
+	expired := "nil"
 	expiration := "nil"
+	if s.Expired != nil {
+		expired = strconv.FormatBool(*s.Expired)
+	}
 	if s.Expiration != nil {
 		expiration = s.Expiration.UTC().Format("Jan 2 2006 MST")
 	}

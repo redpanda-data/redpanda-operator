@@ -453,9 +453,10 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  false,
 		expected: "Expired",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Expired:      true,
-			Type:         "free_trial",
-			Organization: "Redpanda Built-In Evaluation Period",
+			Violation:    false,
+			Expired:      ptr.To(true),
+			Type:         ptr.To("free_trial"),
+			Organization: ptr.To("Redpanda Built-In Evaluation Period"),
 		},
 	}, {
 		image: image{
@@ -465,12 +466,12 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  true,
 		expected: "Valid",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Expired: false,
+			Violation: false,
+			Expired:   ptr.To(false),
 			// add a 30 day expiration, which is how we handle trial licenses
 			Expiration:   &metav1.Time{Time: time.Now().Add(30 * 24 * time.Hour).UTC()},
-			Violation:    false,
-			Type:         "free_trial",
-			Organization: "Redpanda Built-In Evaluation Period",
+			Type:         ptr.To("free_trial"),
+			Organization: ptr.To("Redpanda Built-In Evaluation Period"),
 		},
 	}, {
 		image: image{
@@ -479,6 +480,9 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		},
 		license:  false,
 		expected: "Not Present",
+		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
+			Violation: false,
+		},
 	}, {
 		image: image{
 			repository: "redpandadata/redpanda",
@@ -486,6 +490,9 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		},
 		license:  true,
 		expected: "Not Present",
+		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
+			Violation: false,
+		},
 	}}
 
 	for _, c := range cases {
@@ -541,7 +548,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			s.Require().Equal(licenseStatus.Violation, c.expectedLicenseStatus.Violation, "%s license violation field does not match", name)
 
 			// only do the expiration check if the license isn't already expired
-			if !licenseStatus.Expired {
+			if licenseStatus.Expired != nil && !*licenseStatus.Expired {
 				expectedExpiration := c.expectedLicenseStatus.Expiration.UTC()
 				actualExpiration := licenseStatus.Expiration.UTC()
 
