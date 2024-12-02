@@ -1,8 +1,9 @@
 //go:build rewrites
+
 package typing
 
 import (
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func Typing(dot *helmette.Dot) map[string]any {

@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )

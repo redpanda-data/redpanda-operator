@@ -1,4 +1,5 @@
 //go:build rewrites
+
 package main
 
 import (
@@ -19,7 +20,7 @@ import (
 	"example.com/example/sprig"
 	"example.com/example/syntax"
 	"example.com/example/typing"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func main() {

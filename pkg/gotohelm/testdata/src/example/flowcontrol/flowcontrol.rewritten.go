@@ -1,8 +1,9 @@
 //go:build rewrites
+
 package flowcontrol
 
 import (
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func FlowControl(dot *helmette.Dot) map[string]any {

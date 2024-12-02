@@ -1,10 +1,11 @@
 //go:build rewrites
+
 package inputs
 
 import (
 	"sort"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"golang.org/x/exp/maps"
 )
 

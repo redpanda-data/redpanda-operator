@@ -1,10 +1,11 @@
 //go:build rewrites
+
 package sprig
 
 import (
 	"strings"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 type AStruct struct {
