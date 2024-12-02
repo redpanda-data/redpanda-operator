@@ -75,14 +75,6 @@ const (
 func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	log := r.logger.WithName("handleScaling").WithValues("nodepool", r.nodePool.Name)
 
-	// This is special - we allow only one decom at a time, ACROSS ALL nodePools. It's not per nodepool.
-	// if a decommission is already in progress, handle it first. If it's not finished, it will return an error
-	// which will requeue the reconciliation. We can't (and don't want to) do any further scaling until it's finished.
-	// handleDecommissionInProgress is supposed to exit with error if a decom is already in progress, so we don't start another decom.
-	if err := r.handleDecommissionInProgress(ctx, log); err != nil {
-		return err
-	}
-
 	npStatus := r.getNodePoolStatus()
 	if npStatus.CurrentReplicas == 0 && ptr.Deref(r.nodePool.Replicas, 0) != 0 && !r.nodePool.Deleted {
 		// Initialize the currentReplicas field.
@@ -100,6 +92,14 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 		log.Info("upscaling setCurrentreplicas request", "replicas", r.nodePool.Replicas, "np", r.nodePool.Name)
 		// Upscaling request: this is already handled by Redpanda, so we just increase status currentReplicas
 		return r.setCurrentReplicas(ctx, *r.nodePool.Replicas, r.nodePool.Name, r.logger)
+	}
+
+	// This is special - we allow only one decom at a time, ACROSS ALL nodePools. It's not per nodepool.
+	// if a decommission is already in progress, handle it first. If it's not finished, it will return an error
+	// which will requeue the reconciliation. We can't (and don't want to) do any further scaling until it's finished.
+	// handleDecommissionInProgress is supposed to exit with error if a decom is already in progress, so we don't start another decom.
+	if err := r.handleDecommissionInProgress(ctx, log); err != nil {
+		return err
 	}
 
 	if ptr.Deref(r.nodePool.Replicas, 0) == npCurrentReplicas {
