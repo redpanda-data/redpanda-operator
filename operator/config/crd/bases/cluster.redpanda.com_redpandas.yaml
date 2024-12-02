@@ -9796,6 +9796,7 @@ spec:
                   installed license in the Redpanda cluster.
                 properties:
                   expiration:
+                    format: date-time
                     type: string
                   expired:
                     type: boolean
@@ -9803,6 +9804,17 @@ spec:
                     items:
                       type: string
                     type: array
+                  organization:
+                    type: string
+                  type:
+                    type: string
+                  violation:
+                    type: boolean
+                required:
+                - expired
+                - organization
+                - type
+                - violation
                 type: object
               observedGeneration:
                 description: Specifies the last observed generation.
@@ -19600,6 +19612,7 @@ spec:
                   installed license in the Redpanda cluster.
                 properties:
                   expiration:
+                    format: date-time
                     type: string
                   expired:
                     type: boolean
@@ -19607,6 +19620,17 @@ spec:
                     items:
                       type: string
                     type: array
+                  organization:
+                    type: string
+                  type:
+                    type: string
+                  violation:
+                    type: boolean
+                required:
+                - expired
+                - organization
+                - type
+                - violation
                 type: object
               observedGeneration:
                 description: Specifies the last observed generation.

@@ -453,19 +453,24 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  false,
 		expected: "Expired",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Expired: ptr.To(true),
+			Expired:      true,
+			Type:         "free_trial",
+			Organization: "Redpanda Built-In Evaluation Period",
 		},
 	}, {
 		image: image{
 			repository: "redpandadata/redpanda-unstable",
-			tag:        "v24.3.1-rc4",
+			tag:        "v24.3.1-rc8",
 		},
 		license:  true,
 		expected: "Valid",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Expired: ptr.To(false),
-			// add a 45 day expiration, which is how we handle trial licenses
-			Expiration: ptr.To(time.Now().Add(45 * 24 * time.Hour).UTC().Format(redpanda.LicenseExpirationFormat)),
+			Expired: false,
+			// add a 30 day expiration, which is how we handle trial licenses
+			Expiration:   &metav1.Time{Time: time.Now().Add(30 * 24 * time.Hour).UTC()},
+			Violation:    false,
+			Type:         "free_trial",
+			Organization: "Redpanda Built-In Evaluation Period",
 		},
 	}, {
 		image: image{
@@ -529,22 +534,23 @@ func (s *RedpandaControllerSuite) TestLicense() {
 
 		if c.expectedLicenseStatus != nil {
 			s.Require().NotNil(licenseStatus, "%s does has a nil license", name)
-			s.Require().Equal(*licenseStatus.Expired, *c.expectedLicenseStatus.Expired, "%s license expired field does not match")
-			s.Require().EqualValues(licenseStatus.InUseFeatures, c.expectedLicenseStatus.InUseFeatures, "%s license valid features do not match")
+			s.Require().Equal(licenseStatus.Expired, c.expectedLicenseStatus.Expired, "%s license expired field does not match", name)
+			s.Require().EqualValues(licenseStatus.InUseFeatures, c.expectedLicenseStatus.InUseFeatures, "%s license valid features do not match", name)
+			s.Require().Equal(licenseStatus.Organization, c.expectedLicenseStatus.Organization, "%s license organization field does not match", name)
+			s.Require().Equal(licenseStatus.Type, c.expectedLicenseStatus.Type, "%s license type field does not match", name)
+			s.Require().Equal(licenseStatus.Violation, c.expectedLicenseStatus.Violation, "%s license violation field does not match", name)
 
 			// only do the expiration check if the license isn't already expired
-			if !*licenseStatus.Expired {
-				expectedExpiration, err := time.Parse(redpanda.LicenseExpirationFormat, *c.expectedLicenseStatus.Expiration)
-				s.Require().NoError(err)
-				actualExpiration, err := time.Parse(redpanda.LicenseExpirationFormat, *licenseStatus.Expiration)
-				s.Require().NoError(err)
+			if !licenseStatus.Expired {
+				expectedExpiration := c.expectedLicenseStatus.Expiration.UTC()
+				actualExpiration := licenseStatus.Expiration.UTC()
 
+				rangeFactor := 5 * time.Minute
 				// add some fudge factor so that we don't fail with flakiness due to tests being run at
-				// the change of a couple of minutes that causes the date to be rolled over a day
-				if !expectedExpiration.Equal(actualExpiration) &&
-					!expectedExpiration.Add(24*time.Hour).Equal(actualExpiration) &&
-					!expectedExpiration.Add(-24*time.Hour).Equal(actualExpiration) {
-					s.T().Fatalf("%s does not match expected expiration: %s != %s", name, *licenseStatus.Expiration, *c.expectedLicenseStatus.Expiration)
+				// the change of a couple of minutes that causes the date to be rolled over by some factor
+				if !(expectedExpiration.Add(rangeFactor).After(actualExpiration) &&
+					expectedExpiration.Add(-rangeFactor).Before(actualExpiration)) {
+					s.T().Fatalf("%s does not match expected expiration: %s != %s", name, actualExpiration, expectedExpiration)
 				}
 			}
 		}

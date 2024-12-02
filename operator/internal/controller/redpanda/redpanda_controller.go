@@ -70,8 +70,6 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
-
-	LicenseExpirationFormat = "Jan 2 2006"
 )
 
 type gvkKey struct {
@@ -547,9 +545,9 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 		// so no need to set the expiration time
 		isExpired := licenseInfo.Properties.Expires <= 0 || expirationTime.Before(now)
 
-		var expiration *string
+		var expiration *metav1.Time
 		if !isExpired {
-			expiration = ptr.To(expirationTime.UTC().Format(LicenseExpirationFormat))
+			expiration = &metav1.Time{Time: expirationTime.UTC()}
 		}
 
 		inUseFeatures := []string{}
@@ -560,9 +558,12 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 		}
 
 		return &v1alpha2.RedpandaLicenseStatus{
-			Expired:       ptr.To(isExpired),
+			Expired:       isExpired,
 			Expiration:    expiration,
 			InUseFeatures: inUseFeatures,
+			Violation:     features.Violation,
+			Type:          licenseInfo.Properties.Type,
+			Organization:  licenseInfo.Properties.Organization,
 		}
 	}
 
