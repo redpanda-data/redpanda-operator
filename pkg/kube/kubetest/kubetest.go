@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )

@@ -12,7 +12,7 @@ package helm_test
 import (
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/stretchr/testify/require"
 )
 

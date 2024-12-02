@@ -14,7 +14,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 )
