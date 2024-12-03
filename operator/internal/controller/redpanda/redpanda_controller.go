@@ -489,6 +489,22 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 		return err
 	}
 
+	licenseInfo, err := client.GetLicenseInfo(ctx)
+	if err != nil {
+		if internalclient.IsTerminalClientError(err) {
+			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
+				Type:               v1alpha2.ClusterLicenseValid,
+				Status:             metav1.ConditionUnknown,
+				ObservedGeneration: rp.Generation,
+				Reason:             "TerminalError",
+				Message:            err.Error(),
+			})
+
+			return nil
+		}
+		return err
+	}
+
 	var message string
 	var reason string
 	status := metav1.ConditionUnknown
@@ -515,6 +531,41 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 		Reason:             reason,
 		Message:            message,
 	})
+
+	licenseStatus := func() *v1alpha2.RedpandaLicenseStatus {
+		inUseFeatures := []string{}
+		for _, feature := range features.Features {
+			if feature.Enabled {
+				inUseFeatures = append(inUseFeatures, feature.Name)
+			}
+		}
+
+		status := &v1alpha2.RedpandaLicenseStatus{
+			InUseFeatures: inUseFeatures,
+			Violation:     features.Violation,
+		}
+
+		// make sure we can actually format the extend license properties
+		if !licenseInfo.Loaded {
+			return status
+		}
+
+		status.Organization = ptr.To(licenseInfo.Properties.Organization)
+		status.Type = ptr.To(licenseInfo.Properties.Type)
+		expirationTime := time.Unix(licenseInfo.Properties.Expires, 0)
+
+		// if we have an expiration that is below 0 we are already expired
+		// so no need to set the expiration time
+		status.Expired = ptr.To(licenseInfo.Properties.Expires <= 0 || expirationTime.Before(time.Now()))
+
+		if !*status.Expired {
+			status.Expiration = &metav1.Time{Time: expirationTime.UTC()}
+		}
+
+		return status
+	}
+
+	rp.Status.LicenseStatus = licenseStatus()
 
 	return nil
 }

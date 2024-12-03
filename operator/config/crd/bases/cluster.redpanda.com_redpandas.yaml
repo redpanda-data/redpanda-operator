@@ -9790,6 +9790,30 @@ spec:
                   reconcile request value, so a change of the annotation value
                   can be detected.
                 type: string
+              license:
+                description: |-
+                  LicenseStatus contains information about the current state of any
+                  installed license in the Redpanda cluster.
+                properties:
+                  expiration:
+                    format: date-time
+                    type: string
+                  expired:
+                    type: boolean
+                  inUseFeatures:
+                    items:
+                      type: string
+                    type: array
+                  organization:
+                    type: string
+                  type:
+                    type: string
+                  violation:
+                    type: boolean
+                required:
+                - inUseFeatures
+                - violation
+                type: object
               observedGeneration:
                 description: Specifies the last observed generation.
                 format: int64
@@ -19580,6 +19604,30 @@ spec:
                   reconcile request value, so a change of the annotation value
                   can be detected.
                 type: string
+              license:
+                description: |-
+                  LicenseStatus contains information about the current state of any
+                  installed license in the Redpanda cluster.
+                properties:
+                  expiration:
+                    format: date-time
+                    type: string
+                  expired:
+                    type: boolean
+                  inUseFeatures:
+                    items:
+                      type: string
+                    type: array
+                  organization:
+                    type: string
+                  type:
+                    type: string
+                  violation:
+                    type: boolean
+                required:
+                - inUseFeatures
+                - violation
+                type: object
               observedGeneration:
                 description: Specifies the last observed generation.
                 format: int64
