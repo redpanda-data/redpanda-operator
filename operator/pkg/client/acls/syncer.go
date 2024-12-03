@@ -82,10 +82,7 @@ func (s *Syncer) sync(ctx context.Context, principal string, rules []redpandav1a
 		return 0, 0, fmt.Errorf("listing ACLs: %w", err)
 	}
 
-	creations, deletions, err := calculateACLs(principal, rules, acls)
-	if err != nil {
-		return 0, 0, fmt.Errorf("calculating ACLs: %w", err)
-	}
+	creations, deletions := calculateACLs(principal, rules, acls)
 
 	if err := s.createACLs(ctx, creations); err != nil {
 		return 0, 0, fmt.Errorf("creating ACLs: %w", err)

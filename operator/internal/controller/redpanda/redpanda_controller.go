@@ -189,7 +189,7 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, rp)
+		return ctrl.Result{}, r.reconcileDelete(ctx, rp)
 	}
 
 	if !isRedpandaManaged(ctx, rp) {
@@ -847,14 +847,14 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.Redpanda) (ctrl.Result, error) {
+func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.Redpanda) error {
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
 		if err := r.Client.Update(ctx, rp); err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha2.Redpanda) (*helmv2beta2.HelmRelease, error) {
