@@ -453,10 +453,11 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  false,
 		expected: "Expired",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Violation:    false,
-			Expired:      ptr.To(true),
-			Type:         ptr.To("free_trial"),
-			Organization: ptr.To("Redpanda Built-In Evaluation Period"),
+			Violation:     false,
+			InUseFeatures: []string{},
+			Expired:       ptr.To(true),
+			Type:          ptr.To("free_trial"),
+			Organization:  ptr.To("Redpanda Built-In Evaluation Period"),
 		},
 	}, {
 		image: image{
@@ -466,8 +467,9 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  true,
 		expected: "Valid",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Violation: false,
-			Expired:   ptr.To(false),
+			Violation:     false,
+			InUseFeatures: []string{},
+			Expired:       ptr.To(false),
 			// add a 30 day expiration, which is how we handle trial licenses
 			Expiration:   &metav1.Time{Time: time.Now().Add(30 * 24 * time.Hour).UTC()},
 			Type:         ptr.To("free_trial"),
@@ -481,7 +483,8 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  false,
 		expected: "Not Present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Violation: false,
+			Violation:     false,
+			InUseFeatures: []string{},
 		},
 	}, {
 		image: image{
@@ -491,7 +494,8 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		license:  true,
 		expected: "Not Present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
-			Violation: false,
+			Violation:     false,
+			InUseFeatures: []string{},
 		},
 	}}
 
