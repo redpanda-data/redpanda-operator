@@ -58,6 +58,9 @@ type PVCUnbinderReconciler struct {
 	// Selector, if specified, will narrow the scope of Pods that this
 	// Reconciler will consider for remediation.
 	Selector labels.Selector
+	// Filter, if specified, will programmatically filter pods considered
+	// for reconciliation.
+	Filter func(pod *corev1.Pod) bool
 }
 
 func (r *PVCUnbinderReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -257,6 +260,11 @@ func (r *PVCUnbinderReconciler) recyclePersistentVolume(ctx context.Context, pv 
 func (r *PVCUnbinderReconciler) shouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
 	if r.Selector != nil && !r.Selector.Matches(labels.Set(pod.Labels)) {
 		log.FromContext(ctx).Info("selector not satisfied; skipping", "name", pod.Name, "labels", pod.Labels, "selector", r.Selector.String())
+		return false, 0
+	}
+
+	if r.Filter != nil && !r.Filter(pod) {
+		log.FromContext(ctx).Info("filter not satisfied; skipping", "name", pod.Name)
 		return false, 0
 	}
 
