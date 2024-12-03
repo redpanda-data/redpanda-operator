@@ -749,7 +749,7 @@ func (s *RedpandaControllerSuite) randString(length int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	name := ""
-	for i := 0; i < 6; i++ {
+	for i := 0; i < length; i++ {
 		//nolint:gosec // not meant to be a secure random string.
 		name += string(alphabet[rand.Intn(len(alphabet))])
 	}

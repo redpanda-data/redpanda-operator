@@ -40,7 +40,7 @@ func rulesetFromDescribeResponse(acls []kmsg.DescribeACLsResponseResource) colle
 	return rules
 }
 
-func calculateACLs(principal string, rules []redpandav1alpha2.ACLRule, existing []kmsg.DescribeACLsResponseResource) ([]kmsg.CreateACLsRequestCreation, []kmsg.DeleteACLsRequestFilter, error) {
+func calculateACLs(principal string, rules []redpandav1alpha2.ACLRule, existing []kmsg.DescribeACLsResponseResource) ([]kmsg.CreateACLsRequestCreation, []kmsg.DeleteACLsRequestFilter) {
 	// initially mark all existing acls as needing deletion
 	existingRules := rulesetFromDescribeResponse(existing)
 	desiredRules := collections.NewSet[rule]()
@@ -49,10 +49,7 @@ func calculateACLs(principal string, rules []redpandav1alpha2.ACLRule, existing 
 	// exist from our deletion set and adding them to the creation set
 	// if they don't yet exist
 	for _, rule := range rules {
-		rules, err := rulesFromV1Alpha2ACL(principal, rule)
-		if err != nil {
-			return nil, nil, err
-		}
+		rules := rulesFromV1Alpha2ACL(principal, rule)
 
 		for _, acl := range rules {
 			desiredRules.Add(acl)
@@ -62,5 +59,5 @@ func calculateACLs(principal string, rules []redpandav1alpha2.ACLRule, existing 
 	toCreate := collections.MapSet(desiredRules.LeftDisjoint(existingRules), ruleToCreationRequest)
 	toDelete := collections.MapSet(desiredRules.RightDisjoint(existingRules), ruleToDeletionFilter)
 
-	return toCreate, toDelete, nil
+	return toCreate, toDelete
 }
