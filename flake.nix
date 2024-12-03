@@ -62,6 +62,7 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.openssl
+              pkgs.helm-docs
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
               pkgs.buildkite-agent
