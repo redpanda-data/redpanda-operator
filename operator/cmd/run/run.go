@@ -15,8 +15,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/http/pprof"
 	"strings"
 	"time"
 
@@ -143,9 +141,6 @@ func Command() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			// Always run a pprof server to facilitate debugging.
-			go runPProfServer(ctx, pprofAddr)
-
 			return Run(
 				ctx,
 				clusterDomain,
@@ -168,13 +163,14 @@ func Command() *cobra.Command {
 				unbinderSelector.Selector,
 				autoDeletePVCs,
 				forceDefluxedMode,
+				pprofAddr,
 			)
 		},
 	}
 
 	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	cmd.Flags().StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
 	cmd.Flags().StringVar(&clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -235,6 +231,7 @@ func Run(
 	unbinderSelector labels.Selector,
 	autoDeletePVCs bool,
 	forceDefluxedMode bool,
+	pprofAddr string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -242,11 +239,12 @@ func Run(
 	kube.ManagedFieldsManager = controllerName
 
 	mgrOptions := ctrl.Options{
-		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "aa9fc693.vectorized.io",
 		LeaderElectionNamespace: namespace,
+		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
+		PprofBindAddress:        pprofAddr,
 	}
 	if namespace != "" {
 		mgrOptions.Cache.DefaultNamespaces = map[string]cache.Config{namespace: {}}
@@ -540,25 +538,4 @@ func runThisController(rc RedpandaController, controllers []string) bool {
 		}
 	}
 	return false
-}
-
-func runPProfServer(ctx context.Context, listenAddr string) {
-	logger := ctrl.LoggerFrom(ctx)
-
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	pprofServer := &http.Server{
-		Addr:              listenAddr,
-		Handler:           pprofMux,
-		ReadHeaderTimeout: 3 * time.Second,
-	}
-
-	logger.Info("starting pprof server...", "addr", listenAddr)
-	if err := pprofServer.ListenAndServe(); err != nil {
-		logger.Error(err, "failed to run pprof server")
-	}
 }
