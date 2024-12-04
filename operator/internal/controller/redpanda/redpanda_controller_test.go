@@ -819,6 +819,14 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ChartRef: redpandav1alpha2.ChartRef{
 				UseFlux: ptr.To(useFlux),
+				Upgrade: &redpandav1alpha2.HelmUpgrade{
+					Remediation: &v2beta2.UpgradeRemediation{
+						// Flux controller might fail before cert-manager creates certificate, because
+						// the default `retires` value is set to 0, it will not fail the HelmRelease resource
+						// installation or upgrade. To make CI test run less flaky allow at most 5 retires.
+						Retries: 5,
+					},
+				},
 			},
 			// Any empty structs are to make setting them more ergonomic
 			// without having to worry about nil pointers.
