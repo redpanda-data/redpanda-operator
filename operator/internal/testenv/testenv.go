@@ -18,6 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/rand"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -56,6 +57,8 @@ type Env struct {
 }
 
 type Options struct {
+	Name   string
+	Agents int
 	Scheme *runtime.Scheme
 	CRDs   []*apiextensionsv1.CustomResourceDefinition
 	Logger logr.Logger
@@ -71,6 +74,14 @@ type Options struct {
 // Due to the shared nature, the k3d cluster will NOT be shutdown at the end of
 // tests.
 func New(t *testing.T, options Options) *Env {
+	if options.Agents == 0 {
+		options.Agents = 3
+	}
+
+	if options.Name == "" {
+		options.Name = k3dClusterName
+	}
+
 	if options.Scheme == nil {
 		options.Scheme = goclientscheme.Scheme
 	}
@@ -80,7 +91,7 @@ func New(t *testing.T, options Options) *Env {
 	}
 
 	// TODO maybe allow customizing name?
-	cluster, err := k3d.GetOrCreate(k3dClusterName)
+	cluster, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
 	require.NoError(t, err)
 
 	if len(options.CRDs) > 0 {
@@ -246,4 +257,16 @@ func (e *Env) shutdown() {
 			return apierrors.IsNotFound(err), client.IgnoreNotFound(err)
 		}), "stalled waiting for Namespace %q to finish deleting", e.namespace.Name)
 	}
+}
+
+func RandString(length int) string {
+	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+	name := ""
+	for i := 0; i < length; i++ {
+		//nolint:gosec // not meant to be a secure random string.
+		name += string(alphabet[rand.Intn(len(alphabet))])
+	}
+
+	return name
 }
