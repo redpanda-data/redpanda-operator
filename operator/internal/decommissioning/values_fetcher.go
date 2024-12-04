@@ -1,3 +1,12 @@
+// Copyright 2024 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 package decommissioning
 
 import (
@@ -13,6 +22,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// the format logic for helm releases can be found:
+// https://github.com/helm/helm/blob/2cea1466d3c27491364eb44bafc7be1ca5461b2d/pkg/storage/driver/util.go#L58
 
 var (
 	gzipHeader = []byte{0x1f, 0x8b, 0x08}
@@ -97,5 +109,8 @@ func (f *HelmFetcher) decode(data []byte) (map[string]any, int, error) {
 		return nil, 0, err
 	}
 
+	// We only care about the chart.Config here and not the
+	// merged values with the chart values because our
+	// client initialization code already does the merging.
 	return chart.Config, chart.Version, nil
 }

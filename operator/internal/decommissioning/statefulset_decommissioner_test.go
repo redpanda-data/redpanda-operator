@@ -1,7 +1,17 @@
-package redpanda_test
+// Copyright 2024 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package decommissioning_test
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"testing"
 	"time"
@@ -11,7 +21,6 @@ import (
 	"github.com/redpanda-data/helm-charts/pkg/helm"
 	"github.com/redpanda-data/helm-charts/pkg/kube"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -28,14 +37,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestSidecarDecommissionController(t *testing.T) {
+//go:embed role.yaml
+var decommissionerRBAC []byte
+
+func TestStatefulSetDecommissioner(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping long running test as -short was specified")
 	}
-	suite.Run(t, new(SidecarDecommissionControllerSuite))
+	suite.Run(t, new(StatefulSetDecommissionerSuite))
 }
 
-type SidecarDecommissionControllerSuite struct {
+type StatefulSetDecommissionerSuite struct {
 	suite.Suite
 
 	ctx           context.Context
@@ -45,10 +57,10 @@ type SidecarDecommissionControllerSuite struct {
 	clientFactory internalclient.ClientFactory
 }
 
-var _ suite.SetupAllSuite = (*SidecarDecommissionControllerSuite)(nil)
+var _ suite.SetupAllSuite = (*StatefulSetDecommissionerSuite)(nil)
 
-func (s *SidecarDecommissionControllerSuite) TestBasicDecommission() {
-	chart := s.installChart("trigger", "", map[string]any{
+func (s *StatefulSetDecommissionerSuite) TestBasicDecommission() {
+	chart := s.installChart("basic", "", map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 5,
 		},
@@ -83,11 +95,16 @@ func (s *SidecarDecommissionControllerSuite) TestBasicDecommission() {
 	s.cleanupChart(chart)
 }
 
-func (s *SidecarDecommissionControllerSuite) SetupSuite() {
+func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	t := s.T()
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	log := testr.New(t).V(10)
+	if testing.Verbose() {
+		log = log.V(10)
+	}
 
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
@@ -97,7 +114,7 @@ func (s *SidecarDecommissionControllerSuite) SetupSuite() {
 		Name:   "decommissioning",
 		Agents: 5,
 		Scheme: scheme,
-		Logger: testr.New(t).V(10),
+		Logger: log,
 	})
 
 	s.client = s.env.Client()
@@ -118,10 +135,7 @@ func (s *SidecarDecommissionControllerSuite) SetupSuite() {
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		decommissioner := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), decommissioning.WithFactory(s.clientFactory))
-		if err := (&redpanda.SidecarDecommissionReconciler{
-			Client:         mgr.GetClient(),
-			Decommissioner: decommissioner,
-		}).SetupWithManager(mgr); err != nil {
+		if err := decommissioner.Setup(mgr); err != nil {
 			return err
 		}
 
@@ -136,7 +150,7 @@ type chart struct {
 	values  map[string]any
 }
 
-func (s *SidecarDecommissionControllerSuite) installChart(name, version string, overrides map[string]any) *chart {
+func (s *StatefulSetDecommissionerSuite) installChart(name, version string, overrides map[string]any) *chart {
 	values := map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 1,
@@ -174,7 +188,7 @@ func (s *SidecarDecommissionControllerSuite) installChart(name, version string, 
 	}
 }
 
-func (s *SidecarDecommissionControllerSuite) adminClientFor(chart *chart) *rpadmin.AdminAPI {
+func (s *StatefulSetDecommissionerSuite) adminClientFor(chart *chart) *rpadmin.AdminAPI {
 	data, err := json.Marshal(chart.values)
 	s.Require().NoError(err)
 
@@ -195,7 +209,7 @@ func (s *SidecarDecommissionControllerSuite) adminClientFor(chart *chart) *rpadm
 	return adminClient
 }
 
-func (s *SidecarDecommissionControllerSuite) upgradeChart(chart *chart, overrides map[string]any) {
+func (s *StatefulSetDecommissionerSuite) upgradeChart(chart *chart, overrides map[string]any) {
 	values := functional.MergeMaps(chart.values, overrides)
 	release, err := s.helm.Upgrade(s.ctx, chart.release.Name, "redpandadata/redpanda", helm.UpgradeOptions{
 		Version:   chart.version,
@@ -208,12 +222,12 @@ func (s *SidecarDecommissionControllerSuite) upgradeChart(chart *chart, override
 	chart.values = values
 }
 
-func (s *SidecarDecommissionControllerSuite) cleanupChart(chart *chart) {
+func (s *StatefulSetDecommissionerSuite) cleanupChart(chart *chart) {
 	s.Require().NoError(s.helm.Uninstall(s.ctx, chart.release))
 }
 
-func (s *SidecarDecommissionControllerSuite) setupRBAC() string {
-	roles, err := kube.DecodeYAML(operatorRBAC, s.client.Scheme())
+func (s *StatefulSetDecommissionerSuite) setupRBAC() string {
+	roles, err := kube.DecodeYAML(decommissionerRBAC, s.client.Scheme())
 	s.Require().NoError(err)
 
 	role := roles[1].(*rbacv1.Role)
@@ -226,7 +240,7 @@ func (s *SidecarDecommissionControllerSuite) setupRBAC() string {
 		Verbs:     []string{"*"},
 	})
 
-	name := "testenv-" + randString(6)
+	name := "testenv-" + testenv.RandString(6)
 
 	role.Name = name
 	role.Namespace = s.env.Namespace()
@@ -271,7 +285,7 @@ func (s *SidecarDecommissionControllerSuite) setupRBAC() string {
 	return name
 }
 
-func (s *SidecarDecommissionControllerSuite) applyAndWait(objs ...client.Object) {
+func (s *StatefulSetDecommissionerSuite) applyAndWait(objs ...client.Object) {
 	s.applyAndWaitFor(func(obj client.Object) bool {
 		switch obj := obj.(type) {
 		case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
@@ -285,7 +299,7 @@ func (s *SidecarDecommissionControllerSuite) applyAndWait(objs ...client.Object)
 	}, objs...)
 }
 
-func (s *SidecarDecommissionControllerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
+func (s *StatefulSetDecommissionerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
 	for _, obj := range objs {
 		gvk, err := s.client.GroupVersionKindFor(obj)
 		s.NoError(err)
@@ -312,6 +326,6 @@ func (s *SidecarDecommissionControllerSuite) applyAndWaitFor(cond func(client.Ob
 	}
 }
 
-func (s *SidecarDecommissionControllerSuite) waitFor(cond func(ctx context.Context) (bool, error)) {
+func (s *StatefulSetDecommissionerSuite) waitFor(cond func(ctx context.Context) (bool, error)) {
 	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, cond))
 }
