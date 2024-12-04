@@ -16,20 +16,19 @@ import (
 	"net/http/pprof"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 )
 
-var (
-	schemes = []func(s *runtime.Scheme) error{
-		clientgoscheme.AddToScheme,
-	}
-)
+var schemes = []func(s *runtime.Scheme) error{
+	clientgoscheme.AddToScheme,
+}
 
 func Command() *cobra.Command {
 	var (

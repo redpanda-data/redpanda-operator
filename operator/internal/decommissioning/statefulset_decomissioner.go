@@ -20,11 +20,6 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,6 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 const (
