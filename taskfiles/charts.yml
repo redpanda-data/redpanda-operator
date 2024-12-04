@@ -1,0 +1,129 @@
+version: '3'
+
+env:
+  # some of the tasks defined in this file are executed in containers
+  # see https://github.com/golang/go/issues/53640 for details on why
+  # 1.19.2 fails to deal with modules with nested repositories. Once
+  # the fix for #53640 is included in a release, either next minor for
+  # 1.19 or 1.20, this can be removed
+  GOFLAGS: -buildvcs=false
+  GOPRIVATE: github.com/redpanda-data/flux-controller-shim
+
+tasks:
+  lint:
+    cmds:
+      - task: :ci:configure-git-private-repo
+      - task: generate
+      - gofumpt -w .
+      # Fail on any generated diffs.
+      - git diff --exit-code
+      # Actually run linters.
+      - ct lint --chart-dirs ./charts --check-version-increment=false --all
+      - staticcheck ./...
+
+  generate:
+    desc: "Run all file generation tasks"
+    cmds:
+      # Generate chart README.md's
+      - nix develop -c helm-docs -c ./charts/
+      - task: chart:generate:console
+      - task: chart:generate:operator
+      - task: chart:generate:redpanda
+      - task: chart:generate:connectors
+      # Ensure go deps are up to date
+      - task: go-deps:charts
+      - task: go-deps:genpartial
+      - task: go-deps:genschema
+      - task: go-deps:gotohelm
+      - task: go-deps:pkg
+      # Ensure go deps in the gotohelm test package are up to date
+      - cd ./pkg/gotohelm/testdata/src/example && go mod tidy
+      - go work sync
+      # Ensure flake.nix has been formatted.
+      - nix fmt
+
+  chart:generate:console:
+    desc: "Generate files for the console Helm chart"
+    cmds:
+      # Generate a "partial" version of the Values struct.
+      - go run ./genpartial -out charts/console/values_partial.gen.go -struct Values ./charts/console
+      # Generate helm templates from Go definitions
+      - go run ./gotohelm -write ./charts/console/templates ./charts/console
+
+  chart:generate:operator:
+    desc: "Generate files for the operator Helm chart"
+    cmds:
+      # Generate a "partial" version of the Values struct.
+      - go run ./genpartial -out charts/operator/values_partial.gen.go -struct Values ./charts/operator
+      # Generate the values JSON schema from the Values struct
+      - go run ./genschema operator > charts/operator/values.schema.json
+      # Generate helm templates from Go definitions
+      - go run ./gotohelm -write ./charts/operator/templates ./charts/operator
+
+  chart:generate:redpanda:
+    desc: "Generate files for the redpanda Helm chart"
+    cmds:
+      # Generate a "partial" version of the Values struct.
+      - go run ./genpartial -out charts/redpanda/values_partial.gen.go -struct Values ./charts/redpanda
+      # Generate the values JSON schema from the Values struct
+      - go run ./genschema redpanda > charts/redpanda/values.schema.json
+      # Generate helm templates from Go definitions
+      - go run ./gotohelm -write ./charts/redpanda/templates ./charts/redpanda ./charts/...
+
+  chart:generate:connectors:
+    desc: "Generate files for the connectors Helm chart"
+    cmds:
+      # Generate a "partial" version of the Values struct.
+      - go run ./genpartial -out charts/connectors/values_partial.gen.go -struct Values ./charts/connectors
+      # Generate helm templates from Go definitions
+      - go run ./gotohelm -write ./charts/connectors/templates ./charts/connectors
+
+  go-deps:charts:
+    dir: 'charts'
+    cmds:
+      - go mod tidy
+  go-deps:genpartial:
+    dir: 'charts'
+    cmds:
+      - go mod tidy
+  go-deps:genschema:
+    dir: 'charts'
+    cmds:
+      - go mod tidy
+  go-deps:gotohelm:
+    dir: 'charts'
+    cmds:
+      - go mod tidy
+  go-deps:pkg:
+    dir: 'pkg'
+    cmds:
+      - go mod tidy
+
+  tests:
+    cmds:
+      - task: :ci:configure-git-private-repo
+      - task: tests:charts
+      - task: tests:genpartial
+      - task: tests:genschema
+      - task: tests:gotohelm
+      - task: tests:pkg
+  tests:charts:
+    dir: 'charts'
+    cmds:
+      - go test -v ./... -coverprofile cover.out -timeout 20m
+  tests:genpartial:
+    dir: 'genpartial'
+    cmds:
+      - go test -v ./... -coverprofile cover.out -timeout 20m
+  tests:genschema:
+    dir: 'genschema'
+    cmds:
+      - go test -v ./... -coverprofile cover.out -timeout 20m
+  tests:gotohelm:
+    dir: 'gotohelm'
+    cmds:
+      - go test -v ./... -coverprofile cover.out -timeout 20m
+  tests:pkg:
+    dir: 'pkg'
+    cmds:
+      - go test -v ./... -coverprofile cover.out -timeout 20m

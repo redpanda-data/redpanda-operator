@@ -157,7 +157,7 @@ func (g *Generator) partialize(t types.Type) types.Type {
 	// TODO cache me.
 
 	switch t := t.(type) {
-	case *types.Basic, *types.Interface:
+	case *types.Basic, *types.Interface, *types.Alias:
 		return t
 	case *types.Pointer:
 		return types.NewPointer(g.partialize(t.Elem()))
@@ -384,6 +384,8 @@ func FindAllNames(pkg *types.Package, root types.Type) []*types.Named {
 		push(current.Underlying())
 
 		switch current := current.(type) {
+		case *types.Alias:
+			continue
 		case *types.Basic, *types.Interface, *types.TypeParam:
 			continue
 

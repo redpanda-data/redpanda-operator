@@ -28,6 +28,9 @@
             overlays = [
               # Load in various overrides for custom packages and version pinning.
               (import ./ci/overlay.nix { pkgs = pkgs; })
+              (final: prev: {
+                helm-3-10-3 = pkgs.callPackage ./.github/helm.nix { };
+              })
             ];
           };
         in
@@ -62,6 +65,7 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.openssl
+              pkgs.helm-docs
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
               pkgs.buildkite-agent

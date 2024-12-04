@@ -27,9 +27,8 @@ import (
 type astRewrite func(*packages.Package, *ast.File) (_ *ast.File, changed bool)
 
 const (
-	shimsPkg = "helmette"
-	// TODO replace with `github.com/redpanda-data/redpanda-operator
-	shimsPkgPath = "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	shimsPkg     = "helmette"
+	shimsPkgPath = "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 // NB: Order is very important here.

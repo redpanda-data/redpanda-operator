@@ -1085,37 +1085,36 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return args[0]
 	case "k8s.io/utils/ptr.Equal":
 		return litCall("_shims.ptr_Equal", args...)
-	// TODO replace with github.com/redpanda-data/redpanda-operator
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Dig":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Dig":
 		return &BuiltInCall{FuncName: "dig", Arguments: append(args[2:], args[1], args[0])}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Unwrap":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Unwrap":
 		return &Selector{Expr: args[0], Field: "AsMap"}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.UnmarshalInto":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.UnmarshalInto":
 		return args[0]
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Compact2", "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Compact3":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact2", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact3":
 		return litCall("_shims.compact", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.AsIntegral":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsIntegral":
 		return litCall("_shims.asintegral", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.AsNumeric":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsNumeric":
 		return litCall("_shims.asnumeric", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.DictTest":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.DictTest":
 		valueType := callee.(*types.Func).Type().(*types.Signature).TypeParams().At(1)
 		return litCall("_shims.dicttest", append(args, t.zeroOf(valueType))...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Merge":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Merge":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
 	// Add note about this change.
 	case "helm.sh/helm/v3/pkg/chartutil.(Values).AsMap":
 		return &Selector{Expr: reciever, Field: "AsMap"}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.MergeTo":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MergeTo":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.SortedKeys":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedKeys":
 		return &BuiltInCall{FuncName: "sortAlpha", Arguments: []Node{&BuiltInCall{FuncName: "keys", Arguments: args}}}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Get":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Lookup":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of
 		// Lookup will always be a pointer as only pointers implement
 		// kube.Object.
@@ -1145,7 +1144,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// client's builtin scheme.
 		panic(fmt.Sprintf("unrecognized type: %v", k8sType))
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.TypeTest":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.TypeTest":
 		typ := signature.Results().At(0).Type()
 		if basic, ok := typ.(*types.Basic); ok {
 			if basic.Info()&types.IsNumeric != 0 {
@@ -1164,7 +1163,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "time.(Duration).String":
 		return litCall("_shims.time_Duration_String", args...)
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.MustDuration":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MustDuration":
 		return litCall(
 			"_shims.time_Duration_String",
 			litCall("_shims.time_ParseDuration", args...),
