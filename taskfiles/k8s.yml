@@ -36,6 +36,14 @@ tasks:
       - cp ./config/rbac/v2-manager-role/*.yaml ./internal/controller/redpanda/
       - |
         controller-gen \
+          paths='./internal/decommissioning/...' \
+          rbac:roleName=decommissioner-role \
+          output:rbac:artifacts:config=config/rbac/decommissioner-role
+      # controller-gen won't output to multiple directories and we need a copy
+      # of resources for tests, so cp it is.
+      - cp ./config/rbac/decommissioner-role/*.yaml ./internal/decommissioning/
+      - |
+        controller-gen \
           paths='./internal/controller/vectorized/...' \
           rbac:roleName=v1-manager-role \
           output:rbac:artifacts:config=config/rbac/v1-manager-role
