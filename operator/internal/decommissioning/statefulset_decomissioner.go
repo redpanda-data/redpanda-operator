@@ -210,7 +210,8 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// skip objects already being deleted
 	if !set.ObjectMeta.DeletionTimestamp.IsZero() {
-		// TODO: Won't this leave orphaned PVCs around?
+		// TODO: This follows the original implementation, but
+		// won't this leave orphaned PVCs around?
 		log.V(traceLevel).Info("StatefulSet is currently deleted, skipping")
 
 		return ctrl.Result{}, nil
@@ -307,7 +308,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		}
 
 		message := fmt.Sprintf(
-			"unbound persistent volumes: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
+			"unbound persistent volume claims: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
 				return client.ObjectKeyFromObject(claim).String()
 			}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
 		)
@@ -500,7 +501,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 
 	if len(brokersToDecommission) > 0 {
 		// only record the event here since this is when we trigger a decommission
-		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "decommissioning broker: %d", brokersToDecommission[0])
+		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), brokersToDecommission[0])
 
 		if err := adminClient.DecommissionBroker(ctx, brokersToDecommission[0]); err != nil {
 			log.Error(err, "decommissioning broker", "broker", brokersToDecommission[0])
@@ -540,7 +541,8 @@ func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, 
 			break
 		}
 	}
-	dataVolumeLabels[k8sComponentLabelKey] = fmt.Sprintf("%s-statefulset", set.Name)
+	// the first part of this, "redpanda" is the component name (i.e. redpanda, console, etc.)
+	dataVolumeLabels[k8sComponentLabelKey] = "redpanda-statefulset"
 
 	// find all pvcs of the data directory for this StatefulSet
 	pvcs := &corev1.PersistentVolumeClaimList{}
@@ -616,6 +618,9 @@ func (s *StatefulSetDecomissioner) getAdminClient(ctx context.Context, set *apps
 	return s.factory.RedpandaAdminClient(ctx, cluster)
 }
 
+// ordinalFromFQDN takes a hostname and attempt to map the
+// name back to a stateful set pod ordinal based on the left
+// most DNS segment containing the form SETNAME-ORDINAL.
 func ordinalFromFQDN(fqdn string) (int, error) {
 	tokens := strings.Split(fqdn, ".")
 	if len(tokens) < 2 {
