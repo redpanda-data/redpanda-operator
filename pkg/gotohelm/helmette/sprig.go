@@ -24,7 +24,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/imdario/mergo"
-	"github.com/redpanda-data/helm-charts/pkg/valuesutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
 )

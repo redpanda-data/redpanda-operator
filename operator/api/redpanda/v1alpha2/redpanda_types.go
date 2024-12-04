@@ -24,9 +24,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
-	redpandachart "github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
@@ -61,7 +61,7 @@ type ChartRef struct {
 	// UseFlux flag set to `false` will prevent helm controller from reconciling helm chart. The operator would be
 	// tight with `go` based Redpanda helm chart version. The rest of the ChartRef fields would be ignored.
 	//
-	// Before setting UseFlux flag to `false` please alight your ChartVersion to at least `5.9.11`
+	// Before setting UseFlux flag to `false` please alight your ChartVersion to at least `5.9.15`
 	// version of the Redpanda chart.
 	//
 	// RedpandaStatus might not be accurate if flag is set to `false` and HelmRelease is manually deleted.

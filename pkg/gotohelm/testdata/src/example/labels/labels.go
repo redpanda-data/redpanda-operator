@@ -9,7 +9,7 @@
 
 package labels
 
-import "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+import "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 
 type Values struct {
 	CommonLabels map[string]string `json:"commonLabels"`

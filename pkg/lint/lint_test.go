@@ -16,12 +16,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 )
 
+// TODO replace with github.com/redpanda-data/redpanda-operator
 const tagURL = "https://github.com/redpanda-data/helm-charts/releases/tag/"
 
 type ChartYAML struct {

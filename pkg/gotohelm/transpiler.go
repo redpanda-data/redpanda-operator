@@ -1085,6 +1085,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return args[0]
 	case "k8s.io/utils/ptr.Equal":
 		return litCall("_shims.ptr_Equal", args...)
+	// TODO replace with github.com/redpanda-data/redpanda-operator
 	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Dig":
 		return &BuiltInCall{FuncName: "dig", Arguments: append(args[2:], args[1], args[0])}
 	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Unwrap":
