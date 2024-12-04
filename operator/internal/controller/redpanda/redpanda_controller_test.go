@@ -754,7 +754,7 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 		Verbs:     []string{"*"},
 	})
 
-	name := "testenv-" + s.randString(6)
+	name := "testenv-" + randString(6)
 
 	role.Name = name
 	role.Namespace = s.env.Namespace()
@@ -799,7 +799,7 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 	return name
 }
 
-func (s *RedpandaControllerSuite) randString(length int) string {
+func randString(length int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	name := ""
@@ -814,7 +814,7 @@ func (s *RedpandaControllerSuite) randString(length int) string {
 func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "rp-" + s.randString(6), // GenerateName doesn't play nice with SSA.
+			Name: "rp-" + randString(6), // GenerateName doesn't play nice with SSA.
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ChartRef: redpandav1alpha2.ChartRef{

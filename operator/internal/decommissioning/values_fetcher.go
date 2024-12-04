@@ -67,9 +67,6 @@ func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (
 }
 
 type partialChart struct {
-	Chart struct {
-		Values map[string]any `json:"values"`
-	} `json:"chart"`
 	Config  map[string]any `json:"config"`
 	Version int            `json:"version"`
 }
@@ -100,26 +97,5 @@ func (f *HelmFetcher) decode(data []byte) (map[string]any, int, error) {
 		return nil, 0, err
 	}
 
-	return merge(chart.Chart.Values, chart.Config), chart.Version, nil
-}
-
-func merge(original, overrides map[string]any) map[string]any {
-	for name, override := range overrides {
-		if v, ok := original[name]; ok {
-			switch value := v.(type) {
-			case map[string]any:
-				overrideMap, ok := override.(map[string]any)
-				if !ok {
-					// ignore if we don't have something we can deep merge
-					continue
-				}
-				merge(value, overrideMap)
-				original[name] = value
-			default:
-				original[name] = override
-			}
-		}
-	}
-
-	return original
+	return chart.Config, chart.Version, nil
 }

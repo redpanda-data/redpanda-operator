@@ -11,12 +11,13 @@ package redpanda
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	appsv1ac "k8s.io/client-go/applyconfigurations/apps/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +38,11 @@ type SidecarDecommissionReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SidecarDecommissionReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).For(&appsv1.StatefulSet{}).WithEventFilter(UpdateEventFilter).Complete(r)
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&appsv1.StatefulSet{}).
+		Owns(&corev1.Pod{}).
+		Owns(&corev1.PersistentVolumeClaim{}).
+		Complete(r)
 }
 
 func (r *SidecarDecommissionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -45,7 +50,12 @@ func (r *SidecarDecommissionReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	set := &appsv1.StatefulSet{}
 	if err := r.Client.Get(ctx, req.NamespacedName, set); err != nil {
-		return ctrl.Result{}, fmt.Errorf("could not retrieve the statefulset: %w", err)
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "fetching StatefulSet")
+		// avoid the internal controller runtime stacktrace
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Examine if the object is under deletion
