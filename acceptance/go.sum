@@ -646,8 +646,7 @@ github.com/redpanda-data/common-go/rpadmin v0.1.9 h1:X5a95P7Dc+7EaidU7dusWJyiG3e
 github.com/redpanda-data/common-go/rpadmin v0.1.9/go.mod h1:I7umqhnMhIOSEnIA3fvLtdQU7QO/SbWGCwFfFDs3De4=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 h1:+zsE3W1V86k2sjAGWOySIlF0xn5R1aXXQBaIdr80F48=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20/go.mod h1:DC42/3+k5PefSo4IalYbDN3yRZrVFP0b69+gC/NwGd4=
-github.com/redpanda-data/helm-charts v0.0.0-20241114193526-f53a0adc8f15 h1:OkWn3PL9PbIegbYfEZ9LbVAnZpQd/MzUbFdJLxWbX+s=
-github.com/redpanda-data/helm-charts v0.0.0-20241114193526-f53a0adc8f15/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
+github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2 h1:OBCxU0Q5vhy3FVuvhw1FWxrx2pyyu5KG2arpCkccDvQ=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8/go.mod h1:97qkjcMI3gDL+y+aY/w5o0xF2qGHFof6rCXIYjnTalM=
 github.com/rhnvrm/simples3 v0.6.1/go.mod h1:Y+3vYm2V7Y4VijFoJHHTrja6OgPrJ2cBti8dPGkC3sA=
