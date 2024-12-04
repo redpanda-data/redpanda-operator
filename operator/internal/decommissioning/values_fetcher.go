@@ -26,9 +26,7 @@ import (
 // the format logic for helm releases can be found:
 // https://github.com/helm/helm/blob/2cea1466d3c27491364eb44bafc7be1ca5461b2d/pkg/storage/driver/util.go#L58
 
-var (
-	gzipHeader = []byte{0x1f, 0x8b, 0x08}
-)
+var gzipHeader = []byte{0x1f, 0x8b, 0x08}
 
 type ValuesFetcher interface {
 	FetchLatest(ctx context.Context, name, namespace string) (map[string]any, error)
