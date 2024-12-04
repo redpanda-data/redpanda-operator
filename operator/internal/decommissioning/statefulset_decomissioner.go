@@ -18,7 +18,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appsv1ac "k8s.io/client-go/applyconfigurations/apps/v1"
 	corev1ac "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
@@ -27,19 +26,8 @@ import (
 )
 
 const (
-	decommissionCondition appsv1.StatefulSetConditionType = "Decommissioning"
-
-	reasonConditionNoNeed                = "NoNeed"
-	reasonConditionWaiting               = "Waiting"
-	reasonConditionBrokerDecommissioning = "BrokerDecommissioning"
-	reasonConditionPVCDecommissioning    = "PersistentVolumeClaimDecommissioning"
-	reasonConditionError                 = "Error"
-
-	eventDecommissioningBroker = "DecommissioningBroker"
-	eventReasonBrokerGone      = "BrokerGone"
-
-	eventDecommissioningPersistentVolumeClaim = "DecommissioningPersistentVolumeClaim"
-	eventReasonUnboundPersistentVolumeClaims  = "UnboundPersistentVolumeClaims"
+	eventReasonBroker                        = "DecommissioningBroker"
+	eventReasonUnboundPersistentVolumeClaims = "DecommissioningUnboundPersistentVolumeClaims"
 
 	k8sManagedByLabelKey = "app.kubernetes.io/managed-by"
 	k8sInstanceLabelKey  = "app.kubernetes.io/instance"
@@ -94,7 +82,7 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher ValuesFetcher, optio
 	k8sClient := mgr.GetClient()
 
 	decommissioner := &StatefulSetDecomissioner{
-		recorder: mgr.GetEventRecorderFor("BrokerDecommissioner"),
+		recorder: mgr.GetEventRecorderFor("broker-decommissioner"),
 		client:   k8sClient,
 		fetcher:  fetcher,
 		factory:  internalclient.NewFactory(mgr.GetConfig(), k8sClient),
@@ -108,7 +96,7 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher ValuesFetcher, optio
 	return decommissioner
 }
 
-func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1.StatefulSet) (*appsv1ac.StatefulSetConditionApplyConfiguration, bool, error) {
+func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1.StatefulSet) (bool, error) {
 	// note that this is best-effort, the decommissioning code needs to be idempotent and deterministic
 
 	log := ctrl.LoggerFrom(ctx, "namespace", set.Namespace, "name", set.Name).WithName("StatefulSetDecommissioner.Decomission")
@@ -116,41 +104,29 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	// if helm is not managing it, move on.
 	if managedBy, ok := set.Labels[k8sManagedByLabelKey]; managedBy != "Helm" || !ok {
 		log.V(traceLevel).Info("not managed by helm")
-		return nil, false, nil
+		return false, nil
 	}
 
 	keep, err := s.filter(ctx, set)
 	if err != nil {
 		log.Error(err, "error filtering StatefulSet")
-		return nil, false, err
+		return false, err
 	}
 
 	if !keep {
 		log.V(traceLevel).Info("skipping decommission, StatefulSet filtered out")
-		return nil, false, nil
+		return false, nil
 	}
 
 	unboundVolumeClaims, err := s.findUnboundVolumeClaims(ctx, set)
 	if err != nil {
 		log.Error(err, "error finding unbound PersistentVolumeClaims")
-		return nil, false, err
+		return false, err
 	}
 
 	log.V(traceLevel).Info("fetched unbound volume claims", "claims", functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
 		return claim.Name
 	}, unboundVolumeClaims))
-
-	condition := &appsv1ac.StatefulSetConditionApplyConfiguration{
-		Type: ptr.To(decommissionCondition),
-	}
-
-	setCondition := func(requeue bool, err error) (*appsv1ac.StatefulSetConditionApplyConfiguration, bool, error) {
-		if err != nil {
-			return condition.WithStatus(corev1.ConditionFalse).WithReason(reasonConditionError).WithMessage(err.Error()), false, err
-		}
-
-		return condition, requeue, err
-	}
 
 	// we first clean up any unbound PVCs, ensuring that their PVs have a retain policy
 	if len(unboundVolumeClaims) > 0 {
@@ -166,13 +142,13 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			corev1ac.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
 		)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
 			log.Error(err, "error patching PersistentVolume spec")
-			return setCondition(false, err)
+			return false, err
 		}
 
 		// now that we've patched the PV, delete the PVC
 		if err := s.client.Delete(ctx, claim); err != nil {
 			log.Error(err, "error deleting PersistentVolumeClaim")
-			return setCondition(false, err)
+			return false, err
 		}
 
 		message := fmt.Sprintf(
@@ -180,43 +156,39 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 				return client.ObjectKeyFromObject(claim).String()
 			}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
 		)
-		condition = condition.WithMessage(message).WithReason(reasonConditionPVCDecommissioning).WithStatus(corev1.ConditionTrue)
 
-		s.recorder.Eventf(set, eventDecommissioningPersistentVolumeClaim, eventReasonUnboundPersistentVolumeClaims, message)
+		log.V(traceLevel).Info(message)
+		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
 
-		return setCondition(false, nil)
+		// at this point we should get a requeue anyway due to the ownership watch
+		// so just delegate to the runtime
+		return false, nil
 	}
 
 	// now we check if we can/should decommission any brokers
 	adminClient, err := s.getAdminClient(ctx, set)
 	if err != nil {
 		log.Error(err, "initializing admin client")
-		return setCondition(false, err)
+		return false, err
 	}
 
 	health, err := adminClient.GetHealthOverview(ctx)
 	if err != nil {
 		log.Error(err, "fetching brokers")
-		return setCondition(false, err)
+		return false, err
 	}
 
 	requestedNodes := int(ptr.Deref(set.Spec.Replicas, 0))
 	if len(health.AllNodes) <= requestedNodes {
 		// we don't need to decommission anything since we're at the proper
 		// capacity
-		condition = condition.WithStatus(corev1.ConditionFalse).WithReason(reasonConditionNoNeed).
-			WithMessage("cluster does not have any nodes which need decommissioning")
-
-		return setCondition(false, nil)
+		return false, nil
 	}
 
 	if len(health.NodesDown) == 0 {
 		// we don't need to decommission anything since everything is healthy
 		// and we want to wait until a broker is fully stopped
-		condition = condition.WithStatus(corev1.ConditionFalse).WithReason(reasonConditionWaiting).
-			WithMessage("waiting for StatefulSet to delete pod before beginning decommission")
-
-		return setCondition(false, nil)
+		return false, nil
 	}
 
 	allNodes := collections.NewSet[int]()
@@ -243,11 +215,10 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			}
 
 			log.Error(err, "fetching decommission status")
-			return setCondition(false, err)
+			return false, err
 		}
 
 		if status.Finished {
-			// TODO: does this seem right?
 			// skip since we have already decommissioned it, so it should no longer
 			// show up in the health overview
 			continue
@@ -279,24 +250,25 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		formatBrokerList(brokersToDecommission),
 		formatBrokerList(currentlyDecommissioningBrokers),
 	)
-	condition = condition.WithMessage(message).WithReason(reasonConditionBrokerDecommissioning).WithStatus(corev1.ConditionTrue)
+	log.V(traceLevel).Info(message)
 
 	if len(currentlyDecommissioningBrokers) != 0 {
 		// we skip decommissioing our next broker since we already have some node decommissioning in progress
-		return setCondition(true, nil)
+		return true, nil
 	}
 
 	if len(brokersToDecommission) > 0 {
-		s.recorder.Eventf(set, eventDecommissioningBroker, eventReasonBrokerGone, message)
+		// only record the event here since this is when we trigger a decommission
+		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, message)
 
 		if err := adminClient.DecommissionBroker(ctx, brokersToDecommission[0]); err != nil {
 			log.Error(err, "decommissioning broker", "broker", brokersToDecommission[0])
-			return setCondition(false, err)
+			return false, err
 		}
 	}
 
 	// we should have decommissioned something above, so requeue and wait for it to finish
-	return setCondition(true, nil)
+	return true, nil
 }
 
 func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, set *appsv1.StatefulSet) ([]*corev1.PersistentVolumeClaim, error) {

@@ -47,7 +47,7 @@ type SidecarDecommissionControllerSuite struct {
 
 var _ suite.SetupAllSuite = (*SidecarDecommissionControllerSuite)(nil)
 
-func (s *SidecarDecommissionControllerSuite) TestBasicTriggering() {
+func (s *SidecarDecommissionControllerSuite) TestBasicDecommission() {
 	chart := s.installChart("trigger", "", map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 5,
@@ -91,8 +91,13 @@ func (s *SidecarDecommissionControllerSuite) SetupSuite() {
 
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
+		// We need our own cluster for these tests since we need additional
+		// agents. Otherwise we can just turn up the default... but we'll
+		// need a different cluster to manipulate for node cleanup anyway.
+		Name:   "decommissioning",
+		Agents: 5,
 		Scheme: scheme,
-		Logger: testr.New(t),
+		Logger: testr.New(t).V(10),
 	})
 
 	s.client = s.env.Client()

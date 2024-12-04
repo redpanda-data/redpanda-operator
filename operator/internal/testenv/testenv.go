@@ -56,6 +56,8 @@ type Env struct {
 }
 
 type Options struct {
+	Name   string
+	Agents int
 	Scheme *runtime.Scheme
 	CRDs   []*apiextensionsv1.CustomResourceDefinition
 	Logger logr.Logger
@@ -71,6 +73,14 @@ type Options struct {
 // Due to the shared nature, the k3d cluster will NOT be shutdown at the end of
 // tests.
 func New(t *testing.T, options Options) *Env {
+	if options.Agents == 0 {
+		options.Agents = 3
+	}
+
+	if options.Name == "" {
+		options.Name = k3dClusterName
+	}
+
 	if options.Scheme == nil {
 		options.Scheme = goclientscheme.Scheme
 	}
@@ -80,7 +90,7 @@ func New(t *testing.T, options Options) *Env {
 	}
 
 	// TODO maybe allow customizing name?
-	cluster, err := k3d.GetOrCreate(k3dClusterName)
+	cluster, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
 	require.NoError(t, err)
 
 	if len(options.CRDs) > 0 {
