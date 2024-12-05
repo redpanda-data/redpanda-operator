@@ -2685,6 +2685,7 @@ github.com/redpanda-data/helm-charts v0.0.0-20241031235426-99ca96105c9a/go.mod h
 github.com/redpanda-data/helm-charts v0.0.0-20241113221319-230a32adcee0/go.mod h1:dmmGZo7DuHNnCy0QOykXN2sY9QI8kbdlkSKgIkCT978=
 github.com/redpanda-data/helm-charts v0.0.0-20241121200315-d6d3364e543d h1:Uh/25ztbyKy304h+AJIiATu0oyaw2QXRLRqRHEsiG8o=
 github.com/redpanda-data/helm-charts v0.0.0-20241121200315-d6d3364e543d/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
+github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240105044330-c094966ca0cf/go.mod h1:SaSp5/JwdLHu8ZU82wFbXD8/oE4UWB+8ZkjWWreAt7Y=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/rhnvrm/simples3 v0.6.1 h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=

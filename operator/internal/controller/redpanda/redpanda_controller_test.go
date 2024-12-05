@@ -29,14 +29,17 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -507,11 +510,15 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		}
 		if !c.license {
 			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
-				Spec: &redpandav1alpha2.PodSpec{
-					Containers: []redpandav1alpha2.Container{{
-						Name: "redpanda",
-						Env:  []corev1.EnvVar{{Name: "__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE", Value: "true"}},
-					}},
+				Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+					PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+						Containers: []applycorev1.ContainerApplyConfiguration{{
+							Name: ptr.To("redpanda"),
+							Env: []applycorev1.EnvVarApplyConfiguration{
+								*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+							},
+						}},
+					},
 				},
 			}
 		}
@@ -568,6 +575,43 @@ func (s *RedpandaControllerSuite) TestLicense() {
 
 		s.deleteAndWait(rp)
 	}
+}
+
+func (s *RedpandaControllerSuite) TestPodTemplateOverrides() {
+	rp := s.minimalRP(true)
+
+	rp.Spec.ClusterSpec.PostInstallJob = &redpandav1alpha2.PostInstallJob{
+		PodTemplate: &redpandav1alpha2.PodTemplate{
+			Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+				PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+					InitContainers: []applycorev1.ContainerApplyConfiguration{
+						{
+							Name: ptr.To("bootstrap-yaml-envsubst"),
+							Resources: &applycorev1.ResourceRequirementsApplyConfiguration{
+								Requests: &corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("10Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s.applyAndWait(rp)
+
+	var jobs batchv1.JobList
+	s.NoError(s.client.List(s.ctx, &jobs, client.MatchingLabels{
+		"app.kubernetes.io/instance": rp.Name,
+	}))
+
+	s.Len(jobs.Items, 1, "expected to find 1 post install/upgrade job")
+	for _, job := range jobs.Items {
+		s.True(job.Spec.Template.Spec.InitContainers[0].Resources.Requests[corev1.ResourceMemory].Equal(resource.MustParse("10Mi")))
+	}
+
+	s.deleteAndWait(rp)
 }
 
 func (s *RedpandaControllerSuite) TestConnectorsIntegration() {

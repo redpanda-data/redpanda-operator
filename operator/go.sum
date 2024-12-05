@@ -1093,8 +1093,8 @@ github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a4
 github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240/go.mod h1:5KLXArOMFOrwb3BihpFaRNiPCyo9AXsXhvMdUmrCdUg=
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19 h1:sJjDhnIbTMOuP4Rnhm1N3GNfgv6BJlocCnGliNvhgbw=
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19/go.mod h1:T39OECA7eOlhpHZPBSGg+bpuwtt/G4m03fjBkJ821CM=
-github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2 h1:OBCxU0Q5vhy3FVuvhw1FWxrx2pyyu5KG2arpCkccDvQ=
-github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
+github.com/redpanda-data/helm-charts v0.0.0-20241203151858-926cfe070c6e h1:UEzwEsi0nuT6qrDyDfpXjCm9DhjY4Cryj9XRPgjzpDs=
+github.com/redpanda-data/helm-charts v0.0.0-20241203151858-926cfe070c6e/go.mod h1:maQmSf2TLXRGKLcDeCBO/zD+5/i+8NDNOkS2685/P9A=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e h1:8HB05vSCY+0MwjT2DIVq6gJV5iw7nQNIDfMqcc1NEC8=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e/go.mod h1:jF5kbQy3qT/zufL27DE3lecfYTRWeAzSiVmrbDDQwUw=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=

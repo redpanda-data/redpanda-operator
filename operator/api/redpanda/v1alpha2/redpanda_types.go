@@ -61,7 +61,7 @@ type ChartRef struct {
 	// UseFlux flag set to `false` will prevent helm controller from reconciling helm chart. The operator would be
 	// tight with `go` based Redpanda helm chart version. The rest of the ChartRef fields would be ignored.
 	//
-	// Before setting UseFlux flag to `false` please alight your ChartVersion to at least `5.9.11`
+	// Before setting UseFlux flag to `false` please align your ChartVersion to `5.9.15` or ``
 	// version of the Redpanda chart.
 	//
 	// RedpandaStatus might not be accurate if flag is set to `false` and HelmRelease is manually deleted.

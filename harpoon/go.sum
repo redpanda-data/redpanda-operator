@@ -407,8 +407,7 @@ github.com/prometheus/procfs v0.0.2/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsT
 github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
-github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2 h1:OBCxU0Q5vhy3FVuvhw1FWxrx2pyyu5KG2arpCkccDvQ=
-github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2/go.mod h1:iUkRGjzQhCRKvmYpeExfsN+aslvoahRke6PGPit2xC4=
+github.com/redpanda-data/helm-charts v0.0.0-20241203151858-926cfe070c6e h1:UEzwEsi0nuT6qrDyDfpXjCm9DhjY4Cryj9XRPgjzpDs=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
