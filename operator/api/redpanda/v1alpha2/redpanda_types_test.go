@@ -64,6 +64,14 @@ var (
 			SuccessThreshold:    rapid.Int32Min(1).Draw(t, "SuccessThreshold"),
 		}
 	})
+
+	Time = rapid.Custom(func(t *rapid.T) metav1.Time {
+		// As metav1.Time will unmarshal 0 into "null", we need to ensure that
+		// we never generate a 0 time here otherwise JSON serialization will be
+		// non-idempotent and break out tests.
+		nsec := rapid.Int64Min(1).Draw(t, "Time")
+		return metav1.Time{Time: time.Unix(0, nsec)}
+	})
 )
 
 func TestDefluxedMinimumVersion(t *testing.T) {
@@ -133,13 +141,13 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 func TestHelmValuesCompat(t *testing.T) {
 	cfg := rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[intstr.IntOrString]():       IntOrString.AsAny(),
-			reflect.TypeFor[*resource.Quantity]():       Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():          Duration.AsAny(),
-			reflect.TypeFor[*redpanda.PartialPodSpec](): rapid.Just[any](nil), // PodSpec's serialization intentionally diverges from PartialPodSpec's so we can leverage builtin types and their validation.
-			reflect.TypeFor[any]():                      rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
-			reflect.TypeFor[*metav1.FieldsV1]():         rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[corev1.Probe]():             Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
+			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
+			reflect.TypeFor[*resource.Quantity](): Quantity.AsAny(),
+			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
+			reflect.TypeFor[metav1.Time]():        Time.AsAny(),
+			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeFor[*metav1.FieldsV1]():   rapid.Just[any](nil), // Return nil for K8s accounting fields.
+			reflect.TypeFor[corev1.Probe]():       Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
 		},
 		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{
 			reflect.TypeFor[redpanda.PartialValues](): {

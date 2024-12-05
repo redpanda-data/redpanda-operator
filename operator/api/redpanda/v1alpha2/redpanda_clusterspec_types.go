@@ -10,11 +10,14 @@
 package v1alpha2
 
 import (
+	"encoding/json"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 )
@@ -731,25 +734,34 @@ type Statefulset struct {
 
 // PodTemplate will pass label and annotation to Statefulset Pod template.
 type PodTemplate struct {
-	Labels      map[string]string `json:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
-	Spec        *PodSpec          `json:"spec,omitempty"`
+	Labels      map[string]string          `json:"labels,omitempty"`
+	Annotations map[string]string          `json:"annotations,omitempty"`
+	Spec        *PodSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-type Container struct {
-	Name            string                  `json:"name"`
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
-	Env             []corev1.EnvVar         `json:"env"`
+// PodSpecApplyConfiguration is a wrapper around
+// [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+type PodSpecApplyConfiguration struct {
+	*applycorev1.PodSpecApplyConfiguration `json:",inline"`
 }
 
-// PodSpec is a subset of [corev1.PodSpec] that will be merged into the objects
-// constructed by this helm chart via means of a [strategic merge
-// patch](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#use-a-strategic-merge-patch-to-update-a-deployment).
-// NOTE: At the time of writing, merging is manually implemented for each
-// field. Ideally, a more generally applicable solution should be used.
-type PodSpec struct {
-	Containers      []Container                `json:"containers,omitempty"`
-	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+func (ac *PodSpecApplyConfiguration) DeepCopy() *PodSpecApplyConfiguration {
+	// For some inexplicable reason, apply configs don't have deepcopy
+	// generated for them.
+	//
+	// DeepCopyInto can be generated with just DeepCopy implemented. Sadly, the
+	// easiest way to implement DeepCopy is to run this type through JSON. It's
+	// highly unlikely that we'll hit a panic but it is possible to do so with
+	// invalid values for resource.Quantity and the like.
+	out := new(PodSpecApplyConfiguration)
+	data, err := json.Marshal(ac)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(data, out); err != nil {
+		panic(err)
+	}
+	return out
 }
 
 // Budget configures the management of disruptions affecting the Pods in the StatefulSet.

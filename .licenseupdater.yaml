@@ -9,6 +9,11 @@ ignore:
   - directory: .task
   - directory: dist
   - directory: operator/api/applyconfiguration
+  # Ignore go files installed in testdata as they're not writable.
+  - directory: pkg/gotohelm/testdata/pkg
+  # Ignore go files from gotohelm's rewrite tests, they'll have the header but
+  # after a build directive.
+  - match: /\.rewritten\.go$/
 files:
   - name: licenses/boilerplate.go.txt
     type: go
