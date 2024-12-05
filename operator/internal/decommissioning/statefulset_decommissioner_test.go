@@ -20,9 +20,11 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -60,7 +62,7 @@ type StatefulSetDecommissionerSuite struct {
 
 var _ suite.SetupAllSuite = (*StatefulSetDecommissionerSuite)(nil)
 
-func (s *StatefulSetDecommissionerSuite) TestBasicDecommission() {
+func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	chart := s.installChart("basic", "", map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 5,
@@ -93,7 +95,62 @@ func (s *StatefulSetDecommissionerSuite) TestBasicDecommission() {
 		return len(health.NodesDown) == 0, nil
 	})
 
+	var firstBroker corev1.Pod
+	s.Require().NoError(s.client.Get(s.ctx, types.NamespacedName{Namespace: s.env.Namespace(), Name: chart.name + "-0"}, &firstBroker))
+	var firstPVC corev1.PersistentVolumeClaim
+	s.Require().NoError(s.client.Get(s.ctx, types.NamespacedName{Namespace: s.env.Namespace(), Name: "datadir-" + chart.name + "-0"}, &firstPVC))
+
+	// now we simulate node failure by tainting a node with NoSchedule and evicting the pod
+	firstBrokerNode := firstBroker.Spec.NodeName
+	s.taintNode(firstBrokerNode)
+	s.T().Cleanup(func() {
+		s.untaintNode(firstBrokerNode)
+	})
+	s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{})
+
+	s.waitFor(func(ctx context.Context) (bool, error) {
+		health, err := adminClient.GetHealthOverview(ctx)
+		if err != nil {
+			return false, err
+		}
+		// make sure that the pod has been taken offline
+		return len(health.NodesDown) == 1, nil
+	})
+
+	// we have to manually delete both the broker and its PVC, which would normally
+	// be done by the PVC unbinder
+	s.Require().NoError(s.client.Delete(s.ctx, &firstPVC))
+	s.Require().NoError(s.client.Delete(s.ctx, &firstBroker))
+
+	s.waitFor(func(ctx context.Context) (bool, error) {
+		health, err := adminClient.GetHealthOverview(ctx)
+		if err != nil {
+			return false, err
+		}
+		// now make sure it comes back online and the broker is decommissioned
+		return len(health.NodesDown) == 0, nil
+	})
+
 	s.cleanupChart(chart)
+}
+
+func (s *StatefulSetDecommissionerSuite) taintNode(name string) {
+	var node corev1.Node
+	s.Require().NoError(s.client.Get(s.ctx, types.NamespacedName{Name: name}, &node))
+	node.Spec.Taints = append(node.Spec.Taints, corev1.Taint{
+		Key:    "decommission-test",
+		Effect: corev1.TaintEffectNoSchedule,
+	})
+	s.Require().NoError(s.client.Update(s.ctx, &node))
+}
+
+func (s *StatefulSetDecommissionerSuite) untaintNode(name string) {
+	var node corev1.Node
+	s.Require().NoError(s.client.Get(s.ctx, types.NamespacedName{Name: name}, &node))
+	node.Spec.Taints = functional.Filter(node.Spec.Taints, func(taint corev1.Taint) bool {
+		return taint.Key != "decommission-test"
+	})
+	s.Require().NoError(s.client.Update(s.ctx, &node))
 }
 
 func (s *StatefulSetDecommissionerSuite) SetupSuite() {

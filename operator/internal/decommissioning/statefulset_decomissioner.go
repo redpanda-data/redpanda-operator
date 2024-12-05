@@ -427,7 +427,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 				// node for decommission, otherwise, we can't distinguish which
 				// pod is which broker (i.e. they're all down) and whether we
 				// should actually decommission it or not
-				hasHealthyBroker := true
+				hasHealthyBroker := false
 				for _, broker := range brokers.Values() {
 					if broker == downedNode {
 						continue
@@ -529,6 +529,8 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 // despite the fact that it's still bound to a pod. In such a case the pvc-protection finalizer put in-place by core keeps the
 // PVC from being deleted until the pod is deleted. Due to the skip of already-deleted PVCs below, these PVCs should
 // just get GC'd when the pod is finally decommissioned.
+//
+// TODO: will this cause issues if a PVC is deleted and before it's GC'd a Pod comes up?
 func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, set *appsv1.StatefulSet) ([]*corev1.PersistentVolumeClaim, error) {
 	pods := &corev1.PodList{}
 	if err := s.client.List(ctx, pods, client.InNamespace(set.Namespace), client.MatchingLabels(set.Spec.Template.Labels)); err != nil {
