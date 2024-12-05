@@ -15,9 +15,10 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // Dot is a representation of the "global" context or `.` in the execution

@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/cucumber/messages/go/v21 v21.0.1
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/redpanda-data/helm-charts v0.0.0-20241114193526-f53a0adc8f15
+	github.com/redpanda-data/helm-charts v0.0.0-20241121211850-232b4aaab5b2
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	k8s.io/api v0.30.3
@@ -36,7 +36,6 @@ require (
 	github.com/containerd/containerd v1.7.18 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/creack/pty v1.1.20 // indirect
 	github.com/cucumber/gherkin/go/v26 v26.2.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

@@ -13,9 +13,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
 	"github.com/stretchr/testify/require"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestHelm(t *testing.T) {

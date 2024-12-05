@@ -47,3 +47,7 @@ issues:
       - unparam
       text: "always receives"
       path: '(.+)_test\.go'
+    # We're not aiming to be secure in our tests.
+    - linters:
+      - gosec
+      path: '(.+)_test\.go'

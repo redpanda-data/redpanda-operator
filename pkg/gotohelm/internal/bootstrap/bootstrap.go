@@ -24,7 +24,7 @@
 // +gotohelm:filename=_shims.tpl
 // +gotohelm:namespace=_shims
 //
-//lint:file-ignore U1000 Ignore all unused code, it's exported into gotohelm templates
+//nolint:stylecheck,unused // Functions are unused and named strangely as they're only used post-transpilation.
 package bootstrap
 
 import (

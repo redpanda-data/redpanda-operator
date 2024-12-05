@@ -13,11 +13,12 @@ import (
 	"reflect"
 
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"helm.sh/helm/v3/pkg/chart"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type RenderFunc func(*helmette.Dot) []kube.Object

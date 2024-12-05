@@ -36,6 +36,11 @@ tasks:
         vars:
           CLI_ARGS: "--fix"
 
+  mod:tidy:
+    cmds:
+    - go list -f '{{"{{.Dir}}"}}' -m | xargs -L1 go mod tidy -C
+    - go work sync
+
   fmt:
     cmds:
       - gofumpt -w ./

@@ -17,11 +17,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/mitchellh/mapstructure"
-	"github.com/redpanda-data/helm-charts/pkg/valuesutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 // TypeTest is an equivalent of `val, ok := x.(type)` that is exercised as a

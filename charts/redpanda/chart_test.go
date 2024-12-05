@@ -847,6 +847,27 @@ func TestLabels(t *testing.T) {
 	}
 }
 
+func TestControllersTag(t *testing.T) {
+	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
+	require.NoError(t, err)
+
+	valuesYAML, err := os.ReadFile("values.yaml")
+	require.NoError(t, err)
+
+	var chart map[string]any
+	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
+
+	var values redpanda.Values
+	require.NoError(t, yaml.Unmarshal(valuesYAML, &values))
+
+	require.Equal(
+		t,
+		chart["appVersion"].(string),
+		string(values.Statefulset.SideCars.Controllers.Image.Tag),
+		"the redpanda chart's values.yaml's controllers tag should be equal to the operator chart's appVersion",
+	)
+}
+
 func TestGoHelmEquivalence(t *testing.T) {
 	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
 	require.NoError(t, err)
