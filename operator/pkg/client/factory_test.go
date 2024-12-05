@@ -29,9 +29,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"

@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 )
 

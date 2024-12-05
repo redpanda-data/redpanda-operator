@@ -45,9 +45,9 @@ import (
 
 	"github.com/redpanda-data/common-go/rpadmin"
 
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"

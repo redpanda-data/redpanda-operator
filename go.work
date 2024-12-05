@@ -4,6 +4,7 @@ use (
 	./acceptance
 	./alias
 	./harpoon
+	./helm-charts
 	./licenseupdater
 	./operator
 )

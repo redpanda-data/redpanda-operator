@@ -29,8 +29,9 @@ import (
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	"github.com/redpanda-data/redpanda-operator/helm-charts/pkg/kube"
+	redpandav1alpha2 "github.
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
