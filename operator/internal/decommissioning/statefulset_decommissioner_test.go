@@ -160,9 +160,6 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	log := testr.New(t).V(10)
-	if testing.Verbose() {
-		log = log.V(10)
-	}
 
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
@@ -192,8 +189,18 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
-		decommissioner := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), decommissioning.WithFactory(s.clientFactory))
-		if err := decommissioner.Setup(mgr); err != nil {
+		options := []decommissioning.Option{
+			// override this so we can dial directly to our Redpanda pods
+			decommissioning.WithFactory(s.clientFactory),
+			// set these low so that we don't have to wait forever in the test
+			// these settings should give about a 5-10 second window before
+			// actually running a decommission
+			decommissioning.WithDelayedCacheInterval(5 * time.Second),
+			decommissioning.WithDelayedCacheMaxCount(2),
+			decommissioning.WithRequeueTimeout(2 * time.Second),
+		}
+		decommissioner := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), options...)
+		if err := decommissioner.SetupWithManager(mgr); err != nil {
 			return err
 		}
 

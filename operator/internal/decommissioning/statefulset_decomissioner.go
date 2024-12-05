@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	corev1ac "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
@@ -56,6 +57,11 @@ const (
 	infoLevel  = 0
 
 	defaultRequeueTimeout = 10 * time.Second
+	// these defaults give us roughly 1 minute before
+	// we decommission a failing broker that appears to
+	// need decommissioning
+	defaultDelayedCacheInterval = 30 * time.Second
+	defaultDelayedMaxCacheCount = 2
 )
 
 type Option func(*StatefulSetDecomissioner)
@@ -95,30 +101,51 @@ func WithRequeueTimeout(timeout time.Duration) Option {
 	}
 }
 
+func WithDelayedCacheInterval(interval time.Duration) Option {
+	return func(decommissioner *StatefulSetDecomissioner) {
+		decommissioner.delayedCacheInterval = interval
+	}
+}
+
+func WithDelayedCacheMaxCount(count int) Option {
+	return func(decommissioner *StatefulSetDecomissioner) {
+		decommissioner.delayedCacheMaxCount = count
+	}
+}
+
 type StatefulSetDecomissioner struct {
-	client         client.Client
-	factory        internalclient.ClientFactory
-	fetcher        ValuesFetcher
-	recorder       record.EventRecorder
-	requeueTimeout time.Duration
-	filter         func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
+	client               client.Client
+	factory              internalclient.ClientFactory
+	fetcher              ValuesFetcher
+	recorder             record.EventRecorder
+	requeueTimeout       time.Duration
+	delayedCacheInterval time.Duration
+	delayedCacheMaxCount int
+	delayedBrokerIDCache *CategorizedDelayedCache[types.NamespacedName, int]
+	delayedVolumeCache   *CategorizedDelayedCache[types.NamespacedName, types.NamespacedName]
+	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
 }
 
 func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher ValuesFetcher, options ...Option) *StatefulSetDecomissioner {
 	k8sClient := mgr.GetClient()
 
 	decommissioner := &StatefulSetDecomissioner{
-		recorder:       mgr.GetEventRecorderFor("broker-decommissioner"),
-		client:         k8sClient,
-		fetcher:        fetcher,
-		factory:        internalclient.NewFactory(mgr.GetConfig(), k8sClient),
-		requeueTimeout: defaultRequeueTimeout,
-		filter:         func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) { return true, nil },
+		recorder:             mgr.GetEventRecorderFor("broker-decommissioner"),
+		client:               k8sClient,
+		fetcher:              fetcher,
+		factory:              internalclient.NewFactory(mgr.GetConfig(), k8sClient),
+		requeueTimeout:       defaultRequeueTimeout,
+		delayedCacheInterval: defaultDelayedCacheInterval,
+		delayedCacheMaxCount: defaultDelayedMaxCacheCount,
+		filter:               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) { return true, nil },
 	}
 
 	for _, opt := range options {
 		opt(decommissioner)
 	}
+
+	decommissioner.delayedBrokerIDCache = NewCategorizedDelayedCache[types.NamespacedName, int](decommissioner.delayedCacheMaxCount, decommissioner.delayedCacheInterval)
+	decommissioner.delayedVolumeCache = NewCategorizedDelayedCache[types.NamespacedName, types.NamespacedName](decommissioner.delayedCacheMaxCount, decommissioner.delayedCacheInterval)
 
 	return decommissioner
 }
@@ -137,7 +164,7 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher ValuesFetcher, optio
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=secrets,verbs=get;list;watch
 
-func (s *StatefulSetDecomissioner) Setup(mgr ctrl.Manager) error {
+func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
 	pvcPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{{
@@ -201,6 +228,10 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 	set := &appsv1.StatefulSet{}
 	if err := s.client.Get(ctx, req.NamespacedName, set); err != nil {
 		if apierrors.IsNotFound(err) {
+			// clean up the caches if this is finally deleted
+			s.delayedBrokerIDCache.Clean(req.NamespacedName)
+			s.delayedVolumeCache.Clean(req.NamespacedName)
+
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "fetching StatefulSet")
@@ -220,12 +251,15 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 
 	requeue, err := s.Decommission(ctx, set)
 	if err != nil {
-		// we already logged any error, just requeue directly
+		// we already logged any error, just requeue directly, delegating to the
+		// exponential backoff behavior
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	if requeue {
-		return ctrl.Result{RequeueAfter: s.requeueTimeout}, nil
+		// wait up to a 10% additional jitter factor, but requeue again
+		timeout := wait.Jitter(s.requeueTimeout, 0.10)
+		return ctrl.Result{RequeueAfter: timeout}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -253,6 +287,24 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 //
 // For PVC deletion and broker decommissioning, each step happens sequentially such that no two brokers should
 // attempt to be decommissioned simultaneously. Likewise each PVC is deleted one by one.
+//
+// NB: most of these operations are highly sensitive to the behavior of the client-side Kubernetes cache, the
+// population of which can introduce race conditions for prematurely considering either a PVC unbound or a broker
+// ready to decommission due to a stale read on either the StatefulSet or a partial list of Pods. Consider:
+//
+// - A StatefulSet scales up and the pod comes up and registers with the cluster but has not yet become fully healthy
+// - Reconciliation is triggered due to the pod coming online but the StatefulSet has been slow to propagate through
+// cache
+// - The requested replicas for the StatefulSet are out-of-date and it seems like we have one extra broker than we need
+// and that broker is currently unhealthy in our cluster health check
+// - We mark it as needing to be decommissioned even though it's new
+//
+// These types of stale cache scenarios are effectively eliminated by introducing a "delayed" cache that essentially
+// counts the number of times that we've marked a broker as ready to decommission across a certain window. If it's been
+// marked as needing to be decommissioned some m times with delays of n in between each mark, then it can be decommissioned
+// because we've given the client-side cache enough time to fill. We also add this guard for PVCs. In every loop through
+// reconciliation we expunge the broker and/or PVC entries that no longer meet the decommission criteria, so if a broker
+// or PVC should no longer be decommissioned, we reset our count.
 func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1.StatefulSet) (bool, error) {
 	// note that this is best-effort, the decommissioning code needs to be idempotent and deterministic
 
@@ -285,41 +337,64 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		return claim.Name
 	}, unboundVolumeClaims))
 
-	// we first clean up any unbound PVCs, ensuring that their PVs have a retain policy
-	if len(unboundVolumeClaims) > 0 {
-		claim := unboundVolumeClaims[0]
-		volume := &corev1.PersistentVolume{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: claim.Spec.VolumeName,
-			},
-		}
+	setCacheKey := client.ObjectKeyFromObject(set)
 
-		// ensure that the PV has a retain policy
-		if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(corev1ac.PersistentVolume(volume.Name).WithSpec(
-			corev1ac.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
-		)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
-			log.Error(err, "error patching PersistentVolume spec")
+	// remove any volumes from the cache that are no longer considered unbound
+	s.delayedVolumeCache.Filter(setCacheKey, functional.MapFn(func(claim *corev1.PersistentVolumeClaim) types.NamespacedName {
+		return client.ObjectKeyFromObject(claim)
+	}, unboundVolumeClaims)...)
+
+	// first mark all of the claims as needing potential expiration
+	for _, claim := range unboundVolumeClaims {
+		s.delayedVolumeCache.Mark(setCacheKey, client.ObjectKeyFromObject(claim))
+	}
+
+	// now we attempt to clean up the first of the PVCs that meets the treshold of the cache,
+	// ensuring that their PVs have a retain policy, and short-circuiting the rest of reconciliation
+	// if we actually delete a claim
+	for _, claim := range unboundVolumeClaims {
+		deleted, err := s.delayedVolumeCache.Process(setCacheKey, client.ObjectKeyFromObject(claim), func() error {
+			// first mark all of the claims as needing potential expiration
+			volume := &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: claim.Spec.VolumeName,
+				},
+			}
+
+			// ensure that the PV has a retain policy
+			if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(corev1ac.PersistentVolume(volume.Name).WithSpec(
+				corev1ac.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
+			)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
+				log.Error(err, "error patching PersistentVolume spec")
+				return err
+			}
+
+			// now that we've patched the PV, delete the PVC
+			if err := s.client.Delete(ctx, claim); err != nil {
+				log.Error(err, "error deleting PersistentVolumeClaim")
+				return err
+			}
+
+			message := fmt.Sprintf(
+				"unbound persistent volume claims: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
+					return client.ObjectKeyFromObject(claim).String()
+				}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
+			)
+
+			log.V(traceLevel).Info(message)
+			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
+
+			return nil
+		})
+		if err != nil {
 			return false, err
 		}
 
-		// now that we've patched the PV, delete the PVC
-		if err := s.client.Delete(ctx, claim); err != nil {
-			log.Error(err, "error deleting PersistentVolumeClaim")
-			return false, err
+		// if anything was actually deleted, just return immediately and we'll pick things up on
+		// the next pass
+		if deleted {
+			return true, nil
 		}
-
-		message := fmt.Sprintf(
-			"unbound persistent volume claims: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
-				return client.ObjectKeyFromObject(claim).String()
-			}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
-		)
-
-		log.V(traceLevel).Info(message)
-		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
-
-		// at this point we should get a requeue anyway due to the ownership watch
-		// so just delegate to the runtime
-		return false, nil
 	}
 
 	// now we check if we can/should decommission any brokers
@@ -335,16 +410,29 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		return false, err
 	}
 
+	// NB: we don't have to take into account cache counts yet at this point
+	// since we're not actually deleting anything if these conditions hold
+	// the counting happens below as a guard for *when we actually do clean
+	// something up*
+
 	requestedNodes := int(ptr.Deref(set.Spec.Replicas, 0))
 	if len(health.AllNodes) <= requestedNodes {
 		// we don't need to decommission anything since we're at the proper
-		// capacity
+		// capacity, we also clear the cache here because nothing should
+		// be considered for decommissioning until we actually have more nodes
+		// than are desired
+
+		s.delayedVolumeCache.Clean(setCacheKey)
 		return false, nil
 	}
 
 	if len(health.NodesDown) == 0 {
 		// we don't need to decommission anything since everything is healthy
-		// and we want to wait until a broker is fully stopped
+		// and we want to wait until a broker is fully stopped, we also clear the cache
+		// here because everything is healthy and we don't want to accidentally pick up something
+		// later and have old cache entries count against it
+
+		s.delayedVolumeCache.Clean(setCacheKey)
 		return false, nil
 	}
 
@@ -478,6 +566,16 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		return set
 	}
 
+	// NB: here is where we need to start to check the cache for any
+	// nodes that meet the threshold, otherwise they should just be considered
+	// ignored as well
+
+	// mark any brokers that currently meet our criteria for decommissioning
+	s.delayedBrokerIDCache.Filter(setCacheKey, brokersToDecommission...)
+	for _, broker := range brokersToDecommission {
+		s.delayedBrokerIDCache.Mark(setCacheKey, broker)
+	}
+
 	healthyBrokers := sortBrokers(healthyNodes.Values())
 	brokersToDecommission = sortBrokers(brokersToDecommission)
 	brokersToIgnore = sortBrokers(brokersToIgnore)
@@ -495,23 +593,41 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		formatBrokerList(currentlyDecommissioningBrokers),
 	))
 
+	// we marked the brokers to decommission above, but don't attempt a decommission yet
+	// because something is already in progress
+
 	if len(currentlyDecommissioningBrokers) != 0 {
 		// we skip decommissioning our next broker since we already have some node decommissioning in progress
 		return true, nil
 	}
 
-	if len(brokersToDecommission) > 0 {
-		// only record the event here since this is when we trigger a decommission
-		s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), brokersToDecommission[0])
+	// now attempt to decommission something, if we have actually done something, then requeue
+	for _, broker := range brokersToDecommission {
+		decommissioned, err := s.delayedBrokerIDCache.Process(setCacheKey, broker, func() error {
+			// only record the event here since this is when we trigger a decommission
+			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), brokersToDecommission[0])
 
-		if err := adminClient.DecommissionBroker(ctx, brokersToDecommission[0]); err != nil {
-			log.Error(err, "decommissioning broker", "broker", brokersToDecommission[0])
+			if err := adminClient.DecommissionBroker(ctx, brokersToDecommission[0]); err != nil {
+				log.Error(err, "decommissioning broker", "broker", brokersToDecommission[0])
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
 			return false, err
+		}
+
+		if decommissioned {
+			// we decommissioned something, return immediately and wait until the process is fully complete
+			// before attempting our next decommission
+			return true, nil
 		}
 	}
 
-	// we should have decommissioned something above, so requeue and wait for it to finish
-	return true, nil
+	// we may not have decommissioned anything above, but go ahead and requeue if we have anything
+	// in either of our caches since we have something that might need decommissioning soon
+	return s.delayedBrokerIDCache.Size(setCacheKey) > 0 || s.delayedVolumeCache.Size(setCacheKey) > 0, nil
 }
 
 // findUnboundVolumeClaims fetches any PVCs associated with the StatefulSet that aren't actively attached
@@ -524,13 +640,14 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 // 2. Pull any pvcs matching the labels for the stateful set's volume claim template (though the component adds a "NAME-statefulset")
 // 3. Find unbound volumes by checking that the pods we pulled reference every volume claim
 //
-// NB: this follow the original implementation that has a potential race-condition in the cache, where a PVC may come online and be in-cache
-// but the corresponding pod has not yet populated into the cache. In this case the PVC could be marked for deletion
+// NB: this bit follows the original implementation that has a potential race-condition in the cache, where a PVC may come online
+// and be in-cache but the corresponding pod has not yet populated into the cache. In this case the PVC could be marked for deletion
 // despite the fact that it's still bound to a pod. In such a case the pvc-protection finalizer put in-place by core keeps the
 // PVC from being deleted until the pod is deleted. Due to the skip of already-deleted PVCs below, these PVCs should
-// just get GC'd when the pod is finally decommissioned.
-//
-// TODO: will this cause issues if a PVC is deleted and before it's GC'd a Pod comes up?
+// just get GC'd when the pod is finally decommissioned. HOWEVER, this is addressed by wrapping the volume claim deletion
+// logic in an extra caching layer in the main reconciliation loop that only deletes a volume after it has been seen
+// as unbound n times with m amount of time between checks. This gives the pod and PVC time to both enter cache
+// so that the PVC will not be decommissioned while still being legitimately bound to a pod.
 func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, set *appsv1.StatefulSet) ([]*corev1.PersistentVolumeClaim, error) {
 	pods := &corev1.PodList{}
 	if err := s.client.List(ctx, pods, client.InNamespace(set.Namespace), client.MatchingLabels(set.Spec.Template.Labels)); err != nil {
@@ -630,16 +747,21 @@ func ordinalFromFQDN(fqdn string) (int, error) {
 		return 0, fmt.Errorf("invalid broker FQDN for ordinal fetching: %s", fqdn)
 	}
 
-	brokerPod := tokens[0]
-	brokerTokens := strings.Split(brokerPod, "-")
-	if len(brokerTokens) < 2 {
-		return 0, fmt.Errorf("invalid broker FQDN for ordinal fetching: %s", fqdn)
+	return ordinalFromResourceName(tokens[0])
+}
+
+// ordinalFromResourceName takes a ordinal suffixed resource and returns
+// the ordinal at the end.
+func ordinalFromResourceName(name string) (int, error) {
+	resourceTokens := strings.Split(name, "-")
+	if len(resourceTokens) < 2 {
+		return 0, fmt.Errorf("invalid resource name for ordinal fetching: %s", name)
 	}
 
 	// grab the last item after the "-"" which should be the ordinal and parse it
-	ordinal, err := strconv.Atoi(brokerTokens[len(brokerTokens)-1])
+	ordinal, err := strconv.Atoi(resourceTokens[len(resourceTokens)-1])
 	if err != nil {
-		return 0, fmt.Errorf("parsing broker FQDN %q: %w", fqdn, err)
+		return 0, fmt.Errorf("parsing resource name %q: %w", name, err)
 	}
 
 	return ordinal, nil

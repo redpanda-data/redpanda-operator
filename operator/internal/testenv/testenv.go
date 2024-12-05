@@ -90,7 +90,6 @@ func New(t *testing.T, options Options) *Env {
 		options.Logger = logr.Discard()
 	}
 
-	// TODO maybe allow customizing name?
 	cluster, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
 	require.NoError(t, err)
 
