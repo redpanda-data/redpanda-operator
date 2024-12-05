@@ -106,7 +106,7 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.T().Cleanup(func() {
 		s.untaintNode(firstBrokerNode)
 	})
-	s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{})
+	s.Require().NoError(s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{}))
 
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
