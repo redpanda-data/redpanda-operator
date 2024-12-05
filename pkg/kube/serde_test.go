@@ -12,12 +12,13 @@ package kube_test
 import (
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/kube"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	clientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func TestEncodeDecode(t *testing.T) {

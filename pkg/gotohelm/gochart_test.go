@@ -22,15 +22,16 @@ import (
 
 	"github.com/gonvenience/ytbx"
 	"github.com/homeport/dyff/pkg/dyff"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 var (
@@ -131,8 +132,7 @@ func TestDependencyChainRender(t *testing.T) {
 	actual, err := root.Render(kube.Config{}, helmette.Release{}, inputValues)
 	require.NoError(t, err)
 
-	actualByte, err := convertToString(actual)
-	require.NoError(t, err)
+	actualByte := convertToString(actual)
 
 	actualDocuments, err := ytbx.LoadDocuments(actualByte)
 	require.NoError(t, err)
@@ -168,12 +168,12 @@ func TestDependencyChainRender(t *testing.T) {
 	}
 }
 
-func convertToString(objs []kube.Object) ([]byte, error) {
+func convertToString(objs []kube.Object) []byte {
 	b := bytes.NewBuffer(nil)
 	for _, obj := range objs {
 		fmt.Fprintf(b, "---\n%s\n", MustMarshalYAML(obj))
 	}
-	return b.Bytes(), nil
+	return b.Bytes()
 }
 
 func MustMarshalYAML(x any) string {

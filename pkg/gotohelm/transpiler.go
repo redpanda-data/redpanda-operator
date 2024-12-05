@@ -992,7 +992,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 
 	signature := t.typeOf(n.Fun).(*types.Signature)
 
-	var reciever Node
+	var receiver Node
 	if recv := callee.Type().(*types.Signature).Recv(); recv != nil {
 		// If a function invocation has a receiver, it's reasonably safe to
 		// assume that it's a SelectorExpr as the form should always be
@@ -1000,17 +1000,17 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// In theory this could panic in the case of something like:
 		// `x := mystruct.MyMethod; x()`
 		// That's not supported any how.
-		reciever = t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)
+		receiver = t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)
 
-		recieverName := ""
+		receiverName := ""
 		switch x := recv.Type().(type) {
 		case *types.Named:
-			recieverName = x.Obj().Name()
+			receiverName = x.Obj().Name()
 		case *types.Pointer:
-			recieverName = "*" + x.Elem().(*types.Named).Obj().Name()
+			receiverName = "*" + x.Elem().(*types.Named).Obj().Name()
 		}
 		// Try to make a string that looks like something from reflect.
-		id = callee.Pkg().Path() + ".(" + recieverName + ")." + callee.Name()
+		id = callee.Pkg().Path() + ".(" + receiverName + ")." + callee.Name()
 	}
 
 	// Before checking anything else, search for a +gotohelm:builtin=X
@@ -1085,36 +1085,36 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return args[0]
 	case "k8s.io/utils/ptr.Equal":
 		return litCall("_shims.ptr_Equal", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Dig":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Dig":
 		return &BuiltInCall{FuncName: "dig", Arguments: append(args[2:], args[1], args[0])}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Unwrap":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Unwrap":
 		return &Selector{Expr: args[0], Field: "AsMap"}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.UnmarshalInto":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.UnmarshalInto":
 		return args[0]
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Compact2", "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Compact3":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact2", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact3":
 		return litCall("_shims.compact", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.AsIntegral":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsIntegral":
 		return litCall("_shims.asintegral", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.AsNumeric":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsNumeric":
 		return litCall("_shims.asnumeric", args...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.DictTest":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.DictTest":
 		valueType := callee.(*types.Func).Type().(*types.Signature).TypeParams().At(1)
 		return litCall("_shims.dicttest", append(args, t.zeroOf(valueType))...)
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Merge":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Merge":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
 	// Add note about this change.
 	case "helm.sh/helm/v3/pkg/chartutil.(Values).AsMap":
-		return &Selector{Expr: reciever, Field: "AsMap"}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.MergeTo":
+		return &Selector{Expr: receiver, Field: "AsMap"}
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MergeTo":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.SortedKeys":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedKeys":
 		return &BuiltInCall{FuncName: "sortAlpha", Arguments: []Node{&BuiltInCall{FuncName: "keys", Arguments: args}}}
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Get":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.Lookup":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of
 		// Lookup will always be a pointer as only pointers implement
 		// kube.Object.
@@ -1144,7 +1144,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// client's builtin scheme.
 		panic(fmt.Sprintf("unrecognized type: %v", k8sType))
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.TypeTest":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.TypeTest":
 		typ := signature.Results().At(0).Type()
 		if basic, ok := typ.(*types.Basic); ok {
 			if basic.Info()&types.IsNumeric != 0 {
@@ -1163,7 +1163,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "time.(Duration).String":
 		return litCall("_shims.time_Duration_String", args...)
 
-	case "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette.MustDuration":
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MustDuration":
 		return litCall(
 			"_shims.time_Duration_String",
 			litCall("_shims.time_ParseDuration", args...),
@@ -1177,21 +1177,21 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "k8s.io/apimachinery/pkg/api/resource.MustParse":
 		return litCall("_shims.resource_MustParse", args...)
 	case "k8s.io/apimachinery/pkg/api/resource.(*Quantity).Value":
-		return &Cast{To: "int64", X: litCall("_shims.resource_Value", append([]Node{reciever}, args...)...)}
+		return &Cast{To: "int64", X: litCall("_shims.resource_Value", append([]Node{receiver}, args...)...)}
 	case "k8s.io/apimachinery/pkg/api/resource.(*Quantity).MilliValue":
-		return &Cast{To: "int64", X: litCall("_shims.resource_MilliValue", append([]Node{reciever}, args...)...)}
+		return &Cast{To: "int64", X: litCall("_shims.resource_MilliValue", append([]Node{receiver}, args...)...)}
 	case "k8s.io/apimachinery/pkg/api/resource.(*Quantity).String":
 		// Similarly to DeepCopy, we're exploit the JSON representation of
 		// resource.Quantity here and rely on MustParse to simply normalize the
 		// representation.
-		return litCall("_shims.resource_MustParse", reciever)
+		return litCall("_shims.resource_MustParse", receiver)
 	case "k8s.io/apimachinery/pkg/api/resource.(Quantity).DeepCopy":
 		// DeepCopy is supported in a bit of a hacky way. We call "MustParse"
 		// which takes the JSON (string) representation of a resource.Quantity
 		// and parses it returning a new resource.Quantity, which is
 		// functionally equivalent. It has the added benefit of normalizing the
 		// string form of the Quantity.
-		return litCall("_shims.resource_MustParse", reciever)
+		return litCall("_shims.resource_MustParse", receiver)
 	}
 
 	// Final stop, all our special cases have been handled. Either this call is
@@ -1463,6 +1463,8 @@ func (t *Transpiler) maybeCast(n Node, to types.Type) Node {
 
 // getTypeSpec returns the [ast.StructType] for the given named type and the
 // [packages.Package] that contains the definition.
+//
+//nolint:unparam
 func (t *Transpiler) getStructType(typ *types.Struct) (*packages.Package, *ast.StructType) {
 	if typ.NumFields() == 0 {
 		panic("unhandled")

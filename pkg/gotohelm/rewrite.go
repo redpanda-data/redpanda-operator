@@ -28,7 +28,7 @@ type astRewrite func(*packages.Package, *ast.File) (_ *ast.File, changed bool)
 
 const (
 	shimsPkg     = "helmette"
-	shimsPkgPath = "github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	shimsPkgPath = "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 // NB: Order is very important here.
@@ -362,7 +362,7 @@ func rewriteMultiValueSyntaxToHelpers(pkg *packages.Package, f *ast.File) (*ast.
 func hoistIfs(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
 	count := 0
 	info := pkg.TypesInfo
-	renames := map[*ast.Object]*ast.Ident{}
+	renames := map[types.Object]*ast.Ident{}
 
 	return astutil.Apply(f, func(c *astutil.Cursor) bool {
 		node, ok := c.Node().(*ast.IfStmt)
@@ -380,7 +380,7 @@ func hoistIfs(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
 			new := ast.NewIdent(fmt.Sprintf("%s_%d", old.Name, count))
 			new.Obj = old.Obj
 
-			renames[old.Obj] = new
+			renames[info.ObjectOf(old)] = new
 
 			info.Defs[new] = info.Defs[old]
 			info.Instances[new] = info.Instances[old]
@@ -390,7 +390,7 @@ func hoistIfs(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
 	}, func(c *astutil.Cursor) bool {
 		switch node := c.Node().(type) {
 		case *ast.Ident:
-			if rename, ok := renames[node.Obj]; ok {
+			if rename, ok := renames[info.ObjectOf(node)]; ok {
 				c.Replace(rename)
 			}
 

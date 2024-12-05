@@ -191,7 +191,7 @@ func (g *TxTarGolden) update(path string) error {
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	return os.WriteFile(path, txtar.Format(g.archive), 0o664)
+	return os.WriteFile(path, txtar.Format(g.archive), 0o644)
 }
 
 func (g *TxTarGolden) getFile(path string) *txtar.File {

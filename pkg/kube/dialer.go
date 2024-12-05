@@ -139,7 +139,7 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 	dataStream, err := conn.CreateStream(headers)
 	if err != nil {
 		// close off the error stream that's been opened
-		errorStream.Reset()
+		_ = errorStream.Reset()
 
 		return nil, err
 	}
@@ -388,7 +388,7 @@ func (c *conn) Close() error {
 
 	// closing the underlying connection should cause
 	// our error stream reading routine to stop
-	c.errorStream.Reset()
+	_ = c.errorStream.Reset()
 	closeErr := c.dataStream.Reset()
 
 	// prioritize any sort of checks propagated on

@@ -24,9 +24,10 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/imdario/mergo"
-	"github.com/redpanda-data/helm-charts/pkg/valuesutil"
 	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 // ToYAML is the go equivalent of helm's `toYaml`.
@@ -482,7 +483,7 @@ func NIndent(spaces int, v string) string {
 
 // +gotohelm:builtin=randAlphaNum
 func RandAlphaNum(length int) string {
-	return "4" // Choosen by a fair dice roll.
+	return "4" // Chosen by a fair dice roll.
 }
 
 // +gotohelm:builtin=replace

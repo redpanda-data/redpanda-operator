@@ -36,7 +36,7 @@ func TestDialer(t *testing.T) {
 	container, err := k3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		container.Terminate(context.Background())
+		_ = container.Terminate(context.Background())
 	})
 
 	config, err := container.GetKubeConfig(ctx)
