@@ -12,8 +12,6 @@ package sidecar
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/pprof"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -32,12 +30,14 @@ var schemes = []func(s *runtime.Scheme) error{
 
 func Command() *cobra.Command {
 	var (
-		metricsAddr         string
-		probeAddr           string
-		pprofAddr           string
-		clusterNamespace    string
-		clusterName         string
-		decommissionTimeout time.Duration
+		metricsAddr                string
+		probeAddr                  string
+		pprofAddr                  string
+		clusterNamespace           string
+		clusterName                string
+		decommissionRequeueTimeout time.Duration
+		decommissionVoteInterval   time.Duration
+		decommissionMaxVoteCount   int
 	)
 
 	cmd := &cobra.Command{
@@ -46,16 +46,16 @@ func Command() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			// Always run a pprof server to facilitate debugging.
-			go runPProfServer(ctx, pprofAddr)
-
 			return Run(
 				ctx,
 				metricsAddr,
 				probeAddr,
+				pprofAddr,
 				clusterNamespace,
 				clusterName,
-				decommissionTimeout,
+				decommissionRequeueTimeout,
+				decommissionVoteInterval,
+				decommissionMaxVoteCount,
 			)
 		},
 	}
@@ -65,7 +65,9 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
 	cmd.Flags().StringVar(&clusterNamespace, "cluster-namespace", "", "The namespace of the cluster that this sidecar manages.")
 	cmd.Flags().StringVar(&clusterName, "cluster-name", "", "The name of the cluster that this sidecar manages.")
-	cmd.Flags().DurationVar(&decommissionTimeout, "decommission-timeout", 10*time.Second, "The time period to wait before recheck a broker that is being decommissioned.")
+	cmd.Flags().DurationVar(&decommissionRequeueTimeout, "decommission-requeue-timeout", 10*time.Second, "The time period to wait before rechecking a broker that is being decommissioned.")
+	cmd.Flags().DurationVar(&decommissionVoteInterval, "decommission-vote-interval", 30*time.Second, "The time period between incrementing decommission vote counts since the last decommission conditions were met.")
+	cmd.Flags().IntVar(&decommissionMaxVoteCount, "decommission-vote-count", 2, "The number of times that a vote must be tallied when a resource meets decommission conditions for it to actually be decommissioned.")
 
 	return cmd
 }
@@ -74,9 +76,12 @@ func Run(
 	ctx context.Context,
 	metricsAddr string,
 	probeAddr string,
+	pprofAddr string,
 	clusterNamespace string,
 	clusterName string,
-	decommissionTimeout time.Duration,
+	decommissionRequeueTimeout time.Duration,
+	decommissionVoteInterval time.Duration,
+	decommissionMaxVoteCount int,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -101,6 +106,7 @@ func Run(
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress:  probeAddr,
+		PprofBindAddress:        pprofAddr,
 		LeaderElection:          true,
 		LeaderElectionID:        clusterName + "." + clusterNamespace + ".redpanda",
 		Scheme:                  scheme,
@@ -113,9 +119,11 @@ func Run(
 
 	if err := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), []decommissioning.Option{
 		decommissioning.WithFilter(decommissioning.FilterStatefulSetOwner(clusterNamespace, clusterName)),
-		decommissioning.WithRequeueTimeout(decommissionTimeout),
-	}...).Setup(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
+		decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
+		decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
+		decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
+	}...).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 		return err
 	}
 
@@ -125,25 +133,4 @@ func Run(
 	}
 
 	return nil
-}
-
-func runPProfServer(ctx context.Context, listenAddr string) {
-	logger := ctrl.LoggerFrom(ctx)
-
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	pprofServer := &http.Server{
-		Addr:              listenAddr,
-		Handler:           pprofMux,
-		ReadHeaderTimeout: 3 * time.Second,
-	}
-
-	logger.Info("starting pprof server...", "addr", listenAddr)
-	if err := pprofServer.ListenAndServe(); err != nil {
-		logger.Error(err, "failed to run pprof server")
-	}
 }
