@@ -96,15 +96,15 @@
 {{- define "sprig.float" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_37525721_f__ := (list (float64 "3.2") nil) -}}
-{{- $f := ((index $_37525721_f__ 0) | float64) -}}
-{{- $_ := (index $_37525721_f__ 1) -}}
-{{- $_37525754_integer__ := (list (float64 "3") nil) -}}
-{{- $integer := ((index $_37525754_integer__ 0) | float64) -}}
-{{- $_ := (index $_37525754_integer__ 1) -}}
-{{- $_37525791_invalidInput_err := (list (float64 "abc") nil) -}}
-{{- $invalidInput := ((index $_37525791_invalidInput_err 0) | float64) -}}
-{{- $err := (index $_37525791_invalidInput_err 1) -}}
+{{- $_155_f__ := (list (float64 "3.2") nil) -}}
+{{- $f := ((index $_155_f__ 0) | float64) -}}
+{{- $_ := (index $_155_f__ 1) -}}
+{{- $_156_integer__ := (list (float64 "3") nil) -}}
+{{- $integer := ((index $_156_integer__ 0) | float64) -}}
+{{- $_ := (index $_156_integer__ 1) -}}
+{{- $_157_invalidInput_err := (list (float64 "abc") nil) -}}
+{{- $invalidInput := ((index $_157_invalidInput_err 0) | float64) -}}
+{{- $err := (index $_157_invalidInput_err 1) -}}
 {{- $errorHappen := 0.3 -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- end -}}
@@ -126,15 +126,15 @@
 {{- define "sprig.atoi" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_37526364_positive__ := (list (atoi "234") nil) -}}
-{{- $positive := ((index $_37526364_positive__ 0) | int) -}}
-{{- $_ := (index $_37526364_positive__ 1) -}}
-{{- $_37526401_negative__ := (list (atoi "-23") nil) -}}
-{{- $negative := ((index $_37526401_negative__ 0) | int) -}}
-{{- $_ := (index $_37526401_negative__ 1) -}}
-{{- $_37526438_invalidInput_err := (list (atoi "paokwdpo") nil) -}}
-{{- $invalidInput := ((index $_37526438_invalidInput_err 0) | int) -}}
-{{- $err := (index $_37526438_invalidInput_err 1) -}}
+{{- $_180_positive__ := (list (atoi "234") nil) -}}
+{{- $positive := ((index $_180_positive__ 0) | int) -}}
+{{- $_ := (index $_180_positive__ 1) -}}
+{{- $_181_negative__ := (list (atoi "-23") nil) -}}
+{{- $negative := ((index $_181_negative__ 0) | int) -}}
+{{- $_ := (index $_181_negative__ 1) -}}
+{{- $_182_invalidInput_err := (list (atoi "paokwdpo") nil) -}}
+{{- $invalidInput := ((index $_182_invalidInput_err 0) | int) -}}
+{{- $err := (index $_182_invalidInput_err 1) -}}
 {{- $errorHappen := (0 | int) -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- end -}}
@@ -214,12 +214,12 @@
 {{- define "sprig.errTypes" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_37528998_x1_err1 := (list (atoi "1") nil) -}}
-{{- $x1 := ((index $_37528998_x1_err1 0) | int) -}}
-{{- $err1 := (index $_37528998_x1_err1 1) -}}
-{{- $_37529030_x2_err2 := (list (float64 "1.1") nil) -}}
-{{- $x2 := ((index $_37529030_x2_err2 0) | float64) -}}
-{{- $err2 := (index $_37529030_x2_err2 1) -}}
+{{- $_284_x1_err1 := (list (atoi "1") nil) -}}
+{{- $x1 := ((index $_284_x1_err1 0) | int) -}}
+{{- $err1 := (index $_284_x1_err1 1) -}}
+{{- $_285_x2_err2 := (list (float64 "1.1") nil) -}}
+{{- $x2 := ((index $_285_x2_err2 0) | float64) -}}
+{{- $err2 := (index $_285_x2_err2 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (list $x1 $err1) (list $x2 $err2))) | toJson -}}
 {{- break -}}
