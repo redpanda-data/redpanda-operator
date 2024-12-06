@@ -17,7 +17,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm"
+	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -76,7 +77,7 @@ func goList(patterns ...string) ([]string, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to go list %v: %s", patterns, out)
 	}
 
 	return strings.Split(string(out), "\n"), nil

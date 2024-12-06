@@ -7,4 +7,5 @@ use (
 	./licenseupdater
 	./operator
 	./pkg
+	./pkg/gotohelm/testdata/src/example
 )

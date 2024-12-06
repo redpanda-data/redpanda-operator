@@ -48,15 +48,15 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $tmp_tuple_1 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name") ))) "r")) ))) "r") -}}
-{{- $ok1 := $tmp_tuple_1.T2 -}}
-{{- $svc := $tmp_tuple_1.T1 -}}
+{{- $_37519012_svc_ok1 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name") ))) "r") -}}
+{{- $svc := (index $_37519012_svc_ok1 0) -}}
+{{- $ok1 := (index $_37519012_svc_ok1 1) -}}
 {{- if (not $ok1) -}}
 {{- $_ := (fail (printf "%T %q not found. Test setup should have created it?" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil) ) "spec" (dict ) "status" (dict "loadBalancer" (dict ) ) ) (dict )) "name")) -}}
 {{- end -}}
-{{- $tmp_tuple_2 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman") ))) "r")) ))) "r") -}}
-{{- $ok2 := $tmp_tuple_2.T2 -}}
-{{- $sts := $tmp_tuple_2.T1 -}}
+{{- $_37519200_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman") ))) "r") -}}
+{{- $sts := (index $_37519200_sts_ok2 0) -}}
+{{- $ok2 := (index $_37519200_sts_ok2 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list $svc $ok1 $sts $ok2)) | toJson -}}
 {{- break -}}

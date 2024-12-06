@@ -14,8 +14,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
-	"go/parser"
-	"go/token"
 	"go/types"
 
 	"github.com/cockroachdb/errors"
@@ -26,23 +24,15 @@ import (
 
 type astRewrite func(*packages.Package, *ast.File) (_ *ast.File, changed bool)
 
-const (
-	shimsPkg     = "helmette"
-	shimsPkgPath = "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-)
-
-// NB: Order is very important here.
 var rewrites = []astRewrite{
 	hoistIfs,
-	rewriteMultiValueSyntaxToHelpers,
-	rewriteMultiValueReturns,
 }
 
 // LoadPackages is a wrapper around [packages.Load] that performs a handful of
 // AST rewrites followed by a second invocation of [packages.Load] to
 // appropriately populate the AST.
 // AST rewriting is done to keep the transpilation process to be as simple as
-// possible. Any unsuported or non-trivially supported expressions/statements
+// possible. Any unsupported or non-trivially supported expressions/statements
 // will be rewritten to supported equivalents instead.
 // If need be, the rewritten files can also be dumped to disk and have assertions made
 func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package, error) {
@@ -126,219 +116,6 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package
 	}
 
 	return pkgs, nil
-}
-
-// typeToNode returns an [ast.Expr] representing the provided type.
-func typeToNode(pkg *packages.Package, typ types.Type) ast.Expr {
-	qualifier := func(p *types.Package) string {
-		if p.Path() == pkg.PkgPath {
-			return ""
-		}
-
-		// Technically this could break in the case of having multiple files
-		// with different import aliases.
-		for _, obj := range pkg.TypesInfo.Defs {
-			if name, ok := obj.(*types.PkgName); ok && p.Path() == name.Imported().Path() {
-				return name.Name()
-			}
-		}
-
-		// If no package name was found in Defs, there's no import alias.
-		// Fallback to p.Name().
-		return p.Name()
-	}
-
-	// This should only happen if a rewrite forgot to update TypesInfo or
-	// someone called TypeOf on `_`.
-	if typ == nil {
-		panic("nil type")
-	}
-
-	s := types.TypeString(typ, qualifier)
-
-	expr, err := parser.ParseExpr(s)
-	if err != nil {
-		panic(fmt.Sprintf("pkg errors (%s) with type (%s): %v", pkg.Name, s, err))
-	}
-
-	return expr
-}
-
-// rewriteMultiValueReturns rewrites instances of multi-value returns into an
-// equivalent set of statements that utilizes a tuple followed by unpacking it.
-//
-//	x, y := f(a)
-//
-//	mvr := Compact2(f(a))
-//	x := mvr.First
-//	y := mvr.Second
-func rewriteMultiValueReturns(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
-	fset := pkg.Fset
-	info := pkg.TypesInfo
-
-	var count int
-	f = astutil.Apply(f, func(c *astutil.Cursor) bool {
-		assignment, ok := c.Node().(*ast.AssignStmt)
-		if !ok {
-			return true
-		}
-		if len(assignment.Lhs) < 2 || len(assignment.Rhs) != 1 {
-			return true
-		}
-
-		count++
-		mvr := ast.NewIdent(fmt.Sprintf("tmp_tuple_%d", count))
-
-		// TODO might be nicer to call c.InsertAfter in reverse order because
-		// unpacking ends up looking "backwards".
-		unpacked := 0
-		var typeArgs []ast.Expr
-
-		rhsTypes := info.TypeOf(assignment.Rhs[0]).(*types.Tuple)
-
-		for i, v := range assignment.Lhs {
-			typeArgs = append(typeArgs, typeToNode(pkg, rhsTypes.At(i).Type()))
-
-			// Skip over any blackhole assignments.
-			if ident, ok := v.(*ast.Ident); ok && ident.Name == "_" {
-				continue
-			}
-
-			unpacked++
-
-			c.InsertAfter(&ast.AssignStmt{
-				Lhs: []ast.Expr{v},
-				Tok: assignment.Tok,
-				Rhs: []ast.Expr{
-					&ast.SelectorExpr{
-						X:   mvr,
-						Sel: ast.NewIdent(fmt.Sprintf("T%d", i+1)),
-					},
-				},
-			})
-		}
-
-		tok := assignment.Tok
-
-		if unpacked == 0 {
-			mvr = &ast.Ident{Name: "_"}
-			tok = token.ASSIGN
-		}
-
-		c.Replace(&ast.AssignStmt{
-			Lhs: []ast.Expr{mvr},
-			Tok: tok,
-			Rhs: []ast.Expr{
-				&ast.CallExpr{
-					Fun: &ast.SelectorExpr{
-						X:   ast.NewIdent(shimsPkg),
-						Sel: ast.NewIdent(fmt.Sprintf("Compact%d", len(typeArgs))),
-					},
-					// TODO(chrisseto): This is commented out for the worse
-					// possible reason. It seems that format.Node is _slightly_
-					// non-deterministic in the case of long lines. The easiest
-					// way to work around that for now is to not include
-					// explicit type hints to CompactN as go seems to be able
-					// to infer most cases.
-					// Fun: &ast.IndexListExpr{
-					// 	X: &ast.SelectorExpr{
-					// 		X:   ast.NewIdent(shimsPkg),
-					// 		Sel: ast.NewIdent(fmt.Sprintf("Compact%d", len(typeArgs))),
-					// 	},
-					// 	Indices: typeArgs,
-					// },
-					Args: assignment.Rhs,
-				},
-			},
-		})
-
-		return true
-	}, nil).(*ast.File)
-
-	if count > 0 {
-		_ = astutil.AddImport(fset, f, shimsPkgPath)
-	}
-
-	return f, count > 0
-}
-
-// rewriteMultiValueSyntaxToHelpers rewrites instances of multi-value return
-// syntax, such as dictionary tests and type tests into equivalent function
-// invocations.
-//
-//	t, ok := x.(type)
-//
-//	t, ok := DictTest[keytype, valuetype](m, k)
-func rewriteMultiValueSyntaxToHelpers(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
-	count := 0
-	fset := pkg.Fset
-
-	replace := func(c *astutil.Cursor, replacement ast.Expr) {
-		// Increment count so we know when replacements have occurred.
-		count++
-
-		// Populate .Types for our replacement so downstream rewrites can
-		// depend on .TypeInfo without having to reparse the entire package.
-		pkg.TypesInfo.Types[replacement] = types.TypeAndValue{
-			Type: pkg.TypesInfo.TypeOf(c.Node().(ast.Expr)),
-		}
-
-		// Actually replace the node.
-		c.Replace(replacement)
-	}
-
-	f = astutil.Apply(f, func(c *astutil.Cursor) bool {
-		assignment, ok := c.Parent().(*ast.AssignStmt)
-		if !ok {
-			return true
-		}
-
-		if len(assignment.Lhs) != 2 || len(assignment.Rhs) != 1 {
-			return true
-		}
-
-		if assignment.Rhs[0] != c.Node() {
-			return true
-		}
-
-		switch node := c.Node().(type) {
-		case *ast.IndexExpr:
-			// x, ok := m[key] -> x, ok := DictTest[K, V](y, key)
-			typ := pkg.TypesInfo.TypeOf(node.X).Underlying().(*types.Map)
-
-			replace(c, &ast.CallExpr{
-				Fun: &ast.IndexListExpr{
-					X: &ast.SelectorExpr{X: ast.NewIdent(shimsPkg), Sel: ast.NewIdent("DictTest")},
-					Indices: []ast.Expr{
-						typeToNode(pkg, typ.Key()),
-						typeToNode(pkg, typ.Elem()),
-					},
-				},
-				Args: []ast.Expr{node.X, node.Index},
-			})
-
-		case *ast.TypeAssertExpr:
-			// x, ok := y.(type) -> x, ok := TypeTest[type](y)
-			replace(c, &ast.CallExpr{
-				Fun: &ast.IndexExpr{
-					X: &ast.SelectorExpr{
-						X:   ast.NewIdent(shimsPkg),
-						Sel: ast.NewIdent("TypeTest"),
-					},
-					Index: node.Type,
-				},
-				Args: []ast.Expr{node.X},
-			})
-		}
-
-		return true
-	}, nil).(*ast.File)
-
-	if count > 0 {
-		_ = astutil.AddImport(fset, f, shimsPkgPath)
-	}
-
-	return f, count > 0
 }
 
 // hoistIfs "hoists" all assignments within an if else chain to be above said
