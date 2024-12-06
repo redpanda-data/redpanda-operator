@@ -11,6 +11,7 @@ package decommissioning
 
 import (
 	"context"
+	"sync"
 
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
@@ -23,6 +24,8 @@ import (
 type RPKProfileFetcher struct {
 	configPath string
 	fs         afero.Fs
+	profile    *rpkconfig.RpkProfile
+	mutex      sync.Mutex
 }
 
 var _ Fetcher = (*RPKProfileFetcher)(nil)
@@ -32,6 +35,16 @@ func NewRPKProfileFetcher(configPath string) *RPKProfileFetcher {
 }
 
 func (f *RPKProfileFetcher) FetchLatest(_ context.Context, _, _ string) (any, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if f.profile != nil {
+		// returned the memoized profile so we don't have to keep reading it, if we need
+		// to handle the profile on disk changing, then we should implement something like
+		// an fsnotify watcher that clears the memoized profile when the file changes on disk
+		return f.profile, nil
+	}
+
 	params := rpkconfig.Params{ConfigFlag: f.configPath}
 
 	config, err := params.Load(f.fs)
@@ -39,5 +52,7 @@ func (f *RPKProfileFetcher) FetchLatest(_ context.Context, _, _ string) (any, er
 		return nil, err
 	}
 
-	return config.VirtualProfile(), nil
+	f.profile = config.VirtualProfile()
+
+	return f.profile, nil
 }
