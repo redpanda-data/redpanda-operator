@@ -12,6 +12,9 @@ package typing
 
 import "math"
 
+type myfloat = float64
+type myint int64
+
 func numbers() []any {
 	return []any{
 		// NB: It's possible that this test will fail on machines who's `int`
@@ -30,6 +33,10 @@ func numbers() []any {
 		-0.01,
 		123.00,
 		// math.MaxInt64 * math.MaxInt64, // Believe it or not, this actually causes an overflow error.
+		getMyInt() == 10,
+		getMyInt() == myint(getMyFloat()),
+		myfloat(getMyInt()) == getMyFloat(),
+		getMyFloat() == 1.1,
 	}
 }
 
@@ -39,4 +46,12 @@ func anInt() any {
 
 func anFloat() any {
 	return float64(123)
+}
+
+func getMyInt() myint {
+	return 10
+}
+
+func getMyFloat() myfloat {
+	return 1.1
 }
