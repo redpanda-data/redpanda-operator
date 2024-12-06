@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -7,8 +8,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build rewrites
-
 package syntax
 
 import (
@@ -16,7 +15,6 @@ import (
 	"math"
 
 	"example.com/example/aaacommon"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -61,11 +59,10 @@ func Syntax() map[string]any {
 
 	// TypeAssertExpr
 	var x any
-	_ = helmette.
-		// _, _ = x.(int) // Numeric types will generate an error.
-		Compact2(helmette.TypeTest[[]any](x))
-	_ = helmette.Compact2(helmette.TypeTest[[]string](x))
-	_ = helmette.Compact2(helmette.TypeTest[map[string]any](x))
+	// _, _ = x.(int) // Numeric types will generate an error.
+	_, _ = x.([]any)
+	_, _ = x.([]string)
+	_, _ = x.(map[string]any)
 
 	return map[string]any{
 		"sliceExpr":             slice,

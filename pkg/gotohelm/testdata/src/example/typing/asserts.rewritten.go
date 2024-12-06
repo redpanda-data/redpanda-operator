@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -7,8 +8,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build rewrites
-
 package typing
 
 import (
@@ -17,12 +16,12 @@ import (
 
 func typeTesting(dot *helmette.Dot) string {
 	t := dot.Values["t"]
-	tmp_tuple_1 := helmette.Compact2(helmette.TypeTest[string](t))
-	ok_1 := tmp_tuple_1.T2
-	tmp_tuple_2 := helmette.Compact2(helmette.AsIntegral[int](t))
-	ok_2 := tmp_tuple_2.T2
-	tmp_tuple_3 := helmette.Compact2(helmette.AsNumeric(t))
-	ok_3 := tmp_tuple_3.T2
+
+	_, ok_1 := t.(string)
+
+	_, ok_2 := helmette.AsIntegral[int](t)
+
+	_, ok_3 := helmette.AsNumeric(t)
 	if ok_1 {
 		return "it's a string!"
 	} else if ok_2 {

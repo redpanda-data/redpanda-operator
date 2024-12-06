@@ -14,9 +14,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $tmp_tuple_1 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_2 := $tmp_tuple_1.T2 -}}
-{{- $b_1 := $tmp_tuple_1.T1 -}}
+{{- $_37513989_b_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil)) ))) "r") -}}
+{{- $b_1 := (index $_37513989_b_1_ok_2 0) -}}
+{{- $ok_2 := (index $_37513989_b_1_ok_2 1) -}}
 {{- if (and $ok_2 (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" $b_1) ))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "Early Returns work!") | toJson -}}
@@ -32,9 +32,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $tmp_tuple_2 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour")) ))) "r")) ))) "r") -}}
-{{- $ok := $tmp_tuple_2.T2 -}}
-{{- $oneToFour := ($tmp_tuple_2.T1 | int) -}}
+{{- $_37514208_oneToFour_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour")) ))) "r") -}}
+{{- $oneToFour := ((index $_37514208_oneToFour_ok 0) | int) -}}
+{{- $ok := (index $_37514208_oneToFour_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "oneToFour not specified!") | toJson -}}
@@ -69,9 +69,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $tmp_tuple_3 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok := $tmp_tuple_3.T2 -}}
-{{- $intsAny := $tmp_tuple_3.T1 -}}
+{{- $_37514557_intsAny_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil)) ))) "r") -}}
+{{- $intsAny := (index $_37514557_intsAny_ok 0) -}}
+{{- $ok := (index $_37514557_intsAny_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $intsAny = (list ) -}}
 {{- end -}}

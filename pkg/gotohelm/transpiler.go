@@ -279,10 +279,11 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		return &Return{Expr: &BuiltInCall{FuncName: "list", Arguments: results}}
 
 	case *ast.AssignStmt:
-		if len(stmt.Lhs) != len(stmt.Rhs) {
-			break
-		}
-
+		// "unroll" in-lined assignments
+		// x, y, := 1, 2
+		// becomes
+		// x := 1
+		// x := 2
 		if len(stmt.Lhs) == len(stmt.Rhs) && len(stmt.Lhs) > 1 {
 			var stmts []Node
 			for i := 0; i < len(stmt.Lhs); i++ {
@@ -293,6 +294,16 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 				}))
 			}
 			return &Block{Statements: stmts}
+		}
+
+		if len(stmt.Lhs) > 1 && len(stmt.Rhs) == 1 {
+			return t.transpileMVAssignStmt(stmt)
+		}
+
+		// Unhandled case, that may not be possible?
+		// x, y, z := a, b
+		if len(stmt.Lhs) != len(stmt.Rhs) {
+			break
 		}
 
 		// +=, /=, *=, etc show up as assignments. They're not supported in
@@ -490,6 +501,65 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		Fset: t.Fset,
 		Msg:  "unhandled ast.Stmt",
 	})
+}
+
+// transpileMVAssignStmt handles transpiling assignments where the RHS has
+// exactly one expression and the LHS has more than one. E.g type checks, map
+// checks, and functions with multiple return values.
+func (t *Transpiler) transpileMVAssignStmt(stmt *ast.AssignStmt) Node {
+	var stmts []Node
+
+	// We need an intermediate variable to assign to. We'll synthesize it from
+	// the identifiers on the LHS and position of the AssignStmt to get something that is unique,
+	// deterministic, and mildly human readable.
+	// foo, ok := ... -> $_123_foo_ok := ...
+	intermediate := &Ident{Name: fmt.Sprintf("_%d", stmt.Pos())}
+	for _, ident := range stmt.Lhs {
+		intermediate.Name += "_"
+		intermediate.Name += ident.(*ast.Ident).Name
+	}
+
+	// Next, check for special cases. The behavior of operations like x[key] or
+	// x.(type) are dependent on the LHS of the assignment.
+	var rhs Node
+	if len(stmt.Lhs) == 2 && len(stmt.Rhs) == 1 {
+		switch n := stmt.Rhs[0].(type) {
+		case *ast.IndexExpr:
+			rhs = litCall("_shims.dicttest", t.transpileExpr(n.X), t.transpileExpr(n.Index), t.zeroOf(t.typeOf(stmt.Lhs[0])))
+
+		case *ast.TypeAssertExpr:
+			typ := t.typeOf(n.Type)
+			rhs = litCall("_shims.typetest", t.transpileTypeRepr(typ), t.transpileExpr(n.X), t.zeroOf(typ))
+		}
+	}
+
+	// If we didn't hit any special cases, this is probably just a call with
+	// multiple returns. Transpile as normal.
+	if rhs == nil {
+		rhs = t.transpileExpr(stmt.Rhs[0])
+	}
+
+	// Our intermediate variable will always be a new assignment.
+	stmts = append(stmts, &Assignment{LHS: intermediate, New: true, RHS: rhs})
+
+	// Generate our "unwrapping"
+	// x, ok := ...
+	// becomes:
+	// _123_x_ok := ...
+	// x := _123_x_ok[0]
+	// ok := _123_x_ok[1]
+	for i, ident := range stmt.Lhs {
+		stmts = append(stmts, &Assignment{
+			LHS: t.transpileExpr(ident),
+			New: stmt.Tok.String() == ":=",
+			RHS: t.maybeCast(&BuiltInCall{FuncName: "index", Arguments: []Node{
+				intermediate,
+				&Literal{Value: fmt.Sprintf("%d", i)},
+			}}, t.typeOf(ident)),
+		})
+	}
+
+	return &Block{Statements: stmts}
 }
 
 func (t *Transpiler) transpileExpr(n ast.Expr) Node {
@@ -1091,15 +1161,10 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return &Selector{Expr: args[0], Field: "AsMap"}
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.UnmarshalInto":
 		return args[0]
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact2", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Compact3":
-		return litCall("_shims.compact", args...)
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsIntegral":
 		return litCall("_shims.asintegral", args...)
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsNumeric":
 		return litCall("_shims.asnumeric", args...)
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.DictTest":
-		valueType := callee.(*types.Func).Type().(*types.Signature).TypeParams().At(1)
-		return litCall("_shims.dicttest", append(args, t.zeroOf(valueType))...)
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Merge":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
@@ -1143,19 +1208,6 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// inject a Scheme into the transpiler instead of relying on the kube
 		// client's builtin scheme.
 		panic(fmt.Sprintf("unrecognized type: %v", k8sType))
-
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.TypeTest":
-		typ := signature.Results().At(0).Type()
-		if basic, ok := typ.(*types.Basic); ok {
-			if basic.Info()&types.IsNumeric != 0 {
-				panic(&Unsupported{
-					Fset: t.Fset,
-					Node: n,
-					Msg:  "type checks on numeric types are unreliable due to JSON casting all numbers to float64's. Instead use `helmette.IsNumeric` or `helmette.AsIntegral`",
-				})
-			}
-		}
-		return litCall("_shims.typetest", t.transpileTypeRepr(typ), args[0], t.zeroOf(typ))
 
 	case "time.ParseDuration":
 		return litCall("_shims.time_ParseDuration", args...)
@@ -1295,6 +1347,8 @@ func (t *Transpiler) transpileTypeRepr(typ types.Type) Node {
 		}}
 	case *types.Basic:
 		return NewLiteral(typ.String())
+	case *types.Alias:
+		return t.transpileTypeRepr(typ.Rhs())
 	case *types.Interface:
 		if typ.Empty() {
 			return NewLiteral("interface {}")
