@@ -6,6 +6,7 @@ use (
 	./charts
 	./harpoon
 	./licenseupdater
+	./nightly-malformer
 	./operator
 	./pkg
 )
