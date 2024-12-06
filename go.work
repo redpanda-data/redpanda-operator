@@ -5,6 +5,8 @@ use (
 	./alias
 	./harpoon
 	./licenseupdater
+	./nightly-malformer
 	./operator
 	./pkg
+	./charts
 )
