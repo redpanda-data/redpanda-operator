@@ -38,6 +38,7 @@ func Command() *cobra.Command {
 		decommissionRequeueTimeout time.Duration
 		decommissionVoteInterval   time.Duration
 		decommissionMaxVoteCount   int
+		redpandaYAMLPath           string
 	)
 
 	cmd := &cobra.Command{
@@ -56,6 +57,7 @@ func Command() *cobra.Command {
 				decommissionRequeueTimeout,
 				decommissionVoteInterval,
 				decommissionMaxVoteCount,
+				redpandaYAMLPath,
 			)
 		},
 	}
@@ -68,6 +70,7 @@ func Command() *cobra.Command {
 	cmd.Flags().DurationVar(&decommissionRequeueTimeout, "decommission-requeue-timeout", 10*time.Second, "The time period to wait before rechecking a broker that is being decommissioned.")
 	cmd.Flags().DurationVar(&decommissionVoteInterval, "decommission-vote-interval", 30*time.Second, "The time period between incrementing decommission vote counts since the last decommission conditions were met.")
 	cmd.Flags().IntVar(&decommissionMaxVoteCount, "decommission-vote-count", 2, "The number of times that a vote must be tallied when a resource meets decommission conditions for it to actually be decommissioned.")
+	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml")
 
 	return cmd
 }
@@ -82,6 +85,7 @@ func Run(
 	decommissionRequeueTimeout time.Duration,
 	decommissionVoteInterval time.Duration,
 	decommissionMaxVoteCount int,
+	redpandaYAMLPath string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -117,7 +121,13 @@ func Run(
 		return err
 	}
 
-	if err := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), []decommissioning.Option{
+	fetcher := decommissioning.NewChainedFetcher(
+		// prefer RPK profile first and then move on to fetch from helm values
+		decommissioning.NewRPKProfileFetcher(redpandaYAMLPath),
+		decommissioning.NewHelmFetcher(mgr),
+	)
+
+	if err := decommissioning.NewStatefulSetDecommissioner(mgr, fetcher, []decommissioning.Option{
 		decommissioning.WithFilter(decommissioning.FilterStatefulSetOwner(clusterNamespace, clusterName)),
 		decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
 		decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),

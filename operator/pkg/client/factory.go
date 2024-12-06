@@ -14,13 +14,19 @@ import (
 	"errors"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/spf13/afero"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -30,12 +36,13 @@ import (
 )
 
 var (
-	ErrInvalidClusterRef           = errors.New("clusterRef refers to a cluster that does not exist")
-	ErrEmptyBrokerList             = errors.New("empty broker list")
-	ErrEmptyURLList                = errors.New("empty url list")
-	ErrInvalidKafkaClientObject    = errors.New("cannot initialize Kafka API client from given object")
-	ErrInvalidRedpandaClientObject = errors.New("cannot initialize Redpanda Admin API client from given object")
-	ErrUnsupportedSASLMechanism    = errors.New("unsupported SASL mechanism")
+	ErrInvalidClusterRef                 = errors.New("clusterRef refers to a cluster that does not exist")
+	ErrEmptyBrokerList                   = errors.New("empty broker list")
+	ErrEmptyURLList                      = errors.New("empty url list")
+	ErrInvalidKafkaClientObject          = errors.New("cannot initialize Kafka API client from given object")
+	ErrInvalidRedpandaClientObject       = errors.New("cannot initialize Redpanda Admin API client from given object")
+	ErrInvalidSchemaRegistryClientObject = errors.New("cannot initialize Schema Registry API client from given object")
+	ErrUnsupportedSASLMechanism          = errors.New("unsupported SASL mechanism")
 )
 
 // UserAuth allows you to override the auth credentials used in establishing a client connection
@@ -57,20 +64,20 @@ type UserAuth struct {
 // at method invocation.
 type ClientFactory interface {
 	// KafkaClient initializes a kgo.Client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.KafkaConnectedObject interface or the v1alpha2.ClusterReferencingObject
-	// interface to properly initialize. Callers should always call Close on the returned *kgo.Client, or it will leak
-	// goroutines.
-	KafkaClient(ctx context.Context, object client.Object, opts ...kgo.Opt) (*kgo.Client, error)
+	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.KafkaConnectedObject interface
+	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should always call Close on the returned *kgo.Client,
+	// or it will leak goroutines.
+	KafkaClient(ctx context.Context, object any, opts ...kgo.Opt) (*kgo.Client, error)
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.AdminConnectedObject interface or the v1alpha2.ClusterReferencingObject
-	// interface to properly initialize.
-	RedpandaAdminClient(ctx context.Context, object client.Object) (*rpadmin.AdminAPI, error)
+	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
+	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
+	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
-	// The struct *must* implement either the v1alpha2.SchemaRegistryConnectedObject interface or the v1alpha2.ClusterReferencingObject
-	// interface to properly initialize.
-	SchemaRegistryClient(ctx context.Context, object client.Object) (*sr.Client, error)
+	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
+	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
+	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
 
 	// ACLs returns a high-level client for synchronizing ACLs. Callers should always call Close on the returned *acls.Syncer, or it will leak
 	// goroutines.
@@ -87,6 +94,7 @@ type ClientFactory interface {
 type Factory struct {
 	client.Client
 	config *rest.Config
+	fs     afero.Fs
 
 	dialer   redpanda.DialContextFunc
 	userAuth *UserAuth
@@ -97,6 +105,7 @@ var _ ClientFactory = (*Factory)(nil)
 func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 	return &Factory{
 		config: rest.CopyConfig(config),
+		fs:     afero.NewOsFs(),
 		Client: kubeclient,
 	}
 }
@@ -106,7 +115,18 @@ func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 		Client:   c.Client,
 		config:   c.config,
 		userAuth: c.userAuth,
+		fs:       c.fs,
 		dialer:   dialer,
+	}
+}
+
+func (c *Factory) WithFS(fs afero.Fs) *Factory {
+	return &Factory{
+		Client:   c.Client,
+		config:   c.config,
+		userAuth: c.userAuth,
+		dialer:   c.dialer,
+		fs:       fs,
 	}
 }
 
@@ -115,17 +135,27 @@ func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
 		Client:   c.Client,
 		config:   c.config,
 		dialer:   c.dialer,
+		fs:       c.fs,
 		userAuth: userAuth,
 	}
 }
 
-func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*kgo.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.kafkaForCluster(cluster, opts...)
 	}
 
-	cluster, err := c.getCluster(ctx, obj)
+	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
+		return c.kafkaForRPKProfile(profile, opts...)
+	}
+
+	o, ok := obj.(client.Object)
+	if !ok {
+		return nil, ErrInvalidKafkaClientObject
+	}
+
+	cluster, err := c.getCluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -134,20 +164,29 @@ func (c *Factory) KafkaClient(ctx context.Context, obj client.Object, opts ...kg
 		return c.kafkaForCluster(cluster, opts...)
 	}
 
-	if spec := c.getKafkaSpec(obj); spec != nil {
-		return c.kafkaForSpec(ctx, obj.GetNamespace(), c.getKafkaMetricNamespace(obj), spec, opts...)
+	if spec := c.getKafkaSpec(o); spec != nil {
+		return c.kafkaForSpec(ctx, o.GetNamespace(), c.getKafkaMetricNamespace(o), spec, opts...)
 	}
 
 	return nil, ErrInvalidKafkaClientObject
 }
 
-func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*rpadmin.AdminAPI, error) {
+func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.redpandaAdminForCluster(cluster)
 	}
 
-	cluster, err := c.getCluster(ctx, obj)
+	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
+		return c.redpandaAdminForRPKProfile(profile)
+	}
+
+	o, ok := obj.(client.Object)
+	if !ok {
+		return nil, ErrInvalidRedpandaClientObject
+	}
+
+	cluster, err := c.getCluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -156,20 +195,29 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj client.Object) (*
 		return c.redpandaAdminForCluster(cluster)
 	}
 
-	if spec := c.getAdminSpec(obj); spec != nil {
-		return c.redpandaAdminForSpec(ctx, obj.GetNamespace(), spec)
+	if spec := c.getAdminSpec(o); spec != nil {
+		return c.redpandaAdminForSpec(ctx, o.GetNamespace(), spec)
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
 }
 
-func (c *Factory) SchemaRegistryClient(ctx context.Context, obj client.Object) (*sr.Client, error) {
+func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.schemaRegistryForCluster(cluster)
 	}
 
-	cluster, err := c.getCluster(ctx, obj)
+	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
+		return c.schemaRegistryForRPKProfile(profile)
+	}
+
+	o, ok := obj.(client.Object)
+	if !ok {
+		return nil, ErrInvalidSchemaRegistryClientObject
+	}
+
+	cluster, err := c.getCluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +226,11 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj client.Object) (
 		return c.schemaRegistryForCluster(cluster)
 	}
 
-	if spec := c.getSchemaRegistrySpec(obj); spec != nil {
-		return c.schemaRegistryForSpec(ctx, obj.GetNamespace(), spec)
+	if spec := c.getSchemaRegistrySpec(o); spec != nil {
+		return c.schemaRegistryForSpec(ctx, o.GetNamespace(), spec)
 	}
 
-	return nil, ErrInvalidRedpandaClientObject
+	return nil, ErrInvalidSchemaRegistryClientObject
 }
 
 func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error) {
@@ -281,4 +329,27 @@ func (c *Factory) getSchemaRegistrySpec(obj client.Object) *redpandav1alpha2.Sch
 	}
 
 	return nil
+}
+
+func (c *Factory) kafkaUserAuth() (kgo.Opt, error) {
+	if c.userAuth != nil {
+		auth := scram.Auth{
+			User: c.userAuth.Username,
+			Pass: c.userAuth.Password,
+		}
+
+		var mechanism sasl.Mechanism
+		switch c.userAuth.Mechanism {
+		case config.SASLMechanismScramSHA256:
+			mechanism = auth.AsSha256Mechanism()
+		case config.SASLMechanismScramSHA512:
+			mechanism = auth.AsSha512Mechanism()
+		default:
+			return nil, ErrUnsupportedSASLMechanism
+		}
+
+		return kgo.SASL(mechanism), nil
+	}
+
+	return nil, nil
 }

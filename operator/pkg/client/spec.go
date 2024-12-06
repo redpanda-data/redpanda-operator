@@ -17,10 +17,7 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"github.com/twmb/franz-go/pkg/sasl"
-	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -57,23 +54,13 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 		kopts = append(kopts, saslOpt)
 	}
 
-	if c.userAuth != nil {
-		auth := scram.Auth{
-			User: c.userAuth.Username,
-			Pass: c.userAuth.Password,
-		}
+	authOpt, err := c.kafkaUserAuth()
+	if err != nil {
+		return nil, err
+	}
 
-		var mechanism sasl.Mechanism
-		switch c.userAuth.Mechanism {
-		case config.SASLMechanismScramSHA256:
-			mechanism = auth.AsSha256Mechanism()
-		case config.SASLMechanismScramSHA512:
-			mechanism = auth.AsSha512Mechanism()
-		default:
-			return nil, ErrUnsupportedSASLMechanism
-		}
-
-		kopts = append(kopts, kgo.SASL(mechanism))
+	if authOpt != nil {
+		kopts = append(kopts, authOpt)
 	}
 
 	if spec.TLS != nil {
