@@ -125,8 +125,6 @@ func (d *CategorizedDelayedCache[Category, Entry]) Mark(category Category, entry
 		lastMarked: time.Now(),
 		count:      1,
 	}
-
-	return
 }
 
 // Process processes and removes a cache item, calling the callback if the minimum threshold count is met.
