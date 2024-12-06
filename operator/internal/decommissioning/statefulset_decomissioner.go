@@ -422,8 +422,10 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		// be considered for decommissioning until we actually have more nodes
 		// than are desired
 
-		s.delayedVolumeCache.Clean(setCacheKey)
-		return false, nil
+		s.delayedBrokerIDCache.Clean(setCacheKey)
+		// reqeueue if we have any pending volumes for decommission, and if not
+		// settle until the next thing trigger reconciliation
+		return s.delayedVolumeCache.Size(setCacheKey) > 0, nil
 	}
 
 	if len(health.NodesDown) == 0 {
@@ -432,8 +434,10 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		// here because everything is healthy and we don't want to accidentally pick up something
 		// later and have old cache entries count against it
 
-		s.delayedVolumeCache.Clean(setCacheKey)
-		return false, nil
+		s.delayedBrokerIDCache.Clean(setCacheKey)
+		// reqeueue if we have any pending volumes for decommission, and if not
+		// settle until the next thing trigger reconciliation
+		return s.delayedVolumeCache.Size(setCacheKey) > 0, nil
 	}
 
 	allNodes := collections.NewSet[int]()
