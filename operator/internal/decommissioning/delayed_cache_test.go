@@ -15,8 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/stretchr/testify/require"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 )
 
 func TestCategorizedDelayedCache(t *testing.T) {
