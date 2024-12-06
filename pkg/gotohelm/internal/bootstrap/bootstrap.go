@@ -72,16 +72,6 @@ func dicttest(m map[string]any, key string, zero any) []any {
 	return []any{zero, false}
 }
 
-// compact is the implementation of `helmette.CompactN`.
-// It's a strange and hacky way of handling multi-value returns.
-func compact(args []any) map[string]any {
-	out := map[string]any{}
-	for i, e := range args {
-		out[fmt.Sprintf("T%d", 1+i)] = e
-	}
-	return out
-}
-
 // deref is the implementation of the go syntax `*variable`.
 func deref(ptr any) any {
 	if ptr == nil {

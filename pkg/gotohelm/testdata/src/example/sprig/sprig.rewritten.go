@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -6,8 +7,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build rewrites
 
 package sprig
 
@@ -154,13 +153,9 @@ func lenTest() []int {
 }
 
 func float() []float64 {
-	tmp_tuple_1 := helmette.Compact2(helmette.Float64("3.2"))
-	f := tmp_tuple_1.T1
-	tmp_tuple_2 := helmette.Compact2(helmette.Float64("3"))
-	integer := tmp_tuple_2.T1
-	tmp_tuple_3 := helmette.Compact2(helmette.Float64("abc"))
-	err := tmp_tuple_3.T2
-	invalidInput := tmp_tuple_3.T1
+	f, _ := helmette.Float64("3.2")
+	integer, _ := helmette.Float64("3")
+	invalidInput, err := helmette.Float64("abc")
 	errorHappen := 0.3
 	if err != nil {
 		// The error will never happen in go template engine. That's why sprig is swallowing/omitting any error
@@ -183,13 +178,9 @@ func regex() []bool {
 }
 
 func atoi() []int {
-	tmp_tuple_4 := helmette.Compact2(helmette.Atoi("234"))
-	positive := tmp_tuple_4.T1
-	tmp_tuple_5 := helmette.Compact2(helmette.Atoi("-23"))
-	negative := tmp_tuple_5.T1
-	tmp_tuple_6 := helmette.Compact2(helmette.Atoi("paokwdpo"))
-	err := tmp_tuple_6.T2
-	invalidInput := tmp_tuple_6.T1
+	positive, _ := helmette.Atoi("234")
+	negative, _ := helmette.Atoi("-23")
+	invalidInput, err := helmette.Atoi("paokwdpo")
 	errorHappen := 0
 	if err != nil {
 		// The error will never happen in go template engine. That's why sprig is swallowing/omitting any error
@@ -291,8 +282,10 @@ func errTypes() []any {
 	// can't due to template limitation.
 	// We can't currently exercise failure cases here as the test harness
 	// doesn't handle it.
+	x1, err1 := helmette.Atoi("1")
+	x2, err2 := helmette.Float64("1.1")
 	return []any{
-		helmette.Compact2(helmette.Atoi("1")),
-		helmette.Compact2(helmette.Float64("1.1")),
+		[]any{x1, err1},
+		[]any{x2, err2},
 	}
 }

@@ -23,8 +23,6 @@ import (
 )
 
 func TestLoadPackages(t *testing.T) {
-	t.Skipf("not working post repo merger")
-
 	td, err := filepath.Abs("testdata")
 	require.NoError(t, err)
 

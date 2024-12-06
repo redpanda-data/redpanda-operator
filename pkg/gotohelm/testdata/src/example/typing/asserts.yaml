@@ -5,12 +5,15 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $t := (index $dot.Values "t") -}}
-{{- $tmp_tuple_1 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.typetest" (dict "a" (list "string" $t "") ))) "r")) ))) "r") -}}
-{{- $ok_1 := $tmp_tuple_1.T2 -}}
-{{- $tmp_tuple_2 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.asintegral" (dict "a" (list $t) ))) "r")) ))) "r") -}}
-{{- $ok_2 := $tmp_tuple_2.T2 -}}
-{{- $tmp_tuple_3 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.asnumeric" (dict "a" (list $t) ))) "r")) ))) "r") -}}
-{{- $ok_3 := $tmp_tuple_3.T2 -}}
+{{- $_37529618___ok_1 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" $t "") ))) "r") -}}
+{{- $_ := (index $_37529618___ok_1 0) -}}
+{{- $ok_1 := (index $_37529618___ok_1 1) -}}
+{{- $_37529642___ok_2 := (get (fromJson (include "_shims.asintegral" (dict "a" (list $t) ))) "r") -}}
+{{- $_ := ((index $_37529642___ok_2 0) | int) -}}
+{{- $ok_2 := (index $_37529642___ok_2 1) -}}
+{{- $_37529683___ok_3 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $t) ))) "r") -}}
+{{- $_ := ((index $_37529683___ok_3 0) | float64) -}}
+{{- $ok_3 := (index $_37529683___ok_3 1) -}}
 {{- if $ok_1 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "it's a string!") | toJson -}}

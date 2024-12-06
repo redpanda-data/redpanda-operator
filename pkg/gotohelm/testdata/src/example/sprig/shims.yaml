@@ -18,9 +18,9 @@
 {{- $inputs = (concat (default (list ) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
 {{- $outputs := (list ) -}}
 {{- range $_, $in := $inputs -}}
-{{- $tmp_tuple_1 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.asnumeric" (dict "a" (list $in) ))) "r")) ))) "r") -}}
-{{- $isNumeric := $tmp_tuple_1.T2 -}}
-{{- $value := ($tmp_tuple_1.T1 | float64) -}}
+{{- $_37536015_value_isNumeric := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $in) ))) "r") -}}
+{{- $value := ((index $_37536015_value_isNumeric 0) | float64) -}}
+{{- $isNumeric := (index $_37536015_value_isNumeric 1) -}}
 {{- $outputs = (concat (default (list ) $outputs) (list (list $in $value $isNumeric))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -40,9 +40,9 @@
 {{- $inputs = (concat (default (list ) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
 {{- $outputs := (list ) -}}
 {{- range $_, $in := $inputs -}}
-{{- $tmp_tuple_2 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.asintegral" (dict "a" (list $in) ))) "r")) ))) "r") -}}
-{{- $isIntegral := $tmp_tuple_2.T2 -}}
-{{- $value := ($tmp_tuple_2.T1 | int) -}}
+{{- $_37536535_value_isIntegral := (get (fromJson (include "_shims.asintegral" (dict "a" (list $in) ))) "r") -}}
+{{- $value := ((index $_37536535_value_isIntegral 0) | int) -}}
+{{- $isIntegral := (index $_37536535_value_isIntegral 1) -}}
 {{- $outputs = (concat (default (list ) $outputs) (list (list $in $value $isIntegral))) -}}
 {{- end -}}
 {{- if $_is_returning -}}

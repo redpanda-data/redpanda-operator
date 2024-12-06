@@ -11,6 +11,7 @@ package gotohelm
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -73,15 +74,20 @@ var transpileBootstrap = sync.OnceValues(func() (*File, error) {
 	//
 	// It's a weird process but removes any
 	// possibility of things getting out of sync.
-	dir, _ := os.Getwd()
+	dir := os.TempDir()
 
 	// We can reasonably convince packages.Load to read from the embedded FS.
-	// Though it seems likely this isn't 100% reliable as we always execute
-	// gotohelm from the root of this repository.
+	// Rather than fighting with go.mod's we turn on GOPATH mode as bootstrap
+	// only imports the stdlib.
 	pkgs, err := LoadPackages(&packages.Config{
-		Dir:     dir,
-		Overlay: fsToOverlay(&bootstrapGo, dir),
-	}, filepath.Join(dir, "internal/bootstrap"))
+		Dir: dir,
+		Env: append(
+			os.Environ(),
+			"GO111MODULE=off",
+			fmt.Sprintf("GOPATH=%s", dir),
+		),
+		Overlay: fsToOverlay(&bootstrapGo, filepath.Join(dir, "src")),
+	}, "internal/bootstrap")
 	if err != nil {
 		return nil, err
 	}
