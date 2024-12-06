@@ -22,18 +22,19 @@ import (
 // solely uses a profile found on disk.
 type RPKProfileFetcher struct {
 	configPath string
+	fs         afero.Fs
 }
 
 var _ Fetcher = (*RPKProfileFetcher)(nil)
 
 func NewRPKProfileFetcher(configPath string) *RPKProfileFetcher {
-	return &RPKProfileFetcher{configPath: configPath}
+	return &RPKProfileFetcher{configPath: configPath, fs: afero.NewOsFs()}
 }
 
 func (f *RPKProfileFetcher) FetchLatest(_ context.Context, _, _ string) (any, error) {
 	params := rpkconfig.Params{ConfigFlag: f.configPath}
 
-	config, err := params.Load(afero.NewOsFs())
+	config, err := params.Load(f.fs)
 	if err != nil {
 		return nil, err
 	}
