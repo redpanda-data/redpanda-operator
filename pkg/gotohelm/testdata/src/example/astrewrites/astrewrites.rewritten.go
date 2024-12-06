@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -7,12 +8,9 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build rewrites
-
 package astrewrites
 
 import (
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -25,50 +23,39 @@ func mvrs() {
 	var a any = m
 
 	{
-		tmp_tuple_1 := helmette.Compact2(helmette.DictTest[string, int](m, "1"))
-		y := tmp_tuple_1.T2
-		x := tmp_tuple_1.T1
+		x, y := m["1"]
 		_ = x
 		_ = y
 	}
 
 	{
-		tmp_tuple_2 := helmette.Compact2(helmette.TypeTest[map[string]int](a))
-		y := tmp_tuple_2.T2
-		x := tmp_tuple_2.T1
+		x, y := a.(map[string]int)
 		_, _ = x, y
 	}
 
 	{
-		tmp_tuple_3 := helmette.Compact2(helmette.TypeTest[map[string]int](a))
-		x := tmp_tuple_3.T1
+		x, _ := a.(map[string]int)
 		_ = x
 	}
 
 	{
-		tmp_tuple_4 := helmette.Compact2(helmette.TypeTest[map[string]int](a))
-		x := tmp_tuple_4.T2
+		_, x := a.(map[string]int)
 		_ = x
 	}
 
 	{
-		_ = helmette.Compact2(helmette.TypeTest[map[string]int](a))
+		_, _ = a.(map[string]int)
 	}
 
 	{
-		tmp_tuple_6 := helmette.Compact3(mvr3())
-		c := tmp_tuple_6.T3
-		b := tmp_tuple_6.T2
-		a := tmp_tuple_6.T1
+		a, b, c := mvr3()
 		_, _, _ = a, b, c
 	}
 
 	{
 		// Using a 3rd party type, with type aliasing to boot.
 		m := map[string]corev1.Affinity{}
-		tmp_tuple_7 := helmette.Compact2(helmette.DictTest[string, corev1.Affinity](m, ""))
-		y := tmp_tuple_7.T2
-		x := tmp_tuple_7.T1
+		x, y := m[""]
 		_, _ = x, y
 	}
 }
@@ -77,29 +64,26 @@ type mymap map[string]int
 
 func dictTest() {
 	m := mymap{}
-	tmp_tuple_8 := helmette.Compact2(helmette.DictTest[string, int](m, ""))
-	ok := tmp_tuple_8.T2
+	_, ok := m[""]
 	_ = ok
 }
 
 func typeTest() {
 	var m any = map[string]int{}
-	tmp_tuple_9 := helmette.Compact2(helmette.TypeTest[map[string]string](m))
-	ok := tmp_tuple_9.T2
+
+	_, ok := m.(map[string]string)
 	_ = ok
-	_ = helmette.Compact2(helmette.TypeTest[map[string]int](m))
+
+	_, _ = m.(map[string]int)
 }
 
 func ifHoisting() {
 	m := map[string]int{"1": 1}
-	tmp_tuple_11 := helmette.Compact2(helmette.DictTest[string, int](m, "2"))
-	ok_1 := tmp_tuple_11.T2
-	tmp_tuple_12 := helmette.Compact2(helmette.DictTest[string, int](m, "3"))
-	ok_2 := tmp_tuple_12.T2
-	tmp_tuple_13 := helmette.Compact2(helmette.DictTest[string, int](m, "4"))
-	ok_3 := tmp_tuple_13.T2
-	tmp_tuple_14 := helmette.Compact2(helmette.DictTest[string, int](m, "5"))
-	ok_4 := tmp_tuple_14.T2
+
+	_, ok_1 := m["2"]
+	_, ok_2 := m["3"]
+	_, ok_3 := m["4"]
+	_, ok_4 := m["5"]
 	if ok_1 {
 	} else if ok_2 {
 	} else if ok_3 {
