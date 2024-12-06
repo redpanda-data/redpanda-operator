@@ -115,7 +115,6 @@ tasks:
     status:
       - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
 
-
   publish-k8s-operator-images:
     cmds:
       - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
@@ -123,6 +122,14 @@ tasks:
       - task: :k8s:build-tag-and-push-images
     status:
       - test -z '{{.TAG_NAME}}' # only run for tagged commits
+
+  publish-k8s-nightly-artifacts:
+    cmds:
+      - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
+      - task: configure-git-private-repo
+      - task: :goreleaser:build-operator-binaries
+      - task: :k8s:build-and-push-operator-container-image
+      # Package and push Operator helm chart to Dockerhub
 
   assert-no-diffs:
     desc: "Fail on any unexpected diffs to generated files (CI only)"

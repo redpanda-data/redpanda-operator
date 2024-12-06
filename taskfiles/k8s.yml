@@ -193,6 +193,31 @@ tasks:
       - |
         golangci-lint run --timeout 8m -v --fix
 
+  build-and-push-operator-container-image:
+    vars:
+      OPERATOR_REPO:
+        sh: |
+          repo="redpanda-operator"
+          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
+            repo="redpanda-operator-nightly"
+          fi
+          echo $repo
+    cmds:
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - 'echo "~~~ :docker: Build & Push operator container"'
+      - docker buildx build
+        --platform linux/arm64,linux/amd64
+        --file operator/Dockerfile
+        --target manager
+        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+        --push
+        ./dist
+      - cmd: docker logout
+    preconditions:
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"
+
   build-tag-and-push-images:
     desc: builds, tags and pushes images to dockerhub
     deps:

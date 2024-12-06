@@ -9,9 +9,39 @@ env:
   # work well with podman.
   TESTCONTAINERS_RYUK_DISABLED: "true"
 steps:
+  - key: release-nightly
+    label: ":gandalf: Nightly Operator release"
+    timeout_in_minutes: 10
+    agents:
+      queue: v6-amd64-builders
+    commands:
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:publish-k8s-nightly-artifacts
+    if: build.branch == "main" && build.source == "schedule" && build.env("NIGHTLY_RELEASE") == "true"
+    plugins:
+      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
+            - secret-id: sdlc/prod/buildkite/buildkite_api_token
+            - secret-id: sdlc/prod/buildkite/dockerhub
+            - secret-id: sdlc/prod/buildkite/gh_token
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: "Nightly release failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+            branches:
+              - main
+
   - key: k8s-operator
     label: K8s Operator
     timeout_in_minutes: 180
+    if: build.env("NIGHTLY_RELEASE") != "true"
     notify:
       - github_commit_status:
           context: k8s-operator
@@ -51,6 +81,7 @@ steps:
               - main
   - key: k8s-operator-tests-with-flags
     if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
       build.tag == null ||
       build.env("K8S_NIGHTLY") == "1"
     label: K8s Operator tests with flags
@@ -94,6 +125,7 @@ steps:
               - main
   - group: K8s Operator v2 Jobs
     if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
       build.tag == null ||
       build.env("K8S_NIGHTLY") == "1"
     steps:
@@ -131,6 +163,7 @@ steps:
         allow_dependency_failure: true
   - group: K8s Operator v2 Helm Jobs
     if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
       build.tag == null ||
       build.env("K8S_NIGHTLY") == "1"
     steps:
