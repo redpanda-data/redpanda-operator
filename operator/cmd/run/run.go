@@ -22,8 +22,10 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/client"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -80,6 +82,32 @@ var (
 	}
 )
 
+type LabelSelectorValue struct {
+	Selector labels.Selector
+}
+
+var _ pflag.Value = ((*LabelSelectorValue)(nil))
+
+func (s *LabelSelectorValue) Set(value string) error {
+	if value == "" {
+		return nil
+	}
+	var err error
+	s.Selector, err = labels.Parse(value)
+	return err
+}
+
+func (s *LabelSelectorValue) String() string {
+	if s.Selector == nil {
+		return ""
+	}
+	return s.Selector.String()
+}
+
+func (s *LabelSelectorValue) Type() string {
+	return "label selector"
+}
+
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
@@ -104,6 +132,7 @@ func Command() *cobra.Command {
 		enableHelmControllers       bool
 		ghostbuster                 bool
 		unbindPVCsAfter             time.Duration
+		unbinderSelector            LabelSelectorValue
 		autoDeletePVCs              bool
 		forceDefluxedMode           bool
 	)
@@ -136,6 +165,7 @@ func Command() *cobra.Command {
 				enableHelmControllers,
 				ghostbuster,
 				unbindPVCsAfter,
+				unbinderSelector.Selector,
 				autoDeletePVCs,
 				forceDefluxedMode,
 			)
@@ -167,6 +197,7 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	cmd.Flags().BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+	cmd.Flags().Var(&unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
 
@@ -201,6 +232,7 @@ func Run(
 	enableHelmControllers bool,
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
+	unbinderSelector labels.Selector,
 	autoDeletePVCs bool,
 	forceDefluxedMode bool,
 ) error {
@@ -309,20 +341,6 @@ func Run(
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
-		}
-
-		if unbindPVCsAfter <= 0 {
-			setupLog.Info("PVCUnbinder controller not active", "flag", unbindPVCsAfter)
-		} else {
-			setupLog.Info("starting PVCUnbinder controller", "flag", unbindPVCsAfter)
-
-			if err := (&vectorizedcontrollers.PVCUnbinderReconciler{
-				Client:  mgr.GetClient(),
-				Timeout: unbindPVCsAfter,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
-				return err
-			}
 		}
 
 		// Setup webhooks
@@ -458,6 +476,22 @@ func Run(
 		err := errors.New("unable to run operator without specifying an operator state")
 		setupLog.Error(err, "shutting down")
 		return err
+	}
+
+	// The unbinder gets to run in any mode, if it's enabled.
+	if unbindPVCsAfter <= 0 {
+		setupLog.Info("PVCUnbinder controller not active", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
+	} else {
+		setupLog.Info("starting PVCUnbinder controller", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
+
+		if err := (&vectorizedcontrollers.PVCUnbinderReconciler{
+			Client:   mgr.GetClient(),
+			Timeout:  unbindPVCsAfter,
+			Selector: unbinderSelector,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+			return err
+		}
 	}
 
 	//+kubebuilder:scaffold:builder
