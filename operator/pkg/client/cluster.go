@@ -11,17 +11,14 @@ package client
 
 import (
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"github.com/twmb/franz-go/pkg/sasl"
-	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 
 	"github.com/redpanda-data/helm-charts/pkg/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// RedpandaAdminForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
+// redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
 	dot, err := cluster.GetDot(c.config)
 	if err != nil {
@@ -43,7 +40,7 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 	return client, nil
 }
 
-// schemaRegistryForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
+// schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (*sr.Client, error) {
 	dot, err := cluster.GetDot(c.config)
 	if err != nil {
@@ -65,7 +62,7 @@ func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (
 	return client, nil
 }
 
-// KafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
+// kafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
 	dot, err := cluster.GetDot(c.config)
 	if err != nil {
@@ -77,23 +74,19 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 		return nil, err
 	}
 
-	if c.userAuth != nil {
-		auth := scram.Auth{
-			User: c.userAuth.Username,
-			Pass: c.userAuth.Password,
-		}
+	authOpt, err := c.kafkaUserAuth()
+	if err != nil {
+		// close the client since it's no longer usable
+		client.Close()
 
-		var mechanism sasl.Mechanism
-		switch c.userAuth.Mechanism {
-		case config.SASLMechanismScramSHA256:
-			mechanism = auth.AsSha256Mechanism()
-		case config.SASLMechanismScramSHA512:
-			mechanism = auth.AsSha512Mechanism()
-		default:
-			return nil, ErrUnsupportedSASLMechanism
-		}
+		return nil, err
+	}
 
-		return kgo.NewClient(append(client.Opts(), kgo.SASL(mechanism))...)
+	if authOpt != nil {
+		// close this client since we're not going to use it anymore
+		client.Close()
+
+		return kgo.NewClient(append(client.Opts(), authOpt)...)
 	}
 
 	return client, nil

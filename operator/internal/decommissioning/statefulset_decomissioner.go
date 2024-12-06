@@ -11,7 +11,6 @@ package decommissioning
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -35,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
@@ -116,7 +114,7 @@ func WithDelayedCacheMaxCount(count int) Option {
 type StatefulSetDecomissioner struct {
 	client               client.Client
 	factory              internalclient.ClientFactory
-	fetcher              ValuesFetcher
+	fetcher              Fetcher
 	recorder             record.EventRecorder
 	requeueTimeout       time.Duration
 	delayedCacheInterval time.Duration
@@ -126,7 +124,7 @@ type StatefulSetDecomissioner struct {
 	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
 }
 
-func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher ValuesFetcher, options ...Option) *StatefulSetDecomissioner {
+func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...Option) *StatefulSetDecomissioner {
 	k8sClient := mgr.GetClient()
 
 	decommissioner := &StatefulSetDecomissioner{
@@ -717,29 +715,12 @@ func (s *StatefulSetDecomissioner) getAdminClient(ctx context.Context, set *apps
 		return nil, errors.New("unable to get release name")
 	}
 
-	values, err := s.fetcher.FetchLatest(ctx, release, set.Namespace)
+	fetched, err := s.fetcher.FetchLatest(ctx, release, set.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("fetching latest values: %w", err)
 	}
 
-	data, err := json.MarshalIndent(values, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("marshaling values: %w", err)
-	}
-
-	cluster := &redpandav1alpha2.Redpanda{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      release,
-			Namespace: set.Namespace,
-		},
-		Spec: redpandav1alpha2.RedpandaSpec{ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{}},
-	}
-
-	if err := json.Unmarshal(data, cluster.Spec.ClusterSpec); err != nil {
-		return nil, fmt.Errorf("unmarshaling values: %w", err)
-	}
-
-	return s.factory.RedpandaAdminClient(ctx, cluster)
+	return s.factory.RedpandaAdminClient(ctx, fetched)
 }
 
 // ordinalFromFQDN takes a hostname and attempt to map the

@@ -16,11 +16,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // the format logic for helm releases can be found:
@@ -28,19 +32,22 @@ import (
 
 var gzipHeader = []byte{0x1f, 0x8b, 0x08}
 
-type ValuesFetcher interface {
-	FetchLatest(ctx context.Context, name, namespace string) (map[string]any, error)
-}
-
+// HelmFetcher fetches a Redpanda CR via initializing it virtually with a
+// Helm values file stored in a secret. This is to maintain backwards
+// compatibility with our current mechanism for decommissioning, but
+// it should likely be dropped in the future with preference to using
+// an RPK profile.
 type HelmFetcher struct {
 	client client.Client
 }
+
+var _ Fetcher = (*HelmFetcher)(nil)
 
 func NewHelmFetcher(mgr ctrl.Manager) *HelmFetcher {
 	return &HelmFetcher{client: mgr.GetClient()}
 }
 
-func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (map[string]any, error) {
+func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (any, error) {
 	log := ctrl.LoggerFrom(ctx, "namespace", namespace, "name", name).WithName("HelmFetcher.FetchLatest")
 
 	var secrets corev1.SecretList
@@ -49,8 +56,7 @@ func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (
 		"name":  name,
 		"owner": "helm",
 	}, client.InNamespace(namespace)); err != nil {
-		log.Error(err, "fetching secrets list")
-		return nil, err
+		return nil, fmt.Errorf("fetching secrets list: %w", err)
 	}
 
 	latestVersion := 0
@@ -58,6 +64,8 @@ func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (
 	for _, item := range secrets.Items {
 		values, version, err := f.decode(item.Data["release"])
 		if err != nil {
+			// just log the error and move on rather than making it terminal
+			// in case there's some secret that's just badly formatted
 			log.Error(err, "decoding secret", "secret", item.Name)
 			continue
 		}
@@ -68,7 +76,24 @@ func (f *HelmFetcher) FetchLatest(ctx context.Context, name, namespace string) (
 	}
 
 	if latestValues != nil {
-		return latestValues, nil
+		data, err := json.Marshal(latestValues)
+		if err != nil {
+			return nil, fmt.Errorf("marshaling values: %w", err)
+		}
+
+		cluster := &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: redpandav1alpha2.RedpandaSpec{ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{}},
+		}
+
+		if err := json.Unmarshal(data, cluster.Spec.ClusterSpec); err != nil {
+			return nil, fmt.Errorf("unmarshaling values: %w", err)
+		}
+
+		return cluster, nil
 	}
 
 	err := errors.New("unable to find latest value")
