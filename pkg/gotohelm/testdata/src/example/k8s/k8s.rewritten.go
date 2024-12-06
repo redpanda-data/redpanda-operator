@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -6,8 +7,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build rewrites
 
 package k8s
 
@@ -128,15 +127,12 @@ func service() *corev1.Service {
 }
 
 func lookup(dot *helmette.Dot) []any {
-	tmp_tuple_1 := helmette.Compact2(helmette.Lookup[corev1.Service](dot, "namespace", "name"))
-	ok1 := tmp_tuple_1.T2
-	svc := tmp_tuple_1.T1
+	svc, ok1 := helmette.Lookup[corev1.Service](dot, "namespace", "name")
 	if !ok1 {
 		panic(fmt.Sprintf("%T %q not found. Test setup should have created it?", corev1.Service{}, "name"))
 	}
-	tmp_tuple_2 := helmette.Compact2(helmette.Lookup[appsv1.StatefulSet](dot, "spacename", "eman"))
-	ok2 := tmp_tuple_2.T2
-	sts := tmp_tuple_2.T1
+
+	sts, ok2 := helmette.Lookup[appsv1.StatefulSet](dot, "spacename", "eman")
 
 	return []any{svc, ok1, sts, ok2}
 }

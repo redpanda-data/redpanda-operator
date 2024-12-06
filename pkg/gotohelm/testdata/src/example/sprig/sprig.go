@@ -281,8 +281,10 @@ func errTypes() []any {
 	// can't due to template limitation.
 	// We can't currently exercise failure cases here as the test harness
 	// doesn't handle it.
+	x1, err1 := helmette.Atoi("1")
+	x2, err2 := helmette.Float64("1.1")
 	return []any{
-		helmette.Compact2(helmette.Atoi("1")),
-		helmette.Compact2(helmette.Float64("1.1")),
+		[]any{x1, err1},
+		[]any{x2, err2},
 	}
 }

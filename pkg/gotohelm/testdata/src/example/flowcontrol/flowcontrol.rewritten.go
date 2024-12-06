@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -6,8 +7,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build rewrites
 
 package flowcontrol
 
@@ -26,11 +25,9 @@ func FlowControl(dot *helmette.Dot) map[string]any {
 }
 
 func earlyReturn(dot *helmette.Dot) string {
-	tmp_tuple_1 :=
+	b_1,
 		// This is trickily written on purpose.
-		helmette.Compact2(helmette.DictTest[string, interface{}](dot.Values, "boolean"))
-	ok_2 := tmp_tuple_1.T2
-	b_1 := tmp_tuple_1.T1
+		ok_2 := dot.Values["boolean"]
 	if ok_2 && b_1.(bool) {
 		return "Early Returns work!"
 	}
@@ -38,9 +35,7 @@ func earlyReturn(dot *helmette.Dot) string {
 }
 
 func ifElse(dot *helmette.Dot) string {
-	tmp_tuple_2 := helmette.Compact2(helmette.AsIntegral[int](dot.Values["oneToFour"]))
-	ok := tmp_tuple_2.T2
-	oneToFour := tmp_tuple_2.T1
+	oneToFour, ok := helmette.AsIntegral[int](dot.Values["oneToFour"])
 	if !ok {
 		return "oneToFour not specified!"
 	}
@@ -58,9 +53,7 @@ func ifElse(dot *helmette.Dot) string {
 }
 
 func sliceRanges(dot *helmette.Dot) []any {
-	tmp_tuple_3 := helmette.Compact2(helmette.DictTest[string, interface{}](dot.Values, "ints"))
-	ok := tmp_tuple_3.T2
-	intsAny := tmp_tuple_3.T1
+	intsAny, ok := dot.Values["ints"]
 	if !ok {
 		intsAny = []any{}
 	}
