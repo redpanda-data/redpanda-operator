@@ -73,13 +73,6 @@ tasks:
           --tag localhost/redpanda-operator:dev
           --load
           ./dist
-      - docker buildx build
-          --platform linux/{{ARCH}}
-          --file operator/Dockerfile
-          --target=configurator
-          --tag localhost/configurator:dev
-          --load
-          ./dist
 
   fetch-latest-redpanda:
     desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
@@ -209,15 +202,6 @@ tasks:
             fi
           fi
           echo $repo
-      CONFIGURATOR_REPO:
-        sh: |
-          repo="configurator"
-          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
-            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
-              repo="configurator-internal"
-            fi
-          fi
-          echo $repo
     cmds:
       - |
         if [[ "{{.IS_INTERNAL}}" == "false" && "{{.IS_OPERATOR}}" == "false" ]]; then
@@ -234,14 +218,6 @@ tasks:
           --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
           --push
           ./dist
-      - docker buildx build
-          --platform linux/arm64,linux/amd64
-          --file operator/Dockerfile
-          --target configurator
-          --tag docker.io/vectorized/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
-          --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
-          --push
-          ./dist
       # re-enable as part of https://github.com/redpanda-data/cloudv2/issues/3267
       # - cmd: docker login docker.cloudsmith.io --username {{.CLOUDSMITH_USERNAME}} --password {{.CLOUDSMITH_API_KEY}}
       #   silent: true
@@ -249,13 +225,6 @@ tasks:
       #     --platform linux/arm64,linux/amd64
       #     --file operator/Dockerfile
       #     --target manager
-      #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
-      #     --push
-      #     ./dist
-      # - docker buildx build
-      #     --platform linux/arm64,linux/amd64
-      #     --file operator/Dockerfile
-      #     --target configurator
       #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
       #     --push
       #     ./dist
