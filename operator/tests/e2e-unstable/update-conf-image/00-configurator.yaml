@@ -14,7 +14,7 @@ spec:
             - "--metrics-bind-address=127.0.0.1:8080"
             - "--leader-elect"
             - "--webhook-enabled=true"
-            - "--configurator-base-image=vectorized/configurator"
+            - "--configurator-base-image=redpanda-data/redpanda-operator" # The redpanda-operator in version 22.1.3 does not have common entrypoint to host operator and configurator. Regardless e2e-unstable is not executed in CI
             - "--configurator-tag=v22.1.3"
             - "--configurator-image-pull-policy=IfNotPresent"
           imagePullPolicy: IfNotPresent
