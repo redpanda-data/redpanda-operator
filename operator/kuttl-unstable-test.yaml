@@ -5,7 +5,6 @@ skipDelete: true
 skipClusterDelete: true
 kindContainers:
   - localhost/redpanda-operator:dev
-  - localhost/configurator:dev
   - localhost/redpanda:dev
 testDirs:
   - ./tests/e2e-unstable

@@ -170,7 +170,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		AdminAPIClientFactory:    testAdminAPIFactory,
 		DecommissionWaitInterval: 100 * time.Millisecond,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
-		ConfiguratorBaseImage: "vectorized/configurator",
+		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)
