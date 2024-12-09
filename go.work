@@ -3,6 +3,7 @@ go 1.23.2
 use (
 	./acceptance
 	./alias
+	./charts
 	./harpoon
 	./licenseupdater
 	./operator
