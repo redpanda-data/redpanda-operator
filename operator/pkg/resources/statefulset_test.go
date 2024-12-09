@@ -163,7 +163,7 @@ func TestEnsure(t *testing.T) {
 				TestAdminTLSConfigProvider{},
 				"",
 				resources.ConfiguratorSettings{
-					ConfiguratorBaseImage: "vectorized/configurator",
+					ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
@@ -279,7 +279,7 @@ func defaultNodePoolstsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *ap
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{{
 						Name:  "redpanda-configurator",
-						Image: "vectorized/configurator:latest",
+						Image: "vectorized/redpanda-operator:latest",
 						Resources: corev1.ResourceRequirements{
 							Limits:   pandaCluster.Spec.Resources.Limits,
 							Requests: pandaCluster.Spec.Resources.Requests,
@@ -377,7 +377,7 @@ func stsFromCluster(pandaCluster *vectorizedv1alpha1.Cluster) *appsv1.StatefulSe
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{{
 						Name:  "redpanda-configurator",
-						Image: "vectorized/configurator:latest",
+						Image: "vectorized/redpanda-operator:latest",
 						Resources: corev1.ResourceRequirements{
 							Limits:   pandaCluster.Spec.NodePools[0].Resources.Limits,
 							Requests: pandaCluster.Spec.NodePools[0].Resources.Requests,
@@ -641,7 +641,7 @@ func TestCurrentVersion(t *testing.T) {
 				TestAdminTLSConfigProvider{},
 				"",
 				resources.ConfiguratorSettings{
-					ConfiguratorBaseImage: "vectorized/configurator",
+					ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
