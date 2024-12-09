@@ -1,3 +1,4 @@
+//go:build rewrites
 // Copyright 2024 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
@@ -6,8 +7,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build rewrites
 
 package main
 
@@ -45,9 +44,8 @@ func main() {
 			}
 			panic(err_1)
 		}
-		tmp_tuple_1 := helmette.Compact2(runChart(&dot))
-		err := tmp_tuple_1.T2
-		out := tmp_tuple_1.T1
+
+		out, err := runChart(&dot)
 
 		if out == nil {
 			out = map[string]any{}
