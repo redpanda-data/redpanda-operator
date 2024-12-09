@@ -15,12 +15,11 @@ import (
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/helm-charts/pkg/helm"
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -34,53 +33,59 @@ var (
 	//go:embed values.yaml
 	defaultValuesYAML []byte
 
-	chartMeta helmette.Chart
+	// Chart is the go version of the operator helm chart.
+	Chart = gotohelm.MustLoad(chartYAML, defaultValuesYAML, render)
 )
 
 func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
-
-	// NB: We can't directly unmarshal into a helmette.Chart as adding json
-	// tags to it breaks gotohelm.
-	var chart map[string]any
-	must(yaml.Unmarshal(chartYAML, &chart))
-
-	chartMeta = helmette.Chart{
-		Name:       chart["name"].(string),
-		Version:    chart["version"].(string),
-		AppVersion: chart["appVersion"].(string),
-	}
-}
-
-// ChartMeta returns a parsed version of redpanda's Chart.yaml.
-func ChartMeta() helmette.Chart {
-	return chartMeta
-}
-
-func Dot(release helmette.Release, values PartialValues, kubeConfig kube.Config) (*helmette.Dot, error) {
-	valuesYaml, err := yaml.Marshal(values)
-	if err != nil {
-		return nil, err
-	}
-
-	// NB: err1 is working around an issue in gotohelm's ASTs rewrites
-	merged, err1 := helm.MergeYAMLValues("", defaultValuesYAML, valuesYaml)
-	if err1 != nil {
-		return nil, err1
-	}
-
-	return &helmette.Dot{
-		Values:     merged,
-		Chart:      ChartMeta(),
-		Release:    release,
-		KubeConfig: kubeConfig,
-	}, nil
 }
 
 func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// render is the entrypoint to both the go and helm versions of the redpanda
+// helm chart.
+// In helm, _shims.render-manifest is used to call and filter the output of
+// this function.
+// In go, this function should be call by executing [Chart.Render], which will
+// handle construction of [helmette.Dot], subcharting, and output filtering.
+func render(dot *helmette.Dot) []kube.Object {
+	manifests := []kube.Object{
+		Certificate(dot),
+		ConfigMap(dot),
+		Deployment(dot),
+		WebhookService(dot),
+		MetricsService(dot),
+		ServiceAccount(dot),
+		ServiceMonitor(dot),
+	}
+
+	// NB: gotohelm doesn't currently have a way to handle casting from
+	// []Instance -> []Interface as doing so generally requires some go
+	// helpers.
+	// Instead, it's easiest (though painful to read and write) to iterate over
+	// all functions that return slices and append them one at a time.
+	for _, obj := range ClusterRole(dot) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range ClusterRoleBindings(dot) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range Roles(dot) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range RoleBindings(dot) {
+		manifests = append(manifests, obj)
+	}
+
+	return manifests
 }

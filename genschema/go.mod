@@ -7,9 +7,15 @@ replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-c
 require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.78.2
-	github.com/redpanda-data/helm-charts v0.0.0-20241129100931-05d3182eb933
-	k8s.io/api v0.31.3
-	k8s.io/apimachinery v0.31.3
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0
+	github.com/redpanda-data/redpanda-operator/charts v0.0.0
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
+)
+
+replace (
+github.com/redpanda-data/redpanda-operator/pkg => ../pkg
+ github.com/redpanda-data/redpanda-operator/charts => ../charts
 )
 
 require (
