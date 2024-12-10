@@ -139,7 +139,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - coordination
+  - coordination.k8s.io
   resources:
   - leases
   verbs:
@@ -337,7 +337,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - coordination
   - coordination.k8s.io
   resources:
   - leases

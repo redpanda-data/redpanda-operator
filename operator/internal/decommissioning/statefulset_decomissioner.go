@@ -154,14 +154,14 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=patch
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=coordination,resources=leases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=secrets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=coordination,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
 	pvcPredicate, err := predicate.LabelSelectorPredicate(
