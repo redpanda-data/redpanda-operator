@@ -43,6 +43,18 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - coordination
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -69,12 +81,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumes
-  verbs:
-  - patch
-- apiGroups:
-  - ""
-  resources:
   - pods
   - secrets
   verbs:
@@ -88,4 +94,16 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - coordination
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch

@@ -139,6 +139,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - coordination
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -262,12 +274,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumes
-  verbs:
-  - patch
-- apiGroups:
-  - ""
-  resources:
   - pods/status
   verbs:
   - patch
@@ -331,6 +337,7 @@ rules:
   - update
   - watch
 - apiGroups:
+  - coordination
   - coordination.k8s.io
   resources:
   - leases
