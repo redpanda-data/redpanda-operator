@@ -12,7 +12,7 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: "vectorized/redpanda:v24.2.5"
+      image: "docker.redpanda.com/redpandadata/redpanda:v24.2.5"
 status:
   phase: "Running"
 ---
@@ -23,7 +23,7 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: "vectorized/redpanda:v24.2.5"
+      image: "docker.redpanda.com/redpandadata/redpanda:v24.2.5"
 status:
   phase: "Running"
 ---

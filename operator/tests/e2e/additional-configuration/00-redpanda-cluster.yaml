@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: additional-configuration
 spec:
-  image: "vectorized/redpanda"
+  image: "docker.redpanda.com/redpandadata/redpanda"
   version: "v24.2.5"
   replicas: 1
   resources:

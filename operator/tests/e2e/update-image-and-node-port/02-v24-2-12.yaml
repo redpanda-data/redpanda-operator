@@ -11,4 +11,4 @@ kind: Cluster
 metadata:
   name: update-image-cluster-and-node-port
 spec:
-  version: "v24.1.15"
+  version: "v24.2.12"
