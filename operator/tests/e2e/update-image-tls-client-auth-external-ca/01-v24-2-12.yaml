@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: update-img-external-client-ca
 spec:
-  image: "docker.redpanda.com/redpandadata/redpanda"
+  image: "redpandadata/redpanda"
   version: "v24.2.12"
   replicas: 1
   resources:

@@ -22,7 +22,7 @@ kind: Cluster
 metadata:
   name: update-image-cluster-and-node-port
 spec:
-  image: "docker.redpanda.com/redpandadata/redpanda"
+  image: "redpandadata/redpanda"
   version: "v24.1.15"
   replicas: 3
   restartConfig:
