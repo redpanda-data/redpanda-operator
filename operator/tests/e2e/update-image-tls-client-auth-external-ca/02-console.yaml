@@ -12,6 +12,6 @@ spec:
     name: update-img-external-client-ca
     namespace: redpanda-system
   deployment:
-    image: vectorized/console:v2.6.1
+    image: redpandadata/console:v2.8.0
   connect:
     enabled: false
