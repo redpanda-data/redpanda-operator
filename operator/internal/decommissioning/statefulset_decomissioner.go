@@ -154,25 +154,24 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=patch
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups=coordination,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete
-// +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumes,verbs=patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups=coordination,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
 	pvcPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{{
-				Key:      k8sNameLabelKey, // look for only redpanda owned pvcs
-				Operator: metav1.LabelSelectorOpIn,
-				Values:   []string{"redpanda"},
+				Key:      k8sNameLabelKey, // make sure we have a name
+				Operator: metav1.LabelSelectorOpExists,
 			}, {
-				Key:      k8sComponentLabelKey, // make sure the PVC is part of the statefulset
-				Operator: metav1.LabelSelectorOpIn,
-				Values:   []string{"redpanda-statefulset"},
+				Key:      k8sComponentLabelKey, // make sure we have a component label
+				Operator: metav1.LabelSelectorOpExists,
 			}, {
 				Key:      k8sInstanceLabelKey, // make sure we have a cluster name
 				Operator: metav1.LabelSelectorOpExists,
@@ -607,10 +606,10 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	for _, broker := range brokersToDecommission {
 		decommissioned, err := s.delayedBrokerIDCache.Process(setCacheKey, broker, func() error {
 			// only record the event here since this is when we trigger a decommission
-			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), brokersToDecommission[0])
+			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), broker)
 
-			if err := adminClient.DecommissionBroker(ctx, brokersToDecommission[0]); err != nil {
-				log.Error(err, "decommissioning broker", "broker", brokersToDecommission[0])
+			if err := adminClient.DecommissionBroker(ctx, broker); err != nil {
+				log.Error(err, "decommissioning broker", "broker", broker)
 				return err
 			}
 
@@ -656,15 +655,26 @@ func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, 
 		return nil, fmt.Errorf("listing pods: %w", err)
 	}
 
+	// This code for volume labels differs from what the original decommission controller did
+	// because it attempts to follow the actual label provisioning convention of the statefulset
+	// controller code here:
+	// https://github.com/kubernetes/kubernetes/blob/a499facee693a1a83daadb82d88f7b51d324ffc5/pkg/controller/statefulset/stateful_set_utils.go#L391
+	//
+	// The original does some oddities around overwriting the component label with a `-statefulset` suffix. This comes from the fact
+	// that the original code failed to merge in the MatchLabels, which in the helm chart we explicitly set to have a `-statefulset`
+	// suffix. Here we just add the MatchLabels merging code found in the statefulset controller, so we should be good.
 	dataVolumeLabels := client.MatchingLabels{}
 	for _, template := range set.Spec.VolumeClaimTemplates {
 		if template.Name == datadirVolume {
-			dataVolumeLabels = template.Labels
+			for key, value := range template.Labels {
+				dataVolumeLabels[key] = value
+			}
+			for key, value := range set.Spec.Selector.MatchLabels {
+				dataVolumeLabels[key] = value
+			}
 			break
 		}
 	}
-	// the first part of this, "redpanda" is the component name (i.e. redpanda, console, etc.)
-	dataVolumeLabels[k8sComponentLabelKey] = "redpanda-statefulset"
 
 	// find all pvcs of the data directory for this StatefulSet
 	pvcs := &corev1.PersistentVolumeClaimList{}

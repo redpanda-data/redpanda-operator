@@ -159,7 +159,9 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	log := testr.New(t).V(10)
+	log := testr.NewWithOptions(t, testr.Options{
+		Verbosity: 10,
+	})
 
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
@@ -227,8 +229,8 @@ func (s *StatefulSetDecommissionerSuite) installChart(name, version string, over
 			"enabled": false,
 		},
 		"image": map[string]any{
-			"repository": "redpandadata/redpanda-unstable",
-			"tag":        "v24.3.1-rc8",
+			"repository": "redpandadata/redpanda",
+			"tag":        "v24.3.1",
 		},
 	}
 

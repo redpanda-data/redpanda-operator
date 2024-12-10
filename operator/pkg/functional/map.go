@@ -59,6 +59,10 @@ func deepCopyElements(v []any) []any {
 	return copied
 }
 
+// MergeMaps attempts to merge all elements in a generic map
+// including merging arrays of matching keyed arrays. Note that
+// the array merging behavior is *not* the same as that of Helm
+// so this should not be used as a replacement for that.
 func MergeMaps(first, second map[string]any) map[string]any {
 	merged := deepCopyMap(first)
 	for k, v := range second {
