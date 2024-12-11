@@ -6,9 +6,9 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
 	github.com/redpanda-data/common-go/rpadmin v0.1.9
-	github.com/redpanda-data/helm-charts v0.0.0-20241203151858-926cfe070c6e
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 	github.com/twmb/franz-go v1.18.0
 	github.com/twmb/franz-go/pkg/kadm v1.12.0
@@ -158,6 +158,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 // indirect
+	github.com/redpanda-data/helm-charts v0.0.0-20241203151858-926cfe070c6e // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
@@ -226,6 +227,8 @@ require (
 )
 
 replace (
+	github.com/redpanda-data/redpanda-operator/charts => ../charts
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
+	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 )
