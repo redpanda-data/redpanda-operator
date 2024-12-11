@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
 
