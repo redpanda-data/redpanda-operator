@@ -21,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 )
 
@@ -39,6 +40,9 @@ func Command() *cobra.Command {
 		decommissionVoteInterval   time.Duration
 		decommissionMaxVoteCount   int
 		redpandaYAMLPath           string
+		usersDirectoryPath         string
+		watchUsers                 bool
+		runDecommissioner          bool
 	)
 
 	cmd := &cobra.Command{
@@ -58,6 +62,9 @@ func Command() *cobra.Command {
 				decommissionVoteInterval,
 				decommissionMaxVoteCount,
 				redpandaYAMLPath,
+				usersDirectoryPath,
+				watchUsers,
+				runDecommissioner,
 			)
 		},
 	}
@@ -71,6 +78,9 @@ func Command() *cobra.Command {
 	cmd.Flags().DurationVar(&decommissionVoteInterval, "decommission-vote-interval", 30*time.Second, "The time period between incrementing decommission vote counts since the last decommission conditions were met.")
 	cmd.Flags().IntVar(&decommissionMaxVoteCount, "decommission-vote-count", 2, "The number of times that a vote must be tallied when a resource meets decommission conditions for it to actually be decommissioned.")
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml whose rpk stanza will be used for connecting to a Redpanda cluster.")
+	cmd.Flags().BoolVar(&watchUsers, "watch-users", false, "Specifies if the sidecar should watch and configure superusers based on a mounted users file.")
+	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted.")
+	cmd.Flags().BoolVar(&runDecommissioner, "run-decommissioner", false, "Specifies if the sidecar should run the broker decommissioner.")
 
 	return cmd
 }
@@ -86,6 +96,9 @@ func Run(
 	decommissionVoteInterval time.Duration,
 	decommissionMaxVoteCount int,
 	redpandaYAMLPath string,
+	usersDirectoryPath string,
+	watchUsers bool,
+	runDecommissioner bool,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -121,20 +134,33 @@ func Run(
 		return err
 	}
 
-	fetcher := decommissioning.NewChainedFetcher(
-		// prefer RPK profile first and then move on to fetch from helm values
-		decommissioning.NewRPKProfileFetcher(redpandaYAMLPath),
-		decommissioning.NewHelmFetcher(mgr),
-	)
+	if runDecommissioner {
+		fetcher := decommissioning.NewChainedFetcher(
+			// prefer RPK profile first and then move on to fetch from helm values
+			decommissioning.NewRPKProfileFetcher(redpandaYAMLPath),
+			decommissioning.NewHelmFetcher(mgr),
+		)
 
-	if err := decommissioning.NewStatefulSetDecommissioner(mgr, fetcher, []decommissioning.Option{
-		decommissioning.WithFilter(decommissioning.FilterStatefulSetOwner(clusterNamespace, clusterName)),
-		decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
-		decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
-		decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
-	}...).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
-		return err
+		if err := decommissioning.NewStatefulSetDecommissioner(mgr, fetcher, []decommissioning.Option{
+			decommissioning.WithFilter(decommissioning.FilterStatefulSetOwner(clusterNamespace, clusterName)),
+			decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
+			decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
+			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
+		}...).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			return err
+		}
+	}
+
+	if watchUsers {
+		watcher := configwatcher.NewConfigWatcher(mgr.GetLogger(), true,
+			configwatcher.WithRedpandaConfigPath(redpandaYAMLPath),
+			configwatcher.WithUsersDirectory(usersDirectoryPath),
+		)
+		if err := mgr.Add(watcher); err != nil {
+			setupLog.Error(err, "unable to run config watcher")
+			return err
+		}
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
