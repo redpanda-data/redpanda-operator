@@ -513,7 +513,8 @@ func (t *Transpiler) transpileMVAssignStmt(stmt *ast.AssignStmt) Node {
 	// the identifiers on the LHS and position of the AssignStmt to get something that is unique,
 	// deterministic, and mildly human readable.
 	// foo, ok := ... -> $_123_foo_ok := ...
-	intermediate := &Ident{Name: fmt.Sprintf("_%d", stmt.Pos())}
+	// NB: Line number is used here as .Pos seems to be unstable.
+	intermediate := &Ident{Name: fmt.Sprintf("_%d", t.Fset.Position(stmt.Pos()).Line)}
 	for _, ident := range stmt.Lhs {
 		intermediate.Name += "_"
 		intermediate.Name += ident.(*ast.Ident).Name
@@ -982,16 +983,22 @@ func mkPkgTree(root *packages.Package) map[string]*packages.Package {
 }
 
 func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
+	callee := typeutil.Callee(t.TypesInfo, n)
+
+	// n.Fun is not a function, signature, var, or built in.
+	// Chances are it's a cast expression.
+	if callee == nil {
+		return t.transpileCast(n.Args[0], t.typeOf(n.Fun))
+	}
+
 	var args []Node
 	for _, arg := range n.Args {
 		args = append(args, t.transpileExpr(arg))
 	}
 
-	callee := typeutil.Callee(t.TypesInfo, n)
-
 	// go builtins
-	if callee == nil || callee.Pkg() == nil {
-		switch n.Fun.(*ast.Ident).Name {
+	if builtin, ok := callee.(*types.Builtin); ok {
+		switch builtin.Name() {
 		case "append":
 			// Sprig's append is a bit frustrating to work with as it doesn't
 			// handle `nil` slices nor multiple elements.
@@ -1030,25 +1037,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 					&BuiltInCall{FuncName: "list", Arguments: args[1:]},
 				},
 			}
-		case "int", "int32":
-			return &Cast{X: args[0], To: "int"}
-		case "int64":
-			return &Cast{X: args[0], To: "int64"}
-		case "float64":
-			return &Cast{X: args[0], To: "float64"}
-		case "any":
-			return args[0]
 		case "panic":
 			return &BuiltInCall{FuncName: "fail", Arguments: args}
-		case "string":
-			x := t.typeOf(n.Args[0])
-			if x.String() == "byte" {
-				return &BuiltInCall{
-					FuncName:  "printf",
-					Arguments: append([]Node{&Literal{Value: "\"%c\""}}, args...),
-				}
-			}
-			return &BuiltInCall{FuncName: "toString", Arguments: args}
 		case "len":
 			return t.maybeCast(litCall("_shims.len", args...), types.Typ[types.Int])
 		case "delete":
@@ -1319,6 +1309,47 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	return call
 }
 
+func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {
+	from := t.typeOf(expr)
+	node := t.transpileExpr(expr)
+
+	// NB: We use .Underlying() here to unwrap any type wrappers or alias as
+	// there's no such concept in helm world:
+	//
+	// type myint int
+	// myint(10)
+	switch typ := to.Underlying().(type) {
+	case *types.Basic:
+		switch typ.Kind() {
+		case types.Int, types.Int32:
+			return &Cast{X: node, To: "int"}
+		case types.Int64:
+			return &Cast{X: node, To: "int64"}
+		case types.Float64:
+			return &Cast{X: node, To: "float64"}
+		case types.String:
+			if from.String() == "byte" {
+				return &BuiltInCall{
+					FuncName:  "printf",
+					Arguments: append([]Node{&Literal{Value: "\"%c\""}}, node),
+				}
+			}
+			return &BuiltInCall{FuncName: "toString", Arguments: []Node{node}}
+		}
+	case *types.Interface:
+		// Cast to any or interface{}.
+		if typ.Empty() {
+			return node
+		}
+	}
+
+	panic(&Unsupported{
+		Fset: t.Fset,
+		Node: expr,
+		Msg:  fmt.Sprintf("unsupported type cast to %v", to),
+	})
+}
+
 func (t *Transpiler) transpileTypeRepr(typ types.Type) Node {
 	// NB: Ideally, we'd just use typ.String(). Sadly, we can't as typ.String()
 	// will return `any` but we need to match the result of fmt.Sprintf("%T")
@@ -1492,9 +1523,16 @@ func (t *Transpiler) getFields(root *types.Struct) []structField {
 // For example: go can infer that `1` should be a float64 in some situations.
 // text/template would require an explicit cast.
 func (t *Transpiler) maybeCast(n Node, to types.Type) Node {
+	// In some cases, to may be nil due to the return of `t.typeOf` e.g. a
+	// blank identifier. There's no need to cast in such cases, so return n
+	// unmodified.
+	if to == nil {
+		return n
+	}
+
 	// TODO: This can probably be optimized to not cast as frequently but
 	// should otherwise perform just fine.
-	if basic, ok := to.(*types.Basic); ok {
+	if basic, ok := to.Underlying().(*types.Basic); ok {
 		switch basic.Kind() {
 		case types.Int, types.Int32, types.UntypedInt:
 			return &Cast{X: n, To: "int"}

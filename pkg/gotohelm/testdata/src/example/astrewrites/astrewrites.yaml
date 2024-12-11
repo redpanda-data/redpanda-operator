@@ -14,38 +14,38 @@
 {{- $_is_returning := false -}}
 {{- $m := (dict ) -}}
 {{- $a := $m -}}
-{{- $_32228819_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "1" 0) ))) "r") -}}
-{{- $x := ((index $_32228819_x_y 0) | int) -}}
-{{- $y := (index $_32228819_x_y 1) -}}
+{{- $_25_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "1" 0) ))) "r") -}}
+{{- $x := ((index $_25_x_y 0) | int) -}}
+{{- $y := (index $_25_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
-{{- $_32228859_x_y := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
-{{- $x := (index $_32228859_x_y 0) -}}
-{{- $y := (index $_32228859_x_y 1) -}}
+{{- $_31_x_y := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
+{{- $x := (index $_31_x_y 0) -}}
+{{- $y := (index $_31_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
-{{- $_32228909_x__ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
-{{- $x := (index $_32228909_x__ 0) -}}
-{{- $_ := (index $_32228909_x__ 1) -}}
+{{- $_36_x__ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
+{{- $x := (index $_36_x__ 0) -}}
+{{- $_ := (index $_36_x__ 1) -}}
 {{- $_ = $x -}}
-{{- $_32228953___x := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
-{{- $_ := (index $_32228953___x 0) -}}
-{{- $x := (index $_32228953___x 1) -}}
+{{- $_41___x := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_41___x 0) -}}
+{{- $x := (index $_41___x 1) -}}
 {{- $_ = $x -}}
-{{- $_32228997____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
-{{- $_ = (index $_32228997____ 0) -}}
-{{- $_ = (index $_32228997____ 1) -}}
-{{- $_32229032_a_b_c := (get (fromJson (include "astrewrites.mvr3" (dict "a" (list ) ))) "r") -}}
-{{- $a := (index $_32229032_a_b_c 0) -}}
-{{- $b := (index $_32229032_a_b_c 1) -}}
-{{- $c := ((index $_32229032_a_b_c 2) | int) -}}
+{{- $_46____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil)) ))) "r") -}}
+{{- $_ = (index $_46____ 0) -}}
+{{- $_ = (index $_46____ 1) -}}
+{{- $_50_a_b_c := (get (fromJson (include "astrewrites.mvr3" (dict "a" (list ) ))) "r") -}}
+{{- $a := (index $_50_a_b_c 0) -}}
+{{- $b := (index $_50_a_b_c 1) -}}
+{{- $c := ((index $_50_a_b_c 2) | int) -}}
 {{- $_ = $a -}}
 {{- $_ = $b -}}
 {{- $_ = $c -}}
 {{- $m := (dict ) -}}
-{{- $_32229172_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "" (dict )) ))) "r") -}}
-{{- $x := (index $_32229172_x_y 0) -}}
-{{- $y := (index $_32229172_x_y 1) -}}
+{{- $_57_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "" (dict )) ))) "r") -}}
+{{- $x := (index $_57_x_y 0) -}}
+{{- $y := (index $_57_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
 {{- end -}}
@@ -55,9 +55,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $m := (dict ) -}}
-{{- $_32229266___ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "" 0) ))) "r") -}}
-{{- $_ := ((index $_32229266___ok 0) | int) -}}
-{{- $ok := (index $_32229266___ok 1) -}}
+{{- $_66___ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "" 0) ))) "r") -}}
+{{- $_ := ((index $_66___ok 0) | int) -}}
+{{- $ok := (index $_66___ok 1) -}}
 {{- $_ = $ok -}}
 {{- end -}}
 {{- end -}}
@@ -66,13 +66,13 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $m := (dict ) -}}
-{{- $_32229342___ok := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "string") $m (coalesce nil)) ))) "r") -}}
-{{- $_ := (index $_32229342___ok 0) -}}
-{{- $ok := (index $_32229342___ok 1) -}}
+{{- $_73___ok := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "string") $m (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_73___ok 0) -}}
+{{- $ok := (index $_73___ok 1) -}}
 {{- $_ = $ok -}}
-{{- $_32229383____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $m (coalesce nil)) ))) "r") -}}
-{{- $_ = (index $_32229383____ 0) -}}
-{{- $_ = (index $_32229383____ 1) -}}
+{{- $_76____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $m (coalesce nil)) ))) "r") -}}
+{{- $_ = (index $_76____ 0) -}}
+{{- $_ = (index $_76____ 1) -}}
 {{- end -}}
 {{- end -}}
 
@@ -80,18 +80,18 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $m := (dict "1" (1 | int) ) -}}
-{{- $_32229463___ok_1 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "2" 0) ))) "r") -}}
-{{- $_ := ((index $_32229463___ok_1 0) | int) -}}
-{{- $ok_1 := (index $_32229463___ok_1 1) -}}
-{{- $_32229482___ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "3" 0) ))) "r") -}}
-{{- $_ := ((index $_32229482___ok_2 0) | int) -}}
-{{- $ok_2 := (index $_32229482___ok_2 1) -}}
-{{- $_32229501___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "4" 0) ))) "r") -}}
-{{- $_ := ((index $_32229501___ok_3 0) | int) -}}
-{{- $ok_3 := (index $_32229501___ok_3 1) -}}
-{{- $_32229520___ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "5" 0) ))) "r") -}}
-{{- $_ := ((index $_32229520___ok_4 0) | int) -}}
-{{- $ok_4 := (index $_32229520___ok_4 1) -}}
+{{- $_82___ok_1 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "2" 0) ))) "r") -}}
+{{- $_ := ((index $_82___ok_1 0) | int) -}}
+{{- $ok_1 := (index $_82___ok_1 1) -}}
+{{- $_83___ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "3" 0) ))) "r") -}}
+{{- $_ := ((index $_83___ok_2 0) | int) -}}
+{{- $ok_2 := (index $_83___ok_2 1) -}}
+{{- $_84___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "4" 0) ))) "r") -}}
+{{- $_ := ((index $_84___ok_3 0) | int) -}}
+{{- $ok_3 := (index $_84___ok_3 1) -}}
+{{- $_85___ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "5" 0) ))) "r") -}}
+{{- $_ := ((index $_85___ok_4 0) | int) -}}
+{{- $ok_4 := (index $_85___ok_4 1) -}}
 {{- if $ok_1 -}}
 {{- else -}}{{- if $ok_2 -}}
 {{- else -}}{{- if $ok_3 -}}
