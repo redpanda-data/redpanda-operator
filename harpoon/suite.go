@@ -22,7 +22,7 @@ import (
 	"github.com/cucumber/godog/colors"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
 )
