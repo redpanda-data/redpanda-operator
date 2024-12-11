@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/helm-charts/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 const (

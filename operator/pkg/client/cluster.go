@@ -14,7 +14,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
-	"github.com/redpanda-data/helm-charts/pkg/redpanda"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
