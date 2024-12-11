@@ -36,3 +36,9 @@ operator/tests/e2e-v2-helm/
 
 # Go releaser artifacts
 dist/
+
+# Ignore depedencies
+charts/*/charts/*.tgz
+
+# Dep Chart Lock file
+Chart.lock
