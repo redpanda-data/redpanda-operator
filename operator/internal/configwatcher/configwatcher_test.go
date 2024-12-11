@@ -17,12 +17,13 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 )
 
 func TestConfigWatcher(t *testing.T) {
@@ -46,7 +47,7 @@ func TestConfigWatcher(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		container.Terminate(context.Background())
+		_ = container.Terminate(context.Background())
 	})
 
 	adminAPI, err := container.AdminAPIAddress(ctx)
@@ -70,10 +71,10 @@ func TestConfigWatcher(t *testing.T) {
 	}
 
 	fs := afero.NewMemMapFs()
-	require.NoError(t, fs.MkdirAll("/var/lib", 0755))
-	require.NoError(t, fs.MkdirAll("/etc/secret/users", 0755))
-	require.NoError(t, afero.WriteFile(fs, "/var/lib/redpanda.yaml", []byte(redpandaYaml), 0644))
-	require.NoError(t, afero.WriteFile(fs, "/etc/secret/users/users.txt", []byte(strings.Join(users, "\n")), 0644))
+	require.NoError(t, fs.MkdirAll("/var/lib", 0o755))
+	require.NoError(t, fs.MkdirAll("/etc/secret/users", 0o755))
+	require.NoError(t, afero.WriteFile(fs, "/var/lib/redpanda.yaml", []byte(redpandaYaml), 0o644))
+	require.NoError(t, afero.WriteFile(fs, "/etc/secret/users/users.txt", []byte(strings.Join(users, "\n")), 0o644))
 
 	ctx, cancel := context.WithCancel(ctx)
 

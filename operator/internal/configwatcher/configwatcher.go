@@ -23,10 +23,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
 	"k8s.io/client-go/rest"
+
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 const (
