@@ -89,7 +89,8 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
 		if err != nil {
-			return false, err
+			s.T().Log("failed to fetch health overview", "error", err)
+			return false, nil
 		}
 		// make sure that we've removed all stale nodes
 		return len(health.NodesDown) == 0, nil
@@ -111,7 +112,8 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
 		if err != nil {
-			return false, err
+			s.T().Log("failed to fetch health overview", "error", err)
+			return false, nil
 		}
 		// make sure that the pod has been taken offline
 		return len(health.NodesDown) == 1, nil
@@ -125,7 +127,8 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
 		if err != nil {
-			return false, err
+			s.T().Log("failed to fetch health overview", "error", err)
+			return false, nil
 		}
 		// now make sure it comes back online and the broker is decommissioned
 		return len(health.NodesDown) == 0, nil
