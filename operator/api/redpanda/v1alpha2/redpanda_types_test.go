@@ -28,9 +28,9 @@ import (
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/helm-charts/charts/connectors"
-	"github.com/redpanda-data/helm-charts/charts/console"
-	"github.com/redpanda-data/helm-charts/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/charts/console"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"

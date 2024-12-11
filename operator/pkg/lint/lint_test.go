@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/redpanda-data/helm-charts/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestToolVersions(t *testing.T) {
