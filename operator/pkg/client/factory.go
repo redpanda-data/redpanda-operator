@@ -28,7 +28,7 @@ import (
 
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
-	"github.com/redpanda-data/helm-charts/pkg/redpanda"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
