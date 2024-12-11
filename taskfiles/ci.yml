@@ -128,8 +128,18 @@ tasks:
       - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
       - task: configure-git-private-repo
       - task: :goreleaser:build-operator-binaries
-      - task: :k8s:build-and-push-operator-container-image
+      - defer: 'docker logout'
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - task: :k8s:build-container-image
+        vars:
+          PLATFORM: 'linux/arm64'
+          REPOSITORY_NAME: 'docker.io/redpandadata'
+          ADDITIONAL_CMD: '--push'
+          OPERATOR_IMAGE_NAME: 'redpanda-operator-nightly'
+          TAG_NAME: '{{.TAG_NAME}}-arm64'
       # Package and push Operator helm chart to Dockerhub
+      - task: :k8s:package-and-publish-operator-chart
 
   assert-no-diffs:
     desc: "Fail on any unexpected diffs to generated files (CI only)"

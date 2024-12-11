@@ -11,19 +11,19 @@
 package operator
 
 import (
-	"github.com/redpanda-data/helm-charts/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
+func ClusterRole(dot *helmette.Dot) []*rbacv1.ClusterRole {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {
 		return nil
 	}
 
-	clusterRoles := []rbacv1.ClusterRole{
+	clusterRoles := []*rbacv1.ClusterRole{
 		{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -67,7 +67,7 @@ func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
 	}
 
 	if values.Scope == Cluster {
-		return append(clusterRoles, []rbacv1.ClusterRole{
+		return append(clusterRoles, []*rbacv1.ClusterRole{
 			{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "rbac.authorization.k8s.io/v1",
@@ -210,7 +210,7 @@ func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
 	}
 
 	if values.Scope == Namespace && values.RBAC.CreateRPKBundleCRs {
-		clusterRoles = append(clusterRoles, []rbacv1.ClusterRole{
+		clusterRoles = append(clusterRoles, []*rbacv1.ClusterRole{
 			{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "rbac.authorization.k8s.io/v1",
@@ -243,7 +243,7 @@ func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
 	}
 
 	if values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs {
-		clusterRoles = append(clusterRoles, []rbacv1.ClusterRole{
+		clusterRoles = append(clusterRoles, []*rbacv1.ClusterRole{
 			{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "rbac.authorization.k8s.io/v1",
@@ -282,7 +282,7 @@ func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
 		}...)
 	}
 
-	return append(clusterRoles, rbacv1.ClusterRole{
+	return append(clusterRoles, &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "ClusterRole",
@@ -300,14 +300,14 @@ func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
 	})
 }
 
-func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
+func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {
 		return nil
 	}
 
-	binding := []rbacv1.ClusterRoleBinding{
+	binding := []*rbacv1.ClusterRoleBinding{
 		{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -334,7 +334,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 	}
 
 	if values.Scope == Cluster {
-		return append(binding, rbacv1.ClusterRoleBinding{
+		return append(binding, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRoleBinding",
@@ -360,7 +360,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 	}
 
 	if values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs {
-		binding = append(binding, rbacv1.ClusterRoleBinding{
+		binding = append(binding, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRoleBinding",
@@ -386,7 +386,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 	}
 
 	if values.Scope == Namespace && values.RBAC.CreateRPKBundleCRs {
-		binding = append(binding, rbacv1.ClusterRoleBinding{
+		binding = append(binding, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRoleBinding",
@@ -411,7 +411,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 		})
 	}
 
-	return append(binding, rbacv1.ClusterRoleBinding{
+	return append(binding, &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "ClusterRoleBinding",
@@ -436,14 +436,14 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 	})
 }
 
-func Roles(dot *helmette.Dot) []rbacv1.Role {
+func Roles(dot *helmette.Dot) []*rbacv1.Role {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {
 		return nil
 	}
 
-	role := []rbacv1.Role{
+	role := []*rbacv1.Role{
 		{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -485,7 +485,7 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 	}
 
 	if values.Scope == Namespace {
-		role = append(role, rbacv1.Role{
+		role = append(role, &rbacv1.Role{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "Role",
@@ -689,14 +689,14 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 	return role
 }
 
-func RoleBindings(dot *helmette.Dot) []rbacv1.RoleBinding {
+func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {
 		return nil
 	}
 
-	binding := []rbacv1.RoleBinding{
+	binding := []*rbacv1.RoleBinding{
 		{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -748,7 +748,7 @@ func RoleBindings(dot *helmette.Dot) []rbacv1.RoleBinding {
 	}
 
 	if values.Scope == Namespace {
-		binding = append(binding, rbacv1.RoleBinding{
+		binding = append(binding, &rbacv1.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "RoleBinding",

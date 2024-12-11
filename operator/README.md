@@ -78,11 +78,10 @@ Install cert manager
 make certmanager-install
 ```
 
-Build docker images for manager and configurator
+Build docker images for manager
 
 ```bash
 make docker-build
-make docker-build-configurator
 ```
 
 Deploy operator to kind

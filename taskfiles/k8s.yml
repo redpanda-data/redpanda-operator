@@ -70,25 +70,26 @@ tasks:
       - |
         go test -v ./... -coverprofile cover.out -timeout 20m
 
-  build-operator-images:
+  build-container-image:
+    label: 'build {{.OPERATOR_IMAGE_NAME}} image'
+    vars:
+      TAG_NAME: '{{.TAG_NAME | default "dev"}}'
+      REPOSITORY_NAME: '{{.REPOSITORY_NAME | default "localhost"}}'
+      PLATFORM: '{{.PLATFORM | default "linux/{{ARCH}}"}}'
+      ADDITIONAL_CMD: '{{.ADDITIONAL_CMD | default "--load"}}'
     deps:
       - :goreleaser:build-operator-binaries
     cmds:
       # TODO(chrisseto): Get multiplatform builds working.
-      - docker buildx build
-          --platform linux/{{ARCH}}
+      - echo docker buildx build
+          --platform {{.PLATFORM}}
           --file operator/Dockerfile
           --target=manager
-          --tag localhost/redpanda-operator:dev
-          --load
+          --tag {{.REPOSITORY_NAME}}/{{.OPERATOR_IMAGE_NAME}}:{{.TAG_NAME}}
+          {{.ADDITIONAL_CMD}}
           ./dist
-      - docker buildx build
-          --platform linux/{{ARCH}}
-          --file operator/Dockerfile
-          --target=configurator
-          --tag localhost/configurator:dev
-          --load
-          ./dist
+    preconditions:
+      - test -n "{{.OPERATOR_IMAGE_NAME}}"
 
   fetch-latest-redpanda:
     desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
@@ -154,7 +155,9 @@ tasks:
         vars:
           USE_SUDO: "false"
       - task: fetch-latest-redpanda
-      - task: build-operator-images
+      - task: build-container-image
+        vars:
+          PLATFORM: 'linux/{{ARCH}}'
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}
@@ -201,37 +204,14 @@ tasks:
       - |
         golangci-lint run --timeout 8m -v --fix
 
-  build-and-push-operator-container-image:
-    vars:
-      OPERATOR_REPO:
-        sh: |
-          repo="redpanda-operator"
-          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
-            repo="redpanda-operator-nightly"
-          fi
-          echo $repo
-    cmds:
-      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
-        silent: true
-      - 'echo "~~~ :docker: Build & Push operator container"'
-      - docker buildx build
-        --platform linux/arm64,linux/amd64
-        --file operator/Dockerfile
-        --target manager
-        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
-        --push
-        ./dist
-      - cmd: docker logout
-    preconditions:
-      - test -n "$DOCKERHUB_USER"
-      - test -n "$DOCKERHUB_TOKEN"
-
   build-tag-and-push-images:
     desc: builds, tags and pushes images to dockerhub
     deps:
-      - :dev:create-buildx-builder
       - :goreleaser:build-operator-binaries
     vars:
+      PLATFORM: '{{.PLATFORM | default "linux/arm64,linux/amd64"}}'
+      REPOSITORY_NAME: '{{.REPOSITORY_NAME | default "docker.io/redpandadata"}}'
+      ADDITIONAL_CMD: '--push'
       IS_INTERNAL:
         sh: |
           if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
@@ -239,30 +219,12 @@ tasks:
           else
             echo "false"
           fi
-      CLOUDSMITH_REPO:
-        sh: |
-          repo="docker.cloudsmith.io/redpanda/cloudv2/redpanda"
-          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
-            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
-              repo="docker.cloudsmith.io/redpanda/redpanda-internal/redpanda"
-            fi
-          fi
-          echo $repo
-      OPERATOR_REPO:
+      OPERATOR_IMAGE_NAME:
         sh: |
           repo="redpanda-operator"
           if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
             if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
-              repo="redpanda-operator-internal"
-            fi
-          fi
-          echo $repo
-      CONFIGURATOR_REPO:
-        sh: |
-          repo="configurator"
-          if {{regexMatch `^v0\.0\.0-\d{8}git[a-f0-9]{7}$` .TAG_NAME}}; then
-            if [[ '{{.BRANCH_NAME}}' != 'dev' ]]; then
-              repo="configurator-internal"
+              repo="redpanda-operator-nightly"
             fi
           fi
           echo $repo
@@ -272,49 +234,34 @@ tasks:
           echo "operator requires 'operator/' prefix in tags"
           exit 1
         fi
+      - defer: 'docker logout'
       - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
         silent: true
-      - docker buildx build
-          --platform linux/arm64,linux/amd64
-          --file operator/Dockerfile
-          --target manager
-          --tag docker.io/vectorized/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
-          --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
-          --push
-          ./dist
-      - docker buildx build
-          --platform linux/arm64,linux/amd64
-          --file operator/Dockerfile
-          --target configurator
-          --tag docker.io/vectorized/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
-          --tag docker.io/redpandadata/{{.CONFIGURATOR_REPO}}:{{.TAG_NAME}}
-          --push
-          ./dist
-      # re-enable as part of https://github.com/redpanda-data/cloudv2/issues/3267
-      # - cmd: docker login docker.cloudsmith.io --username {{.CLOUDSMITH_USERNAME}} --password {{.CLOUDSMITH_API_KEY}}
-      #   silent: true
-      # - docker buildx build
-      #     --platform linux/arm64,linux/amd64
-      #     --file operator/Dockerfile
-      #     --target manager
-      #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
-      #     --push
-      #     ./dist
-      # - docker buildx build
-      #     --platform linux/arm64,linux/amd64
-      #     --file operator/Dockerfile
-      #     --target configurator
-      #     --tag {{.CLOUDSMITH_REPO}}:{{.TAG_NAME}}
-      #     --push
-      #     ./dist
+      - task: build-container-image
+        vars:
+          PLATFORM: '{{.PLATFORM}}'
+          REPOSITORY_NAME: '{{.REPOSITORY_NAME}}'
+          ADDITIONAL_CMD: '{{.ADDITIONAL_CMD}}'
+          OPERATOR_IMAGE_NAME: '{{.OPERATOR_IMAGE_NAME}}'
     preconditions:
       - test -n "$DOCKERHUB_USER"
       - test -n "$DOCKERHUB_TOKEN"
-      - test -n "$CLOUDSMITH_USERNAME"
-      - test -n "$CLOUDSMITH_API_KEY"
 
   create-v2-helm-tests:
     dir: 'operator'
     cmds:
       - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
       - ./hack/v2-helm-setup.sh
+
+  package-and-publish-operator-chart:
+    cmds:
+      - defer: 'helm registry logout registry-1.docker.io'
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - helm dep update charts/operator
+      # To change name of the operator helm chart malformer program is executed
+      - go run ./nightly-malformer/...
+      - helm package charts/operator
+      - helm push `ls redpanda-operator-nightly*.tgz` oci://registry-1.docker.io/redpandadata
+    preconditions:
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"
