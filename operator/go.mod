@@ -16,6 +16,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/fluxcd/source-controller/api v1.2.3
 	github.com/fluxcd/source-controller/shim v0.0.0-00010101000000-000000000000
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-logr/logr v1.4.2
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
@@ -191,7 +192,6 @@ require (
 	github.com/fluxcd/pkg/tar v0.4.0 // indirect
 	github.com/fluxcd/pkg/version v0.2.2 // indirect
 	github.com/fluxcd/source-controller v1.2.3 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-chi/chi/v5 v5.0.12 // indirect
