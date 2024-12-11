@@ -146,6 +146,7 @@ func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 		// Pod eviction happens in a timely fashion.
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
+		`--verbose`,
 	}
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()
@@ -155,14 +156,15 @@ func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 		}
 
 		// If k3d cluster create will fail please uncomment the following debug logs from containers
-		// for i := 0; i < config.agents; i++ {
-		// 	containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-%d", name, i)).CombinedOutput()
-		// 	fmt.Printf("Agent-%d logs:\n%s\n", i, string(containerLogs))
-		// }
-		// containerLogs, _ = exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
-		// fmt.Printf("server-0 logs:\n%s\n", string(containerLogs))
-		// containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
-		// fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
+		for i := 0; i < config.agents; i++ {
+			containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-%d", name, i)).CombinedOutput()
+			fmt.Printf("Agent-%d logs:\n%s\n", i, string(containerLogs))
+		}
+		containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
+		fmt.Printf("server-0 logs:\n%s\n", string(containerLogs))
+		containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
+		fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
+
 		return nil, errors.Wrapf(err, "%s", out)
 	}
 
