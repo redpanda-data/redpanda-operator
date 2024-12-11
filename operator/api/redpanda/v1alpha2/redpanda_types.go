@@ -57,20 +57,25 @@ type ChartRef struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// Defines how to handle upgrades, including failures.
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
-	// NOTE! Alpha feature
-	// UseFlux flag set to `false` will prevent helm controller from reconciling helm chart. The operator would be
-	// tight with `go` based Redpanda helm chart version. The rest of the ChartRef fields would be ignored.
+	// IMPORTANT: Beta Feature
 	//
-	// Before setting UseFlux flag to `false` please align your ChartVersion to `5.9.15` or ``
+	// Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
+	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
+	// ChartRef fields to be ignored.
+	//
+	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.15` or the corresponding
 	// version of the Redpanda chart.
 	//
-	// RedpandaStatus might not be accurate if flag is set to `false` and HelmRelease is manually deleted.
+	// Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
+	// manually deleted.
 	//
-	// To achieve dynamic switch for Flux controllers (HelmRelease and HelmRepository) the resources
-	// would not be removed, but they will be put in suspended mode (if flag is provided and set to `false`).
+	// To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false`
+	// will suspend these resources instead of removing them.
 	//
-	// https://fluxcd.io/flux/components/helm/helmreleases/#suspend
-	// https://fluxcd.io/flux/components/source/helmrepositories/#suspend
+	// References:
+	// - https://fluxcd.io/flux/components/helm/helmreleases/#suspend
+	// - https://fluxcd.io/flux/components/source/helmrepositories/#suspend
+	//
 	// +optional
 	UseFlux *bool `json:"useFlux,omitempty"`
 }
