@@ -5,6 +5,7 @@ use (
 	./alias
 	./charts
 	./genpartial
+	./genschema
 	./gotohelm
 	./harpoon
 	./licenseupdater
