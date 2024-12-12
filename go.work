@@ -5,6 +5,7 @@ use (
 	./alias
 	./charts
 	./genpartial
+	./gotohelm
 	./harpoon
 	./licenseupdater
 	./operator
