@@ -9,11 +9,71 @@ env:
   # work well with podman.
   TESTCONTAINERS_RYUK_DISABLED: "true"
 steps:
+  - key: chart-lint
+    label: Charts lint
+    if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    timeout_in_minutes: 30
+    notify:
+      - github_commit_status:
+          context: charts-lint
+    commands:
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:lint
+    agents:
+      queue: k8s-builders-2xlarge
+    plugins:
+      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: ":cloud: K8S Chart lint Jobs failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+            branches:
+              - main
+
+  - key: charts-tests
+    label: Charts tests
+    if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: charts-tests
+    commands:
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:charts:tests
+    agents:
+      queue: k8s-builders-2xlarge
+    plugins:
+      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: ":cloud: K8S Chart tests Jobs failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+            branches:
+              - main
+
   - key: release-nightly
     label: ":gandalf: Nightly Operator release"
     timeout_in_minutes: 10
     agents:
-      queue: v6-amd64-builders
+      queue: k8s-builders
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:publish-k8s-nightly-artifacts
