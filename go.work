@@ -4,6 +4,7 @@ use (
 	./acceptance
 	./alias
 	./charts
+	./genpartial
 	./harpoon
 	./licenseupdater
 	./operator
