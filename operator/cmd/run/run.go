@@ -54,7 +54,7 @@ func (r RedpandaController) toString() string {
 }
 
 const (
-	defaultConfiguratorContainerImage = "vectorized/configurator"
+	defaultConfiguratorContainerImage = "redpanda-data/redpanda-operator"
 
 	AllControllers         = RedpandaController("all")
 	NodeController         = RedpandaController("nodeWatcher")

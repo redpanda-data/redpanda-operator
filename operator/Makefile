@@ -1,6 +1,5 @@
 # Image URL to use all building/pushing image targets
 OPERATOR_IMG_LATEST ?= "localhost/redpanda-operator:dev"
-CONFIGURATOR_IMG_LATEST ?= "localhost/configurator:dev"
 
 HELM_CONTROLLER_VERSION ?= v0.37.2
 SOURCE_CONTROLLER_VERSION ?= v1.2.3
@@ -47,11 +46,6 @@ test: manifests generate fmt
 .PHONY: manager
 manager: manifests generate fmt
 	go build -o bin/manager cmd/main.go
-
-# Build manager binary
-.PHONY: configurator
-configurator: manifests generate fmt
-	go build -o bin/configurator cmd/configurator/main.go
 
 .PHONY: build
 build: manager configurator
@@ -110,11 +104,6 @@ certmanager-install: kind-create
 # Build the docker image
 docker-build:
 	echo "~~~ Building operator image :docker:"
-	cd .. && task k8s:build-operator-images
-
-# Build the docker image
-docker-build-configurator:
-	echo "~~~ Building configurator image :docker:"
 	cd .. && task k8s:build-operator-images
 
 # Preload controller image to kind cluster
