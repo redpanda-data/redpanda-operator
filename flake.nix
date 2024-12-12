@@ -45,12 +45,14 @@
             packages = [
               pkgs.applyconfiguration-gen
               pkgs.controller-gen
+              pkgs.chart-testing
               pkgs.diffutils # Provides `diff`, used by golangci-lint.
               pkgs.docker-client
               pkgs.docker-tag-list
               pkgs.gawk # GNU awk, used by some build scripts.
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
+              pkgs.go-tools
               pkgs.go_1_23
               pkgs.gofumpt
               pkgs.golangci-lint
@@ -62,6 +64,8 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.openssl
+              pkgs.helm-docs
+              pkgs.helm-3-10-3
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
               pkgs.buildkite-agent

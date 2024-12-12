@@ -20,6 +20,7 @@ includes:
   k8s: taskfiles/k8s.yml
   dev: taskfiles/dev.yml
   goreleaser: taskfiles/goreleaser.yml
+  charts: taskfiles/charts.yml
 
 tasks:
   lint:
@@ -28,7 +29,8 @@ tasks:
     cmds:
       # NB: go list -f takes a go template string, It needs to be escaped in
       # taskfile land to get properly passed to go list.
-      - golangci-lint run $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.CLI_ARGS}}
+      - golangci-lint run --timeout 28m $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.CLI_ARGS}}
+      - ct lint --chart-dirs ./charts --check-version-increment=false --all
 
   lint-fix:
     cmds:
@@ -48,7 +50,10 @@ tasks:
   generate:
     cmds:
       - task: k8s:generate
+      - task: charts:generate
       - task: dev:update-licenses
+      # Ensure flake.nix has been formatted.
+      - nix fmt
 
   build:
     cmds:
