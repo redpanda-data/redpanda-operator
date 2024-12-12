@@ -50,6 +50,10 @@ steps:
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
     agents:
       queue: v6-amd64-builders
+    retry:
+      automatic:
+        - exit_status: *
+          limit: 4
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
