@@ -231,7 +231,7 @@
 {{- $certNames := (keys $values.tls.certs) -}}
 {{- $_ := (sortAlpha $certNames) -}}
 {{- range $_, $name := $certNames -}}
-{{- $cert := (index $values.tls.certs $name) -}}
+{{- $cert := (ternary (index $values.tls.certs $name) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil) ) (hasKey $values.tls.certs $name)) -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $cert.enabled true) ))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -271,7 +271,7 @@
 {{- $certNames := (keys $values.tls.certs) -}}
 {{- $_ := (sortAlpha $certNames) -}}
 {{- range $_, $name := $certNames -}}
-{{- $cert := (index $values.tls.certs $name) -}}
+{{- $cert := (ternary (index $values.tls.certs $name) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil) ) (hasKey $values.tls.certs $name)) -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $cert.enabled true) ))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -281,7 +281,7 @@
 {{- break -}}
 {{- end -}}
 {{- $adminTLS := $values.listeners.admin.tls -}}
-{{- $cert := (index $values.tls.certs $adminTLS.cert) -}}
+{{- $cert := (ternary (index $values.tls.certs $adminTLS.cert) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil) ) (hasKey $values.tls.certs $adminTLS.cert)) -}}
 {{- if $adminTLS.requireClientAuth -}}
 {{- $secretName := (printf "%s-client" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot) ))) "r")) -}}
 {{- if (ne (toJson $cert.clientSecretRef) "null") -}}
