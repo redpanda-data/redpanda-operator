@@ -162,7 +162,7 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $externalKafkaListenerName := (get (fromJson (include "redpanda.getFirstExternalKafkaListener" (dict "a" (list $dot) ))) "r") -}}
-{{- $listener := (index $values.listeners.kafka.external $externalKafkaListenerName) -}}
+{{- $listener := (ternary (index $values.listeners.kafka.external $externalKafkaListenerName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "prefixTemplate" (coalesce nil) "tls" (coalesce nil) ) (hasKey $values.listeners.kafka.external $externalKafkaListenerName)) -}}
 {{- $port := (($values.listeners.kafka.port | int) | int) -}}
 {{- if (gt (($listener.port | int) | int) ((1 | int) | int)) -}}
 {{- $port = (($listener.port | int) | int) -}}
@@ -188,7 +188,7 @@
 {{- $keys := (keys $values.listeners.admin.external) -}}
 {{- $_ := (sortAlpha $keys) -}}
 {{- $externalAdminListenerName := (first $keys) -}}
-{{- $listener := (index $values.listeners.admin.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalAdminListenerName) ))) "r")) -}}
+{{- $listener := (ternary (index $values.listeners.admin.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalAdminListenerName) ))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil) ) (hasKey $values.listeners.admin.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalAdminListenerName) ))) "r"))) -}}
 {{- $port := (($values.listeners.admin.port | int) | int) -}}
 {{- if (gt (($listener.port | int) | int) (1 | int)) -}}
 {{- $port = (($listener.port | int) | int) -}}
@@ -214,7 +214,7 @@
 {{- $keys := (keys $values.listeners.schemaRegistry.external) -}}
 {{- $_ := (sortAlpha $keys) -}}
 {{- $externalSchemaListenerName := (first $keys) -}}
-{{- $listener := (index $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName) ))) "r")) -}}
+{{- $listener := (ternary (index $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName) ))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "tls" (coalesce nil) ) (hasKey $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName) ))) "r"))) -}}
 {{- $port := (($values.listeners.schemaRegistry.port | int) | int) -}}
 {{- if (gt (($listener.port | int) | int) (1 | int)) -}}
 {{- $port = (($listener.port | int) | int) -}}
@@ -566,7 +566,7 @@
 {{- $_ := (sortAlpha $keys) -}}
 {{- $flags := (list ) -}}
 {{- range $_, $key := $keys -}}
-{{- $flags = (concat (default (list ) $flags) (list (printf "--%s=%s" $key (index $chartFlags $key)))) -}}
+{{- $flags = (concat (default (list ) $flags) (list (printf "--%s=%s" $key (ternary (index $chartFlags $key) "" (hasKey $chartFlags $key))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}

@@ -789,7 +789,7 @@
 {{- $tss = (concat (default (list ) $tss) (list $l.tls.trustStore)) -}}
 {{- end -}}
 {{- range $_, $key := (sortAlpha (keys $l.external)) -}}
-{{- $lis := (index $l.external $key) -}}
+{{- $lis := (ternary (index $l.external $key) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil) ) (hasKey $l.external $key)) -}}
 {{- if (or (or (not (get (fromJson (include "redpanda.AdminExternal.IsEnabled" (dict "a" (list $lis) ))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $lis.tls $l.tls $tls) ))) "r"))) (eq (toJson $lis.tls.trustStore) "null")) -}}
 {{- continue -}}
 {{- end -}}
@@ -887,7 +887,7 @@
 {{- $tss = (concat (default (list ) $tss) (list $l.tls.trustStore)) -}}
 {{- end -}}
 {{- range $_, $key := (sortAlpha (keys $l.external)) -}}
-{{- $lis := (index $l.external $key) -}}
+{{- $lis := (ternary (index $l.external $key) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "prefixTemplate" (coalesce nil) "tls" (coalesce nil) ) (hasKey $l.external $key)) -}}
 {{- if (or (or (not (get (fromJson (include "redpanda.HTTPExternal.IsEnabled" (dict "a" (list $lis) ))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $lis.tls $l.tls $tls) ))) "r"))) (eq (toJson $lis.tls.trustStore) "null")) -}}
 {{- continue -}}
 {{- end -}}
@@ -985,7 +985,7 @@
 {{- $tss = (concat (default (list ) $tss) (list $l.tls.trustStore)) -}}
 {{- end -}}
 {{- range $_, $key := (sortAlpha (keys $l.external)) -}}
-{{- $lis := (index $l.external $key) -}}
+{{- $lis := (ternary (index $l.external $key) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "prefixTemplate" (coalesce nil) "tls" (coalesce nil) ) (hasKey $l.external $key)) -}}
 {{- if (or (or (not (get (fromJson (include "redpanda.KafkaExternal.IsEnabled" (dict "a" (list $lis) ))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $lis.tls $l.tls $tls) ))) "r"))) (eq (toJson $lis.tls.trustStore) "null")) -}}
 {{- continue -}}
 {{- end -}}
@@ -1132,7 +1132,7 @@
 {{- $tss = (concat (default (list ) $tss) (list $l.tls.trustStore)) -}}
 {{- end -}}
 {{- range $_, $key := (sortAlpha (keys $l.external)) -}}
-{{- $lis := (index $l.external $key) -}}
+{{- $lis := (ternary (index $l.external $key) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "tls" (coalesce nil) ) (hasKey $l.external $key)) -}}
 {{- if (or (or (not (get (fromJson (include "redpanda.SchemaRegistryExternal.IsEnabled" (dict "a" (list $lis) ))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $lis.tls $l.tls $tls) ))) "r"))) (eq (toJson $lis.tls.trustStore) "null")) -}}
 {{- continue -}}
 {{- end -}}
