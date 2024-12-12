@@ -33,13 +33,15 @@
 {{- $bootstrap = (merge (dict ) $bootstrap (get (fromJson (include "redpanda.ClusterConfig.Translate" (dict "a" (list $values.config.cluster) ))) "r")) -}}
 {{- $bootstrap = (merge (dict ) $bootstrap (get (fromJson (include "redpanda.Auth.Translate" (dict "a" (list $values.auth (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth) ))) "r")) ))) "r")) -}}
 {{- $bootstrap = (merge (dict ) $bootstrap (get (fromJson (include "redpanda.TieredStorageConfig.Translate" (dict "a" (list (deepCopy (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $values.storage) ))) "r")) $values.storage.tiered.credentialsSecretRef) ))) "r")) -}}
-{{- $tmp_tuple_1 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $values.config.cluster "default_topic_replications" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_1 := $tmp_tuple_1.T2 -}}
+{{- $_79___ok_1 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $values.config.cluster "default_topic_replications" (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_79___ok_1 0) -}}
+{{- $ok_1 := (index $_79___ok_1 1) -}}
 {{- if (and (not $ok_1) (ge ($values.statefulset.replicas | int) (3 | int))) -}}
 {{- $_ := (set $bootstrap "default_topic_replications" (3 | int)) -}}
 {{- end -}}
-{{- $tmp_tuple_2 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $values.config.cluster "storage_min_free_bytes" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_2 := $tmp_tuple_2.T2 -}}
+{{- $_84___ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $values.config.cluster "storage_min_free_bytes" (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_84___ok_2 0) -}}
+{{- $ok_2 := (index $_84___ok_2 1) -}}
 {{- if (not $ok_2) -}}
 {{- $_ := (set $bootstrap "storage_min_free_bytes" ((get (fromJson (include "redpanda.Storage.StorageMinFreeBytes" (dict "a" (list $values.storage) ))) "r") | int64)) -}}
 {{- end -}}
@@ -114,20 +116,23 @@
 {{- break -}}
 {{- end -}}
 {{- $kafkaTLS := (get (fromJson (include "redpanda.rpkKafkaClientTLSConfiguration" (dict "a" (list $dot) ))) "r") -}}
-{{- $tmp_tuple_3 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $kafkaTLS "ca_file" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_3 := $tmp_tuple_3.T2 -}}
+{{- $_172___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $kafkaTLS "ca_file" (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_172___ok_3 0) -}}
+{{- $ok_3 := (index $_172___ok_3 1) -}}
 {{- if $ok_3 -}}
 {{- $_ := (set $kafkaTLS "ca_file" "ca.crt") -}}
 {{- end -}}
 {{- $adminTLS := (get (fromJson (include "redpanda.rpkAdminAPIClientTLSConfiguration" (dict "a" (list $dot) ))) "r") -}}
-{{- $tmp_tuple_4 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $adminTLS "ca_file" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_4 := $tmp_tuple_4.T2 -}}
+{{- $_178___ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $adminTLS "ca_file" (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_178___ok_4 0) -}}
+{{- $ok_4 := (index $_178___ok_4 1) -}}
 {{- if $ok_4 -}}
 {{- $_ := (set $adminTLS "ca_file" "ca.crt") -}}
 {{- end -}}
 {{- $schemaTLS := (get (fromJson (include "redpanda.rpkSchemaRegistryClientTLSConfiguration" (dict "a" (list $dot) ))) "r") -}}
-{{- $tmp_tuple_5 := (get (fromJson (include "_shims.compact" (dict "a" (list (get (fromJson (include "_shims.dicttest" (dict "a" (list $schemaTLS "ca_file" (coalesce nil)) ))) "r")) ))) "r") -}}
-{{- $ok_5 := $tmp_tuple_5.T2 -}}
+{{- $_184___ok_5 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $schemaTLS "ca_file" (coalesce nil)) ))) "r") -}}
+{{- $_ := (index $_184___ok_5 0) -}}
+{{- $ok_5 := (index $_184___ok_5 1) -}}
 {{- if $ok_5 -}}
 {{- $_ := (set $schemaTLS "ca_file" "ca.crt") -}}
 {{- end -}}
