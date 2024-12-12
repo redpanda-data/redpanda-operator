@@ -140,3 +140,17 @@ tasks:
     - git diff --exit-code
     status:
       - test "$CI" != "true" # run only in CI as local runs may have unstaged changes.
+
+  lint:
+    cmds:
+      - task: configure-git-private-repo
+      - task: :generate
+      - task: :lint
+      # Fail on any generated diffs.
+      - git diff --exit-code
+
+  charts:tests:
+    cmds:
+      - task: configure-git-private-repo
+      - kind create cluster --config operator/kind.yaml
+      - task: :charts:tests
