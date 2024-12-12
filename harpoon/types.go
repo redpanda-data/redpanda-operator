@@ -19,8 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
 // Redefine the interfaces from the internal package

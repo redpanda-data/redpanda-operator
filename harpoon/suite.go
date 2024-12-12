@@ -22,9 +22,9 @@ import (
 	"github.com/cucumber/godog/colors"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
 func setShortTimeout(timeout *time.Duration, short time.Duration) {
