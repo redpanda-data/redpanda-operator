@@ -9,7 +9,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/json-iterator/go v1.1.12
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.74.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/redpanda-data/common-go/rpadmin v0.1.9
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
