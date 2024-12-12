@@ -14,1088 +14,597 @@ spec:
     singular: console
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: Console is the Schema for the consoles API
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: |-
-              ConsoleSpec defines the desired state of Console
-              Most of the fields here are copied from Console config
-              REF https://github.com/redpanda-data/console/blob/master/backend/pkg/api/config.go
-            properties:
-              cloud:
-                description: |-
-                  Cloud contains configurations for Redpanda cloud. If you're running a
-                  self-hosted installation, you can ignore this
-                properties:
-                  prometheusEndpoint:
-                    description: |-
-                      PrometheusEndpointConfig configures the Prometheus endpoint that shall be
-                      exposed in Redpanda Cloud so that users can scrape this URL to
-                      collect their dataplane's metrics in their own time-series database.
-                    properties:
-                      basicAuth:
-                        description: |-
-                          BasicAuthConfig are credentials that will be required by the user in order to
-                          scrape the endpoint
-                        properties:
-                          passwordRef:
-                            description: |-
-                              SecretKeyRef contains enough information to inspect or modify the referred Secret data
-                              REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
-                            properties:
-                              key:
-                                description: Key in Secret data to get value from
-                                type: string
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                              namespace:
-                                description: |-
-                                  Namespace of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                                type: string
-                            required:
-                            - name
-                            - namespace
-                            type: object
-                          username:
-                            type: string
-                        required:
-                        - passwordRef
-                        - username
-                        type: object
-                      enabled:
-                        type: boolean
-                      prometheus:
-                        description: PrometheusConfig is configuration of prometheus
-                          instance
-                        properties:
-                          address:
-                            description: Address to Prometheus endpoint
-                            type: string
-                          jobs:
-                            description: |-
-                              Jobs is the list of Prometheus Jobs that we want to discover so that we
-                              can then scrape the discovered targets ourselves.
-                            items:
-                              description: |-
-                                PrometheusScraperJobConfig is the configuration object that determines what Prometheus
-                                targets we should scrape.
-                              properties:
-                                jobName:
-                                  description: JobName refers to the Prometheus job
-                                    name whose discovered targets we want to scrape
-                                  type: string
-                                keepLabels:
-                                  description: |-
-                                    KeepLabels is a list of label keys that are added by Prometheus when scraping
-                                    the target and should remain for all metrics as exposed to the Prometheus endpoint.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - jobName
-                              - keepLabels
-                              type: object
-                            type: array
-                          targetRefreshInterval:
-                            default: 10s
-                            type: string
-                        required:
-                        - address
-                        - jobs
-                        type: object
-                      responseCacheDuration:
-                        default: 1s
-                        format: duration
-                        type: string
-                      scrapeTargetTimeout:
-                        default: 15s
-                        format: duration
-                        type: string
-                    required:
-                    - enabled
-                    - prometheus
-                    type: object
-                  redpandaConnect:
-                    description: RedpandaConnect is the configuration for Redpanda
-                      Connect in Redpanda Cloud.
-                    properties:
-                      address:
-                        description: |-
-                          Address to Redpanda Connect Cloud API service endpoint
-                          (e.g. "redpanda-connect-api.redpanda-connect.svc.cluster.local:8080")
-                        type: string
-                      enabled:
-                        type: boolean
-                    type: object
-                required:
-                - prometheusEndpoint
-                type: object
-              clusterRef:
-                description: The referenced Redpanda Cluster
-                properties:
-                  name:
-                    description: |-
-                      Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                  namespace:
-                    description: |-
-                      Namespace of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              connect:
-                description: Connect defines configurable fields for Kafka Connect
-                properties:
-                  clusters:
-                    items:
-                      description: ConnectCluster defines configurable fields for
-                        the Kafka Connect cluster
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              properties:
+                cloud:
+                  properties:
+                    prometheusEndpoint:
                       properties:
-                        basicAuthRef:
-                          description: |-
-                            BasicAuthRef configures basic auth credentials referenced by Secret
-                            Expects to have keys "username", "password"
+                        basicAuth:
                           properties:
-                            apiVersion:
-                              description: API version of the referent.
-                              type: string
-                            fieldPath:
-                              description: |-
-                                If referring to a piece of an object instead of an entire object, this string
-                                should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                                For example, if the object reference is to a container within a pod, this would take on a value like:
-                                "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                                the event) or if no container name is specified "spec.containers[2]" (container with
-                                index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                                referencing a part of an object.
-                              type: string
-                            kind:
-                              description: |-
-                                Kind of the referent.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                              type: string
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                            namespace:
-                              description: |-
-                                Namespace of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                              type: string
-                            resourceVersion:
-                              description: |-
-                                Specific resourceVersion to which this reference is made, if any.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                              type: string
-                            uid:
-                              description: |-
-                                UID of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        name:
-                          type: string
-                        tls:
-                          description: TLS configures mTLS auth
-                          properties:
-                            enabled:
-                              type: boolean
-                            insecureSkipTlsVerify:
-                              type: boolean
-                            secretKeyRef:
-                              description: |-
-                                SecretKeyRef configures certificate used for mTLS auth referenced by Secret
-                                Expects to have keys "tls.crt", "tls.key", "ca.crt"
+                            passwordRef:
                               properties:
-                                apiVersion:
-                                  description: API version of the referent.
-                                  type: string
-                                fieldPath:
-                                  description: |-
-                                    If referring to a piece of an object instead of an entire object, this string
-                                    should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                                    For example, if the object reference is to a container within a pod, this would take on a value like:
-                                    "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                                    the event) or if no container name is specified "spec.containers[2]" (container with
-                                    index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                                    referencing a part of an object.
-                                  type: string
-                                kind:
-                                  description: |-
-                                    Kind of the referent.
-                                    More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                                key:
                                   type: string
                                 name:
-                                  description: |-
-                                    Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                   type: string
                                 namespace:
-                                  description: |-
-                                    Namespace of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                                   type: string
-                                resourceVersion:
-                                  description: |-
-                                    Specific resourceVersion to which this reference is made, if any.
-                                    More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                                  type: string
-                                uid:
-                                  description: |-
-                                    UID of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                                  type: string
+                              required:
+                                - name
+                                - namespace
                               type: object
-                              x-kubernetes-map-type: atomic
-                          type: object
-                        tokenRef:
-                          description: |-
-                            TokenRef configures token header auth referenced by Secret
-                            Expects to have key "token"
-                          properties:
-                            apiVersion:
-                              description: API version of the referent.
-                              type: string
-                            fieldPath:
-                              description: |-
-                                If referring to a piece of an object instead of an entire object, this string
-                                should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                                For example, if the object reference is to a container within a pod, this would take on a value like:
-                                "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                                the event) or if no container name is specified "spec.containers[2]" (container with
-                                index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                                referencing a part of an object.
-                              type: string
-                            kind:
-                              description: |-
-                                Kind of the referent.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                              type: string
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                            namespace:
-                              description: |-
-                                Namespace of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                              type: string
-                            resourceVersion:
-                              description: |-
-                                Specific resourceVersion to which this reference is made, if any.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                              type: string
-                            uid:
-                              description: |-
-                                UID of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        url:
-                          type: string
-                      required:
-                      - name
-                      - url
-                      type: object
-                    type: array
-                  connectTimeout:
-                    default: 15s
-                    format: duration
-                    type: string
-                  enabled:
-                    type: boolean
-                  readTimeout:
-                    default: 60s
-                    format: duration
-                    type: string
-                  requestTimeout:
-                    default: 6s
-                    format: duration
-                    type: string
-                type: object
-              console:
-                description: |-
-                  Console contains all configuration options for features that are generic,
-                  such as enabling API endpoints.
-                properties:
-                  api:
-                    description: |-
-                      ConsoleAPI declares the configuration properties for managing the
-                      connect/grpc/grpc-gateway API endpoints.
-                    properties:
-                      enabled:
-                        default: true
-                        description: |-
-                          Enabled determines whether any of the connect/grpc/grpc-gateway endpoints
-                          will be mounted to the server.
-                        type: boolean
-                      enabledProcedures:
-                        default:
-                        - '*'
-                        description: |-
-                          EnabledProcedures is a list of procedure names that shall be allowed.
-                          If a procedure is called that is not on this list a descriptive error
-                          will be returned. A procedure name has the following format, regardless
-                          whether it's called via connect, gRPC or the HTTP interface:
-                          "/redpanda.api.dataplane.v1alpha1.UserService/ListUsers".
-                          You can use "*" to enable all procedures.
-                        items:
-                          type: string
-                        type: array
-                    required:
-                    - enabled
-                    - enabledProcedures
-                    type: object
-                type: object
-              deployment:
-                description: Deployment defines configurable fields for the Console
-                  Deployment resource
-                properties:
-                  image:
-                    type: string
-                  imagePullPolicy:
-                    description: PullPolicy describes a policy for if/when to pull
-                      a container image
-                    type: string
-                  imagePullSecrets:
-                    description: Specifies credentials for a private image repository.
-                      For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
-                    items:
-                      description: |-
-                        LocalObjectReference contains enough information to let you locate the
-                        referenced object inside the same namespace.
-                      properties:
-                        name:
-                          default: ""
-                          description: |-
-                            Name of the referent.
-                            This field is effectively required, but due to backwards compatibility is
-                            allowed to be empty. Instances of this type with an empty value here are
-                            almost certainly wrong.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    type: array
-                  maxSurge:
-                    default: 1
-                    format: int32
-                    type: integer
-                  maxUnavailable:
-                    default: 0
-                    format: int32
-                    type: integer
-                  replicas:
-                    default: 1
-                    format: int32
-                    type: integer
-                  resources:
-                    description: |-
-                      Resources are the [corev1.ResourceRequirements] that are passed, verbatim, to the console Deployment.
-                      See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                    properties:
-                      claims:
-                        description: |-
-                          Claims lists the names of resources, defined in spec.resourceClaims,
-                          that are used by this container.
-
-                          This is an alpha field and requires enabling the
-                          DynamicResourceAllocation feature gate.
-
-                          This field is immutable. It can only be set for containers.
-                        items:
-                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
-                          properties:
-                            name:
-                              description: |-
-                                Name must match the name of one entry in pod.spec.resourceClaims of
-                                the Pod where this field is used. It makes that resource available
-                                inside a container.
+                            username:
                               type: string
                           required:
-                          - name
+                            - passwordRef
+                            - username
                           type: object
-                        type: array
-                        x-kubernetes-list-map-keys:
-                        - name
-                        x-kubernetes-list-type: map
-                      limits:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: |-
-                          Limits describes the maximum amount of compute resources allowed.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                        type: object
-                      requests:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: |-
-                          Requests describes the minimum amount of compute resources required.
-                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                        type: object
-                    type: object
-                required:
-                - image
-                type: object
-              enterprise:
-                description: Enterprise defines configurable fields for features that
-                  require license
-                properties:
-                  rbac:
-                    description: Console uses role-based access control (RBAC) to
-                      restrict system access to authorized users
-                    properties:
-                      enabled:
-                        type: boolean
-                      roleBindingsRef:
-                        description: |-
-                          RoleBindingsRef is the ConfigMap that contains the RBAC file
-                          The ConfigMap should contain "rbac.yaml" key
-                        properties:
-                          name:
-                            default: ""
-                            description: |-
-                              Name of the referent.
-                              This field is effectively required, but due to backwards compatibility is
-                              allowed to be empty. Instances of this type with an empty value here are
-                              almost certainly wrong.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
-                    required:
-                    - enabled
-                    - roleBindingsRef
-                    type: object
-                required:
-                - rbac
-                type: object
-              ingress:
-                description: Ingress contains configuration for the Console ingress.
-                properties:
-                  annotations:
-                    additionalProperties:
+                        enabled:
+                          type: boolean
+                        prometheus:
+                          properties:
+                            address:
+                              type: string
+                            jobs:
+                              items:
+                                properties:
+                                  jobName:
+                                    type: string
+                                  keepLabels:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                  - jobName
+                                  - keepLabels
+                                type: object
+                              type: array
+                            targetRefreshInterval:
+                              default: 10s
+                              type: string
+                          required:
+                            - address
+                            - jobs
+                          type: object
+                        responseCacheDuration:
+                          default: 1s
+                          format: duration
+                          type: string
+                        scrapeTargetTimeout:
+                          default: 15s
+                          format: duration
+                          type: string
+                      required:
+                        - enabled
+                        - prometheus
+                      type: object
+                    redpandaConnect:
+                      properties:
+                        address:
+                          type: string
+                        enabled:
+                          type: boolean
+                      type: object
+                  required:
+                    - prometheusEndpoint
+                  type: object
+                clusterRef:
+                  properties:
+                    name:
                       type: string
-                    description: Optional annotations for the generated ingress.
-                    type: object
-                  enabled:
-                    description: Indicates if ingress is enabled (true when unspecified).
-                    type: boolean
-                  endpoint:
-                    description: If present, it's appended to the subdomain to form
-                      the ingress hostname.
-                    type: string
-                type: object
-              licenseRef:
-                description: |-
-                  If you don't provide an enterprise license, Console ignores configurations for enterprise features
-                  REF https://docs.redpanda.com/docs/console/reference/config/
-                  If key is not provided in the SecretRef, Secret data should have key "license"
-                properties:
-                  key:
-                    description: Key in Secret data to get value from
-                    type: string
-                  name:
-                    description: |-
-                      Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                  namespace:
-                    description: |-
-                      Namespace of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              login:
-                description: |-
-                  Login contains all configurations in order to protect Console with a login screen
-                  Configure one or more of the below identity providers in order to support SSO
-                  This feature requires an Enterprise license
-                  REF https://docs.redpanda.com/docs/console/single-sign-on/identity-providers/google/
-                properties:
-                  enabled:
-                    type: boolean
-                  google:
-                    description: EnterpriseLoginGoogle defines configurable fields
-                      for Google provider
-                    properties:
-                      clientCredentialsRef:
-                        description: |-
-                          ClientCredentials is the Secret that contains SSO credentials
-                          The Secret should contain keys "clientId", "clientSecret"
+                    namespace:
+                      type: string
+                  required:
+                    - name
+                    - namespace
+                  type: object
+                connect:
+                  properties:
+                    clusters:
+                      items:
                         properties:
-                          name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            type: string
-                          namespace:
-                            description: |-
-                              Namespace of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                      directory:
-                        description: Use Google groups in your RBAC role bindings.
-                        properties:
-                          serviceAccountRef:
-                            description: |-
-                              ServiceAccountRef is the ConfigMap that contains the Google Service Account json
-                              The ConfigMap should contain "sa.json" key
+                          basicAuthRef:
                             properties:
+                              apiVersion:
+                                type: string
+                              fieldPath:
+                                type: string
+                              kind:
+                                type: string
                               name:
-                                default: ""
-                                description: |-
-                                  Name of the referent.
-                                  This field is effectively required, but due to backwards compatibility is
-                                  allowed to be empty. Instances of this type with an empty value here are
-                                  almost certainly wrong.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              namespace:
+                                type: string
+                              resourceVersion:
+                                type: string
+                              uid:
                                 type: string
                             type: object
                             x-kubernetes-map-type: atomic
-                          targetPrincipal:
-                            description: TargetPrincipal is the user that shall be
-                              impersonated by the service account
+                          name:
+                            type: string
+                          tls:
+                            properties:
+                              enabled:
+                                type: boolean
+                              insecureSkipTlsVerify:
+                                type: boolean
+                              secretKeyRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                  resourceVersion:
+                                    type: string
+                                  uid:
+                                    type: string
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                          tokenRef:
+                            properties:
+                              apiVersion:
+                                type: string
+                              fieldPath:
+                                type: string
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                              resourceVersion:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          url:
                             type: string
                         required:
-                        - serviceAccountRef
-                        - targetPrincipal
+                          - name
+                          - url
                         type: object
-                      enabled:
-                        type: boolean
-                    required:
-                    - clientCredentialsRef
-                    - enabled
-                    type: object
-                  jwtSecretRef:
-                    description: |-
-                      JWTSecret is the Secret that is used to sign and encrypt the JSON Web tokens that are used by the backend for session management
-                      If not provided, the default key is "jwt"
-                    properties:
-                      key:
-                        description: Key in Secret data to get value from
-                        type: string
-                      name:
-                        description: |-
-                          Name of the referent.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        type: string
-                      namespace:
-                        description: |-
-                          Namespace of the referent.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                        type: string
-                    required:
-                    - name
-                    - namespace
-                    type: object
-                  redpandaCloud:
-                    description: EnterpriseLoginRedpandaCloud defines configurable
-                      fields for RedpandaCloud SSO provider
-                    properties:
-                      allowedOrigins:
-                        description: AllowedOrigins indicates if response is allowed
-                          from given origin
-                        items:
-                          type: string
-                        type: array
-                      audience:
-                        description: Audience is the domain where this auth is intended
-                          for
-                        type: string
-                      domain:
-                        description: Domain is the domain of the auth server
-                        type: string
-                      enabled:
-                        type: boolean
-                      orgId:
-                        description: |-
-                          OrgID refers to the Redpanda Cloud organization id that Console is running in.
-                          If the OrgID is set, Console will ensure that incoming requests will only pass
-                          if the provided access token matches this org id in the custom claims.
-                        type: string
-                    required:
-                    - audience
-                    - domain
-                    - enabled
-                    type: object
-                required:
-                - enabled
-                - jwtSecretRef
-                type: object
-              metricsNamespace:
-                default: console
-                description: Prefix for all exported prometheus metrics
-                type: string
-              redpanda:
-                description: Redpanda contains configurations that are Redpanda specific
-                properties:
-                  adminApi:
-                    description: RedpandaAdmin defines API configuration that enables
-                      additional features that are Redpanda specific
-                    properties:
-                      enabled:
-                        type: boolean
-                    required:
-                    - enabled
-                    type: object
-                type: object
-              schema:
-                description: Schema defines configurable fields for Schema Registry
-                properties:
-                  enabled:
-                    type: boolean
-                  refreshInterval:
-                    default: 1m
-                    format: duration
-                    type: string
-                  useSchemaRegistryCA:
-                    description: |-
-                      Indication on whether to use the schema registry CA as trust when connecting to the schema registry.
-                      If not set, the public CAs will be used.
-                    type: boolean
-                required:
-                - enabled
-                type: object
-              secretStore:
-                description: SecretStore contains the configuration for the cloud
-                  provider secret manager
-                properties:
-                  awsSecretManager:
-                    description: SecretManagerAWS is the configuration object for
-                      using Amazon's secret manager.
-                    properties:
-                      AWSCredentialsRef:
-                        description: |-
-                          AWSCredentialsRef refers to Kubernetes secret where AWS access key id and secret access key
-                          is taken and used as environments variable
+                      type: array
+                    connectTimeout:
+                      default: 15s
+                      format: duration
+                      type: string
+                    enabled:
+                      type: boolean
+                    readTimeout:
+                      default: 60s
+                      format: duration
+                      type: string
+                    requestTimeout:
+                      default: 6s
+                      format: duration
+                      type: string
+                  type: object
+                console:
+                  properties:
+                    api:
+                      properties:
+                        enabled:
+                          default: true
+                          type: boolean
+                        enabledProcedures:
+                          default:
+                            - '*'
+                          items:
+                            type: string
+                          type: array
+                      required:
+                        - enabled
+                        - enabledProcedures
+                      type: object
+                  type: object
+                deployment:
+                  properties:
+                    image:
+                      type: string
+                    imagePullPolicy:
+                      type: string
+                    imagePullSecrets:
+                      items:
                         properties:
                           name:
                             default: ""
-                            description: |-
-                              Name of the referent.
-                              This field is effectively required, but due to backwards compatibility is
-                              allowed to be empty. Instances of this type with an empty value here are
-                              almost certainly wrong.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
-                      enabled:
-                        description: |-
-                          Enabled is whether AWS secret manager is enabled. Only one store
-                          can be enabled at a time.
-                        type: boolean
-                      kmsKeyId:
-                        description: |-
-                          KmsKeyID is the ARN, key ID, or alias of the KMS key that Secrets Manager uses to encrypt
-                          the secret value in the secret.
-
-                          To use a KMS key in a different account, use the key ARN or the alias ARN.
-
-                          If you don't specify this value, then Secrets Manager uses the key aws/secretsmanager.
-                          If that key doesn't yet exist, then Secrets Manager creates it for you automatically
-                          the first time it encrypts the secret value.
-
-                          If the secret is in a different Amazon Web Services account from the credentials
-                          calling the API, then you can't use aws/secretsmanager to encrypt the secret,
-                          and you must create and use a customer managed KMS key.
-                        type: string
-                      region:
-                        description: |-
-                          Region in which service is deployed so that related resources like
-                          secrets are put to the same region
-                        type: string
-                      serviceAccountRoleARNAnnotation:
-                        description: |-
-                          ServiceAccountRoleARNAnnotation will be included in the Service Account definition.
-                          That Kubernetes Service Account will be used in Kubernetes Deployment Spec of Console
-                          Ref https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
-                        type: string
-                      tags:
-                        additionalProperties:
-                          type: string
-                        description: |-
-                          Tags is a list of tags to attach to the secret. Each tag is a key and value a pair
-                          of strings in a JSON text string, for example:
-
-                          [{"Key":"CostCenter","Value":"12345"},{"Key":"environment","Value":"production"}]
-
-                          Secrets Manager tag key names are case sensitive. A tag with the key "ABC"
-                          is a different tag from one with key "abc".
-
-                          Tags can be used for permissions, so that you can namespace your secrets within a
-                          single secret store. Console will also only allow the deletion of secrets that
-                          posses the configured tags.
-                          Tags default to:
-                          "owner": "console"
-                        type: object
-                    required:
-                    - enabled
-                    - region
-                    type: object
-                  enabled:
-                    type: boolean
-                  gcpSecretManager:
-                    description: SecretManagerGCP is the configuration object for
-                      using Google Cloud's secret manager.
-                    properties:
-                      credentialsSecretRef:
-                        description: |-
-                          CredentialsSecretRef points to Kubernetes secret where service account
-                          will be mounted to Console and used to authenticate again GCP API.
-                        properties:
-                          key:
-                            description: Key in Secret data to get value from
-                            type: string
-                          name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            type: string
-                          namespace:
-                            description: |-
-                              Namespace of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                      enabled:
-                        description: |-
-                          Enabled is whether GCP secret manager is enabled. Only one store
-                          can be enabled at a time.
-                        type: boolean
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: |-
-                          Labels help you to organize your project, add arbitrary labels as key/value
-                          pairs to your resources. Use labels to indicate different environments,
-                          services, teams, and so on. Console may use additional labels for each secret.
-
-                          Use a label with key "owner" to namespace secrets within a secret manager.
-                          This label will always be set for the creation and listing of all secrets.
-                          If you change the value after secrets have been created, Console will no
-                          longer return them and consider them as managed by another application.
-                          The owner label is optional but recommended.
-
-                          Labels default to:
-                          "owner": "console"
-                        type: object
-                      projectId:
-                        description: ProjectID is the GCP project in which to store
-                          the secrets.
-                        type: string
-                      serviceAccountNameAnnotation:
-                        description: |-
-                          ServiceAccountNameAnnotation will be included in the Service Account definition.
-                          That Kubernetes Service Account will be used in Kubernetes Deployment Spec of Console
-                          Ref https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
-                        type: string
-                    required:
-                    - enabled
-                    - projectId
-                    type: object
-                  kafkaConnect:
-                    description: |-
-                      SecretStoreKafkaConnect is a configuration block that specifies
-                      what configured Kafka connect clusters support loading secrets from
-                      the configured secret store. The frontend will only store sensitive
-                      connector configurations in the secret store if the respective
-                      kafka connect cluster is listed in this configuration.
-                    properties:
-                      clusters:
-                        description: |-
-                          Clusters is the list of Kafka connect clusters
-                          which the secret store shall be used for.
-                        items:
-                          description: |-
-                            SecretStoreKafkaConnectCluster configures the Kafka connect clusters
-                            that support loading secrets from the configured secret store.
+                      type: array
+                    maxSurge:
+                      default: 1
+                      format: int32
+                      type: integer
+                    maxUnavailable:
+                      default: 0
+                      format: int32
+                      type: integer
+                    replicas:
+                      default: 1
+                      format: int32
+                      type: integer
+                    resources:
+                      properties:
+                        claims:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                            required:
+                              - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                            - name
+                          x-kubernetes-list-type: map
+                        limits:
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          type: object
+                        requests:
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          type: object
+                      type: object
+                  required:
+                    - image
+                  type: object
+                enterprise:
+                  properties:
+                    rbac:
+                      properties:
+                        enabled:
+                          type: boolean
+                        roleBindingsRef:
                           properties:
                             name:
-                              description: |-
-                                Name refers to the Kafka connect cluster name that has been
-                                given in the connect configuration. This name must match some
-                                cluster name or the configuration will be rejected.
+                              default: ""
                               type: string
-                            secretNamePrefixAppend:
-                              description: |-
-                                SecretNamePrefixAppend is an optional string that shall be appended
-                                to the global secretNamePrefix. This config is helpful if you want
-                                to use a specific prefix for secrets belonging to this Kafka connect
-                                cluster. You may want to do this if you want to restrict the
-                                permissions for the kafka connect workers reading these secrets.
-
-                                Example:
-                                secretstore.secretNamePrefix is set to: "redpanda/prod/"
-                                secretstore.kafkaConnect.clusters.dwh.secretNamePrefixAppend is set to: "dwh/"
-                                => Secrets will be created with the prefix "redpanda/prod/dwh/" so that
-                                you can apply special iam permissions in your cloud account.
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      required:
+                        - enabled
+                        - roleBindingsRef
+                      type: object
+                  required:
+                    - rbac
+                  type: object
+                ingress:
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    enabled:
+                      type: boolean
+                    endpoint:
+                      type: string
+                  type: object
+                licenseRef:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                    - name
+                    - namespace
+                  type: object
+                login:
+                  properties:
+                    enabled:
+                      type: boolean
+                    google:
+                      properties:
+                        clientCredentialsRef:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
                               type: string
                           required:
-                          - name
-                          - secretNamePrefixAppend
+                            - name
+                            - namespace
                           type: object
-                        type: array
-                      enabled:
-                        type: boolean
-                    required:
-                    - clusters
+                        directory:
+                          properties:
+                            serviceAccountRef:
+                              properties:
+                                name:
+                                  default: ""
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            targetPrincipal:
+                              type: string
+                          required:
+                            - serviceAccountRef
+                            - targetPrincipal
+                          type: object
+                        enabled:
+                          type: boolean
+                      required:
+                        - clientCredentialsRef
+                        - enabled
+                      type: object
+                    jwtSecretRef:
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                        - name
+                        - namespace
+                      type: object
+                    redpandaCloud:
+                      properties:
+                        allowedOrigins:
+                          items:
+                            type: string
+                          type: array
+                        audience:
+                          type: string
+                        domain:
+                          type: string
+                        enabled:
+                          type: boolean
+                        orgId:
+                          type: string
+                      required:
+                        - audience
+                        - domain
+                        - enabled
+                      type: object
+                  required:
                     - enabled
-                    type: object
-                  scopes:
-                    description: Scopes is a list of supported secret scopes
-                    items:
+                    - jwtSecretRef
+                  type: object
+                metricsNamespace:
+                  default: console
+                  type: string
+                redpanda:
+                  properties:
+                    adminApi:
+                      properties:
+                        enabled:
+                          type: boolean
+                      required:
+                        - enabled
+                      type: object
+                  type: object
+                schema:
+                  properties:
+                    enabled:
+                      type: boolean
+                    refreshInterval:
+                      default: 1m
+                      format: duration
                       type: string
-                    type: array
-                  secretNamePrefix:
-                    description: |-
-                      SecretNamePrefix is the prefix that shall be used for each secret name
-                      that will be stored. The prefix is used for namespacing your secrets,
-                      so that one secret store can be used by multiple tenants.
-                      For AWS it's common to use a path-like structure whereas GCP does not
-                      allow slashes.
-
-                      Examples:
-                      AWS: redpanda/analytics/prod/console/
-                      GCP: redpanda-analytics-prod-console-
-
-                      Changing this prefix won't let you access secrets created under
-                      a different prefix.
-                    type: string
-                required:
-                - enabled
-                - secretNamePrefix
-                type: object
-              serveFrontend:
-                default: true
-                description: Only relevant for developers, who might want to run the
-                  frontend separately
-                type: boolean
-              server:
-                description: |-
-                  Server is the Console app HTTP server config
-                  REF https://github.com/cloudhut/common/blob/b601d681e8599cee4255899def813142c0218e8b/rest/config.go
-                properties:
-                  basePath:
-                    description: Sets the subpath (root prefix) under which Kowl is
-                      reachable. If you want to host Kowl under 'your.domain.com/kowl/'
-                      you'd set the base path to 'kowl/'. The default is an empty
-                      string which makes Kowl reachable under just 'domain.com/'.
-                      When using this setting (or letting the 'X-Forwarded-Prefix'
-                      header set it for you) remember to either leave 'strip-prefix'
-                      enabled, or use a proxy that can strip the base-path/prefix
-                      before it reaches Kowl.
-                    type: string
-                  compressionLevel:
-                    default: 4
-                    description: 'Compression level applied to all http responses.
-                      Valid values are: 0-9 (0=completely disable compression middleware,
-                      1=weakest compression, 9=best compression)'
-                    type: integer
-                  gracefulShutdownTimeout:
-                    default: 30s
-                    description: Timeout for graceful shutdowns
-                    format: duration
-                    type: string
-                  idleTimeout:
-                    default: 30s
-                    description: Idle timeout for HTTP server
-                    format: duration
-                    type: string
-                  listenAddress:
-                    description: HTTP server listen address
-                    type: string
-                  listenPort:
-                    default: 8080
-                    description: HTTP server listen port
-                    type: integer
-                  readTimeout:
-                    default: 30s
-                    description: Read timeout for HTTP server
-                    format: duration
-                    type: string
-                  setBasePathFromXForwardedPrefix:
-                    default: true
-                    description: server.set-base-path-from-x-forwarded-prefix", true,
-                      "When set to true, Kowl will use the 'X-Forwarded-Prefix' header
-                      as the base path. (When enabled the 'base-path' setting won't
-                      be used)
-                    type: boolean
-                  stripPrefix:
-                    default: true
-                    description: If a base-path is set (either by the 'base-path'
-                      setting, or by the 'X-Forwarded-Prefix' header), they will be
-                      removed from the request url. You probably want to leave this
-                      enabled, unless you are using a proxy that can remove the prefix
-                      automatically (like Traefik's 'StripPrefix' option)
-                    type: boolean
-                  writeTimeout:
-                    default: 30s
-                    description: Write timeout for HTTP server
-                    format: duration
-                    type: string
-                type: object
-              serviceAccount:
-                description: The name of the ServiceAccount to be used by the Redpanda
-                  pods
-                type: string
-            required:
-            - clusterRef
-            - connect
-            - deployment
-            - schema
-            type: object
-          status:
-            description: ConsoleStatus defines the observed state of Console
-            properties:
-              availableReplicas:
-                description: Total number of available pods (ready for at least minReadySeconds)
-                  targeted by this deployment.
-                format: int32
-                type: integer
-              clusterGeneration:
-                description: The generation of the Repanda cluster
-                format: int64
-                type: integer
-              configMapRef:
-                description: |-
-                  The ConfigMap used by Console
-                  This is used to pass the ConfigMap used to mount in the Deployment Resource since Ensure() only returns error
-                properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: |-
-                      If referring to a piece of an object instead of an entire object, this string
-                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within a pod, this would take on a value like:
-                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]" (container with
-                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                      referencing a part of an object.
-                    type: string
-                  kind:
-                    description: |-
-                      Kind of the referent.
-                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                    type: string
-                  name:
-                    description: |-
-                      Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                  namespace:
-                    description: |-
-                      Namespace of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                    type: string
-                  resourceVersion:
-                    description: |-
-                      Specific resourceVersion to which this reference is made, if any.
-                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                    type: string
-                  uid:
-                    description: |-
-                      UID of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
-              connectivity:
-                description: Connectivity defines internal/external hosts
-                properties:
-                  external:
-                    type: string
-                  internal:
-                    type: string
-                type: object
-              observedGeneration:
-                description: The generation observed by the controller
-                format: int64
-                type: integer
-              readyReplicas:
-                description: readyReplicas is the number of pods targeted by this
-                  Deployment with a Ready Condition.
-                format: int32
-                type: integer
-              replicas:
-                description: Total number of non-terminated pods targeted by this
-                  deployment (their labels match the selector).
-                format: int32
-                type: integer
-              unavailableReplicas:
-                description: |-
-                  Total number of unavailable pods targeted by this deployment. This is the total number of
-                  pods that are still required for the deployment to have 100% available capacity. They may
-                  either be pods that are running but not yet available or pods that still have not been created.
-                format: int32
-                type: integer
-              updatedReplicas:
-                description: Total number of non-terminated pods targeted by this
-                  deployment that have the desired template spec.
-                format: int32
-                type: integer
-              version:
-                description: Current version of the cluster.
-                type: string
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                    useSchemaRegistryCA:
+                      type: boolean
+                  required:
+                    - enabled
+                  type: object
+                secretStore:
+                  properties:
+                    awsSecretManager:
+                      properties:
+                        AWSCredentialsRef:
+                          properties:
+                            name:
+                              default: ""
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        enabled:
+                          type: boolean
+                        kmsKeyId:
+                          type: string
+                        region:
+                          type: string
+                        serviceAccountRoleARNAnnotation:
+                          type: string
+                        tags:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      required:
+                        - enabled
+                        - region
+                      type: object
+                    enabled:
+                      type: boolean
+                    gcpSecretManager:
+                      properties:
+                        credentialsSecretRef:
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                            - name
+                            - namespace
+                          type: object
+                        enabled:
+                          type: boolean
+                        labels:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        projectId:
+                          type: string
+                        serviceAccountNameAnnotation:
+                          type: string
+                      required:
+                        - enabled
+                        - projectId
+                      type: object
+                    kafkaConnect:
+                      properties:
+                        clusters:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              secretNamePrefixAppend:
+                                type: string
+                            required:
+                              - name
+                              - secretNamePrefixAppend
+                            type: object
+                          type: array
+                        enabled:
+                          type: boolean
+                      required:
+                        - clusters
+                        - enabled
+                      type: object
+                    scopes:
+                      items:
+                        type: string
+                      type: array
+                    secretNamePrefix:
+                      type: string
+                  required:
+                    - enabled
+                    - secretNamePrefix
+                  type: object
+                serveFrontend:
+                  default: true
+                  type: boolean
+                server:
+                  properties:
+                    basePath:
+                      type: string
+                    compressionLevel:
+                      default: 4
+                      type: integer
+                    gracefulShutdownTimeout:
+                      default: 30s
+                      format: duration
+                      type: string
+                    idleTimeout:
+                      default: 30s
+                      format: duration
+                      type: string
+                    listenAddress:
+                      type: string
+                    listenPort:
+                      default: 8080
+                      type: integer
+                    readTimeout:
+                      default: 30s
+                      format: duration
+                      type: string
+                    setBasePathFromXForwardedPrefix:
+                      default: true
+                      type: boolean
+                    stripPrefix:
+                      default: true
+                      type: boolean
+                    writeTimeout:
+                      default: 30s
+                      format: duration
+                      type: string
+                  type: object
+                serviceAccount:
+                  type: string
+              required:
+                - clusterRef
+                - connect
+                - deployment
+                - schema
+              type: object
+            status:
+              properties:
+                availableReplicas:
+                  format: int32
+                  type: integer
+                clusterGeneration:
+                  format: int64
+                  type: integer
+                configMapRef:
+                  properties:
+                    apiVersion:
+                      type: string
+                    fieldPath:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    resourceVersion:
+                      type: string
+                    uid:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                connectivity:
+                  properties:
+                    external:
+                      type: string
+                    internal:
+                      type: string
+                  type: object
+                observedGeneration:
+                  format: int64
+                  type: integer
+                readyReplicas:
+                  format: int32
+                  type: integer
+                replicas:
+                  format: int32
+                  type: integer
+                unavailableReplicas:
+                  format: int32
+                  type: integer
+                updatedReplicas:
+                  format: int32
+                  type: integer
+                version:
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
