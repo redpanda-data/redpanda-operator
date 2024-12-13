@@ -23,7 +23,7 @@ steps:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:lint
     agents:
-      queue: k8s-builders-2xlarge
+      queue: v6-amd64-builders-m6id
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -45,16 +45,24 @@ steps:
       build.env("K8S_NIGHTLY") == "1"
     steps:
       - key: charts-tests
-        label: Charts tests
+        label: Charts tests {{matrix.testpackagename}}
         timeout_in_minutes: 20
         notify:
           - github_commit_status:
               context: charts-tests
         commands:
           - |
-            TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:charts:tests
+            TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:pkg:unit-tests PKG_NAME={{matrix.testpackagename}}
         agents:
-          queue: k8s-builders-2xlarge
+          queue: v6-amd64-builders-m6id
+        matrix:
+          setup:
+            testpackagename:
+              - charts
+              - genpartial
+              - genschema
+              - gotohelm
+              - pkg
         plugins:
           - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
               json-to-env:
@@ -63,7 +71,7 @@ steps:
                 - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
                 - secret-id: sdlc/prod/buildkite/slack_vbot_token
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-              message: ":cloud: K8S Chart tests Jobs failed"
+              message: ":cloud: K8S Chart tests {{matrix.testpackagename}} Jobs failed"
               channel_name: "kubernetes-tests"
               slack_token_env_var_name: "SLACK_VBOT_TOKEN"
               conditions:
@@ -71,17 +79,24 @@ steps:
                 branches:
                   - main
       - key: annotate-charts-tests
-        label: Parse Charts tests
+        label: Parse {{matrix.testpackagename}} tests
         plugins:
-          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.4.1:
-              artifacts: work/charts/charts.xml
+              artifacts: work/{{matrix.testpackagename}}.xml
               report-slowest: 20
         timeout_in_minutes: 0
         agents:
           queue: pipeline-uploader
         depends_on: charts-tests
         allow_dependency_failure: true
+        matrix:
+          setup:
+            testpackagename:
+              - charts
+              - genpartial
+              - genschema
+              - gotohelm
+              - pkg
 
   - key: release-nightly
     label: ":gandalf: Nightly Operator release"
@@ -123,7 +138,7 @@ steps:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
     agents:
-      queue: v6-amd64-builders
+      queue: v6-amd64-builders-m6id
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -153,6 +168,7 @@ steps:
             failed: true
             branches:
               - main
+
   - key: k8s-operator-tests-with-flags
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -167,7 +183,7 @@ steps:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:run-k8s-tests-with-flags
     agents:
-      queue: v6-amd64-builders
+      queue: v6-amd64-builders-m6id
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -197,6 +213,7 @@ steps:
             failed: true
             branches:
               - main
+
   - group: K8s Operator v2 Jobs
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -212,7 +229,7 @@ steps:
         commands:
           - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2
         agents:
-          queue: v6-amd64-builders
+          queue: v6-amd64-builders-m6id
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
@@ -235,6 +252,7 @@ steps:
           queue: pipeline-uploader
         depends_on: k8s-operator-v2
         allow_dependency_failure: true
+
   - group: K8s Operator v2 Helm Jobs
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -259,7 +277,7 @@ steps:
           - buildkite-agent artifact upload operator/tests/_e2e_helm_artifacts_v2/kuttl-report.xml
           - echo Noop
         agents:
-          queue: v6-amd64-builders
+          queue: v6-amd64-builders-m6id
         plugins:
           - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:

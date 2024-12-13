@@ -56,30 +56,6 @@ tasks:
       # Generate helm templates from Go definitions
       - go run ./gotohelm -write ./charts/connectors/templates ./charts/connectors
 
-  tests:
+  kind-cluster:
     cmds:
-      - task: tests:charts
-      - task: tests:genpartial
-      - task: tests:genschema
-      - task: tests:gotohelm
-      - task: tests:pkg
-  tests:charts:
-    dir: 'charts'
-    cmds:
-      - gotestsum --format testdox --junitfile charts.xml ./...
-  tests:genpartial:
-    dir: 'genpartial'
-    cmds:
-      - gotestsum --format testdox --junitfile genpartial.xml ./...
-  tests:genschema:
-    dir: 'genschema'
-    cmds:
-      - gotestsum --format testdox --junitfile genschema.xml ./...
-  tests:gotohelm:
-    dir: 'gotohelm'
-    cmds:
-      - gotestsum --format testdox --junitfile gotohelm.xml ./...
-  tests:pkg:
-    dir: 'pkg'
-    cmds:
-      - gotestsum --format testdox --junitfile pkg.xml ./...
+      - kind create cluster --config operator/kind.yaml
