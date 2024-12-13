@@ -3,6 +3,7 @@ ignore:
   - extension: .yaml
     match: /test(s){0,1}/
   - match: generated
+  - directory: genpartial/testdata/partial.go
   - directory: .build
   - directory: .buildkite
   - directory: .github
