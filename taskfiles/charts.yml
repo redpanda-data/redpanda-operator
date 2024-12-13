@@ -66,20 +66,20 @@ tasks:
   tests:charts:
     dir: 'charts'
     cmds:
-      - go test -v ./... -coverprofile cover.out -timeout 20m
+      - gotestsum --format testdox --junitfile charts.xml ./...
   tests:genpartial:
     dir: 'genpartial'
     cmds:
-      - go test -v ./... -coverprofile cover.out -timeout 20m
+      - gotestsum --format testdox --junitfile genpartial.xml ./...
   tests:genschema:
     dir: 'genschema'
     cmds:
-      - go test -v ./... -coverprofile cover.out -timeout 20m
+      - gotestsum --format testdox --junitfile genschema.xml ./...
   tests:gotohelm:
     dir: 'gotohelm'
     cmds:
-      - go test -v ./... -coverprofile cover.out -timeout 20m
+      - gotestsum --format testdox --junitfile gotohelm.xml ./...
   tests:pkg:
     dir: 'pkg'
     cmds:
-      - go test -v ./... -coverprofile cover.out -timeout 20m
+      - gotestsum --format testdox --junitfile pkg.xml ./...

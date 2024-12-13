@@ -39,3 +39,11 @@ dist/
 
 # Ignore depedencies
 charts/*/charts/*.tgz
+
+# Ignore gotestsum junit reports
+charts/charts.xml
+genpartial/genpartial.xml
+genschema/genschema.xml
+gotohelm/gotohelm.xml
+pkg/pkg.xml
+
