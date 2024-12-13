@@ -9,12 +9,6 @@ vars:
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
 
-env:
-  # Redpanda maintains a few private forks of fluxcd repositories (See go.mod
-  # files). GOPRIVATE ensures that go mod commands will understand how to
-  # access them.
-  GOPRIVATE: 'github.com/redpanda-data/*'
-
 includes:
   ci: taskfiles/ci.yml
   k8s: taskfiles/k8s.yml
