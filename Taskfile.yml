@@ -25,6 +25,9 @@ tasks:
       # taskfile land to get properly passed to go list.
       - golangci-lint run --timeout 28m $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
+      - task: test
+        vars:
+          PKG: './pkg/lint'
 
   lint-fix:
     cmds:
