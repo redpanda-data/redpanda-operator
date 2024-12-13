@@ -22,9 +22,6 @@ import (
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,6 +37,10 @@ import (
 	"sigs.k8s.io/kustomize/kustomize/v5/commands/build"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestMain(m *testing.M) {

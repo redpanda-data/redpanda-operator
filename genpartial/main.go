@@ -334,7 +334,10 @@ func GeneratePartial(pkg *packages.Package, structName string, out io.Writer) er
 		if i > 0 {
 			fmt.Fprintf(&buf, "\n\n")
 		}
-		format.Node(&buf, token.NewFileSet(), d)
+		err := format.Node(&buf, token.NewFileSet(), d)
+		if err != nil {
+			return err
+		}
 	}
 
 	formatted, err := gofumpt.Source(buf.Bytes(), gofumpt.Options{})

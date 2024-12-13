@@ -12,13 +12,14 @@ package redpanda
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
+
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestFirstUser(t *testing.T) {
@@ -63,7 +64,7 @@ func TestCertificates(t *testing.T) {
 		"default with non-enabled global cert": {
 			Cert: &redpanda.TLSCert{
 				Enabled: ptr.To(false),
-				SecretRef: &v1.LocalObjectReference{
+				SecretRef: &corev1.LocalObjectReference{
 					Name: "some-cert",
 				},
 			},
@@ -74,7 +75,7 @@ func TestCertificates(t *testing.T) {
 		},
 		"certificate with secret ref": {
 			Cert: &redpanda.TLSCert{
-				SecretRef: &v1.LocalObjectReference{
+				SecretRef: &corev1.LocalObjectReference{
 					Name: "some-cert",
 				},
 			},
@@ -86,7 +87,7 @@ func TestCertificates(t *testing.T) {
 		"certificate with CA": {
 			Cert: &redpanda.TLSCert{
 				CAEnabled: true,
-				SecretRef: &v1.LocalObjectReference{
+				SecretRef: &corev1.LocalObjectReference{
 					Name: "some-cert",
 				},
 			},
@@ -98,10 +99,10 @@ func TestCertificates(t *testing.T) {
 		"certificate with client certificate": {
 			Cert: &redpanda.TLSCert{
 				CAEnabled: true,
-				SecretRef: &v1.LocalObjectReference{
+				SecretRef: &corev1.LocalObjectReference{
 					Name: "some-cert",
 				},
-				ClientSecretRef: &v1.LocalObjectReference{
+				ClientSecretRef: &corev1.LocalObjectReference{
 					Name: "client-cert",
 				},
 			},

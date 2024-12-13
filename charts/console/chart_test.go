@@ -20,10 +20,6 @@ import (
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,6 +28,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestValues asserts that the chart's values.yaml file can be losslessly

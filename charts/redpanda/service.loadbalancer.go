@@ -13,11 +13,12 @@ package redpanda
 import (
 	"fmt"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {

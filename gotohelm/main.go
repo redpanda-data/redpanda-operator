@@ -18,8 +18,9 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
 )
 
 func main() {
@@ -73,6 +74,7 @@ func goList(patterns ...string) ([]string, error) {
 		return nil, nil
 	}
 
+	//nolint:gosec
 	cmd := exec.Command("go", append([]string{"list"}, patterns...)...)
 
 	out, err := cmd.CombinedOutput()
