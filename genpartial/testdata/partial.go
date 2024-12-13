@@ -20,17 +20,17 @@ import (
 )
 
 type PartialExampleStruct struct {
-	A1 PartialMapGeneric[int]                            "json:\",omitempty\""
-	A2 PartialMapGeneric[PartialNestedStruct]            "json:\",omitempty\""
-	A3 PartialMapGeneric[*PartialNestedStruct]           "json:\",omitempty\""
-	A4 PartialMapGeneric[IntAlias]                       "json:\",omitempty\""
-	A5 PartialMapGeneric[PartialMapGeneric[IntAlias]]    "json:\",omitempty\""
-	A6 PartialMapGeneric[PartialMapGeneric[alias1.File]] "json:\",omitempty\""
-	A7 PartialMapGeneric[PartialMapGeneric[fs.FileInfo]] "json:\",omitempty\""
-	A8 *PartialGenericStruct[string]                     "json:\",omitempty\""
-	A9 *PartialGenericStruct[PartialGenericStruct[*int]] "json:\",omitempty\""
-	B1 *int                                              "json:\",omitempty\""
-	B2 *int                                              "json:\",omitempty\""
+	A1 PartialMapGeneric[int]                                "json:\",omitempty\""
+	A2 PartialMapGeneric[PartialNestedStruct]                "json:\",omitempty\""
+	A3 PartialMapGeneric[*PartialNestedStruct]               "json:\",omitempty\""
+	A4 PartialMapGeneric[IntAlias]                           "json:\",omitempty\""
+	A5 PartialMapGeneric[PartialMapGeneric[IntAlias]]        "json:\",omitempty\""
+	A6 PartialMapGeneric[PartialMapGeneric[alias1.File]]     "json:\",omitempty\""
+	A7 PartialMapGeneric[PartialMapGeneric[alias1.FileInfo]] "json:\",omitempty\""
+	A8 *PartialGenericStruct[string]                         "json:\",omitempty\""
+	A9 *PartialGenericStruct[PartialGenericStruct[*int]]     "json:\",omitempty\""
+	B1 *int                                                  "json:\",omitempty\""
+	B2 *int                                                  "json:\",omitempty\""
 	C1 *struct {
 		Any any  "json:\",omitempty\""
 		Int *int "json:\",omitempty\""

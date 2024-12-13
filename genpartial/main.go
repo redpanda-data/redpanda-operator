@@ -390,6 +390,9 @@ func FindAllNames(pkg *types.Package, root types.Type) []*types.Named {
 		case *types.Pointer:
 			push(current.Elem())
 
+		case *types.Array:
+			push(current.Elem())
+
 		case *types.Slice:
 			push(current.Elem())
 
