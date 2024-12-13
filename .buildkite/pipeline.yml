@@ -37,6 +37,7 @@ steps:
             failed: true
             branches:
               - main
+
   - group: Charts tests
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -44,16 +45,24 @@ steps:
       build.env("K8S_NIGHTLY") == "1"
     steps:
       - key: charts-tests
-        label: Charts tests
+        label: Charts tests {{matrix.testpackagename}}
         timeout_in_minutes: 20
         notify:
           - github_commit_status:
               context: charts-tests
         commands:
           - |
-            TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:charts:tests
+            TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:pkg:unit-tests PKG_NAME={{matrix.testpackagename}}
         agents:
           queue: k8s-builders
+        matrix:
+          setup:
+            testpackagename:
+              - charts
+              - genpartial
+              - genschema
+              - gotohelm
+              - pkg
         plugins:
           - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
               json-to-env:
@@ -62,7 +71,7 @@ steps:
                 - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
                 - secret-id: sdlc/prod/buildkite/slack_vbot_token
           - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-              message: ":cloud: K8S Chart tests Jobs failed"
+              message: ":cloud: K8S Chart tests {{matrix.testpackagename}} Jobs failed"
               channel_name: "kubernetes-tests"
               slack_token_env_var_name: "SLACK_VBOT_TOKEN"
               conditions:
@@ -70,17 +79,25 @@ steps:
                 branches:
                   - main
       - key: annotate-charts-tests
-        label: Parse Charts tests
+        label: Parse {{matrix.testpackagename}} tests
         plugins:
-          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
           - junit-annotate#v2.4.1:
-              artifacts: work/charts/charts.xml
+              artifacts: work/{{matrix.testpackagename}}.xml
               report-slowest: 20
         timeout_in_minutes: 0
         agents:
           queue: k8s-builders
         depends_on: charts-tests
         allow_dependency_failure: true
+        matrix:
+          setup:
+            testpackagename:
+              - charts
+              - genpartial
+              - genschema
+              - gotohelm
+              - pkg
+
   - key: release-nightly
     label: ":gandalf: Nightly Operator release"
     timeout_in_minutes: 10
@@ -151,6 +168,7 @@ steps:
             failed: true
             branches:
               - main
+
   - key: k8s-operator-tests-with-flags
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -195,6 +213,7 @@ steps:
             failed: true
             branches:
               - main
+
   - group: K8s Operator v2 Jobs
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
@@ -233,6 +252,7 @@ steps:
           queue: v6-k8s-builders
         depends_on: k8s-operator-v2
         allow_dependency_failure: true
+
   - group: K8s Operator v2 Helm Jobs
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&

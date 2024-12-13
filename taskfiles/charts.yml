@@ -63,22 +63,31 @@ tasks:
       - task: tests:genschema
       - task: tests:gotohelm
       - task: tests:pkg
+
+  kind-cluster:
+    cmds:
+      - kind create cluster --config operator/kind.yaml
+
   tests:charts:
     dir: 'charts'
     cmds:
       - gotestsum --format testdox --junitfile charts.xml ./...
+
   tests:genpartial:
     dir: 'genpartial'
     cmds:
       - gotestsum --format testdox --junitfile genpartial.xml ./...
+
   tests:genschema:
     dir: 'genschema'
     cmds:
       - gotestsum --format testdox --junitfile genschema.xml ./...
+
   tests:gotohelm:
     dir: 'gotohelm'
     cmds:
       - gotestsum --format testdox --junitfile gotohelm.xml ./...
+
   tests:pkg:
     dir: 'pkg'
     cmds:

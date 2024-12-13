@@ -68,3 +68,10 @@ tasks:
   build:images:
     cmds:
       - task: k8s:build-operator-images
+
+  test:
+    vars:
+      PKG: '{{default "./..." .PKG}}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
+    - "{{.GO_TEST_RUNNER}} {{.CLI_FLAGS}} {{.PKG}}"
