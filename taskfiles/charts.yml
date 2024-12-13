@@ -58,6 +58,8 @@ tasks:
   kind-cluster:
     cmds:
       - kind create cluster --config operator/kind.yaml
+    status:
+      - test -n '{{.SKIP_KIND_CLUSTER}}'
 
   tests:charts:
     dir: 'charts'
