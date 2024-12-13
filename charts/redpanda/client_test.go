@@ -23,14 +23,15 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/portforward"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type Client struct {

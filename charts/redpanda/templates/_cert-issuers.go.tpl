@@ -4,9 +4,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_24_issuers__ := (get (fromJson (include "redpanda.certIssuersAndCAs" (dict "a" (list $dot) ))) "r") -}}
-{{- $issuers := (index $_24_issuers__ 0) -}}
-{{- $_ := (index $_24_issuers__ 1) -}}
+{{- $_25_issuers__ := (get (fromJson (include "redpanda.certIssuersAndCAs" (dict "a" (list $dot) ))) "r") -}}
+{{- $issuers := (index $_25_issuers__ 0) -}}
+{{- $_ := (index $_25_issuers__ 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $issuers) | toJson -}}
 {{- break -}}
@@ -17,9 +17,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_29___cas := (get (fromJson (include "redpanda.certIssuersAndCAs" (dict "a" (list $dot) ))) "r") -}}
-{{- $_ := (index $_29___cas 0) -}}
-{{- $cas := (index $_29___cas 1) -}}
+{{- $_30___cas := (get (fromJson (include "redpanda.certIssuersAndCAs" (dict "a" (list $dot) ))) "r") -}}
+{{- $_ := (index $_30___cas 0) -}}
+{{- $cas := (index $_30___cas 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $cas) | toJson -}}
 {{- break -}}

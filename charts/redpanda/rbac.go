@@ -13,9 +13,10 @@ package redpanda
 import (
 	"fmt"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {

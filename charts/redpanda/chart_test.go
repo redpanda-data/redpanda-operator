@@ -23,16 +23,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
-	"github.com/redpanda-data/redpanda-operator/charts/console"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
-	"github.com/redpanda-data/redpanda-operator/pkg/tlsgeneration"
-	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -43,6 +33,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/charts/console"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/tlsgeneration"
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 func TestChart(t *testing.T) {
@@ -229,7 +230,7 @@ func TestChart(t *testing.T) {
 
 		env := h.Namespaced(t)
 
-		env.Ctl().Create(ctx, &corev1.Secret{
+		err := env.Ctl().Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-secret",
 				Namespace: env.Namespace(),
@@ -238,6 +239,7 @@ func TestChart(t *testing.T) {
 				"users.txt": "superuser:superpassword:SCRAM-SHA-512",
 			},
 		})
+		require.NoError(t, err)
 
 		partial := redpanda.PartialValues{
 			External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},

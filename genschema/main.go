@@ -17,12 +17,13 @@ import (
 
 	"github.com/invopop/jsonschema"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/redpanda-data/redpanda-operator/charts/operator"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/redpanda-data/redpanda-operator/charts/operator"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 var schemas = map[string]any{

@@ -14,9 +14,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 )
 
 // TestPartialValuesRoundTrip asserts that any .yaml file in ./ci/ can be round

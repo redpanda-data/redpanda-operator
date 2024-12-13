@@ -13,10 +13,11 @@ package redpanda
 import (
 	"fmt"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func PodDisruptionBudget(dot *helmette.Dot) *policyv1.PodDisruptionBudget {

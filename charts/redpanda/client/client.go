@@ -22,12 +22,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
+
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 
