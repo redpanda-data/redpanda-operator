@@ -46,7 +46,7 @@ func Command() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "run",
+		Use:   "sidecar",
 		Short: "Run the redpanda sidecar",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
