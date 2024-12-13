@@ -13,12 +13,13 @@ package connectors
 import (
 	"fmt"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 func Deployment(dot *helmette.Dot) *appsv1.Deployment {

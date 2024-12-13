@@ -14,22 +14,31 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	corev1 "k8s.io/api/core/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 const (
-	redpanda_22_2_0               = ">=22.2.0-0 || <0.0.1-0"
-	redpanda_22_3_0               = ">=22.3.0-0 || <0.0.1-0"
-	redpanda_23_1_1               = ">=23.1.1-0 || <0.0.1-0"
-	redpanda_23_1_2               = ">=23.1.2-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_22_2_0 = ">=22.2.0-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_22_3_0 = ">=22.3.0-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_23_1_1 = ">=23.1.1-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_23_1_2 = ">=23.1.2-0 || <0.0.1-0"
+	//nolint:stylecheck
 	redpanda_22_3_atleast_22_3_13 = ">=22.3.13-0,<22.4"
+	//nolint:stylecheck
 	redpanda_22_2_atleast_22_2_10 = ">=22.2.10-0,<22.3"
-	redpanda_23_2_1               = ">=23.2.1-0 || <0.0.1-0"
-	redpanda_23_3_0               = ">=23.3.0-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_23_2_1 = ">=23.2.1-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_23_3_0 = ">=23.3.0-0 || <0.0.1-0"
 )
 
 // Create chart name and version as used by the chart label.
@@ -345,34 +354,42 @@ func ContainerSecurityContext(dot *helmette.Dot) corev1.SecurityContext {
 	}
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_22_2_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_2_0)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_22_3_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_3_0)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_23_1_1(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_23_1_1)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_23_1_2(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_23_1_2)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_22_3_atleast_22_3_13(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_3_atleast_22_3_13)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_22_2_atleast_22_2_10(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_2_atleast_22_2_10)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_23_2_1(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_23_2_1)
 }
 
+//nolint:stylecheck
 func RedpandaAtLeast_23_3_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_23_3_0)
 }

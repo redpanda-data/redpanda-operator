@@ -86,6 +86,7 @@ type KubeRBACProxyConfig struct {
 }
 
 type Config struct {
+	//nolint:stylecheck
 	ApiVersion     string               `json:"apiVersion"`
 	Kind           string               `json:"kind"`
 	Health         HealthConfig         `json:"health"`

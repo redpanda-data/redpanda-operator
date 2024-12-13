@@ -14,11 +14,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 const (
@@ -41,6 +42,7 @@ const (
 	// The token file would then be accessible at /var/run/secrets/kubernetes.io/serviceaccount
 	// Reference
 	// https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L55-L57
+	//nolint:gosec
 	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
 )
 
@@ -462,6 +464,7 @@ func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Cont
 	}
 }
 
+//nolint:stylecheck
 func securityContextUidGid(dot *helmette.Dot, containerName string) (int64, int64) {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -874,6 +877,8 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) *corev1.Container {
 }
 
 // adminApiURLs was: admin-api-urls
+//
+//nolint:stylecheck
 func adminApiURLs(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
 

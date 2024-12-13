@@ -14,8 +14,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
 // Expand the name of the chart.
@@ -128,7 +129,7 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 		original.Spec.AutomountServiceAccountToken = overrides.Spec.AutomountServiceAccountToken
 	}
 
-	//lint:ignore S1009 ImagePullSecrets can have elements
+	//nolint:gosimple
 	if overrides.Spec.ImagePullSecrets != nil && len(overrides.Spec.ImagePullSecrets) > 0 {
 		original.Spec.ImagePullSecrets = overrides.Spec.ImagePullSecrets
 	}
@@ -151,12 +152,12 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 		)
 	}
 
-	//lint:ignore S1009 TopologySpreadConstraints can have elements
+	//nolint:gosimple
 	if overrides.Spec.TopologySpreadConstraints != nil && len(overrides.Spec.TopologySpreadConstraints) > 0 {
 		original.Spec.TopologySpreadConstraints = overrides.Spec.TopologySpreadConstraints
 	}
 
-	//lint:ignore S1009 Volumes can have elements
+	//nolint:gosimple
 	if overrides.Spec.Volumes != nil && len(overrides.Spec.Volumes) > 0 {
 		newVolumes := []corev1.Volume{}
 		overrideVolumes := map[string]corev1.Volume{}
@@ -232,12 +233,12 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 		original.Spec.SchedulerName = overrides.Spec.SchedulerName
 	}
 
-	//lint:ignore S1009 Tolerations can have elements
+	//nolint:gosimple
 	if overrides.Spec.Tolerations != nil && len(overrides.Spec.Tolerations) > 0 {
 		original.Spec.Tolerations = overrides.Spec.Tolerations
 	}
 
-	//lint:ignore S1009 HostAliases can have elements
+	//nolint:gosimple
 	if overrides.Spec.HostAliases != nil && len(overrides.Spec.HostAliases) > 0 {
 		original.Spec.HostAliases = overrides.Spec.HostAliases
 	}
@@ -257,7 +258,7 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 		)
 	}
 
-	//lint:ignore S1009 ReadinessGates can have elements
+	//nolint:gosimple
 	if overrides.Spec.ReadinessGates != nil && len(overrides.Spec.ReadinessGates) > 0 {
 		original.Spec.ReadinessGates = overrides.Spec.ReadinessGates
 	}
@@ -291,12 +292,12 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 		original.Spec.HostUsers = overrides.Spec.HostUsers
 	}
 
-	//lint:ignore S1009 SchedulingGates can have elements
+	//nolint:gosimple
 	if overrides.Spec.SchedulingGates != nil && len(overrides.Spec.SchedulingGates) > 0 {
 		original.Spec.SchedulingGates = overrides.Spec.SchedulingGates
 	}
 
-	//lint:ignore S1009 ResourceClaims can have elements
+	//nolint:gosimple
 	if overrides.Spec.ResourceClaims != nil && len(overrides.Spec.ResourceClaims) > 0 {
 		original.Spec.ResourceClaims = overrides.Spec.ResourceClaims
 	}

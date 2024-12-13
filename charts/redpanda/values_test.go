@@ -609,7 +609,7 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 
 			require.EqualValues(t, tc.Expected, envvars)
 
-			// Assert that any envvars have corrosponding placeholders at the
+			// Assert that any envvars have corresponding placeholders at the
 			// expected keys in the config. See also: [BootstrapFile].
 			for _, envar := range envvars {
 				key := strings.ToLower(envar.Name[len("REDPANDA_"):])

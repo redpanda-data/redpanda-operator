@@ -11,15 +11,18 @@
 package main
 
 import (
+	//nolint:stylecheck
 	"bytes"
+	//nolint:stylecheck
 	alias2 "bytes"
 	alias1 "os"
 	"testing"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 type (

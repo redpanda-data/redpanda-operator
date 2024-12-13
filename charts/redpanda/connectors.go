@@ -13,11 +13,12 @@ package redpanda
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
+
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 // connectorsChartIntegration plumbs redpanda connection information into the connectors subchart.
