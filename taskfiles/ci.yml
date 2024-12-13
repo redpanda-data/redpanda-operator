@@ -149,8 +149,16 @@ tasks:
       # Fail on any generated diffs.
       - git diff --exit-code
 
-  charts:tests:
+  pkg:unit-tests:
+    vars:
+      PKG_NAME: '{{default "charts" .PKG_NAME}}'
     cmds:
       - task: configure-git-private-repo
-      - kind create cluster --config operator/kind.yaml
-      - task: :charts:tests
+      - defer: 'kind delete clusters --all'
+      - task: :charts:kind-cluster
+      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/{{.PKG_NAME}}.xml'
+      - task: :test
+        vars:
+          GO_TEST_RUNNER: "gotestsum"
+          CLI_FLAGS: "--format testdox --junitfile {{.PKG_NAME}}.xml"
+          PKG: "./{{.PKG_NAME}}/..."
