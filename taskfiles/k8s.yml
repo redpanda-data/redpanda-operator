@@ -1,14 +1,5 @@
 version: '3'
 
-env:
-  # some of the tasks defined in this file are executed in containers
-  # see https://github.com/golang/go/issues/53640 for details on why
-  # 1.19.2 fails to deal with modules with nested repositories. Once
-  # the fix for #53640 is included in a release, either next minor for
-  # 1.19 or 1.20, this can be removed
-  GOFLAGS: -buildvcs=false
-  GOPRIVATE: github.com/redpanda-data/flux-controller-shim
-
 tasks:
 
   generate:
