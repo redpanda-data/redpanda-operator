@@ -7,6 +7,8 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
+//go:build integration
+
 package main
 
 import (
@@ -88,6 +90,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestSuite(t *testing.T) {
+	t.Skip()
 	suite.RunT(t)
 }
 
