@@ -28,7 +28,7 @@ require (
 	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/net v0.1.0
-	github.com/redpanda-data/common-go/rpadmin v0.1.9
+	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20241213223629-113b96483733
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000

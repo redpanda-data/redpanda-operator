@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
-	github.com/redpanda-data/common-go/rpadmin v0.1.9
+	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20241213223629-113b96483733
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
