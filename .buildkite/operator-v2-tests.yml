@@ -1,0 +1,58 @@
+steps:
+  - group: K8s Operator v2 Jobs
+    if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    steps:
+      - key: k8s-operator-v2
+        label: Operator v2 e2e tests
+        timeout: 100
+        notify:
+          - github_commit_status:
+              context: k8s-operator-v2
+        commands:
+          - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2
+        agents:
+          queue: v6-amd64-builders-m6id
+        plugins:
+          - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+              json-to-env:
+                - secret-id: sdlc/prod/buildkite/active_directory
+                - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
+                - secret-id: sdlc/prod/buildkite/buildkite_api_token
+                - secret-id: sdlc/prod/buildkite/cdt_gcp
+                - secret-id: sdlc/prod/buildkite/cdt_runner_aws
+                - secret-id: sdlc/prod/buildkite/ci_db
+                - secret-id: sdlc/prod/buildkite/cloudsmith
+                - secret-id: sdlc/prod/buildkite/dockerhub
+                - secret-id: sdlc/prod/buildkite/gh_token
+                - secret-id: sdlc/prod/buildkite/github_api_token
+                - secret-id: sdlc/prod/buildkite/grafana_token
+                - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+                - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
+                - secret-id: sdlc/prod/buildkite/rpk_test_client
+                - secret-id: sdlc/prod/buildkite/seceng_audit_aws
+                - secret-id: sdlc/prod/buildkite/slack_vbot_token
+                - secret-id: sdlc/prod/buildkite/teleport_bot_token
+                - secret-id: sdlc/prod/buildkite/test_result_dsn
+          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+              message: ":cloud: K8s Operator v2 Jobs failed"
+              channel_name: "kubernetes-tests"
+              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+              conditions:
+                failed: true
+                branches:
+                  - main
+      - key: annotate-v2-testresults
+        label: Parse Operator v2 e2e Test Results
+        plugins:
+          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
+          - junit-annotate#v2.4.1:
+              artifacts: work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml
+              report-slowest: 5
+        timeout_in_minutes: 0
+        agents:
+          queue: pipeline-uploader
+        depends_on: k8s-operator-v2
+        allow_dependency_failure: true

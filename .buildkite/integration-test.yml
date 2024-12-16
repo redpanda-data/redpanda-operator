@@ -1,0 +1,44 @@
+steps:
+  - group: integration-tests
+    if: |
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.tag == null ||
+      build.env("K8S_NIGHTLY") == "1"
+    steps:
+      - key: integration-tests
+        label: Integration tests
+        timeout_in_minutes: 180
+        notify:
+          - github_commit_status:
+              context: integration-tests
+        commands:
+          - |
+            ./ci/scripts/run-in-nix-docker.sh task ci:integration-test
+        agents:
+          queue: v6-amd64-builders-m6id
+        plugins:
+          - seek-oss/aws-sm#v2.3.2:
+              json-to-env:
+                - secret-id: sdlc/prod/buildkite/github_api_token
+                - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+                - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
+                - secret-id: sdlc/prod/buildkite/slack_vbot_token
+          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+              message: ":cloud: integration tests Jobs failed"
+              channel_name: "kubernetes-tests"
+              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+              conditions:
+                failed: true
+                branches:
+                  - main
+      - key: annotate-operator-tests
+        label: "Parse integration tests"
+        plugins:
+          - junit-annotate#v2.4.1:
+              artifacts: "work/integration-tests.xml"
+              report-slowest: 20
+        timeout_in_minutes: 0
+        agents:
+          queue: pipeline-uploader
+        depends_on: integration-tests
+        allow_dependency_failure: true

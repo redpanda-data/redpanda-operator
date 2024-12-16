@@ -140,7 +140,7 @@ tasks:
       # Fail on any generated diffs.
       - git diff --exit-code
 
-  operator:unit-test:
+  integration-test:
     deps:
       # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
       - task: :k8s:set-aio-max
@@ -154,24 +154,21 @@ tasks:
           USE_SUDO: "false"
     cmds:
       - task: configure-git-private-repo
-      - kind delete clusters --all
-      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/operator.xml'
+      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/integration-tests.xml'
       - task: :test
         vars:
           GO_TEST_RUNNER: "gotestsum"
-          CLI_FLAGS: "--format standard-verbose --junitfile operator.xml"
-          PKG: "./operator/..."
+          CLI_FLAGS: '--format testdox --junitfile unit-tests.xml --packages="./..." -- -timeout=30m --tags integration -run "^TestIntegration"'
 
-  pkg:unit-tests:
+  unit-tests:
     vars:
-      PKG_NAME: '{{default "charts" .PKG_NAME}}'
+      PKG: '{{default "./charts/..." .PKG}}'
     cmds:
       - task: configure-git-private-repo
       - defer: 'kind delete clusters --all'
       - task: :charts:kind-cluster
-      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/{{.PKG_NAME}}.xml'
+      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/unit-tests.xml'
       - task: :test
         vars:
           GO_TEST_RUNNER: "gotestsum"
-          CLI_FLAGS: "--format testdox --junitfile {{.PKG_NAME}}.xml"
-          PKG: "./{{.PKG_NAME}}/..."
+          CLI_FLAGS: '--format testdox --junitfile unit-tests.xml --packages="./..." -- -timeout=30m'
