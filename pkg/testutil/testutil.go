@@ -79,6 +79,52 @@ func Context(t *testing.T) context.Context {
 	return ctx
 }
 
+// SkipIfNotIntegration skips t if the integration build tag has not be
+// specified or -short has been specified. It additionally asserts that callers
+// are appropriately prefixed with `TestIntegration` and that an appropriate
+// `-timeout` value has been specified. To run integration tests, invoke go
+// test as:
+// `go test ./... --tags integration -run '^TestIntegration' -timeout 10m`
+// Usage:
+//
+//	func TestIntegrationSomeIntegrationTest(t *testing.T) {
+//		SkipIfNotIntegration(t, time.Hour)
+//	}
+func SkipIfNotIntegration(t *testing.T) {
+	const prefix = "TestIntegration"
+
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotIntegration must be prefixed with %q; got: %s", prefix, t.Name())
+	}
+
+	if skipIntegrationTests {
+		t.Skipf("integration build flag not set; skipping integration test")
+	} else if testing.Short() {
+		t.Skipf("-short specified; skipping integration test")
+	} else {
+		RequireTimeout(t, 20*time.Minute)
+	}
+}
+
+// RequireTimeout asserts that the `-timeout` flag is at least `minimum`.
+// Usage:
+//
+//	func TestLogThing(t *testing.T) {
+//		RequireTimeout(t, time.Hour)
+//	}
+func RequireTimeout(t *testing.T, minimum time.Duration) {
+	deadline, ok := t.Deadline()
+	if !ok {
+		return
+	}
+
+	timeout := time.Until(deadline).Round(time.Minute)
+
+	if timeout < minimum {
+		t.Fatalf("-timeout is too low. needed at least %s; got: %s", minimum, timeout)
+	}
+}
+
 // Writer wraps a [testing.T] to implement [io.Writer] by utilizing
 // [testing.T.Log].
 type Writer struct {
