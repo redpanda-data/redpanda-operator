@@ -1459,9 +1459,6 @@ func (t *Transpiler) typeOf(expr ast.Expr) types.Type {
 }
 
 func (t *Transpiler) zeroOf(typ types.Type) Node {
-	// TODO need to detect and reject or special case implementors of
-	// json.Marshaler. Getting a handle to a that interface is... difficult.
-
 	// Special cases.
 	switch typ.String() {
 	case "k8s.io/apimachinery/pkg/apis/meta/v1.Time":
@@ -1470,6 +1467,30 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 		// IntOrString's zero value appears to marshal to a 0 though it's
 		// unclear how correct this is.
 		return &Literal{Value: "0"}
+	case "k8s.io/apimachinery/pkg/api/resource.Quantity":
+		return &Literal{Value: `"0"`}
+	}
+
+	// If encoding/json is in the dependency chain for this package, we'll
+	// enable some additional checks (because it's other wise very difficult to
+	// check for implementation of {M,Unm}arshaller...)
+	if json, ok := t.packages["encoding/json"]; ok {
+		marshaller := json.Types.Scope().Lookup("Marshaler").Type().Underlying().(*types.Interface)
+		unmarshaller := json.Types.Scope().Lookup("Unmarshaler").Type().Underlying().(*types.Interface)
+
+		ptr := types.NewPointer(typ)
+
+		// If we can get a handle to Marshaler and Unmarshaler, we'll error out
+		// on any types that implement either and aren't special cased as their
+		// JSON representation likely won't match what we can infer from the go
+		// type.
+		switch {
+		case types.Implements(typ, unmarshaller),
+			types.Implements(typ, marshaller),
+			types.Implements(ptr, marshaller),
+			types.Implements(ptr, unmarshaller):
+			panic(fmt.Sprintf("unsupported type %q implemented json.Unmarshaler or json.Marshaller and needs to be special cased but isn't currently", typ.String()))
+		}
 	}
 
 	switch underlying := typ.Underlying().(type) {

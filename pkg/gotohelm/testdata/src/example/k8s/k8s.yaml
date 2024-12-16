@@ -90,8 +90,10 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- $varZero := "0" -}}
+{{- $resources := (dict ) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "MustParse" $quantities "Value" $value "String" $strs )) | toJson -}}
+{{- (dict "r" (dict "MustParse" $quantities "Value" $value "String" $strs "dictZero" (ternary (index $resources "cpu") "0" (hasKey $resources "cpu")) "varZero" $varZero )) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

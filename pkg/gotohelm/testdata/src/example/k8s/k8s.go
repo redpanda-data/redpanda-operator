@@ -181,9 +181,16 @@ func quantity(dot *helmette.Dot) map[string]any {
 		value = append(value, q.Value())
 	}
 
+	// Intentionally generate zero values of resource.Quantity to assert that
+	// zeroOf handles it.
+	var varZero resource.Quantity
+	resources := corev1.ResourceList{}
+
 	return map[string]any{
 		"MustParse": quantities,
 		"Value":     value,
 		"String":    strs,
+		"dictZero":  resources[corev1.ResourceCPU],
+		"varZero":   varZero,
 	}
 }
