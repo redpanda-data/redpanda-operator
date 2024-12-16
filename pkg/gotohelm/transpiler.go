@@ -923,6 +923,46 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		}
 
 	case *ast.IndexExpr:
+		// IndexExprs handle (n.X)[n.Index] as an expression i.e. map tests (_,
+		// _ = X[Index]) are NOT handled here (see
+		// [Transpiler.transpileMVAssignStmt]).
+
+		switch typ := t.typeOf(n.X).Underlying().(type) {
+		case *types.Map:
+			// if the zero value of elem's type is NOT nil, we need to
+			// replicate go's behavior of returning zero values on missing
+			// keys.
+			elemZero := t.zeroOf(typ.Elem())
+			if _, ok := elemZero.(*Nil); !ok {
+				// This behavior is replicated using sprig's ternary function.
+				// Admittedly, this could cause unexpected behavior if either
+				// expr or index are particularly complex or have side effects.
+				// In practice, this, thankfully, has not been the case.
+				expr := t.transpileExpr(n.X)
+				index := t.transpileExpr(n.Index)
+
+				// X[index] -> (ternary (index X index) (zero) (hasKey X index))
+				return &BuiltInCall{
+					// Ternary signature is (trueVal, falseVal, testVal)
+					FuncName: "ternary",
+					Arguments: []Node{
+						&BuiltInCall{
+							FuncName:  "index",
+							Arguments: []Node{expr, index},
+						},
+						elemZero,
+						&BuiltInCall{
+							FuncName:  "hasKey",
+							Arguments: []Node{expr, index},
+						},
+					},
+				}
+			}
+		}
+
+		// Otherwise, text/template's builtin index function handles everything
+		// for us as it returns nil for missing keys due to all maps being
+		// `map[string]any`'s.
 		return &BuiltInCall{
 			FuncName: "index",
 			Arguments: []Node{

@@ -212,7 +212,7 @@
 {{- $s1 := "one " -}}
 {{- $s2 := "two" -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (gt (1 | int) (2 | int)) (lt (1 | int) (2 | int)) (ge (1 | int) (2 | int)) (le (1 | int) (2 | int)) (ge (2 | int) (2 | int)) (le (2 | int) (2 | int)) (printf "%s%s" "string " "concatenation") (printf "%s%s" $s1 $s2) (printf "%s%s" "one" $s2) (printf "%s%s" $s1 "two"))) | toJson -}}
+{{- (dict "r" (list (gt (1 | int) (2 | int)) (lt (1 | int) (2 | int)) (ge (1 | int) (2 | int)) (le (1 | int) (2 | int)) (ge (2 | int) (2 | int)) (le (2 | int) (2 | int)) (printf "%s%s" "string " "concatenation") (printf "%s%s" $s1 $s2) (printf "%s%s" "one" $s2) (printf "%s%s" $s1 "two") (ternary (index (dict ) "missing") 0 (hasKey (dict ) "missing")) (ternary (index (dict ) "missing") "" (hasKey (dict ) "missing")) (ternary (index (dict ) "missing") false (hasKey (dict ) "missing")) (ternary (index (dict ) "missing") (dict "Foo" 0 ) (hasKey (dict ) "missing")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

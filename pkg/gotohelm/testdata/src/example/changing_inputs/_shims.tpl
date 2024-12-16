@@ -301,7 +301,7 @@
 {{- $_ := (fail (printf "invalid Duration: %q" $original)) -}}
 {{- end -}}
 {{- $repr = (substr ((get (fromJson (include "_shims.len" (dict "a" (list $unit) ))) "r") | int) -1 $repr) -}}
-{{- $value = ((add $value (((mul (int64 $n) (index $unitMap $unit)) | int64))) | int64) -}}
+{{- $value = ((add $value (((mul (int64 $n) (ternary (index $unitMap $unit) 0 (hasKey $unitMap $unit))) | int64))) | int64) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
