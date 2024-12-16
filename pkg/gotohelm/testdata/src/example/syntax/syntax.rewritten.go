@@ -237,6 +237,12 @@ func binaryExprs() []any {
 		s1 + s2,
 		"one" + s2,
 		s1 + "two",
+		// Ensure that indexing into a map with a missing key generates the
+		// correct zero value.
+		map[string]int{}["missing"],
+		map[string]string{}["missing"],
+		map[string]bool{}["missing"],
+		map[string]struct{ Foo int }{}["missing"],
 	}
 }
 
