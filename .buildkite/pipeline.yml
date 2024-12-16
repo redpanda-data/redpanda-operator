@@ -9,95 +9,6 @@ env:
   # work well with podman.
   TESTCONTAINERS_RYUK_DISABLED: "true"
 steps:
-  - key: chart-lint
-    label: Charts lint
-    if: |
-      build.env("NIGHTLY_RELEASE") != "true" &&
-      build.tag == null ||
-      build.env("K8S_NIGHTLY") == "1"
-    timeout_in_minutes: 30
-    notify:
-      - github_commit_status:
-          context: charts-lint
-    commands:
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:lint
-    agents:
-      queue: v6-amd64-builders-m6id
-    plugins:
-      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
-          json-to-env:
-            - secret-id: sdlc/prod/buildkite/github_api_token
-            - secret-id: sdlc/prod/buildkite/slack_vbot_token
-      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: ":cloud: K8S Chart lint Jobs failed"
-          channel_name: "kubernetes-tests"
-          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-          conditions:
-            failed: true
-            branches:
-              - main
-
-  - group: Charts tests
-    if: |
-      build.env("NIGHTLY_RELEASE") != "true" &&
-      build.tag == null ||
-      build.env("K8S_NIGHTLY") == "1"
-    steps:
-      - key: charts-tests
-        label: Charts tests {{matrix.testpackagename}}
-        timeout_in_minutes: 20
-        notify:
-          - github_commit_status:
-              context: charts-tests
-        commands:
-          - |
-            TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:pkg:unit-tests PKG_NAME={{matrix.testpackagename}}
-        agents:
-          queue: v6-amd64-builders-m6id
-        matrix:
-          setup:
-            testpackagename:
-              - charts
-              - genpartial
-              - genschema
-              - gotohelm
-              - pkg
-        plugins:
-          - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
-              json-to-env:
-                - secret-id: sdlc/prod/buildkite/github_api_token
-                - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-                - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
-                - secret-id: sdlc/prod/buildkite/slack_vbot_token
-          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-              message: ":cloud: K8S Chart tests {{matrix.testpackagename}} Jobs failed"
-              channel_name: "kubernetes-tests"
-              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-              conditions:
-                failed: true
-                branches:
-                  - main
-      - key: annotate-charts-tests
-        label: Parse {{matrix.testpackagename}} tests
-        plugins:
-          - junit-annotate#v2.4.1:
-              artifacts: work/{{matrix.testpackagename}}.xml
-              report-slowest: 20
-        timeout_in_minutes: 0
-        agents:
-          queue: pipeline-uploader
-        depends_on: charts-tests
-        allow_dependency_failure: true
-        matrix:
-          setup:
-            testpackagename:
-              - charts
-              - genpartial
-              - genschema
-              - gotohelm
-              - pkg
-
   - key: release-nightly
     label: ":gandalf: Nightly Operator release"
     timeout_in_minutes: 10
@@ -127,77 +38,53 @@ steps:
             branches:
               - main
 
-  - group: operator-unit-tests
+  - key: operator-lint
+    label: Lint operator repo
     if: |
       build.env("NIGHTLY_RELEASE") != "true" &&
       build.tag == null ||
       build.env("K8S_NIGHTLY") == "1"
-    steps:
-      - key: operator-unit-tests
-        label: Operator unit tests
-        timeout_in_minutes: 180
-        notify:
-          - github_commit_status:
-              context: k8s-operator
-        commands:
-          - ./ci/scripts/run-in-nix-docker.sh task ci:operator:unit-test
-        agents:
-          queue: v6-amd64-builders-m6id
-        plugins:
-          - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
-              json-to-env:
-                - secret-id: sdlc/prod/buildkite/active_directory
-                - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
-                - secret-id: sdlc/prod/buildkite/buildkite_api_token
-                - secret-id: sdlc/prod/buildkite/cdt_gcp
-                - secret-id: sdlc/prod/buildkite/cdt_runner_aws
-                - secret-id: sdlc/prod/buildkite/ci_db
-                - secret-id: sdlc/prod/buildkite/cloudsmith
-                - secret-id: sdlc/prod/buildkite/dockerhub
-                - secret-id: sdlc/prod/buildkite/gh_token
-                - secret-id: sdlc/prod/buildkite/github_api_token
-                - secret-id: sdlc/prod/buildkite/grafana_token
-                - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-                - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
-                - secret-id: sdlc/prod/buildkite/rpk_test_client
-                - secret-id: sdlc/prod/buildkite/seceng_audit_aws
-                - secret-id: sdlc/prod/buildkite/slack_vbot_token
-                - secret-id: sdlc/prod/buildkite/teleport_bot_token
-                - secret-id: sdlc/prod/buildkite/test_result_dsn
-          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-              message: ":cloud: Operator unit tests Jobs failed"
-              channel_name: "kubernetes-tests"
-              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-              conditions:
-                failed: true
-                branches:
-                  - main
-      - key: annotate-operator-tests
-        label: Parse operator tests
-        plugins:
-          - junit-annotate#v2.4.1:
-              artifacts: work/operator.xml
-              report-slowest: 20
-        timeout_in_minutes: 0
-        agents:
-          queue: k8s-builders
-        depends_on: operator-unit-tests
-        allow_dependency_failure: true
+    timeout_in_minutes: 30
+    notify:
+      - github_commit_status:
+          context: charts-lint
+    commands:
+      - |
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:lint
+      - echo '~~~ pipeline upload unit tests' && buildkite-agent pipeline upload .buildkite/unit-tests.yml
+      - echo '~~~ pipeline upload operator e2e tests with flags' && buildkite-agent pipeline upload .buildkite/operator-e2e-tests-with-flags.yml
+      - echo '~~~ pipeline upload operator integration tests' && buildkite-agent pipeline upload .buildkite/integration-test.yml
+      - echo '~~~ pipeline upload operator v2 e2e tests' && buildkite-agent pipeline upload .buildkite/operator-v2-tests.yml
+    agents:
+      queue: v6-amd64-builders-m6id
+    plugins:
+      - seek-oss/aws-sm#v2.3.2:
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: ":cloud: K8S operator lint Jobs failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+            branches:
+              - main
 
   - key: k8s-operator
-    label: K8s Operator
+    label: Operator v1 E2E tests or release
     timeout_in_minutes: 180
     if: build.env("NIGHTLY_RELEASE") != "true"
     notify:
       - github_commit_status:
-          context: k8s-operator
+          context: k8s-operator-e2e-tests
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
     agents:
       queue: v6-amd64-builders-m6id
     plugins:
-      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+      - seek-oss/aws-sm#v2.3.2:
           json-to-env:
             - secret-id: sdlc/prod/buildkite/active_directory
             - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
@@ -218,94 +105,10 @@ steps:
             - secret-id: sdlc/prod/buildkite/teleport_bot_token
             - secret-id: sdlc/prod/buildkite/test_result_dsn
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: ":cloud: K8s Operator v1 Jobs failed"
+          message: ":cloud: K8s Operator v1 e2e tests Jobs failed"
           channel_name: "kubernetes-tests"
           slack_token_env_var_name: "SLACK_VBOT_TOKEN"
           conditions:
             failed: true
             branches:
               - main
-
-  - key: k8s-operator-tests-with-flags
-    if: |
-      build.env("NIGHTLY_RELEASE") != "true" &&
-      build.tag == null ||
-      build.env("K8S_NIGHTLY") == "1"
-    label: K8s Operator tests with flags
-    timeout_in_minutes: 180
-    notify:
-      - github_commit_status:
-          context: k8s-operator-tests-with-flags
-    commands:
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:run-k8s-tests-with-flags
-    agents:
-      queue: v6-amd64-builders-m6id
-    plugins:
-      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
-          json-to-env:
-            - secret-id: sdlc/prod/buildkite/active_directory
-            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
-            - secret-id: sdlc/prod/buildkite/buildkite_api_token
-            - secret-id: sdlc/prod/buildkite/cdt_gcp
-            - secret-id: sdlc/prod/buildkite/cdt_runner_aws
-            - secret-id: sdlc/prod/buildkite/ci_db
-            - secret-id: sdlc/prod/buildkite/cloudsmith
-            - secret-id: sdlc/prod/buildkite/dockerhub
-            - secret-id: sdlc/prod/buildkite/gh_token
-            - secret-id: sdlc/prod/buildkite/github_api_token
-            - secret-id: sdlc/prod/buildkite/grafana_token
-            - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
-            - secret-id: sdlc/prod/buildkite/rpk_test_client
-            - secret-id: sdlc/prod/buildkite/seceng_audit_aws
-            - secret-id: sdlc/prod/buildkite/slack_vbot_token
-            - secret-id: sdlc/prod/buildkite/teleport_bot_token
-            - secret-id: sdlc/prod/buildkite/test_result_dsn
-      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: ":cloud: K8s Operator v1 Jobs failed"
-          channel_name: "kubernetes-tests"
-          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-          conditions:
-            failed: true
-            branches:
-              - main
-
-  - group: K8s Operator v2 Jobs
-    if: |
-      build.env("NIGHTLY_RELEASE") != "true" &&
-      build.tag == null ||
-      build.env("K8S_NIGHTLY") == "1"
-    steps:
-      - key: k8s-operator-v2
-        label: K8s Operator v2
-        timeout: 100
-        notify:
-          - github_commit_status:
-              context: k8s-operator-v2
-        commands:
-          - ./ci/scripts/run-in-nix-docker.sh task ci:k8s-v2
-        agents:
-          queue: v6-amd64-builders-m6id
-        plugins:
-          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
-          - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-              message: ":cloud: K8s Operator v2 Jobs failed"
-              channel_name: "kubernetes-tests"
-              slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-              conditions:
-                failed: true
-                branches:
-                  - main
-      - key: annotate-v2-testresults
-        label: Parse Operator v2 Test Results
-        plugins:
-          - seek-oss/aws-sm#v2.3.2: *aws-sm-plugin
-          - junit-annotate#v2.4.1:
-              artifacts: work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml
-              report-slowest: 5
-        timeout_in_minutes: 0
-        agents:
-          queue: pipeline-uploader
-        depends_on: k8s-operator-v2
-        allow_dependency_failure: true
