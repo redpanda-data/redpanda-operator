@@ -931,6 +931,11 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 			Interval: metav1.Duration{Duration: 30 * time.Second},
 			Timeout:  timeout,
 			Upgrade:  upgrade,
+			Install: &helmv2beta2.Install{
+				Remediation: &helmv2beta2.InstallRemediation{
+					Retries: -1,
+				},
+			},
 		},
 	}, nil
 }
