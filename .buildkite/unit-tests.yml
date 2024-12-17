@@ -13,7 +13,7 @@ steps:
               context: unit-tests
         commands:
           - |
-            ./ci/scripts/run-in-nix-docker.sh task ci:unit-tests
+            ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:unit
         agents:
           queue: v6-amd64-builders-m6id
         plugins:

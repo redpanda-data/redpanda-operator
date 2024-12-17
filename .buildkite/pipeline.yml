@@ -16,7 +16,7 @@ steps:
       queue: k8s-builders
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:publish-k8s-nightly-artifacts
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-k8s-nightly-artifacts
     if: build.branch == "main" && build.source == "schedule" && build.env("NIGHTLY_RELEASE") == "true"
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
@@ -50,7 +50,7 @@ steps:
           context: charts-lint
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:lint
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:lint
       - echo '~~~ pipeline upload unit tests' && buildkite-agent pipeline upload .buildkite/unit-tests.yml
       - echo '~~~ pipeline upload operator e2e tests with flags' && buildkite-agent pipeline upload .buildkite/operator-e2e-tests-with-flags.yml
       - echo '~~~ pipeline upload operator integration tests' && buildkite-agent pipeline upload .buildkite/integration-test.yml
@@ -80,7 +80,7 @@ steps:
           context: k8s-operator-e2e-tests
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:k8s
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:k8s
     agents:
       queue: v6-amd64-builders-m6id
     plugins:
