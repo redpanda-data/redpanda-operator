@@ -112,3 +112,14 @@ steps:
             failed: true
             branches:
               - main
+
+  - key: k8s-operator-v2-helm
+    label: K8s Operator v2 Helm
+    if: build.env("NIGHTLY_RELEASE") != "true"
+    notify:
+      - github_commit_status:
+          context: k8s-operator-v2-helm
+    commands:
+      - echo Tests where failing and K8S disabled this test suite. K8S team want to sunset kuttle base tests to new testing framework. If any of those test would be beneficial then they will be backported
+    agents:
+      queue: pipeline-uploader
