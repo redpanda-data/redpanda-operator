@@ -4,6 +4,16 @@ vars:
   DOCKER_REGISTRY: '778696301129.dkr.ecr.us-west-2.amazonaws.com'
 
 tasks:
+
+  configure:
+    desc: "Configure a CI agent"
+    cmds:
+    # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
+    - task: set-aio-max
+    - task: set-inotify-watches
+    - task: set-inotify-instances
+    - task: configure-git-private-repo
+
   configure-git-private-repo:
     env:
       GITHUB_TOKEN:
@@ -26,7 +36,7 @@ tasks:
     summary: |
       kuttl-artifact-upload should be called in `defer`.
       https://taskfile.dev/usage/#doing-task-cleanup-with-defer
-      
+
       As buildkite pipeline step are wrapped with shell script, that executes
       docker run of a NIX container, where the permission are set to user of
       ID 0 (root). The buildkite agent executor can not resolve glob due to
@@ -59,7 +69,6 @@ tasks:
   run-k8s-v2-tests:
     cmds:
       - 'echo "~~~ Running operator v2 e2e tests :k8s:"'
-      - task: configure-git-private-repo
       - task: :k8s:run-golangci-lint
       - task: :k8s:generate
       - task: :dev:update-licenses
@@ -71,26 +80,12 @@ tasks:
   run-k8s-v2-helm-tests:
     cmds:
       - 'echo "~~~ Running operator v2 helm-ci e2e tests :k8s:"'
-      - task: configure-git-private-repo
       - task: run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-helm-test.yaml
 
   run-k8s-tests:
-    deps:
-      # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
-      - task: :k8s:set-aio-max
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-watches
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-instances
-        vars:
-          USE_SUDO: "false"
     cmds:
-      - 'echo "~~~ Linting operator code :golangci-lint:"'
-      - task: configure-git-private-repo
       - 'echo "~~~ Running operator e2e tests :k8s:"'
       - task: run-kuttl-tests
     status:
@@ -98,7 +93,6 @@ tasks:
 
   run-k8s-tests-with-flags:
     cmds:
-      - task: configure-git-private-repo
       - 'echo "~~~ Running operator e2e tests :k8s:"'
       - task: run-kuttl-tests
         vars:
@@ -109,7 +103,6 @@ tasks:
   publish-k8s-operator-images:
     cmds:
       - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
-      - task: configure-git-private-repo
       - task: :k8s:build-tag-and-push-images
     status:
       - test -z '{{.TAG_NAME}}' # only run for tagged commits
@@ -117,7 +110,6 @@ tasks:
   publish-k8s-nightly-artifacts:
     cmds:
       - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
-      - task: configure-git-private-repo
       - task: :goreleaser:build-operator-binaries
       - task: :k8s:build-and-push-operator-container-image
       # Package and push Operator helm chart to Dockerhub
@@ -134,58 +126,69 @@ tasks:
 
   lint:
     cmds:
-      - task: configure-git-private-repo
       - task: :generate
       - task: :lint
       # Fail on any generated diffs.
       - git diff --exit-code
 
-  integration-test:
-    deps:
-      # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
-      - task: :k8s:set-aio-max
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-watches
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-instances
-        vars:
-          USE_SUDO: "false"
+  test:integration:
     cmds:
-      - task: configure-git-private-repo
       - defer: 'kind delete clusters --all'
       - task: :charts:kind-cluster
       - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/integration-tests.xml'
-      - |
-        pkgs=""
-        for pkg in $(go list -f '{{ .Dir }}' -m "$@"); do
-          pkgs="${pkgs}${pkg}/... "
-        done
-        
-        go test -timeout=30m --tags integration -run "^TestIntegration" -v 2>&1 $pkgs | go-junit-report -iocopy -set-exit-code -out integration-tests.xml
+      - task: :test:integration
+        vars:
+          GO_TEST_RUNNER: gotestsum
+          CLI_ARGS: --junitfile=integration-tests.xml -- {{.CLI_ARGS}}
 
-  unit-tests:
-    deps:
-      # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
-      - task: :k8s:set-aio-max
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-watches
-        vars:
-          USE_SUDO: "false"
-      - task: :k8s:set-inotify-instances
-        vars:
-          USE_SUDO: "false"
+  test:unit:
     cmds:
-      - task: configure-git-private-repo
       - defer: 'kind delete clusters --all'
       - task: :charts:kind-cluster
       - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/unit-tests.xml'
-      - |
-        pkgs=""
-        for pkg in $(go list -f '{{ .Dir }}' -m "$@"); do
-          pkgs="${pkgs}${pkg}/... "
-        done
-        
-        go test -timeout=30m -v 2>&1 $pkgs | go-junit-report -iocopy -set-exit-code -out unit-tests.xml
+      - task: :test:unit
+        vars:
+          GO_TEST_RUNNER: gotestsum
+          CLI_ARGS: '--junitfile=unit-tests.xml -- -timeout=30m {{.CLI_ARGS}}'
+
+  set-aio-max:
+    desc: set minimum required value for fs.aio-max-nr sysctl option
+    vars:
+      MIN_REQUIRED_AIO_MAX: 20971520
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - 'echo "Setting fs.aio-max-nr sysctl option to {{.MIN_REQUIRED_AIO_MAX}}"'
+      - '{{if eq .USE_SUDO "true"}}echo "Please enter your sudo password: "{{end}}'
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.aio-max-nr={{.MIN_REQUIRED_AIO_MAX}}'
+    status:
+      - test {{.MIN_REQUIRED_AIO_MAX}} -le $(sysctl -nb fs.aio-max-nr)
+    platforms:
+      - linux
+
+  set-inotify-watches:
+    desc: |
+      set minimum required value for fs.inotify.max_user_watches sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_WATCHES: 1310720
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_watches={{.MIN_REQUIRED_USER_WATCHES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_WATCHES}} -le $(sysctl -nb fs.inotify.max_user_watches)
+    platforms:
+      - linux
+
+  set-inotify-instances:
+    desc: |
+      set minimum required value for fs.inotify.max_user_instances sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_INSTANCES: 2560
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_instances={{.MIN_REQUIRED_USER_INSTANCES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_INSTANCES}} -le $(sysctl -nb fs.inotify.max_user_instances)
+    platforms:
+      - linux

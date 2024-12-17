@@ -13,7 +13,7 @@ steps:
               context: integration-tests
         commands:
           - |
-            ./ci/scripts/run-in-nix-docker.sh task ci:integration-test
+            ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:integration
         agents:
           queue: v6-amd64-builders-m6id
         plugins:
