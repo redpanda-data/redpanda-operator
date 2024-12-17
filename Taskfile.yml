@@ -18,16 +18,17 @@ includes:
 
 tasks:
   lint:
-    var:
-      ARGS: ""
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
+      PKG: '{{default ._PKG .PKG}}'
     cmds:
-      # NB: go list -f takes a go template string, It needs to be escaped in
-      # taskfile land to get properly passed to go list.
-      - golangci-lint run --timeout 28m $(go list -f '{{"{{.Dir}}"}}/...' -m) {{.CLI_ARGS}}
+      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
-      - task: test
+      - task: test:unit
         vars:
           PKG: './pkg/lint'
+          CLI_ARGS: ''
 
   lint-fix:
     cmds:
@@ -70,9 +71,19 @@ tasks:
     cmds:
       - task: k8s:build-operator-images
 
-  test:
+  test:unit:
     vars:
-      PKG: '{{default "./..." .PKG}}'
+      _PKG:
+        sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
+      PKG: '{{default ._PKG .PKG}}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
-    - "{{.GO_TEST_RUNNER}} {{.CLI_FLAGS}} {{.PKG}}"
+    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
+
+  test:integration:
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER:
+          ref: .GO_TEST_RUNNER
+        CLI_ARGS: '{{.CLI_ARGS}} -run "^TestIntegration" -timeout 20m'
