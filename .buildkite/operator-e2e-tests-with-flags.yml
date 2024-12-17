@@ -11,7 +11,7 @@ steps:
           context: k8s-operator-tests-with-flags
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:run-k8s-tests-with-flags
+        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:run-k8s-tests-with-flags
     agents:
       queue: v6-amd64-builders-m6id
     plugins:

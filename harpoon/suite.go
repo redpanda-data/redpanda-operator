@@ -67,7 +67,9 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 	// i.e. switching namespaces even if we don't delete the old one depending on when namespace
 	// isolation occurs, so consider if it would make sense to add something like a T.AlwaysCleanup
 	// or something that allows us to switch between "optional" and "required" test cleanup.
-	flag.BoolVar(&options.RetainOnFailure, "retain", false, "retain resources when a scenario fails")
+	// TODO(chrisseto): This conflicts with the -retain flag defined in
+	// pkg/testutil. Figure out how to rely on that or "spy" on the already defined flag.
+	// flag.BoolVar(&options.RetainOnFailure, "retain", false, "retain resources when a scenario fails")
 	flag.DurationVar(&options.CleanupTimeout, "cleanup-timeout", 0, "timeout for running any cleanup routines after a scenario")
 	flag.DurationVar(&options.Timeout, "timeout", 0, "timeout for running any individual test")
 	flag.StringVar(&config, "kube-config", "", "path to kube-config to use for scenario runs")
