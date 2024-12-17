@@ -933,6 +933,19 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 			Interval: metav1.Duration{Duration: 30 * time.Second},
 			Timeout:  timeout,
 			Upgrade:  upgrade,
+			Install: &helmv2beta2.Install{
+				Remediation: &helmv2beta2.InstallRemediation{
+					// Per the flux helm remediation docs negative value is set to
+					// reconcile even if client-side cache has stale data.
+					//
+					// Flux Docs:
+					// Retries is the number of retries that should be attempted on
+					// failures before bailing. Remediation, using an uninstall,
+					// is performed between each attempt. Defaults to '0', a negative
+					// integer equals to unlimited retries.
+					Retries: -1,
+				},
+			},
 		},
 	}, nil
 }
