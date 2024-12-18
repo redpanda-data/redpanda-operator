@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1024,7 +1025,6 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 // - pandaproxy.pandaproxy_api
 // - pandaproxy.advertised_pandaproxy_api
 // example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
-// example: redpanda.advertised_kafka_api: "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cluster123.fmc.prd.cloud.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
 func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{}
 
@@ -1032,50 +1032,35 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		return ports
 	}
 
-	additionalNode0Config := config.ProdDefault()
-	for _, k := range additionalListenerCfgNames {
-		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
-			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy", 0), false)
+	getPorts := func(key string) []corev1.ContainerPort {
+		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[key]; found {
+			var ports []corev1.ContainerPort
+			res, err := utils.Compute(v, utils.NewEndpointTemplateData(0, "dummy", r.nodePool.HostIndexOffset), false)
 			if err != nil {
-				r.logger.Error(err, "failed to evaluate template", "template", v)
-				continue
+				r.logger.Error(err, "failed to execute endpoint template", "additionalProperty", key)
+				return nil
 			}
-			err = config.Set(additionalNode0Config, k, res)
-			if err != nil {
-				r.logger.Error(err, "failed to set node config", k, v)
-				continue
-			}
-		}
-	}
 
-	for i := 0; i < int(ptr.Deref(r.nodePool.Replicas, 0)); i++ {
-		for _, n := range additionalNode0Config.Redpanda.AdvertisedKafkaAPI {
-			ports = append(ports, corev1.ContainerPort{
-				Name:          getAdditionalListenerPortName(n.Name, i),
-				ContainerPort: int32(n.Port + i),
-			})
-		}
-		if additionalNode0Config.Pandaproxy != nil {
-			for _, n := range additionalNode0Config.Pandaproxy.AdvertisedPandaproxyAPI {
+			var addrs []config.NamedAuthNSocketAddress
+			if err := yaml.Unmarshal([]byte(res), &addrs); err != nil {
+				r.logger.Error(err, "failed to unmarshal additionalProperty %s into []config.NamedAuthNSocketAddress", "additionalProperty", key)
+				return nil
+			}
+			for _, v := range addrs {
 				ports = append(ports, corev1.ContainerPort{
-					Name:          getAdditionalListenerPortName(n.Name, i),
-					ContainerPort: int32(n.Port + i),
+					Name:          getAdditionalListenerPortName(v.Name),
+					ContainerPort: int32(v.Port),
 				})
 			}
+			return ports
 		}
+		return nil
 	}
-	return ports
-}
 
-// getAdditionalListenerPortName returns the name of container port for additional listener.
-// Container port name must be unique and its length can not exceed 15.
-func getAdditionalListenerPortName(listenerName string, podOrdinal int) string {
-	portName := fmt.Sprintf("%s%d", listenerName, podOrdinal)
-	s := 0
-	if len(portName) > 15 {
-		s = len(portName) - 15
-	}
-	return portName[s:]
+	ports = append(ports, getPorts("redpanda.kafka_api")...)
+	ports = append(ports, getPorts("pandaproxy.pandaproxy_api")...)
+
+	return ports
 }
 
 func (r *StatefulSetResource) fullConfiguratorImage() string {
@@ -1091,6 +1076,16 @@ func (r *StatefulSetResource) Version() string {
 		return redpandaContainerVersion(lastObservedSts.Spec.Template.Spec.Containers)
 	}
 	return ""
+}
+
+// getAdditionalListenerPortName returns the name of container port for additional listener.
+// Container port name must be unique and its length can not exceed 15.
+func getAdditionalListenerPortName(listenerName string) string {
+	s := 0
+	if len(listenerName) > 15 {
+		s = len(listenerName) - 15
+	}
+	return listenerName[s:]
 }
 
 func redpandaContainerVersion(containers []corev1.Container) string {
