@@ -955,18 +955,16 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 						},
 					},
 					AdditionalConfiguration: map[string]string{
-						"redpanda.advertised_kafka_api": "[{'name':'pl-kafka','address':'0.0.0.0','port': {{30092 | add .Index}}}]",
+						"redpanda.kafka_api": "[{'name':'pl-kafka','address':'0.0.0.0','port': {{30092 | add .Index}}}]",
 					},
 				},
 			},
 			expectedContainerPorts: []corev1.ContainerPort{
-				{Name: "pl-kafka0", ContainerPort: 30092},
-				{Name: "pl-kafka1", ContainerPort: 30093},
-				{Name: "pl-kafka2", ContainerPort: 30094},
+				{Name: "pl-kafka", ContainerPort: 30092},
 			},
 		},
 		{
-			name: "additional kafka and panda proxy listeners",
+			name: "do not add advertised listeners",
 			pandaCluster: &vectorizedv1alpha1.Cluster{
 				Spec: vectorizedv1alpha1.ClusterSpec{
 					NodePools: []vectorizedv1alpha1.NodePoolSpec{
@@ -981,13 +979,28 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectedContainerPorts: []corev1.ContainerPort{},
+		},
+
+		{
+			name: "additional kafka and panda proxy listeners",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					AdditionalConfiguration: map[string]string{
+						"redpanda.kafka_api":        "[{'name':'pl-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
+						"pandaproxy.pandaproxy_api": "[{'name':'pl-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
+					},
+				},
+			},
 			expectedContainerPorts: []corev1.ContainerPort{
-				{Name: "pl-kafka0", ContainerPort: 30092},
-				{Name: "pl-kafka1", ContainerPort: 30093},
-				{Name: "pl-kafka2", ContainerPort: 30094},
-				{Name: "pl-proxy0", ContainerPort: 39282},
-				{Name: "pl-proxy1", ContainerPort: 39283},
-				{Name: "pl-proxy2", ContainerPort: 39284},
+				{Name: "pl-kafka", ContainerPort: 30092},
+				{Name: "pl-proxy", ContainerPort: 39282},
 			},
 		},
 		{
@@ -1001,18 +1014,14 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 						},
 					},
 					AdditionalConfiguration: map[string]string{
-						"redpanda.advertised_kafka_api":        "[{'name':'private-link-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
-						"pandaproxy.advertised_pandaproxy_api": "[{'name':'private-link-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
+						"redpanda.kafka_api":        "[{'name':'private-link-kafka','address':'0.0.0.0', 'port': {{30092 | add .Index}}}]",
+						"pandaproxy.pandaproxy_api": "[{'name':'private-link-proxy','address':'0.0.0.0', 'port': {{39282 | add .Index}}}]",
 					},
 				},
 			},
 			expectedContainerPorts: []corev1.ContainerPort{
-				{Name: "ate-link-kafka0", ContainerPort: 30092},
-				{Name: "ate-link-kafka1", ContainerPort: 30093},
-				{Name: "ate-link-kafka2", ContainerPort: 30094},
-				{Name: "ate-link-proxy0", ContainerPort: 39282},
-				{Name: "ate-link-proxy1", ContainerPort: 39283},
-				{Name: "ate-link-proxy2", ContainerPort: 39284},
+				{Name: "vate-link-kafka", ContainerPort: 30092},
+				{Name: "vate-link-proxy", ContainerPort: 39282},
 			},
 		},
 	}
@@ -1027,6 +1036,7 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				true)
 			containerPorts := r.GetPortsForListenersInAdditionalConfig()
 			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
+
 			for _, cp := range containerPorts {
 				found := false
 				for _, p := range tt.expectedContainerPorts {
