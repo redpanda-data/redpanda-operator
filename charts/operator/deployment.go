@@ -143,7 +143,7 @@ func operatorContainers(dot *helmette.Dot, podTerminationGracePeriodSeconds *int
 func kubeRBACProxyVolumeMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !(values.ServiceAccount.Create && !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false)) {
+	if !values.ServiceAccount.Create {
 		return nil
 	}
 
@@ -255,7 +255,7 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 
 	vol := []corev1.Volume{}
 
-	if values.ServiceAccount.Create && !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
+	if values.ServiceAccount.Create {
 		vol = append(vol, kubeTokenAPIVolume(ServiceAccountVolumeName))
 	}
 
@@ -331,7 +331,7 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 
 	volMount := []corev1.VolumeMount{}
 
-	if values.ServiceAccount.Create && !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
+	if values.ServiceAccount.Create {
 		mountName := ServiceAccountVolumeName
 		for _, vol := range operatorPodVolumes(dot) {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {

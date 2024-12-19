@@ -72,6 +72,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        Fullname(dot),
 			Labels:      Labels(dot),
+			Namespace:   dot.Release.Namespace,
 			Annotations: values.Ingress.Annotations,
 		},
 		Spec: networkingv1.IngressSpec{

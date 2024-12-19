@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Helm chart.
 ---
 
-![Version: 5.9.15](https://img.shields.io/badge/Version-5.9.15-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.2.7](https://img.shields.io/badge/AppVersion-v24.2.7-informational?style=flat-square)
+![Version: 5.9.17](https://img.shields.io/badge/Version-5.9.17-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.3.1](https://img.shields.io/badge/AppVersion-v24.3.1-informational?style=flat-square)
 
 This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
@@ -961,11 +961,15 @@ To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limi
 
 ### [statefulset.sideCars.controllers.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.image.tag)
 
-**Default:** `"v2.3.2-24.3.1"`
+**Default:** `"v2.3.3-24.3.1"`
 
 ### [statefulset.sideCars.controllers.metricsAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.metricsAddress)
 
 **Default:** `":9082"`
+
+### [statefulset.sideCars.controllers.pprofAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.pprofAddress)
+
+**Default:** `":9083"`
 
 ### [statefulset.sideCars.controllers.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.resources)
 
@@ -1030,7 +1034,7 @@ Persistence settings. For details, see the [storage documentation](https://docs.
 **Default:**
 
 ```
-{"hostPath":"","persistentVolume":{"annotations":{},"enabled":true,"labels":{},"nameOverwrite":"","size":"20Gi","storageClass":""},"tiered":{"config":{"cloud_storage_cache_size":5368709120,"cloud_storage_enable_remote_read":true,"cloud_storage_enable_remote_write":true,"cloud_storage_enabled":false},"credentialsSecretRef":{"accessKey":{"configurationKey":"cloud_storage_access_key"},"secretKey":{"configurationKey":"cloud_storage_secret_key"}},"hostPath":"","mountType":"emptyDir","persistentVolume":{"annotations":{},"labels":{},"storageClass":""}}}
+{"hostPath":"","persistentVolume":{"annotations":{},"enabled":true,"labels":{},"nameOverwrite":"","size":"20Gi","storageClass":""},"tiered":{"config":{"cloud_storage_cache_size":5368709120,"cloud_storage_enable_remote_read":true,"cloud_storage_enable_remote_write":true,"cloud_storage_enabled":false},"credentialsSecretRef":{"accessKey":{"configurationKey":"cloud_storage_access_key"},"secretKey":{"configurationKey":"cloud_storage_secret_key"}},"hostPath":"","mountType":"none","persistentVolume":{"annotations":{},"labels":{},"storageClass":""}}}
 ```
 
 ### [storage.hostPath](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=storage.hostPath)
