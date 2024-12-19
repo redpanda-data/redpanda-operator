@@ -223,6 +223,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 
 	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 	s.Require().NoError(err)
+	defer adminAPI.Close()
 
 	beforeBrokers, err := adminAPI.Brokers(s.ctx)
 	s.Require().NoError(err)
@@ -382,6 +383,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 		adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 		s.Require().NoError(err)
+		defer adminClient.Close()
 
 		config, err := adminClient.Config(s.ctx, false)
 		s.Require().NoError(err)

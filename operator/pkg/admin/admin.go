@@ -39,6 +39,11 @@ func (n *NoInternalAdminAPI) Error() string {
 //
 // Memory can be easily leaked by [AdminAPIClient]s due to [http.Client]s
 // connection pooling behavior and their lack of being exposed directly.
+//
+// TODO: the connection pools can be manually flushed for an admin client by calling
+// the Close method introduced in https://github.com/redpanda-data/common-go/pull/44
+// Consider replacing the cached clients with clients that just ensure cleanup via
+// a call to Close.
 func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) NodePoolAdminAPIClientFactory { //nolint:dupl // want to keep this for now
 	// Mildly paranoid defaults, expire the client every 5 minutes so the
 	// operator will continue to limp along in case something strange happens

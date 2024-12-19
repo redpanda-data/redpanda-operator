@@ -370,6 +370,8 @@ func TestClientFactoryTLSListeners(t *testing.T) {
 	// check admin connection
 	adminClient, err := factory.RedpandaAdminClient(ctx, &redpanda)
 	require.NoError(t, err)
+	defer adminClient.Close()
+
 	brokers, err := adminClient.Brokers(ctx)
 	require.NoError(t, err)
 	require.Len(t, brokers, 1)
