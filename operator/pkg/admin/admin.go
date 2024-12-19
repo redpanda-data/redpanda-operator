@@ -19,6 +19,7 @@ import (
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/scalalang2/golang-fifo/sieve"
+	fifotypes "github.com/scalalang2/golang-fifo/types"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,16 +40,16 @@ func (n *NoInternalAdminAPI) Error() string {
 //
 // Memory can be easily leaked by [AdminAPIClient]s due to [http.Client]s
 // connection pooling behavior and their lack of being exposed directly.
-//
-// TODO: the connection pools can be manually flushed for an admin client by calling
-// the Close method introduced in https://github.com/redpanda-data/common-go/pull/44
-// Consider replacing the cached clients with clients that just ensure cleanup via
-// a call to Close.
 func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) NodePoolAdminAPIClientFactory { //nolint:dupl // want to keep this for now
 	// Mildly paranoid defaults, expire the client every 5 minutes so the
 	// operator will continue to limp along in case something strange happens
 	// (looking at you, coredns).
 	cache := sieve.New[string, AdminAPIClient](75, 5*time.Minute)
+	cache.SetOnEvicted(func(_ string, client AdminAPIClient, _ fifotypes.EvictReason) {
+		// Make sure that we flush any idle connections. Ideally this will happen anyway
+		// due to idle timeouts at the transport layer, but this ensures it.
+		client.Close()
+	})
 
 	return func(
 		ctx context.Context,
@@ -181,6 +182,8 @@ type AdminAPIClient interface {
 	DisableMaintenanceMode(ctx context.Context, node int, useLeaderNode bool) error
 
 	GetHealthOverview(ctx context.Context) (rpadmin.ClusterHealthOverview, error)
+
+	Close()
 }
 
 // NodePoolAdminAPIClientFactory is a node aware abstract constructor of admin API clients
