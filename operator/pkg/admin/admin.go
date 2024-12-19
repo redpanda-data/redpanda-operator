@@ -19,6 +19,7 @@ import (
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/scalalang2/golang-fifo/sieve"
+	fifotypes "github.com/scalalang2/golang-fifo/types"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -44,6 +45,11 @@ func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) 
 	// operator will continue to limp along in case something strange happens
 	// (looking at you, coredns).
 	cache := sieve.New[string, AdminAPIClient](75, 5*time.Minute)
+	cache.SetOnEvicted(func(_ string, client AdminAPIClient, _ fifotypes.EvictReason) {
+		// Make sure that we flush any idle connections. Ideally this will happen anyway
+		// due to idle timeouts at the transport layer, but this ensures it.
+		client.Close()
+	})
 
 	return func(
 		ctx context.Context,
@@ -176,6 +182,8 @@ type AdminAPIClient interface {
 	DisableMaintenanceMode(ctx context.Context, node int, useLeaderNode bool) error
 
 	GetHealthOverview(ctx context.Context) (rpadmin.ClusterHealthOverview, error)
+
+	Close()
 }
 
 // NodePoolAdminAPIClientFactory is a node aware abstract constructor of admin API clients

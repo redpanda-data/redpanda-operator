@@ -105,6 +105,7 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("initializing Redpanda admin API client: %w", err)
 	}
+	defer client.Close()
 
 	w.adminClient = client
 

@@ -481,6 +481,10 @@ func (m *MockAdminAPI) DisableMaintenanceMode(_ context.Context, _ int, _ bool) 
 	return nil
 }
 
+func (m *MockAdminAPI) Close() {
+	m.Log.WithName("Close").Info("called")
+}
+
 func (m *MockAdminAPI) GetHealthOverview(_ context.Context) (rpadmin.ClusterHealthOverview, error) {
 	m.Log.WithName("GetHealthOverview").Info("called")
 	m.monitor.Lock()

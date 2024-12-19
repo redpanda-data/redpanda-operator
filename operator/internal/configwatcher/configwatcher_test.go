@@ -54,6 +54,7 @@ func TestConfigWatcher(t *testing.T) {
 	require.NoError(t, err)
 	adminClient, err := rpadmin.NewAdminAPI([]string{adminAPI}, &rpadmin.BasicAuth{Username: user, Password: password}, nil)
 	require.NoError(t, err)
+	defer adminClient.Close()
 
 	t.Setenv("RPK_USER", user)
 	t.Setenv("RPK_PASS", password)

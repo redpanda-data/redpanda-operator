@@ -69,6 +69,7 @@ func TestSync(t *testing.T) {
 		Password: password,
 	}, nil)
 	require.NoError(t, err)
+	defer adminAPIClient.Close()
 
 	_, err = adminAPIClient.PatchClusterConfig(ctx, map[string]any{
 		"admin_api_require_auth": true,
@@ -230,6 +231,7 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 
 	adminAPIClient, err := rpadmin.NewAdminAPI([]string{adminAPIAddr}, &rpadmin.NopAuth{}, nil)
 	require.NoError(t, err)
+	defer adminAPIClient.Close()
 
 	rpkConfigBytes, err := yaml.Marshal(map[string]any{
 		"rpk": map[string]any{
