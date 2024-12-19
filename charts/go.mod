@@ -10,7 +10,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
-	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20241219180638-9d81554c753d
+	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20241219194551-05ac5889aee7
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
