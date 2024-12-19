@@ -203,7 +203,9 @@ func (c *clusterClients) checkUser(ctx context.Context, user string, exists bool
 
 	if !assert.Eventually(t, func() bool {
 		t.Logf("Pulling list of users from cluster")
-		users, err = c.RedpandaAdmin(ctx).ListUsers(ctx)
+		adminClient := c.RedpandaAdmin(ctx)
+		defer adminClient.Close()
+		users, err = adminClient.ListUsers(ctx)
 		require.NoError(t, err)
 
 		return exists == slices.Contains(users, user)

@@ -65,6 +65,7 @@ func TestDiffIntegration(t *testing.T) {
 		Password: password,
 	}, nil)
 	require.NoError(t, err)
+	defer adminAPIClient.Close()
 
 	_, err = adminAPIClient.PatchClusterConfig(ctx, map[string]any{
 		"kafka_rpc_server_tcp_send_buf": 102400,

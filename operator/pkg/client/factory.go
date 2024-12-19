@@ -71,7 +71,8 @@ type ClientFactory interface {
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
-	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
+	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
+	// to ensure any idle connections in the underlying transport are closed.
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.

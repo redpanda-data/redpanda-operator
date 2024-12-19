@@ -89,6 +89,7 @@ func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, er
 // Close closes the underlying kafka connection
 func (c *Client) Close() {
 	c.kafkaAdminClient.Close()
+	c.adminClient.Close()
 }
 
 func (c *Client) delete(ctx context.Context, username string) error {

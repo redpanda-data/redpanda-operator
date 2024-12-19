@@ -114,6 +114,7 @@ func Command() *cobra.Command {
 	var (
 		clusterDomain               string
 		metricsAddr                 string
+		secureMetricsAddr           string
 		probeAddr                   string
 		pprofAddr                   string
 		enableLeaderElection        bool
@@ -169,6 +170,7 @@ func Command() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&secureMetricsAddr, "secure-metrics-bind-address", ":8443", "The address the metric endpoint binds to over a secure port.")
 	cmd.Flags().StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
 	cmd.Flags().StringVar(&clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")

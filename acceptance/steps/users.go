@@ -109,6 +109,7 @@ func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.T
 func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framework.TestingT, cluster string, users *godog.Table) {
 	clients := clientsForCluster(ctx, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
+	defer adminClient.Close()
 	usersClient := clients.Users(ctx)
 	defer usersClient.Close()
 

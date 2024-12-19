@@ -200,6 +200,7 @@ func (r *ManagedDecommissionReconciler) decommissionStatus(ctx context.Context, 
 	if err != nil {
 		return fmt.Errorf("creating AdminAPI: %w", err)
 	}
+	defer adminAPI.Close()
 
 	decomStatus, err := adminAPI.DecommissionBrokerStatus(ctx, decommissionNodeID)
 	if err != nil {
@@ -271,6 +272,7 @@ func (r *ManagedDecommissionReconciler) getPodFromRedpandaNodeID(ctx context.Con
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	defer adminAPI.Close()
 
 	brokers, err := adminAPI.Brokers(ctx)
 	if err != nil {
@@ -359,6 +361,7 @@ func (r *ManagedDecommissionReconciler) reconcilePodsDecommission(ctx context.Co
 	if err != nil {
 		return err
 	}
+	defer adminAPI.Close()
 
 	brokers, err := adminAPI.Brokers(ctx)
 	if err != nil {

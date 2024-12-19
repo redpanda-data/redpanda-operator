@@ -331,6 +331,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not reconcile, error creating adminAPI: %w", err)
 	}
+	defer adminAPI.Close()
 
 	health, err := watchClusterHealth(ctx, adminAPI)
 	if err != nil {
@@ -372,6 +373,8 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 					log.Error(buildErr, "creating single node AdminAPI", "pod-ordinal", podOrdinal)
 					return ctrl.Result{}, fmt.Errorf("creating single node AdminAPI for pod (%d): %w", podOrdinal, buildErr)
 				}
+				defer singleNodeAdminAPI.Close()
+
 				nodeCfg, nodeErr := singleNodeAdminAPI.GetNodeConfig(ctx)
 				if nodeErr != nil {
 					log.Error(nodeErr, "getting node configuration", "pod-ordinal", podOrdinal)

@@ -472,6 +472,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	features, err := client.GetEnterpriseFeatures(ctx)
 	if err != nil {
@@ -586,11 +587,11 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1a
 		return nil
 	}
 
-	// TODO cache the redpanda admin client.
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	config, err := r.clusterConfigFor(ctx, rp)
 	if err != nil {
@@ -778,6 +779,7 @@ func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *v1alpha2
 	if err != nil {
 		return false, err
 	}
+	defer client.Close()
 
 	health, err := client.GetHealthOverview(ctx)
 	if err != nil {

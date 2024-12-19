@@ -400,6 +400,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		log.Error(err, "initializing admin client")
 		return false, err
 	}
+	defer adminClient.Close()
 
 	health, err := adminClient.GetHealthOverview(ctx)
 	if err != nil {

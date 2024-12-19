@@ -15,9 +15,10 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"testing"
 	"time"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -92,6 +93,7 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	})
 
 	adminClient := s.adminClientFor(chart)
+	defer adminClient.Close()
 
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
