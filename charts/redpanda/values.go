@@ -7,6 +7,13 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 // +gotohelm:filename=_values.go.tpl
 package redpanda
 
@@ -300,8 +307,7 @@ type Monitoring struct {
 	ScrapeInterval monitoringv1.Duration   `json:"scrapeInterval" jsonschema:"required"`
 	Labels         map[string]string       `json:"labels"`
 	TLSConfig      *monitoringv1.TLSConfig `json:"tlsConfig"`
-	//nolint:stylecheck
-	EnableHttp2 *bool `json:"enableHttp2"`
+	EnableHttp2    *bool                   `json:"enableHttp2"`
 }
 
 type RedpandaResources struct {
@@ -1450,26 +1456,26 @@ func (l *KafkaListeners) TrustStores(tls *TLS) []*TrustStore {
 	return tss
 }
 
-func (l *KafkaListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
-	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
+func (k *KafkaListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
+	t := ConsoleTLS{Enabled: k.TLS.IsEnabled(tls)}
 	if !t.Enabled {
 		return t
 	}
 
-	kafkaPathPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, l.TLS.Cert)
+	kafkaPathPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, k.TLS.Cert)
 
 	// Strange but technically correct, if CAEnabled is false, we can't safely
 	// assume that a ca.crt file will exist. So we fallback to using the
 	// server's certificate itself.
 	// Other options would be: failing or falling back to the container's
 	// default truststore.
-	if tls.Certs.MustGet(l.TLS.Cert).CAEnabled {
+	if tls.Certs.MustGet(k.TLS.Cert).CAEnabled {
 		t.CaFilepath = fmt.Sprintf("%s/ca.crt", kafkaPathPrefix)
 	} else {
 		t.CaFilepath = fmt.Sprintf("%s/tls.crt", kafkaPathPrefix)
 	}
 
-	if !l.TLS.RequireClientAuth {
+	if !k.TLS.RequireClientAuth {
 		return t
 	}
 
@@ -1479,8 +1485,8 @@ func (l *KafkaListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
 	return t
 }
 
-func (l *KafkaListeners) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
-	t := connectors.TLS{Enabled: l.TLS.IsEnabled(tls)}
+func (k *KafkaListeners) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
+	t := connectors.TLS{Enabled: k.TLS.IsEnabled(tls)}
 	if !t.Enabled {
 		return t
 	}
@@ -1531,14 +1537,14 @@ func (SchemaRegistryListeners) JSONSchemaExtend(schema *jsonschema.Schema) {
 	makeNullable(schema, "authenticationMethod")
 }
 
-func (l *SchemaRegistryListeners) Listeners(saslEnabled bool) []map[string]any {
-	internal := createInternalListenerCfg(l.Port)
+func (sr *SchemaRegistryListeners) Listeners(saslEnabled bool) []map[string]any {
+	internal := createInternalListenerCfg(sr.Port)
 
 	if saslEnabled {
 		internal["authentication_method"] = "http_basic"
 	}
 
-	if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
+	if am := ptr.Deref(sr.AuthenticationMethod, ""); am != "" {
 		internal["authentication_method"] = am
 	}
 
@@ -1546,7 +1552,7 @@ func (l *SchemaRegistryListeners) Listeners(saslEnabled bool) []map[string]any {
 		internal,
 	}
 
-	for k, l := range l.External {
+	for k, l := range sr.External {
 		if !l.IsEnabled() {
 			continue
 		}
@@ -1619,26 +1625,26 @@ func (l *SchemaRegistryListeners) TrustStores(tls *TLS) []*TrustStore {
 	return tss
 }
 
-func (l *SchemaRegistryListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
-	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
+func (sr *SchemaRegistryListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
+	t := ConsoleTLS{Enabled: sr.TLS.IsEnabled(tls)}
 	if !t.Enabled {
 		return t
 	}
 
-	schemaRegistryPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, l.TLS.Cert)
+	schemaRegistryPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, sr.TLS.Cert)
 
 	// Strange but technically correct, if CAEnabled is false, we can't safely
 	// assume that a ca.crt file will exist. So we fallback to using the
 	// server's certificate itself.
 	// Other options would be: failing or falling back to the container's
 	// default truststore.
-	if tls.Certs.MustGet(l.TLS.Cert).CAEnabled {
+	if tls.Certs.MustGet(sr.TLS.Cert).CAEnabled {
 		t.CaFilepath = fmt.Sprintf("%s/ca.crt", schemaRegistryPrefix)
 	} else {
 		t.CaFilepath = fmt.Sprintf("%s/tls.crt", schemaRegistryPrefix)
 	}
 
-	if !l.TLS.RequireClientAuth {
+	if !sr.TLS.RequireClientAuth {
 		return t
 	}
 
