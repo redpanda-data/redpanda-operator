@@ -993,6 +993,7 @@ type RPControllers struct {
 	Image              *RedpandaImage               `json:"image,omitempty"`
 	HealthProbeAddress *string                      `json:"healthProbeAddress,omitempty"`
 	MetricsAddress     *string                      `json:"metricsAddress,omitempty"`
+	PProfAddress       *string                      `json:"pprofAddress,omitempty"`
 	Run                []string                     `json:"run,omitempty"`
 	CreateRBAC         *bool                        `json:"createRBAC,omitempty"`
 }
