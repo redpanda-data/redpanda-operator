@@ -19024,6 +19024,8 @@ spec:
                                 type: object
                               metricsAddress:
                                 type: string
+                              pprofAddress:
+                                type: string
                               resources:
                                 description: ResourceRequirements describes the compute
                                   resource requirements.
@@ -39272,6 +39274,8 @@ spec:
                                     type: string
                                 type: object
                               metricsAddress:
+                                type: string
+                              pprofAddress:
                                 type: string
                               resources:
                                 description: ResourceRequirements describes the compute

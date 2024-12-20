@@ -2046,6 +2046,11 @@ func (in *RPControllers) DeepCopyInto(out *RPControllers) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.PProfAddress != nil {
+		in, out := &in.PProfAddress, &out.PProfAddress
+		*out = new(string)
+		**out = **in
+	}
 	if in.Run != nil {
 		in, out := &in.Run, &out.Run
 		*out = make([]string, len(*in))
