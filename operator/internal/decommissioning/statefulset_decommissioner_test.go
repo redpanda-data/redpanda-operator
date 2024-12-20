@@ -7,8 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build integration
-
 package decommissioning_test
 
 import (
@@ -42,19 +40,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 //go:embed role.yaml
 var decommissionerRBAC []byte
 
 func TestIntegrationStatefulSetDecommissioner(t *testing.T) {
-	t.Skip("Too flaky")
 	testutil.SkipIfNotIntegration(t)
-	testutil.RequireTimeout(t, time.Minute*10)
 
-	if testing.Short() {
-		t.Skip("skipping long running test as -short was specified")
-	}
+	t.Skip("Too flaky")
+
 	suite.Run(t, new(StatefulSetDecommissionerSuite))
 }
 

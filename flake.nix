@@ -44,8 +44,9 @@
             # update TestToolVersions.
             packages = [
               pkgs.applyconfiguration-gen
-              pkgs.controller-gen
+              pkgs.buildkite-agent
               pkgs.chart-testing
+              pkgs.controller-gen
               pkgs.diffutils # Provides `diff`, used by golangci-lint.
               pkgs.docker-client
               pkgs.docker-tag-list
@@ -57,6 +58,10 @@
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.goreleaser
+              pkgs.gotestsum
+              pkgs.helm-3-10-3
+              pkgs.helm-docs
+              pkgs.jq
               pkgs.k3d # Kind alternative that allows adding/removing Nodes.
               pkgs.kind
               pkgs.kubectl
@@ -64,12 +69,8 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.openssl
-              pkgs.helm-docs
-              pkgs.helm-3-10-3
-              pkgs.go-junit-report
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
-              pkgs.buildkite-agent
               # pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               # pkgs.gotools
             ] ++ lib.optionals pkgs.stdenv.isLinux [
