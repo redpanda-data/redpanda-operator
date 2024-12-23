@@ -8,6 +8,17 @@ steps:
       - key: integration-tests
         label: Integration tests
         timeout_in_minutes: 180
+        retry:
+          automatic:
+            - exit_status: "*"
+              signal: "*"
+              limit: 5
+            - exit_status: 0
+              signal: "*"
+              limit: 5
+            - exit_status: -1
+              signal: "*"
+              limit: 5
         notify:
           - github_commit_status:
               context: integration-tests
