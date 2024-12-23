@@ -31,7 +31,6 @@ import (
 // Annotations of all objects created by the controller are stable across flux
 // and de-fluxed.
 func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
-	s.T().Skip("Too flaky")
 	testutil.SkipIfNotIntegration(s.T())
 	testutil.RequireTimeout(s.T(), time.Minute*20)
 

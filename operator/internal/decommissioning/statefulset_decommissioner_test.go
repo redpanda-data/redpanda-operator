@@ -48,7 +48,6 @@ import (
 var decommissionerRBAC []byte
 
 func TestIntegrationStatefulSetDecommissioner(t *testing.T) {
-	t.Skip("Too flaky")
 	testutil.SkipIfNotIntegration(t)
 	testutil.RequireTimeout(t, time.Minute*10)
 
