@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -48,7 +48,6 @@ import (
 var decommissionerRBAC []byte
 
 func TestIntegrationStatefulSetDecommissioner(t *testing.T) {
-	t.Skip("Too flaky")
 	testutil.SkipIfNotIntegration(t)
 	testutil.RequireTimeout(t, time.Minute*10)
 
