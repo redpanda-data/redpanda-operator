@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -31,7 +31,6 @@ import (
 // Annotations of all objects created by the controller are stable across flux
 // and de-fluxed.
 func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
-	s.T().Skip("Too flaky")
 	testutil.SkipIfNotIntegration(s.T())
 	testutil.RequireTimeout(s.T(), time.Minute*20)
 

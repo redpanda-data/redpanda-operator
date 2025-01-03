@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -235,15 +235,6 @@ func containerImage(dot *helmette.Dot) string {
 	return fmt.Sprintf("%s:%s", values.Image.Repository, tag)
 }
 
-func configuratorTag(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !helmette.Empty(values.Configurator.Tag) {
-		return *values.Configurator.Tag
-	}
-	return dot.Chart.AppVersion
-}
-
 func isWebhookEnabled(dot *helmette.Dot) bool {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -366,8 +357,6 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
 		"--leader-elect",
-		fmt.Sprintf("--configurator-tag=%s", configuratorTag(dot)),
-		fmt.Sprintf("--configurator-base-image=%s", values.Configurator.Repository),
 		fmt.Sprintf("--webhook-enabled=%t", isWebhookEnabled(dot)),
 	}
 
