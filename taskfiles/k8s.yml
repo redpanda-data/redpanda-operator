@@ -239,3 +239,16 @@ tasks:
     cmds:
       - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
       - ./hack/v2-helm-setup.sh
+
+  package-and-publish-operator-chart:
+    cmds:
+      - defer: 'helm registry logout registry-1.docker.io'
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - mkdir helm-operator-release
+      - defer 'rm -r helm-operator-release'
+      - yq -i '.name = "redpanda-operator-nightly"' charts/operator/Chart.yaml
+      - helm package charts/operator --version "{{.TAG_NAME}}-helm-chart" --destination helm-operator-release --dependency-update
+      - helm push `ls helm-operator-release/redpanda-operator-nightly*.tgz` oci://registry-1.docker.io/redpandadata
+    preconditions:
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"

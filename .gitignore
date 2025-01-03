@@ -47,3 +47,4 @@ genschema/genschema.xml
 gotohelm/gotohelm.xml
 pkg/pkg.xml
 
+helm-operator-release/
