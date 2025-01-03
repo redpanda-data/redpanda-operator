@@ -34,6 +34,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
@@ -54,7 +55,7 @@ func (r RedpandaController) toString() string {
 }
 
 const (
-	defaultConfiguratorContainerImage = "vectorized/configurator"
+	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
 
 	AllControllers         = RedpandaController("all")
 	NodeController         = RedpandaController("nodeWatcher")
@@ -177,7 +178,7 @@ func Command() *cobra.Command {
 			"Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().BoolVar(&webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 	cmd.Flags().StringVar(&configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "Set the configurator base image")
-	cmd.Flags().StringVar(&configuratorTag, "configurator-tag", "latest", "Set the configurator tag")
+	cmd.Flags().StringVar(&configuratorTag, "configurator-tag", version.Version, "Set the configurator tag")
 	cmd.Flags().StringVar(&configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
 	cmd.Flags().DurationVar(&decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
 	cmd.Flags().DurationVar(&metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
