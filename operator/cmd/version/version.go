@@ -20,7 +20,7 @@ import (
 var (
 	// these variables are set via ldflags in our goreleaser build.
 
-	version   string
+	Version   string
 	commit    string
 	buildDate string
 )
@@ -31,7 +31,7 @@ func init() {
 		Name:      "build_info",
 		Help:      "A gauge always set to 1 that provides build information as labels.",
 		ConstLabels: prometheus.Labels{
-			"version":    version,
+			"version":    Version,
 			"commit":     commit,
 			"go_version": runtime.Version(),
 		},
@@ -47,7 +47,7 @@ func Command() *cobra.Command {
 		Use:   "version",
 		Short: "print build information",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Printf("Version: %s\n", version)
+			cmd.Printf("Version: %s\n", Version)
 			cmd.Printf("Commit: %s\n", commit)
 			cmd.Printf("Go Version: %s\n", runtime.Version())
 			cmd.Printf("Build Date: %s\n", buildDate)
