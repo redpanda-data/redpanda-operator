@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -6,8 +6,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build integration
 
 package main
 
@@ -27,6 +25,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 var (
@@ -89,8 +88,9 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestSuite(t *testing.T) {
-	t.Skip()
+func TestIntegrationSuite(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+	t.Skipf("Currently failing. Needs to be debugged and corrected.")
 	suite.RunT(t)
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -93,16 +93,16 @@ func Context(t *testing.T) context.Context {
 func SkipIfNotIntegration(t *testing.T) {
 	const prefix = "TestIntegration"
 
-	if !strings.HasPrefix(t.Name(), prefix) {
-		t.Fatalf("tests calling SkipIfNotIntegration must be prefixed with %q; got: %s", prefix, t.Name())
-	}
-
 	if skipIntegrationTests {
 		t.Skipf("integration build flag not set; skipping integration test")
 	} else if testing.Short() {
 		t.Skipf("-short specified; skipping integration test")
 	} else {
 		RequireTimeout(t, 20*time.Minute)
+	}
+
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotIntegration must be prefixed with %q; got: %s", prefix, t.Name())
 	}
 }
 
