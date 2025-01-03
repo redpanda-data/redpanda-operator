@@ -239,3 +239,23 @@ tasks:
     cmds:
       - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
       - ./hack/v2-helm-setup.sh
+
+  package-and-publish-operator-chart:
+    vars:
+      TMP_PATH:
+        sh: mktemp --directory --tmpdir "helm-package-XXXXXXXXXX"
+    cmds:
+      - defer: 'rm -r {{.TMP_PATH}}'
+      - defer: 'helm registry logout registry-1.docker.io'
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - cp -r charts/operator/ {{.TMP_PATH}}
+      # The Chart.yaml name needs to match with docker hub OCI registry, so that helm push correctly
+      # finds OCI registry.
+      # Reference
+      # https://hub.docker.com/r/redpandadata/redpanda-operator-nightly
+      - yq -i '.name = "redpanda-operator-nightly"' {{.TMP_PATH}}/operator/Chart.yaml
+      - helm package {{.TMP_PATH}}/operator --version "{{.TAG_NAME}}-helm-chart" --destination {{.TMP_PATH}} --dependency-update
+      - helm push `ls {{.TMP_PATH}}/redpanda-operator-nightly*.tgz` oci://registry-1.docker.io/redpandadata
+    preconditions:
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"
