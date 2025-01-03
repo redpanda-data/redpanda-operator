@@ -113,6 +113,7 @@ tasks:
       - task: :goreleaser:build-operator-binaries
       - task: :k8s:build-and-push-operator-container-image
       # Package and push Operator helm chart to Dockerhub
+      - task: :k8s:package-and-publish-operator-chart
 
   assert-no-diffs:
     desc: "Fail on any unexpected diffs to generated files (CI only)"
