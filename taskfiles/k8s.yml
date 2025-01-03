@@ -121,62 +121,12 @@ tasks:
         sh: |
           cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
     deps:
-      - task: set-aio-max
-        vars:
-          USE_SUDO: "false"
-      - task: set-inotify-watches
-        vars:
-          USE_SUDO: "false"
-      - task: set-inotify-instances
-        vars:
-          USE_SUDO: "false"
       - task: fetch-latest-redpanda
       - task: build-operator-images
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}
 
-  set-aio-max:
-    desc: set minimum required value for fs.aio-max-nr sysctl option
-    vars:
-      MIN_REQUIRED_AIO_MAX: 20971520
-      USE_SUDO: '{{default "true" .USE_SUDO}}'
-    cmds:
-      - 'echo "Setting fs.aio-max-nr sysctl option to {{.MIN_REQUIRED_AIO_MAX}}"'
-      - '{{if eq .USE_SUDO "true"}}echo "Please enter your sudo password: "{{end}}'
-      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.aio-max-nr={{.MIN_REQUIRED_AIO_MAX}}'
-    status:
-      - test {{.MIN_REQUIRED_AIO_MAX}} -le $(sysctl -nb fs.aio-max-nr)
-    platforms:
-      - linux
-
-  set-inotify-watches:
-    desc: |
-      set minimum required value for fs.inotify.max_user_watches sysctl option
-      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
-    vars:
-      MIN_REQUIRED_USER_WATCHES: 1310720
-      USE_SUDO: '{{default "true" .USE_SUDO}}'
-    cmds:
-      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_watches={{.MIN_REQUIRED_USER_WATCHES}}'
-    status:
-      - test {{.MIN_REQUIRED_USER_WATCHES}} -le $(sysctl -nb fs.inotify.max_user_watches)
-    platforms:
-      - linux
-
-  set-inotify-instances:
-    desc: |
-      set minimum required value for fs.inotify.max_user_instances sysctl option
-      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
-    vars:
-      MIN_REQUIRED_USER_INSTANCES: 2560
-      USE_SUDO: '{{default "true" .USE_SUDO}}'
-    cmds:
-      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_instances={{.MIN_REQUIRED_USER_INSTANCES}}'
-    status:
-      - test {{.MIN_REQUIRED_USER_INSTANCES}} -le $(sysctl -nb fs.inotify.max_user_instances)
-    platforms:
-      - linux
 
   run-golangci-lint:
     desc: run golangci-lint
@@ -206,12 +156,23 @@ tasks:
         silent: true
       - 'echo "~~~ :docker: Build & Push operator container"'
       - docker buildx build
-        --platform linux/arm64,linux/amd64
+        --provenance false --sbom false --platform linux/amd64
         --file operator/Dockerfile
         --target manager
-        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-amd64
         --push
         ./dist
+      - docker buildx build
+        --provenance false --sbom false --platform linux/arm64
+        --file operator/Dockerfile
+        --target manager
+        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-arm64
+        --push
+        ./dist
+      - docker manifest create docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+        --amend docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-amd64
+        --amend docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-arm64
+      - docker manifest push docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
       - cmd: docker logout
     preconditions:
       - test -n "$DOCKERHUB_USER"

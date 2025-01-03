@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -6,8 +6,6 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
-
-//go:build integration
 
 package redpanda_test
 
@@ -17,21 +15,21 @@ import (
 	"strings"
 	"time"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestStableUIDAndGeneration asserts that UIDs, Generations, Labels, and
 // Annotations of all objects created by the controller are stable across flux
 // and de-fluxed.
 func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
-	s.T().Skip("Too flaky")
 	testutil.SkipIfNotIntegration(s.T())
 	testutil.RequireTimeout(s.T(), time.Minute*20)
 
