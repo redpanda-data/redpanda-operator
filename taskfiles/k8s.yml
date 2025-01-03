@@ -156,12 +156,23 @@ tasks:
         silent: true
       - 'echo "~~~ :docker: Build & Push operator container"'
       - docker buildx build
-        --platform linux/arm64,linux/amd64
+        --provenance false --sbom false --platform linux/amd64
         --file operator/Dockerfile
         --target manager
-        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-amd64
         --push
         ./dist
+      - docker buildx build
+        --provenance false --sbom false --platform linux/arm64
+        --file operator/Dockerfile
+        --target manager
+        --tag docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-arm64
+        --push
+        ./dist
+      - docker manifest create docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
+        --amend docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-amd64
+        --amend docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}-arm64
+      - docker manifest push docker.io/redpandadata/{{.OPERATOR_REPO}}:{{.TAG_NAME}}
       - cmd: docker logout
     preconditions:
       - test -n "$DOCKERHUB_USER"
