@@ -13,7 +13,7 @@ steps:
     label: ":gandalf: Nightly Operator release"
     timeout_in_minutes: 10
     agents:
-      queue: k8s-builders
+      queue: v6-amd64-builders-m6id
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-k8s-nightly-artifacts
