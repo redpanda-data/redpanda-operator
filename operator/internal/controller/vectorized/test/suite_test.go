@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -170,7 +170,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		AdminAPIClientFactory:    testAdminAPIFactory,
 		DecommissionWaitInterval: 100 * time.Millisecond,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
-		ConfiguratorBaseImage: "vectorized/configurator",
+		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)

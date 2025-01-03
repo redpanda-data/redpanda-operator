@@ -1,4 +1,4 @@
-// Copyright 2024 Redpanda Data, Inc.
+// Copyright 2025 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -502,6 +502,8 @@ func (r *StatefulSetResource) obj(
 						{
 							Name:            configuratorContainerName,
 							Image:           r.fullConfiguratorImage(),
+							Command:         []string{"/redpanda-operator"},
+							Args:            []string{"configure"},
 							ImagePullPolicy: r.configuratorSettings.ImagePullPolicy,
 							Env: append([]corev1.EnvVar{
 								{
