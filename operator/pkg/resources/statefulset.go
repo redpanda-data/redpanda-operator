@@ -502,6 +502,8 @@ func (r *StatefulSetResource) obj(
 						{
 							Name:            configuratorContainerName,
 							Image:           r.fullConfiguratorImage(),
+							Command:         []string{"/redpanda-operator"},
+							Args:            []string{"configure"},
 							ImagePullPolicy: r.configuratorSettings.ImagePullPolicy,
 							Env: append([]corev1.EnvVar{
 								{
