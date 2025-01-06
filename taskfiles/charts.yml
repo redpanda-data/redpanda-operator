@@ -4,49 +4,105 @@ tasks:
   generate:
     desc: "Run all file generation tasks"
     cmds:
-      # Generate chart README.md's
-      - nix develop -c helm-docs -c ./charts/
       - task: generate:console
       - task: generate:operator
       - task: generate:redpanda
       - task: generate:connectors
+      # Generate chart README.md's
+      - helm-docs -c ./charts/
 
   generate:console:
     desc: "Generate files for the console Helm chart"
     cmds:
-      # Generate a "partial" version of the Values struct.
-      - go run ./genpartial -out charts/console/values_partial.gen.go -struct Values ./charts/console
-      # Generate helm templates from Go definitions
-      - go run ./gotohelm -write ./charts/console/templates ./charts/console
+    - task: genpartial
+      vars: { CHART: console }
+    - task: gotohelm
+      vars: { CHART: console }
 
   generate:operator:
     desc: "Generate files for the operator Helm chart"
     cmds:
-      # Generate a "partial" version of the Values struct.
-      - go run ./genpartial -out charts/operator/values_partial.gen.go -struct Values ./charts/operator
-      # Generate the values JSON schema from the Values struct
-      - go run ./genschema operator > charts/operator/values.schema.json
-      # Generate helm templates from Go definitions
-      - go run ./gotohelm -write ./charts/operator/templates ./charts/operator
+    - task: genpartial
+      vars: { CHART: operator }
+    - task: genschema
+      vars: { CHART: operator }
+    - task: gotohelm
+      vars: { CHART: operator }
 
   generate:redpanda:
     desc: "Generate files for the redpanda Helm chart"
     cmds:
-      # Generate a "partial" version of the Values struct.
-      - go run ./genpartial -out charts/redpanda/values_partial.gen.go -struct Values ./charts/redpanda
-      # Generate the values JSON schema from the Values struct
-      - go run ./genschema redpanda > charts/redpanda/values.schema.json
-      # Generate helm templates from Go definitions
-      - go run ./gotohelm -write ./charts/redpanda/templates ./charts/redpanda ./charts/...
+    - task: genpartial
+      vars: { CHART: redpanda }
+    - task: genschema
+      vars: { CHART: redpanda }
+    - task: gotohelm
+      vars: { CHART: redpanda, DEPS: ./charts/... }
 
   generate:connectors:
     desc: "Generate files for the connectors Helm chart"
     cmds:
-      # Generate a "partial" version of the Values struct.
-      - go run ./genpartial -out charts/connectors/values_partial.gen.go -struct Values ./charts/connectors
-      # Generate helm templates from Go definitions
-      - go run ./gotohelm -write ./charts/connectors/templates ./charts/connectors
+    - task: genpartial
+      vars: { CHART: connectors }
+    - task: gotohelm
+      vars: { CHART: connectors }
 
   kind-cluster:
     cmds:
       - kind create cluster --config operator/kind.yaml
+
+  # Below this line are internal helper tasks that configuring caching for generation tasks.
+
+  genpartial:
+    internal: true
+    run: when_changed
+    label: "genpartial:{{ .CHART }}"
+    desc: "Generate a 'partial' version of the Values struct"
+    var:
+      CHART: ""
+    requires:
+      vars: [CHART]
+    sources:
+    - ./charts/{{ .CHART }}/*.go
+    - ./charts/{{ .CHART }}/**/*.go
+    - exclude: ./charts/{{ .CHART }}/values_partial.gen.go
+    generates:
+    - ./charts/{{ .CHART }}/values_partial.gen.go
+    cmds:
+    - go run ./genpartial -header ./licenses/boilerplate.go.txt -out charts/{{ .CHART }}/values_partial.gen.go -struct Values ./charts/{{ .CHART }}
+
+  genschema:
+    internal: true
+    run: when_changed
+    label: "genschema:{{ .CHART }}"
+    desc: "Generate the values JSON schema from the Values struct"
+    var:
+      CHART: ""
+    requires:
+      vars: [CHART]
+    sources:
+    - ./charts/{{ .CHART }}/*.go
+    generates:
+    - ./charts/{{ .CHART}}/values.schema.json
+    cmds:
+    - go run ./genschema {{ .CHART }} > charts/{{ .CHART }}/values.schema.json
+
+  gotohelm:
+    internal: true
+    run: when_changed
+    label: "gotohelm:{{ .CHART }}"
+    desc: "Generate helm templates from Go definitions"
+    var:
+      CHART: ""
+      DEPS: ""
+    requires:
+      vars: [CHART]
+    sources:
+    - ./charts/{{ .CHART }}/*.go
+    - ./charts/{{ .CHART }}/**/*.go
+    generates:
+      - ./charts/{{ .CHART }}/templates/*
+      - ./charts/{{ .CHART }}/templates/**/*
+    cmds:
+    # Generate helm templates from Go definitions
+    - go run ./gotohelm -write ./charts/{{ .CHART }}/templates ./charts/{{ .CHART }} {{ .DEPS }}
