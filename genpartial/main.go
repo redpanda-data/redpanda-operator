@@ -48,13 +48,14 @@ func main() {
 	cwd, _ := os.Getwd()
 
 	outFlag := flag.String("out", "-", "The file to output to or `-` for stdout")
+	headerFlag := flag.String("header", "", "A file that will be used as a header for the generated file")
 	structFlag := flag.String("struct", "Values", "The struct name to generate a partial for")
 
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
 		fmt.Printf("Usage: genpartial <pkg>\n")
-		fmt.Printf("Example: genpartial -struct Values ./charts/redpanda\n")
+		fmt.Printf("Example: genpartial [-header ./path/to/license] -struct Values ./charts/redpanda\n")
 		os.Exit(1)
 	}
 
@@ -64,6 +65,15 @@ func main() {
 	}, flag.Arg(0)))
 
 	var buf bytes.Buffer
+
+	if *headerFlag != "" {
+		header, err := os.ReadFile(*headerFlag)
+		if err != nil {
+			panic(err)
+		}
+		_, _ = buf.Write(header)
+	}
+
 	if err := GeneratePartial(pkgs[0], *structFlag, &buf); err != nil {
 		panic(err)
 	}
