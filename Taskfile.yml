@@ -46,8 +46,12 @@ tasks:
 
   generate:
     cmds:
-      - task: k8s:generate
       - task: charts:generate
+      # update-licenses may update licenses/boilerplate.go.txt which is used
+      # for _some_ of k8s:generate. For simplicity, we just run update-licenses
+      # twice.
+      - task: dev:update-licenses
+      - task: k8s:generate
       - task: dev:update-licenses
       # Ensure flake.nix has been formatted.
       - nix fmt
