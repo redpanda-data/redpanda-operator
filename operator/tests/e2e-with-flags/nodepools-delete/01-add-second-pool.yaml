@@ -8,6 +8,8 @@ spec:
   nodePools:
     - name: first
       replicas: 3
+      storage: {}
+      cloudCacheStorage: {}
       resources:
         requests:
           cpu: "100m"
@@ -17,6 +19,8 @@ spec:
           memory: 256Mi
     - name: second
       replicas: 3
+      storage: {}
+      cloudCacheStorage: {}
       resources:
         requests:
           cpu: "101m"
