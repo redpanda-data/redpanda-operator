@@ -8,6 +8,8 @@ spec:
   nodePools:
     - name: nodepool1
       replicas: 3
+      storage: {}
+      cloudCacheStorage: {}
       resources:
         requests:
           cpu: "100m"
