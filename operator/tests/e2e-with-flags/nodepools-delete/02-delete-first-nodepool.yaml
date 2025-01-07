@@ -11,6 +11,8 @@ spec:
   nodePools:
     - name: second
       replicas: 3
+      storage: {}
+      cloudCacheStorage: {}
       resources:
         requests:
           cpu: "101m"
