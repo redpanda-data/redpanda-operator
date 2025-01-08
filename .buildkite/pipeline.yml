@@ -17,7 +17,7 @@ steps:
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-k8s-nightly-artifacts
-    if: build.branch == "main" && build.source == "schedule" && build.env("NIGHTLY_RELEASE") == "true"
+    if: build.env("NIGHTLY_RELEASE") == "true"
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
