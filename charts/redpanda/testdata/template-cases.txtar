@@ -1124,3 +1124,40 @@ tls:
         kind: ClusterIssuer
         name: letsencrypt-production
   enabled: true
+
+-- direct-resources-examples --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.limits}", {"memory": "10Gi"}]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.requests}", {"cpu": "5500m"}]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp=5"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--memory=9216M"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--reserve-memory=0M"]
+resources:
+  limits:
+    memory: 10Gi
+  requests:
+    cpu: 5500m
+
+-- direct-resources-none-provided --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.limits}", {}]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.requests}", {}]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--memory"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--reserve-memory=0M"]
+resources:
+  limits: {}
+  requests: {}
+
+-- flag-overrides --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp=67"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "enable_memory_locking: false"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "overprovisioned: true"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--default-log-level=warn"]
+statefulset:
+  additionalRedpandaCmdFlags:
+  - --smp=67
+  - --lock-memory=false
+  - --overprovisioned
+  - --default-log-level warn
