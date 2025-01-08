@@ -449,6 +449,7 @@ replace (
 	github.com/fluxcd/helm-controller/shim => github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240
 	github.com/fluxcd/source-controller/shim => github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
+	github.com/redpanda-data/common-go/rpadmin => ../../common-go/rpadmin
 	github.com/redpanda-data/redpanda-operator/charts => ../charts
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
