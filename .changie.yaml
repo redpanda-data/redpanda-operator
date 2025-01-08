@@ -1,0 +1,43 @@
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: '* {{.Body}}'
+# All changes specify auto as 'patch' to avoid unintentional major or minor
+# version bumps as those are handled manually.
+kinds:
+    - label: Added
+      auto: patch
+    - label: Changed
+      auto: patch
+    - label: Deprecated
+      auto: patch
+    - label: Removed
+      auto: patch
+    - label: Fixed
+      auto: patch
+newlines:
+    afterChangelogHeader: 1
+    beforeChangelogVersion: 1
+    endOfVersion: 1
+envPrefix: CHANGIE_
+projectsVersionSeparator: "-"
+projects:
+- label: Redpanda Operator
+  key: operator
+  changelog: operator/CHANGELOG.md
+- label: Redpanda Helm Chart
+  key: chart-redpanda
+  changelog: charts/redpanda/CHANGELOG.md
+- label: Console Helm Chart
+  key: chart-console
+  changelog: charts/console/CHANGELOG.md
+- label: Connectors Helm Chart
+  key: chart-connectors
+  changelog: charts/connectors/CHANGELOG.md
+- label: Redpanda Operator Helm Chart
+  key: chart-operator
+  changelog: charts/operator/CHANGELOG.md

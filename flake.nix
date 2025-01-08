@@ -45,6 +45,7 @@
             packages = [
               pkgs.applyconfiguration-gen
               pkgs.buildkite-agent
+              pkgs.changie # Changelog manager
               pkgs.chart-testing
               pkgs.controller-gen
               pkgs.diffutils # Provides `diff`, used by golangci-lint.

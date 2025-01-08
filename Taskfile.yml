@@ -54,8 +54,17 @@ tasks:
       - task: dev:update-licenses
       - task: k8s:generate
       - task: dev:update-licenses
-      # Ensure flake.nix has been formatted.
-      - nix fmt
+      - task: generate:changelog
+      - nix fmt # Ensure flake.nix has been formatted.
+
+  generate:changelog:
+    generates:
+    - charts/*/CHANGELOG.md
+    - operator/CHANGELOG.md
+    sources:
+    - ./changes/**/*.md
+    cmds:
+    - changie merge -u '## Unreleased' # Ensure CHANGELOG.mds are up to date.
 
   build:
     cmds:
