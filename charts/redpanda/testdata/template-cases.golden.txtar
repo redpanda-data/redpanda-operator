@@ -42784,8 +42784,8 @@ data:
       additional_start_flags:
       - --default-log-level=info
       - --memory=2048M
-      - --smp=99
       - --reserve-memory=9999
+      - --smp=99
       admin_api:
         addresses:
         - redpanda-0.redpanda.default.svc.cluster.local.:9644
@@ -43178,7 +43178,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: 154bbf670b25a84e084af1f1a6777450206fdb2f3014a881f8350fe0371cdc54
+        config.redpanda.com/checksum: 254fcfce7b5ac22dbb5c85515910cfa4a9a3ce14c1453ff29f044e4ff9b60160
       creationTimestamp: null
       labels:
         app.kubernetes.io/component: redpanda-statefulset
@@ -74737,12 +74737,12 @@ data:
           port: 33145
     rpk:
       additional_start_flags:
+      - --abort-on-seastar-bad-alloc
       - --default-log-level=info
-      - --smp=1
+      - --dump-memory-diagnostics-on-alloc-failure-kind=all
       - --memory=5G
       - --reserve-memory=1G
-      - --abort-on-seastar-bad-alloc
-      - --dump-memory-diagnostics-on-alloc-failure-kind=all
+      - --smp=1
       admin_api:
         addresses:
         - redpanda-0.redpanda.default.svc.cluster.local.:9644
@@ -74997,7 +74997,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: 69e9dd514b47e871ffed51f91c705708156ff083623eccd0d138847850a6858b
+        config.redpanda.com/checksum: a1ecaf6efd1c355f483958b8c2eeb52695110b1b65366d9d0a0571b067fa6283
       creationTimestamp: null
       labels:
         app.kubernetes.io/component: redpanda-statefulset
