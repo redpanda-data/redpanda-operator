@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "asIntegral" (get (fromJson (include "sprig.asIntegral" (dict "a" (list $dot) ))) "r") "asNumeric" (get (fromJson (include "sprig.asNumeric" (dict "a" (list $dot) ))) "r") "atoi" (get (fromJson (include "sprig.atoi" (dict "a" (list ) ))) "r") "concat" (get (fromJson (include "sprig.concat" (dict "a" (list ) ))) "r") "default" (get (fromJson (include "sprig.default_" (dict "a" (list ) ))) "r") "empty" (get (fromJson (include "sprig.empty" (dict "a" (list ) ))) "r") "errTypes" (get (fromJson (include "sprig.errTypes" (dict "a" (list ) ))) "r") "first" (get (fromJson (include "sprig.first" (dict "a" (list ) ))) "r") "float" (get (fromJson (include "sprig.float" (dict "a" (list ) ))) "r") "keys" (get (fromJson (include "sprig.keys" (dict "a" (list ) ))) "r") "len" (get (fromJson (include "sprig.lenTest" (dict "a" (list ) ))) "r") "min" (get (fromJson (include "sprig.minFunc" (dict "a" (list ) ))) "r") "regex" (get (fromJson (include "sprig.regex" (dict "a" (list ) ))) "r") "strings" (get (fromJson (include "sprig.stringsFunctions" (dict "a" (list ) ))) "r") "toString" (get (fromJson (include "sprig.toString" (dict "a" (list ) ))) "r") "hasPrefix" (get (fromJson (include "sprig.hasPrefix" (dict "a" (list ) ))) "r") "trim" (get (fromJson (include "sprig.trim" (dict "a" (list ) ))) "r") "unset" (get (fromJson (include "sprig.unset" (dict "a" (list ) ))) "r") "yaml" (get (fromJson (include "sprig.yaml" (dict "a" (list ) ))) "r") "tpl" (get (fromJson (include "sprig.tpl" (dict "a" (list ) ))) "r") "regexReplaceAll" (get (fromJson (include "sprig.regexReplaceAll" (dict "a" (list ) ))) "r") )) | toJson -}}
+{{- (dict "r" (dict "asIntegral" (get (fromJson (include "sprig.asIntegral" (dict "a" (list $dot) ))) "r") "asNumeric" (get (fromJson (include "sprig.asNumeric" (dict "a" (list $dot) ))) "r") "atoi" (get (fromJson (include "sprig.atoi" (dict "a" (list ) ))) "r") "concat" (get (fromJson (include "sprig.concat" (dict "a" (list ) ))) "r") "default" (get (fromJson (include "sprig.default_" (dict "a" (list ) ))) "r") "empty" (get (fromJson (include "sprig.empty" (dict "a" (list ) ))) "r") "errTypes" (get (fromJson (include "sprig.errTypes" (dict "a" (list ) ))) "r") "first" (get (fromJson (include "sprig.first" (dict "a" (list ) ))) "r") "float" (get (fromJson (include "sprig.float" (dict "a" (list ) ))) "r") "keys" (get (fromJson (include "sprig.keys" (dict "a" (list ) ))) "r") "len" (get (fromJson (include "sprig.lenTest" (dict "a" (list ) ))) "r") "min" (get (fromJson (include "sprig.minFunc" (dict "a" (list ) ))) "r") "regex" (get (fromJson (include "sprig.regex" (dict "a" (list ) ))) "r") "strings" (get (fromJson (include "sprig.stringsFunctions" (dict "a" (list ) ))) "r") "toString" (get (fromJson (include "sprig.toString" (dict "a" (list ) ))) "r") "hasPrefix" (get (fromJson (include "sprig.hasPrefix" (dict "a" (list ) ))) "r") "trim" (get (fromJson (include "sprig.trim" (dict "a" (list ) ))) "r") "unset" (get (fromJson (include "sprig.unset" (dict "a" (list ) ))) "r") "yaml" (get (fromJson (include "sprig.yaml" (dict "a" (list ) ))) "r") "tpl" (get (fromJson (include "sprig.tpl" (dict "a" (list ) ))) "r") "regexReplaceAll" (get (fromJson (include "sprig.regexReplaceAll" (dict "a" (list ) ))) "r") "regexSplit" (get (fromJson (include "sprig.regexSplit" (dict "a" (list ) ))) "r") )) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -24,6 +24,18 @@
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (regexReplaceAll "" "" "") (regexReplaceAll "ab" "abbabaab" "w") (regexReplaceAll "test" "kodwptestpwo" "x") (regexReplaceAll " " "wko pdodk wej ndj ow" "_"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "sprig.regexSplit" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_68_spl__ := (list (mustRegexSplit " " "1 2 3 4 5" -1) nil) -}}
+{{- $spl := (index $_68_spl__ 0) -}}
+{{- $_ := (index $_68_spl__ 1) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (concat (default (list ) (list (mustRegexSplit " " "1 2 3 4 5" -1) (mustRegexSplit " " "1 2 3 4 5" (1 | int)) (mustRegexSplit " " "1 2 3 4 5" (2 | int)) (mustRegexSplit " " "1 2 3 4 5" (10 | int)))) (list $spl))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -96,15 +108,15 @@
 {{- define "sprig.float" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_155_f__ := (list (float64 "3.2") nil) -}}
-{{- $f := ((index $_155_f__ 0) | float64) -}}
-{{- $_ := (index $_155_f__ 1) -}}
-{{- $_156_integer__ := (list (float64 "3") nil) -}}
-{{- $integer := ((index $_156_integer__ 0) | float64) -}}
-{{- $_ := (index $_156_integer__ 1) -}}
-{{- $_157_invalidInput_err := (list (float64 "abc") nil) -}}
-{{- $invalidInput := ((index $_157_invalidInput_err 0) | float64) -}}
-{{- $err := (index $_157_invalidInput_err 1) -}}
+{{- $_167_f__ := (list (float64 "3.2") nil) -}}
+{{- $f := ((index $_167_f__ 0) | float64) -}}
+{{- $_ := (index $_167_f__ 1) -}}
+{{- $_168_integer__ := (list (float64 "3") nil) -}}
+{{- $integer := ((index $_168_integer__ 0) | float64) -}}
+{{- $_ := (index $_168_integer__ 1) -}}
+{{- $_169_invalidInput_err := (list (float64 "abc") nil) -}}
+{{- $invalidInput := ((index $_169_invalidInput_err 0) | float64) -}}
+{{- $err := (index $_169_invalidInput_err 1) -}}
 {{- $errorHappen := 0.3 -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- end -}}
@@ -126,15 +138,15 @@
 {{- define "sprig.atoi" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_180_positive__ := (list (atoi "234") nil) -}}
-{{- $positive := ((index $_180_positive__ 0) | int) -}}
-{{- $_ := (index $_180_positive__ 1) -}}
-{{- $_181_negative__ := (list (atoi "-23") nil) -}}
-{{- $negative := ((index $_181_negative__ 0) | int) -}}
-{{- $_ := (index $_181_negative__ 1) -}}
-{{- $_182_invalidInput_err := (list (atoi "paokwdpo") nil) -}}
-{{- $invalidInput := ((index $_182_invalidInput_err 0) | int) -}}
-{{- $err := (index $_182_invalidInput_err 1) -}}
+{{- $_192_positive__ := (list (atoi "234") nil) -}}
+{{- $positive := ((index $_192_positive__ 0) | int) -}}
+{{- $_ := (index $_192_positive__ 1) -}}
+{{- $_193_negative__ := (list (atoi "-23") nil) -}}
+{{- $negative := ((index $_193_negative__ 0) | int) -}}
+{{- $_ := (index $_193_negative__ 1) -}}
+{{- $_194_invalidInput_err := (list (atoi "paokwdpo") nil) -}}
+{{- $invalidInput := ((index $_194_invalidInput_err 0) | int) -}}
+{{- $err := (index $_194_invalidInput_err 1) -}}
 {{- $errorHappen := (0 | int) -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- end -}}
@@ -214,12 +226,12 @@
 {{- define "sprig.errTypes" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_284_x1_err1 := (list (atoi "1") nil) -}}
-{{- $x1 := ((index $_284_x1_err1 0) | int) -}}
-{{- $err1 := (index $_284_x1_err1 1) -}}
-{{- $_285_x2_err2 := (list (float64 "1.1") nil) -}}
-{{- $x2 := ((index $_285_x2_err2 0) | float64) -}}
-{{- $err2 := (index $_285_x2_err2 1) -}}
+{{- $_296_x1_err1 := (list (atoi "1") nil) -}}
+{{- $x1 := ((index $_296_x1_err1 0) | int) -}}
+{{- $err1 := (index $_296_x1_err1 1) -}}
+{{- $_297_x2_err2 := (list (float64 "1.1") nil) -}}
+{{- $x2 := ((index $_297_x2_err2 0) | float64) -}}
+{{- $err2 := (index $_297_x2_err2 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (list $x1 $err1) (list $x2 $err2))) | toJson -}}
 {{- break -}}

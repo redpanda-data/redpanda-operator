@@ -247,6 +247,29 @@ func MustRegexMatch(pattern, s string) bool {
 	return RegexMatch(pattern, s)
 }
 
+// RegexSplit is the go equivalent of sprig's `regexSplit`.
+// +gotohelm:builtin=mustRegexSplit
+func RegexSplit(pattern, s string, n int) []string {
+	r := regexp.MustCompile(pattern)
+	return r.Split(s, n)
+}
+
+// MustRegexSplit is the go equivalent of sprig's `mustRegexSplit`.
+// +gotohelm:builtin=mustRegexSplit
+func MustRegexSplit(pattern, s string, n int) ([]string, error) {
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		return []string{}, err
+	}
+	return r.Split(s, n), nil
+}
+
+// +gotohelm:builtin=regexReplaceAll
+func RegexReplaceAll(regex, s, repl string) string {
+	r := regexp.MustCompile(regex)
+	return r.ReplaceAllString(s, repl)
+}
+
 // Coalesce is the go equivalent of sprig's `coalesce`.
 // +gotohelm:builtin=coalesce
 func Coalesce[T any](values ...T) T {
@@ -439,12 +462,6 @@ func ToString(input any) string {
 func SemverCompare(constraint, version string) (bool, error) {
 	fn := sprig.FuncMap()["semverCompare"].(func(string, string) (bool, error))
 	return fn(constraint, version)
-}
-
-// +gotohelm:builtin=regexReplaceAll
-func RegexReplaceAll(regex, s, repl string) string {
-	r := regexp.MustCompile(regex)
-	return r.ReplaceAllString(s, repl)
 }
 
 // +gotohelm:builtin=join

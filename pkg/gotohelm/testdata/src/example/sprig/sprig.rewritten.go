@@ -46,6 +46,7 @@ func Sprig(dot *helmette.Dot) map[string]any {
 		"yaml":            yaml(),
 		"tpl":             tpl(),
 		"regexReplaceAll": regexReplaceAll(),
+		"regexSplit":      regexSplit(),
 	}
 }
 
@@ -62,6 +63,17 @@ func regexReplaceAll() any {
 		helmette.RegexReplaceAll("test", "kodwptestpwo", "x"),
 		helmette.RegexReplaceAll(" ", "wko pdodk wej ndj ow", "_"),
 	}
+}
+
+func regexSplit() [][]string {
+	spl, _ := helmette.MustRegexSplit(" ", "1 2 3 4 5", -1)
+
+	return append([][]string{
+		helmette.RegexSplit(" ", "1 2 3 4 5", -1),
+		helmette.RegexSplit(" ", "1 2 3 4 5", 1),
+		helmette.RegexSplit(" ", "1 2 3 4 5", 2),
+		helmette.RegexSplit(" ", "1 2 3 4 5", 10),
+	}, spl)
 }
 
 func yaml() any {
