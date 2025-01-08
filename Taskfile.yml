@@ -62,7 +62,8 @@ tasks:
     - charts/*/CHANGELOG.md
     - operator/CHANGELOG.md
     sources:
-    - ./changes/**/*.md
+    - ./.changes/**/*.md
+    - ./.changes/**/*.yaml
     cmds:
     - changie merge -u '## Unreleased' # Ensure CHANGELOG.mds are up to date.
 

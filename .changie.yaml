@@ -6,6 +6,8 @@ versionExt: md
 versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
 kindFormat: '### {{.Kind}}'
 changeFormat: '* {{.Body}}'
+body:
+  block: true
 # All changes specify auto as 'patch' to avoid unintentional major or minor
 # version bumps as those are handled manually.
 kinds:
