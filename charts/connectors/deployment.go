@@ -87,7 +87,7 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 		}
 	}
 
-	return &appsv1.Deployment{
+	d := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "Deployment",
@@ -128,7 +128,6 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 							Image:           fmt.Sprintf("%s:%s", values.Image.Repository, Tag(dot)),
 							ImagePullPolicy: values.Image.PullPolicy,
 							SecurityContext: &values.Container.SecurityContext,
-							Command:         values.Deployment.Command,
 							Env:             env(&values),
 							EnvFrom:         values.Deployment.ExtraEnvFrom,
 							LivenessProbe: &corev1.Probe{
@@ -182,6 +181,12 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 			},
 		},
 	}
+
+	if !helmette.Empty(values.Deployment.Command) {
+		d.Spec.Template.Spec.Containers[0].Command = values.Deployment.Command
+	}
+
+	return d
 }
 
 func env(values *Values) []corev1.EnvVar {

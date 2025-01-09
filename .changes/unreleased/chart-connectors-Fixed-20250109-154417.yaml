@@ -1,0 +1,4 @@
+project: chart-connectors
+kind: Fixed
+body: Connectors container command will not be set if the value is empty
+time: 2025-01-09T15:44:17.717249+01:00

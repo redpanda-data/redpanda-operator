@@ -53532,8 +53532,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
-      - command: null
-        env:
+      - env:
         - name: CONNECT_CONFIGURATION
           value: |-
             rest.advertised.port=8083
@@ -69194,8 +69193,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
-      - command: null
-        env:
+      - env:
         - name: CONNECT_CONFIGURATION
           value: |-
             rest.advertised.port=8083
@@ -110769,8 +110767,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
-      - command: null
-        env:
+      - env:
         - name: CONNECT_CONFIGURATION
           value: |-
             rest.advertised.port=8083
