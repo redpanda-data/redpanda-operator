@@ -14,11 +14,13 @@ import (
 	"errors"
 	"fmt"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+
 	"github.com/spf13/cobra"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 )
 
 func Command() *cobra.Command {
