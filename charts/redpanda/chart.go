@@ -11,7 +11,7 @@
 package redpanda
 
 import (
-	_ "embed"
+	"embed"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -37,14 +37,15 @@ var (
 	// objects produced by the redpanda chart.
 	Scheme = runtime.NewScheme()
 
+	//go:embed Chart.lock
 	//go:embed Chart.yaml
-	chartYAML []byte
-
+	//go:embed templates/*
+	//go:embed values.schema.json
 	//go:embed values.yaml
-	defaultValuesYAML []byte
+	ChartFiles embed.FS
 
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(chartYAML, defaultValuesYAML, render, console.Chart, connectors.Chart)
+	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart, connectors.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that

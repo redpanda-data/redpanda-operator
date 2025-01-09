@@ -298,7 +298,7 @@ func advertisedHost(dot *helmette.Dot, i int32) string {
 
 	address := fmt.Sprintf("%s-%d", Fullname(dot), int(i))
 	if ptr.Deref(values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(*values.External.Domain, dot))
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, *values.External.Domain, dot))
 	}
 
 	if len(values.External.Addresses) <= 0 {
@@ -312,7 +312,7 @@ func advertisedHost(dot *helmette.Dot, i int32) string {
 	}
 
 	if ptr.Deref(values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(*values.External.Domain, dot))
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, *values.External.Domain, dot))
 	}
 
 	return address

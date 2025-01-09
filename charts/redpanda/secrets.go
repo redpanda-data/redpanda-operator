@@ -542,7 +542,7 @@ func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
 	)
 	if len(values.Listeners.Kafka.External) > 0 {
 		externalCounter := 0
-		for externalName, externalVals := range values.Listeners.Kafka.External {
+		for externalName, externalVals := range helmette.SortedMap(values.Listeners.Kafka.External) {
 			externalCounter = externalCounter + 1
 			snippet = append(snippet,
 				``,
@@ -619,7 +619,7 @@ func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
 	)
 	if len(values.Listeners.HTTP.External) > 0 {
 		externalCounter := 0
-		for externalName, externalVals := range values.Listeners.HTTP.External {
+		for externalName, externalVals := range helmette.SortedMap(values.Listeners.HTTP.External) {
 			externalCounter = externalCounter + 1
 			snippet = append(snippet,
 				``,
@@ -695,7 +695,7 @@ func externalAdvertiseAddress(dot *helmette.Dot) string {
 
 	eaa := "${SERVICE_NAME}"
 	externalDomainTemplate := ptr.Deref(values.External.Domain, "")
-	expanded := helmette.Tpl(externalDomainTemplate, dot)
+	expanded := helmette.Tpl(dot, externalDomainTemplate, dot)
 	if !helmette.Empty(expanded) {
 		eaa = fmt.Sprintf("%s.%s", "${SERVICE_NAME}", expanded)
 	}
@@ -721,7 +721,7 @@ func advertisedHostJSON(dot *helmette.Dot, externalName string, port int32, repl
 		if domain := ptr.Deref(values.External.Domain, ""); domain != "" {
 			host = map[string]any{
 				"name":    externalName,
-				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(domain, dot)),
+				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, domain, dot)),
 				"port":    port,
 			}
 		} else {

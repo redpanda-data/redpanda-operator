@@ -173,7 +173,7 @@ func StrategicMergePatch(overrides *corev1.PodTemplateSpec, original corev1.PodT
 			}
 			newVolumes = append(newVolumes, vol)
 		}
-		for _, vol := range overrideVolumes {
+		for _, vol := range helmette.SortedMap(overrideVolumes) {
 			newVolumes = append(newVolumes, vol)
 		}
 		original.Spec.Volumes = newVolumes

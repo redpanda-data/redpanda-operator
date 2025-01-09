@@ -28,7 +28,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 	for _, t := range values.Ingress.TLS {
 		var hosts []string
 		for _, host := range t.Hosts {
-			hosts = append(hosts, helmette.Tpl(host, dot))
+			hosts = append(hosts, helmette.Tpl(dot, host, dot))
 		}
 		tls = append(tls, networkingv1.IngressTLS{
 			SecretName: t.SecretName,
@@ -55,7 +55,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 		}
 
 		rules = append(rules, networkingv1.IngressRule{
-			Host: helmette.Tpl(host.Host, dot),
+			Host: helmette.Tpl(dot, host.Host, dot),
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
 					Paths: paths,

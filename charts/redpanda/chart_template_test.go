@@ -85,36 +85,16 @@ func TestTemplate(t *testing.T) {
 
 	tmp := testutil.TempDir(t)
 
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
+	chartDir := filepath.Join(tmp, "redpanda")
+	require.NoError(t, os.Mkdir(chartDir, 0o700))
 
-	err = CopyFS(tmp, os.DirFS(pwd), "charts")
-	require.NoError(t, err)
-
-	require.NoError(t, os.Remove(filepath.Join(tmp, "Chart.lock")))
+	require.NoError(t, redpanda.Chart.Write(chartDir))
 
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
-
-	// As go based resource rendering is hooked with the unreleased console version
-	// any change to the console would end up be blocked by this test. The helm template
-	// would pick the latest console release, so that any change in console would not be
-	// available in `template` function. Just for
-	metadata := redpanda.Chart.Metadata()
-	for _, d := range metadata.Dependencies {
-		d.Repository = fmt.Sprintf("file://%s", filepath.Join(pwd, fmt.Sprintf("../%s", d.Name)))
-	}
-
-	b, err := yaml.Marshal(metadata)
-	require.NoError(t, err)
-
-	err = os.WriteFile(filepath.Join(tmp, "Chart.yaml"), b, os.ModePerm)
-	require.NoError(t, err)
-
-	require.NoError(t, client.DependencyBuild(ctx, tmp))
 
 	archive, err := txtar.ParseFile("testdata/template-cases.txtar")
 	require.NoError(t, err)
@@ -139,7 +119,7 @@ func TestTemplate(t *testing.T) {
 			var values map[string]any
 			require.NoError(t, yaml.Unmarshal(tc.Data, &values), "input values are invalid YAML")
 
-			out, renderErr := client.Template(ctx, tmp, helm.TemplateOptions{
+			out, renderErr := client.Template(ctx, chartDir, helm.TemplateOptions{
 				Name:   "redpanda",
 				Values: values,
 				Set: []string{

@@ -66,7 +66,7 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 				}
 			}
 
-			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(*values.External.Domain, dot))
+			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(dot, *values.External.Domain, dot))
 
 			annotations["external-dns.alpha.kubernetes.io/hostname"] = address
 		}
@@ -80,8 +80,11 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 
 		podSelector["statefulset.kubernetes.io/pod-name"] = podname
 
+		// Divergences pop up here due to iterating over a map. This isn't okay
+		// in helm. TODO setup a linter that barks about this? Also a helper
+		// for getting the sorted keys of a map?
 		var ports []corev1.ServicePort
-		for name, listener := range values.Listeners.Admin.External {
+		for name, listener := range helmette.SortedMap(values.Listeners.Admin.External) {
 			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
 				continue
 			}
@@ -96,7 +99,7 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 			})
 		}
 
-		for name, listener := range values.Listeners.Kafka.External {
+		for name, listener := range helmette.SortedMap(values.Listeners.Kafka.External) {
 			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
 				continue
 			}
@@ -111,7 +114,7 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 			})
 		}
 
-		for name, listener := range values.Listeners.HTTP.External {
+		for name, listener := range helmette.SortedMap(values.Listeners.HTTP.External) {
 			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
 				continue
 			}
@@ -126,7 +129,7 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 			})
 		}
 
-		for name, listener := range values.Listeners.SchemaRegistry.External {
+		for name, listener := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
 			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
 				continue
 			}

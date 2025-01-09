@@ -11,7 +11,7 @@
 package connectors
 
 import (
-	_ "embed"
+	"embed"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,13 +28,12 @@ var (
 	Scheme = runtime.NewScheme()
 
 	//go:embed Chart.yaml
-	chartYAML []byte
-
 	//go:embed values.yaml
-	defaultValuesYAML []byte
+	//go:embed templates/*
+	chartFiles embed.FS
 
 	// ChartLabel is the go version of the console helm chart.
-	Chart = gotohelm.MustLoad(chartYAML, defaultValuesYAML, render)
+	Chart = gotohelm.MustLoad(chartFiles, render)
 )
 
 // +gotohelm:ignore=true

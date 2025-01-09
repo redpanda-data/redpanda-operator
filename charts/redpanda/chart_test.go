@@ -14,7 +14,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"maps"
 	"math/big"
@@ -48,6 +47,33 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/tlsgeneration"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
+
+// TestChartLock asserts that the dependencies reported in Chart.lock align
+// with the dependencies and versions of the go version of the chart.
+func TestChartLock(t *testing.T) {
+	// TODO: Once all charts are split into individual modules, also assert
+	// that the versions reported by runtime/debug.BuildInfo() align with
+	// Chart.lock.
+	chartLockBytes, err := fs.ReadFile(redpanda.ChartFiles, "Chart.lock")
+	require.NoError(t, err)
+
+	var lock helm.ChartLock
+	require.NoError(t, yaml.Unmarshal(chartLockBytes, &lock))
+
+	for _, dep := range lock.Dependencies {
+		var goVersion string
+		switch dep.Name {
+		case "console":
+			goVersion = console.Chart.Metadata().Version
+		case "connectors":
+			goVersion = connectors.Chart.Metadata().Version
+		default:
+			t.Errorf("unexpected dependency: %q", dep.Name)
+		}
+
+		require.Equal(t, goVersion, dep.Version, "Chart.lock dependency of %q is out of sync with the go version")
+	}
+}
 
 func TestIntegrationChart(t *testing.T) {
 	testutil.SkipIfNotIntegration(t)
@@ -875,192 +901,122 @@ func TestControllersTag(t *testing.T) {
 func TestGoHelmEquivalence(t *testing.T) {
 	tmp := testutil.TempDir(t)
 
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
+	chartDir := filepath.Join(tmp, "redpanda")
+	require.NoError(t, os.Mkdir(chartDir, 0o700))
 
-	err = CopyFS(tmp, os.DirFS(pwd), "charts")
-	require.NoError(t, err)
-
-	require.NoError(t, os.Remove(filepath.Join(tmp, "Chart.lock")))
+	require.NoError(t, redpanda.Chart.Write(chartDir))
 
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
+	for _, tc := range CIGoldenTestCases(t) {
+		t.Run(tc.Name, func(t *testing.T) {
+			var values redpanda.PartialValues
+			require.NoError(t, yaml.Unmarshal(tc.Data, &values), "input values are invalid YAML")
 
-	// As go based resource rendering is hooked with the unreleased console version
-	// any change to the console would end up be blocked by this test. The helm template
-	// would pick the latest console release, so that any change in console would not be
-	// available in `template` function. Just for
-	metadata := redpanda.Chart.Metadata()
-	for _, d := range metadata.Dependencies {
-		d.Repository = fmt.Sprintf("file://%s", filepath.Join(pwd, fmt.Sprintf("../%s", d.Name)))
-	}
-
-	b, err := yaml.Marshal(metadata)
-	require.NoError(t, err)
-
-	err = os.WriteFile(filepath.Join(tmp, "Chart.yaml"), b, os.ModePerm)
-	require.NoError(t, err)
-
-	require.NoError(t, client.DependencyBuild(ctx, tmp))
-
-	// TODO: Add additional cases for better coverage. Generating random inputs
-	// generally results in invalid inputs.
-	values := redpanda.PartialValues{
-		Enterprise: &redpanda.PartialEnterprise{License: ptr.To("LICENSE_PLACEHOLDER")},
-		External: &redpanda.PartialExternalConfig{
-			// include, required and tpl are not yet implemented in gotohelm package
-			Domain:         ptr.To("{{ trunc 4 .Values.external.prefixTemplate | lower | repeat 3 }}-testing"),
-			Type:           ptr.To(corev1.ServiceTypeLoadBalancer),
-			PrefixTemplate: ptr.To("$POD_ORDINAL-XYZ-$(echo -n $HOST_IP_ADDRESS | sha256sum | head -c 7)"),
-			ExternalDNS:    &redpanda.PartialEnableable{Enabled: ptr.To(true)},
-		},
-		Statefulset: &redpanda.PartialStatefulset{
-			ExtraVolumeMounts: ptr.To(`- name: test-extra-volume
-  mountPath: {{ upper "/fake/lifecycle" }}`),
-			ExtraVolumes: ptr.To(`- name: test-extra-volume
-  secret:
-    secretName: {{ trunc 5 .Values.enterprise.license }}-sts-lifecycle
-    defaultMode: 0774`),
-			InitContainers: GetInitContainer(),
-		},
-	}
-
-	// We're not interested in tests, console, or connectors so always disable
-	// those.
-	values.Tests = &struct {
-		Enabled *bool "json:\"enabled,omitempty\""
-	}{
-		Enabled: ptr.To(false),
-	}
-
-	values.Console = &console.PartialValues{
-		Enabled: ptr.To(true),
-		Ingress: &console.PartialIngressConfig{
-			Enabled: ptr.To(true),
-		},
-		Secret: &console.PartialSecretConfig{
-			Login: &console.PartialLoginSecrets{
-				JWTSecret: ptr.To("JWT_PLACEHOLDER"),
-			},
-		},
-		Tests: &console.PartialEnableable{Enabled: ptr.To(false)},
-		// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
-		// Currently there is difference between dependency Console Deployment and ServiceAccount
-		ServiceAccount: &console.PartialServiceAccountConfig{
-			AutomountServiceAccountToken: ptr.To(false),
-		},
-		AutomountServiceAccountToken: ptr.To(false),
-	}
-	values.Connectors = &connectors.PartialValues{
-		Enabled: ptr.To(true),
-		Test: &connectors.PartialCreatable{
-			Create: ptr.To(false),
-		},
-		Monitoring: &connectors.PartialMonitoringConfig{
-			Enabled: ptr.To(true),
-		},
-		ServiceAccount: &connectors.PartialServiceAccountConfig{
-			Create: ptr.To(true),
-		},
-	}
-
-	goObjs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
-		Name:      "gotohelm",
-		Namespace: "mynamespace",
-		Service:   "Helm",
-	}, values)
-	require.NoError(t, err)
-
-	rendered, err := client.Template(context.Background(), tmp, helm.TemplateOptions{
-		Name:      "gotohelm",
-		Namespace: "mynamespace",
-		Values:    values,
-	})
-	require.NoError(t, err)
-
-	helmObjs, err := kube.DecodeYAML(rendered, redpanda.Scheme)
-	require.NoError(t, err)
-
-	slices.SortStableFunc(helmObjs, func(a, b kube.Object) int {
-		aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
-		bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
-		return strings.Compare(aStr, bStr)
-	})
-
-	slices.SortStableFunc(goObjs, func(a, b kube.Object) int {
-		aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
-		bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
-		return strings.Compare(aStr, bStr)
-	})
-
-	const stsIdx = 17
-
-	// resource.Quantity is a special object. To Ensure they compare correctly,
-	// we'll round trip it through JSON so the internal representations will
-	// match (assuming the values are actually equal).
-	goObjs[stsIdx].(*appsv1.StatefulSet).Spec.Template.Spec.Containers[0].Resources, err = valuesutil.UnmarshalInto[corev1.ResourceRequirements](goObjs[stsIdx].(*appsv1.StatefulSet).Spec.Template.Spec.Containers[0].Resources)
-	require.NoError(t, err)
-
-	helmObjs[stsIdx].(*appsv1.StatefulSet).Spec.Template.Spec.Containers[0].Resources, err = valuesutil.UnmarshalInto[corev1.ResourceRequirements](helmObjs[stsIdx].(*appsv1.StatefulSet).Spec.Template.Spec.Containers[0].Resources)
-	require.NoError(t, err)
-
-	assert.Equal(t, len(helmObjs), len(goObjs))
-
-	// Iterate and compare instead of a single comparison for better error
-	// messages. Some divergences will fail an Equal check on slices but not
-	// report which element(s) aren't equal.
-	for i := range helmObjs {
-		assert.Equal(t, helmObjs[i], goObjs[i])
-	}
-}
-
-// CopyFs is a direct copy of function from standard library in go 1.23
-// https://github.com/golang/go/blob/c8fb6ae617d65b42089202040d8fbd309d1a0fe4/src/os/dir.go#L132-L191
-func CopyFS(dir string, fsys fs.FS, skip ...string) error {
-	return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fs.ValidPath(path) {
-			return fmt.Errorf("invalid path: %s", path)
-		}
-		for _, s := range skip {
-			if strings.Contains(path, s) {
-				return nil
+			// Make our values deterministic, otherwise the comparisons will be
+			// thrown off.
+			values.Tests = &struct {
+				Enabled *bool "json:\"enabled,omitempty\""
+			}{
+				Enabled: ptr.To(false),
 			}
-		}
-		newPath := filepath.Join(dir, path)
-		if d.IsDir() {
-			return os.MkdirAll(newPath, 0o777)
-		}
-		// TODO(panjf2000): handle symlinks with the help of fs.ReadLinkFS
-		// 		once https://go.dev/issue/49580 is done.
-		//		we also need filepathlite.IsLocal from https://go.dev/cl/564295.
-		if !d.Type().IsRegular() {
-			return &os.PathError{Op: "CopyFS", Path: path, Err: os.ErrInvalid}
-		}
-		r, err := fsys.Open(path)
-		if err != nil {
-			return err
-		}
-		defer r.Close()
-		info, err := r.Stat()
-		if err != nil {
-			return err
-		}
-		w, err := os.OpenFile(newPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666|info.Mode()&0o777)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(w, r); err != nil {
-			w.Close()
-			return &os.PathError{Op: "Copy", Path: newPath, Err: err}
-		}
-		return w.Close()
-	})
+
+			if values.Auth == nil {
+				values.Auth = &redpanda.PartialAuth{}
+			}
+			if values.Auth.SASL == nil {
+				values.Auth.SASL = &redpanda.PartialSASLAuth{}
+			}
+			if values.Auth.SASL.BootstrapUser == nil {
+				values.Auth.SASL.BootstrapUser = &redpanda.PartialBootstrapUser{}
+			}
+
+			if values.Auth != nil && values.Auth.SASL != nil && values.Auth.SASL.BootstrapUser != nil {
+				values.Auth.SASL.BootstrapUser.Password = ptr.To("bootstrapuser-p@ssw0rd")
+			}
+
+			values.Console = &console.PartialValues{
+				Enabled: ptr.To(true),
+				Ingress: &console.PartialIngressConfig{
+					Enabled: ptr.To(true),
+				},
+				Secret: &console.PartialSecretConfig{
+					Login: &console.PartialLoginSecrets{
+						JWTSecret: ptr.To("JWT_PLACEHOLDER"),
+					},
+				},
+				Tests: &console.PartialEnableable{Enabled: ptr.To(false)},
+				// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
+				// Currently there is difference between dependency Console Deployment and ServiceAccount
+				ServiceAccount: &console.PartialServiceAccountConfig{
+					AutomountServiceAccountToken: ptr.To(false),
+				},
+				AutomountServiceAccountToken: ptr.To(false),
+			}
+			values.Connectors = &connectors.PartialValues{
+				Enabled: ptr.To(true),
+				Test: &connectors.PartialCreatable{
+					Create: ptr.To(false),
+				},
+				Monitoring: &connectors.PartialMonitoringConfig{
+					Enabled: ptr.To(true),
+				},
+				ServiceAccount: &connectors.PartialServiceAccountConfig{
+					Create: ptr.To(true),
+				},
+			}
+
+			goObjs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
+				Name:      "gotohelm",
+				Namespace: "mynamespace",
+				Service:   "Helm",
+			}, values)
+			require.NoError(t, err)
+
+			rendered, err := client.Template(context.Background(), chartDir, helm.TemplateOptions{
+				Name:      "gotohelm",
+				Namespace: "mynamespace",
+				Values:    values,
+			})
+			require.NoError(t, err)
+
+			helmObjs, err := kube.DecodeYAML(rendered, redpanda.Scheme)
+			require.NoError(t, err)
+
+			slices.SortStableFunc(helmObjs, func(a, b kube.Object) int {
+				aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
+				bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
+				return strings.Compare(aStr, bStr)
+			})
+
+			slices.SortStableFunc(goObjs, func(a, b kube.Object) int {
+				aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
+				bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
+				return strings.Compare(aStr, bStr)
+			})
+
+			for _, obj := range append(helmObjs, goObjs...) {
+				switch obj := obj.(type) {
+				case *appsv1.StatefulSet:
+					// resource.Quantity is a special object. To Ensure they compare correctly,
+					// we'll round trip it through JSON so the internal representations will
+					// match (assuming the values are actually equal).
+					obj.Spec.Template.Spec.Containers[0].Resources, err = valuesutil.UnmarshalInto[corev1.ResourceRequirements](obj.Spec.Template.Spec.Containers[0].Resources)
+					require.NoError(t, err)
+				}
+			}
+
+			assert.Equal(t, len(helmObjs), len(goObjs))
+
+			// Iterate and compare instead of a single comparison for better error
+			// messages. Some divergences will fail an Equal check on slices but not
+			// report which element(s) aren't equal.
+			for i := range helmObjs {
+				assert.Equal(t, helmObjs[i], goObjs[i])
+			}
+		})
+	}
 }
 
 func GetInitContainer() *struct {

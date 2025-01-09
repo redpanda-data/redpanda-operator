@@ -11,7 +11,7 @@
 package console
 
 import (
-	_ "embed"
+	"embed"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -27,13 +27,13 @@ var (
 	Scheme = runtime.NewScheme()
 
 	//go:embed Chart.yaml
-	chartYAML []byte
-
+	//go:embed templates/*
+	//go:embed values.schema.json
 	//go:embed values.yaml
-	defaultValuesYAML []byte
+	chartFiles embed.FS
 
 	// ChartLabel is the go version of the console helm chart.
-	Chart = gotohelm.MustLoad(chartYAML, defaultValuesYAML, render)
+	Chart = gotohelm.MustLoad(chartFiles, render)
 )
 
 // +gotohelm:ignore=true
