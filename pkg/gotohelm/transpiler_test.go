@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -154,11 +153,6 @@ func TestTranspile(t *testing.T) {
 	pkgs, err := LoadPackages(&packages.Config{
 		Dir:   td + "/src/example",
 		Tests: true,
-		Env: append(
-			os.Environ(),
-			"GOPATH="+td,
-			"GO111MODULE=on",
-		),
 	}, "./...")
 	require.NoError(t, err)
 
@@ -426,11 +420,6 @@ type GoRunner struct {
 func NewGoRunner(t *testing.T, root string) *GoRunner {
 	cmd := exec.Command("go", "run", "main.go")
 	cmd.Dir = filepath.Join(root, "src", "example")
-	cmd.Env = append(
-		os.Environ(),
-		"GOPATH="+root,
-		"GO111MODULE=on",
-	)
 
 	runner := &GoRunner{
 		cmd:      cmd,

@@ -12,7 +12,6 @@ package gotohelm
 import (
 	"bytes"
 	"go/format"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -28,11 +27,6 @@ func TestLoadPackages(t *testing.T) {
 
 	pkgs, err := LoadPackages(&packages.Config{
 		Dir: filepath.Join(td, "src/example"),
-		Env: append(
-			os.Environ(),
-			"GOPATH="+td,
-			"GO111MODULE=on",
-		),
 	}, "./...")
 	require.NoError(t, err)
 
