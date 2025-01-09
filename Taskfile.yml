@@ -97,3 +97,15 @@ tasks:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
         CLI_ARGS: '{{.CLI_ARGS}} -run "^TestIntegration" -timeout 20m'
+
+  test:acceptance:
+    vars:
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+      CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
+    cmds:
+    - task: k8s:build-operator-images
+    - kind delete cluster --name acceptance || true
+    - kind create cluster --name acceptance
+    - defer: kind delete cluster --name acceptance
+    - kind load --name acceptance docker-image localhost/redpanda-operator:dev localhost/configurator:dev
+    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} ./acceptance'
