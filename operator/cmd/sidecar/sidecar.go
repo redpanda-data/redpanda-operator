@@ -21,6 +21,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
