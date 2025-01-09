@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
@@ -224,7 +225,7 @@ func (s *ProberSuite) installChart(name, version string) *chart {
 	s.Require().True(ok, "redpanda.yaml not found in config map")
 
 	fs := afero.NewMemMapFs()
-	err = afero.WriteFile(fs, "/redpanda.yaml", []byte(data), 0644)
+	err = afero.WriteFile(fs, "/redpanda.yaml", []byte(data), 0o644)
 	s.Require().NoError(err)
 
 	var secret corev1.Secret
@@ -234,7 +235,7 @@ func (s *ProberSuite) installChart(name, version string) *chart {
 	cert, ok := secret.Data["ca.crt"]
 	s.Require().True(ok, "ca.crt not found in secret")
 
-	err = afero.WriteFile(fs, fmt.Sprintf("/etc/tls/certs/%s/ca.crt", name), []byte(cert), 0644)
+	err = afero.WriteFile(fs, fmt.Sprintf("/etc/tls/certs/%s/ca.crt", name), []byte(cert), 0o644)
 	s.Require().NoError(err)
 
 	prober := probes.NewProber(s.manager, "/redpanda.yaml", probes.WithFS(fs), probes.WithFactory(s.clientFactory.WithFS(fs)))
