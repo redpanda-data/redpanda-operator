@@ -508,6 +508,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -649,8 +650,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -1266,7 +1267,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -1778,6 +1779,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -1921,8 +1923,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 8e295d714da59dddd171a1e22d24dbcc78ccfb3123ebddc0c14390bb736f6d65
-        checksum/config: 8e295d714da59dddd171a1e22d24dbcc78ccfb3123ebddc0c14390bb736f6d65
+        checksum-redpanda-chart/config: c0d5ae4fb28222db3d12e9cadc48f9a15849e3c3ebd8c6c03cc01b2349b25108
+        checksum/config: 63bb2348b6a7362fde73c4e7cbb6cce884965350d5298f130bc4d393a57d797f
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -2316,7 +2318,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -2879,6 +2881,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -3020,8 +3023,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: d736bbd4f157a579177ab56c0a9855484f1a234bf96de2d6cb762bae2f5ddf3d
-        checksum/config: d736bbd4f157a579177ab56c0a9855484f1a234bf96de2d6cb762bae2f5ddf3d
+        checksum-redpanda-chart/config: dc2be51dd65d8f1a43caae9322c2c0b311f3726fccd6490de5503b5814cc2546
+        checksum/config: 0bbaf411a0d13d9803c40543e70292b3a52f97fff960c0208082aa0b11756924
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -3637,7 +3640,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -4284,6 +4287,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -4425,8 +4429,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 1065bc2e7f874eda3abe8ffce90d6b430d8334187d3841d4d7e8897de4ac977e
-        checksum/config: 1065bc2e7f874eda3abe8ffce90d6b430d8334187d3841d4d7e8897de4ac977e
+        checksum-redpanda-chart/config: 03ead3d2be374fd67f17c50fa2236aa37e05c119d286053d7ae87f67cff9c0fd
+        checksum/config: 5c3da25d6dc54cd1c1813897ec9b3bdcd9b490790726fc712a0669a7cce5ba74
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -4876,7 +4880,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -5601,6 +5605,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -5742,8 +5747,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: b61e56acd844faac80ce86bcafb5402bc25d7f9eb65f079a97bb5ef701728307
-        checksum/config: b61e56acd844faac80ce86bcafb5402bc25d7f9eb65f079a97bb5ef701728307
+        checksum-redpanda-chart/config: 97ba25c7002c323f8e8f82c321784fff9494e62aa9c02a877cd81692beca210c
+        checksum/config: 6ecb42b8f990bdedb8277cb1f6d9f2f8da7f8adf9a594385a3f1884b2bfd1ef8
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -6418,7 +6423,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -7072,6 +7077,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7311,8 +7317,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -7949,7 +7955,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -8622,6 +8628,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -8793,8 +8800,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 721d4f3f7ab8e76694c1d5ccab48c84cd30b5c9711b5d9b1a6d69d1a3cbf69e8
-        checksum/config: 721d4f3f7ab8e76694c1d5ccab48c84cd30b5c9711b5d9b1a6d69d1a3cbf69e8
+        checksum-redpanda-chart/config: cc486944141fe32b742ffac2d6f78fa0f98774c3520f469bfcc23d1d11d9394e
+        checksum/config: 676ef3b448437e7aadf1c294ee26762dfe6774ef29417a8e79de9f7f0fe0cd2f
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -9531,7 +9538,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -10152,6 +10159,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -10293,8 +10301,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -10909,7 +10917,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -11579,6 +11587,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -11720,8 +11729,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -12425,7 +12434,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -13040,6 +13049,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -13181,8 +13191,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -13802,7 +13812,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -14566,6 +14576,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -14707,8 +14718,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
-        checksum/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
+        checksum-redpanda-chart/config: d85e0f5d39ef7b466a460fb9ac4bdd6b4a0380cff02e45bb0ee0804c886ba8c8
+        checksum/config: 7aaa1942fba64d3aa47294854015cdbd41909658d393c8d1d4a5ff85ba6b80d5
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -15383,7 +15394,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -16015,6 +16026,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -16156,8 +16168,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -16678,7 +16690,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -17293,6 +17305,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -17521,8 +17534,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -18043,7 +18056,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -18590,6 +18603,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -18731,8 +18745,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 83a571bb3ef213bdf428747ccfc45e87986518e632b69ef2c02aaec57d53a8c9
-        checksum/config: 83a571bb3ef213bdf428747ccfc45e87986518e632b69ef2c02aaec57d53a8c9
+        checksum-redpanda-chart/config: 982bf85c8fbb592b5b25d112f92f144dd8f45a0f1d4075b76387dba3ffa49028
+        checksum/config: 36e245ac0ed8fc4d7ce3a7b2afc7ede236f36c2eee1e5df756fb3dd562476e59
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -19151,7 +19165,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -19754,6 +19768,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -19895,8 +19910,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -20544,7 +20559,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -21159,6 +21174,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -21530,8 +21546,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -22185,7 +22201,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -22800,6 +22816,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -22941,8 +22958,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -23561,7 +23578,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -24176,6 +24193,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -24317,8 +24335,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -24938,7 +24956,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -25285,6 +25303,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -25597,6 +25616,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -25738,8 +25758,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -26386,7 +26406,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -26735,6 +26755,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -27048,6 +27069,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -27189,8 +27211,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -27837,7 +27859,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -28186,6 +28208,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -28497,6 +28520,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -28638,8 +28662,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -29287,7 +29311,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -29909,6 +29933,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -30050,8 +30075,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -30683,7 +30708,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -31030,6 +31055,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -31342,6 +31368,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -31483,8 +31510,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -32150,7 +32177,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -32499,6 +32526,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -32812,6 +32840,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -32953,8 +32982,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -33620,7 +33649,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -33969,6 +33998,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -34280,6 +34310,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -34421,8 +34452,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -35090,7 +35121,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -35712,6 +35743,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -35853,8 +35885,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -36506,7 +36538,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -36853,6 +36885,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -37165,6 +37198,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -37306,8 +37340,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -37973,7 +38007,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -38322,6 +38356,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -38635,6 +38670,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -38776,8 +38812,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -39443,7 +39479,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -39792,6 +39828,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_SAMPLE_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -40103,6 +40140,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -40244,8 +40282,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -40913,7 +40951,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -41535,6 +41573,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -41676,8 +41715,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -42329,7 +42368,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -42944,6 +42983,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -43085,8 +43125,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -43702,7 +43742,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -44317,6 +44357,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -44458,8 +44499,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -45076,7 +45117,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -45691,6 +45732,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -45832,8 +45874,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -46451,7 +46493,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -47129,6 +47171,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -47290,8 +47333,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 0fa9347997916af52bc48424c8328cbec3039389d78a7444dab61e8c0d1ee8c0
-        checksum/config: 0fa9347997916af52bc48424c8328cbec3039389d78a7444dab61e8c0d1ee8c0
+        checksum-redpanda-chart/config: 9094c788a38745d933a56b7b9b73f0a5dc1452aa659a8f371a505ebf618e6556
+        checksum/config: 86cec0ff9c3011b884224f3190783543f878a9eb61084a9cfecf734a95ecd840
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -47915,7 +47958,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -48533,6 +48576,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -48680,8 +48724,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -49309,7 +49353,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -49924,6 +49968,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -50295,8 +50340,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -50962,7 +51007,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -51632,6 +51677,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -51905,8 +51951,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -52565,7 +52611,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -53197,6 +53243,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/connectors/templates/entry-point.yaml
 apiVersion: v1
@@ -53370,8 +53417,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
-        checksum/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
+        checksum-redpanda-chart/config: 1dc9c72bfc2427987118c978527a28be63360b5bd14931a879aea04cca12d840
+        checksum/config: 1f069ebc4e0b6a2e905bca2e6f9d11f031ac3fe20b27dca589d15e1301a8b7b9
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -54152,7 +54199,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -54767,6 +54814,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -54908,8 +54956,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -55529,7 +55577,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -56145,6 +56193,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -56289,8 +56338,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 20cd6cbc36825de9d72e07cfd13dd0f51a51c2d4e921ca7be261fe8902edd674
-        checksum/config: 20cd6cbc36825de9d72e07cfd13dd0f51a51c2d4e921ca7be261fe8902edd674
+        checksum-redpanda-chart/config: 01c976a6a91def876ce547a5a83c9da9e4362fc95c70dd4d5508cfff884b4f78
+        checksum/config: e483931e9520a93df00d7894b777adba7513fb21add77165f9a6bed1662e0888
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -56941,7 +56990,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -57556,6 +57605,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -57697,8 +57747,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -58329,7 +58379,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -58963,6 +59013,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -59104,8 +59155,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -59736,7 +59787,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -60372,6 +60423,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -60513,8 +60565,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -61133,7 +61185,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -63041,6 +63093,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -63182,8 +63235,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -63743,7 +63796,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -64223,6 +64276,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -64551,6 +64605,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -64692,8 +64747,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
-        checksum/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
+        checksum-redpanda-chart/config: d85e0f5d39ef7b466a460fb9ac4bdd6b4a0380cff02e45bb0ee0804c886ba8c8
+        checksum/config: 7aaa1942fba64d3aa47294854015cdbd41909658d393c8d1d4a5ff85ba6b80d5
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -65384,7 +65439,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -65750,6 +65805,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ${REDPANDA_LICENSE}
   kafka-protobuf-git-basicauth-password: ""
@@ -66056,6 +66112,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -66197,8 +66254,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -66830,7 +66887,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -67447,6 +67504,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -67588,8 +67646,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -68210,7 +68268,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -68847,6 +68905,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/connectors/templates/entry-point.yaml
 apiVersion: v1
@@ -69020,8 +69079,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
-        checksum/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
+        checksum-redpanda-chart/config: 1dc9c72bfc2427987118c978527a28be63360b5bd14931a879aea04cca12d840
+        checksum/config: 1f069ebc4e0b6a2e905bca2e6f9d11f031ac3fe20b27dca589d15e1301a8b7b9
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -69265,6 +69324,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 spec:
   maxReplicas: 100
   metrics:
@@ -69627,6 +69687,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 spec:
   ingressClassName: null
   rules:
@@ -69879,7 +69940,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -70494,6 +70555,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -70635,8 +70697,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -71253,7 +71315,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -71869,6 +71931,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -72010,8 +72073,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -72628,7 +72691,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -73244,6 +73307,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -73385,8 +73449,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -74002,7 +74066,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -76322,6 +76386,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -76463,8 +76528,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -77087,7 +77152,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -77849,6 +77914,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -77990,8 +78056,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
-        checksum/config: 7c7f4a111865610cc9487cc076a984b8603c6ede97a620f4731d55bb0acde7b5
+        checksum-redpanda-chart/config: d85e0f5d39ef7b466a460fb9ac4bdd6b4a0380cff02e45bb0ee0804c886ba8c8
+        checksum/config: 7aaa1942fba64d3aa47294854015cdbd41909658d393c8d1d4a5ff85ba6b80d5
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -78666,7 +78732,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -79322,6 +79388,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -79463,8 +79530,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -80080,7 +80147,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -80427,6 +80494,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -80732,6 +80800,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -80873,8 +80942,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -81506,7 +81575,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -82128,6 +82197,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -82269,8 +82339,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -82907,7 +82977,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -83534,6 +83604,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -83675,8 +83746,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -84292,7 +84363,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -84639,6 +84710,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -84944,6 +85016,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -85085,8 +85158,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -85718,7 +85791,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -86340,6 +86413,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -86481,8 +86555,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -87119,7 +87193,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -87734,6 +87808,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -87875,8 +87950,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -88492,7 +88567,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -88839,6 +88914,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -89144,6 +89220,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -89285,8 +89362,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -89918,7 +89995,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -90540,6 +90617,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -90681,8 +90759,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -91319,7 +91397,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -91934,6 +92012,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -92075,8 +92154,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -92692,7 +92771,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -93039,6 +93118,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -93344,6 +93424,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -93485,8 +93566,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -94118,7 +94199,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -94740,6 +94821,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -94881,8 +94963,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -95519,7 +95601,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -96135,6 +96217,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -96276,8 +96359,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -96893,7 +96976,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -97240,6 +97323,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -97546,6 +97630,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -97687,8 +97772,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -98320,7 +98405,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -98943,6 +99028,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -99084,8 +99170,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -99722,7 +99808,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -100338,6 +100424,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -100479,8 +100566,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -101096,7 +101183,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -101443,6 +101530,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -101749,6 +101837,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -101890,8 +101979,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -102523,7 +102612,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -103146,6 +103235,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -103287,8 +103377,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -103925,7 +104015,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -104540,6 +104630,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -104681,8 +104772,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -105104,7 +105195,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -105719,6 +105810,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -105860,8 +105952,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 854c7070cbfa5b36c96c1a3810bd6b94bc3cfee53f0fb0f4b09ba6fbba07a26f
-        checksum/config: 854c7070cbfa5b36c96c1a3810bd6b94bc3cfee53f0fb0f4b09ba6fbba07a26f
+        checksum-redpanda-chart/config: 38d4b884564b205ee525c0da5ebdf2aa101b671080f21e0a0b37e733a8b565b9
+        checksum/config: bd4c7e4795a5f9bfddf73642e7c62cc83001fa849818cd04a3dfc0751bf59274
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -106289,7 +106381,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -106920,6 +107012,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -107291,8 +107384,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -107946,7 +108039,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -108702,6 +108795,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/connectors/templates/entry-point.yaml
 apiVersion: v1
@@ -108875,8 +108969,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 5e53a21bf2aa20d9471169eeafe012a28cab465bff1ab9248550d6e44e7330f5
-        checksum/config: 5e53a21bf2aa20d9471169eeafe012a28cab465bff1ab9248550d6e44e7330f5
+        checksum-redpanda-chart/config: 951211656a78ff7c424df984d3293640c4acbd66b4643036b72239d1149cddad
+        checksum/config: c368e479785a794b7c7158487530a35ee0279d9b986f8c2a39d918fb5b609bcb
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -109737,7 +109831,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -110386,6 +110480,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/connectors/templates/entry-point.yaml
 apiVersion: v1
@@ -110559,8 +110654,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
-        checksum/config: 1894d433f8a13a5d76ec09415a79b012be1f5fd3c528f7e41b040909a8092a28
+        checksum-redpanda-chart/config: 1dc9c72bfc2427987118c978527a28be63360b5bd14931a879aea04cca12d840
+        checksum/config: 1f069ebc4e0b6a2e905bca2e6f9d11f031ac3fe20b27dca589d15e1301a8b7b9
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -111341,7 +111436,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -111972,6 +112067,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -112343,8 +112439,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -112977,7 +113073,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -113608,6 +113704,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -113979,8 +114076,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -114635,7 +114732,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -115305,6 +115402,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -115446,8 +115544,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -116133,7 +116231,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -116748,6 +116846,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -116979,8 +117078,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -117600,7 +117699,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -118215,6 +118314,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -118446,8 +118546,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -119067,7 +119167,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -119744,6 +119844,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -119905,8 +120006,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -120604,7 +120705,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -121228,6 +121329,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -121369,8 +121471,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 76c131535732e862e4209226f3d94362a0a1b5c8276f68ffd2d3d27a86364289
-        checksum/config: 76c131535732e862e4209226f3d94362a0a1b5c8276f68ffd2d3d27a86364289
+        checksum-redpanda-chart/config: a907d902cf1dd1037ff542934e2e7456064eafd161fc194bb9a5ff488b8e8d2d
+        checksum/config: e90cdb08cc28471e349293969d71eb681ac9d0c91f565d15663b8ef8da0b5794
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -122126,7 +122228,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -122747,6 +122849,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -122888,8 +122991,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -123505,7 +123608,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -124120,6 +124223,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -124261,8 +124365,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -124909,7 +125013,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -125510,6 +125614,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -125651,8 +125756,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 3625f2840a697b642d4050810321c97582f99f49531381188ab86eb679f2d2b3
-        checksum/config: 3625f2840a697b642d4050810321c97582f99f49531381188ab86eb679f2d2b3
+        checksum-redpanda-chart/config: 5e1030803cf851c767be9541a66e63d81b4b2fa91a8c59adb5b64e12cf996858
+        checksum/config: a5e158cfb6c03ae692f70a21e03b02b4aea2d0c20db2580c8d2b7d954fc887c7
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -126294,7 +126399,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -127019,6 +127124,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/connectors/templates/entry-point.yaml
 apiVersion: v1
@@ -127246,8 +127352,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 2e5a61ebd58223d2dbaa08e074d30bd546a33e7a518f02d852ef4c5988b10c13
-        checksum/config: 2e5a61ebd58223d2dbaa08e074d30bd546a33e7a518f02d852ef4c5988b10c13
+        checksum-redpanda-chart/config: d229c26045f39e4be61db251ed2a5a765ab902d44fc1f70249093e1c441f2c36
+        checksum/config: 3d3b214914b5b1d9a95ea8ad9d414a28fc4f240deae932ba5308fc519ab48dfe
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -127946,6 +128052,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 spec:
   ingressClassName: nginx
   rules:
@@ -128333,7 +128440,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -128970,6 +129077,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -129111,8 +129219,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -129728,7 +129836,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -130075,6 +130183,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -130380,6 +130489,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -130521,8 +130631,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -131154,7 +131264,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -131776,6 +131886,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -131917,8 +132028,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -132555,7 +132666,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -133171,6 +133282,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -133312,8 +133424,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -133929,7 +134041,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -134276,6 +134388,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 stringData:
   enterprise-license: ATOTALLYVALIDLICENSE
   kafka-protobuf-git-basicauth-password: ""
@@ -134582,6 +134695,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -134723,8 +134837,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -135356,7 +135470,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -135979,6 +136093,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -136120,8 +136235,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -136758,7 +136873,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -137383,6 +137498,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -137524,8 +137640,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: 3007625e3139d9dda2c9c0eda193ef8a62313a6ed6f5fda29a5f4f8e867b6d80
-        checksum/config: 3007625e3139d9dda2c9c0eda193ef8a62313a6ed6f5fda29a5f4f8e867b6d80
+        checksum-redpanda-chart/config: f738475f8a90defcd46462eaba1ec9819fb3892316abd16fc82d31020cbd43c3
+        checksum/config: 450435f723b5e8fb1ed50477f40f3041d6648dec7029f41a49c2cec5aded2078
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -137946,6 +138062,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 spec:
   ingressClassName: null
   rules:
@@ -138176,7 +138293,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -138791,6 +138908,7 @@ metadata:
     app.kubernetes.io/version: v2.8.0
     helm.sh/chart: console-0.7.31
   name: redpanda-console
+  namespace: default
 ---
 # Source: redpanda/charts/console/templates/entry-point.yaml
 apiVersion: v1
@@ -138932,8 +139050,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum-redpanda-chart/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
-        checksum/config: fe98669030bb7281f6ae4f27a63ae8e758f50359502f97c00d5b34d60dceba5f
+        checksum-redpanda-chart/config: 56eec42d81378b3fbd3c589756dc5eb2dec99cbf5253cc78e6fbe919de999e53
+        checksum/config: ef2d05c2002b60caf928b0bab2e92f8e4f0220155660aaad6e58828400ab7ee4
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: redpanda
@@ -139549,7 +139667,7 @@ spec:
       command: ['wget']
       args: ['redpanda-console:8080']
   restartPolicy: Never
-  priorityClassName:
+  priorityClassName: ""
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1

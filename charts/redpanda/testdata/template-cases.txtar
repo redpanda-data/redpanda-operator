@@ -627,11 +627,11 @@ statefulset:
 # ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.initContainers[?(@.name==\"test-init-container\")].image}", "mintel/docker-alpine-bash-curl-jq:latest"]
 # ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.initContainers[?(@.name==\"test-init-container\")].args[0]}", "echo \"Hello World! Hello World! \""]
 # The namespace is not set in Ingress and ConfigMap resource
-# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "/redpanda-console", "{.spec.rules[0].host}", "redpanda-console-first-rule-host"]
-# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "/redpanda-console", "{.spec.rules[1].host}", "redpanda-console-second-rule-host"]
-# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "/redpanda-console", "{.spec.tls[0].hosts[0]}", "redpanda-console-tls-first-host"]
-# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "/redpanda-console", "{.spec.tls[0].hosts[1]}", "redpanda-console-tls-second-host"]
-# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "/redpanda-console", "{.data.role-bindings\\.yaml}", "kind: 'USERUSER'"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.rules[0].host}", "redpanda-console-first-rule-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.rules[1].host}", "redpanda-console-second-rule-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.tls[0].hosts[0]}", "redpanda-console-tls-first-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.tls[0].hosts[1]}", "redpanda-console-tls-second-host"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda-console", "{.data.role-bindings\\.yaml}", "kind: 'USERUSER'"]
 console:
   console:
     roleBindings:
