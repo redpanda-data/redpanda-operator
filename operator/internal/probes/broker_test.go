@@ -238,7 +238,7 @@ func (s *ProberSuite) installChart(name, version string) *chart {
 	err = afero.WriteFile(fs, fmt.Sprintf("/etc/tls/certs/%s/ca.crt", name), []byte(cert), 0o644)
 	s.Require().NoError(err)
 
-	prober := probes.NewProber(s.manager, "/redpanda.yaml", probes.WithFS(fs), probes.WithFactory(s.clientFactory.WithFS(fs)))
+	prober := probes.NewProber(s.clientFactory.WithFS(fs), "/redpanda.yaml", probes.WithFS(fs), probes.WithLogger(s.manager.GetLogger()))
 
 	return &chart{
 		name:    name,

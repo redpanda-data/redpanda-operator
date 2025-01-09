@@ -17,18 +17,11 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 type Option func(*Prober)
-
-func WithFactory(factory internalclient.ClientFactory) Option {
-	return func(prober *Prober) {
-		prober.factory = factory
-	}
-}
 
 func WithLogger(logger logr.Logger) Option {
 	return func(prober *Prober) {
@@ -50,12 +43,12 @@ type Prober struct {
 	fs         afero.Fs
 }
 
-func NewProber(mgr ctrl.Manager, configPath string, options ...Option) *Prober {
+func NewProber(factory internalclient.ClientFactory, configPath string, options ...Option) *Prober {
 	prober := &Prober{
 		configPath: configPath,
 		fs:         afero.NewOsFs(),
-		logger:     mgr.GetLogger(),
-		factory:    internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+		logger:     logr.Discard(),
+		factory:    factory,
 	}
 
 	for _, opt := range options {

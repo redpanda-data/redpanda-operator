@@ -21,8 +21,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 )
 
 var schemes = []func(s *runtime.Scheme) error{
@@ -33,6 +36,7 @@ func Command() *cobra.Command {
 	var (
 		metricsAddr                string
 		probeAddr                  string
+		brokerProbeAddr            string
 		pprofAddr                  string
 		clusterNamespace           string
 		clusterName                string
@@ -43,6 +47,9 @@ func Command() *cobra.Command {
 		usersDirectoryPath         string
 		watchUsers                 bool
 		runDecommissioner          bool
+		runBrokerProbe             bool
+		brokerProbeShutdownTimeout time.Duration
+		brokerProbeBrokerID        int
 	)
 
 	cmd := &cobra.Command{
@@ -55,6 +62,7 @@ func Command() *cobra.Command {
 				ctx,
 				metricsAddr,
 				probeAddr,
+				brokerProbeAddr,
 				pprofAddr,
 				clusterNamespace,
 				clusterName,
@@ -65,22 +73,40 @@ func Command() *cobra.Command {
 				usersDirectoryPath,
 				watchUsers,
 				runDecommissioner,
+				runBrokerProbe,
+				brokerProbeShutdownTimeout,
+				brokerProbeBrokerID,
 			)
 		},
 	}
 
-	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	cmd.Flags().StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
+	// runtime flags
+	cmd.Flags().StringVar(&metricsAddr, "runtime-metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&probeAddr, "runtime-health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	cmd.Flags().StringVar(&pprofAddr, "runtime-pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
+
+	// rpk flags
+	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml whose rpk stanza will be used for connecting to a Redpanda cluster.")
+
+	// cluster flags
 	cmd.Flags().StringVar(&clusterNamespace, "redpanda-cluster-namespace", "", "The namespace of the cluster that this sidecar manages.")
 	cmd.Flags().StringVar(&clusterName, "redpanda-cluster-name", "", "The name of the cluster that this sidecar manages.")
+
+	// decommission flags
+	cmd.Flags().BoolVar(&runDecommissioner, "run-decommissioner", false, "Specifies if the sidecar should run the broker decommissioner.")
 	cmd.Flags().DurationVar(&decommissionRequeueTimeout, "decommission-requeue-timeout", 10*time.Second, "The time period to wait before rechecking a broker that is being decommissioned.")
 	cmd.Flags().DurationVar(&decommissionVoteInterval, "decommission-vote-interval", 30*time.Second, "The time period between incrementing decommission vote counts since the last decommission conditions were met.")
 	cmd.Flags().IntVar(&decommissionMaxVoteCount, "decommission-vote-count", 2, "The number of times that a vote must be tallied when a resource meets decommission conditions for it to actually be decommissioned.")
-	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml whose rpk stanza will be used for connecting to a Redpanda cluster.")
+
+	// users flags
 	cmd.Flags().BoolVar(&watchUsers, "watch-users", false, "Specifies if the sidecar should watch and configure superusers based on a mounted users file.")
 	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted.")
-	cmd.Flags().BoolVar(&runDecommissioner, "run-decommissioner", false, "Specifies if the sidecar should run the broker decommissioner.")
+
+	// broker probe flags
+	cmd.Flags().BoolVar(&runBrokerProbe, "run-broker-probe", false, "Specifies if the sidecar should run the health probe.")
+	cmd.Flags().StringVar(&brokerProbeAddr, "broker-probe-bind-address", ":8083", "The address the broker probe endpoint binds to.")
+	cmd.Flags().DurationVar(&brokerProbeShutdownTimeout, "broker-probe-shutdown-timeout", 10*time.Second, "The time period to wait to gracefully shutdown the broker probe before terminating.")
+	cmd.Flags().IntVar(&brokerProbeBrokerID, "broker-probe-broker-id", -1, "The ID of the broker instance this sidecar is for.")
 
 	return cmd
 }
@@ -89,6 +115,7 @@ func Run(
 	ctx context.Context,
 	metricsAddr string,
 	probeAddr string,
+	brokerProbeAddr string,
 	pprofAddr string,
 	clusterNamespace string,
 	clusterName string,
@@ -99,6 +126,9 @@ func Run(
 	usersDirectoryPath string,
 	watchUsers bool,
 	runDecommissioner bool,
+	runBrokerProbe bool,
+	brokerProbeShutdownTimeout time.Duration,
+	brokerProbeBrokerID int,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -148,6 +178,34 @@ func Run(
 			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
 		}...).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			return err
+		}
+	}
+
+	if runBrokerProbe {
+		if brokerProbeBrokerID == -1 {
+			err := errors.New("must specify -broker-probe-broker-id to run the broker probe")
+			setupLog.Error(err, "no broker id provided")
+			return err
+		}
+
+		server, err := probes.NewServer(probes.Config{
+			Prober: probes.NewProber(
+				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+				redpandaYAMLPath,
+				probes.WithLogger(mgr.GetLogger().WithName("Prober")),
+			),
+			ShutdownTimeout: brokerProbeShutdownTimeout,
+			ID:              brokerProbeBrokerID,
+			Address:         brokerProbeAddr,
+			Logger:          mgr.GetLogger().WithName("ProbeServer"),
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to create health probe server")
+			return err
+		}
+		if err := mgr.Add(server); err != nil {
+			setupLog.Error(err, "unable to run health probe server")
 			return err
 		}
 	}
