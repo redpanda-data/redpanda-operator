@@ -1,3 +1,12 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 package probes
 
 import (
@@ -8,7 +17,6 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -73,7 +81,7 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerID int) (bool
 	// This check is a more relaxed version of our previous "readiness" probe that was
 	// based solely off of the cluster health. It works via doing the following:
 	//
-	// 1. Gets the broker status, making sure it's marked as `is_alive` and is not in maintenance mode.
+	// 1. Gets the broker status, making sure it's marked as active and is not in maintenance mode.
 	// 2. Lists the local summary of partitions for the broker, making sure there are no leaderless or
 	//    underreplicated partitions.
 	// 3. Gets the cluster health and makes sure that the broker is part of the quorum by having a
@@ -88,13 +96,18 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerID int) (bool
 		return false, fmt.Errorf("fetching broker status: %w", err)
 	}
 
-	// is the broker proxied API down?
-	if !ptr.Deref(broker.IsAlive, false) {
+	// is the broker marked as active and not being decommissioned
+	if broker.MembershipStatus != rpadmin.MembershipStatusActive {
 		return false, nil
 	}
 
-	// is the broker in maintenance mode?
-	if broker.Maintenance != nil {
+	status, err := client.MaintenanceStatus(ctx)
+	if err != nil {
+		return false, fmt.Errorf("fetching broker maintenance status: %w", err)
+	}
+
+	// is the broker in maintenance mode and currently draining
+	if status.Draining {
 		return false, nil
 	}
 
@@ -126,9 +139,9 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerID int) (bool
 // underlying Kafka API, checking that the broker is marked as alive, not in maintenance
 // mode, and that we actually get a response should inform us that:
 //
-// 1. The Kafka API is up and servicing requests.
-// 2. The Admin API is up and servicing requests.
-// 3. The broker is not in a mode where it shouldn't be servicing anything (i.e. maintenance).
+// 1. The Kafka API is up and servicing requests (through the broker active membership check).
+// 2. The Admin API is up and servicing requests (through receiving a valid request).
+// 3. We aren't currently draining in maintenance mode.
 func (p *Prober) IsClusterBrokerReady(ctx context.Context, brokerID int) (bool, error) {
 	client, err := p.getClient(ctx, brokerID)
 	if err != nil {
@@ -144,13 +157,18 @@ func (p *Prober) IsClusterBrokerReady(ctx context.Context, brokerID int) (bool, 
 		return false, fmt.Errorf("fetching broker status: %w", err)
 	}
 
-	// is the broker proxied API down?
-	if !ptr.Deref(broker.IsAlive, false) {
+	// is the broker marked as active and not being decommissioned
+	if broker.MembershipStatus != rpadmin.MembershipStatusActive {
 		return false, nil
 	}
 
-	// is the broker in maintenance mode?
-	if broker.Maintenance != nil {
+	status, err := client.MaintenanceStatus(ctx)
+	if err != nil {
+		return false, fmt.Errorf("fetching broker maintenance status: %w", err)
+	}
+
+	// is the broker in maintenance mode and currently draining
+	if status.Draining {
 		return false, nil
 	}
 

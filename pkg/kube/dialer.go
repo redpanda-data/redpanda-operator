@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -47,20 +46,12 @@ var (
 	negotiatedSerializer = serializer.NewCodecFactory(runtime.NewScheme()).WithoutConversion()
 )
 
-type refCountedConnection struct {
-	httpstream.Connection
-	references int
-}
-
 // PodDialer is a basic port-forwarding dialer that doesn't start
 // any local listeners, but returns a net.Conn directly.
 type PodDialer struct {
 	config        *rest.Config
 	clusterDomain string
 	requestID     int
-
-	connections map[types.NamespacedName]*refCountedConnection
-	mutex       sync.RWMutex
 }
 
 // NewPodDialer create a PodDialer.
@@ -68,7 +59,6 @@ func NewPodDialer(config *rest.Config) *PodDialer {
 	return &PodDialer{
 		config:        config,
 		clusterDomain: defaultClusterDomain,
-		connections:   make(map[types.NamespacedName]*refCountedConnection),
 	}
 }
 
@@ -76,28 +66,6 @@ func NewPodDialer(config *rest.Config) *PodDialer {
 func (p *PodDialer) WithClusterDomain(domain string) *PodDialer {
 	p.clusterDomain = domain
 	return p
-}
-
-// cleanupConnection should be called via a function callback
-// any time that one of its underlying streams is closed
-// when it's called, it decrements the reference counted connection
-// pruning it from our connection map when its references hit 0.
-func (p *PodDialer) cleanupConnection(pod types.NamespacedName) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	connection, ok := p.connections[pod]
-	if !ok {
-		return
-	}
-
-	connection.references--
-
-	if connection.references == 0 {
-		connection.Close()
-
-		delete(p.connections, pod)
-	}
 }
 
 // DialContext dials the given pod's service-based DNS address and returns a
@@ -115,10 +83,7 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 		return nil, err
 	}
 
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	conn, err := p.connectionForPodLocked(pod)
+	conn, err := p.connectionForPod(pod)
 	if err != nil {
 		return nil, err
 	}
@@ -132,21 +97,21 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 	headers.Set(corev1.StreamType, corev1.StreamTypeError)
 	errorStream, err := conn.CreateStream(headers)
 	if err != nil {
-		return nil, err
+		conn.Close()
+
+		return nil, fmt.Errorf("creating error stream: %w", err)
 	}
 
 	headers.Set(corev1.StreamType, corev1.StreamTypeData)
 	dataStream, err := conn.CreateStream(headers)
 	if err != nil {
-		// close off the error stream that's been opened
-		_ = errorStream.Reset()
+		conn.Close()
 
-		return nil, err
+		return nil, fmt.Errorf("creating data stream: %w", err)
 	}
 
-	conn.references++
 	onClose := func() {
-		p.cleanupConnection(pod)
+		conn.Close()
 	}
 
 	return wrapConn(onClose, network, address, dataStream, errorStream), nil
@@ -238,11 +203,7 @@ func (p *PodDialer) parseDNS(fqdn string) (types.NamespacedName, int, error) {
 	return pod, port, nil
 }
 
-func (p *PodDialer) connectionForPodLocked(pod types.NamespacedName) (*refCountedConnection, error) {
-	if conn, ok := p.connections[pod]; ok {
-		return conn, nil
-	}
-
+func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Connection, error) {
 	transport, upgrader, err := spdy.RoundTripperFor(p.config)
 	if err != nil {
 		return nil, err
@@ -277,10 +238,7 @@ func (p *PodDialer) connectionForPodLocked(pod types.NamespacedName) (*refCounte
 		return nil, fmt.Errorf("unable to negotiate protocol: client supports %q, server returned %q", portForwardProtocolV1Name, protocol)
 	}
 
-	refCountedConn := &refCountedConnection{Connection: conn}
-
-	p.connections[pod] = refCountedConn
-	return refCountedConn, nil
+	return conn, nil
 }
 
 type conn struct {
