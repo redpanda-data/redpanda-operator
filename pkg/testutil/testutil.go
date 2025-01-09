@@ -106,6 +106,22 @@ func SkipIfNotIntegration(t *testing.T) {
 	}
 }
 
+func SkipIfNotAcceptance(t *testing.T) {
+	const prefix = "TestAcceptance"
+
+	if skipAcceptanceTests {
+		t.Skipf("acceptance build flag not set; skipping acceptance test")
+	} else if testing.Short() {
+		t.Skipf("-short specified; skipping acceptance test")
+	} else {
+		RequireTimeout(t, 20*time.Minute)
+	}
+
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotAcceptance must be prefixed with %q; got: %s", prefix, t.Name())
+	}
+}
+
 // RequireTimeout asserts that the `-timeout` flag is at least `minimum`.
 // Usage:
 //

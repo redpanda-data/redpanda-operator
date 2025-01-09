@@ -86,7 +86,11 @@ func iDeleteTheCRDUser(ctx context.Context, t framework.TestingT, user string) {
 func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.TestingT, cluster string, acls *godog.Table) {
 	clients := clientsForCluster(ctx, cluster)
 	aclClient := clients.ACLs(ctx)
-	defer aclClient.Close()
+	// throw this in a cleanup instead of a defer since we use it in a cleanup
+	// below and it needs to stay alive until then
+	t.Cleanup(func(_ context.Context) {
+		aclClient.Close()
+	})
 
 	for _, user := range usersFromACLTable(t, cluster, acls) {
 		user := user
@@ -109,7 +113,12 @@ func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.T
 func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framework.TestingT, cluster string, users *godog.Table) {
 	clients := clientsForCluster(ctx, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
-	defer adminClient.Close()
+	// throw this in a cleanup instead of a defer since we use it in a cleanup
+	// below and it needs to stay alive until then
+	t.Cleanup(func(_ context.Context) {
+		adminClient.Close()
+	})
+
 	usersClient := clients.Users(ctx)
 	defer usersClient.Close()
 

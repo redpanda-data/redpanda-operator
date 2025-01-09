@@ -41,3 +41,26 @@ func (t *TestingT) InstallHelmChart(ctx context.Context, url, repo, chart string
 		}))
 	})
 }
+
+func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions) {
+	helmClient, err := helm.New(helm.Options{
+		KubeConfig: rest.CopyConfig(t.restConfig),
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, "", options.Namespace, "namespace must not be blank")
+	require.NotEqual(t, "", options.Name, "name must not be blank")
+
+	options.CreateNamespace = true
+
+	t.Logf("installing chart %q", path)
+	_, err = helmClient.Install(ctx, path, options)
+	require.NoError(t, err)
+
+	t.Cleanup(func(ctx context.Context) {
+		t.Logf("uninstalling chart %q", path)
+		require.NoError(t, helmClient.Uninstall(ctx, helm.Release{
+			Name:      options.Name,
+			Namespace: options.Namespace,
+		}))
+	})
+}

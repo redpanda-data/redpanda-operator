@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			t.Log("Installing Redpanda operator chart")
-			t.InstallHelmChart(ctx, "https://charts.redpanda.com", "redpanda", "operator", helm.InstallOptions{
+			t.InstallLocalHelmChart(ctx, "../charts/operator", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: t.IsolateNamespace(ctx),
 				Values: map[string]any{
@@ -88,9 +88,8 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestIntegrationSuite(t *testing.T) {
-	testutil.SkipIfNotIntegration(t)
-	t.Skipf("Currently failing. Needs to be debugged and corrected.")
+func TestAcceptanceSuite(t *testing.T) {
+	testutil.SkipIfNotAcceptance(t)
 	suite.RunT(t)
 }
 
