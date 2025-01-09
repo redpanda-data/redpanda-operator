@@ -28,7 +28,7 @@ require (
 	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/net v0.1.0
-	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20241219194551-05ac5889aee7
+	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20241216191615-bb41e7cd4a6e
@@ -449,7 +449,6 @@ replace (
 	github.com/fluxcd/helm-controller/shim => github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240
 	github.com/fluxcd/source-controller/shim => github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
-	github.com/redpanda-data/common-go/rpadmin => ../../common-go/rpadmin
 	github.com/redpanda-data/redpanda-operator/charts => ../charts
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
