@@ -1392,7 +1392,7 @@ func (l *AdminListeners) Listeners() []map[string]any {
 		createInternalListenerCfg(l.Port),
 	}
 
-	for k, lis := range l.External {
+	for k, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() {
 			continue
 		}
@@ -1414,7 +1414,7 @@ func (l *AdminListeners) ListenersTLS(tls *TLS) []map[string]any {
 		admin = append(admin, internal)
 	}
 
-	for k, lis := range l.External {
+	for k, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
 			continue
 		}
@@ -1497,7 +1497,7 @@ func (l *HTTPListeners) Listeners(saslEnabled bool) []map[string]any {
 		internal,
 	}
 
-	for k, l := range l.External {
+	for k, l := range helmette.SortedMap(l.External) {
 		if !l.IsEnabled() {
 			continue
 		}
@@ -1530,7 +1530,7 @@ func (l *HTTPListeners) ListenersTLS(tls *TLS) []map[string]any {
 		pp = append(pp, internal)
 	}
 
-	for k, lis := range l.External {
+	for k, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
 			continue
 		}
@@ -1558,8 +1558,7 @@ func (l *HTTPListeners) TrustStores(tls *TLS) []*TrustStore {
 		tss = append(tss, l.TLS.TrustStore)
 	}
 
-	for _, key := range helmette.SortedKeys(l.External) {
-		lis := l.External[key]
+	for _, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
 			continue
 		}
@@ -1624,7 +1623,7 @@ func (l *KafkaListeners) Listeners(auth *Auth) []map[string]any {
 		internal,
 	}
 
-	for k, l := range l.External {
+	for k, l := range helmette.SortedMap(l.External) {
 		if !l.IsEnabled() {
 			continue
 		}
@@ -1659,7 +1658,7 @@ func (l *KafkaListeners) ListenersTLS(tls *TLS) []map[string]any {
 		kafka = append(kafka, internal)
 	}
 
-	for k, lis := range l.External {
+	for k, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
 			continue
 		}
@@ -1795,7 +1794,7 @@ func (l *SchemaRegistryListeners) Listeners(saslEnabled bool) []map[string]any {
 		internal,
 	}
 
-	for k, l := range l.External {
+	for k, l := range helmette.SortedMap(l.External) {
 		if !l.IsEnabled() {
 			continue
 		}
@@ -1828,7 +1827,7 @@ func (l *SchemaRegistryListeners) ListenersTLS(tls *TLS) []map[string]any {
 		listeners = append(listeners, internal)
 	}
 
-	for k, lis := range l.External {
+	for k, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
 			continue
 		}
@@ -1856,8 +1855,7 @@ func (l *SchemaRegistryListeners) TrustStores(tls *TLS) []*TrustStore {
 		tss = append(tss, l.TLS.TrustStore)
 	}
 
-	for _, key := range helmette.SortedKeys(l.External) {
-		lis := l.External[key]
+	for _, lis := range helmette.SortedMap(l.External) {
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
 			continue
 		}

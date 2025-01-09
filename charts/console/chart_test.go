@@ -229,9 +229,6 @@ func TestGoHelmEquivalence(t *testing.T) {
 		return strings.Compare(aStr, bStr)
 	})
 
-	// resource.Quantity is a special object. To Ensure they compare correctly,
-	// we'll round trip it through JSON so the internal representations will
-	// match (assuming the values are actually equal).
 	assert.Equal(t, len(helmObjs), len(goObjs))
 
 	// Iterate and compare instead of a single comparison for better error

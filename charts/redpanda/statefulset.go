@@ -793,7 +793,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		Name:          "admin",
 		ContainerPort: values.Listeners.Admin.Port,
 	})
-	for externalName, external := range values.Listeners.Admin.External {
+	for externalName, external := range helmette.SortedMap(values.Listeners.Admin.External) {
 		if external.IsEnabled() {
 			// The original template used
 			// $external.port > 0 &&
@@ -811,7 +811,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		Name:          "http",
 		ContainerPort: values.Listeners.HTTP.Port,
 	})
-	for externalName, external := range values.Listeners.HTTP.External {
+	for externalName, external := range helmette.SortedMap(values.Listeners.HTTP.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("http-%.8s", helmette.Lower(externalName)),
@@ -823,7 +823,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		Name:          "kafka",
 		ContainerPort: values.Listeners.Kafka.Port,
 	})
-	for externalName, external := range values.Listeners.Kafka.External {
+	for externalName, external := range helmette.SortedMap(values.Listeners.Kafka.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("kafka-%.8s", helmette.Lower(externalName)),
@@ -839,7 +839,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		Name:          "schemaregistry",
 		ContainerPort: values.Listeners.SchemaRegistry.Port,
 	})
-	for externalName, external := range values.Listeners.SchemaRegistry.External {
+	for externalName, external := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("schema-%.8s", helmette.Lower(externalName)),
@@ -988,17 +988,17 @@ func bootstrapEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVa
 }
 
 func templateToVolumeMounts(dot *helmette.Dot, template string) []corev1.VolumeMount {
-	result := helmette.Tpl(template, dot)
+	result := helmette.Tpl(dot, template, dot)
 	return helmette.UnmarshalYamlArray[corev1.VolumeMount](result)
 }
 
 func templateToVolumes(dot *helmette.Dot, template string) []corev1.Volume {
-	result := helmette.Tpl(template, dot)
+	result := helmette.Tpl(dot, template, dot)
 	return helmette.UnmarshalYamlArray[corev1.Volume](result)
 }
 
 func templateToContainers(dot *helmette.Dot, template string) []corev1.Container {
-	result := helmette.Tpl(template, dot)
+	result := helmette.Tpl(dot, template, dot)
 	return helmette.UnmarshalYamlArray[corev1.Container](result)
 }
 

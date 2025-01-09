@@ -16,10 +16,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
@@ -131,16 +131,16 @@ func compareEnvVars(a, b corev1.EnvVar) int {
 }
 
 func TestAnnotationsOverwrite(t *testing.T) {
-	v := Values{
-		PostInstallJob: PostInstallJob{
-			Enabled: true,
+	v := PartialValues{
+		PostInstallJob: &PartialPostInstallJob{
+			Enabled: ptr.To(true),
 			Annotations: map[string]string{
 				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded",
 			},
 			Labels: map[string]string{
 				"app.kubernetes.io/name": "overwrite-name",
 			},
-			PodTemplate: PodTemplate{
+			PodTemplate: &PartialPodTemplate{
 				Labels: map[string]string{
 					"app.kubernetes.io/name": "overwrite-pod-template-name",
 				},
@@ -151,16 +151,10 @@ func TestAnnotationsOverwrite(t *testing.T) {
 		},
 	}
 
-	b, err := yaml.Marshal(v)
+	dot, err := Chart.Dot(kube.Config{}, helmette.Release{}, v)
 	require.NoError(t, err)
 
-	dot := helmette.Dot{
-		Chart: helmette.Chart{Name: "XYZ-to-change"},
-	}
-	dot.Values, err = helm.MergeYAMLValues(b, defaultValuesYAML)
-	require.NoError(t, err)
-
-	job := PostInstallUpgradeJob(&dot)
+	job := PostInstallUpgradeJob(dot)
 	require.Equal(t, job.Annotations["helm.sh/hook-delete-policy"], "before-hook-creation,hook-succeeded")
 	require.Equal(t, job.Labels["app.kubernetes.io/name"], "overwrite-name")
 	require.Equal(t, job.Spec.Template.Annotations["some-annotation"], "some-annotation-value")

@@ -27,17 +27,17 @@ func ConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 	}
 
 	data := map[string]string{
-		"config.yaml": fmt.Sprintf("# from .Values.console.config\n%s\n", helmette.Tpl(helmette.ToYaml(values.Console.Config), dot)),
+		"config.yaml": fmt.Sprintf("# from .Values.console.config\n%s\n", helmette.Tpl(dot, helmette.ToYaml(values.Console.Config), dot)),
 	}
 
 	if len(values.Console.Roles) > 0 {
-		data["roles.yaml"] = helmette.Tpl(helmette.ToYaml(map[string]any{
+		data["roles.yaml"] = helmette.Tpl(dot, helmette.ToYaml(map[string]any{
 			"roles": values.Console.Roles,
 		}), dot)
 	}
 
 	if len(values.Console.RoleBindings) > 0 {
-		data["role-bindings.yaml"] = helmette.Tpl(helmette.ToYaml(map[string]any{
+		data["role-bindings.yaml"] = helmette.Tpl(dot, helmette.ToYaml(map[string]any{
 			"roleBindings": values.Console.RoleBindings,
 		}), dot)
 	}

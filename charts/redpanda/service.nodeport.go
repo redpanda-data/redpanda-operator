@@ -49,7 +49,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range values.Listeners.Kafka.External {
+	for name, listener := range helmette.SortedMap(values.Listeners.Kafka.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -67,7 +67,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range values.Listeners.HTTP.External {
+	for name, listener := range helmette.SortedMap(values.Listeners.HTTP.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -85,7 +85,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range values.Listeners.SchemaRegistry.External {
+	for name, listener := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
