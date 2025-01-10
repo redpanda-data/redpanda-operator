@@ -294,12 +294,6 @@ func makeSureTagIsNotEmptyString(values PartialValues, fuzzer *fuzz.Fuzzer) {
 			fuzzer.Fuzz(t)
 		}
 	}
-	if values.Configurator != nil && values.Configurator.Tag != nil && len(*values.Configurator.Tag) == 0 {
-		t := values.Configurator.Tag
-		for len(*t) == 0 {
-			fuzzer.Fuzz(t)
-		}
-	}
 }
 
 func CalculateRoleRules(rules []rbacv1.PolicyRule) map[string]map[string]struct{} {

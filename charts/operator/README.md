@@ -126,32 +126,6 @@ Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
 
-### [configurator](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=configurator)
-
-Configuration for the Redpanda configurator, a component for managing Redpanda configuration.
-
-**Default:**
-
-```
-{"pullPolicy":"IfNotPresent","repository":"docker.redpanda.com/redpandadata/configurator"}
-```
-
-### [configurator.pullPolicy](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=configurator.pullPolicy)
-
-Sets the `pullPolicy` for the Redpanda configurator image.
-
-**Default:** `"IfNotPresent"`
-
-### [configurator.repository](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=configurator.repository)
-
-Sets the repository in which the Redpanda configurator image is available.
-
-**Default:**
-
-```
-"docker.redpanda.com/redpandadata/configurator"
-```
-
 ### [fullnameOverride](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=fullnameOverride)
 
 Overrides the `redpanda-operator.fullname` template.

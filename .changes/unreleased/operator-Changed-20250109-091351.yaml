@@ -1,10 +1,10 @@
 project: operator
 kind: Changed
 body: |
-  For any user that is mirroring configurator image and changes entrypoint or wraps configurator with additional 
-    script the following constraint need to be meet:
-    * use the alternative configuration parameter by specifying `additionalCmdFlags` in Redpanda operator helm chart
-      * to change the container repository set `--configurator-base-image=my.repo.com/configurator`
-      * to change the container tag set `--configurator-tag=XYZ`
+  For any user that is mirroring configurator image (air-gapped environment) and changes entrypoint
+    or wraps configurator with additional script the following constraint need to be meet:
+    * set the following flags
+      * to change the container repository set `--configurator-base-image=my.repo.com/configurator` flag
+      * to change the container tag set `--configurator-tag=XYZ` flag
     * image needs to supports the entrypoint `redpanda-operator configure` as it is the default one
 time: 2025-01-09T09:13:51.668314+01:00

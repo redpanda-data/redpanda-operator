@@ -1,0 +1,13 @@
+project: chart-operator
+kind: Deprecated
+body: |
+  `configurator`, `configurator.tag`, `configurator.pullPolicy`, and `configurator.repository` are no
+    longer respected but may still be set. The configurator image can still be set using `additionalCmdFlags`:
+
+    ```yaml
+    additionalCmdFlags:
+    - --configurator-base-image=my.repo.com/configurator
+    - --configurator-tag=XYZ
+    - --configurator-image-pull-policy=IfNotPresent
+    ```
+time: 2025-01-10T14:30:18.618402+01:00
