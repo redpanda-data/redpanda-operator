@@ -97,7 +97,7 @@ func (s *Server) HandleHealthyCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) HandleReadyCheck(w http.ResponseWriter, r *http.Request) {
-		ready, err := s.prober.IsClusterBrokerReady(r.Context(), s.url)
+	ready, err := s.prober.IsClusterBrokerReady(r.Context(), s.url)
 	if err != nil {
 		s.logger.Error(err, "error running ready check")
 		w.WriteHeader(http.StatusInternalServerError)
