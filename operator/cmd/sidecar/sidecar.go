@@ -21,11 +21,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 var schemes = []func(s *runtime.Scheme) error{
@@ -49,7 +48,7 @@ func Command() *cobra.Command {
 		runDecommissioner          bool
 		runBrokerProbe             bool
 		brokerProbeShutdownTimeout time.Duration
-		brokerProbeBrokerID        int
+		brokerProbeBrokerURL       string
 	)
 
 	cmd := &cobra.Command{
@@ -75,7 +74,7 @@ func Command() *cobra.Command {
 				runDecommissioner,
 				runBrokerProbe,
 				brokerProbeShutdownTimeout,
-				brokerProbeBrokerID,
+				brokerProbeBrokerURL,
 			)
 		},
 	}
@@ -106,7 +105,7 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&runBrokerProbe, "run-broker-probe", false, "Specifies if the sidecar should run the health probe.")
 	cmd.Flags().StringVar(&brokerProbeAddr, "broker-probe-bind-address", ":8083", "The address the broker probe endpoint binds to.")
 	cmd.Flags().DurationVar(&brokerProbeShutdownTimeout, "broker-probe-shutdown-timeout", 10*time.Second, "The time period to wait to gracefully shutdown the broker probe before terminating.")
-	cmd.Flags().IntVar(&brokerProbeBrokerID, "broker-probe-broker-id", -1, "The ID of the broker instance this sidecar is for.")
+	cmd.Flags().StringVar(&brokerProbeBrokerURL, "broker-probe-broker-url", "", "The URL of the broker instance this sidecar is for.")
 
 	return cmd
 }
@@ -128,7 +127,7 @@ func Run(
 	runDecommissioner bool,
 	runBrokerProbe bool,
 	brokerProbeShutdownTimeout time.Duration,
-	brokerProbeBrokerID int,
+	brokerProbeBrokerURL string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -183,9 +182,9 @@ func Run(
 	}
 
 	if runBrokerProbe {
-		if brokerProbeBrokerID == -1 {
-			err := errors.New("must specify -broker-probe-broker-id to run the broker probe")
-			setupLog.Error(err, "no broker id provided")
+		if brokerProbeBrokerURL == "" {
+			err := errors.New("must specify -broker-probe-broker-url to run the broker probe")
+			setupLog.Error(err, "no broker URL provided")
 			return err
 		}
 
@@ -196,7 +195,7 @@ func Run(
 				probes.WithLogger(mgr.GetLogger().WithName("Prober")),
 			),
 			ShutdownTimeout: brokerProbeShutdownTimeout,
-			ID:              brokerProbeBrokerID,
+			URL:             brokerProbeBrokerURL,
 			Address:         brokerProbeAddr,
 			Logger:          mgr.GetLogger().WithName("ProbeServer"),
 		})

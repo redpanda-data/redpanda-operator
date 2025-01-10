@@ -20,7 +20,7 @@ import (
 
 type Server struct {
 	prober *Prober
-	id     int
+	url    string
 
 	logger logr.Logger
 
@@ -34,7 +34,7 @@ type Config struct {
 	ShutdownTimeout time.Duration
 	Address         string
 	Logger          logr.Logger
-	ID              int
+	URL             string
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -61,7 +61,7 @@ func NewServer(config Config) (*Server, error) {
 		shutdownTimeout: shutdownTimeout,
 		logger:          logger,
 		prober:          config.Prober,
-		id:              config.ID,
+		url:             config.URL,
 	}
 
 	mux := http.NewServeMux()
@@ -82,7 +82,7 @@ func NewServer(config Config) (*Server, error) {
 }
 
 func (s *Server) HandleHealthyCheck(w http.ResponseWriter, r *http.Request) {
-	healthy, err := s.prober.IsClusterBrokerHealthy(r.Context(), s.id)
+	healthy, err := s.prober.IsClusterBrokerHealthy(r.Context(), s.url)
 	if err != nil {
 		s.logger.Error(err, "error running health check")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +97,7 @@ func (s *Server) HandleHealthyCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) HandleReadyCheck(w http.ResponseWriter, r *http.Request) {
-	ready, err := s.prober.IsClusterBrokerReady(r.Context(), s.id)
+	ready, err := s.prober.IsClusterBrokerReady(r.Context(), s.url)
 	if err != nil {
 		s.logger.Error(err, "error running ready check")
 		w.WriteHeader(http.StatusInternalServerError)

@@ -64,8 +64,8 @@ func NewProber(factory internalclient.ClientFactory, configPath string, options 
 // the cluster health overview endpoint. This had the unfortunate effect of marking all brokers
 // as "unready" when a single broker was marked as a downed node due to being a reflection of
 // the overall cluster health rather than an individual broker's health.
-func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerID int) (bool, error) {
-	client, err := p.getClient(ctx, brokerID)
+func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (bool, error) {
+	client, brokerID, err := p.getClient(ctx, brokerURL)
 	if err != nil {
 		return false, fmt.Errorf("initializing client to check broker health: %w", err)
 	}
@@ -135,8 +135,8 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerID int) (bool
 // 1. The Kafka API is up and servicing requests (through the broker active membership check).
 // 2. The Admin API is up and servicing requests (through receiving a valid request).
 // 3. We aren't currently draining in maintenance mode.
-func (p *Prober) IsClusterBrokerReady(ctx context.Context, brokerID int) (bool, error) {
-	client, err := p.getClient(ctx, brokerID)
+func (p *Prober) IsClusterBrokerReady(ctx context.Context, brokerURL string) (bool, error) {
+	client, brokerID, err := p.getClient(ctx, brokerURL)
 	if err != nil {
 		return false, fmt.Errorf("initializing client to check broker readiness: %w", err)
 	}
@@ -168,24 +168,29 @@ func (p *Prober) IsClusterBrokerReady(ctx context.Context, brokerID int) (bool, 
 	return true, nil
 }
 
-func (p *Prober) getClient(ctx context.Context, brokerID int) (*rpadmin.AdminAPI, error) {
+func (p *Prober) getClient(ctx context.Context, brokerURL string) (*rpadmin.AdminAPI, int, error) {
 	profile, err := p.readProfile()
 	if err != nil {
-		return nil, fmt.Errorf("reading profile: %w", err)
+		return nil, -1, fmt.Errorf("reading profile: %w", err)
 	}
 
 	client, err := p.factory.RedpandaAdminClient(ctx, profile)
 	if err != nil {
-		return nil, fmt.Errorf("initializing client: %w", err)
+		return nil, -1, fmt.Errorf("initializing client: %w", err)
 	}
 	defer client.Close()
 
-	scopedClient, err := client.ForBroker(ctx, brokerID)
+	scopedClient, err := client.ForHost(brokerURL)
 	if err != nil {
-		return nil, fmt.Errorf("initializing client for broker %d: %w", brokerID, err)
+		return nil, -1, fmt.Errorf("initializing client for broker %q: %w", brokerURL, err)
 	}
 
-	return scopedClient, nil
+	config, err := scopedClient.GetNodeConfig(ctx)
+	if err != nil {
+		return nil, -1, fmt.Errorf("fetching node config for broker %q: %w", brokerURL, err)
+	}
+
+	return scopedClient, config.NodeID, nil
 }
 
 func (p *Prober) readProfile() (*rpkconfig.RpkProfile, error) {

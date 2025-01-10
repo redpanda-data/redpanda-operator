@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -34,19 +35,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/common-go/rpadmin"
-
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestIntegrationProber(t *testing.T) {
-	testutil.SkipIfNotIntegration(t)
+	// testutil.SkipIfNotIntegration(t)
 
 	suite.Run(t, new(ProberSuite))
 }
@@ -69,11 +67,12 @@ func (s *ProberSuite) TestProbes() {
 	adminClient := s.adminClientFor(chart)
 	defer adminClient.Close()
 
+	brokerURL := fmt.Sprintf("https://default-0.default.%s.svc.cluster.local.:9644", s.env.Namespace())
 	// we wrap the first check in a waitFor since there's no guarantee that
 	// the broker will be ready when the helm install completes
 	prober := chart.prober
 	s.waitFor(func(ctx context.Context) (bool, error) {
-		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, 0)
+		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker health, retrying: %v", err)
 			return false, nil
@@ -81,7 +80,7 @@ func (s *ProberSuite) TestProbes() {
 		return healthy, nil
 	})
 
-	ready, err := prober.IsClusterBrokerReady(s.ctx, 0)
+	ready, err := prober.IsClusterBrokerReady(s.ctx, brokerURL)
 	s.Require().NoError(err)
 	s.Require().True(ready)
 
@@ -105,7 +104,7 @@ func (s *ProberSuite) TestProbes() {
 	s.Require().NoError(err)
 
 	s.waitFor(func(ctx context.Context) (bool, error) {
-		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, 0)
+		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker health, retrying: %v", err)
 			return false, nil
@@ -115,7 +114,7 @@ func (s *ProberSuite) TestProbes() {
 	})
 
 	// this should still be true since we don't care about under-replicated partitions here
-	ready, err = prober.IsClusterBrokerReady(s.ctx, 0)
+	ready, err = prober.IsClusterBrokerReady(s.ctx, brokerURL)
 	s.Require().NoError(err)
 	s.Require().True(ready)
 
@@ -131,7 +130,7 @@ func (s *ProberSuite) TestProbes() {
 	})
 
 	s.waitFor(func(ctx context.Context) (bool, error) {
-		ready, err := prober.IsClusterBrokerReady(s.ctx, 0)
+		ready, err := prober.IsClusterBrokerReady(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker readiness, retrying: %v", err)
 			return false, nil
