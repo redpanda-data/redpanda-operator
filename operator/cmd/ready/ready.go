@@ -26,7 +26,7 @@ import (
 func Command() *cobra.Command {
 	var (
 		redpandaYAMLPath string
-		brokerID         int
+		brokerURL        string
 	)
 
 	cmd := &cobra.Command{
@@ -38,13 +38,13 @@ func Command() *cobra.Command {
 			return Run(
 				ctx,
 				redpandaYAMLPath,
-				brokerID,
+				brokerURL,
 			)
 		},
 	}
 
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml whose rpk stanza will be used for connecting to a Redpanda cluster.")
-	cmd.Flags().IntVar(&brokerID, "broker-id", -1, "The ID of the broker instance this readiness check is for.")
+	cmd.Flags().StringVar(&brokerURL, "broker-url", "", "The URL of the broker instance this readiness check is for.")
 
 	return cmd
 }
@@ -52,13 +52,13 @@ func Command() *cobra.Command {
 func Run(
 	ctx context.Context,
 	redpandaYAMLPath string,
-	brokerID int,
+	brokerURL string,
 ) error {
 	logger := ctrl.LoggerFrom(ctx)
 
-	if brokerID < 0 {
-		err := fmt.Errorf("invalid broker id: %d", brokerID)
-		logger.Error(err, "must specify a broker via the -broker-id flag")
+	if brokerURL == "" {
+		err := fmt.Errorf("invalid broker url: %q", brokerURL)
+		logger.Error(err, "must specify a broker via the -broker-url flag")
 		return err
 	}
 
@@ -68,7 +68,7 @@ func Run(
 		probes.WithLogger(logger),
 	)
 
-	ready, err := prober.IsClusterBrokerReady(ctx, brokerID)
+	ready, err := prober.IsClusterBrokerReady(ctx, brokerURL)
 	if err != nil {
 		logger.Error(err, "error checking broker readiness")
 		return err
