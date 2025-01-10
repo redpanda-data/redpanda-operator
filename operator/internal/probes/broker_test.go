@@ -41,10 +41,11 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestIntegrationProber(t *testing.T) {
-	// testutil.SkipIfNotIntegration(t)
+	testutil.SkipIfNotIntegration(t)
 
 	suite.Run(t, new(ProberSuite))
 }
