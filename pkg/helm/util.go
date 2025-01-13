@@ -10,37 +10,43 @@
 package helm
 
 import (
-	"fmt"
-	"os"
-
-	"helm.sh/helm/v3/pkg/cli/values"
+	"sigs.k8s.io/yaml"
 )
 
-// MergeYAMLValues uses helm's values package to merge a collection of YAML
-// values in accordance with helm's merging logic.
-// Sadly, their merging logic is not exported nor can it accept raw JSON/YAML
-// so we dump files on disk.
-func MergeYAMLValues(tempDir string, vs ...[]byte) (map[string]any, error) {
-	if tempDir == "" {
-		tempDir = os.TempDir()
+// MergeYAMLValues merges a collection of YAML values in accordance with helm's
+// merging logic.
+func MergeYAMLValues(vs ...[]byte) (map[string]any, error) {
+	out := map[string]any{}
+
+	for _, valuesBytes := range vs {
+		var values map[string]any
+		if err := yaml.Unmarshal(valuesBytes, &values); err != nil {
+			return nil, err
+		}
+
+		out = mergeMaps(out, values)
 	}
 
-	var opts values.Options
-	for i, v := range vs {
-		file, err := os.CreateTemp(tempDir, fmt.Sprintf("values-%d.yaml", i))
-		if err != nil {
-			return nil, err
-		}
+	return out, nil
+}
 
-		if _, err := file.Write(v); err != nil {
-			return nil, err
-		}
-
-		if err := file.Close(); err != nil {
-			return nil, err
-		}
-		opts.ValueFiles = append(opts.ValueFiles, file.Name())
+// mergeMaps is ripped directly from helm's values package as it's not publicly
+// exposed and the only way to access it is to write YAML files to disk.
+func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
 	}
-
-	return opts.MergeValues(nil)
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = mergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
+	return out
 }
