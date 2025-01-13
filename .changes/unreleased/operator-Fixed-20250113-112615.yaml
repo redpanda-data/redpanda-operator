@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Value's merging no longer writes files to disk which prevents the operator from eating disk space when the reconciliation loop is run in rapid succession
+time: 2025-01-13T11:26:15.748888-05:00

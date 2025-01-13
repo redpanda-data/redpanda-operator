@@ -68,7 +68,7 @@ func (c *GoChart) LoadValues(values any) (helmette.Values, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	merged, err := helm.MergeYAMLValues("", c.defaultValues, valuesYaml)
+	merged, err := helm.MergeYAMLValues(c.defaultValues, valuesYaml)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -106,7 +106,7 @@ func mergeRootValueWithDependency(rootValues helmette.Values, dependencyValues h
 		return nil, errors.WithStack(err)
 	}
 
-	merged, err := helm.MergeYAMLValues("", []byte(root), []byte(dependency))
+	merged, err := helm.MergeYAMLValues([]byte(root), []byte(dependency))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
