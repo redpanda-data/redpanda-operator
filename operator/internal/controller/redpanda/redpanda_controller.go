@@ -49,7 +49,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	opkube "github.com/redpanda-data/redpanda-operator/operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -662,7 +661,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *v1alpha2.
 	job := redpanda.PostInstallUpgradeJob(dot)
 	clusterConfigTemplate := redpanda.BootstrapFile(dot)
 
-	expander := opkube.EnvExpander{
+	expander := kube.EnvExpander{
 		Client:    r.Client,
 		Namespace: rp.Namespace,
 		Env:       job.Spec.Template.Spec.InitContainers[0].Env,
