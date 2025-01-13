@@ -51,7 +51,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC)) -}}
+{{- if (and (and ((or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC))) (not $values.statefulset.sideCars.pvcUnbinder.enabled)) (not $values.statefulset.sideCars.brokerDecommissioner.enabled)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -68,7 +68,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC)) -}}
+{{- if (and (and ((or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC))) (not $values.statefulset.sideCars.pvcUnbinder.enabled)) (not $values.statefulset.sideCars.brokerDecommissioner.enabled)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -85,7 +85,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC)) -}}
+{{- if (and (and ((or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC))) (not $values.statefulset.sideCars.pvcUnbinder.enabled)) (not $values.statefulset.sideCars.brokerDecommissioner.enabled)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -102,7 +102,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC)) -}}
+{{- if (and (and ((or (not $values.statefulset.sideCars.controllers.enabled) (not $values.statefulset.sideCars.controllers.createRBAC))) (not $values.statefulset.sideCars.pvcUnbinder.enabled)) (not $values.statefulset.sideCars.brokerDecommissioner.enabled)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}

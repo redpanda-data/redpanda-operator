@@ -921,6 +921,14 @@ DEPRECATED: Prefer to use podTemplate.spec.securityContext or podTemplate.spec.c
 {"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}
 ```
 
+### [statefulset.sideCars.brokerDecommissioner.decommissionAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionAfter)
+
+**Default:** `"60s"`
+
+### [statefulset.sideCars.brokerDecommissioner.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.enabled)
+
+**Default:** `false`
+
 ### [statefulset.sideCars.configWatcher.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.configWatcher.enabled)
 
 **Default:** `true`
@@ -930,8 +938,6 @@ DEPRECATED: Prefer to use podTemplate.spec.securityContext or podTemplate.spec.c
 **Default:** `""`
 
 ### [statefulset.sideCars.configWatcher.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.configWatcher.resources)
-
-To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed * Every container in the Pod must have a memory limit and a memory request. * For every container in the Pod, the memory limit must equal the memory request. * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request.  To maximize efficiency, use the `static` CPU manager policy by specifying an even integer for CPU resource requests and limits. This policy gives the Pods running Redpanda brokers access to exclusive CPUs on the node. For details, see https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy
 
 **Default:** `{}`
 
@@ -982,6 +988,40 @@ To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limi
 **Default:** `"all"`
 
 ### [statefulset.sideCars.controllers.securityContext](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.securityContext)
+
+**Default:** `{}`
+
+### [statefulset.sideCars.extraVolumeMounts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.extraVolumeMounts)
+
+**Default:** `""`
+
+### [statefulset.sideCars.image.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.repository)
+
+**Default:**
+
+```
+"docker.redpanda.com/redpandadata/redpanda-operator"
+```
+
+### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
+
+**Default:** `"v2.3.5-24.3.2"`
+
+### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
+
+**Default:** `false`
+
+### [statefulset.sideCars.pvcUnbinder.unbindAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.unbindAfter)
+
+**Default:** `"60s"`
+
+### [statefulset.sideCars.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.resources)
+
+To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed * Every container in the Pod must have a memory limit and a memory request. * For every container in the Pod, the memory limit must equal the memory request. * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request.  To maximize efficiency, use the `static` CPU manager policy by specifying an even integer for CPU resource requests and limits. This policy gives the Pods running Redpanda brokers access to exclusive CPUs on the node. For details, see https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy
+
+**Default:** `{}`
+
+### [statefulset.sideCars.securityContext](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.securityContext)
 
 **Default:** `{}`
 
