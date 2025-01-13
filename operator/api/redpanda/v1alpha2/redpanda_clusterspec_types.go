@@ -499,6 +499,9 @@ type UsageStats struct {
 
 // Resources configures resource allocation. The default values are for a development environment. Production-level values and other considerations are documented, where those values are different from the default.
 type Resources struct {
+	Limits   *map[corev1.ResourceName]resource.Quantity `json:"limits,omitempty"`
+	Requests *map[corev1.ResourceName]resource.Quantity `json:"requests,omitempty"`
+
 	// Specifies the number of CPU cores.
 	CPU *CPU `json:"cpu,omitempty"`
 	// Specifies the amount of memory.
