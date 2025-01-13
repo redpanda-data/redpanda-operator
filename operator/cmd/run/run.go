@@ -39,6 +39,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -483,7 +484,7 @@ func Run(
 	} else {
 		setupLog.Info("starting PVCUnbinder controller", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
 
-		if err := (&vectorizedcontrollers.PVCUnbinderReconciler{
+		if err := (&decommissioning.PVCUnbinder{
 			Client:   mgr.GetClient(),
 			Timeout:  unbindPVCsAfter,
 			Selector: unbinderSelector,

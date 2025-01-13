@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package vectorized
+package decommissioning_test
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -109,7 +110,7 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 		},
 	}
 
-	r := &PVCUnbinderReconciler{
+	r := &decommissioning.PVCUnbinder{
 		Timeout: 30 * time.Second,
 		Selector: labels.SelectorFromSet(labels.Set{
 			"key": "value",
@@ -122,7 +123,7 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 			fn(&pod)
 		}
 
-		ok, requeue := r.shouldRemediate(context.Background(), &pod)
+		ok, requeue := r.ShouldRemediate(context.Background(), &pod)
 		require.Equal(t, tc.Should, ok)
 		require.InDelta(t, tc.RequeueAfter, requeue, float64(500*time.Millisecond) /* Leeway so we don't have to monkey patch time.Now */)
 	}
@@ -229,7 +230,7 @@ func TestPVCUnbinder(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	r := PVCUnbinderReconciler{Client: c}
+	r := decommissioning.PVCUnbinder{Client: c}
 	require.NoError(t, r.SetupWithManager(mgr))
 
 	tgo(t, ctx, func(ctx context.Context) error {
