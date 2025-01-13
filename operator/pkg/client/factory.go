@@ -111,6 +111,10 @@ func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 	}
 }
 
+func NewRPKOnlyFactory() *Factory {
+	return NewFactory(&rest.Config{}, nil)
+}
+
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 	return &Factory{
 		Client:   c.Client,

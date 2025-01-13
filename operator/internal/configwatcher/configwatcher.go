@@ -25,7 +25,6 @@ import (
 	"github.com/redpanda-data/console/backend/pkg/config"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
-	"k8s.io/client-go/rest"
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
@@ -100,7 +99,7 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 		return fmt.Errorf("loading rpk config: %w", err)
 	}
 
-	factory := internalclient.NewFactory(&rest.Config{}, nil).WithFS(w.fs)
+	factory := internalclient.NewRPKOnlyFactory().WithFS(w.fs)
 	client, err := factory.RedpandaAdminClient(ctx, config.VirtualProfile())
 	if err != nil {
 		return fmt.Errorf("initializing Redpanda admin API client: %w", err)
