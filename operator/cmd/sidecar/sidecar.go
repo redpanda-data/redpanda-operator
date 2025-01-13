@@ -49,6 +49,8 @@ func Command() *cobra.Command {
 		runBrokerProbe             bool
 		brokerProbeShutdownTimeout time.Duration
 		brokerProbeBrokerURL       string
+		runUnbinder                bool
+		unbinderTimeout            time.Duration
 	)
 
 	cmd := &cobra.Command{
@@ -75,6 +77,8 @@ func Command() *cobra.Command {
 				runBrokerProbe,
 				brokerProbeShutdownTimeout,
 				brokerProbeBrokerURL,
+				runUnbinder,
+				unbinderTimeout,
 			)
 		},
 	}
@@ -107,6 +111,10 @@ func Command() *cobra.Command {
 	cmd.Flags().DurationVar(&brokerProbeShutdownTimeout, "broker-probe-shutdown-timeout", 10*time.Second, "The time period to wait to gracefully shutdown the broker probe before terminating.")
 	cmd.Flags().StringVar(&brokerProbeBrokerURL, "broker-probe-broker-url", "", "The URL of the broker instance this sidecar is for.")
 
+	// unbinder flags
+	cmd.Flags().BoolVar(&runUnbinder, "run-pvc-unbinder", false, "Specifies if the PVC unbinder should be run.")
+	cmd.Flags().DurationVar(&unbinderTimeout, "pvc-unbinder-timeout", 60*time.Second, "The time period to wait before removing any unbound PVCs.")
+
 	return cmd
 }
 
@@ -128,6 +136,8 @@ func Run(
 	runBrokerProbe bool,
 	brokerProbeShutdownTimeout time.Duration,
 	brokerProbeBrokerURL string,
+	runUnbinder bool,
+	unbinderTimeout time.Duration,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -177,6 +187,17 @@ func Run(
 			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
 		}...).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			return err
+		}
+	}
+
+	if runUnbinder {
+		if err := (&decommissioning.PVCUnbinder{
+			Client:  mgr.GetClient(),
+			Timeout: unbinderTimeout,
+			Filter:  decommissioning.FilterPodOwner(clusterNamespace, clusterName),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
 		}
 	}
