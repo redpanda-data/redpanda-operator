@@ -14,12 +14,15 @@
 package redpanda
 
 import (
+	"time"
+
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
@@ -228,6 +231,21 @@ type PartialStatefulset struct {
 	PodSecurityContext *PartialSecurityContext "json:\"podSecurityContext,omitempty\""
 	SecurityContext    *PartialSecurityContext "json:\"securityContext,omitempty\" jsonschema:\"required\""
 	SideCars           *struct {
+		Image *struct {
+			Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+			Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+		} "json:\"image,omitempty\""
+		ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
+		Resources         map[string]any          "json:\"resources,omitempty\""
+		SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
+		PVCUnbinder       *struct {
+			Enabled     *bool          "json:\"enabled,omitempty\""
+			UnbindAfter *time.Duration "json:\"unbindAfter,omitempty\""
+		} "json:\"pvcUnbinder,omitempty\""
+		BrokerDecommissioner *struct {
+			Enabled           *bool          "json:\"enabled,omitempty\""
+			DecommissionAfter *time.Duration "json:\"decommissionAfter,omitempty\""
+		} "json:\"brokerDecommissioner,omitempty\""
 		ConfigWatcher *struct {
 			Enabled           *bool                   "json:\"enabled,omitempty\""
 			ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""

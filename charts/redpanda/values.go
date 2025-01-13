@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"fmt"
+	"time"
 
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/invopop/jsonschema"
@@ -578,6 +579,21 @@ type Statefulset struct {
 	// Deprecated. Prefer [PodTemplate.Spec.Containers[*].SecurityContext].
 	SecurityContext SecurityContext `json:"securityContext" jsonschema:"required"`
 	SideCars        struct {
+		Image struct {
+			Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
+			Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
+		} `json:"image"`
+		ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+		Resources         map[string]any          `json:"resources"`
+		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
+		PVCUnbinder       struct {
+			Enabled     bool          `json:"enabled"`
+			UnbindAfter time.Duration `json:"unbindAfter"`
+		} `json:"pvcUnbinder"`
+		BrokerDecommissioner struct {
+			Enabled           bool          `json:"enabled"`
+			DecommissionAfter time.Duration `json:"decommissionAfter"`
+		} `json:"brokerDecommissioner"`
 		ConfigWatcher struct {
 			Enabled           bool                    `json:"enabled"`
 			ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml

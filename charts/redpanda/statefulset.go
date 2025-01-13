@@ -226,12 +226,15 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 	// Volume is used when:
 	// * service account automount is set to false
 	// * one of the below condition:
-	//   * sidecars controllers are enabled (decommission, node-watcher) and rbac is enabled
+	//   * deprecated: sidecars controllers are enabled (decommission, node-watcher) and rbac is enabled
 	//   * rack awareness is enabled
+	//   * either broker decommissioner or pvc unbinder are enabled
 	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
 		((values.RBAC.Enabled &&
 			values.Statefulset.SideCars.Controllers.Enabled &&
 			values.Statefulset.SideCars.Controllers.CreateRBAC) ||
+			values.Statefulset.SideCars.BrokerDecommissioner.Enabled ||
+			values.Statefulset.SideCars.PVCUnbinder.Enabled ||
 			values.RackAwareness.Enabled) {
 		foundK8STokenVolume := false
 		for _, v := range volumes {
@@ -648,10 +651,7 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 func StatefulSetContainers(dot *helmette.Dot) []corev1.Container {
 	var containers []corev1.Container
 	containers = append(containers, *statefulSetContainerRedpanda(dot))
-	if c := statefulSetContainerConfigWatcher(dot); c != nil {
-		containers = append(containers, *c)
-	}
-	if c := statefulSetContainerControllers(dot); c != nil {
+	if c := statefulSetContainerSidecar(dot); c != nil {
 		containers = append(containers, *c)
 	}
 	return containers
@@ -888,52 +888,59 @@ func adminApiURLs(dot *helmette.Dot) string {
 	)
 }
 
-func statefulSetContainerConfigWatcher(dot *helmette.Dot) *corev1.Container {
+func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.ConfigWatcher.Enabled {
-		return nil
+	args := []string{
+		`sidecar`,
+		`--redpanda-yaml`,
+		`/etc/redpanda/redpanda.yaml`,
+		`--redpanda-cluster-namespace`,
+		dot.Release.Namespace,
+		`--redpanda-cluster-name`,
+		Fullname(dot),
+		`--run-broker-probe`,
+		`--broker-probe-broker-url`,
+		// even though this is named "...URLs", it returns
+		// only the url for the given pod
+		adminApiURLs(dot),
 	}
 
-	return &corev1.Container{
-		Name:    "config-watcher",
-		Image:   fmt.Sprintf(`%s:%s`, values.Image.Repository, Tag(dot)),
-		Command: []string{`/bin/sh`},
-		Args: []string{
-			`-c`,
-			`trap "exit 0" TERM; exec /etc/secrets/config-watcher/scripts/sasl-user.sh & wait $!`,
-		},
-		Env:             rpkEnvVars(dot, nil),
-		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.ConfigWatcher.Resources),
-		SecurityContext: values.Statefulset.SideCars.ConfigWatcher.SecurityContext,
-		VolumeMounts: append(
-			append(CommonMounts(dot),
-				corev1.VolumeMount{
-					Name:      "config",
-					MountPath: "/etc/redpanda",
-				},
-				corev1.VolumeMount{
-					Name:      fmt.Sprintf(`%s-config-watcher`, Fullname(dot)),
-					MountPath: "/etc/secrets/config-watcher/scripts",
-				},
-			),
-			templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...,
+	if values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
+		args = append(args, []string{
+			`--run-decommissioner`,
+			fmt.Sprintf("--decommissioner-vote-interval=%s", values.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
+			`--decommissioner-vote-count=2`,
+		}...)
+	}
+
+	if values.Statefulset.SideCars.ConfigWatcher.Enabled {
+		args = append(args, []string{
+			`--watch-users`,
+			`--users-directory=/etc/secrets/users/`,
+		}...)
+	}
+
+	if values.Statefulset.SideCars.PVCUnbinder.Enabled {
+		args = append(args, []string{
+			`--run-pvc-unbinder`,
+			fmt.Sprintf("--pvc-unbinder-timeout=%s", values.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
+		}...)
+	}
+
+	volumeMounts := append(
+		append(CommonMounts(dot),
+			corev1.VolumeMount{
+				Name:      "config",
+				MountPath: "/etc/redpanda",
+			},
 		),
-	}
-}
+		templateToVolumeMounts(dot, values.Statefulset.SideCars.ExtraVolumeMounts)...,
+	)
 
-func statefulSetContainerControllers(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.RBAC.Enabled || !values.Statefulset.SideCars.Controllers.Enabled {
-		return nil
-	}
-
-	volumeMounts := []corev1.VolumeMount{}
-	if values.RBAC.Enabled &&
-		values.Statefulset.SideCars.Controllers.Enabled &&
-		values.Statefulset.SideCars.Controllers.CreateRBAC &&
-		!ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
+	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
+		values.Statefulset.SideCars.BrokerDecommissioner.Enabled ||
+		values.Statefulset.SideCars.PVCUnbinder.Enabled {
 		mountName := ServiceAccountVolumeName
 		for _, vol := range StatefulSetVolumes(dot) {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
@@ -949,36 +956,13 @@ func statefulSetContainerControllers(dot *helmette.Dot) *corev1.Container {
 	}
 
 	return &corev1.Container{
-		Name: RedpandaControllersContainerName,
-		Image: fmt.Sprintf(`%s:%s`,
-			values.Statefulset.SideCars.Controllers.Image.Repository,
-			values.Statefulset.SideCars.Controllers.Image.Tag,
-		),
-		Command: []string{`/manager`},
-		Args: []string{
-			`--operator-mode=false`,
-			fmt.Sprintf(`--namespace=%s`, dot.Release.Namespace),
-			fmt.Sprintf(`--health-probe-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.HealthProbeAddress,
-			),
-			fmt.Sprintf(`--metrics-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.MetricsAddress,
-			),
-			fmt.Sprintf(`--pprof-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.PprofAddress,
-			),
-			fmt.Sprintf(`--additional-controllers=%s`,
-				helmette.Join(",", values.Statefulset.SideCars.Controllers.Run),
-			),
-		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "REDPANDA_HELM_RELEASE_NAME",
-				Value: dot.Release.Name,
-			},
-		},
-		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.Controllers.Resources),
-		SecurityContext: values.Statefulset.SideCars.Controllers.SecurityContext,
+		Name:            "sidecar",
+		Image:           fmt.Sprintf(`%s:%s`, values.Statefulset.SideCars.Image.Repository, values.Statefulset.SideCars.Image.Tag),
+		Command:         []string{`/redpanda-operator`},
+		Args:            args,
+		Env:             append(rpkEnvVars(dot, nil), statefulSetRedpandaEnv()...),
+		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.Resources),
+		SecurityContext: values.Statefulset.SideCars.SecurityContext,
 		VolumeMounts:    volumeMounts,
 	}
 }

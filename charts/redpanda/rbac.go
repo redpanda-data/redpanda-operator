@@ -155,7 +155,9 @@ func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if (!values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC) &&
+		!values.Statefulset.SideCars.PVCUnbinder.Enabled &&
+		!values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		return nil
 	}
 
@@ -188,7 +190,9 @@ func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
 func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if (!values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC) &&
+		!values.Statefulset.SideCars.PVCUnbinder.Enabled &&
+		!values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		return nil
 	}
 
@@ -221,7 +225,9 @@ func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRole
 func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if (!values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC) &&
+		!values.Statefulset.SideCars.PVCUnbinder.Enabled &&
+		!values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		return nil
 	}
 
@@ -265,7 +271,9 @@ func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 func SidecarControllersRoleBinding(dot *helmette.Dot) *rbacv1.RoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if (!values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC) &&
+		!values.Statefulset.SideCars.PVCUnbinder.Enabled &&
+		!values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		return nil
 	}
 
