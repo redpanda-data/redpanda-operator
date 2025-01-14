@@ -585,6 +585,12 @@ func (d *Deployment) getContainers(ctx context.Context, ss map[string]string) ([
 
 //nolint:funlen // the function could be refactored later
 func (d *Deployment) genEnvVars(ctx context.Context) (envars []corev1.EnvVar, err error) {
+	// first initialize to any custom provided env vars
+	// but we we override any of the ones we need to generate from other configs
+	if len(d.consoleobj.Spec.Deployment.ExtraEnv) > 0 {
+		envars = append(envars, d.consoleobj.Spec.Deployment.ExtraEnv...)
+	}
+
 	if d.clusterobj.IsSASLOnInternalEnabled() {
 		envars = append(envars, corev1.EnvVar{
 			Name: kafkaSASLBasicAuthPasswordEnvVar,
