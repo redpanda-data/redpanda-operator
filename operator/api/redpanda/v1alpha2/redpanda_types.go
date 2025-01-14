@@ -32,8 +32,6 @@ import (
 )
 
 const (
-	RedpandaChartRepository = "https://charts.redpanda.com/"
-
 	// ClusterConfigSynced is a condition indicating whether or not the
 	// redpanda cluster's configuration is up to date with the desired config.
 	ClusterConfigSynced = "ClusterConfigSynced"

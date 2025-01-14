@@ -135,6 +135,7 @@ func Command() *cobra.Command {
 		unbinderSelector            LabelSelectorValue
 		autoDeletePVCs              bool
 		forceDefluxedMode           bool
+		helmRepositoryURL           string
 	)
 
 	cmd := &cobra.Command{
@@ -166,6 +167,7 @@ func Command() *cobra.Command {
 				autoDeletePVCs,
 				forceDefluxedMode,
 				pprofAddr,
+				helmRepositoryURL,
 			)
 		},
 	}
@@ -198,6 +200,7 @@ func Command() *cobra.Command {
 	cmd.Flags().Var(&unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
+	cmd.Flags().StringVar(&helmRepositoryURL, "helm-repository-url", "https://charts.redpanda.com/", "URL to overwrite official `https://charts.redpanda.com/` Redpanda Helm chart repository")
 
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
@@ -234,6 +237,7 @@ func Run(
 	autoDeletePVCs bool,
 	forceDefluxedMode bool,
 	pprofAddr string,
+	helmRepositoryURL string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -387,6 +391,7 @@ func Run(
 			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
 			ClientFactory:      internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			DefaultDisableFlux: forceDefluxedMode,
+			HelmRepositoryURL:  helmRepositoryURL,
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err

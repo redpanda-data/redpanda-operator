@@ -702,10 +702,11 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: s.clientFactory,
+			Client:            mgr.GetClient(),
+			Scheme:            mgr.GetScheme(),
+			EventRecorder:     mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory:     s.clientFactory,
+			HelmRepositoryURL: "https://charts.redpanda.com/",
 		}).SetupWithManager(s.ctx, mgr); err != nil {
 			return err
 		}
@@ -976,6 +977,31 @@ func TestIsFluxEnabled(t *testing.T) {
 		assert.Equal(t, tc.expected, r.IsFluxEnabled(tc.useFluxCRD))
 		// When it comes for helmrepository and helmrelease they should be suspended
 		assert.Equal(t, tc.expectedSuspended, !r.IsFluxEnabled(tc.useFluxCRD))
+	}
+}
+
+func TestHelmRepositoryURL(t *testing.T) {
+	for _, tc := range []struct {
+		helmRepoURL string
+	}{
+		{""},
+		{"http://some-url.com/"},
+		{"address-that-can-be-resolved"},
+	} {
+		r := redpanda.RedpandaReconciler{HelmRepositoryURL: tc.helmRepoURL}
+		rp := &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "Redpanda-resource",
+			},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ChartRef: redpandav1alpha2.ChartRef{
+					ChartVersion: "5.x.x",
+				},
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{},
+			},
+		}
+		repo := r.HelmRepositoryFromTemplate(rp)
+		assert.Equal(t, tc.helmRepoURL, repo.Spec.URL)
 	}
 }
 
