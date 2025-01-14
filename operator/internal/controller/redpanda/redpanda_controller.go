@@ -83,6 +83,12 @@ type RedpandaReconciler struct {
 	EventRecorder      kuberecorder.EventRecorder
 	ClientFactory      internalclient.ClientFactory
 	DefaultDisableFlux bool
+	// HelmRepositorySpec.URL points to Redpanda helm repository where the following charts can be located:
+	// * Redpanda
+	// * Console
+	// * Connectors
+	// If not provided the v1alpha2.RedpandaChartRepository constant will be used.
+	HelmRepositoryURL string
 }
 
 // flux resources main resources
@@ -825,7 +831,7 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 }
 
 func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1alpha2.Redpanda) error {
-	repo := r.helmRepositoryFromTemplate(rp)
+	repo := r.HelmRepositoryFromTemplate(rp)
 
 	if err := r.apply(ctx, repo); err != nil {
 		return fmt.Errorf("applying HelmRepository: %w", err)
@@ -949,7 +955,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 	}, nil
 }
 
-func (r *RedpandaReconciler) helmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *sourcev1.HelmRepository {
+func (r *RedpandaReconciler) HelmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *sourcev1.HelmRepository {
 	return &sourcev1.HelmRepository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            rp.GetHelmRepositoryName(),
@@ -959,7 +965,7 @@ func (r *RedpandaReconciler) helmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *
 		Spec: sourcev1.HelmRepositorySpec{
 			Suspend:  !r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux),
 			Interval: metav1.Duration{Duration: 30 * time.Second},
-			URL:      v1alpha2.RedpandaChartRepository,
+			URL:      r.HelmRepositoryURL,
 		},
 	}
 }

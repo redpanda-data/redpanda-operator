@@ -199,10 +199,11 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpanda.RedpandaReconciler{
-		Client:        k8sManager.GetClient(),
-		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		Scheme:        k8sManager.GetScheme(),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		Client:            k8sManager.GetClient(),
+		ClientFactory:     internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
+		Scheme:            k8sManager.GetScheme(),
+		EventRecorder:     k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		HelmRepositoryURL: "https://charts.redpanda.com/",
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
