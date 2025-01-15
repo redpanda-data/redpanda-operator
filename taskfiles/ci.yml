@@ -69,6 +69,7 @@ tasks:
           KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
 
   configure-git-private-repo:
+    internal: true
     env:
       GITHUB_TOKEN:
         sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
@@ -85,6 +86,7 @@ tasks:
           KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
 
   kuttl-artifact-upload:
+    internal: true
     desc: uploads artifact when kuttl fails
     dir: operator
     summary: |
@@ -127,6 +129,7 @@ tasks:
       - task: :k8s:package-and-publish-operator-chart
 
   set-aio-max:
+    internal: true
     desc: set minimum required value for fs.aio-max-nr sysctl option
     vars:
       MIN_REQUIRED_AIO_MAX: 20971520
@@ -141,6 +144,7 @@ tasks:
       - linux
 
   set-inotify-watches:
+    internal: true
     desc: |
       set minimum required value for fs.inotify.max_user_watches sysctl option
       REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
@@ -155,6 +159,7 @@ tasks:
       - linux
 
   set-inotify-instances:
+    internal: true
     desc: |
       set minimum required value for fs.inotify.max_user_instances sysctl option
       REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files

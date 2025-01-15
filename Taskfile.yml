@@ -31,6 +31,7 @@ includes:
 
 tasks:
   lint:
+    desc: "Lint all go code and helm charts"
     cmds:
       - for:
           var: MOD
@@ -38,12 +39,14 @@ tasks:
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
 
   lint-fix:
+    desc: "equivalent to task lint -- --fix"
     cmds:
       - task: lint
         vars:
           CLI_ARGS: "--fix"
 
   mod:tidy:
+    desc: "Runs go mod tidy on all go modules in this repo"
     # This isn't the most accurate check as any new imports in go files may
     # require go mod tidy to get re-run. Builds will fail and CI will always
     # re-run this task, so some false negatives are acceptable.
@@ -56,10 +59,12 @@ tasks:
       cmd: go mod tidy -C {{.ITEM}}
 
   fmt:
+    desc: "gofumpt all go code"
     cmds:
       - gofumpt -w ./
 
   generate:
+    desc: "[re]generate all generated files"
     cmds:
       - task: mod:tidy
       - task: charts:generate
@@ -126,6 +131,7 @@ tasks:
       - task: k8s:build-operator-images
 
   test:unit:
+    desc: "Run all unit tests (~5m)"
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
@@ -134,6 +140,7 @@ tasks:
     - echo "{{.MOD}}" | xargs -t -I % {{.GO_TEST_RUNNER}} -C % {{.CLI_ARGS}} {{.PKG}}
 
   test:integration:
+    desc: "Run all integration tests (~90m)"
     cmds:
     - task: test:unit
       vars:
@@ -142,6 +149,7 @@ tasks:
         CLI_ARGS: '{{.CLI_ARGS}} -run "^TestIntegration" -timeout 35m -tags integration'
 
   test:acceptance:
+    desc: "Run all acceptance tests (~90m)"
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
       CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
