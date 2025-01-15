@@ -13,8 +13,11 @@ package run
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -27,7 +30,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -117,6 +122,8 @@ func Command() *cobra.Command {
 	var (
 		clusterDomain               string
 		metricsAddr                 string
+		secureMetrics               bool
+		enableHTTP2                 bool
 		probeAddr                   string
 		pprofAddr                   string
 		enableLeaderElection        bool
@@ -137,6 +144,12 @@ func Command() *cobra.Command {
 		autoDeletePVCs              bool
 		forceDefluxedMode           bool
 		helmRepositoryURL           string
+		webhookCertPath             string
+		webhookCertName             string
+		webhookCertKey              string
+		metricsCertPath             string
+		metricsCertName             string
+		metricsCertKey              string
 	)
 
 	cmd := &cobra.Command{
@@ -149,6 +162,8 @@ func Command() *cobra.Command {
 				ctx,
 				clusterDomain,
 				metricsAddr,
+				secureMetrics,
+				enableHTTP2,
 				probeAddr,
 				enableLeaderElection,
 				webhookEnabled,
@@ -169,11 +184,20 @@ func Command() *cobra.Command {
 				forceDefluxedMode,
 				pprofAddr,
 				helmRepositoryURL,
+				webhookCertPath,
+				webhookCertName,
+				webhookCertKey,
+				metricsCertPath,
+				metricsCertName,
+				metricsCertKey,
 			)
 		},
 	}
 
-	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
+		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
+	cmd.Flags().BoolVar(&secureMetrics, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+	cmd.Flags().BoolVar(&enableHTTP2, "enable-http2", false, "If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	cmd.Flags().StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&pprofAddr, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
 	cmd.Flags().StringVar(&clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
@@ -203,6 +227,14 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
 	cmd.Flags().StringVar(&helmRepositoryURL, "helm-repository-url", "https://charts.redpanda.com/", "URL to overwrite official `https://charts.redpanda.com/` Redpanda Helm chart repository")
 
+	cmd.Flags().StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
+	cmd.Flags().StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
+	cmd.Flags().StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
+	cmd.Flags().StringVar(&metricsCertPath, "metrics-cert-path", "",
+		"The directory that contains the metrics server certificate.")
+	cmd.Flags().StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
+	cmd.Flags().StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
+
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
 	kubeConfigOpts.BindFlags(cmd.Flags())
@@ -219,6 +251,8 @@ func Run(
 	ctx context.Context,
 	clusterDomain string,
 	metricsAddr string,
+	secureMetrics bool,
+	enableHTTP2 bool,
 	probeAddr string,
 	enableLeaderElection bool,
 	webhookEnabled bool,
@@ -239,19 +273,119 @@ func Run(
 	forceDefluxedMode bool,
 	pprofAddr string,
 	helmRepositoryURL string,
+	webhookCertPath string,
+	webhookCertName string,
+	webhookCertKey string,
+	metricsCertPath string,
+	metricsCertName string,
+	metricsCertKey string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
 	// set the managedFields owner for resources reconciled from Helm charts
 	helmkube.ManagedFieldsManager = controllerName
 
+	// if the enable-http2 flag is false (the default), http/2 should be disabled
+	// due to its vulnerabilities. More specifically, disabling http/2 will
+	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and
+	// Rapid Reset CVEs. For more information see:
+	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
+	// - https://github.com/advisories/GHSA-4374-p667-p6c8
+	disableHTTP2 := func(c *tls.Config) {
+		setupLog.Info("disabling http/2")
+		c.NextProtos = []string{"http/1.1"}
+	}
+
+	var tlsOpts []func(*tls.Config)
+	if !enableHTTP2 {
+		tlsOpts = append(tlsOpts, disableHTTP2)
+	}
+
+	// Create watchers for metrics and webhooks certificates
+	var metricsCertWatcher, webhookCertWatcher *certwatcher.CertWatcher
+
+	var webhookServer webhook.Server
+	if webhookEnabled {
+		// Initial webhook TLS options
+		webhookTLSOpts := tlsOpts
+
+		if len(webhookCertPath) > 0 {
+			setupLog.Info("Initializing webhook certificate watcher using provided certificates",
+				"webhook-cert-path", webhookCertPath, "webhook-cert-name", webhookCertName, "webhook-cert-key", webhookCertKey)
+
+			var err error
+			webhookCertWatcher, err = certwatcher.New(
+				filepath.Join(webhookCertPath, webhookCertName),
+				filepath.Join(webhookCertPath, webhookCertKey),
+			)
+			if err != nil {
+				setupLog.Error(err, "Failed to initialize webhook certificate watcher")
+				os.Exit(1)
+			}
+
+			webhookTLSOpts = append(webhookTLSOpts, func(config *tls.Config) {
+				config.GetCertificate = webhookCertWatcher.GetCertificate
+			})
+		}
+
+		webhookServer = webhook.NewServer(webhook.Options{
+			TLSOpts: webhookTLSOpts,
+		})
+	}
+
+	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
+	// More info:
+	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.4/pkg/metrics/server
+	// - https://book.kubebuilder.io/reference/metrics.html
+	metricsServerOptions := metricsserver.Options{
+		BindAddress:   metricsAddr,
+		SecureServing: secureMetrics,
+		TLSOpts:       tlsOpts,
+	}
+
+	if secureMetrics {
+		// FilterProvider is used to protect the metrics endpoint with authn/authz.
+		// These configurations ensure that only authorized users and service accounts
+		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
+		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.4/pkg/metrics/filters#WithAuthenticationAndAuthorization
+		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+	}
+
+	// If the certificate is not specified, controller-runtime will automatically
+	// generate self-signed certificates for the metrics server. While convenient for development and testing,
+	// this setup is not recommended for production.
+	//
+	// TODO(user): If you enable certManager, uncomment the following lines:
+	// - [METRICS-WITH-CERTS] at config/default/kustomization.yaml to generate and use certificates
+	// managed by cert-manager for the metrics server.
+	// - [PROMETHEUS-WITH-CERTS] at config/prometheus/kustomization.yaml for TLS certification.
+	if len(metricsCertPath) > 0 {
+		setupLog.Info("Initializing metrics certificate watcher using provided certificates",
+			"metrics-cert-path", metricsCertPath, "metrics-cert-name", metricsCertName, "metrics-cert-key", metricsCertKey)
+
+		var err error
+		metricsCertWatcher, err = certwatcher.New(
+			filepath.Join(metricsCertPath, metricsCertName),
+			filepath.Join(metricsCertPath, metricsCertKey),
+		)
+		if err != nil {
+			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
+			os.Exit(1)
+		}
+
+		metricsServerOptions.TLSOpts = append(metricsServerOptions.TLSOpts, func(config *tls.Config) {
+			config.GetCertificate = metricsCertWatcher.GetCertificate
+		})
+	}
+
 	mgrOptions := ctrl.Options{
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "aa9fc693.vectorized.io",
 		LeaderElectionNamespace: namespace,
-		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
+		Metrics:                 metricsServerOptions,
 		PprofBindAddress:        pprofAddr,
+		WebhookServer:           webhookServer,
 	}
 	if namespace != "" {
 		mgrOptions.Cache.DefaultNamespaces = map[string]cache.Config{namespace: {}}

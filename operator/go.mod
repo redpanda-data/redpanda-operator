@@ -121,6 +121,7 @@ require (
 	github.com/alibabacloud-go/tea-utils v1.4.5 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
 	github.com/aliyun/credentials-go v1.3.2 // indirect
+	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.24.0 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.26.1 // indirect
@@ -141,6 +142,7 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -234,6 +236,7 @@ require (
 	github.com/gonvenience/wrap v1.2.0 // indirect
 	github.com/gonvenience/ytbx v1.4.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
+	github.com/google/cel-go v0.18.2 // indirect
 	github.com/google/certificate-transparency-go v1.1.7 // indirect
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
@@ -253,6 +256,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -372,6 +376,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/viper v1.18.1 // indirect
+	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
@@ -405,7 +410,9 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
@@ -438,6 +445,7 @@ require (
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
 	oras.land/oras-go v1.2.5 // indirect
+	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
 	sigs.k8s.io/gateway-api v1.0.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/kustomize/api v0.16.0 // indirect
@@ -451,11 +459,55 @@ replace (
 	github.com/fluxcd/helm-controller v0.37.2 => github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e
 	github.com/fluxcd/helm-controller/shim => github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240
 	github.com/fluxcd/source-controller/shim => github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19
+
+	// NB: Due to old flux version which force us old version of sigs.k8s.io/controller-runtime. That's why
+	// cel library is fixed to old 0.17.8 version.
+	// exact kubernetes apiserver go.mod
+	// https://github.com/kubernetes/apiserver/blob/07c85806d6196f35f1810e1dca92bb03b793253a/go.mod#L14
+	//
+	// The follwoing error is returned by golangci-lint without go mod replace
+	// WARN [runner] Can't run linter goanalysis_metalinter: buildir: failed to load package library: could not load export data: no export data for "k8s.io/apiserver/pkg/cel/library"
+	// ERRO Running error: can't run linter goanalysis_metalinter
+	// buildir: failed to load package library: could not load export data: no export data for "k8s.io/apiserver/pkg/cel/library"
+	//
+	// go mod why github.com/google/cel-go
+	// # github.com/google/cel-go
+	// (main module does not need package github.com/google/cel-go)
+	//
+	// go mod why k8s.io/apiserver/pkg/cel/library
+	// # k8s.io/apiserver/pkg/cel/library
+	// github.com/redpanda-data/redpanda-operator/operator/cmd/run
+	// sigs.k8s.io/controller-runtime/pkg/metrics/filters
+	// k8s.io/apiserver/pkg/authorization/authorizerfactory
+	// k8s.io/apiserver/pkg/authorization/cel
+	// k8s.io/apiserver/pkg/cel/environment
+	// k8s.io/apiserver/pkg/cel/library
+	github.com/google/cel-go => github.com/google/cel-go v0.17.8
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
 
 	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
 	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.
 	github.com/redpanda-data/redpanda-operator/charts/redpanda => github.com/redpanda-data/redpanda-operator/charts/redpanda v0.0.0-20250207141022-1388ec6c6b63
+
+	// NB: Due to old flux version which force us to use old version of sigs.k8s.io/controller-runtime. That's why
+	// otel/sdk is fixed to old 1.28.0 version. The newest version is v1.34.0
+	//
+	// The following error is returned by golangci-lint without go mod replace
+	// WARN [runner] Can't run linter goanalysis_metalinter: buildir: failed to load package trace: could not load export data: no export data for "go.opentelemetry.io/otel/sdk/trace"
+	// ERRO Running error: can't run linter goanalysis_metalinter
+	// buildir: failed to load package trace: could not load export data: no export data for "go.opentelemetry.io/otel/sdk/trace"
+	//
+	// go mod why go.opentelemetry.io/otel/sdk
+	// # go.opentelemetry.io/otel/sdk
+	// github.com/redpanda-data/redpanda-operator/operator/cmd/run
+	// sigs.k8s.io/controller-runtime/pkg/metrics/filters
+	// k8s.io/apiserver/pkg/authentication/authenticatorfactory
+	// k8s.io/apiserver/plugin/pkg/authenticator/token/webhook
+	// k8s.io/apiserver/pkg/util/webhook
+	// k8s.io/component-base/tracing
+	// go.opentelemetry.io/otel/sdk/resource
+	// go.opentelemetry.io/otel/sdk
+	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.28.0
 
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
