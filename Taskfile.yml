@@ -8,6 +8,9 @@ vars:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
+  _PKG:
+    sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
+  PKG: '{{default ._PKG .PKG}}'
 
 includes:
   ci: taskfiles/ci.yml
@@ -18,10 +21,6 @@ includes:
 
 tasks:
   lint:
-    vars:
-      _PKG:
-        sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
-      PKG: '{{default ._PKG .PKG}}'
     cmds:
       - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
@@ -54,8 +53,28 @@ tasks:
       - task: dev:update-licenses
       - task: k8s:generate
       - task: dev:update-licenses
+      - task: generate:third-party-licenses-list
       - task: generate:changelog
       - nix fmt # Ensure flake.nix has been formatted.
+
+  generate:third-party-licenses-list:
+    generates:
+    - licenses/third_party.md
+    sources:
+    - ./**/go.mod
+    - ./**/go.sum
+    cmds:
+    # Our own packages should not be reported as third party license
+    # The example.com/example depedency is ignored as it's part of the
+    # gotohelm test suite (visit ./pkg/gotohelm/testdata/src/example/go.mod)
+    - |
+      go-licenses report {{.PKG}} --template licenses/third_party.md.tpl \
+      --ignore buf.build/gen/go/redpandadata \
+      --ignore example.com/example \
+      --ignore github.com/redpanda-data/common-go \
+      --ignore github.com/redpanda-data/console/backend \
+      --ignore github.com/redpanda-data/redpanda \
+      --ignore github.com/redpanda-data/redpanda-operator > licenses/third_party.md
 
   generate:changelog:
     generates:
@@ -83,9 +102,6 @@ tasks:
 
   test:unit:
     vars:
-      _PKG:
-        sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
-      PKG: '{{default ._PKG .PKG}}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
     - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
