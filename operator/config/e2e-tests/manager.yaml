@@ -11,9 +11,10 @@ spec:
         imagePullPolicy: IfNotPresent
         args:
         - "--health-probe-bind-address=:8081"
-        - "--metrics-bind-address=127.0.0.1:8080"
+        - "--metrics-bind-address=:8443"
         - "--leader-elect"
         - "--webhook-enabled=true"
+        - "--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs"
         - "--configurator-base-image=localhost/redpanda-operator"
         - "--configurator-tag=dev"
         - "--configurator-image-pull-policy=Never"
