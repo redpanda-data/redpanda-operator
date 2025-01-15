@@ -144,8 +144,6 @@ tasks:
 
   test:unit:
     cmds:
-      - defer: 'kind delete clusters --all'
-      - task: :charts:kind-cluster
       - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/unit-tests.xml'
       - task: :test:unit
         vars:
