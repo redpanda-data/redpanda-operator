@@ -13,7 +13,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 
@@ -275,4 +277,16 @@ func AssertJSONCompat[From, To any](t *rapid.T, cfg rapid.MakeConfig, fn func(*F
 	require.NoError(t, err, "failed to marshal %s (%T) through %T", original, from, to)
 
 	require.JSONEq(t, string(original), string(through), "%s (%T) should have serialized to %s (%T)", through, to, original, from)
+}
+
+func TestNoMarkdownLinks(t *testing.T) {
+	data, err := os.ReadFile("testdata/crd-docs.adoc")
+	require.NoError(t, err)
+
+	re := regexp.MustCompile(`\[(.+)\]\((.+)\)`)
+
+	matches := re.FindAllSubmatch(data, -1)
+	for _, match := range matches {
+		t.Errorf("public CRD docs use Ascii doc but found markdown link: %s\nDid you mean: %s[%s]\n(Or do you need to run task generate?)", match[0], match[2], match[1])
+	}
 }

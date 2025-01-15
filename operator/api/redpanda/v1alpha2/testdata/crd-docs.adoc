@@ -1,0 +1,3299 @@
+// Generated documentation. Please do not edit.
+:anchor_prefix: k8s-api
+
+[id="{p}-api-reference"]
+== API Reference
+
+.Packages
+- xref:{anchor_prefix}-cluster-redpanda-com-v1alpha2[$$cluster.redpanda.com/v1alpha2$$]
+
+
+[id="{anchor_prefix}-cluster-redpanda-com-v1alpha2"]
+=== cluster.redpanda.com/v1alpha2
+
+Package v1alpha2 defines the v1alpha2 schema for the Redpanda API. It is part of an evolving API architecture, representing an initial stage that may be subject to change based on user feedback and further development.
+
+.Resource Types
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acloperation"]
+==== ACLOperation
+
+_Underlying type:_ _string_
+
+ACLOperation specifies the type of operation for an ACL.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec"]
+==== ACLResourceSpec
+
+
+
+ACLResourceSpec indicates the resource for which given ACL rule applies.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetype[$$ResourceType$$]__ | Type specifies the type of resource an ACL is applied to. Valid values: +
+- topic +
+- group +
+- cluster +
+- transactionalId + |  | Enum: [topic group cluster transactionalId] +
+
+| *`name`* __string__ | Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified. +
+Can be combined with patternType field to use prefix pattern. + |  | 
+| *`patternType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-patterntype[$$PatternType$$]__ | Describes the pattern used in the resource field. The supported types are literal +
+and prefixed. With literal pattern type, the resource field will be used as a definition +
+of a full topic name. With prefix pattern type, the resource name will be used only as +
+a prefix. Prefixed patterns can only be specified when using types `topic`, `group`, or +
+`transactionalId`. Default value is literal. Valid values: +
+- literal +
+- prefixed + | literal | Enum: [literal prefixed] +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule"]
+==== ACLRule
+
+
+
+ACLRule defines an ACL rule applied to the given user.
+
+
+Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acltype[$$ACLType$$]__ | Type specifies the type of ACL rule to create. Valid values are: +
+- allow +
+- deny + |  | Enum: [allow deny] +
+
+| *`resource`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]__ | Indicates the resource for which given ACL rule applies. + |  | 
+| *`host`* __string__ | The host from which the action described in the ACL rule is allowed or denied. +
+If not set, it defaults to *, allowing or denying the action from any host. + | * | 
+| *`operations`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acloperation[$$ACLOperation$$] array__ | List of operations which will be allowed or denied. Valid values are resource type dependent, but include: +
+- Read +
+- Write +
+- Delete +
+- Alter +
+- Describe +
+- IdempotentWrite +
+- ClusterAction +
+- Create +
+- AlterConfigs +
+- DescribeConfigs + |  | MaxItems: 11 +
+MinItems: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acltype"]
+==== ACLType
+
+_Underlying type:_ _string_
+
+ACLType specifies the type, either allow or deny of an ACL rule.
+
+.Validation:
+- Enum: [allow deny]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-admin"]
+==== Admin
+
+
+
+Admin configures settings for the Admin API listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`appProtocol`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec"]
+==== AdminAPISpec
+
+
+
+AdminAPISpec defines client configuration for connecting to Redpanda's admin API.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource[$$StaticConfigurationSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`urls`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl"]
+==== AdminSASL
+
+
+
+AdminSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec[$$AdminAPISpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`username`* __string__ | Specifies the username. + |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
+| *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
+| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies token for token-based authentication (only used if no username/password are provided). + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auditlogging"]
+==== AuditLogging
+
+
+
+AuditLogging configures how to perform audit logging for a redpanda cluster
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to enable audit logging or not + |  | 
+| *`listener`* __string__ | Kafka external listener name, note that it must have `authenticationMethod` set to sasl + |  | 
+| *`partitions`* __integer__ | Integer value defining the number of partitions used by a newly created audit topic + |  | 
+| *`enabledEventTypes`* __string array__ | Event types that should be captured by audit logs + |  | 
+| *`excludedTopics`* __string array__ | List of topics to exclude from auditing + |  | 
+| *`excludedPrincipals`* __string array__ | List of principals to exclude from auditing + |  | 
+| *`clientMaxBufferSize`* __integer__ | Defines the number of bytes (in bytes) allocated by the internal audit client for audit messages. + |  | 
+| *`queueDrainIntervalMs`* __integer__ | In ms, frequency in which per shard audit logs are batched to client for write to audit log. + |  | 
+| *`queueMaxBufferSizePerShard`* __integer__ | Defines the maximum amount of memory used (in bytes) by the audit buffer in each shard + |  | 
+| *`replicationFactor`* __integer__ | Defines the replication factor for a newly created audit log topic. This configuration applies +
+only to the audit log topic and may be different from the cluster or other topic configurations. +
+This cannot be altered for existing audit log topics. Setting this value is optional. If a value is not provided, +
+Redpanda will use the `internal_topic_replication_factor` cluster config value. Default is `null` + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth"]
+==== Auth
+
+
+
+Auth configures authentication in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/authentication/sasl-kubernetes/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl[$$SASL$$]__ | Configures SASL authentication in the Helm values. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authorizationtype"]
+==== AuthorizationType
+
+_Underlying type:_ _string_
+
+AuthorizationType specifies the type of authorization to use in creating a user.
+
+.Validation:
+- Enum: [simple]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]
+****
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-bootstrapuser"]
+==== BootstrapUser
+
+
+
+BootstrapUser configures the user used to bootstrap Redpanda when SASL is enabled.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl[$$SASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name specifies the name of the bootstrap user created for the cluster, if unspecified +
+defaults to "kubernetes-controller". + |  | 
+| *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | Specifies the location where the generated password will be written or a pre-existing +
+password will be read from. + |  | 
+| *`mechanism`* __string__ | Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-budget"]
+==== Budget
+
+
+
+Budget configures the management of disruptions affecting the Pods in the StatefulSet.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`maxUnavailable`* __integer__ | Defines the maximum number of Pods that can be unavailable during a voluntary disruption. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-cpu"]
+==== CPU
+
+
+
+CPU configures CPU resources for containers. See https://docs.redpanda.com/current/manage/kubernetes/manage-resources/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources[$$Resources$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cores`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the number of CPU cores available to the application. Redpanda makes use of a thread per core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model. For this reason, Redpanda should only be given full cores. Note: You can increase cores, but decreasing cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350. This setting is equivalent to `--smp`, `resources.requests.cpu`, and `resources.limits.cpu`. For production, use `4` or greater. + |  | 
+| *`overprovisioned`* __boolean__ | Specifies whether Redpanda assumes it has all of the provisioned CPU. This should be `true` unless the container has CPU affinity. Equivalent to: `--idle-poll-time-us 0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value of full cores in `resources.cpu.cores` is less than `1`, this setting is set to `true`. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-certificate"]
+==== Certificate
+
+
+
+Certificate configures TLS certificates.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`issuerRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-issuerref[$$IssuerRef$$]__ | Specify the name of an existing Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs. + |  | 
+| *`secretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretref[$$SecretRef$$]__ | Specify the name of an existing Secret resource that contains your TLS certificate. + |  | 
+| *`clientSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretref[$$SecretRef$$]__ | Specify the name of an existing Secret resource that contains your client TLS certificate. + |  | 
+| *`duration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | Specifies the validity duration of certificates generated with `issuerRef`. + |  | 
+| *`caEnabled`* __boolean__ | Specifies whether to include the `ca.crt` file in the trust stores of all listeners. Set to `true` only for certificates that are not authenticated using public certificate authorities (CAs). + |  | 
+| *`applyInternalDNSNames`* __boolean__ | Specifies you wish to have Kubernetes internal dns names (IE the headless service of the redpanda StatefulSet) included in `dnsNames` of the  certificate even, when supplying an issuer. + |  | 
+| *`enabled`* __boolean__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-chartref"]
+==== ChartRef
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`chartName`* __string__ | Specifies the name of the chart to deploy. + |  | 
+| *`chartVersion`* __string__ | Defines the version of the Redpanda Helm chart to deploy. + |  | 
+| *`helmRepositoryName`* __string__ | Defines the chart repository to use. Defaults to `redpanda` if not defined. + |  | 
+| *`timeout`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | Specifies the time to wait for any individual Kubernetes operation (like Jobs +
+for hooks) during Helm actions. Defaults to `15m0s`. + |  | Pattern: `^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$` +
+Type: string +
+
+| *`upgrade`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-helmupgrade[$$HelmUpgrade$$]__ | Defines how to handle upgrades, including failures. + |  | 
+| *`useFlux`* __boolean__ | IMPORTANT: Beta Feature +
+
+
+Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart. +
+This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other +
+ChartRef fields to be ignored. +
+
+
+Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.18` or the corresponding +
+version of the Redpanda chart. +
+
+
+Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is +
+manually deleted. +
+
+
+To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false` +
+will suspend these resources instead of removing them. +
+
+
+References: +
+- https://fluxcd.io/flux/components/helm/helmreleases/#suspend +
+- https://fluxcd.io/flux/components/source/helmrepositories/#suspend + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref"]
+==== ClusterRef
+
+
+
+ClusterRef represents a reference to a cluster that is being targeted.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: {} +
+
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource"]
+==== ClusterSource
+
+
+
+ClusterSource defines how to connect to a particular Redpanda cluster.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ | ClusterRef is a reference to the cluster where the object should be created. +
+It is used in constructing the client created to configure a cluster. +
+This takes precedence over StaticConfigurationSource. + |  | 
+| *`staticConfiguration`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource[$$StaticConfigurationSource$$]__ | StaticConfiguration holds connection parameters to Kafka and Admin APIs. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls"]
+==== CommonTLS
+
+
+
+CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec[$$AdminAPISpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec[$$KafkaAPISpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec[$$SchemaRegistrySpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
+| *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
+| *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 
+| *`insecureSkipTlsVerify`* __boolean__ | InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-compatibilitylevel"]
+==== CompatibilityLevel
+
+_Underlying type:_ _string_
+
+
+
+.Validation:
+- Enum: [None Backward BackwardTransitive Forward ForwardTransitive Full FullTransitive]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-config"]
+==== Config
+
+
+
+Config configures Redpanda config properties supported by Redpanda that may not work correctly in a Kubernetes cluster. Changing these values from the defaults comes with some risk. Use these properties to customize various Redpanda configurations that are not available in the `RedpandaClusterSpec`. These values have no impact on the configuration or behavior of the Kubernetes objects deployed by Helm, and therefore should not be modified for the purpose of configuring those objects. Instead, these settings get passed directly to the Redpanda binary at startup.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`rpk`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/. + |  | 
+| *`cluster`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/. + |  | 
+| *`node`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies broker configuration properties. See https://docs.redpanda.com/current/reference/node-properties/. + |  | 
+| *`tunable`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/. + |  | 
+| *`schema_registry_client`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/. + |  | 
+| *`pandaproxy_client`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configsynonyms"]
+==== ConfigSynonyms
+
+
+
+ConfigSynonyms was copied from https://github.com/twmb/franz-go/blob/01651affd204d4a3577a341e748c5d09b52587f8/pkg/kmsg/generated.go#L24569-L24578
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configuration[$$Configuration$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`value`* __string__ |  |  | 
+| *`source`* __string__ |  |  | 
+| *`unknownTags`* __object (keys:string, values:string)__ | UnknownTags are tags Kafka sent that we do not know the purpose of. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher"]
+==== ConfigWatcher
+
+
+
+ConfigWatcher configures a sidecar that watches for changes to the Secret in `auth.sasl.secretRef` and applies the changes to the Redpanda cluster.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the sidecar is enabled. + |  | 
+| *`extraVolumeMounts`* __string__ | Specifies additional volumes to mount to the sidecar. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configuration"]
+==== Configuration
+
+
+
+Configuration was copied from https://github.com/twmb/franz-go/blob/01651affd204d4a3577a341e748c5d09b52587f8/pkg/kmsg/generated.go#L24593-L24634
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicstatus[$$TopicStatus$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is a key this entry corresponds to (e.g. segment.bytes). + |  | 
+| *`value`* __string__ | Value is the value for this config key. If the key is sensitive, +
+the value will be null. + |  | 
+| *`readOnly`* __boolean__ | ReadOnly signifies whether this is not a dynamic config option. +
+
+
+Note that this field is not always correct, and you may need to check +
+whether the Source is any dynamic enum. See franz-go#91 for more details. + |  | 
+| *`isDefault`* __boolean__ | IsDefault is whether this is a default config option. This has been +
+replaced in favor of Source. + |  | 
+| *`source`* __string__ | Source is where this config entry is from. +
+
+
+This field has a default of -1. + |  | 
+| *`isSensitive`* __boolean__ | IsSensitive signifies whether this is a sensitive config key, which +
+is either a password or an unknown type. + |  | 
+| *`configSynonyms`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configsynonyms[$$ConfigSynonyms$$] array__ | ConfigSynonyms contains fallback key/value pairs for this config +
+entry, in order of preference. That is, if a config entry is both +
+dynamically configured and has a default, the top level return will be +
+the dynamic configuration, while its "synonym" will be the default. + |  | 
+| *`configType`* __string__ | ConfigType specifies the configuration data type. + |  | 
+| *`documentation`* __string__ | Documentation is optional documentation for the config entry. + |  | 
+| *`unknownTags`* __object (keys:string, values:string)__ | UnknownTags are tags Kafka sent that we do not know the purpose of. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configurator"]
+==== Configurator
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`extraVolumeMounts`* __string__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectormonitoring"]
+==== ConnectorMonitoring
+
+
+
+ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics. + |  | 
+| *`labels`* __object (keys:string, values:string)__ | Adds custom labels to the ServiceMonitor resource. + |  | 
+| *`scrapeInterval`* __string__ | Specifies how often to scrape metrics. + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Adds custom Annotations to the ServiceMonitor resource. + |  | 
+| *`namespaceSelector`* __xref:{anchor_prefix}-github-com-prometheus-operator-prometheus-operator-pkg-apis-monitoring-v1-namespaceselector[$$NamespaceSelector$$]__ | Adds custom namespaceSelector to monitoring resources + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectorscreateobj"]
+==== ConnectorsCreateObj
+
+
+
+ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`create`* __boolean__ | Specifies whether to create the resource. + |  | 
+| *`enabled`* __boolean__ | Deprecated: this field exists for storage backwards compatibility and is +
+never used. Prefer Create. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj"]
+==== ConsoleCreateObj
+
+
+
+ConsoleCreateObj represents configuration options for creating Kubernetes objects such as ConfigMaps, Secrets, and Deployments.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`create`* __boolean__ | Indicates whether the corresponding Kubernetes object (ConfigMap, Secret, or Deployment) should be created. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-containerresources"]
+==== ContainerResources
+
+
+
+ContainerResources defines resource limits for containers.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory[$$Memory$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`max`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the maximum resources that can be allocated to a container. + |  | 
+| *`min`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the minimum resources required for a container. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-credentialsecretref"]
+==== CredentialSecretRef
+
+
+
+CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`accessKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
+| *`secretKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enablable"]
+==== Enablable
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise"]
+==== Enterprise
+
+
+
+Enterprise configures an Enterprise license key to enable Redpanda Enterprise features. Requires the post-install job to be enabled (default). See https://docs.redpanda.com/current/get-started/licenses/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`license`* __string__ | Specifies the Enterprise license key. + |  | 
+| *`licenseSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterpriselicensesecretref[$$EnterpriseLicenseSecretRef$$]__ | Defines a reference to a Secret resource that contains the Enterprise license key. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterpriselicensesecretref"]
+==== EnterpriseLicenseSecretRef
+
+
+
+EnterpriseLicenseSecretRef configures a reference to a Secret resource that contains the Enterprise license key.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise[$$Enterprise$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`key`* __string__ | Specifies the key that is contains the Enterprise license in the Secret. + |  | 
+| *`name`* __string__ | Specifies the name of the Secret resource to use. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external"]
+==== External
+
+
+
+External defines external connectivity settings in the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`addresses`* __string array__ | Specifies addresses for the external listeners to advertise.Provide one entry for each broker in order of StatefulSet replicas. The number of brokers is defined in `statefulset.replicas`. The values can be IP addresses or DNS names. If `external.domain` is set, the domain is appended to these values. + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the external Service. + |  | 
+| *`domain`* __string__ | Specifies the domain to advertise to external clients. If specified, then it will be appended to the `external.addresses` values as each broker's advertised address. + |  | 
+| *`enabled`* __boolean__ | Specifies whether the external access is enabled. + |  | 
+| *`service`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalservice[$$ExternalService$$]__ | Configures the external Service resource. + |  | 
+| *`sourceRanges`* __string array__ | Source range for external access. Only applicable when `external.type` is LoadBalancer. + |  | 
+| *`type`* __string__ | Specifies the external Service type. Only NodePort and LoadBalancer are supported. If undefined, then advertised listeners will be configured in Redpanda, but the Helm chart will not create a Service. NodePort is recommended in cases where latency is a priority. + |  | 
+| *`externalDns`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externaldns[$$ExternalDNS$$]__ | Defines externalDNS configurations. + |  | 
+| *`prefixTemplate`* __string__ | Specifies a naming prefix template for external Services. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externaldns"]
+==== ExternalDNS
+
+
+
+ExternalDNS configures externalDNS.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether externalDNS annotations are added to LoadBalancer Services. If you enable externalDns, each LoadBalancer Service defined in `external.type` will be annotated with an external-dns hostname that matches `external.addresses[i]`.`external.domain`. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener"]
+==== ExternalListener
+
+
+
+ExternalListener configures settings for the external listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-admin[$$Admin$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-http[$$HTTP$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafka[$$Kafka$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry[$$SchemaRegistry$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`port`* __integer__ | Specifies the container port number for the external listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the external listener. + |  | 
+| *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number. + |  | 
+| *`nodePort`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalservice"]
+==== ExternalService
+
+
+
+ExternalService allows you to enable or disable the creation of an external Service type.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to create the external Service. If set to `false`, the external Service type is not created. You can still set your cluster with external access but not create the supporting Service. Set this to `false` to manage your own Service. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-fsvalidator"]
+==== FsValidator
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`expectedFS`* __string__ |  |  | 
+| *`extraVolumeMounts`* __string__ | Adds extra volume mounts. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies the resource requirements. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-http"]
+==== HTTP
+
+
+
+HTTP configures settings for the HTTP Proxy listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`enabled`* __boolean__ | Specifies whether the HTTP Proxy is enabled. + |  | 
+| *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
+| *`kafkaEndpoint`* __string__ | Configures the listener to use for HTTP connections. For example `default` for the internal listener. + |  | 
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-helmupgrade"]
+==== HelmUpgrade
+
+
+
+HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-chartref[$$ChartRef$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`remediation`* __link:https://v2-2.docs.fluxcd.io/flux/components/helm/api/v2beta2/#helm.toolkit.fluxcd.io/v2beta2.InstallRemediation[$$UpgradeRemediation$$]__ | Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation. + |  | 
+| *`force`* __boolean__ | Enables forceful updates during an upgrade. + |  | 
+| *`preserveValues`* __boolean__ | Specifies whether to preserve user-configured values during an upgrade. + |  | 
+| *`cleanupOnFail`* __boolean__ | Specifies whether to perform cleanup in case of failed upgrades. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage"]
+==== InitContainerImage
+
+
+
+InitContainerImage configures the init container image used to perform initial setup tasks before the main containers start.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`repository`* __string__ |  |  | 
+| *`tag`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers"]
+==== InitContainers
+
+
+
+InitContainers configures the init container used to perform initial setup tasks before the main containers start.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configurator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configurator[$$Configurator$$]__ |  |  | 
+| *`extraInitContainers`* __string__ |  |  | 
+| *`setDataDirOwnership`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-setdatadirownership[$$SetDataDirOwnership$$]__ | Defines the settings related to ownership of the Redpanda data directory in environments where root access is restricted. + |  | 
+| *`setTieredStorageCacheDirOwnership`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-settieredstoragecachedirownership[$$SetTieredStorageCacheDirOwnership$$]__ | Defines the settings related to ownership of the Tiered Storage cache in environments where root access is restricted. + |  | 
+| *`fsValidator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-fsvalidator[$$FsValidator$$]__ | Defines the setting for init container that not allow to start Redpanda until filesystem matches + |  | 
+| *`tuning`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tuning[$$Tuning$$]__ | Defines settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-issuerref"]
+==== IssuerRef
+
+
+
+IssuerRef configures the Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-certificate[$$Certificate$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Specifies the name of the resource. + |  | 
+| *`kind`* __string__ | Specifies the kind of resource. One of `Issuer` or `ClusterIssuer`. + |  | 
+| *`group`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafka"]
+==== Kafka
+
+
+
+Kafka configures settings for the Kafka API listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec"]
+==== KafkaAPISpec
+
+
+
+KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource[$$StaticConfigurationSource$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+|===
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl"]
+==== KafkaSASL
+
+
+
+KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec[$$KafkaAPISpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`username`* __string__ | Specifies the username. + |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
+| *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
+| *`oauth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]__ |  |  | 
+| *`gssapi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]__ |  |  | 
+| *`awsMskIam`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam"]
+==== KafkaSASLAWSMskIam
+
+
+
+KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
+see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`accessKey`* __string__ |  |  | 
+| *`secretKeySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+| *`sessionTokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | SessionToken, if non-empty, is a session / security token to use for authentication. +
+See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html + |  | 
+| *`userAgent`* __string__ | UserAgent is the user agent to for the client to use when connecting +
+to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>". +
+
+
+Setting a UserAgent allows authorizing based on the aws:UserAgent +
+condition key; see the following link for more details: +
+https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi"]
+==== KafkaSASLGSSAPI
+
+
+
+KafkaSASLGSSAPI represents the Kafka Kerberos config.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`authType`* __string__ |  |  | 
+| *`keyTabPath`* __string__ |  |  | 
+| *`kerberosConfigPath`* __string__ |  |  | 
+| *`serviceName`* __string__ |  |  | 
+| *`username`* __string__ |  |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+| *`realm`* __string__ |  |  | 
+| *`enableFast`* __boolean__ | EnableFAST enables FAST, which is a pre-authentication framework for Kerberos. +
+It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages. +
+FAST provides increased resistance to passive password guessing attacks. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer"]
+==== KafkaSASLOAuthBearer
+
+
+
+KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`tokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-licensesecretref"]
+==== LicenseSecretRef
+
+
+
+LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`secret_key`* __string__ | Specifies the key that is contains the Enterprise license in the Secret. + |  | 
+| *`secret_name`* __string__ | Specifies the name of the Secret. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls"]
+==== ListenerTLS
+
+
+
+ListenerTLS configures TLS configuration for each listener in the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-admin[$$Admin$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-http[$$HTTP$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafka[$$Kafka$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpc[$$RPC$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry[$$SchemaRegistry$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cert`* __string__ | References a specific certificate for the listener. + |  | 
+| *`enabled`* __boolean__ | Specifies whether TLS is enabled for the listener. + |  | 
+| *`secretRef`* __string__ | References a Secret resource containing TLS credentials for the listener. +
+
+
+Deprecated: Setting SecretRef has no affect and will be removed in +
+future releases. + |  | 
+| *`requireClientAuth`* __boolean__ | Indicates whether client authentication (mTLS) is required. + |  | 
+| *`trustStore`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-truststore[$$TrustStore$$]__ | TrustStore allows setting the `truststore_path` on this listener. If +
+specified, this field takes precedence over [Certificate.CAEnabled]. + |  | MaxProperties: 1 +
+MinProperties: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners"]
+==== Listeners
+
+
+
+Listeners configures settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API. See https://docs.redpanda.com/current/manage/kubernetes/networking/configure-listeners/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`admin`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-admin[$$Admin$$]__ | Configures settings for the Admin API listeners. + |  | 
+| *`http`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-http[$$HTTP$$]__ | Configures settings for the HTTP Proxy listeners. + |  | 
+| *`kafka`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafka[$$Kafka$$]__ | Configures settings for the Kafka API listeners. + |  | 
+| *`rpc`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpc[$$RPC$$]__ | Configures settings for the RPC API listener. + |  | 
+| *`schemaRegistry`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry[$$SchemaRegistry$$]__ | Configures settings for the Schema Registry listeners. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe"]
+==== LivenessProbe
+
+
+
+LivenessProbe configures liveness probes to monitor the health of the Pods and restart them if necessary.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`failureThreshold`* __integer__ | Sets the number of consecutive failures required to consider a Pod as not live. + |  | 
+| *`initialDelaySeconds`* __integer__ | Specifies the time in seconds to wait before the first probe is initiated. + |  | 
+| *`periodSeconds`* __integer__ | Determines the frequency in seconds of performing the probe. + |  | 
+| *`timeoutSeconds`* __integer__ |  |  | 
+| *`successThreshold`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-logging"]
+==== Logging
+
+
+
+Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`logLevel`* __string__ | Sets the verbosity level of logs. + |  | 
+| *`usageStats`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usagestats[$$UsageStats$$]__ | Specifies whether to send usage statistics to Redpanda Data. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory"]
+==== Memory
+
+
+
+Memory configures memory resources.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources[$$Resources$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`container`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-containerresources[$$ContainerResources$$]__ | Defines resource limits for containers. + |  | 
+| *`enable_memory_locking`* __boolean__ | Enables memory locking. For production, set to `true`. + |  | 
+| *`redpanda`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandamemory[$$RedpandaMemory$$]__ | Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-metadatatemplate"]
+==== MetadataTemplate
+
+
+
+MetadataTemplate defines additional metadata to associate with a resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetemplate[$$ResourceTemplate$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`labels`* __object (keys:string, values:string)__ | Labels specifies the Kubernetes labels to apply to a managed resource. + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Annotations specifies the Kubernetes annotations to apply to a managed resource. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring"]
+==== Monitoring
+
+
+
+Monitoring configures monitoring resources for Redpanda. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to create a ServiceMonitor that can be used by Prometheus Operator or VictoriaMetrics Operator to scrape the metrics. + |  | 
+| *`labels`* __object (keys:string, values:string)__ | Adds custom labels to the ServiceMonitor resource. + |  | 
+| *`scrapeInterval`* __string__ | Specifies how often to scrape metrics. + |  | 
+| *`tlsConfig`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tls configuration properties. + |  | 
+| *`enableHttp2`* __boolean__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password"]
+==== Password
+
+
+
+Password specifies a password for the user.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec[$$UserAuthenticationSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`value`* __string__ | Value is a hardcoded value to use for the given password. It should only be used for testing purposes. +
+In production, use ValueFrom. + |  | 
+| *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource"]
+==== PasswordSource
+
+
+
+PasswordSource contains the source for a password.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password[$$Password$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | SecretKeyRef specifies the secret used in reading a User password. +
+If the Secret exists and has a value in it, then that value is used. +
+If the Secret does not exist, or is empty, a password is generated and +
+stored based on this configuration. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-patterntype"]
+==== PatternType
+
+_Underlying type:_ _string_
+
+PatternType specifies the type of pattern applied for ACL resource matching.
+
+.Validation:
+- Enum: [literal prefixed]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume"]
+==== PersistentVolume
+
+
+
+PersistentVolume configures configurations for a PersistentVolumeClaim to use to store the Redpanda data directory.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage[$$Storage$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`annotations`* __object (keys:string, values:string)__ | Adds annotations to the PersistentVolumeClaims to provide additional information or metadata that can be used by other tools or libraries. + |  | 
+| *`enabled`* __boolean__ | Specifies whether to enable the Helm chart to create PersistentVolumeClaims for Pods. + |  | 
+| *`labels`* __object (keys:string, values:string)__ | Applies labels to the PersistentVolumeClaims to facilitate identification and selection based on custom criteria. + |  | 
+| *`size`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the storage capacity required. + |  | 
+| *`storageClass`* __string__ | Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed. + |  | 
+| *`nameOverwrite`* __string__ | Option to change volume claim template name for tiered storage persistent volume if tiered.mountType is set to `persistentVolume` + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podantiaffinity"]
+==== PodAntiAffinity
+
+
+
+PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`topologyKey`* __string__ | TopologyKey specifies the topology key used to spread Pods across different nodes or other topologies. + |  | 
+| *`type`* __string__ | Type defines the type of anti-affinity, such as `soft` or `hard`. + |  | 
+| *`weight`* __integer__ | Weight sets the weight associated with the soft anti-affinity rule. + |  | 
+| *`custom`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Custom configures additional custom anti-affinity rules. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration"]
+==== PodSpecApplyConfiguration
+
+
+
+PodSpecApplyConfiguration is a wrapper around
+[applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate"]
+==== PodTemplate
+
+
+
+PodTemplate will pass label and annotation to Statefulset Pod template.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob[$$PostInstallJob$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob[$$PostUpgradeJob$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`labels`* __object (keys:string, values:string)__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration[$$PodSpecApplyConfiguration$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob"]
+==== PostInstallJob
+
+
+
+PostInstallJob configures configurations for the post-install job that run after installation of the Helm chart.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Sets resource requirements (CPU, memory) for the job to ensure proper allocation and limit resource usage. + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Adds annotations to the job to provide additional information or metadata that can be used by other tools or libraries. + |  | 
+| *`enabled`* __boolean__ | Specifies whether the job is deployed. + |  | 
+| *`labels`* __object (keys:string, values:string)__ | Applies labels to the job to facilitate identification and selection based on custom criteria. + |  | 
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#affinity-v1-core[$$Affinity$$]__ | Affinity constraints for scheduling Pods. For details, see the +
+https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation]. + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | SecurityContext is deprecated. Prefer [PodTemplate.Spec.SecurityContext] +
+or [PodTemplate.Spec.Containers[*].SecurityContext]. + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a subset of Kubernetes' PodTemplate that will be merged +
+into this Job's PodTemplate. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob"]
+==== PostUpgradeJob
+
+
+
+PostUpgradeJob configures configurations for the post-upgrade job that run after each upgrade of the Helm chart.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`annotations`* __object (keys:string, values:string)__ | Adds annotations to the job to provide additional information or metadata that can be used by other tools or libraries. + |  | 
+| *`enabled`* __boolean__ | Specifies whether the job is deployed. + |  | 
+| *`labels`* __object (keys:string, values:string)__ | Applies labels to the job to facilitate identification and selection based on custom criteria. + |  | 
+| *`extraEnv`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ | Adds environment variables to the job container to configure its runtime behavior. + |  | 
+| *`extraEnvFrom`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envfromsource-v1-core[$$EnvFromSource$$] array__ | Specifies environment variables from external sources, such as ConfigMap resources, or Secret resources, to dynamically configure the job. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Sets resource requirements (CPU, memory) for the job to ensure proper allocation and limit resource usage. + |  | 
+| *`backoffLimit`* __integer__ |  |  | 
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#affinity-v1-core[$$Affinity$$]__ | Affinity constraints for scheduling Pods. For details, see the +
+https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation]. + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | SecurityContext is deprecated. Prefer [PodTemplate.Spec.SecurityContext] +
+or [PodTemplate.Spec.Containers[*].SecurityContext]. + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a subset of Kubernetes' PodTemplate that will be merged +
+into this Job's PodTemplate. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac"]
+==== RBAC
+
+
+
+RBAC configures role-based access control (RBAC).
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the RBAC resources. + |  | 
+| *`enabled`* __boolean__ | Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpc"]
+==== RPC
+
+
+
+RPC configures settings for the RPC API listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers"]
+==== RPControllers
+
+
+
+RPControllers configures additional controllers that can be deployed as sidecars in rp helm
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the Controllers are enabled. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`healthProbeAddress`* __string__ |  |  | 
+| *`metricsAddress`* __string__ |  |  | 
+| *`pprofAddress`* __string__ |  |  | 
+| *`run`* __string array__ |  |  | 
+| *`createRBAC`* __boolean__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness"]
+==== RackAwareness
+
+
+
+RackAwareness configures rack awareness in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/kubernetes-rack-awareness/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether rack awareness is enabled. When enabled, Kubernetes failure zones are treated as racks. Redpanda maps each rack to a failure zone and places partition replicas across them. Requires `rbac.enabled` set to `true`. + |  | 
+| *`nodeAnnotation`* __string__ | Specifies the key in Node labels or annotations to use to denote failure zones. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe"]
+==== ReadinessProbe
+
+
+
+ReadinessProbe configures readiness probes to determine when a Pod is ready to handle traffic.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`failureThreshold`* __integer__ | Defines the threshold for how many times the probe can fail before the Pod is marked Unready. + |  | 
+| *`initialDelaySeconds`* __integer__ | Sets the initial delay before the readiness probe is initiated, in seconds. + |  | 
+| *`periodSeconds`* __integer__ | Configures the period, in seconds, between each readiness check. + |  | 
+| *`timeoutSeconds`* __integer__ |  |  | 
+| *`successThreshold`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda"]
+==== Redpanda
+
+
+
+Redpanda defines the CRD for Redpanda clusters.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Redpanda` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]__ | Defines the desired state of the Redpanda cluster. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]__ | Represents the current status of the Redpanda cluster. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec"]
+==== RedpandaClusterSpec
+
+
+
+RedpandaClusterSpec defines the desired state of a Redpanda cluster. These settings are the same as those defined in the Redpanda Helm chart. The values in these settings are passed to the Redpanda Helm chart through Flux. For all default values and links to more documentation, see https://docs.redpanda.com/current/reference/redpanda-helm-spec/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`nameOverride`* __string__ | Customizes the labels `app.kubernetes.io/component=<nameOverride>-statefulset` and `app.kubernetes.io/name=<nameOverride>` on the StatefulSet Pods. The default is `redpanda`. + |  | 
+| *`fullNameOverride`* __string__ | Deprecated: use FullnameOverride (fullnameOverride). + |  | 
+| *`fullnameOverride`* __string__ | Customizes the name of the StatefulSet and Services. The default is `redpanda`. + |  | 
+| *`clusterDomain`* __string__ | Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. For details, see https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id. The default is the `cluster.local` domain. + |  | 
+| *`commonLabels`* __object (keys:string, values:string)__ | Assigns custom labels to all resources generated by the Redpanda Helm chart. Specify labels as key/value pairs. + |  | 
+| *`nodeSelector`* __object (keys:string, values:string)__ | Specifies on which nodes a Pod should be scheduled. These key/value pairs ensure that Pods are scheduled onto nodes with the specified labels. + |  | 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Specifies tolerations to allow Pods to be scheduled onto nodes where they otherwise wouldn’t. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Defines the container image settings to use for the Redpanda cluster. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
+| *`license_key`* __string__ | Deprecated: Use `Enterprise` instead. + |  | 
+| *`license_secret_ref`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-licensesecretref[$$LicenseSecretRef$$]__ | Deprecated: Use `EnterpriseLicenseSecretRef` instead. + |  | 
+| *`enterprise`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise[$$Enterprise$$]__ | Defines an Enterprise license. + |  | 
+| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
+| *`console`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]__ | Defines Redpanda Console settings. + |  | 
+| *`connectors`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]__ | Defines Redpanda Connector settings. + |  | 
+| *`auth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth[$$Auth$$]__ | Defines authentication settings for listeners. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
+| *`logging`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-logging[$$Logging$$]__ | Defines the log level settings. + |  | 
+| *`auditLogging`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auditlogging[$$AuditLogging$$]__ | Defines the log level settings. + |  | 
+| *`resources`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources[$$Resources$$]__ | Defines container resource settings. + |  | 
+| *`service`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-service[$$Service$$]__ | Defines settings for the headless ClusterIP Service. + |  | 
+| *`storage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage[$$Storage$$]__ | Defines storage settings for the Redpanda data directory and the Tiered Storage cache. + |  | 
+| *`post_install_job`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob[$$PostInstallJob$$]__ | Defines settings for the post-install hook, which runs after each install or upgrade. For example, this job is responsible for setting the Enterprise license, if specified. + |  | 
+| *`post_upgrade_job`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob[$$PostUpgradeJob$$]__ | Defines settings for the post-upgrade hook, which runs after each update. For example, this job is responsible for setting cluster configuration properties and restarting services such as Schema Registry, if required. + |  | 
+| *`statefulset`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]__ | Defines settings for the StatefulSet that manages Redpanda brokers. + |  | 
+| *`tuning`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tuning[$$Tuning$$]__ | Defines settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance. + |  | 
+| *`listeners`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]__ | Defines settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API. + |  | 
+| *`config`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-config[$$Config$$]__ | Defines configuration properties supported by Redpanda that may not work correctly in a Kubernetes cluster. Changing these values from the defaults comes with some risk. Use these properties to customize various Redpanda configurations that are not available in the `RedpandaClusterSpec`. These values have no impact on the configuration or behavior of the Kubernetes objects deployed by Helm, and therefore should not be modified for the purpose of configuring those objects. Instead, these settings get passed directly to the Redpanda binary at startup. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
+| *`force`* __boolean__ | Adds the `--force` flag in `helm upgrade` commands. Used for allowing a change of TLS configuration for the RPC listener. +
+Setting `force` to `true` will result in a short period of downtime. + |  | 
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#affinity-v1-core[$$Affinity$$]__ | Affinity constraints for scheduling Pods, can override this for +
+StatefulSets and Jobs. For details, see the [Kubernetes +
+documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity). + |  | 
+| *`tests`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enablable[$$Enablable$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors"]
+==== RedpandaConnectors
+
+
+
+RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a package that includes Kafka Connect and built-in connectors, sometimes known as plugins. See https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/k-deploy-connectors/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`test`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectorscreateobj[$$ConnectorsCreateObj$$]__ | Specifies whether to create Helm tests. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectormonitoring[$$ConnectorMonitoring$$]__ | Specifies monitoring resources + |  | 
+| *`connectors`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Connectors specified manual configurations + |  | 
+| *`deployment`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Connectors specified manual configurations + |  | 
+| *`nameOverride`* __string__ | Specifies a custom name for the Redpanda Console resources, overriding the default naming convention. + |  | 
+| *`fullnameOverride`* __string__ | Specifies a full custom name, which overrides the entire naming convention including release name and chart name. + |  | 
+| *`commonLabels`* __object (keys:string, values:string)__ | Assigns custom labels to all resources generated by the Connector Helm chart. Specify labels as key/value pairs. + |  | 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Applies tolerations to allow Pods to be scheduled on nodes with matching taints, enabling control over where Pods can run. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Defines the container image settings to use for the Redpanda cluster. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
+| *`auth`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies superuser credentials + |  | 
+| *`container`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies container information + |  | 
+| *`storage`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies storage information + |  | 
+| *`logging`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies logging details + |  | 
+| *`service`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies service details + |  | 
+| *`serviceAccount`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies service account details + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole"]
+==== RedpandaConsole
+
+
+
+RedpandaConsole configures the Redpanda Console subchart of the Redpanda Helm chart. Use these settings to configure the subchart. For more details on each setting, see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the Redpanda Console subchart should be deployed. + |  | 
+| *`replicaCount`* __integer__ | Sets the number of replicas for the Redpanda Console Deployment resource. + |  | 
+| *`nameOverride`* __string__ | Specifies a custom name for the Redpanda Console resources, overriding the default naming convention. + |  | 
+| *`fullnameOverride`* __string__ | Specifies a full custom name, which overrides the entire naming convention including release name and chart name. + |  | 
+| *`commonLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`priorityClassName`* __string__ | Specifies the priority class name for the Pods that run Redpanda Console. + |  | 
+| *`image`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Defines the container image for the Redpanda Console, including the repository, name, and tag. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Defines Secrets used to pull the container images from a private registry. + |  | 
+| *`serviceAccount`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures the ServiceAccount used by the Pods that run Redpanda Console. + |  | 
+| *`annotations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ |  |  | 
+| *`podAnnotations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Adds custom annotations to the Pods that run Redpanda Console. + |  | 
+| *`podLabels`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Adds custom labels to the Pods that run Redpanda Console. + |  | 
+| *`podSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ |  |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Sets the security context for the Pods that run Redpanda Console. + |  | 
+| *`service`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures the Kubernetes Service for Redpanda Console. + |  | 
+| *`ingress`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures the Kubernetes Ingress resource for Redpanda Console. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures resource requests and limits for the Pods that run Redpanda Console. + |  | 
+| *`autoscaling`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures Horizontal Pod Autoscaling (HPA) for Redpanda Console. + |  | 
+| *`nodeSelector`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies Node labels for Pod assignment. + |  | 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Specifies tolerations for scheduling Pods onto Nodes with taints. + |  | 
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Defines affinity rules for Pod assignment. + |  | 
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies topology spread constraints for Pod placement. + |  | 
+| *`extraEnv`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Adds extra environment variables to the Pods that run Redpanda Console. + |  | 
+| *`extraEnvFrom`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Allows you to add extra environment variables from external resources to the Pods that run Redpanda Console. + |  | 
+| *`extraVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Adds extra volumes to the Pods that run Redpanda Console. + |  | 
+| *`extraVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Mounts additional volumes inside the containers that run Redpanda Console. + |  | 
+| *`extraContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Adds extra containers to the Pods that run Redpanda Console. + |  | 
+| *`initContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies init containers for the Pods that run Redpanda Console. + |  | 
+| *`secretMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$] array__ | Mounts additional Secret resources inside the containers that run Redpanda Console. + |  | 
+| *`configmap`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj[$$ConsoleCreateObj$$]__ | Deprecated: this field exists for storage backwards compatibility and is +
+never used. Prefer ConfigMap (configmap). + |  | 
+| *`configMap`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj[$$ConsoleCreateObj$$]__ | Specifies whether a ConfigMap should be created for Redpanda Console. + |  | 
+| *`secret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies whether a Secret should be created for Redpanda Console. + |  | 
+| *`deployment`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies whether a Deployment should be created for Redpanda Console. + |  | 
+| *`console`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures custom settings for Redpanda Console. + |  | 
+| *`strategy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures console's Deployment's update strategy. + |  | 
+| *`enterprise`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Settings for license key, as an alternative to secret.enterprise when a +
+license secret is available + |  | 
+| *`automountServiceAccountToken`* __boolean__ | Automount API credentials for the Service Account into the pod. + |  | 
+| *`readinessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe[$$ReadinessProbe$$]__ | Settings for console's Deployment's readiness probe. + |  | 
+| *`livenessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe[$$LivenessProbe$$]__ | Settings for console's Deployment's liveness probe. + |  | 
+| *`tests`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enablable[$$Enablable$$]__ | Controls the creation of helm tests for console. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage"]
+==== RedpandaImage
+
+
+
+RedpandaImage configures the Redpanda container image settings in the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`repository`* __string__ | Specifies the image repository to pull from. + |  | 
+| *`tag`* __string__ | Specifies the image tag. + |  | 
+| *`pullPolicy`* __string__ | Specifies the strategy used for pulling images from the repository. For available values, see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus"]
+==== RedpandaLicenseStatus
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`violation`* __boolean__ |  |  | 
+| *`inUseFeatures`* __string array__ |  |  | 
+| *`expired`* __boolean__ |  |  | 
+| *`type`* __string__ |  |  | 
+| *`organization`* __string__ |  |  | 
+| *`expiration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#time-v1-meta[$$Time$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandamemory"]
+==== RedpandaMemory
+
+
+
+RedpandaMemory allows you to optionally specify the memory size for the Redpanda process, including the Seastar subsystem. By default, this section is omitted, and memory sizes are calculated automatically based on the container's total memory allocation. When you configure this section and manually set the memory and reserveMemory values, the automatic calculation is disabled.
+
+
+If you are setting these values manually, follow these guidelines carefully. Incorrect settings can lead to performance degradation, instability, or even data loss. The total memory allocated to a container is determined as the sum of the following two areas:
+
+
+- Redpanda (including Seastar):
+Defined by the `--memory` parameter. Includes the memory used by the Redpanda process and the reserved memory allocated for Seastar. A minimum of 2Gi per core is required, and this value typically accounts for ~80% of the container’s total memory. For production, allocate at least 8Gi.
+
+
+- Operating system (OS):
+Defined by the `--reserve-memory` parameter. Represents the memory available for the operating system and other processes within the container.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory[$$Memory$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`memory`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Memory for the Redpanda process. This must be lower than the container's memory (`resources.memory.container.min` if provided, otherwise `resources.memory.container.max`). Equivalent to `--memory`. For production, use 8Gi or greater. + |  | 
+| *`reserveMemory`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Memory reserved for the OS. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec"]
+==== RedpandaSpec
+
+
+
+RedpandaSpec defines the desired state of the Redpanda cluster.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`chartRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-chartref[$$ChartRef$$]__ | Defines chart details, including the version and repository. + |  | 
+| *`clusterSpec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]__ | Defines the Helm values to use to deploy the cluster. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus"]
+==== RedpandaStatus
+
+
+
+RedpandaStatus defines the observed state of Redpanda
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +
+reconcile request value, so a change of the annotation value +
+can be detected. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
+| *`lastAppliedRevision`* __string__ | LastAppliedRevision is the revision of the last successfully applied source. + |  | 
+| *`lastAttemptedRevision`* __string__ | LastAttemptedRevision is the revision of the last reconciliation attempt. + |  | 
+| *`helmRelease`* __string__ |  |  | 
+| *`helmReleaseReady`* __boolean__ |  |  | 
+| *`helmRepository`* __string__ |  |  | 
+| *`helmRepositoryReady`* __boolean__ |  |  | 
+| *`upgradeFailures`* __integer__ |  |  | 
+| *`failures`* __integer__ | Failures is the reconciliation failure count against the latest desired +
+state. It is reset after a successful reconciliation. + |  | 
+| *`installFailures`* __integer__ |  |  | 
+| *`decommissioningNode`* __integer__ | ManagedDecommissioningNode indicates that a node is currently being +
+decommissioned from the cluster and provides its ordinal number. + |  | 
+| *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
+installed license in the Redpanda cluster. + |  | 
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetemplate"]
+==== ResourceTemplate
+
+
+
+ResourceTemplate specifies additional configuration for a resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usertemplatespec[$$UserTemplateSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`metadata`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-metadatatemplate[$$MetadataTemplate$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetype"]
+==== ResourceType
+
+_Underlying type:_ _string_
+
+ResourceType specifies the type of resource an ACL is applied to.
+
+.Validation:
+- Enum: [topic group cluster transactionalId]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources"]
+==== Resources
+
+
+
+RedpandaResources encapsulates the calculation of the redpanda container's
+https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[corev1.ResourceRequirements]
+and parameters such as `--memory`, `--reserve-memory`, and `--smp`. This
+calculation supports two modes:
+
+
+  - Explicit mode (recommended):  Activated when `Limits` and `Requests` are
+    set. In this mode, the CLI flags are calculated directly based on the
+    provided `Limits` and `Requests`. This mode ensures predictable resource
+    allocation and is recommended for production environments. If additional
+    tuning is required, the CLI flags can be manually overridden using
+    `statefulset.additionalRedpandaCmdFlags`.
+
+
+  - Legacy mode (default): Used when `Limits` and `Requests` are not set.
+    In this mode, the container resources and CLI flags are calculated using
+    built-in default logic, where 80% of the container's memory is allocated
+    to Redpanda and the rest is reserved for system overhead. Legacy mode is
+    intended for backward compatibility and less controlled environments.
+
+
+Explicit mode offers better control and aligns with Kubernetes best
+practices. Legacy mode is a fallback for users who have not defined `Limits`
+and `Requests`.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`limits`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ |  |  | 
+| *`requests`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ |  |  | 
+| *`cpu`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-cpu[$$CPU$$]__ | Specifies the number of CPU cores. + |  | 
+| *`memory`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory[$$Memory$$]__ | Specifies the amount of memory. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl"]
+==== SASL
+
+
+
+SASL configures SASL authentication in the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth[$$Auth$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enables SASL authentication. If you enable SASL authentication, you must provide a Secret name in `secretRef`. + |  | 
+| *`mechanism`* __string__ | Specifies the default authentication mechanism to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+| *`secretRef`* __string__ | If `users` is empty, `secretRef` specifies the name of the Secret that contains your superuser credentials in the format <username>:<password>:<optional-authentication-mechanism>. Otherwise, `secretRef` specifies the name of the Secret that the chart creates to store the credentials in `users`. + |  | 
+| *`users`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usersitems[$$UsersItems$$] array__ | Specifies a list of superuser credentials. + |  | 
+| *`bootstrapUser`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-bootstrapuser[$$BootstrapUser$$]__ | Specifies configuration about the bootstrap user. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism"]
+==== SASLMechanism
+
+_Underlying type:_ _string_
+
+SASLMechanism specifies a SASL auth mechanism.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec[$$UserAuthenticationSpec$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema"]
+==== Schema
+
+
+
+Schema defines the CRD for a Redpanda schema.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Schema` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]__ | Defines the desired state of the Redpanda schema. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemastatus[$$SchemaStatus$$]__ | Represents the current status of the Redpanda schema. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:Pending status:Unknown type:Synced]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemareference"]
+==== SchemaReference
+
+
+
+SchemaReference is a way for a one schema to reference another. The
+details for how referencing is done are type specific; for example,
+JSON objects that use the key "$ref" can refer to another schema via
+URL.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`subject`* __string__ |  |  | 
+| *`version`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry"]
+==== SchemaRegistry
+
+
+
+SchemaRegistry configures settings for the Schema Registry listeners.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners[$$Listeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`enabled`* __boolean__ | Specifies whether the Schema Registry is enabled. + |  | 
+| *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
+| *`kafkaEndpoint`* __string__ | Configures the listener to use for HTTP connections. For example `default` for the internal listener. + |  | 
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl"]
+==== SchemaRegistrySASL
+
+
+
+SchemaRegistrySASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec[$$SchemaRegistrySpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`username`* __string__ | Specifies the username. + |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
+| *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
+| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec"]
+==== SchemaRegistrySpec
+
+
+
+SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource[$$StaticConfigurationSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`urls`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec"]
+==== SchemaSpec
+
+
+
+SchemaSpec defines the configuration of a Redpanda schema.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster hosting the schema registry. +
+It is used in constructing the client created to configure a cluster. + |  | 
+| *`text`* __string__ | Text is the actual unescaped text of a schema. + |  | 
+| *`schemaType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schematype[$$SchemaType$$]__ | Type is the type of a schema. The default type is avro. + | avro | Enum: [avro protobuf json] +
+
+| *`references`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemareference[$$SchemaReference$$] array__ | References declares other schemas this schema references. See the +
+docs on SchemaReference for more details. + |  | 
+| *`compatibilityLevel`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-compatibilitylevel[$$CompatibilityLevel$$]__ | CompatibilityLevel sets the compatibility level for the given schema + | Backward | Enum: [None Backward BackwardTransitive Forward ForwardTransitive Full FullTransitive] +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemastatus"]
+==== SchemaStatus
+
+
+
+SchemaStatus defines the observed state of a Redpanda schema.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda schema. + |  | 
+| *`versions`* __integer array__ | Versions shows the versions of a given schema + |  | 
+| *`schemaHash`* __string__ | SchemaHash is the hashed value of the schema synced to the cluster + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schematype"]
+==== SchemaType
+
+_Underlying type:_ _string_
+
+SchemaType specifies the type of the given schema.
+
+.Validation:
+- Enum: [avro protobuf json]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref"]
+==== SecretKeyRef
+
+
+
+SecretKeyRef contains enough information to inspect or modify the referred Secret data
+See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name of the referent. +
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names + |  | 
+| *`key`* __string__ | Key in Secret data to get value from + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretref"]
+==== SecretRef
+
+
+
+SecretRef configures the Secret resource that contains existing TLS certificates.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-certificate[$$Certificate$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Specifies the name of the Secret resource. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield"]
+==== SecretWithConfigField
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-credentialsecretref[$$CredentialSecretRef$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`key`* __string__ |  |  | 
+| *`name`* __string__ |  |  | 
+| *`configurationKey`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-service"]
+==== Service
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`internal`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceinternal[$$ServiceInternal$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount"]
+==== ServiceAccount
+
+
+
+ServiceAccount configures Service Accounts.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`automountServiceAccountToken`* __boolean__ | Specifies whether a service account should automount API-Credentials + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the ServiceAccount resources. + |  | 
+| *`create`* __boolean__ | Specifies whether a ServiceAccount should be created. + |  | 
+| *`name`* __string__ | Specifies the name of the ServiceAccount. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceinternal"]
+==== ServiceInternal
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-service[$$Service$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-setdatadirownership"]
+==== SetDataDirOwnership
+
+
+
+SetDataDirOwnership defines the settings related to ownership of the Redpanda data directory in environments where root access is restricted.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to enable root access. Enable only in environments where root access is not allowed, such as minikube. + |  | 
+| *`extraVolumeMounts`* __string__ | Adds extra volume mounts. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies the resource requirements. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-settieredstoragecachedirownership"]
+==== SetTieredStorageCacheDirOwnership
+
+
+
+SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`extraVolumeMounts`* __string__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj"]
+==== SideCarObj
+
+
+
+SideCarObj represents a generic sidecar object. This is a placeholder for now.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars"]
+==== SideCars
+
+
+
+SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
+| *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 
+| *`controllers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-startupprobe"]
+==== StartupProbe
+
+
+
+StartupProbe configures the startup probe to determine when the Redpanda application within the Pod has started successfully.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`failureThreshold`* __integer__ | Determines the failure threshold to mark the application in the Pod as not started. + |  | 
+| *`initialDelaySeconds`* __integer__ | Specifies the delay in seconds before the startup probe begins. + |  | 
+| *`periodSeconds`* __integer__ | Sets the period in seconds for conducting subsequent probes. + |  | 
+| *`timeoutSeconds`* __integer__ |  |  | 
+| *`successThreshold`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset"]
+==== Statefulset
+
+
+
+Statefulset defines configurations for the StatefulSet in Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ | Includes additional command flags for Redpanda at startup to customize its runtime behavior. + |  | 
+| *`annotations`* __object (keys:string, values:string)__ | Adds annotations to the StatefulSet to provide additional information or metadata. +
+Please use PodTemplate to add additional annotation or labels for Pods managed by Statefulset. + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a subset of Kubernetes' PodTemplate that will be merged +
+into this StatefulSet's PodTemplate. + |  | 
+| *`budget`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-budget[$$Budget$$]__ | Defines the management of disruptions affecting the Pods in the StatefulSet. + |  | 
+| *`extraVolumeMounts`* __string__ | Specifies extra volume mounts for the Pods. + |  | 
+| *`extraVolumes`* __string__ | Defines additional volumes for the Pods. + |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | Defines the init container image used to perform initial setup tasks before the main containers start. + |  | 
+| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]__ | Configures the init container used to perform initial setup tasks before the main containers start. + |  | 
+| *`livenessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe[$$LivenessProbe$$]__ | Defines liveness probes to monitor the health of the Pods and restart them if necessary. + |  | 
+| *`nodeSelector`* __object (keys:string, values:string)__ | Applies node selectors to schedule Pods on specific nodes based on labels. + |  | 
+| *`podAffinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podaffinity-v1-core[$$PodAffinity$$]__ | Defines Pod affinity rules to influence the scheduling and placement of Pods relative to other Pods. + |  | 
+| *`podAntiAffinity`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podantiaffinity[$$PodAntiAffinity$$]__ | Defines Pod anti-affinity rules to prevent Pods from being scheduled together on the same node. + |  | 
+| *`priorityClassName`* __string__ | Defines the priority class name to assign priority levels to the Pods, influencing their scheduling order. + |  | 
+| *`readinessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe[$$ReadinessProbe$$]__ | Defines readiness probes to determine when a Pod is ready to handle traffic. + |  | 
+| *`replicas`* __integer__ | Specifies the number of replicas to determine the desired number of Pods (Redpanda brokers) in the StatefulSet. + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Sets a security context for the Pods to define privilege and access control settings. + |  | 
+| *`sideCars`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]__ | Defines the additional sidecar containers that run alongside the main Redpanda container in the Pod. + |  | 
+| *`skipChown`* __boolean__ | Specifies whether to skip the changing of file ownership (chown) during Pod initialization. + |  | 
+| *`startupProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-startupprobe[$$StartupProbe$$]__ | Configures the startup probe to determine when the Redpanda application within the Pod has started successfully. + |  | 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Applies tolerations to allow Pods to be scheduled on nodes with matching taints, enabling control over where Pods can run. + |  | 
+| *`topologySpreadConstraints`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topologyspreadconstraints[$$TopologySpreadConstraints$$] array__ | Defines topology spread constraints to control how Pods are spread across different topology domains. + |  | 
+| *`updateStrategy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-updatestrategy[$$UpdateStrategy$$]__ | Defines the update strategy for the StatefulSet to manage how updates are rolled out to the Pods. + |  | 
+| *`terminationGracePeriodSeconds`* __integer__ | Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource"]
+==== StaticConfigurationSource
+
+
+
+StaticConfigurationSource configures connections to a Redpanda cluster via hard-coded
+connection strings and manually configured TLS and authentication parameters.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`kafka`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec[$$KafkaAPISpec$$]__ | Kafka is the configuration information for communicating with the Kafka +
+API of a Redpanda cluster where the object should be created. + |  | 
+| *`admin`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec[$$AdminAPISpec$$]__ | AdminAPISpec is the configuration information for communicating with the Admin +
+API of a Redpanda cluster where the object should be created. + |  | 
+| *`schemaRegistry`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec[$$SchemaRegistrySpec$$]__ | SchemaRegistry is the configuration information for communicating with the Schema Registry +
+API of a Redpanda cluster where the object should be created. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage"]
+==== Storage
+
+
+
+Storage configures storage-related settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/storage/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`hostPath`* __string__ | Specifies the absolute path on the worker node to store the Redpanda data directory. If unspecified, then an `emptyDir` volume is used. If specified but `persistentVolume.enabled` is true, `storage.hostPath` has no effect. + |  | 
+| *`persistentVolume`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume[$$PersistentVolume$$]__ | Configures a PersistentVolumeClaim (PVC) template to create for each Pod. This PVC is used to store the Redpanda data directory. + |  | 
+| *`tiered`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]__ | Configures storage for the Tiered Storage cache. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls"]
+==== TLS
+
+
+
+TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/tls/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`certs`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-certificate[$$Certificate$$])__ | Lists all available certificates in the cluster. You can reference a specific certificate’s name in each listener’s `listeners.<listener name>.tls.cert` setting. + |  | 
+| *`enabled`* __boolean__ | Enables TLS globally for all listeners. Each listener must include a certificate name in its `<listener>.tls` object. To allow you to enable TLS for individual listeners, certificates are always loaded, even if TLS is disabled. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered"]
+==== Tiered
+
+
+
+Tiered configures storage for the Tiered Storage cache. See https://docs.redpanda.com/current/manage/kubernetes/tiered-storage-kubernetes/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage[$$Storage$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`mountType`* __string__ | mountType can be one of: +
+
+
+- `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory. +
+- `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on. +
+- `emptyDir`: Mounts an empty directory every time the Pod starts. +
+- `persistentVolume`: Creates and mounts a PersistentVolumeClaim using the template defined in `persistentVolume`. + |  | 
+| *`hostPath`* __string__ | Specifies the absolute path on the worker node to store the Tiered Storage cache. + |  | 
+| *`persistentVolume`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume[$$PersistentVolume$$]__ | Configures a PersistentVolumeClaim (PVC) template to create for each Pod. This PVC is used to store the Tiered Storage cache. + |  | 
+| *`config`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tieredconfig[$$TieredConfig$$]__ | Configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprised.licenseSecretRef`. + |  | 
+| *`credentialsSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-credentialsecretref[$$CredentialSecretRef$$]__ | CredentialSecretRef can be used to set `cloud_storage_secret_key` and/or `cloud_storage_access_key` from referenced Kubernetes Secret + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tieredconfig"]
+==== TieredConfig
+
+
+
+TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cloud_storage_enabled`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-apiutil-jsonboolean[$$JSONBoolean$$]__ | Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled. + |  | 
+| *`cloud_storage_api_endpoint`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint. + |  | 
+| *`cloud_storage_api_endpoint_port`* __integer__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port. + |  | 
+| *`cloud_storage_bucket`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket. + |  | 
+| *`cloud_storage_azure_container`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container. + |  | 
+| *`cloud_storage_azure_managed_identity_id`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id. + |  | 
+| *`cloud_storage_azure_storage_account`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account. + |  | 
+| *`cloud_storage_azure_shared_key`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key. + |  | 
+| *`cloud_storage_azure_adls_endpoint`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint. + |  | 
+| *`cloud_storage_azure_adls_port`* __integer__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port. + |  | 
+| *`cloud_storage_cache_check_interval`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval. + |  | 
+| *`cloud_storage_cache_directory`* __string__ | See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory. + |  | 
+| *`cloud_storage_cache_size`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size. + |  | 
+| *`cloud_storage_credentials_source`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source. + |  | 
+| *`cloud_storage_disable_tls`* __boolean__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls. + |  | 
+| *`cloud_storage_enable_remote_read`* __boolean__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read. + |  | 
+| *`cloud_storage_enable_remote_write`* __boolean__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write. + |  | 
+| *`cloud_storage_initial_backoff_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms. + |  | 
+| *`cloud_storage_manifest_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms. + |  | 
+| *`cloud_storage_max_connection_idle_time_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms. + |  | 
+| *`cloud_storage_max_connections`* __integer__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections. + |  | 
+| *`cloud_storage_reconciliation_interval_ms`* __integer__ | Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms. + |  | 
+| *`cloud_storage_region`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region. + |  | 
+| *`cloud_storage_segment_max_upload_interval_sec`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec. + |  | 
+| *`cloud_storage_segment_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms. + |  | 
+| *`cloud_storage_trust_file`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file. + |  | 
+| *`cloud_storage_upload_ctrl_d_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff. + |  | 
+| *`cloud_storage_upload_ctrl_max_shares`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares. + |  | 
+| *`cloud_storage_upload_ctrl_min_shares`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares. + |  | 
+| *`cloud_storage_upload_ctrl_p_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff. + |  | 
+| *`cloud_storage_upload_ctrl_update_interval_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic"]
+==== Topic
+
+
+
+Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Topic` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]__ | Defines the desired state of the Topic resource. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicstatus[$$TopicStatus$$]__ | Represents the current status of the Topic resource. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec"]
+==== TopicSpec
+
+
+
+TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`partitions`* __integer__ | Specifies the number of topic shards that are distributed across the brokers in a cluster. +
+This number cannot be decreased after topic creation. +
+It can be increased after topic creation, but it is +
+important to understand the consequences that has, especially for +
+topics with semantic partitioning. When absent this will default to +
+the Redpanda cluster configuration `default_topic_partitions`. +
+See https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_partitions and +
+https://docs.redpanda.com/docs/get-started/architecture/#partitions + |  | 
+| *`replicationFactor`* __integer__ | Specifies the number of replicas the topic should have. Must be odd value. +
+When absent this will default to the Redpanda cluster configuration `default_topic_replications`. +
+See https://docs.redpanda.com/docs/reference/cluster-properties/#default_topic_replications. + |  | 
+| *`overwriteTopicName`* __string__ | Changes the topic name from the value of `metadata.name`. + |  | 
+| *`additionalConfig`* __object (keys:string, values:string)__ | Adds extra topic configurations. This is a free-form map of any configuration options that topics can have. +
+Examples: +
+`cleanup.policy=compact` +
+`redpanda.remote.write=true` +
+`redpanda.remote.read=true` +
+`redpanda.remote.recovery=true` +
+`redpanda.remote.delete=true` + |  | 
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the user should be created. +
+It is used in constructing the client created to configure a cluster. + |  | 
+| *`kafkaApiSpec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec[$$KafkaAPISpec$$]__ | Defines client configuration for connecting to Redpanda brokers. +
+Deprecated: Use cluster.staticConfiguration.kafkaApiSpec if explicit connection +
+configuration is required. Otherwise, prefer cluster.clusterRef. + |  | 
+| *`metricsNamespace`* __string__ | Overwrites the fully-qualified +
+name of the metric. This should be easier to identify if +
+multiple operator instances runs inside the same Kubernetes cluster. +
+By default, it is set to `redpanda-operator`. + |  | 
+| *`interval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | Defines when the topic controller will schedule the next reconciliation. +
+Default is 3 seconds. + | 3s | Format: duration +
+Type: string +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicstatus"]
+==== TopicStatus
+
+
+
+TopicStatus defines the observed state of the Topic resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Topic. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Topic. + |  | 
+| *`topicConfiguration`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configuration[$$Configuration$$] array__ | TopicConfiguration is the last snapshot of the topic configuration during successful reconciliation. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topologyspreadconstraints"]
+==== TopologySpreadConstraints
+
+
+
+TopologySpreadConstraints configures topology spread constraints to control how Pods are spread across different topology domains.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`maxSkew`* __integer__ | Defines the maximum skew between the number of Pods in any two topology domains. + |  | 
+| *`topologyKey`* __string__ | Specifies the topology key to use for spreading Pods. + |  | 
+| *`whenUnsatisfiable`* __string__ | Sets the policy for how to handle unsatisfiable constraints, such as `DoNotSchedule` or `ScheduleAnyway`. + |  | 
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tuning"]
+==== Tuning
+
+
+
+Tuning configures settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers[$$InitContainers$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`extraVolumeMounts`* __string__ | Configures additional volume mounts for the Pod. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Sets resource requirements such as CPU and memory limits. + |  | 
+| *`ballast_file_path`* __string__ | Specifies the file path for ballast file. A ballast file is an empty file that takes up disk space. If Redpanda runs out of disk space and becomes unavailable, you can delete the ballast file as a last resort. This clears up some space and gives you time to delete topics or records and change your retention properties. + |  | 
+| *`ballast_file_size`* __string__ | Defines the size of the ballast file. + |  | 
+| *`tune_aio_events`* __boolean__ | Specifies whether to increase the number of allowed asynchronous IO events. + |  | 
+| *`tune_ballast_file`* __boolean__ | Specifies whether to create the ballast file. + |  | 
+| *`tune_clocksource`* __boolean__ | Specifies whether to synchronize NTP. + |  | 
+| *`well_known_io`* __string__ | Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>. This hints to Redpanda which configuration values it should use for the Redpanda IO scheduler. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-updatestrategy"]
+==== UpdateStrategy
+
+
+
+UpdateStrategy configures the update strategy for the StatefulSet to manage how updates are rolled out to the Pods.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __string__ | Defines the strategy type for updating the StatefulSet, such as `RollingUpdate` or `OnDelete`. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usagestats"]
+==== UsageStats
+
+
+
+UsageStats configures the reporting of usage statistics. Redpanda Data uses these metrics to learn how the software is used, which can guide future improvements.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-logging[$$Logging$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether usage reporting is enabled. + |  | 
+| *`organization`* __string__ | Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled. +
+Deprecated: This value is no longer respected in the redpanda helm chart +
+and will be removed in a future version. + |  | 
+| *`clusterId`* __string__ | Specifies the ID of your Redpanda cluster. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user"]
+==== User
+
+
+
+User defines the CRD for a Redpanda user.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `User` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]__ | Defines the desired state of the Redpanda user. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userstatus[$$UserStatus$$]__ | Represents the current status of the Redpanda user. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:Pending status:Unknown type:Synced]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec"]
+==== UserAuthenticationSpec
+
+
+
+UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | SASL mechanism to use for the user credentials. Valid values are: +
+- scram-sha-512 +
+- scram-sha-256 + | scram-sha-512 | Enum: [scram-sha-256 scram-sha-512 SCRAM-SHA-256 SCRAM-SHA-512] +
+
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password[$$Password$$]__ | Password specifies where a password is read from. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec"]
+==== UserAuthorizationSpec
+
+
+
+UserAuthorizationSpec defines authorization rules for this user.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authorizationtype[$$AuthorizationType$$]__ | Type specifies the type of authorization to use for User ACLs. If unspecified, defaults to `simple`. Valid values are: +
+- simple + | simple | Enum: [simple] +
+
+| *`acls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$] array__ | List of ACL rules which should be applied to this user. + |  | MaxItems: 1024 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec"]
+==== UserSpec
+
+
+
+UserSpec defines the configuration of a Redpanda user.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the user should be created. +
+It is used in constructing the client created to configure a cluster. + |  | 
+| *`authentication`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec[$$UserAuthenticationSpec$$]__ | Authentication defines the authentication information for a user. If no +
+Authentication credentials are specified, then no user will be created. +
+This is useful when wanting to manage ACLs for an already-existing user. + |  | 
+| *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]__ | Authorization rules defined for this user. + |  | 
+| *`template`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usertemplatespec[$$UserTemplateSpec$$]__ | Template to specify how user secrets are generated. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userstatus"]
+==== UserStatus
+
+
+
+UserStatus defines the observed state of a Redpanda user
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda user. + |  | 
+| *`managedAcls`* __boolean__ | ManagedACLs returns whether the user has managed ACLs that need +
+to be cleaned up. + |  | 
+| *`managedUser`* __boolean__ | ManagedUser returns whether the user has a managed SCRAM user that need +
+to be cleaned up. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usertemplatespec"]
+==== UserTemplateSpec
+
+
+
+UserTemplateSpec defines the template metadata (labels and annotations)
+for any subresources, such as Secrets, created by a User object.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`secret`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetemplate[$$ResourceTemplate$$]__ | Specifies how the Secret with a user password is generated. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usersitems"]
+==== UsersItems
+
+
+
+UsersItems configures a list of superusers in the Helm values.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl[$$SASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`mechanism`* __string__ | Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+| *`name`* __string__ | Specifies the name of the superuser. + |  | 
+| *`password`* __string__ | Specifies the superuser password. + |  | 
+|===
+
+

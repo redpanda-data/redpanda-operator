@@ -1,4 +1,4 @@
-project: chart-redpanda
+project: operator
 kind: Added
 body: |
   Added `resources.limits` and `resources.requests` as an alternative method of managing the redpanda container's resources.
@@ -17,6 +17,4 @@ body: |
       requests:
         cpu: 5 # Only CPU requests
     ```
-
-    For more details see [redpanda's values.yaml](./charts/redpanda/values.yaml).
-time: 2025-01-08T15:31:47.946476-05:00
+time: 2025-01-15T16:21:58.898733-05:00

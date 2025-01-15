@@ -8,6 +8,7 @@ tasks:
     - generate-controller-code
     - generate-manifests
     cmds:
+      - task: generate:crd-docs
       - |
         controller-gen \
           object:headerFile="../licenses/boilerplate.go.txt" \
@@ -52,6 +53,15 @@ tasks:
       - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
 
+  generate:crd-docs:
+    desc: Generates an example ascii doc from our crd-ref-docs configuration.
+    dir: 'operator'
+    cmds:
+    - |
+      crd-ref-docs \
+      --config crd-ref-docs-config.yaml \
+      --source-path ./api/redpanda/v1alpha2/ \
+      --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc
 
   run-unit-tests:
     dir: 'operator'

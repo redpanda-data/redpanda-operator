@@ -2864,7 +2864,7 @@ spec:
                       affinity:
                         description: |-
                           Affinity constraints for scheduling Pods. For details, see the
-                          [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+                          https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
                         properties:
                           nodeAffinity:
                             description: Describes node affinity scheduling rules
@@ -8102,7 +8102,7 @@ spec:
                       affinity:
                         description: |-
                           Affinity constraints for scheduling Pods. For details, see the
-                          [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+                          https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
                         properties:
                           nodeAffinity:
                             description: Describes node affinity scheduling rules
@@ -23131,7 +23131,7 @@ spec:
                       affinity:
                         description: |-
                           Affinity constraints for scheduling Pods. For details, see the
-                          [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+                          https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
                         properties:
                           nodeAffinity:
                             description: Describes node affinity scheduling rules
@@ -28369,7 +28369,7 @@ spec:
                       affinity:
                         description: |-
                           Affinity constraints for scheduling Pods. For details, see the
-                          [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+                          https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
                         properties:
                           nodeAffinity:
                             description: Describes node affinity scheduling rules
