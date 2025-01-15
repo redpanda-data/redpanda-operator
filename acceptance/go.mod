@@ -5,6 +5,7 @@ go 1.23.2
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
+	github.com/prometheus/common v0.55.0
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
@@ -14,8 +15,10 @@ require (
 	github.com/twmb/franz-go v1.18.0
 	github.com/twmb/franz-go/pkg/kadm v1.12.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
+	k8s.io/client-go v0.30.3
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.18.5
 )
@@ -166,7 +169,6 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2 // indirect
 	github.com/prometheus/client_golang v1.20.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 // indirect
@@ -203,7 +205,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
@@ -227,7 +228,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.3 // indirect
 	k8s.io/apiserver v0.30.3 // indirect
 	k8s.io/cli-runtime v0.30.3 // indirect
-	k8s.io/client-go v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
