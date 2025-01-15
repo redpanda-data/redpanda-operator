@@ -53,6 +53,7 @@
               pkgs.docker-tag-list
               pkgs.gawk # GNU awk, used by some build scripts.
               pkgs.gnused # Stream Editor, used by some build scripts.
+              pkgs.go-licenses
               pkgs.go-task
               pkgs.go-tools
               pkgs.go_1_23
