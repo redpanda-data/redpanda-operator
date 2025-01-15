@@ -31,6 +31,7 @@ spec:
         - --leader-elect
         image: vectorized/redpanda-operator:2021022-e853bf3
         name: manager
+        ports: []
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
@@ -54,4 +55,6 @@ spec:
           requests:
             cpu: 100m
             memory: 128Mi
+        volumeMounts: []
       terminationGracePeriodSeconds: 10
+      volumes: []

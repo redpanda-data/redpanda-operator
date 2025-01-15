@@ -11,21 +11,29 @@ package steps
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/prometheus/common/expfmt"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
+	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -353,4 +361,103 @@ func checkStableResource(ctx context.Context, t framework.TestingT, o runtimecli
 		return false
 	}, 30*time.Second, 1*time.Second, "Resource never stabilized")
 	t.Logf("Resource %q has been stable for 5 seconds", key.String())
+}
+
+type operatorClients struct {
+	client             http.Client
+	operatorPodName    string
+	namespace          string
+	schema             string
+	token              string
+	expectedStatusCode int
+}
+
+func (c *operatorClients) ExpectRequestRejected(ctx context.Context) {
+	t := framework.T(ctx)
+
+	url := fmt.Sprintf("%s://%s.%s:8443/metrics", c.schema, c.operatorPodName, c.namespace)
+
+	t.Logf("Request %s to operator", url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	require.NoError(t, err)
+
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	resp, err := c.client.Do(req)
+	require.NoError(t, err)
+
+	require.Equal(t, c.expectedStatusCode, resp.StatusCode)
+
+	defer resp.Body.Close()
+}
+
+func (c *operatorClients) ExpectCorrectMetricsResponse(ctx context.Context) {
+	t := framework.T(ctx)
+
+	url := fmt.Sprintf("%s://%s.%s:8443/metrics", c.schema, c.operatorPodName, c.namespace)
+
+	t.Logf("Request %s to operator", url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	require.NoError(t, err)
+
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	resp, err := c.client.Do(req)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	defer resp.Body.Close()
+
+	var parser expfmt.TextParser
+	_, err = parser.TextToMetricFamilies(resp.Body)
+	require.NoError(t, err)
+}
+
+func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName, expectedStatusCode string) *operatorClients {
+	t := framework.T(ctx)
+
+	var dep appsv1.Deployment
+	require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &dep))
+
+	var podList corev1.PodList
+
+	require.NoError(t, t.List(ctx, &podList, &runtimeclient.ListOptions{
+		LabelSelector: labels.SelectorFromSet(dep.Spec.Selector.MatchLabels),
+	}))
+
+	require.Len(t, podList.Items, 1, "expected 1 pod, got %d", len(podList.Items))
+
+	var tlsCfg tls.Config
+	schema := "http"
+	if includeTLS {
+		tlsCfg = tls.Config{InsecureSkipVerify: includeTLS} // nolint:gosec
+		schema = "https"
+	}
+
+	token := "non-existing-token"
+	if serviceAccountName != "" {
+		cs, err := kubernetes.NewForConfig(t.RestConfig())
+		require.NoError(t, err)
+		tokenResponse, err := cs.CoreV1().ServiceAccounts(t.Namespace()).CreateToken(ctx, serviceAccountName, &authenticationv1.TokenRequest{}, metav1.CreateOptions{})
+		require.NoError(t, err)
+		token = tokenResponse.Status.Token
+	}
+
+	statusCode := http.StatusOK
+	if expectedStatusCode != "" {
+		var err error
+		statusCode, err = strconv.Atoi(expectedStatusCode)
+		require.NoError(t, err)
+	}
+
+	return &operatorClients{
+		expectedStatusCode: statusCode,
+		token:              token,
+		schema:             schema,
+		namespace:          t.Namespace(),
+		operatorPodName:    podList.Items[0].Name,
+		client: http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tlsCfg,
+			DialContext:     kube.NewPodDialer(t.RestConfig()).DialContext,
+		}},
+	}
 }
