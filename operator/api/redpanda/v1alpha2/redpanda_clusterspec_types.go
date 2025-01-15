@@ -497,7 +497,27 @@ type UsageStats struct {
 	ClusterID *string `json:"clusterId,omitempty"`
 }
 
-// Resources configures resource allocation. The default values are for a development environment. Production-level values and other considerations are documented, where those values are different from the default.
+// RedpandaResources encapsulates the calculation of the redpanda container's
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[corev1.ResourceRequirements]
+// and parameters such as `--memory`, `--reserve-memory`, and `--smp`. This
+// calculation supports two modes:
+//
+//   - Explicit mode (recommended):  Activated when `Limits` and `Requests` are
+//     set. In this mode, the CLI flags are calculated directly based on the
+//     provided `Limits` and `Requests`. This mode ensures predictable resource
+//     allocation and is recommended for production environments. If additional
+//     tuning is required, the CLI flags can be manually overridden using
+//     `statefulset.additionalRedpandaCmdFlags`.
+//
+//   - Legacy mode (default): Used when `Limits` and `Requests` are not set.
+//     In this mode, the container resources and CLI flags are calculated using
+//     built-in default logic, where 80% of the container's memory is allocated
+//     to Redpanda and the rest is reserved for system overhead. Legacy mode is
+//     intended for backward compatibility and less controlled environments.
+//
+// Explicit mode offers better control and aligns with Kubernetes best
+// practices. Legacy mode is a fallback for users who have not defined `Limits`
+// and `Requests`.
 type Resources struct {
 	Limits   *map[corev1.ResourceName]resource.Quantity `json:"limits,omitempty"`
 	Requests *map[corev1.ResourceName]resource.Quantity `json:"requests,omitempty"`
@@ -641,9 +661,8 @@ type PostInstallJob struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Applies labels to the job to facilitate identification and selection based on custom criteria.
 	Labels map[string]string `json:"labels,omitempty"`
-
 	// Affinity constraints for scheduling Pods. For details, see the
-	// [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// SecurityContext is deprecated. Prefer [PodTemplate.Spec.SecurityContext]
 	// or [PodTemplate.Spec.Containers[*].SecurityContext].
@@ -672,7 +691,7 @@ type PostUpgradeJob struct {
 	BackoffLimit *int32                       `json:"backoffLimit,omitempty"`
 
 	// Affinity constraints for scheduling Pods. For details, see the
-	// [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+	// https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[Kubernetes' documentation].
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// SecurityContext is deprecated. Prefer [PodTemplate.Spec.SecurityContext]
 	// or [PodTemplate.Spec.Containers[*].SecurityContext].
