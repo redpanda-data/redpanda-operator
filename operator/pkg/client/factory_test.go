@@ -83,10 +83,8 @@ func (f *fakeObject) DeepCopyObject() runtime.Object {
 	return f
 }
 
-func TestClientFactory(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping factory tests in short mode")
-	}
+func TestIntegrationClientFactory(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
 
 	var suffix atomic.Int32
 
@@ -238,12 +236,9 @@ func TestClientFactory(t *testing.T) {
 	}
 }
 
-func TestClientFactoryTLSListeners(t *testing.T) {
+func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	// Test of https://github.com/redpanda-data/helm-charts/blob/230a32adcee07184313f1c864bf9e3ab21a2e38e/charts/operator/files/three_node_redpanda.yaml
-
-	if testing.Short() {
-		t.Skip("skipping factory tests in short mode")
-	}
+	testutil.SkipIfNotIntegration(t)
 
 	ctx := context.Background()
 	cluster, err := k3d.NewCluster(t.Name(), k3d.WithAgents(1))

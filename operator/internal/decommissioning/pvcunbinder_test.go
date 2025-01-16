@@ -129,7 +129,9 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 	}
 }
 
-func TestPVCUnbinder(t *testing.T) {
+func TestIntegrationPVCUnbinder(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

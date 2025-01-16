@@ -93,6 +93,12 @@ func Context(t *testing.T) context.Context {
 func SkipIfNotIntegration(t *testing.T) {
 	const prefix = "TestIntegration"
 
+	// NB: This check is performed regardless of the build tags because we want
+	// to catch naming issues as soon as possible.
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotIntegration must be prefixed with %q; got: %s", prefix, t.Name())
+	}
+
 	if skipIntegrationTests {
 		t.Skipf("integration build flag not set; skipping integration test")
 	} else if testing.Short() {
@@ -100,14 +106,16 @@ func SkipIfNotIntegration(t *testing.T) {
 	} else {
 		RequireTimeout(t, 20*time.Minute)
 	}
-
-	if !strings.HasPrefix(t.Name(), prefix) {
-		t.Fatalf("tests calling SkipIfNotIntegration must be prefixed with %q; got: %s", prefix, t.Name())
-	}
 }
 
 func SkipIfNotAcceptance(t *testing.T) {
 	const prefix = "TestAcceptance"
+
+	// NB: This check is performed regardless of the build tags because we want
+	// to catch naming issues as soon as possible.
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotAcceptance must be prefixed with %q; got: %s", prefix, t.Name())
+	}
 
 	if skipAcceptanceTests {
 		t.Skipf("acceptance build flag not set; skipping acceptance test")
@@ -115,10 +123,6 @@ func SkipIfNotAcceptance(t *testing.T) {
 		t.Skipf("-short specified; skipping acceptance test")
 	} else {
 		RequireTimeout(t, 20*time.Minute)
-	}
-
-	if !strings.HasPrefix(t.Name(), prefix) {
-		t.Fatalf("tests calling SkipIfNotAcceptance must be prefixed with %q; got: %s", prefix, t.Name())
 	}
 }
 

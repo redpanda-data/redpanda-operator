@@ -11,35 +11,34 @@ package framework
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"sync"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-var suite *Suite
+func getSuite(t *testing.T) *Suite {
+	suit, err := setupSuite()
+	require.NoError(t, err)
+	return suit
+}
 
-func TestMain(m *testing.M) {
-	var err error
-
-	suite, err = SuiteBuilderFromFlags().
+var setupSuite = sync.OnceValues(func() (*Suite, error) {
+	return SuiteBuilderFromFlags().
 		RegisterProvider("stub", NoopProvider).
 		WithDefaultProvider("stub").
 		ExitOnCleanupFailures().
 		Build()
-	if err != nil {
-		fmt.Printf("error running test suite: %v\n", err)
-		os.Exit(1)
-	}
+})
 
-	os.Exit(m.Run())
-}
+func TestIntegrationSuite(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
 
-func TestSuite(t *testing.T) {
-	suite.RunT(t)
+	getSuite(t).RunT(t)
 }
 
 func stubGiven(ctx context.Context, t TestingT) {

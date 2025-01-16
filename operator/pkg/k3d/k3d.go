@@ -48,6 +48,12 @@ var (
 	manifestsFS embed.FS
 
 	ErrExists = errors.New("cluster with name already exists")
+
+	// usagePermitted controls whether or not the k3d package may be utilized.
+	// To keep the development cycle of unittests short, usage of the k3d
+	// package is disallowed. Setting either the integration or acceptance
+	// build tag will toggle this variable to true.
+	usagePermitted = false
 )
 
 type Cluster struct {
@@ -122,6 +128,11 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 }
 
 func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
+	if !usagePermitted {
+		return nil, errors.New(`use of the k3d package is only permitted when using the integration or acceptance build tag.
+Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate tests that use this package.`)
+	}
+
 	name = strings.ToLower(name)
 
 	config := defaultClusterConfig()
