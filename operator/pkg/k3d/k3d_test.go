@@ -16,12 +16,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-func TestMultiInstance(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping multi k3d cluster bootup test")
-	}
+func TestIntegrationMultiInstance(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
 
 	clusters := 3
 

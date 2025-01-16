@@ -11,9 +11,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -31,15 +31,16 @@ import (
 var (
 	imageRepo = "localhost/redpanda-operator"
 	imageTag  = "dev"
-	suite     *framework.Suite
 )
 
-func TestMain(m *testing.M) {
-	log.SetLogger(logr.Discard())
+func getSuite(t *testing.T) *framework.Suite {
+	suit, err := setupSuite()
+	require.NoError(t, err)
+	return suit
+}
 
-	var err error
-
-	suite, err = framework.SuiteBuilderFromFlags().
+var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
+	return framework.SuiteBuilderFromFlags().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
@@ -80,17 +81,17 @@ func TestMain(m *testing.M) {
 		RegisterTag("cluster", 1, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
-	if err != nil {
-		fmt.Printf("error running test suite: %v\n", err)
-		os.Exit(1)
-	}
+})
 
+func TestMain(m *testing.M) {
+	log.SetLogger(logr.Discard())
 	os.Exit(m.Run())
 }
 
 func TestAcceptanceSuite(t *testing.T) {
 	testutil.SkipIfNotAcceptance(t)
-	suite.RunT(t)
+
+	getSuite(t).RunT(t)
 }
 
 func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
