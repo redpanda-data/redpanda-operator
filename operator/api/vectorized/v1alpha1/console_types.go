@@ -178,8 +178,7 @@ type Deployment struct {
 	// See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// +kubebuilder:pruning:PreserveUnknownFields
-	// Adds extra environment variables to the Pods that run Redpanda Console.
+	// ExtraEnv adds extra environment variables to the Pods that run Redpanda Console.
 	ExtraEnv []corev1.EnvVar `json:"extraEnv,omitempty"`
 }
 
