@@ -385,8 +385,8 @@ spec:
                   Deployment resource
                 properties:
                   extraEnv:
-                    description: Adds extra environment variables to the Pods that
-                      run Redpanda Console.
+                    description: ExtraEnv adds extra environment variables to the
+                      Pods that run Redpanda Console.
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -505,7 +505,6 @@ spec:
                       - name
                       type: object
                     type: array
-                    x-kubernetes-preserve-unknown-fields: true
                   image:
                     type: string
                   imagePullPolicy:
