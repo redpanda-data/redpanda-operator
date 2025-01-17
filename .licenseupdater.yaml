@@ -18,7 +18,7 @@ ignore:
   # Ignore go files from genpartial, they utilize a -header flag.
   - match: .+\.gen\.go$
 files:
-  - name: licenses/boilerplate.go.txt
+  - name: ../licenses/boilerplate.go.txt
     type: go
     license: BSL
 matches:
@@ -29,3 +29,4 @@ matches:
   - extension: .go
     type: go
     license: BSL
+license_directory: ../licenses

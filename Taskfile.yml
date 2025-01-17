@@ -8,26 +8,26 @@ vars:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
-  _PKG:
-    sh: go work edit -json | jq -j '[.Use[].DiskPath+"/..."]|join(" ")'
-  PKG: '{{default ._PKG .PKG}}'
+  _MOD:
+    sh: dirname $(ls **/go.mod)
+  PKG: './...'
+  MOD: '{{default ._MOD .MOD}}'
 
 includes:
+  build: taskfiles/build.yml
+  charts: taskfiles/charts.yml
   ci: taskfiles/ci.yml
-  k8s: taskfiles/k8s.yml
   dev: taskfiles/dev.yml
   goreleaser: taskfiles/goreleaser.yml
-  charts: taskfiles/charts.yml
+  k8s: taskfiles/k8s.yml
 
 tasks:
   lint:
     cmds:
-      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
+      - for:
+          var: MOD
+        cmd: cd {{.ITEM}} && golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
-      - task: test:unit
-        vars:
-          PKG: './pkg/lint'
-          CLI_ARGS: ''
 
   lint-fix:
     cmds:
@@ -37,8 +37,9 @@ tasks:
 
   mod:tidy:
     cmds:
-    - go list -f '{{"{{.Dir}}"}}' -m | xargs -L1 go mod tidy -C
-    - go work sync
+    - for:
+        var: MOD
+      cmd: go mod tidy -C {{.ITEM}}
 
   fmt:
     cmds:
@@ -46,6 +47,7 @@ tasks:
 
   generate:
     cmds:
+      - task: mod:tidy
       - task: charts:generate
       # update-licenses may update licenses/boilerplate.go.txt which is used
       # for _some_ of k8s:generate. For simplicity, we just run update-licenses
@@ -58,23 +60,24 @@ tasks:
       - nix fmt # Ensure flake.nix has been formatted.
 
   generate:third-party-licenses-list:
+    dir: operator
     generates:
     - licenses/third_party.md
     sources:
-    - ./**/go.mod
-    - ./**/go.sum
+    - ./operator/go.mod
+    - ./operator/go.sum
     cmds:
     # Our own packages should not be reported as third party license
     # The example.com/example depedency is ignored as it's part of the
     # gotohelm test suite (visit ./pkg/gotohelm/testdata/src/example/go.mod)
     - |
-      go-licenses report {{.PKG}} --template licenses/third_party.md.tpl \
+      go-licenses report ./... --template ../licenses/third_party.md.tpl \
       --ignore buf.build/gen/go/redpandadata \
       --ignore example.com/example \
       --ignore github.com/redpanda-data/common-go \
       --ignore github.com/redpanda-data/console/backend \
       --ignore github.com/redpanda-data/redpanda \
-      --ignore github.com/redpanda-data/redpanda-operator > licenses/third_party.md
+      --ignore github.com/redpanda-data/redpanda-operator > ../licenses/third_party.md
 
   generate:changelog:
     generates:
@@ -104,7 +107,9 @@ tasks:
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
-    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
+    # NB: xargs is used here in favor of taskfile's for as it allows parent
+    # tasks to utilizing xargs' templating (%).
+    - echo "{{.MOD}}" | xargs -t -I % {{.GO_TEST_RUNNER}} -C % {{.CLI_ARGS}} {{.PKG}}
 
   test:integration:
     cmds:
@@ -124,4 +129,8 @@ tasks:
     - kind create cluster --name acceptance
     - defer: kind delete cluster --name acceptance
     - kind load --name acceptance docker-image localhost/redpanda-operator:dev localhost/configurator:dev
-    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} ./acceptance'
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER:
+          ref: .GO_TEST_RUNNER
+        CLI_ARGS: '{{.CLI_ARGS}} -run "^TestAcceptance" -timeout 35m -tags acceptance'

@@ -37,7 +37,7 @@ tasks:
     - task: genschema
       vars: { CHART: redpanda }
     - task: gotohelm
-      vars: { CHART: redpanda, DEPS: ./charts/... }
+      vars: { CHART: redpanda, DEPS: ./... }
 
   generate:connectors:
     desc: "Generate files for the connectors Helm chart"
@@ -58,6 +58,9 @@ tasks:
     run: when_changed
     label: "genpartial:{{ .CHART }}"
     desc: "Generate a 'partial' version of the Values struct"
+    dir: charts
+    deps:
+    - task: :build:genpartial
     var:
       CHART: ""
     requires:
@@ -69,13 +72,25 @@ tasks:
     generates:
     - ./charts/{{ .CHART }}/values_partial.gen.go
     cmds:
-    - go run ./genpartial -header ./licenses/boilerplate.go.txt -out charts/{{ .CHART }}/values_partial.gen.go -struct Values ./charts/{{ .CHART }}
+    - genpartial -header ../licenses/boilerplate.go.txt -out ./{{ .CHART }}/values_partial.gen.go -struct Values ./{{ .CHART }}
+
+  build:genschema:
+    dir: ./genschema
+    sources:
+    - ./genschema/**
+    generates:
+    - ../.build/genschema
+    cmds:
+    - go build -o ../.build/genschema ./...
 
   genschema:
     internal: true
     run: when_changed
     label: "genschema:{{ .CHART }}"
     desc: "Generate the values JSON schema from the Values struct"
+    dir: charts
+    deps:
+    - task: :build:genschema
     var:
       CHART: ""
     requires:
@@ -85,13 +100,16 @@ tasks:
     generates:
     - ./charts/{{ .CHART}}/values.schema.json
     cmds:
-    - go run ./genschema {{ .CHART }} > charts/{{ .CHART }}/values.schema.json
+    - genschema {{ .CHART }} > ./{{ .CHART }}/values.schema.json
 
   gotohelm:
     internal: true
     run: when_changed
     label: "gotohelm:{{ .CHART }}"
     desc: "Generate helm templates from Go definitions"
+    dir: charts
+    deps:
+    - task: :build:gotohelm
     var:
       CHART: ""
       DEPS: ""
@@ -101,8 +119,8 @@ tasks:
     - ./charts/{{ .CHART }}/*.go
     - ./charts/{{ .CHART }}/**/*.go
     generates:
-      - ./charts/{{ .CHART }}/templates/*
-      - ./charts/{{ .CHART }}/templates/**/*
+    - ./charts/{{ .CHART }}/templates/*
+    - ./charts/{{ .CHART }}/templates/**/*
     cmds:
     # Generate helm templates from Go definitions
-    - go run ./gotohelm -write ./charts/{{ .CHART }}/templates ./charts/{{ .CHART }} {{ .DEPS }}
+    - gotohelm -write ./{{ .CHART }}/templates ./{{ .CHART }} {{ .DEPS }}

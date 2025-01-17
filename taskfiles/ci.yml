@@ -136,19 +136,19 @@ tasks:
     cmds:
       - defer: 'kind delete clusters --all'
       - task: :charts:kind-cluster
-      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/integration-tests.xml'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: gotestsum
-          CLI_ARGS: --junitfile=integration-tests.xml -- {{.CLI_ARGS}}
+          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
+          CLI_ARGS: '-json {{.CLI_ARGS}}'
 
   test:unit:
     cmds:
-      - defer: 'buildkite-agent artifact upload {{.SRC_DIR}}/unit-tests.xml'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests-*.xml"'
       - task: :test:unit
         vars:
-          GO_TEST_RUNNER: gotestsum
-          CLI_ARGS: '--junitfile=unit-tests.xml -- -timeout=30m {{.CLI_ARGS}}'
+          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=unit-tests-%.xml -- go test
+          CLI_ARGS: '-json {{.CLI_ARGS}}'
 
   set-aio-max:
     desc: set minimum required value for fs.aio-max-nr sysctl option

@@ -35,7 +35,7 @@ steps:
         label: Parse unit tests
         plugins:
           - junit-annotate#v2.4.1:
-              artifacts: work/unit-tests.xml
+              artifacts: work/unit-tests-*.xml
               report-slowest: 20
         timeout_in_minutes: 0
         agents:
