@@ -30,7 +30,7 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/redpanda-operator/charts v0.0.0-20250117101058-ffdbfad7bc6b
+	github.com/redpanda-data/redpanda-operator/charts v0.0.0-20241220192816-d453875ad308
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20241216191615-bb41e7cd4a6e
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
@@ -449,6 +449,9 @@ replace (
 	github.com/fluxcd/helm-controller/shim => github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240
 	github.com/fluxcd/source-controller/shim => github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
+
+	// Roughly equivalent to redpanda chart version v5.9.18. Pinned to prevent accidental updates.
+	github.com/redpanda-data/redpanda-operator/charts => github.com/redpanda-data/redpanda-operator/charts v0.0.0-20241220192816-d453875ad308
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
