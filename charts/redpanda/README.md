@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Helm chart.
 ---
 
-![Version: 5.9.18](https://img.shields.io/badge/Version-5.9.18-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.3.2](https://img.shields.io/badge/AppVersion-v24.3.2-informational?style=flat-square)
+![Version: 5.9.19](https://img.shields.io/badge/Version-5.9.19-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.3.3](https://img.shields.io/badge/AppVersion-v24.3.3-informational?style=flat-square)
 
 This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
@@ -915,7 +915,7 @@ A subset of Kubernetes' PodSpec type that will be merged into the final PodSpec.
 **Default:**
 
 ```
-{"containers":[{"env":[],"name":"redpanda","securityContext":{}}],"securityContext":{}}
+{"containers":[],"securityContext":{}}
 ```
 
 ### [statefulset.priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.priorityClassName)

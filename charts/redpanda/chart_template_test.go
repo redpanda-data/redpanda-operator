@@ -593,8 +593,23 @@ func execJSONPath(t *testing.T, objs []kube.Object, gvk, key, jsonPath string, f
 		results, err := path.FindResults(obj)
 		require.NoError(t, err)
 
+		// If jsonPath contains a range loop or {range}{end} block, the result
+		// will be an array of values. If not, the results are still an array
+		// but test writers would expect it to be a single value.
+		resultIsArray := strings.Contains(jsonPath, "*") || strings.Contains(jsonPath, "{range")
+
 		for _, result := range results {
-			fn(result[0].Interface())
+			var unwrapped []any
+			for _, x := range result {
+				unwrapped = append(unwrapped, x.Interface())
+			}
+
+			if resultIsArray {
+				fn(unwrapped)
+			} else {
+				require.Len(t, unwrapped, 1, "non iterating JSON path found multiple results: %s", jsonPath)
+				fn(unwrapped[0])
+			}
 		}
 
 		return
