@@ -976,6 +976,10 @@ func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *v1alph
 	if err := r.Client.Get(ctx, key, latest); err != nil {
 		return err
 	}
+	// HACK: Disable optimistic locking. Technically, the correct way to do
+	// this is to set both objects' ResourceVersion to "". It's a waste of
+	// resources deep copy rp, so we just copy it over.
+	latest.ResourceVersion = rp.ResourceVersion
 	return r.Client.Status().Patch(ctx, rp, client.MergeFrom(latest))
 }
 
