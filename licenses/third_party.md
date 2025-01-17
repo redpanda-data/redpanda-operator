@@ -98,9 +98,6 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/stargz-snapshotter/estargz | [Apache-2.0](https://github.com/containerd/stargz-snapshotter/blob/estargz/v0.15.1/estargz/LICENSE) |
 | github.com/coreos/go-oidc/v3/oidc | [Apache-2.0](https://github.com/coreos/go-oidc/blob/v3.9.0/LICENSE) |
-| github.com/cucumber/gherkin/go/v26 | [MIT](https://github.com/cucumber/gherkin/blob/go/v26.2.0/go/LICENSE) |
-| github.com/cucumber/godog | [MIT](https://github.com/cucumber/godog/blob/v0.14.1/LICENSE) |
-| github.com/cucumber/messages/go/v21 | [MIT](https://github.com/cucumber/messages/blob/go/v21.0.1/go/LICENSE) |
 | github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer | [Apache-2.0](https://github.com/cyberphone/json-canonicalization/blob/785e29786b46/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.2.4/LICENSE) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
@@ -172,7 +169,6 @@ run `task generate:third-party-licenses-list`
 | github.com/go-openapi/swag | [Apache-2.0](https://github.com/go-openapi/swag/blob/v0.23.0/LICENSE) |
 | github.com/go-openapi/validate | [Apache-2.0](https://github.com/go-openapi/validate/blob/v0.22.3/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
-| github.com/gofrs/uuid | [MIT](https://github.com/gofrs/uuid/blob/v4.4.0/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
 | github.com/golang-jwt/jwt/v4 | [MIT](https://github.com/golang-jwt/jwt/blob/v4.5.0/LICENSE) |
 | github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.2.0/LICENSE) |
@@ -207,12 +203,9 @@ run `task generate:third-party-licenses-list`
 | github.com/gregjones/httpcache | [MIT](https://github.com/gregjones/httpcache/blob/901d90724c79/LICENSE.txt) |
 | github.com/hashicorp/errwrap | [MPL-2.0](https://github.com/hashicorp/errwrap/blob/v1.1.0/LICENSE) |
 | github.com/hashicorp/go-cleanhttp | [MPL-2.0](https://github.com/hashicorp/go-cleanhttp/blob/v0.5.2/LICENSE) |
-| github.com/hashicorp/go-immutable-radix | [MPL-2.0](https://github.com/hashicorp/go-immutable-radix/blob/v1.3.1/LICENSE) |
-| github.com/hashicorp/go-memdb | [MPL-2.0](https://github.com/hashicorp/go-memdb/blob/v1.3.4/LICENSE) |
 | github.com/hashicorp/go-multierror | [MPL-2.0](https://github.com/hashicorp/go-multierror/blob/v1.1.1/LICENSE) |
 | github.com/hashicorp/go-retryablehttp | [MPL-2.0](https://github.com/hashicorp/go-retryablehttp/blob/v0.7.5/LICENSE) |
 | github.com/hashicorp/go-uuid | [MPL-2.0](https://github.com/hashicorp/go-uuid/blob/v1.0.3/LICENSE) |
-| github.com/hashicorp/golang-lru/simplelru | [MPL-2.0](https://github.com/hashicorp/golang-lru/blob/v1.0.2/LICENSE) |
 | github.com/hashicorp/hcl | [MPL-2.0](https://github.com/hashicorp/hcl/blob/v1.0.1-vault-5/LICENSE) |
 | github.com/homeport/dyff/pkg/dyff | [MIT](https://github.com/homeport/dyff/blob/v1.7.1/LICENSE) |
 | github.com/huandu/xstrings | [MIT](https://github.com/huandu/xstrings/blob/v1.4.0/LICENSE) |
@@ -283,7 +276,6 @@ run `task generate:third-party-licenses-list`
 | github.com/mxk/go-flowrate/flowrate | [BSD-3-Clause](https://github.com/mxk/go-flowrate/blob/cca7078d478f/LICENSE) |
 | github.com/nozzle/throttler | [Apache-2.0](https://github.com/nozzle/throttler/blob/2ea982251481/LICENSE) |
 | github.com/oklog/ulid | [Apache-2.0](https://github.com/oklog/ulid/blob/v1.3.1/LICENSE) |
-| github.com/olekukonko/tablewriter | [MIT](https://github.com/olekukonko/tablewriter/blob/v0.0.5/LICENSE.md) |
 | github.com/onsi/gomega | [MIT](https://github.com/onsi/gomega/blob/v1.34.1/LICENSE) |
 | github.com/opencontainers/go-digest | [Apache-2.0](https://github.com/opencontainers/go-digest/blob/802ce17c4f59/LICENSE) |
 | github.com/opencontainers/go-digest/blake3 | [Apache-2.0](https://github.com/opencontainers/go-digest/blob/429d0316a3dd/blake3/LICENSE) |
@@ -417,9 +409,7 @@ run `task generate:third-party-licenses-list`
 | k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.30.3/LICENSE) |
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/18e509b52bc8/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang/net | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/18e509b52bc8/internal/third_party/forked/golang/LICENSE) |
-| mvdan.cc/gofumpt | [BSD-3-Clause](https://github.com/mvdan/gofumpt/blob/v0.7.0/LICENSE) |
 | oras.land/oras-go/pkg | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v1.2.5/LICENSE) |
-| pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.18.5/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.0.0/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/bc3834ca7abd/LICENSE) |

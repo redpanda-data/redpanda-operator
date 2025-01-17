@@ -3,7 +3,6 @@ module github.com/redpanda-data/redpanda-operator/genschema
 go 1.23.2
 
 replace (
-	github.com/redpanda-data/redpanda-operator/charts => ../charts
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
@@ -11,7 +10,7 @@ replace (
 require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
-	github.com/redpanda-data/redpanda-operator/charts v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/charts v0.0.0-20250117101058-ffdbfad7bc6b
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3

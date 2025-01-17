@@ -1,0 +1,33 @@
+version: '3'
+
+tasks:
+  genpartial:
+    dir: ./genpartial
+    sources:
+    - ./genpartial/**.go
+    generates:
+    - ../.build/genpartial
+    cmds:
+    - go build -o ../.build/genpartial .
+
+  genschema:
+    dir: genschema
+    cmds:
+    - go build -o ../.build/genschema .
+
+  genpartial:
+    dir: genpartial
+    cmds:
+    - go build -o ../.build/genpartial .
+
+  gotohelm:
+    dir: gotohelm
+    sources:
+    - ./genpartial/**.go
+    cmds:
+    - go build -o ../.build/gotohelm .
+
+  licenseupdater:
+    dir: licenseupdater
+    cmds:
+    - go build -o ../.build/licenseupdater .

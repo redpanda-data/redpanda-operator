@@ -38,6 +38,7 @@
             env = [
               { name = "GOPRIVATE"; value = "github.com/redpanda-data/flux-controller-shim"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.29.x)"; }
+              { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
             ];
 
             # If the version of the installed binary is important make sure to

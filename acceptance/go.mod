@@ -168,7 +168,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 // indirect
-	github.com/redpanda-data/redpanda-operator/charts v0.0.0-00010101000000-000000000000 // indirect
+	github.com/redpanda-data/redpanda-operator/charts v0.0.0-20250117101058-ffdbfad7bc6b // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
@@ -240,7 +240,6 @@ require (
 )
 
 replace (
-	github.com/redpanda-data/redpanda-operator/charts => ../charts
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
