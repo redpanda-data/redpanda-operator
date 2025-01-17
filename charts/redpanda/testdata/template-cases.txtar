@@ -155,7 +155,7 @@ tls:
 # Regression test for https://github.com/redpanda-data/helm-charts/issues/1413
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[*].securityContext.allowPrivilegeEscalation}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}", false]
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 statefulset:
   replicas: 3
@@ -167,7 +167,7 @@ statefulset:
 # This test's name is intentionally misspelled.
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[*].securityContext.allowPrivilegeEscalation}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}", false]
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 statefulset:
   replicas: 3
@@ -263,10 +263,10 @@ statefulset:
 
 # Showcase that most fields of the post_install_job's PodSpec may be overridden.
 # ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.securityContext.fsGroup}", 1234]
-# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[*].securityContext.privileged}", true]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[0].securityContext.privileged}", true]
 # ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.metadata.labels.label}", "post-install"]
 # ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.metadata.annotations.anno}", "post-install"]
-# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[*].env[?(@.name==\"HELLO\")].value}", "WORLD"]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[0].env[?(@.name==\"HELLO\")].value}", "WORLD"]
 post_install_job:
   podTemplate:
     labels:
@@ -288,7 +288,7 @@ post_install_job:
 # Regression test for admin.appProtocol
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["v1/Service", "default/redpanda", "{.spec.ports[*].appProtocol}", "http"]
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/redpanda", "{.spec.ports[0].appProtocol}", "http"]
 listeners:
   admin:
     appProtocol: http
@@ -313,7 +313,7 @@ listeners:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 # ASSERT-VALID-RPK-CONFIGURATION
-# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[*].scheme}", "http"]
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "http"]
 monitoring:
   enabled: true
 
@@ -329,7 +329,7 @@ listeners:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 # ASSERT-VALID-RPK-CONFIGURATION
-# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[*].scheme}", "https"]
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "https"]
 monitoring:
   enabled: true
 
@@ -1474,3 +1474,13 @@ tolerations:
     value: redpanda
 tuning:
   tune_aio_events: false
+
+-- name-overrides --
+# Assert that no empty container is generated when using nameOverride or fullnameOverride.
+# It's (likely) acceptable for the container names themselves to change. This
+# assertion prevents any rogue containers from the default podTemplate from
+# slipping in.
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "config-watcher"]]
+nameOverride: "not-redpanda"
+fullnameOverride: "also-not-redpanda"

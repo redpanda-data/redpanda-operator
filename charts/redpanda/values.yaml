@@ -617,10 +617,7 @@ statefulset:
     # final PodSpec. See [Merge Semantics](#merging-semantics) for details.
     spec:
       securityContext: {}
-      containers:
-      - name: redpanda
-        securityContext: {}
-        env: []
+      containers: []
   # -- Adjust the period for your probes to meet your needs.
   # For details,
   # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
