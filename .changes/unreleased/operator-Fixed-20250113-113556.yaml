@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: 'Fixed slice out of bounds panics when using the fs-validator and `useFlux: false`'
-time: 2025-01-13T11:35:56.559263-05:00
