@@ -139,7 +139,6 @@ tasks:
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
           CLI_ARGS: '-json {{.CLI_ARGS}}'
 
   test:unit:
