@@ -626,7 +626,7 @@ func RedpandaAdditionalStartFlags(values *Values) (bool, bool, []string) {
 		delete(flags, "--reserve-memory")
 	}
 
-	for key, value := range ParseCLIArgs(values.Statefulset.AdditionalRedpandaCmdFlags) {
+	for key, value := range helmette.SortedMap(ParseCLIArgs(values.Statefulset.AdditionalRedpandaCmdFlags)) {
 		flags[key] = value
 	}
 

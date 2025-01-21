@@ -36,6 +36,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	_ "github.com/quasilyte/go-ruleguard/dsl"
 	"golang.org/x/tools/go/packages"
 	gofumpt "mvdan.cc/gofumpt/format"
 )

@@ -41,7 +41,7 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 		return issuers, certs
 	}
 
-	for name, data := range values.TLS.Certs {
+	for name, data := range helmette.SortedMap(values.TLS.Certs) {
 		// If secretRef is defined, do not create any of these certificates or when
 		// TLS reference is not enabled.
 		if !helmette.Empty(data.SecretRef) || !ptr.Deref(data.Enabled, true) {

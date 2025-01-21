@@ -52,7 +52,7 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 		// NB: A range loop is used here as its the most terse way to handle
 		// nil maps in gotohelm.
 		annotations := map[string]string{}
-		for k, v := range values.External.Annotations {
+		for k, v := range helmette.SortedMap(values.External.Annotations) {
 			annotations[k] = v
 		}
 

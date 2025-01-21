@@ -31,7 +31,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 	}
 
 	var ports []corev1.ServicePort
-	for name, listener := range values.Listeners.Admin.External {
+	for name, listener := range helmette.SortedMap(values.Listeners.Admin.External) {
 		if !listener.IsEnabled() {
 			continue
 		}

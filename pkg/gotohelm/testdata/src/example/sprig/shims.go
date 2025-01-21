@@ -55,3 +55,22 @@ func asIntegral(dot *helmette.Dot) any {
 
 	return outputs
 }
+
+func mapIteration() []string {
+	m := map[string]bool{
+		"a": true,
+		"b": true,
+		"c": true,
+		"d": true,
+		"0": true,
+		"1": true,
+		"2": true,
+	}
+
+	var out []string
+	for key := range helmette.SortedMap(m) {
+		out = append(out, key)
+	}
+
+	return out
+}

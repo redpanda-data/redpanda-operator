@@ -35,7 +35,7 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 	domain := strings.TrimSuffix(values.ClusterDomain, ".")
 
 	var certs []*certmanagerv1.Certificate
-	for name, data := range values.TLS.Certs {
+	for name, data := range helmette.SortedMap(values.TLS.Certs) {
 		if !helmette.Empty(data.SecretRef) || !ptr.Deref(data.Enabled, true) {
 			continue
 		}
