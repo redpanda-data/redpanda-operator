@@ -119,24 +119,6 @@ func operatorContainers(dot *helmette.Dot, podTerminationGracePeriodSeconds *int
 			ReadinessProbe: readinessProbe(dot, podTerminationGracePeriodSeconds),
 			Resources:      values.Resources,
 		},
-		{
-			Name: "kube-rbac-proxy",
-			Args: []string{
-				"--secure-listen-address=0.0.0.0:8443",
-				"--upstream=http://127.0.0.1:8080/",
-				"--logtostderr=true",
-				fmt.Sprintf("--v=%d", values.KubeRBACProxy.LogLevel),
-			},
-			Image:           fmt.Sprintf("%s:%s", values.KubeRBACProxy.Image.Repository, *values.KubeRBACProxy.Image.Tag),
-			ImagePullPolicy: values.KubeRBACProxy.Image.PullPolicy,
-			Ports: []corev1.ContainerPort{
-				{
-					ContainerPort: 8443,
-					Name:          "https",
-				},
-			},
-			VolumeMounts: kubeRBACProxyVolumeMounts(dot),
-		},
 	}
 }
 
@@ -250,7 +232,7 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 		vol = append(vol, kubeTokenAPIVolume(ServiceAccountVolumeName))
 	}
 
-	if !values.Webhook.Enabled {
+	if !isWebhookEnabled(dot) {
 		return vol
 	}
 
@@ -337,7 +319,7 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		})
 	}
 
-	if !values.Webhook.Enabled {
+	if !isWebhookEnabled(dot) {
 		return volMount
 	}
 
@@ -355,9 +337,16 @@ func operatorArguments(dot *helmette.Dot) []string {
 
 	args := []string{
 		"--health-probe-bind-address=:8081",
-		"--metrics-bind-address=127.0.0.1:8080",
+		"--metrics-bind-address=:8443",
 		"--leader-elect",
 		fmt.Sprintf("--webhook-enabled=%t", isWebhookEnabled(dot)),
+	}
+
+	if isWebhookEnabled(dot) {
+		args = append(args,
+			"--webhook-enabled=true",
+			"--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs",
+		)
 	}
 
 	if values.Scope == Namespace {
