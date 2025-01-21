@@ -10,9 +10,13 @@
 package helmette
 
 import (
+	"cmp"
 	"fmt"
+	"iter"
+	"maps"
 	"math"
 	"reflect"
+	"slices"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -146,4 +150,17 @@ func UnmarshalYamlArray[T any](repr string) []T {
 		panic(fmt.Errorf("cannot unmarshal yaml: %w", err))
 	}
 	return output
+}
+
+// SortedMap is a gotohelm compatible helper for the go equivalent:
+//
+//	for _, _ := range slices.Sorted(maps.Keys(m)) {
+func SortedMap[K cmp.Ordered, V any](m map[K]V) iter.Seq2[K, V] {
+	return iter.Seq2[K, V](func(yield func(K, V) bool) {
+		for _, key := range slices.Sorted(maps.Keys(m)) {
+			if !yield(key, m[key]) {
+				break
+			}
+		}
+	})
 }

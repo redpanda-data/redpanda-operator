@@ -1209,6 +1209,14 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
 
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedMap":
+		// In go, map iteration is non-deterministic which can cause
+		// differences in go vs helm output. A ruleguard linter is responsible
+		// for enforcing the usage of this helper. text/template's range node
+		// will automagically sort maps keys, where applicable. So this helper
+		// "transpiles away".
+		return args[0]
+
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of
 		// Lookup will always be a pointer as only pointers implement

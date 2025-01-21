@@ -54,3 +54,20 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "sprig.mapIteration" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $m := (dict "a" true "b" true "c" true "d" true "0" true "1" true "2" true ) -}}
+{{- $out := (coalesce nil) -}}
+{{- range $key, $_ := $m -}}
+{{- $out = (concat (default (list ) $out) (list $key)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $out) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
