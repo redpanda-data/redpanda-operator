@@ -12,8 +12,9 @@ package gotohelm
 import (
 	"bytes"
 	"context"
-	_ "embed"
+	"embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"slices"
@@ -34,39 +35,15 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-var (
-	//go:embed testdata/subchart/root/Chart.yaml
-	rootChart []byte
-
-	//go:embed testdata/subchart/values-overwrite/Chart.yaml
-	valuesOverwriteChart []byte
-
-	//go:embed testdata/subchart/dependency-excluded-by-default/Chart.yaml
-	depExcludedChart []byte
-
-	//go:embed testdata/subchart/dependency-included-by-default/Chart.yaml
-	depIncludedChart []byte
-
-	//go:embed testdata/subchart/dependency/Chart.yaml
-	depChart []byte
-
-	//go:embed testdata/subchart/root/values.yaml
-	rootDefaultValuesYAML []byte
-
-	//go:embed testdata/subchart/values-overwrite/values.yaml
-	valuesOverwriteDefaultValuesYAML []byte
-
-	//go:embed testdata/subchart/dependency-excluded-by-default/values.yaml
-	depExcludedDefaultValuesYAML []byte
-
-	//go:embed testdata/subchart/dependency-included-by-default/values.yaml
-	depIncludedDefaultValuesYAML []byte
-
-	//go:embed testdata/subchart/dependency/values.yaml
-	depDefaultValuesYAML []byte
-)
+//go:embed testdata/subchart
+var subchartsFS embed.FS
 
 func TestDependencyChainRender(t *testing.T) {
+	subFS := func(dir string) fs.FS {
+		sub, err := fs.Sub(subchartsFS, "testdata/subchart/"+dir)
+		require.NoError(t, err)
+		return sub
+	}
 	// The chart dependency graph
 	//            ┌───────────────┐   ┌──────────┐
 	//     ┌─────►│valuesOverwrite├──►│Dependency│
@@ -86,15 +63,15 @@ func TestDependencyChainRender(t *testing.T) {
 	// valuesOverwrite - does not have any condition
 	//
 	// All charts are creating Config map which has one data, the rendered values
-	dep, err := Load(depChart, depDefaultValuesYAML, renderConfigMap)
+	dep, err := Load(subFS("dependency"), renderConfigMap)
 	require.NoError(t, err)
-	valuesOverwrite, err := Load(valuesOverwriteChart, valuesOverwriteDefaultValuesYAML, renderConfigMap, dep)
+	valuesOverwrite, err := Load(subFS("values-overwrite"), renderConfigMap, dep)
 	require.NoError(t, err)
-	excludeDep, err := Load(depExcludedChart, depExcludedDefaultValuesYAML, renderConfigMap, dep)
+	excludeDep, err := Load(subFS("dependency-excluded-by-default"), renderConfigMap, dep)
 	require.NoError(t, err)
-	includeDep, err := Load(depIncludedChart, depIncludedDefaultValuesYAML, renderConfigMap, dep)
+	includeDep, err := Load(subFS("dependency-included-by-default"), renderConfigMap, dep)
 	require.NoError(t, err)
-	root, err := Load(rootChart, rootDefaultValuesYAML, renderConfigMap, valuesOverwrite, excludeDep, includeDep)
+	root, err := Load(subFS("root"), renderConfigMap, valuesOverwrite, excludeDep, includeDep)
 	require.NoError(t, err)
 
 	helmCli, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})

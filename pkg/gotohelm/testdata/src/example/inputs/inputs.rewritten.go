@@ -52,7 +52,7 @@ func keys(globals *helmette.Dot) []string {
 	// Get the keys in all possible ways but only return the stable ones.
 
 	keys := []string{}
-	for key := range globals.Values {
+	for key := range helmette.SortedMap(globals.Values) {
 		keys = append(keys, key)
 	}
 

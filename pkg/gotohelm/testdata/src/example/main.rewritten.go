@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 
 	"example.com/example/aaacommon"
 	"example.com/example/astrewrites"
@@ -46,6 +47,10 @@ func main() {
 			panic(err_1)
 		}
 
+		// HACK: Inject an FS into .Templates to test `tpl`. This is done
+		// "lazily" so this FS always contains freshly transpiled templates.
+		dot.Templates = os.DirFS("./" + dot.Chart.Name)
+
 		out, err := runChart(&dot)
 
 		if out == nil {
@@ -67,7 +72,12 @@ func main() {
 }
 
 func runChart(dot *helmette.Dot) (_ map[string]any, err any) {
-	defer func() { err = recover() }()
+	defer func() {
+		r_3 := recover()
+		if r_3 != nil {
+			err = fmt.Errorf("%v\n%s", r_3, debug.Stack())
+		}
+	}()
 
 	switch dot.Chart.Name {
 	case "aaacommon":
