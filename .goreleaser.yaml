@@ -16,7 +16,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-    - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.Version}}"
+    - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.Tag}}"
     - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.Commit}}"
     - -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.Date}}"
 
