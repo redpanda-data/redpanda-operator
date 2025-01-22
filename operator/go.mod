@@ -27,6 +27,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/common v0.55.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20

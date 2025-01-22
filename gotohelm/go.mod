@@ -6,6 +6,7 @@ replace github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
 require (
 	github.com/cockroachdb/errors v1.11.3
+	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	golang.org/x/tools v0.27.0
 )

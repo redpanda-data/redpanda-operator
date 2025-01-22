@@ -13,6 +13,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.32.0
