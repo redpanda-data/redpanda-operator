@@ -10,6 +10,9 @@
 package gotohelm
 
 import (
+	"io/fs"
+	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/cockroachdb/errors"
@@ -28,11 +31,12 @@ type GoChart struct {
 	defaultValues []byte
 	renderFunc    RenderFunc
 	dependencies  map[string]*GoChart
+	fs            fs.FS
 }
 
 // MustLoad delegates to [Load] but panics upon any errors.
-func MustLoad(chartYAML, defaultValuesYAML []byte, render RenderFunc, dependencies ...*GoChart) *GoChart {
-	chart, err := Load(chartYAML, defaultValuesYAML, render, dependencies...)
+func MustLoad(f fs.FS, render RenderFunc, dependencies ...*GoChart) *GoChart {
+	chart, err := Load(f, render, dependencies...)
 	if err != nil {
 		panic(err)
 	}
@@ -40,9 +44,18 @@ func MustLoad(chartYAML, defaultValuesYAML []byte, render RenderFunc, dependenci
 }
 
 // Load hydrates a [GoChart] from helm YAML files and a top level [RenderFunc].
-func Load(chartYAML, defaultValuesYAML []byte, render RenderFunc, dependencies ...*GoChart) (*GoChart, error) {
-	var meta chart.Metadata
+func Load(f fs.FS, render RenderFunc, dependencies ...*GoChart) (*GoChart, error) {
+	chartYAML, err := fs.ReadFile(f, "Chart.yaml")
+	if err != nil {
+		return nil, err
+	}
 
+	defaultValuesYAML, err := fs.ReadFile(f, "values.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	var meta chart.Metadata
 	if err := yaml.Unmarshal(chartYAML, &meta); err != nil {
 		return nil, err
 	}
@@ -57,7 +70,36 @@ func Load(chartYAML, defaultValuesYAML []byte, render RenderFunc, dependencies .
 		defaultValues: defaultValuesYAML,
 		renderFunc:    render,
 		dependencies:  deps,
+		fs:            f,
 	}, nil
+}
+
+// Write writes this chart to dir in a format compatible with the helm CLI
+// tool.
+// NOTE: Write relies on gotohelm having been run ahead of GoChart consumption
+// as it just writes out the embedded FS.
+func (c *GoChart) Write(dir string) error {
+	if err := os.CopyFS(dir, c.fs); err != nil {
+		return err
+	}
+
+	if err := os.Mkdir(filepath.Join(dir, "charts"), 0o700); err != nil {
+		return err
+	}
+
+	for name, dep := range c.dependencies {
+		depDir := filepath.Join(dir, "charts", name)
+
+		if err := os.Mkdir(depDir, 0o700); err != nil {
+			return err
+		}
+
+		if err := dep.Write(depDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // LoadValues coheres the provided values into a [helmette.Values] and merges
@@ -162,11 +204,17 @@ func (c *GoChart) Dot(cfg kube.Config, release helmette.Release, values any) (*h
 		subcharts[dep.Name] = subchartDot
 	}
 
+	templates, err := fs.Sub(c.fs, "templates")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &helmette.Dot{
 		KubeConfig: cfg,
 		Release:    release,
 		Subcharts:  subcharts,
 		Values:     loaded,
+		Templates:  templates,
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
 			Version:    c.metadata.Version,

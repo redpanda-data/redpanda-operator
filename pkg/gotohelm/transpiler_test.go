@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -232,6 +233,7 @@ func TestTranspile(t *testing.T) {
 							Name:    pkg.Name,
 							Version: "1.2.3",
 						},
+						Templates: os.DirFS(filepath.Join(td, "src", "example", pkg.Name)),
 						Release: helmette.Release{
 							Name:      "release-name",
 							Namespace: "release-namespace",

@@ -365,6 +365,23 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		return &Assignment{RHS: rhs, LHS: lhs, New: stmt.Tok.String() == ":="}
 
 	case *ast.RangeStmt:
+		if _, isMap := t.typeOf(stmt.X).Underlying().(*types.Map); isMap {
+			var body bytes.Buffer
+			if err := format.Node(&body, t.Fset, stmt.Body); err != nil {
+				panic(err)
+			}
+
+			// Super janky check to enforce deterministic iteration of maps
+			// when side effects occur within the range's body.
+			if bytes.Contains(body.Bytes(), []byte(`= append(`)) {
+				panic(&Unsupported{
+					Node: stmt,
+					Fset: t.Fset,
+					Msg:  "ranges over maps are non-deterministic. use `helmette.SortedMap`",
+				})
+			}
+		}
+
 		return &Range{
 			Key:   t.transpileExpr(stmt.Key),
 			Value: t.transpileExpr(stmt.Value),
@@ -1216,6 +1233,12 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// will automagically sort maps keys, where applicable. So this helper
 		// "transpiles away".
 		return args[0]
+
+	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Tpl":
+		// In go land, tpl requires a handle to the chart's .Dot so we can get
+		// the chart's templates. Helm doesn't require this as that's just how
+		// tpl works. So just clip out the fist argument.
+		return &BuiltInCall{FuncName: "tpl", Arguments: args[1:]}
 
 	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/goutils"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/imdario/mergo"
 	"golang.org/x/exp/maps"
@@ -500,7 +501,10 @@ func NIndent(spaces int, v string) string {
 
 // +gotohelm:builtin=randAlphaNum
 func RandAlphaNum(length int) string {
-	return "4" // Chosen by a fair dice roll.
+	// Implementation taken from sprig, which uses their own helper library.
+	// It is not possible, it appears, to actually generate an error here.
+	r, _ := goutils.CryptoRandomAlphaNumeric(length)
+	return r
 }
 
 // +gotohelm:builtin=replace

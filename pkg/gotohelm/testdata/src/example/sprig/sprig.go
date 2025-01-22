@@ -43,7 +43,7 @@ func Sprig(dot *helmette.Dot) map[string]any {
 		"regexSplit":      regexSplit(),
 		"strings":         stringsFunctions(),
 		"toString":        toString(),
-		"tpl":             tpl(),
+		"tpl":             tpl(dot),
 		"trim":            trim(),
 		"unset":           unset(),
 		"yaml":            yaml(),
@@ -87,11 +87,16 @@ func yaml() any {
 	}
 }
 
-func tpl() []string {
+func tpl(dot *helmette.Dot) []string {
 	return []string{
-		helmette.Tpl(`hello world`, nil),
-		helmette.Tpl(`{{ .Foo }}`, map[string]any{"Foo": "bar"}),
-		helmette.Tpl(`{{ . }}`, 3),
+		helmette.Tpl(dot, `hello world`, nil),
+		helmette.Tpl(dot, `{{ .Foo }}`, map[string]any{"Foo": "bar"}),
+		helmette.Tpl(dot, `{{ . }}`, 3),
+		helmette.Tpl(dot, `{{ . | toJson }}`, 3),
+		// NB: The usage of (dict "a" (list)) here is to appear the test
+		// harness's logging hooks. Failure to do so will result in arcane
+		// errors that seem to come from template execution.
+		helmette.Tpl(dot, `{{ (dict "a" (list))  | include "sprig.trim" }}`, nil),
 	}
 }
 
