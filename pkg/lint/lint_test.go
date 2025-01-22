@@ -16,11 +16,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -153,4 +156,116 @@ func TestOperatorKustomizationTag(t *testing.T) {
 			"testdata kustomization address tag should be equal to the operator chart's appVersion",
 		)
 	}
+}
+
+// TestGoModLint parses most go.mod files in this repository and verifies that:
+//   - No replace directives specifying paths are present (with exceptions).
+//   - All dependencies on modules in this repo reference either a git tag or a
+//     commit reachable from main or release/*.
+func TestGoModLint(t *testing.T) {
+	const modPrefix = "github.com/redpanda-data/redpanda-operator/"
+
+	permittedReplaces := map[string][]string{
+		// acceptance is exempt as it's just a runner for the harpoon module.
+		// (harpoon could be moved into acceptance to resolve this).
+		modPrefix + "acceptance": {modPrefix + "harpoon"},
+
+		// gotohelm is exempt because it's a very loose wrapper around pkg to
+		// expose ./pkg/gotohelm as CLI. (pkg/gotohelm could be re-homed to
+		// resolve this).
+		modPrefix + "gotohelm": {modPrefix + "pkg"},
+
+		// genschema is exempt from this rule because its a simple generator
+		// that needs up to date struct types. (Generation could be moved into
+		// their respective charts to resolve this).
+		modPrefix + "genschema": {modPrefix + "charts"},
+	}
+
+	modPaths, err := filepath.Glob("../../*/go.mod")
+	require.NoError(t, err)
+
+	// Parse all go.mods.
+	modFiles := make([]*modfile.File, len(modPaths))
+	for i, path := range modPaths {
+		modData, err := os.ReadFile(path)
+		require.NoError(t, err)
+
+		modFiles[i], err = modfile.Parse(path[len("../../"):], modData, func(path, version string) (string, error) {
+			return version, nil
+		})
+		require.NoError(t, err)
+	}
+
+	for _, modFile := range modFiles {
+		for _, r := range modFile.Require {
+			if strings.HasPrefix(r.Mod.Path, modPrefix) {
+				assertPresentInMainOrRelease(t, modFile, r.Mod)
+			}
+		}
+
+		// For replaces, only check the replacement as we may not have much
+		// choice about the decided version.
+		for _, r := range modFile.Replace {
+			if strings.HasPrefix(r.New.Path, modPrefix) {
+				assertPresentInMainOrRelease(t, modFile, r.New)
+			}
+		}
+
+		for _, r := range modFile.Replace {
+			if !modfile.IsDirectoryPath(r.New.Path) {
+				continue
+			}
+
+			if slices.Contains(permittedReplaces[modFile.Module.Mod.Path], r.Old.Path) {
+				continue
+			}
+
+			t.Errorf(`
+Replace directives specifying paths are not allowed.
+
+	%s: %q => %q
+
+A go.work may be used to test local changes.
+Cross module changes MUST be performed via multiple commits (PRs) to main or release/*.
+
+`, modFile.Module.Mod, r.Old.Path, r.New.Path)
+		}
+	}
+}
+
+func assertPresentInMainOrRelease(t *testing.T, modFile *modfile.File, version module.Version) {
+	// Versions come in the form v1.2.3 OR
+	// v0.0.0-20250122184213-86ba034147e9 v1.2.3 must be a tag in the
+	// git repo, so no need to check that. Otherwise, we'll extract the
+	// SHA and assert that the commit is in the main or release/*
+	// branches.
+	spl := strings.Split(version.Version, "-")
+	if len(spl) != 3 {
+		return
+	}
+
+	// Sometimes a version is all zeros due to a replace directive. Skip those
+	// as they'll be checked by the replace directive checks.
+	if spl[2] == "000000000000" {
+		return
+	}
+
+	if !presentInMainOrRelease(spl[2]) {
+		t.Errorf(`
+Dependencies on commits from github.com/redpanda-data/redpanda-operator modules MUST be present in main, release/*, or be a git tag.
+
+%s: %q
+
+%s could not be resolved via git merge-base --is-ancestor %s <acceptable-branches>
+
+`, modFile.Module.Mod.Path, version.String(), spl[2], spl[2])
+	}
+}
+
+func presentInMainOrRelease(shortSha string) bool {
+	isAncestor := func(ancestor, commitish string) bool {
+		err := exec.Command("git", "merge-base", "--is-ancestor", ancestor, commitish).Run()
+		return err == nil
+	}
+	return isAncestor(shortSha, "main") // TODO include release branches
 }

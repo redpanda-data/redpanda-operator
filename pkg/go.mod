@@ -19,6 +19,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.32.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
+	golang.org/x/mod v0.22.0
 	golang.org/x/net v0.34.0
 	golang.org/x/tools v0.27.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -192,7 +193,6 @@ require (
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
