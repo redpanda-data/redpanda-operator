@@ -12,6 +12,7 @@ linters:
   - importas
   - ineffassign
   - misspell
+  - gocritic
   - staticcheck
   - stylecheck
   - unparam
@@ -34,6 +35,23 @@ linters-settings:
       alias: $1$2
     - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
       alias: metav1
+
+  gocritic:
+    disable-all: true
+    enabled-checks:
+      - ruleguard
+    settings:
+      # NB: For ruleguard to work, every go.mod must include the ruleguard
+      # library. This is handled with a stub rules.go file in every module in
+      # this repository.
+      ruleguard:
+        # ${configDir} is the only expanded variable. Paths are otherwise
+        # relative to the directory that golangci-lint is invoked in.
+        # rules.go
+        # - "rules.go" -> Load rules.go for each linted go.mod file due to taskfile cd'ing into each module.
+        # - "${configDir}/pkg/lint/rules/*.go" -> Load all go files in pkg/lint/rules.
+        rules: "rules.go,${configDir}/pkg/lint/rules/*.go"
+        failOn: all # all ensures we get nice error messages if something is misconfigured.
 
   stylecheck:
     checks: ["*", "-ST1005"]
