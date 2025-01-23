@@ -23,7 +23,7 @@ tasks:
   gotohelm:
     dir: gotohelm
     sources:
-    - ./genpartial/**.go
+    - ./gotohelm/**.go
     cmds:
     - go build -o ../.build/gotohelm .
 
