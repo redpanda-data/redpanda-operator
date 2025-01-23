@@ -9,7 +9,7 @@ require (
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20241216191615-bb41e7cd4a6e
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.18.0
 	github.com/twmb/franz-go/pkg/kadm v1.12.0
@@ -243,5 +243,4 @@ require (
 replace (
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
-	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 )

@@ -2,15 +2,12 @@ module github.com/redpanda-data/redpanda-operator/genpartial
 
 go 1.23.2
 
-replace (
-	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
-	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
-)
+replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 
 require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.27.0
 	mvdan.cc/gofumpt v0.7.0
