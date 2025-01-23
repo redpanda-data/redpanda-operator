@@ -6,6 +6,9 @@ if [[ -n "${BUILDKITE_TAG-}" ]]; then
   case "${BUILDKITE_TAG-}" in
     # Git tags that starts like charts go module are not considered release tags that would
     # trigger operator release process.
+    #
+    # As buildkite has separated configuration "Branch Limiting" which is set to `main` and
+    # `v*` this `case` is a noop.
     charts/connectors/v* | charts/console/v* | charts/operator/v* | charts/redpanda/v*)
       echo ""
       ;;
