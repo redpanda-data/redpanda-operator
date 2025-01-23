@@ -2,15 +2,12 @@ module github.com/redpanda-data/redpanda-operator/genpartial
 
 go 1.23.2
 
-replace (
-	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
-	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
-)
+replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 
 require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.27.0
 	mvdan.cc/gofumpt v0.7.0
@@ -47,10 +44,10 @@ require (
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
