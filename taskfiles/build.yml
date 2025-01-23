@@ -4,19 +4,24 @@ tasks:
   genpartial:
     dir: ./genpartial
     sources:
-    - ./genpartial/**.go
+    - ./*.go
+    - ./go.*
     cmds:
     - go build -o ../.build/genpartial .
 
   genschema:
     dir: genschema
+    sources:
+    - ./*.go
+    - ./go.*
     cmds:
     - go build -o ../.build/genschema .
 
   gotohelm:
     dir: gotohelm
     sources:
-    - ./gotohelm/**.go
+    - ./*.go
+    - ./go.*
     cmds:
     - go build -o ../.build/gotohelm .
 
