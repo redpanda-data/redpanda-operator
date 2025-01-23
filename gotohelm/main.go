@@ -13,11 +13,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
-	"strings"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/tools/go/packages"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
@@ -49,12 +46,7 @@ func main() {
 
 	pkg := pkgs[0]
 
-	deps, err := goList(flag.Args()[1:]...)
-	if err != nil {
-		panic(err)
-	}
-
-	chart, err := gotohelm.Transpile(pkg, deps...)
+	chart, err := gotohelm.Transpile(pkg, flag.Args()[1:]...)
 	if err != nil {
 		fmt.Printf("Failed to transpile %q: %s\n", pkg.Name, err)
 		os.Exit(1)
@@ -67,22 +59,6 @@ func main() {
 			panic(err)
 		}
 	}
-}
-
-func goList(patterns ...string) ([]string, error) {
-	if len(patterns) == 0 {
-		return nil, nil
-	}
-
-	//nolint:gosec
-	cmd := exec.Command("go", append([]string{"list"}, patterns...)...)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to go list %v: %s", patterns, out)
-	}
-
-	return strings.Split(string(out), "\n"), nil
 }
 
 func writeToStdout(chart *gotohelm.Chart) {
