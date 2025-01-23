@@ -37,7 +37,7 @@ tasks:
     - task: genschema
       vars: { CHART: redpanda }
     - task: gotohelm
-      vars: { CHART: redpanda, DEPS: ./... }
+      vars: { CHART: redpanda, DEPS: github.com/redpanda-data/redpanda-operator/charts/connectors github.com/redpanda-data/redpanda-operator/charts/console }
 
   generate:connectors:
     desc: "Generate files for the connectors Helm chart"
