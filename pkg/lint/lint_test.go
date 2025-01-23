@@ -179,10 +179,18 @@ func TestGoModLint(t *testing.T) {
 		// that needs up to date struct types. (Generation could be moved into
 		// their respective charts to resolve this).
 		modPrefix + "genschema": {modPrefix + "charts"},
+
+		// TODO Remove after merged.
+		modPrefix + "charts/redpanda": {modPrefix + "charts/connectors", modPrefix + "charts/console"},
 	}
 
 	modPaths, err := filepath.Glob("../../*/go.mod")
 	require.NoError(t, err)
+
+	chartsModPaths, err := filepath.Glob("../../*/*/go.mod")
+	require.NoError(t, err)
+
+	modPaths = append(modPaths, chartsModPaths...)
 
 	// Parse all go.mods.
 	modFiles := make([]*modfile.File, len(modPaths))
