@@ -33,7 +33,7 @@ fi
 set -e
 
 # BUILDKITE environment variables are used by `buildkite-agent` cli to upload artifact
-printenv | grep 'BUILDKITE.*=' > env-file-for-buildkite
+printenv | grep '^BUILDKITE.*=' > env-file-for-buildkite
 
 # Build the base image and grab the SHA.
 IMAGE_SHA=$(docker build --quiet -f ./ci/docker/nix.Dockerfile .)
