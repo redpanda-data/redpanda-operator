@@ -3,7 +3,16 @@
 set -eu
 
 if [[ -n "${BUILDKITE_TAG-}" ]]; then
-  echo "$BUILDKITE_TAG"
+  case "${BUILDKITE_TAG-}" in
+    # Git tags that starts like charts go module are not considered release tags that would
+    # trigger operator release process.
+    charts/connectors/v* | charts/console/v* | charts/operator/v* | charts/redpanda/v*)
+      echo ""
+      ;;
+    *)
+      echo "$BUILDKITE_TAG"
+      ;;
+  esac
 elif [[ "${NIGHTLY_K8S:-}" == "1" ]] || [[ "${NIGHTLY_RELEASE:-}" == "true" ]]; then
   echo "v0.0.0-$(date --utc +%Y%m%d)git$(git rev-parse --short=7 HEAD)"
 fi

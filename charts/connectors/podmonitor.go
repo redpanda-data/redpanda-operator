@@ -13,6 +13,7 @@ package connectors
 import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
@@ -40,7 +41,7 @@ func PodMonitor(dot *helmette.Dot) *monitoringv1.PodMonitor {
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
 					Path: "/",
-					Port: "prometheus",
+					Port: ptr.To("prometheus"),
 				},
 			},
 			Selector: metav1.LabelSelector{
