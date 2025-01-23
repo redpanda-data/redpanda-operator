@@ -15,11 +15,6 @@ tasks:
     cmds:
     - go build -o ../.build/genschema .
 
-  genpartial:
-    dir: genpartial
-    cmds:
-    - go build -o ../.build/genpartial .
-
   gotohelm:
     dir: gotohelm
     sources:
