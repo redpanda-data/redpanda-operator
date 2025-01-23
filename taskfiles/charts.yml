@@ -58,7 +58,7 @@ tasks:
     run: when_changed
     label: "genpartial:{{ .CHART }}"
     desc: "Generate a 'partial' version of the Values struct"
-    dir: charts
+    dir: "charts/{{ .CHART }}"
     deps:
     - task: :build:genpartial
     var:
@@ -72,7 +72,7 @@ tasks:
     generates:
     - ./charts/{{ .CHART }}/values_partial.gen.go
     cmds:
-    - genpartial -header ../licenses/boilerplate.go.txt -out ./{{ .CHART }}/values_partial.gen.go -struct Values ./{{ .CHART }}
+    - genpartial -header ../../licenses/boilerplate.go.txt -out ./values_partial.gen.go -struct Values .
 
   build:genschema:
     dir: ./genschema
@@ -107,7 +107,7 @@ tasks:
     run: when_changed
     label: "gotohelm:{{ .CHART }}"
     desc: "Generate helm templates from Go definitions"
-    dir: charts
+    dir: "charts/{{ .CHART }}"
     deps:
     - task: :build:gotohelm
     var:
@@ -123,4 +123,4 @@ tasks:
     - ./charts/{{ .CHART }}/templates/**/*
     cmds:
     # Generate helm templates from Go definitions
-    - gotohelm -write ./{{ .CHART }}/templates ./{{ .CHART }} {{ .DEPS }}
+    - gotohelm -write ./templates . {{ .DEPS }}
