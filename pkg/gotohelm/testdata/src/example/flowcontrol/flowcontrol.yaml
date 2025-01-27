@@ -14,9 +14,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_27_b_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil)) ))) "r") -}}
-{{- $b_1 := (index $_27_b_1_ok_2 0) -}}
-{{- $ok_2 := (index $_27_b_1_ok_2 1) -}}
+{{- $_28_b_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil)) ))) "r") -}}
+{{- $b_1 := (index $_28_b_1_ok_2 0) -}}
+{{- $ok_2 := (index $_28_b_1_ok_2 1) -}}
 {{- if (and $ok_2 (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" $b_1) ))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "Early Returns work!") | toJson -}}
@@ -32,9 +32,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_37_oneToFour_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour")) ))) "r") -}}
-{{- $oneToFour := ((index $_37_oneToFour_ok 0) | int) -}}
-{{- $ok := (index $_37_oneToFour_ok 1) -}}
+{{- $_38_oneToFour_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour")) ))) "r") -}}
+{{- $oneToFour := ((index $_38_oneToFour_ok 0) | int) -}}
+{{- $ok := (index $_38_oneToFour_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "oneToFour not specified!") | toJson -}}
@@ -69,9 +69,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_55_intsAny_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil)) ))) "r") -}}
-{{- $intsAny := (index $_55_intsAny_ok 0) -}}
-{{- $ok := (index $_55_intsAny_ok 1) -}}
+{{- $_56_intsAny_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil)) ))) "r") -}}
+{{- $intsAny := (index $_56_intsAny_ok 0) -}}
+{{- $ok := (index $_56_intsAny_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $intsAny = (list ) -}}
 {{- end -}}

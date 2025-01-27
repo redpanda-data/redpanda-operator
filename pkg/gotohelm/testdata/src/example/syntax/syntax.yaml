@@ -21,15 +21,15 @@
 {{- $_ = "IPv4" -}}
 {{- $_ = 2.718281828459045 -}}
 {{- $x := (coalesce nil) -}}
-{{- $_62____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "[]%s" "interface {}") $x (coalesce nil)) ))) "r") -}}
-{{- $_ = (index $_62____ 0) -}}
-{{- $_ = (index $_62____ 1) -}}
-{{- $_63____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "[]%s" "string") $x (coalesce nil)) ))) "r") -}}
+{{- $_63____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "[]%s" "interface {}") $x (coalesce nil)) ))) "r") -}}
 {{- $_ = (index $_63____ 0) -}}
 {{- $_ = (index $_63____ 1) -}}
-{{- $_64____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $x (coalesce nil)) ))) "r") -}}
+{{- $_64____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "[]%s" "string") $x (coalesce nil)) ))) "r") -}}
 {{- $_ = (index $_64____ 0) -}}
 {{- $_ = (index $_64____ 1) -}}
+{{- $_65____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $x (coalesce nil)) ))) "r") -}}
+{{- $_ = (index $_65____ 0) -}}
+{{- $_ = (index $_65____ 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (dict "sliceExpr" $slice "negativeNumbers" (list -2 -4) "forExpr" (get (fromJson (include "syntax.forExpr" (dict "a" (list (10 | int) (mustMergeOverwrite (dict "Iterations" 0 ) (dict "Iterations" (5 | int) ))) ))) "r") "binaryExprs" (get (fromJson (include "syntax.binaryExprs" (dict "a" (list ) ))) "r") "instance-method" (get (fromJson (include "syntax.instanceMethod" (dict "a" (list ) ))) "r") "append" (get (fromJson (include "syntax.appends" (dict "a" (list ) ))) "r") "nested-for-and-return" (get (fromJson (include "syntax.nestedFor" (dict "a" (list ) ))) "r") "import" (get (fromJson (include "aaacommon.SharedConstant" (dict "a" (list ) ))) "r") "funArgs" (get (fromJson (include "syntax.funcArgs" (dict "a" (list ) ))) "r") )) | toJson -}}
 {{- break -}}

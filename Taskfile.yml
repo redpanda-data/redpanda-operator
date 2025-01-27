@@ -3,13 +3,17 @@ version: '3'
 # if a task is referenced multiple times, only run it once
 run: once
 
+# configure bash to recursively expand **
+shopt: [globstar]
+
 vars:
   SRC_DIR:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
   _MOD:
-    sh: dirname $(ls **/go.mod)
+    # top level shopt doesn't appear to apply to sh.
+    sh: shopt -s globstar; dirname $(ls **/go.mod)
   PKG: './...'
   MOD: '{{default ._MOD .MOD}}'
 
