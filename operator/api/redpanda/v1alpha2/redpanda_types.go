@@ -61,7 +61,7 @@ type ChartRef struct {
 	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
 	// ChartRef fields to be ignored.
 	//
-	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.18` or the corresponding
+	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.19` or the corresponding
 	// version of the Redpanda chart.
 	//
 	// Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
