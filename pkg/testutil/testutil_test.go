@@ -9,7 +9,9 @@
 
 package testutil
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestIntegrationSkipIfNotIntegration(t *testing.T) {
 	SkipIfNotIntegration(t)
