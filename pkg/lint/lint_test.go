@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -159,6 +160,7 @@ func TestOperatorKustomizationTag(t *testing.T) {
 }
 
 // TestGoModLint parses most go.mod files in this repository and verifies that:
+//   - go directive is equal to runtime version.
 //   - No replace directives specifying paths are present (with exceptions).
 //   - All dependencies on modules in this repo reference either a git tag or a
 //     commit reachable from main or release/*.
@@ -184,6 +186,26 @@ func TestGoModLint(t *testing.T) {
 		modPrefix + "charts/redpanda": {modPrefix + "charts/connectors", modPrefix + "charts/console"},
 	}
 
+	// This could also be done with go work sync but go.work causes many other
+	// pains :(.
+	workspaceWideVersions := map[string]string{
+		"github.com/Masterminds/semver/v3": "v3.3.1",
+		"github.com/Masterminds/sprig/v3":  "v3.3.0",
+		"helm.sh/helm/v3":                  "v3.14.4",
+		"k8s.io/api":                       "v0.30.3",
+		"k8s.io/apiextensions-apiserver":   "v0.30.3",
+		"k8s.io/apimachinery":              "v0.30.3",
+		"k8s.io/apiserver":                 "v0.30.3",
+		"k8s.io/cli-runtime":               "v0.30.3",
+		"k8s.io/client-go":                 "v0.30.3",
+		"k8s.io/component-base":            "v0.30.3",
+		"k8s.io/component-helpers":         "v0.30.3",
+		"k8s.io/kubectl":                   "v0.30.3",
+		"k8s.io/utils":                     "v0.0.0-20240711033017-18e509b52bc8",
+		"sigs.k8s.io/controller-runtime":   "v0.18.5",
+		"sigs.k8s.io/yaml":                 "v1.4.0",
+	}
+
 	modPaths, err := filepath.Glob("../../*/go.mod")
 	require.NoError(t, err)
 
@@ -205,9 +227,27 @@ func TestGoModLint(t *testing.T) {
 	}
 
 	for _, modFile := range modFiles {
+		assert.Equalf(t, runtime.Version()[2:], modFile.Go.Version, "%s's go directive should be match runtime.Version(): %q", modFile.Module.Mod.Path, runtime.Version()[2:])
+
 		for _, r := range modFile.Require {
 			if strings.HasPrefix(r.Mod.Path, modPrefix) {
 				assertPresentInMainOrRelease(t, modFile, r.Mod)
+			}
+
+			if version, ok := workspaceWideVersions[r.Mod.Path]; ok {
+				assert.Equalf(t, version, r.Mod.Version, `
+%s MUST be %s across the all go.mod's in this repository.
+
+	%s is using %s
+
+Quick Fixes:
+
+	go get %s@%s
+	go mod edit -require=%s@%s
+	%s %s
+
+If this was an intentional version change, apply it to all go.mod's and update the workspaceWideVersions variable in this linter.
+`, r.Mod.Path, version, modFile.Module.Mod.Path, r.Mod.Version, r.Mod.Path, version, r.Mod.Path, version, r.Mod.Path, version)
 			}
 		}
 
