@@ -294,6 +294,7 @@ run `task generate:third-party-licenses-list`
 | github.com/prometheus/client_model/go | [Apache-2.0](https://github.com/prometheus/client_model/blob/v0.6.1/LICENSE) |
 | github.com/prometheus/common | [Apache-2.0](https://github.com/prometheus/common/blob/v0.55.0/LICENSE) |
 | github.com/prometheus/procfs | [Apache-2.0](https://github.com/prometheus/procfs/blob/v0.15.1/LICENSE) |
+| github.com/quasilyte/go-ruleguard/dsl | [BSD-3-Clause](https://github.com/quasilyte/go-ruleguard/blob/dsl/v0.3.22/dsl/LICENSE) |
 | github.com/rivo/uniseg | [MIT](https://github.com/rivo/uniseg/blob/v0.4.7/LICENSE.txt) |
 | github.com/rogpeppe/go-internal/fmtsort | [BSD-3-Clause](https://github.com/rogpeppe/go-internal/blob/v1.12.0/LICENSE) |
 | github.com/rs/xid | [MIT](https://github.com/rs/xid/blob/v1.5.0/LICENSE) |
@@ -368,13 +369,13 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/e7e105de:LICENSE) |
 | golang.org/x/mod | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.22.0:LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.34.0:LICENSE) |
-| golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.22.0:LICENSE) |
+| golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.23.0:LICENSE) |
 | golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.10.0:LICENSE) |
 | golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.29.0:LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.28.0:LICENSE) |
 | golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.21.0:LICENSE) |
-| golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.6.0:LICENSE) |
-| golang.org/x/tools | [BSD-3-Clause](https://cs.opensource.google/go/x/tools/+/v0.27.0:LICENSE) |
+| golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.7.0:LICENSE) |
+| golang.org/x/tools | [BSD-3-Clause](https://cs.opensource.google/go/x/tools/+/v0.29.0:LICENSE) |
 | gomodules.xyz/jsonpatch/v2 | [Apache-2.0](https://github.com/gomodules/jsonpatch/blob/v2.4.0/v2/LICENSE) |
 | google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.189.0/LICENSE) |
 | google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.189.0/internal/third_party/uritemplates/LICENSE) |
@@ -382,7 +383,7 @@ run `task generate:third-party-licenses-list`
 | google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/573a1156607a/googleapis/rpc/LICENSE) |
 | google.golang.org/genproto/googleapis/type | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/93522f1f2a9f/LICENSE) |
 | google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.65.0/LICENSE) |
-| google.golang.org/protobuf | [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.34.2/LICENSE) |
+| google.golang.org/protobuf | [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.35.1/LICENSE) |
 | gopkg.in/evanphx/json-patch.v5 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.7.0/LICENSE) |
 | gopkg.in/go-jose/go-jose.v2 | [Apache-2.0](https://github.com/go-jose/go-jose/blob/v2.6.2/LICENSE) |
 | gopkg.in/go-jose/go-jose.v2/json | [BSD-3-Clause](https://github.com/go-jose/go-jose/blob/v2.6.2/json/LICENSE) |
@@ -412,7 +413,7 @@ run `task generate:third-party-licenses-list`
 | oras.land/oras-go/pkg | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v1.2.5/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.18.5/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.0.0/LICENSE) |
-| sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/bc3834ca7abd/LICENSE) |
+| sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/9aa6b5e7a4b3/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.16.0/api/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.17.2/kyaml/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml/internal/forked/github.com/qri-io/starlib/util | [MIT](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.17.2/kyaml/internal/forked/github.com/qri-io/starlib/util/LICENSE) |

@@ -1,0 +1,11 @@
+project: operator
+kind: Fixed
+body: |
+    Usage of `tpl` and `include` now function as expected when `useFlux: false` is set.
+
+      `{{ (get (fromJson (include "redpanda.Fullname" (dict "a" (list .)))) "r") }}` would previously failure with fairly arcane errors.
+
+      Now, the above example will correctly render to a string value. However,
+      syntax errors and the like are still reported in an arcane fashion.
+
+time: 2025-01-29T17:31:10.641082-05:00

@@ -162,10 +162,11 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
   mountPath: {{ upper "/fake/lifecycle" }}`)
 
 	rp.Spec.ClusterSpec.Statefulset.ExtraVolumeMounts = extraVolumeMount
-	rp.Spec.ClusterSpec.Statefulset.ExtraVolumes = ptr.To(fmt.Sprintf(`- name: test-extra-volume
+	rp.Spec.ClusterSpec.Statefulset.ExtraVolumes = ptr.To(`- name: test-extra-volume
   secret:
-    secretName: %s-sts-lifecycle
-    defaultMode: 0774`, rp.Name))
+    secretName: {{ (get (fromJson (include "redpanda.Fullname" (dict "a" (list .)))) "r") }}-sts-lifecycle
+    defaultMode: 0774
+`)
 	rp.Spec.ClusterSpec.Statefulset.InitContainers = &redpandav1alpha2.InitContainers{
 		Configurator:                      &redpandav1alpha2.Configurator{ExtraVolumeMounts: extraVolumeMount},
 		FsValidator:                       &redpandav1alpha2.FsValidator{ExtraVolumeMounts: extraVolumeMount},
