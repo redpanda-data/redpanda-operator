@@ -65,6 +65,12 @@ func main() {
 		Mode: mode,
 	}, flag.Arg(0)))
 
+	for _, pkg := range pkgs {
+		for _, err := range pkg.Errors {
+			panic(err)
+		}
+	}
+
 	var buf bytes.Buffer
 
 	if *headerFlag != "" {

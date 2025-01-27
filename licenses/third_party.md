@@ -21,7 +21,7 @@ run `task generate:third-party-licenses-list`
 | cloud.google.com/go/internal | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/v0.115.0/LICENSE) |
 | cloud.google.com/go/storage | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/storage/v1.42.0/storage/LICENSE) |
 | connectrpc.com/connect | [Apache-2.0](https://github.com/connectrpc/connect-go/blob/v1.16.2/LICENSE) |
-| dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.0/LICENSE) |
+| dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.1/LICENSE) |
 | emperror.dev/errors | [MIT](https://github.com/emperror/errors/blob/v0.8.1/LICENSE) |
 | filippo.io/edwards25519 | [BSD-3-Clause](https://github.com/FiloSottile/edwards25519/blob/v1.1.0/LICENSE) |
 | github.com/AlecAivazis/survey/v2 | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/LICENSE) |
@@ -43,8 +43,8 @@ run `task generate:third-party-licenses-list`
 | github.com/BurntSushi/toml | [MIT](https://github.com/BurntSushi/toml/blob/v1.4.0/COPYING) |
 | github.com/MakeNowJust/heredoc | [MIT](https://github.com/MakeNowJust/heredoc/blob/v1.0.0/LICENSE) |
 | github.com/Masterminds/goutils | [Apache-2.0](https://github.com/Masterminds/goutils/blob/v1.1.1/LICENSE.txt) |
-| github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.2.1/LICENSE.txt) |
-| github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.2.3/LICENSE.txt) |
+| github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
+| github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
 | github.com/ProtonMail/go-crypto | [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/a7379d079e0e/LICENSE) |
 | github.com/alibabacloud-go/alibabacloud-gateway-spi/client | [Apache-2.0](https://github.com/alibabacloud-go/alibabacloud-gateway-spi/blob/v0.0.4/LICENSE) |
@@ -208,7 +208,7 @@ run `task generate:third-party-licenses-list`
 | github.com/hashicorp/go-uuid | [MPL-2.0](https://github.com/hashicorp/go-uuid/blob/v1.0.3/LICENSE) |
 | github.com/hashicorp/hcl | [MPL-2.0](https://github.com/hashicorp/hcl/blob/v1.0.1-vault-5/LICENSE) |
 | github.com/homeport/dyff/pkg/dyff | [MIT](https://github.com/homeport/dyff/blob/v1.7.1/LICENSE) |
-| github.com/huandu/xstrings | [MIT](https://github.com/huandu/xstrings/blob/v1.4.0/LICENSE) |
+| github.com/huandu/xstrings | [MIT](https://github.com/huandu/xstrings/blob/v1.5.0/LICENSE) |
 | github.com/imdario/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v0.3.16/LICENSE) |
 | github.com/in-toto/in-toto-golang/in_toto | [Apache-2.0](https://github.com/in-toto/in-toto-golang/blob/v0.9.0/LICENSE) |
 | github.com/invopop/jsonschema | [MIT](https://github.com/invopop/jsonschema/blob/v0.12.0/COPYING) |
@@ -309,7 +309,7 @@ run `task generate:third-party-licenses-list`
 | github.com/sergi/go-diff/diffmatchpatch | [MIT](https://github.com/sergi/go-diff/blob/5b0b94c5c0d3/LICENSE) |
 | github.com/sethgrid/pester | [MIT](https://github.com/sethgrid/pester/blob/v1.2.0/LICENSE.md) |
 | github.com/shibumi/go-pathspec | [Apache-2.0](https://github.com/shibumi/go-pathspec/blob/v1.3.0/LICENSE) |
-| github.com/shopspring/decimal | [MIT](https://github.com/shopspring/decimal/blob/v1.3.1/LICENSE) |
+| github.com/shopspring/decimal | [MIT](https://github.com/shopspring/decimal/blob/v1.4.0/LICENSE) |
 | github.com/sigstore/cosign/v2 | [Apache-2.0](https://github.com/sigstore/cosign/blob/v2.2.2/LICENSE) |
 | github.com/sigstore/fulcio/pkg/api | [Apache-2.0](https://github.com/sigstore/fulcio/blob/v1.4.3/LICENSE) |
 | github.com/sigstore/rekor/pkg | [Apache-2.0](https://github.com/sigstore/rekor/blob/v1.3.4/LICENSE) |
@@ -319,7 +319,7 @@ run `task generate:third-party-licenses-list`
 | github.com/skeema/knownhosts | [Apache-2.0](https://github.com/skeema/knownhosts/blob/v1.2.1/LICENSE) |
 | github.com/skratchdot/open-golang/open | [MIT](https://github.com/skratchdot/open-golang/blob/eef842397966/LICENSE) |
 | github.com/spf13/afero | [Apache-2.0](https://github.com/spf13/afero/blob/v1.11.0/LICENSE.txt) |
-| github.com/spf13/cast | [MIT](https://github.com/spf13/cast/blob/v1.6.0/LICENSE) |
+| github.com/spf13/cast | [MIT](https://github.com/spf13/cast/blob/v1.7.0/LICENSE) |
 | github.com/spf13/cobra | [Apache-2.0](https://github.com/spf13/cobra/blob/v1.8.1/LICENSE.txt) |
 | github.com/spf13/pflag | [BSD-3-Clause](https://github.com/spf13/pflag/blob/v1.0.5/LICENSE) |
 | github.com/spf13/viper | [MIT](https://github.com/spf13/viper/blob/v1.18.1/LICENSE) |
