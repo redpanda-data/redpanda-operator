@@ -8,7 +8,35 @@ env:
   # CI run podman instead of linux. testcontainer's ryuk is reported to not
   # work well with podman.
   TESTCONTAINERS_RYUK_DISABLED: "true"
+# pipeline.yml is the "entrypoint" for all BuildKite pipelines in the operator
+# repo. As such, it is executed for ANY trigger (e.g. PR update/created, Tag
+# updated/created, Schedule run). Use `if`s to delegate to specific pipeline
+# from this file and try to adhere to the below rules.
+#
+# Do:
+# - Use `gen` to generate pipeline files.
+# - Use `if` to gate the execution of pipelines.
+# - Include a human readable explanation of `if` gates.
+# - Separate pipelines into distinct files and use `buildkite-agent pipeline upload`.
+# - Chain together tasks (e.g. `task ci:setup ci:run-test ci:tear-down).
+#
+# Do not:
+# - Use taskfile to gate execution of steps.
+# - Have a pipeline serve multiple purposes.
 steps:
+  # ci-entry-point kicks off the complete operator test suite.
+  # It is responsible for blocking or allowing GitHub PRs to be merged.
+  - key: ci-entry-point
+    label: Operator CI Entrypoint
+    agents:
+      queue: pipeline-uploader
+    # Run for:
+    # - all pull requests that aren't from forks.
+    # - nightly test schedule
+    if: |
+      (build.pull_request.id != null && !build.pull_request.repository.fork) || (build.source == "schedule" && build.env("K8S_NIGHTLY") == "1")
+    command: buildkite-agent pipeline upload .buildkite/testsuite.yml
+
   - key: release-nightly
     label: ":gandalf: Nightly Operator release"
     timeout_in_minutes: 10
@@ -38,46 +66,13 @@ steps:
             branches:
               - main
 
-  - key: operator-lint
-    label: Lint operator repo
-    if: |
-      build.env("NIGHTLY_RELEASE") != "true" &&
-      build.tag == null ||
-      build.env("K8S_NIGHTLY") == "1"
-    timeout_in_minutes: 30
-    notify:
-      - github_commit_status:
-          context: charts-lint
-    commands:
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:lint
-      - echo '~~~ pipeline upload unit tests' && buildkite-agent pipeline upload .buildkite/unit-tests.yml
-      - echo '~~~ pipeline upload operator e2e tests with flags' && buildkite-agent pipeline upload .buildkite/operator-e2e-tests-with-flags.yml
-      - echo '~~~ pipeline upload operator integration tests' && buildkite-agent pipeline upload .buildkite/integration-test.yml
-      - echo '~~~ pipeline upload operator v2 e2e tests' && buildkite-agent pipeline upload .buildkite/operator-v2-tests.yml
-    agents:
-      queue: v6-amd64-builders-m6id
-    plugins:
-      - seek-oss/aws-sm#v2.3.2:
-          json-to-env:
-            - secret-id: sdlc/prod/buildkite/github_api_token
-            - secret-id: sdlc/prod/buildkite/slack_vbot_token
-      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: ":cloud: K8S operator lint Jobs failed"
-          channel_name: "kubernetes-tests"
-          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
-          conditions:
-            failed: true
-            branches:
-              - main
-
+  # Legacy pipeline that appears to be responsible for minting releases,
+  # provided that kuttl-v1 tests pass.
+  # TODO: Scope this to just producing releases, both nightly and on tag.
   - key: k8s-operator
     label: Operator v1 E2E tests or release
     timeout_in_minutes: 180
-    if: build.env("NIGHTLY_RELEASE") != "true"
-    notify:
-      - github_commit_status:
-          context: k8s-operator-e2e-tests
+    if: build.env("NIGHTLY_RELEASE") != "true" && build.pull_request.id == null
     commands:
       - |
         TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:k8s
@@ -112,14 +107,3 @@ steps:
             failed: true
             branches:
               - main
-
-  - key: k8s-operator-v2-helm
-    label: K8s Operator v2 Helm
-    if: build.env("NIGHTLY_RELEASE") != "true"
-    notify:
-      - github_commit_status:
-          context: k8s-operator-v2-helm
-    commands:
-      - echo Tests where failing and K8S disabled this test suite. K8S team want to sunset kuttle base tests to new testing framework. If any of those test would be beneficial then they will be backported
-    agents:
-      queue: pipeline-uploader

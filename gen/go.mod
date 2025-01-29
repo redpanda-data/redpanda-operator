@@ -11,6 +11,7 @@ replace (
 )
 
 require (
+	github.com/buildkite/go-pipeline v0.13.3
 	github.com/cockroachdb/errors v1.11.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
@@ -19,10 +20,13 @@ require (
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/text v0.21.0
 	golang.org/x/tools v0.27.0
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
+	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	mvdan.cc/gofumpt v0.7.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -40,6 +44,7 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/buildkite/interpolate v0.1.5 // indirect
 	github.com/cert-manager/cert-manager v1.14.5 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
@@ -127,6 +132,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
+	github.com/oleiade/reflections v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.1-0.20231025023718-d50d2fec9c98 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -166,7 +172,6 @@ require (
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240808171019-573a1156607a // indirect
 	google.golang.org/grpc v1.65.0 // indirect
@@ -184,7 +189,6 @@ require (
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
 	k8s.io/kubectl v0.30.3 // indirect
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/controller-runtime v0.18.5 // indirect
 	sigs.k8s.io/gateway-api v1.0.0 // indirect
@@ -192,5 +196,4 @@ require (
 	sigs.k8s.io/kustomize/api v0.16.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
