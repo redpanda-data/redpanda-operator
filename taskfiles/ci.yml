@@ -14,6 +14,60 @@ tasks:
     - task: set-inotify-instances
     - task: configure-git-private-repo
 
+  lint:
+    cmds:
+      - task: :generate
+      - task: :lint
+      # Fail on any generated diffs.
+      - git diff --exit-code
+
+  test:unit:
+    cmds:
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests-*.xml"'
+      - task: :test:unit
+        vars:
+          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=unit-tests-%.xml -- go test
+          CLI_ARGS: '-json {{.CLI_ARGS}}'
+
+  test:integration:
+    cmds:
+      - defer: 'kind delete clusters --all'
+      - task: :charts:kind-cluster
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
+      - task: :test:integration
+        vars:
+          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
+          CLI_ARGS: '-json {{.CLI_ARGS}}'
+
+  test:acceptance:
+    cmds:
+      - defer: 'kind delete clusters --all'
+      - task: :charts:kind-cluster
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests-*.xml"'
+      - task: :test:acceptance
+        vars:
+          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=acceptance-tests-%.xml -- go test
+          CLI_ARGS: '-json {{.CLI_ARGS}}'
+
+  test:kuttl-v1:
+    cmds:
+      - 'echo "~~~ Running kuttl V1 tests :k8s:"'
+      - task: run-kuttl-tests
+
+  test:kuttl-v1-nodepools:
+    cmds:
+      - 'echo "~~~ Running kuttl V1 Nodepools tests :k8s:"'
+      - task: run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
+
+  test:kuttl-v2:
+    cmds:
+      - 'echo "~~~ Running kuttl V2 tests :k8s:"'
+      - task: run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
+
   configure-git-private-repo:
     env:
       GITHUB_TOKEN:
@@ -57,49 +111,6 @@ tasks:
       - task: run-k8s-tests
       - task: publish-k8s-operator-images
 
-  k8s-v2-helm:
-    cmds:
-      - task: :k8s:create-v2-helm-tests
-      - task: run-k8s-v2-helm-tests
-
-  k8s-v2:
-    cmds:
-      - task: run-k8s-v2-tests
-
-  run-k8s-v2-tests:
-    cmds:
-      - 'echo "~~~ Running operator v2 e2e tests :k8s:"'
-      - task: :k8s:run-golangci-lint
-      - task: :k8s:generate
-      - task: :dev:update-licenses
-      - task: assert-no-diffs
-      - task: run-kuttl-tests
-        vars:
-          KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
-
-  run-k8s-v2-helm-tests:
-    cmds:
-      - 'echo "~~~ Running operator v2 helm-ci e2e tests :k8s:"'
-      - task: run-kuttl-tests
-        vars:
-          KUTTL_CONFIG_FILE: kuttl-v2-helm-test.yaml
-
-  run-k8s-tests:
-    cmds:
-      - 'echo "~~~ Running operator e2e tests :k8s:"'
-      - task: run-kuttl-tests
-    status:
-      - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
-
-  run-k8s-tests-with-flags:
-    cmds:
-      - 'echo "~~~ Running operator e2e tests :k8s:"'
-      - task: run-kuttl-tests
-        vars:
-          KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
-    status:
-      - test -n '{{.TAG_NAME}}' # skip on tagged commit builds
-
   publish-k8s-operator-images:
     cmds:
       - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
@@ -114,41 +125,6 @@ tasks:
       - task: :k8s:build-and-push-operator-container-image
       # Package and push Operator helm chart to Dockerhub
       - task: :k8s:package-and-publish-operator-chart
-
-  assert-no-diffs:
-    desc: "Fail on any unexpected diffs to generated files (CI only)"
-    cmds:
-    - ls -lah # Debugging
-    - ls -lah .git # Debugging
-    - git status # Debugging
-    - git diff --exit-code
-    status:
-      - test "$CI" != "true" # run only in CI as local runs may have unstaged changes.
-
-  lint:
-    cmds:
-      - task: :generate
-      - task: :lint
-      # Fail on any generated diffs.
-      - git diff --exit-code
-
-  test:integration:
-    cmds:
-      - defer: 'kind delete clusters --all'
-      - task: :charts:kind-cluster
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
-      - task: :test:integration
-        vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
-
-  test:unit:
-    cmds:
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests-*.xml"'
-      - task: :test:unit
-        vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=unit-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
 
   set-aio-max:
     desc: set minimum required value for fs.aio-max-nr sysctl option

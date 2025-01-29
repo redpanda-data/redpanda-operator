@@ -12,8 +12,12 @@ vars:
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
   _MOD:
-    # top level shopt doesn't appear to apply to sh.
-    sh: shopt -s globstar; dirname $(ls **/go.mod)
+    # top level shopt doesn't appear to apply to sh. ** matches symlinks,
+    # meaning src/go/k8s will list the operator twice, not great for all our
+    # test scripts. We use grep to filter out anything starting with s. For
+    # whatever reason, grep resolves to /usr/bin/grep when run in this way so
+    # -P is out.
+    sh: shopt -s globstar; dirname $(ls **/go.mod | grep -o '^[^s].*')
   PKG: './...'
   MOD: '{{default ._MOD .MOD}}'
 
@@ -61,7 +65,14 @@ tasks:
       - task: dev:update-licenses
       - task: generate:third-party-licenses-list
       - task: generate:changelog
+      - task: generate:buildkite-pipelines
       - nix fmt # Ensure flake.nix has been formatted.
+
+  generate:buildkite-pipelines:
+    deps:
+    - build:gen
+    cmds:
+    - gen pipeline testsuite > .buildkite/testsuite.yml
 
   generate:third-party-licenses-list:
     dir: operator
