@@ -11,7 +11,6 @@ package decommissioning
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -45,11 +44,7 @@ var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|
 //  2. Ensure that all PVs in question have a Retain policy
 //  3. Delete all PVCs from step 1. (PVCs are immutable after creation,
 //     deletion is the only option)
-//  4. "Recycle" all PVs from step 1 by clearing the ClaimRef.
-//     Kubernetes will only consider binding PVs that have a satisfiable
-//     NodeAffinity. By "recycling" we permit Flakey Nodes to rejoin the cluster
-//     which _might_ reclaim the now freed volume.
-//  5. Deleting the Pod to re-trigger PVC creation and rebinding.
+//  4. Deleting the Pod to re-trigger PVC creation and rebinding.
 type PVCUnbinder struct {
 	Client client.Client
 	// Timeout is the duration a Pod must be stuck in Pending before
@@ -188,14 +183,6 @@ func (r *PVCUnbinder) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Res
 		pvcByKey[key] = nil
 	}
 
-	// 5. "Recycle" PVs that have been released. Technically optional, this
-	// allows disks to rebind if a Node happens to recover.
-	for _, pv := range pvs {
-		if err := r.recyclePersistentVolume(ctx, pv); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
 	missingPVCs := false
 	for _, pvc := range pvcByKey {
 		if pvc == nil {
@@ -233,32 +220,6 @@ func (r *PVCUnbinder) ensureRetainPolicy(ctx context.Context, pv *corev1.Persist
 
 	patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
 	pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
-	if err := r.Client.Patch(ctx, pv, patch); err != nil {
-		return err
-	}
-	return nil
-}
-
-// recyclePersistentVolume "recycles" a released PV by clearing it's .ClaimRef
-// which makes it available for binding once again.
-// This strategy is only valid for volumes that utilize .HostPath.
-func (r *PVCUnbinder) recyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume) error {
-	if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
-		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for recycling: %q", pv, pv.Name)
-	}
-
-	// Skip over unbound PVs.
-	if pv.Spec.ClaimRef == nil {
-		return nil
-	}
-
-	log.FromContext(ctx).Info("Releasing PersistentVolume", "name", pv.Name)
-
-	// NB: We explicitly don't use an optimistic lock here as the control plane
-	// will likely have updated this PV's Status to indicate that it's now
-	// Released.
-	patch := client.StrategicMergeFrom(pv.DeepCopy())
-	pv.Spec.ClaimRef = nil
 	if err := r.Client.Patch(ctx, pv, patch); err != nil {
 		return err
 	}
