@@ -181,9 +181,6 @@ func TestGoModLint(t *testing.T) {
 		// that needs up to date struct types. (Generation could be moved into
 		// their respective charts to resolve this).
 		modPrefix + "genschema": {modPrefix + "charts"},
-
-		// TODO Remove after merged.
-		modPrefix + "charts/redpanda": {modPrefix + "charts/connectors", modPrefix + "charts/console"},
 	}
 
 	// This could also be done with go work sync but go.work causes many other

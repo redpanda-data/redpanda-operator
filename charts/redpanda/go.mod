@@ -11,9 +11,9 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.1
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.1
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250129114027-a89e202aea86
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.18.0
@@ -214,10 +214,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
-replace (
-	// TODO remove and replace with pin after merged.
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.1 => ../connectors
-	// TODO remove and replace with pin after merged.
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.1 => ../console
-	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
-)
+replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
