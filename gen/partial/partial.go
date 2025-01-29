@@ -7,8 +7,8 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// main executes the "genpartial" program which loads up a go package and
-// recursively generates a "partial" variant of an specified struct.
+// Package genpartial loads up a go package and recursively generates a
+// "partial" variant of an specified struct.
 //
 // If you've ever worked with the AWS SDK, you've worked with "partial" structs
 // before. They are any struct where every field is nullable and the json tag
@@ -18,11 +18,10 @@
 // always exist are presented as values rather than pointers. In cases we were
 // need to marshal a partial value back to json or only specify a subset of
 // values (IE helm values), use the generated partial.
-package main
+package partial
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -36,7 +35,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	_ "github.com/quasilyte/go-ruleguard/dsl"
+	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 	gofumpt "mvdan.cc/gofumpt/format"
 )
@@ -45,25 +44,34 @@ const (
 	mode = packages.NeedTypes | packages.NeedName | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedImports
 )
 
-func main() {
-	cwd, _ := os.Getwd()
+func Cmd() *cobra.Command {
+	var outFlag string
+	var headerFlag string
+	var structFlag string
 
-	outFlag := flag.String("out", "-", "The file to output to or `-` for stdout")
-	headerFlag := flag.String("header", "", "A file that will be used as a header for the generated file")
-	structFlag := flag.String("struct", "Values", "The struct name to generate a partial for")
-
-	flag.Parse()
-
-	if len(flag.Args()) != 1 {
-		fmt.Printf("Usage: genpartial <pkg>\n")
-		fmt.Printf("Example: genpartial [-header ./path/to/license] -struct Values ./charts/redpanda\n")
-		os.Exit(1)
+	cmd := &cobra.Command{
+		Use:     "partial [pkg]",
+		Args:    cobra.ExactArgs(1),
+		Example: "partial [-header ./path/to/license] -struct Values ./charts/redpanda",
+		Run: func(cmd *cobra.Command, args []string) {
+			run(args, outFlag, headerFlag, structFlag)
+		},
 	}
+
+	cmd.Flags().StringVar(&outFlag, "out", "-", "The file to output to or `-` for stdout")
+	cmd.Flags().StringVar(&headerFlag, "header", "", "A file that will be used as a header for the generated file")
+	cmd.Flags().StringVar(&structFlag, "struct", "Values", "The struct name to generate a partial for")
+
+	return cmd
+}
+
+func run(args []string, outFlag, headerFlag, structFlag string) {
+	cwd, _ := os.Getwd()
 
 	pkgs := Must(packages.Load(&packages.Config{
 		Dir:  cwd,
 		Mode: mode,
-	}, flag.Arg(0)))
+	}, args[0]))
 
 	for _, pkg := range pkgs {
 		for _, err := range pkg.Errors {
@@ -73,22 +81,22 @@ func main() {
 
 	var buf bytes.Buffer
 
-	if *headerFlag != "" {
-		header, err := os.ReadFile(*headerFlag)
+	if headerFlag != "" {
+		header, err := os.ReadFile(headerFlag)
 		if err != nil {
 			panic(err)
 		}
 		_, _ = buf.Write(header)
 	}
 
-	if err := GeneratePartial(pkgs[0], *structFlag, &buf); err != nil {
+	if err := GeneratePartial(pkgs[0], structFlag, &buf); err != nil {
 		panic(err)
 	}
 
-	if *outFlag == "-" {
+	if outFlag == "-" {
 		fmt.Println(buf.Bytes())
 	} else {
-		if err := os.WriteFile(*outFlag, buf.Bytes(), 0o644); err != nil {
+		if err := os.WriteFile(outFlag, buf.Bytes(), 0o644); err != nil {
 			panic(err)
 		}
 	}

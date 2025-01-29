@@ -1,27 +1,17 @@
 version: '3'
 
-tasks:
-  genpartial:
-    dir: ./genpartial
-    sources:
-    - ./*.go
-    - ./go.*
-    cmds:
-    - go build -o ../.build/genpartial .
+# NB: Task's globbing appears to be a bit finicky WRT it's recursion. We'll
+# instead rely on go build's caching as it's quite good and eliminates false
+# negatives.
 
-  genschema:
-    dir: genschema
-    sources:
-    - ./*.go
-    - ./go.*
+tasks:
+  gen:
+    dir: ./gen
     cmds:
-    - go build -o ../.build/genschema .
+    - go build -o ../.build/gen main.go
 
   gotohelm:
     dir: gotohelm
-    sources:
-    - ./*.go
-    - ./go.*
     cmds:
     - go build -o ../.build/gotohelm .
 

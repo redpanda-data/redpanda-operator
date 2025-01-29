@@ -60,7 +60,7 @@ tasks:
     desc: "Generate a 'partial' version of the Values struct"
     dir: "charts/{{ .CHART }}"
     deps:
-    - task: :build:genpartial
+    - task: :build:gen
     var:
       CHART: ""
     requires:
@@ -72,16 +72,7 @@ tasks:
     generates:
     - ./charts/{{ .CHART }}/values_partial.gen.go
     cmds:
-    - genpartial -header ../../licenses/boilerplate.go.txt -out ./values_partial.gen.go -struct Values .
-
-  build:genschema:
-    dir: ./genschema
-    sources:
-    - ./genschema/**
-    generates:
-    - ../.build/genschema
-    cmds:
-    - go build -o ../.build/genschema ./...
+    - gen partial --header ../../licenses/boilerplate.go.txt --out ./values_partial.gen.go --struct Values .
 
   genschema:
     internal: true
@@ -90,7 +81,7 @@ tasks:
     desc: "Generate the values JSON schema from the Values struct"
     dir: charts
     deps:
-    - task: :build:genschema
+    - task: :build:gen
     var:
       CHART: ""
     requires:
@@ -100,7 +91,7 @@ tasks:
     generates:
     - ./charts/{{ .CHART}}/values.schema.json
     cmds:
-    - genschema {{ .CHART }} > ./{{ .CHART }}/values.schema.json
+    - gen schema {{ .CHART }} > ./{{ .CHART }}/values.schema.json
 
   gotohelm:
     internal: true
