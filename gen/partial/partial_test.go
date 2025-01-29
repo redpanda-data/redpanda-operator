@@ -8,7 +8,7 @@
 // by the Apache License, Version 2.0
 
 //lint:file-ignore ST1019 duplicate imports are on purpose
-package main
+package partial
 
 import (
 	//nolint:stylecheck
@@ -104,9 +104,9 @@ func TestGenerateParital(t *testing.T) {
 	// seen above.
 	require.Len(t, pkgs, 3)
 	pkg := pkgs[1]
-	require.Equal(t, "main", pkg.Name)
+	require.Equal(t, "partial", pkg.Name)
 
-	require.EqualError(t, GeneratePartial(pkg, "Values", nil), `named struct not found in package "main": "Values"`)
+	require.EqualError(t, GeneratePartial(pkg, "Values", nil), `named struct not found in package "partial": "Values"`)
 
 	var buf bytes.Buffer
 	require.NoError(t, GeneratePartial(pkg, "ExampleStruct", &buf))

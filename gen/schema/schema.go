@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package main
+package schema
 
 import (
 	"encoding/json"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,6 +32,13 @@ var schemas = map[string]any{
 	"operator": &operator.Values{},
 }
 
+func Cmd() *cobra.Command {
+	return &cobra.Command{
+		Use: "schema",
+		Run: run,
+	}
+}
+
 func Must[T any](value T, err error) T {
 	if err != nil {
 		panic(err)
@@ -38,7 +46,7 @@ func Must[T any](value T, err error) T {
 	return value
 }
 
-func main() {
+func run(cmd *cobra.Command, args []string) {
 	r := &jsonschema.Reflector{
 		//  These values are set to minimize the diff between the
 		// handwritten jsonschema and the generated jsonschema.
@@ -96,14 +104,14 @@ func main() {
 		},
 	}
 
-	if len(os.Args) != 2 {
-		fmt.Printf("Wrong number of arguments %d, require 2\nusage: %s <redpanda|operator>\n", len(os.Args), os.Args[0])
+	if len(args) != 1 {
+		fmt.Printf("Wrong number of arguments %d, require 2\nusage: %s <redpanda|operator>\n", len(args), args[0])
 		os.Exit(1)
 	}
 
-	val, exist := schemas[os.Args[1]]
+	val, exist := schemas[args[0]]
 	if !exist {
-		fmt.Printf("schema %s does not exist\nusage: %s <redpanda|operator>\n", os.Args[1], os.Args[0])
+		fmt.Printf("schema %s does not exist\nusage: %s <redpanda|operator>\n", args[0], cmd.CalledAs())
 		os.Exit(1)
 	}
 

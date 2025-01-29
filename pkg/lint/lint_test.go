@@ -177,10 +177,11 @@ func TestGoModLint(t *testing.T) {
 		// resolve this).
 		modPrefix + "gotohelm": {modPrefix + "pkg"},
 
-		// genschema is exempt from this rule because its a simple generator
-		// that needs up to date struct types. (Generation could be moved into
-		// their respective charts to resolve this).
-		modPrefix + "genschema": {modPrefix + "charts"},
+		// gen is exempt from this rule because it's an internal static file
+		// generator. The invocation `gen schema` uses reflection on Charts'
+		// Value types that need to be up to date. (Generation could be moved
+		// into their respective charts to resolve this).
+		modPrefix + "gen": {modPrefix + "charts/redpanda", modPrefix + "charts/operator"},
 	}
 
 	// This could also be done with go work sync but go.work causes many other
