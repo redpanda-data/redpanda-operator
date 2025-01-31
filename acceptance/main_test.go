@@ -75,7 +75,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 					},
 					"additionalCmdFlags": []string{"--additional-controllers=all", "--enable-helm-controllers=false", "--force-defluxed-mode"},
 				},
-			})
+			}, helm.Dependency{Name: "prometheus", Repository: "https://prometheus-community.github.io/helm-charts"})
 			t.Log("Successfully installed Redpanda operator chart")
 		}).
 		RegisterTag("cluster", 1, ClusterTag).
