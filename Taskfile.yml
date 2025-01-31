@@ -44,6 +44,12 @@ tasks:
           CLI_ARGS: "--fix"
 
   mod:tidy:
+    # This isn't the most accurate check as any new imports in go files may
+    # require go mod tidy to get re-run. Builds will fail and CI will always
+    # re-run this task, so some false negatives are acceptable.
+    sources:
+    - ./**/go.mod
+    - ./**/go.sum
     cmds:
     - for:
         var: MOD
@@ -76,11 +82,12 @@ tasks:
 
   generate:third-party-licenses-list:
     dir: operator
+    method: checksum
     generates:
-    - licenses/third_party.md
+    - ../licenses/third_party.md
     sources:
-    - ./operator/go.mod
-    - ./operator/go.sum
+    - ./go.mod
+    - ./go.sum
     cmds:
     # Our own packages should not be reported as third party license
     # The example.com/example depedency is ignored as it's part of the

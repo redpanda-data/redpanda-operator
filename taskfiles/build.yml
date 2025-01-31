@@ -1,21 +1,40 @@
 version: '3'
 
-# NB: Task's globbing appears to be a bit finicky WRT it's recursion. We'll
-# instead rely on go build's caching as it's quite good and eliminates false
-# negatives.
-
 tasks:
+
   gen:
-    dir: ./gen
     cmds:
-    - go build -o ../.build/gen main.go
+      - task: go:build
+        vars: { DIR: gen }
 
   gotohelm:
-    dir: gotohelm
     cmds:
-    - go build -o ../.build/gotohelm .
+      - task: go:build
+        vars: { DIR: gotohelm }
 
   licenseupdater:
-    dir: licenseupdater
     cmds:
-    - go build -o ../.build/licenseupdater .
+      - task: go:build
+        vars: { DIR: licenseupdater }
+
+  go:build:
+    internal: true
+    run: when_changed
+    label: "go:build:{{ .DIR }}"
+    var:
+      DIR: ""
+    requires:
+      vars: [DIR]
+    cmds:
+    - go build -C {{ .DIR }} -o ../.build/{{ .DIR }} .
+    status:
+    # NB: Task's globbing is finicky and tracking all possible go files is
+    # prone to error. Instead, rely on go build's caching. Cache status must be
+    # reflected through `status` in order to not re-fire dependent tasks (e.g.
+    # gotohelm invocations)
+    # `go build -n` reports all commands to build without running them. When a
+    # rebuild is required, the final lines will contain: 'mv $WORK/<somepath> < -o flag >'.
+    # Negating the output of grep effectively indicates if go thinks a rebuild
+    # is required. Command must be encased in "s as the negation operator (!)
+    # is otherwise consumed during YAML parsing.
+    - "! go build -C {{ .DIR }} -n -o ../.build/{{ .DIR }} 2>&1 | grep 'mv $WORK'"
