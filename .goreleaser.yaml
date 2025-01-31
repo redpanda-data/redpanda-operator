@@ -58,3 +58,5 @@ release:
   discussion_category_name: Releases
 announce:
   skip: "true"
+snapshot:
+  version_template: "{{ .Version }}"
