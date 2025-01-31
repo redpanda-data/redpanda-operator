@@ -52,6 +52,8 @@ func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, optio
 
 	options.CreateNamespace = true
 
+	require.NoError(t, helmClient.DependencyBuild(ctx, path))
+
 	t.Logf("installing chart %q", path)
 	_, err = helmClient.Install(ctx, path, options)
 	require.NoError(t, err)
