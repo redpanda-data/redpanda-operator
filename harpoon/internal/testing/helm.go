@@ -42,7 +42,12 @@ func (t *TestingT) InstallHelmChart(ctx context.Context, url, repo, chart string
 	})
 }
 
-func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions) {
+type HelmDependency struct {
+	Name string
+	URL  string
+}
+
+func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...HelmDependency) {
 	helmClient, err := helm.New(helm.Options{
 		KubeConfig: rest.CopyConfig(t.restConfig),
 	})
@@ -51,6 +56,12 @@ func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, optio
 	require.NotEqual(t, "", options.Name, "name must not be blank")
 
 	options.CreateNamespace = true
+
+	require.NoError(t, helmClient.DependencyBuild(ctx, path))
+
+	for _, dep := range deps {
+		require.NoError(t, helmClient.RepoAdd(ctx, dep.Name, dep.URL))
+	}
 
 	t.Logf("installing chart %q", path)
 	_, err = helmClient.Install(ctx, path, options)
