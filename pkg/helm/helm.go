@@ -117,6 +117,7 @@ type Client struct {
 
 type Options struct {
 	ConfigHome string
+	CacheHome  string
 	KubeConfig *rest.Config
 }
 
@@ -137,10 +138,16 @@ func (o *Options) asEnv() ([]string, error) {
 		}
 	}
 
-	return []string{
+	vars := []string{
 		fmt.Sprintf("KUBECONFIG=%s", kubeConfigPath),
 		fmt.Sprintf("HELM_CONFIG_HOME=%s", path.Join(o.ConfigHome, "helm-config")),
-	}, nil
+	}
+
+	if o.CacheHome != "" {
+		vars = append(vars, fmt.Sprintf("HELM_CACHE_HOME=%s", o.CacheHome))
+	}
+
+	return vars, nil
 }
 
 // New creates a new helm client.
@@ -331,8 +338,20 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	// to set it ourselves.
 	client.ReleaseName = releaseName
 
+	// Helm's settings are pulled from the global os.Env (see cli.New()).
+	// Mutating os.Env would make this struct unsafe for concurrent usage.
+	// To work around this, we use `helm env` to get the computed values and
+	// use them directly for our "deeper" integrations with helm.
+	env, err := c.Env(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	chart, err = client.ChartPathOptions.LocateChart(chart, &cli.EnvSettings{
-		Debug: true,
+		Debug:            true,
+		RepositoryConfig: env["HELM_REPOSITORY_CONFIG"],
+		RegistryConfig:   env["HELM_REGISTRY"],
+		RepositoryCache:  env["HELM_REPOSITORY_CACHE"],
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -491,6 +510,31 @@ func (c *Client) Search(ctx context.Context, keyword string) ([]Chart, error) {
 func (c *Client) DependencyBuild(ctx context.Context, chartDir string) error {
 	_, _, err := c.runHelmInDir(ctx, chartDir, "dep", "build")
 	return err
+}
+
+// Env returns the parsed output of `helm env`. Useful for debugging or
+// acquiring helm's computed settings.
+func (c *Client) Env(ctx context.Context) (map[string]string, error) {
+	stdout, _, err := c.runHelm(ctx, "env")
+	if err != nil {
+		return nil, err
+	}
+
+	// Output format is that of `env`
+	// VARIABLE="VALUE"
+	pairs := bytes.Split(stdout, []byte("\n"))
+
+	env := make(map[string]string, len(pairs))
+
+	// Trim the trailing \n from pairs.
+	for _, kv := range pairs[:len(pairs)-1] {
+		spl := bytes.SplitN(kv, []byte(`="`), 2)
+		key := spl[0]
+		val := spl[1]
+		// val will have a trailing ", the leading " is removed by the split.
+		env[string(key)] = string(val[:len(val)-1])
+	}
+	return env, nil
 }
 
 func (c *Client) runHelm(ctx context.Context, args ...string) ([]byte, []byte, error) {
