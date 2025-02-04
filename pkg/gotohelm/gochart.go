@@ -10,6 +10,9 @@
 package gotohelm
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -74,28 +77,73 @@ func Load(f fs.FS, render RenderFunc, dependencies ...*GoChart) (*GoChart, error
 	}, nil
 }
 
+// WriteArchive is the equivalent of `helm package` executed on a [GoChart].
+// Provided that the GoChart's FS is correctly configured, the outputs will
+// be equivalent.
+func (c *GoChart) WriteArchive(w io.Writer) error {
+	// Ideally, this would all be done in memory but it's surprisingly
+	// difficult to stitch together different fs.FS's. So we just dump it to
+	// disk.
+	dir, err := os.MkdirTemp(os.TempDir(), "gotohelm-packaging")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	defer os.RemoveAll(dir)
+
+	if err := c.Write(dir); err != nil {
+		return err
+	}
+
+	gzipWriter := gzip.NewWriter(w)
+	defer gzipWriter.Close()
+
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	if err := tarWriter.AddFS(os.DirFS(dir)); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
 // Write writes this chart to dir in a format compatible with the helm CLI
 // tool.
 // NOTE: Write relies on gotohelm having been run ahead of GoChart consumption
 // as it just writes out the embedded FS.
 func (c *GoChart) Write(dir string) error {
+	// Chart archives are nested under their name.
+	dir = filepath.Join(dir, c.metadata.Name)
+
 	if err := os.CopyFS(dir, c.fs); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
-	if err := os.Mkdir(filepath.Join(dir, "charts"), 0o700); err != nil {
-		return err
+	// helm package strips comments and reformats Chart.yaml. We do the same to
+	// ensure that WriteArchive produces the same output as helm package.
+	chartYAML, err := yaml.Marshal(c.metadata)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
-	for name, dep := range c.dependencies {
-		depDir := filepath.Join(dir, "charts", name)
+	// NB: 0o666 is taken from .CopyFS.
+	//nolint:gosec // Primarily used in tests, these permission are not security critical.
+	if err := os.WriteFile(filepath.Join(dir, "Chart.yaml"), chartYAML, 0o666); err != nil {
+		return errors.WithStack(err)
+	}
 
-		if err := os.Mkdir(depDir, 0o700); err != nil {
-			return err
-		}
+	depDir := filepath.Join(dir, "charts")
 
+	// NB: 0o777 is taken from .CopyFS.
+	//nolint:gosec // Primarily used in tests, these permission are not security critical.
+	if err := os.Mkdir(depDir, 0o777); err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, dep := range c.dependencies {
 		if err := dep.Write(depDir); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 

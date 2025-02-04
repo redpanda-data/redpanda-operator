@@ -10,15 +10,20 @@
 package gotohelm
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
+	"iter"
 	"os"
 	"os/exec"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gonvenience/ytbx"
@@ -35,15 +40,34 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-//go:embed testdata/subchart
+//go:embed testdata/subchart/*/*.yaml
+//go:embed testdata/subchart/*/*.lock
+//go:embed testdata/subchart/*/templates
 var subchartsFS embed.FS
 
-func TestDependencyChainRender(t *testing.T) {
+var getTestCharts = sync.OnceValue(func() []*GoChart {
+	// Build deps of all our charts before loading them.
+	for _, chartPath := range []string{
+		"./testdata/subchart/dependency",
+		"./testdata/subchart/dependency-excluded-by-default",
+		"./testdata/subchart/dependency-included-by-default",
+		"./testdata/subchart/values-overwrite",
+		"./testdata/subchart/root",
+	} {
+		_, err := exec.Command("helm", "dep", "build", chartPath).CombinedOutput()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	subFS := func(dir string) fs.FS {
 		sub, err := fs.Sub(subchartsFS, "testdata/subchart/"+dir)
-		require.NoError(t, err)
+		if err != nil {
+			panic(err)
+		}
 		return sub
 	}
+
 	// The chart dependency graph
 	//            ┌───────────────┐   ┌──────────┐
 	//     ┌─────►│valuesOverwrite├──►│Dependency│
@@ -63,32 +87,27 @@ func TestDependencyChainRender(t *testing.T) {
 	// valuesOverwrite - does not have any condition
 	//
 	// All charts are creating Config map which has one data, the rendered values
-	dep, err := Load(subFS("dependency"), renderConfigMap)
-	require.NoError(t, err)
-	valuesOverwrite, err := Load(subFS("values-overwrite"), renderConfigMap, dep)
-	require.NoError(t, err)
-	excludeDep, err := Load(subFS("dependency-excluded-by-default"), renderConfigMap, dep)
-	require.NoError(t, err)
-	includeDep, err := Load(subFS("dependency-included-by-default"), renderConfigMap, dep)
-	require.NoError(t, err)
-	root, err := Load(subFS("root"), renderConfigMap, valuesOverwrite, excludeDep, includeDep)
-	require.NoError(t, err)
+	dep := MustLoad(subFS("dependency"), renderConfigMap)
+	valuesOverwrite := MustLoad(subFS("values-overwrite"), renderConfigMap, dep)
+	excludeDep := MustLoad(subFS("dependency-excluded-by-default"), renderConfigMap, dep)
+	includeDep := MustLoad(subFS("dependency-included-by-default"), renderConfigMap, dep)
+	root := MustLoad(subFS("root"), renderConfigMap, valuesOverwrite, excludeDep, includeDep)
+
+	return []*GoChart{
+		root,
+		includeDep,
+		excludeDep,
+		valuesOverwrite,
+		dep,
+	}
+})
+
+func TestDependencyChainRender(t *testing.T) {
+	charts := getTestCharts()
+	root := charts[0]
 
 	helmCli, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
 	require.NoError(t, err)
-
-	for _, chartPath := range []string{
-		"./testdata/subchart/dependency",
-		"./testdata/subchart/dependency-excluded-by-default",
-		"./testdata/subchart/dependency-included-by-default",
-		"./testdata/subchart/values-overwrite",
-		"./testdata/subchart/root",
-	} {
-		out, err := exec.Command("helm", "dep", "build", chartPath).CombinedOutput()
-		if err != nil {
-			require.NoErrorf(t, err, "failed to run helm dep build: %s", out)
-		}
-	}
 
 	inputVal, err := os.ReadFile("testdata/subchart/root/input-val.yaml")
 	require.NoError(t, err)
@@ -142,6 +161,63 @@ func TestDependencyChainRender(t *testing.T) {
 		require.NoError(t, hr.WriteReport(&buf))
 
 		require.Fail(t, buf.String())
+	}
+}
+
+func TestWriteArchive(t *testing.T) {
+	charts := getTestCharts()
+	root := charts[0]
+
+	temp := t.TempDir()
+	out, err := exec.Command("helm", "package", "testdata/subchart/root", "-u", "-d", temp).CombinedOutput()
+	require.NoError(t, err)
+
+	// helm package outputs:
+	// Successfully packaged chart and saved it to: /full/path/to/dependency-0.0.1.tgz\n
+	// This (nastily) extracts the path.
+	helmArchive, err := os.ReadFile(string(out[bytes.LastIndex(out, []byte(": "))+2 : len(out)-1]))
+	require.NoError(t, err)
+
+	var goArchive bytes.Buffer
+	require.NoError(t, root.WriteArchive(&goArchive))
+
+	helmFiles := map[string][]byte{}
+	for header, content := range tarGzFiles(t, bytes.NewReader(helmArchive)) {
+		helmFiles[header.Name] = content
+	}
+
+	goFiles := map[string][]byte{}
+	for header, content := range tarGzFiles(t, &goArchive) {
+		goFiles[header.Name] = content
+	}
+
+	// Assert that the inflated outputs of `helm package` and `WriteArchive` are
+	// identical.
+	require.Equal(t, goFiles, helmFiles)
+}
+
+func tarGzFiles(t *testing.T, reader io.Reader) iter.Seq2[*tar.Header, []byte] {
+	gzipReader, err := gzip.NewReader(reader)
+	require.NoError(t, err)
+
+	tarReader := tar.NewReader(gzipReader)
+
+	return func(yield func(*tar.Header, []byte) bool) {
+		for {
+			header, err := tarReader.Next()
+			if err == io.EOF {
+				return
+			}
+
+			require.NoError(t, err)
+
+			content, err := io.ReadAll(tarReader)
+			require.NoError(t, err)
+
+			if !yield(header, content) {
+				break
+			}
+		}
 	}
 }
 
