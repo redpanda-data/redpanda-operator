@@ -21,7 +21,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"helm.sh/helm/v3/pkg/kube"
+	helmkube "helm.sh/helm/v3/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -45,6 +45,7 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type RedpandaController string
@@ -242,7 +243,7 @@ func Run(
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
 	// set the managedFields owner for resources reconciled from Helm charts
-	kube.ManagedFieldsManager = controllerName
+	helmkube.ManagedFieldsManager = controllerName
 
 	mgrOptions := ctrl.Options{
 		HealthProbeBindAddress:  probeAddr,
@@ -386,6 +387,7 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
+			KubeConfig:         kube.RestToConfig(mgr.GetConfig()),
 			Client:             mgr.GetClient(),
 			Scheme:             mgr.GetScheme(),
 			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
