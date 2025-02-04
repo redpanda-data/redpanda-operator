@@ -10,10 +10,14 @@
 package redpanda_test
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"net/http/httptest"
+	"os/exec"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -52,6 +56,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -677,7 +682,7 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 // TestStableUIDAndGeneration asserts that UIDs, Generations, Labels, and
 // Annotations of all objects created by the controller are stable across flux
 // and de-fluxed.
-func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
+func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 	isStable := func(a, b client.Object) {
 		assert.Equal(s.T(), a.GetUID(), b.GetUID(), "%T %q's UID changed (Something recreated it)", a, a.GetName())
 		assert.Equal(s.T(), a.GetLabels(), b.GetLabels(), "%T %q's Labels changed", a, a.GetName())
@@ -693,18 +698,40 @@ func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
 	for _, useFlux := range []bool{true, false} {
 		rp := s.minimalRP(useFlux)
 
+		// A major concern of the migration to and from flux is ensuring that
+		// the bootstrap user's password doesn't get regenerated. We enable
+		// SASL auth to enable bootstrap user generation and enable
+		// admin_api_require_auth to catch any changes to the bootstrap user's
+		// password.
+		// A change in Generation will also inform us about the password being
+		// regenerated but more error messages are helpful here.
+		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{
+			Raw: []byte(`{"admin_api_require_auth": true}`),
+		}
+
+		rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
+			SASL: &redpandav1alpha2.SASL{
+				Enabled: ptr.To(true),
+				Users: []redpandav1alpha2.UsersItems{
+					{Name: ptr.To("s00peruser"), Password: ptr.To("s3cr3t!1")},
+				},
+			},
+		}
+
 		s.applyAndWait(rp)
 
 		filter := client.MatchingLabels{"app.kubernetes.io/instance": rp.Name}
 
 		fresh := s.snapshotCluster(filter)
 
+		s.T().Logf("toggling useFlux: %t -> %t", useFlux, !useFlux)
 		rp.Spec.ChartRef.UseFlux = ptr.To(!useFlux)
 		s.applyAndWait(rp)
 
 		flipped := s.snapshotCluster(filter)
 		s.compareSnapshot(fresh, flipped, isStable)
 
+		s.T().Logf("toggling useFlux: %t -> %t", useFlux, !useFlux)
 		rp.Spec.ChartRef.UseFlux = ptr.To(useFlux)
 		s.applyAndWait(rp)
 
@@ -717,6 +744,35 @@ func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
 
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
+
+	helmRepositoryURL := "https://charts.redpanda.com/"
+
+	// If there's a replace directive pointing at a local chart, we'll start up
+	// a helm repository and package the local chart into it. This allows
+	// integration testing of chart changes with the operator without first
+	// having to release the helm chart.
+	//
+	// This case is for development purposes only. pkg/lint will prevent
+	// replace directives from being committed into a main line branch.
+	//
+	// NOTE: go.work probably doesn't work with this method at the moment.
+	if s.hasChartReplaceDirectives() {
+		t.Logf(`Found a replace directive for a chart targeting a local path.
+Starting helm repository that serves %q as the development version of the redpanda chart.
+
+!!This facility is for development purposes only and should not be considered a successful test run!!
+`, redpandachart.Chart.Metadata().Version)
+
+		helmRepo := helm.NewRepository()
+		server := httptest.NewServer(helmRepo)
+		t.Cleanup(server.Close)
+
+		var buf bytes.Buffer
+		require.NoError(t, redpandachart.Chart.WriteArchive(&buf))
+		helmRepo.AddChart(redpandachart.Chart.Metadata(), buf.Bytes())
+
+		helmRepositoryURL = server.URL
+	}
 
 	// TODO SetupManager currently runs with admin permissions on the cluster.
 	// This will allow the operator's ClusterRole and Role to get out of date.
@@ -745,10 +801,11 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
 			Client:            mgr.GetClient(),
+			KubeConfig:        kube.RestToConfig(mgr.GetConfig()),
 			Scheme:            mgr.GetScheme(),
 			EventRecorder:     mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory:     s.clientFactory,
-			HelmRepositoryURL: "https://charts.redpanda.com/",
+			HelmRepositoryURL: helmRepositoryURL,
 		}).SetupWithManager(s.ctx, mgr); err != nil {
 			return err
 		}
@@ -1047,8 +1104,23 @@ func (s *RedpandaControllerSuite) compareSnapshot(a, b []client.Object, fn func(
 	}
 }
 
+func (s *RedpandaControllerSuite) hasChartReplaceDirectives() bool {
+	// TODO: replace this with debug.ReadBuildInfo once we upgrade to go 1.24
+	// https://github.com/golang/go/issues/33976
+
+	out, err := exec.Command("go", "mod", "edit", "-print").CombinedOutput()
+	s.NoError(err)
+
+	// Very very course check to see if there's a replace directive for a chart to the local version.
+	// NOTE: This (probably) won't handle go.work correctly.
+	matched, err := regexp.Match(`github.com/redpanda-data/redpanda-operator/charts/.+ => \.\.`, out)
+	s.NoError(err)
+
+	return matched
+}
+
 func TestPostInstallUpgradeJobIndex(t *testing.T) {
-	dot, err := redpandachart.Chart.Dot(kube.Config{}, helmette.Release{}, map[string]any{})
+	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
 	require.NoError(t, err)
 
 	job := redpandachart.PostInstallUpgradeJob(dot)
