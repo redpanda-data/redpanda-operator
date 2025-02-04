@@ -63,14 +63,6 @@ tasks:
       --source-path ./api/redpanda/v1alpha2/ \
       --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc
 
-  run-unit-tests:
-    dir: 'operator'
-    deps:
-      - generate
-    cmds:
-      - |
-        go test -v ./... -coverprofile cover.out -timeout 20m
-
   build-operator-images:
     deps:
       - :goreleaser:build-operator-binaries
@@ -129,21 +121,6 @@ tasks:
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
       - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}
-
-
-  run-golangci-lint:
-    desc: run golangci-lint
-    dir: 'operator'
-    cmds:
-      - |
-        golangci-lint run --timeout 8m -v
-
-  run-golangci-lint-fix:
-    desc: run golangci-lint
-    dir: 'operator'
-    cmds:
-      - |
-        golangci-lint run --timeout 8m -v --fix
 
   build-and-push-operator-container-image:
     vars:
@@ -243,12 +220,6 @@ tasks:
       - test -n "$DOCKERHUB_TOKEN"
       - test -n "$CLOUDSMITH_USERNAME"
       - test -n "$CLOUDSMITH_API_KEY"
-
-  create-v2-helm-tests:
-    dir: 'operator'
-    cmds:
-      - 'echo "~~~ Creating operator v2 helm e2e tests :k8s:"'
-      - ./hack/v2-helm-setup.sh
 
   package-and-publish-operator-chart:
     vars:
