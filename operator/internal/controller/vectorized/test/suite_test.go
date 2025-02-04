@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -199,6 +200,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpanda.RedpandaReconciler{
+		KubeConfig:        kube.RestToConfig(k8sManager.GetConfig()),
 		Client:            k8sManager.GetClient(),
 		ClientFactory:     internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
 		Scheme:            k8sManager.GetScheme(),
