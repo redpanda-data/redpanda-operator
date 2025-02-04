@@ -1,0 +1,7 @@
+project: operator
+kind: Fixed
+body: |-
+    Toggling `useFlux`, in either direction, no longer causes the bootstrap user's password to be regenerated.
+
+      Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
+time: 2025-02-07T16:01:09.025536-05:00

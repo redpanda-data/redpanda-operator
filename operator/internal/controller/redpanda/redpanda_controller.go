@@ -78,6 +78,9 @@ type gvkKey struct {
 
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
+	// KubeConfig is the [kube.Config] that provides the go helm chart
+	// Kubernetes access. It should be the same config used to create client.
+	KubeConfig         kube.Config
 	Client             client.Client
 	Scheme             *runtime.Scheme
 	EventRecorder      kuberecorder.EventRecorder
@@ -353,10 +356,11 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	// within the chart itself.
 	values := rp.Spec.ClusterSpec.DeepCopy()
 
-	objs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
+	objs, err := redpanda.Chart.Render(&r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
+		IsUpgrade: true,
 	}, values)
 	if err != nil {
 		return err
