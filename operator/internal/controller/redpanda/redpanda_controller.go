@@ -430,24 +430,6 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *v1alpha2.Redpanda, conditionType string) bool {
 	log := ctrl.LoggerFrom(ctx)
 
-	cond := apimeta.FindStatusCondition(rp.Status.Conditions, conditionType)
-	if cond == nil {
-		cond = &metav1.Condition{
-			Type:   conditionType,
-			Status: metav1.ConditionUnknown,
-		}
-	}
-
-	recheck := time.Since(cond.LastTransitionTime.Time) > time.Minute
-	previouslySynced := cond.Status == metav1.ConditionTrue
-	generationChanged := cond.ObservedGeneration != 0 && cond.ObservedGeneration < rp.Generation
-
-	// NB: This controller re-queues fairly frequently as is (Watching STS
-	// which watches Pods), so we're largely relying on that to ensure we eventually run our rechecks.
-	if previouslySynced && !(generationChanged || recheck) {
-		return true
-	}
-
 	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
 
 	if !(rp.GenerationObserved() || redpandaReady) {
@@ -465,7 +447,21 @@ func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *v1alpha
 		return true
 	}
 
-	return false
+	cond := apimeta.FindStatusCondition(rp.Status.Conditions, conditionType)
+	if cond == nil {
+		cond = &metav1.Condition{
+			Type:   conditionType,
+			Status: metav1.ConditionUnknown,
+		}
+	}
+
+	recheck := time.Since(cond.LastTransitionTime.Time) > time.Minute
+	previouslySynced := cond.Status == metav1.ConditionTrue
+	generationChanged := cond.ObservedGeneration != 0 && cond.ObservedGeneration < rp.Generation
+
+	// NB: This controller re-queues fairly frequently as is (Watching STS
+	// which watches Pods), so we're largely relying on that to ensure we eventually run our rechecks.
+	return previouslySynced && !(generationChanged || recheck)
 }
 
 func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.Redpanda) error {
@@ -577,6 +573,10 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 }
 
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1alpha2.Redpanda) error {
+	if r.ratelimitCondition(ctx, rp, v1alpha2.ClusterConfigSynced) {
+		return nil
+	}
+
 	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
 		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
 			Type:               v1alpha2.ClusterConfigSynced,
@@ -585,10 +585,6 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1a
 			Reason:             "HandledByFlux",
 			Message:            "cluster configuration is not managed by the operator when Flux is enabled",
 		})
-		return nil
-	}
-
-	if r.ratelimitCondition(ctx, rp, v1alpha2.ClusterConfigSynced) {
 		return nil
 	}
 
