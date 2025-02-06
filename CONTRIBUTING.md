@@ -45,7 +45,8 @@ The `changie merge` command will regenerate all CHANGELOG.mds and should be run 
 
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
-2. Commit the resultant diff with the commit message `<project>: cut release <version>` and rebase it into master via a Pull Request.
-3. Tag the above commit with as `<project>-v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
+2. Run `task test:unit` and `task lint`, they will report additional required actions, if any.
+4. Commit the resultant diff with the commit message `<project>: cut release <version>` and rebase it into master via a Pull Request.
+5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
     - If the operator is being released, also tag the same commit as `v<version>`.
-5. Push the tag(s).
+6. Push the tag(s).

@@ -18,6 +18,7 @@ import (
 	"maps"
 	"math/big"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -875,6 +876,18 @@ func TestLabels(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestAppVersion(t *testing.T) {
+	const project = "charts/redpanda"
+	output, err := exec.Command("changie", "latest", "-j", project).CombinedOutput()
+	require.NoError(t, err)
+
+	// Trim the project prefix to just get `x.y.z`
+	expected := string(output[len(project+"/v"):])
+	actual := redpanda.Chart.Metadata().Version
+
+	require.Equalf(t, expected, actual, "Chart.yaml's version should be %q; got %q\nDid you forget to update Chart.yaml before minting a release?\nMake sure to bump appVersion as well!", expected, actual)
 }
 
 func TestControllersTag(t *testing.T) {
