@@ -26,20 +26,23 @@ newlines:
     beforeChangelogVersion: 1
     endOfVersion: 1
 envPrefix: CHANGIE_
-projectsVersionSeparator: "-"
+# Project keys and version separators are configured to align with the tagging
+# semantics of multi-module repositories. `dir/of/module/v<version>`
+# https://go.dev/wiki/Modules#what-are-multi-module-repositories
+projectsVersionSeparator: "/"
 projects:
 - label: Redpanda Operator
   key: operator
   changelog: operator/CHANGELOG.md
 - label: Redpanda Helm Chart
-  key: chart-redpanda
+  key: charts/redpanda
   changelog: charts/redpanda/CHANGELOG.md
 - label: Console Helm Chart
-  key: chart-console
+  key: charts/console
   changelog: charts/console/CHANGELOG.md
 - label: Connectors Helm Chart
-  key: chart-connectors
+  key: charts/connectors
   changelog: charts/connectors/CHANGELOG.md
 - label: Redpanda Operator Helm Chart
-  key: chart-operator
+  key: charts/operator
   changelog: charts/operator/CHANGELOG.md
