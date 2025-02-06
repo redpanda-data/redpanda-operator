@@ -238,7 +238,7 @@ func TestTranspile(t *testing.T) {
 							Name:      "release-name",
 							Namespace: "release-namespace",
 						},
-						KubeConfig: kube.RestToConfig(ctl.RestConfig()),
+						KubeConfig: ptr.To(kube.RestToConfig(ctl.RestConfig())),
 					}
 
 					// MUST round trip values through JSON marshalling to

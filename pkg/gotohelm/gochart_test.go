@@ -125,7 +125,7 @@ func TestDependencyChainRender(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	actual, err := root.Render(kube.Config{}, helmette.Release{}, inputValues)
+	actual, err := root.Render(nil, helmette.Release{}, inputValues)
 	require.NoError(t, err)
 
 	actualByte := convertToString(actual)

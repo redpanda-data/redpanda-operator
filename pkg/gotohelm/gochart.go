@@ -206,7 +206,7 @@ func mergeRootValueWithDependency(rootValues helmette.Values, dependencyValues h
 
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
 // taking into consideration the dependencies' condition.
-func (c *GoChart) Dot(cfg kube.Config, release helmette.Release, values any) (*helmette.Dot, error) {
+func (c *GoChart) Dot(cfg *kube.Config, release helmette.Release, values any) (*helmette.Dot, error) {
 	subcharts := map[string]*helmette.Dot{}
 
 	loaded, err := c.LoadValues(values)
@@ -276,7 +276,10 @@ func (c *GoChart) Dot(cfg kube.Config, release helmette.Release, values any) (*h
 //
 // Helm hooks are included in the returned slice, it's up to the caller
 // to filter them.
-func (c *GoChart) Render(cfg kube.Config, release helmette.Release, values any) ([]kube.Object, error) {
+//
+// If cfg is null, the chart will be rendered "offline" causing functions like
+// [helmette.Lookup] to always return false.
+func (c *GoChart) Render(cfg *kube.Config, release helmette.Release, values any) ([]kube.Object, error) {
 	dot, err := c.Dot(cfg, release, values)
 	if err != nil {
 		return nil, err

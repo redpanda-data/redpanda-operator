@@ -37,8 +37,10 @@ type Dot struct {
 	// KubeConfig is a hacked in value to allow `Lookup` to not rely on global
 	// values. It's a kube.Config to support JSON marshalling and allow easy
 	// transport into the `go run` test runner.
+	// It is a pointer to explicitly allow null values, similar to how `helm
+	// template` provides a mock Kubernetes client.
 	// WARNING: DO NOT USE OR REFERENCE IN HELM CHARTS. IT WILL NOT WORK.
-	KubeConfig kube.Config
+	KubeConfig *kube.Config
 
 	// Templates, similar to KubeConfig, is a hacked in value to support `tpl`.
 	// It is an FS containing the contents of the charts template/ directory.
@@ -176,7 +178,15 @@ func Lookup[T any, PT kube.AddrofObject[T]](dot *Dot, namespace, name string) (o
 // exactly like Lookup except it returns any errors that may have occurred
 // in the underlying lookup operations.
 func SafeLookup[T any, PT kube.AddrofObject[T]](dot *Dot, namespace, name string) (*T, bool, error) {
-	ctl, err := kube.FromConfig(dot.KubeConfig)
+	// Special case, if no KubeConfig has been provided, short circuit and
+	// report that the object wasn't found. This allows execution without
+	// access to a Kubernetes cluster, like `helm template`.
+	// https://github.com/helm/helm/blob/32530594381efc783e17f6fdd3a4a936548bfd04/pkg/action/install.go#L274-L275
+	if dot.KubeConfig == nil {
+		return nil, false, nil
+	}
+
+	ctl, err := kube.FromConfig(*dot.KubeConfig)
 	if err != nil {
 		return nil, false, err
 	}
