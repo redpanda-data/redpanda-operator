@@ -84,11 +84,9 @@ func TestTemplate(t *testing.T) {
 	ctx := testutil.Context(t)
 
 	tmp := testutil.TempDir(t)
+	require.NoError(t, redpanda.Chart.Write(tmp))
 
 	chartDir := filepath.Join(tmp, "redpanda")
-	require.NoError(t, os.Mkdir(chartDir, 0o700))
-
-	require.NoError(t, redpanda.Chart.Write(chartDir))
 
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)

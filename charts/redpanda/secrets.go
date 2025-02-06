@@ -201,10 +201,16 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 
 	secretName := fmt.Sprintf("%s-bootstrap-user", Fullname(dot))
 
-	if dot.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
-			return existing
-		}
+	// Some tools don't correctly set .Release.Upgrade (ArgoCD, gotohelm, helm
+	// template) which has lead us to incorrectly re-generate the bootstrap
+	// user password. Rather than gating, we always attempt a lookup as that's
+	// likely the safest option. Though it's likely that Lookup will be
+	// stubbed out in similar scenarios (helm template).
+	// TODO: Should we try to detect invalid configurations, panic, and request
+	// that a password be explicitly set?
+	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
+	if existing, ok := helmette.Lookup[corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
+		return existing
 	}
 
 	password := helmette.RandAlphaNum(32)

@@ -175,7 +175,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 		},
 	}
 
-	goObjs, err := Chart.Render(kube.Config{}, helmette.Release{
+	goObjs, err := Chart.Render(nil, helmette.Release{
 		Name:      "gotohelm",
 		Namespace: "mynamespace",
 		Service:   "Helm",

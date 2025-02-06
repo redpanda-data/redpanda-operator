@@ -19,7 +19,6 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func TestFirstUser(t *testing.T) {
@@ -121,7 +120,7 @@ func TestCertificates(t *testing.T) {
 				certMap[c.CertificateName] = *c.Cert
 			}
 
-			dot, err := redpanda.Chart.Dot(kube.Config{}, helmette.Release{
+			dot, err := redpanda.Chart.Dot(nil, helmette.Release{
 				Name:      "redpanda",
 				Namespace: "redpanda",
 				Service:   "Helm",
