@@ -19,7 +19,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
@@ -151,7 +150,7 @@ func TestAnnotationsOverwrite(t *testing.T) {
 		},
 	}
 
-	dot, err := Chart.Dot(kube.Config{}, helmette.Release{}, v)
+	dot, err := Chart.Dot(nil, helmette.Release{}, v)
 	require.NoError(t, err)
 
 	job := PostInstallUpgradeJob(dot)

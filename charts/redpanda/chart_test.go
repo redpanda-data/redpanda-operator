@@ -838,7 +838,7 @@ func TestLabels(t *testing.T) {
 		helmValues, err := redpanda.Chart.LoadValues(values)
 		require.NoError(t, err)
 
-		dot, err := redpanda.Chart.Dot(kube.Config{}, helmette.Release{
+		dot, err := redpanda.Chart.Dot(nil, helmette.Release{
 			Name:      "redpanda",
 			Namespace: "redpanda",
 			Service:   "Helm",
@@ -900,11 +900,9 @@ func TestControllersTag(t *testing.T) {
 
 func TestGoHelmEquivalence(t *testing.T) {
 	tmp := testutil.TempDir(t)
+	require.NoError(t, redpanda.Chart.Write(tmp))
 
 	chartDir := filepath.Join(tmp, "redpanda")
-	require.NoError(t, os.Mkdir(chartDir, 0o700))
-
-	require.NoError(t, redpanda.Chart.Write(chartDir))
 
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)
@@ -967,7 +965,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 				},
 			}
 
-			goObjs, err := redpanda.Chart.Render(kube.Config{}, helmette.Release{
+			goObjs, err := redpanda.Chart.Render(nil, helmette.Release{
 				Name:      "gotohelm",
 				Namespace: "mynamespace",
 				Service:   "Helm",
