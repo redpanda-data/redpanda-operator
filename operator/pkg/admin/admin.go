@@ -18,12 +18,12 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	"github.com/scalalang2/golang-fifo/sieve"
 	fifotypes "github.com/scalalang2/golang-fifo/types"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
