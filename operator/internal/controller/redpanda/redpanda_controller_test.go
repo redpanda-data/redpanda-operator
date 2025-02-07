@@ -20,9 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fluxcd/helm-controller/api/v2beta2"
-	fluxclient "github.com/fluxcd/pkg/runtime/client"
-	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +44,6 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -81,7 +77,7 @@ type RedpandaControllerSuite struct {
 var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
 
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
-	rp := s.minimalRP(false)
+	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(true)
 	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
 		Enabled: ptr.To(true),
@@ -156,7 +152,7 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 }
 
 func (s *RedpandaControllerSuite) TestTPLValues() {
-	rp := s.minimalRP(false)
+	rp := s.minimalRP()
 
 	extraVolumeMount := ptr.To(`- name: test-extra-volume
   mountPath: {{ upper "/fake/lifecycle" }}`)
@@ -217,7 +213,7 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 }
 
 func (s *RedpandaControllerSuite) TestManagedDecommission() {
-	rp := s.minimalRP(false)
+	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
 
 	s.applyAndWait(rp)
@@ -288,7 +284,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 }
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {
-	rp := s.minimalRP(false)
+	rp := s.minimalRP()
 	s.applyAndWait(rp)
 
 	setConfig := func(cfg map[string]any) {
@@ -463,7 +459,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}}
 
 	for _, c := range cases {
-		rp := s.minimalRP(false)
+		rp := s.minimalRP()
 		rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
 			Repository: ptr.To(c.image.repository),
 			Tag:        ptr.To(c.image.tag),
@@ -538,7 +534,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 }
 
 func (s *RedpandaControllerSuite) TestPodTemplateOverrides() {
-	rp := s.minimalRP(true)
+	rp := s.minimalRP()
 
 	rp.Spec.ClusterSpec.PostInstallJob = &redpandav1alpha2.PostInstallJob{
 		PodTemplate: &redpandav1alpha2.PodTemplate{
@@ -575,102 +571,13 @@ func (s *RedpandaControllerSuite) TestPodTemplateOverrides() {
 }
 
 func (s *RedpandaControllerSuite) TestConnectorsIntegration() {
-	rp := s.minimalRP(false)
+	rp := s.minimalRP()
 
 	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
 		Enabled: ptr.To(true),
 	}
 
 	s.applyAndWait(rp)
-	s.deleteAndWait(rp)
-}
-
-func (s *RedpandaControllerSuite) TestUpgradeRollback() {
-	rp := s.minimalRP(true)
-	rp.Spec.ChartRef.Upgrade = &redpandav1alpha2.HelmUpgrade{
-		Remediation: &v2beta2.UpgradeRemediation{
-			Retries:  1,
-			Strategy: ptr.To(v2beta2.RollbackRemediationStrategy),
-		},
-	}
-	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.2.3")
-
-	s.applyAndWait(rp)
-
-	// Apply a broken upgrade and make sure things rollback
-
-	rp.Spec.ChartRef.Timeout = ptr.To(metav1.Duration{Duration: 30 * time.Second})
-	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.99.99")
-
-	s.applyAndWaitFor(func(o client.Object) bool {
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == redpandav1alpha2.ReadyCondition {
-				if cond.Status == metav1.ConditionFalse && cond.Reason == "ArtifactFailed" {
-					return true
-				}
-				return false
-			}
-		}
-		return false
-	}, rp)
-
-	s.waitFor(&v2beta2.HelmRelease{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rp.GetName(),
-			Namespace: rp.GetNamespace(),
-		},
-	}, func(o client.Object) bool {
-		helmRelease := o.(*v2beta2.HelmRelease)
-
-		return helmRelease.Status.UpgradeFailures >= 1 && slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
-			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionFalse && cond.Reason == "UpgradeFailed"
-		})
-	})
-
-	s.waitFor(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rp.GetName(),
-			Namespace: rp.GetNamespace(),
-		},
-	}, func(o client.Object) bool {
-		statefulSet := o.(*appsv1.StatefulSet)
-
-		// check that we have a ready replica still because we've rolled back
-		return statefulSet.Status.ReadyReplicas == 1
-	})
-
-	// Apply the good upgrade
-
-	rp.Spec.ChartRef.Timeout = ptr.To(metav1.Duration{Duration: 3 * time.Minute})
-	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.2.10")
-
-	s.applyAndWait(rp)
-
-	s.waitFor(&v2beta2.HelmRelease{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rp.GetName(),
-			Namespace: rp.GetNamespace(),
-		},
-	}, func(o client.Object) bool {
-		helmRelease := o.(*v2beta2.HelmRelease)
-
-		return slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
-			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionTrue && cond.Reason == "UpgradeSucceeded"
-		})
-	})
-
-	s.waitFor(&appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rp.GetName(),
-			Namespace: rp.GetNamespace(),
-		},
-	}, func(o client.Object) bool {
-		statefulSet := o.(*appsv1.StatefulSet)
-
-		return statefulSet.Status.ReadyReplicas == 1
-	})
 	s.deleteAndWait(rp)
 }
 
@@ -691,7 +598,7 @@ func (s *RedpandaControllerSuite) TestIntegrationStableUIDAndGeneration() {
 	// - NoFlux (Fresh) -> Flux (Toggled) -> NoFlux (Toggled)
 	// - Flux (Fresh) -> NoFlux (Toggled) -> Flux (Toggled)
 	for _, useFlux := range []bool{true, false} {
-		rp := s.minimalRP(useFlux)
+		rp := s.minimalRP()
 
 		s.applyAndWait(rp)
 
@@ -732,23 +639,15 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	s.client = s.env.Client()
 
 	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
-		controllers := flux.NewFluxControllers(mgr, fluxclient.Options{}, fluxclient.KubeConfigOptions{})
-		for _, controller := range controllers {
-			if err := controller.SetupWithManager(s.ctx, mgr); err != nil {
-				return err
-			}
-		}
-
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
-			Client:            mgr.GetClient(),
-			Scheme:            mgr.GetScheme(),
-			EventRecorder:     mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory:     s.clientFactory,
-			HelmRepositoryURL: "https://charts.redpanda.com/",
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory: s.clientFactory,
 		}).SetupWithManager(s.ctx, mgr); err != nil {
 			return err
 		}
@@ -773,15 +672,6 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		for _, rp := range redpandas.Items {
 			s.deleteAndWait(&rp)
-		}
-
-		// For some reason, it seems that HelmCharts can get abandoned. Clean
-		// them up to prevent hanging the NS deletion.
-		var helmCharts sourcecontrollerv1beta2.HelmChartList
-		s.NoError(s.env.Client().List(s.ctx, &helmCharts))
-
-		for _, chart := range helmCharts.Items {
-			s.deleteAndWait(&chart)
 		}
 	})
 }
@@ -845,25 +735,15 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 	return name
 }
 
-func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redpanda {
+func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
-			ChartRef: redpandav1alpha2.ChartRef{
-				UseFlux: ptr.To(useFlux),
-				Upgrade: &redpandav1alpha2.HelmUpgrade{
-					Remediation: &v2beta2.UpgradeRemediation{
-						// Flux controller might fail before cert-manager creates certificate, because
-						// the default `retires` value is set to 0, it will not fail the HelmRelease resource
-						// installation or upgrade. To make CI test run less flaky allow at most 5 retires.
-						Retries: 5,
-					},
-				},
-			},
 			// Any empty structs are to make setting them more ergonomic
 			// without having to worry about nil pointers.
+			ChartRef: redpandav1alpha2.ChartRef{},
 			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
 				Config: &redpandav1alpha2.Config{},
 				External: &redpandav1alpha2.External{
@@ -1056,52 +936,6 @@ func TestPostInstallUpgradeJobIndex(t *testing.T) {
 	// Assert that index 0 is the envsubst container as that's what
 	// `clusterConfigfor` utilizes.
 	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
-}
-
-func TestIsFluxEnabled(t *testing.T) {
-	for _, tc := range []struct {
-		expected          bool
-		expectedSuspended bool
-		useFluxCRD        *bool
-		forceDefluxed     bool
-	}{
-		{true, false, ptr.To(true), false},
-		{false, true, ptr.To(false), false},
-		{true, false, nil, false},
-		{true, false, ptr.To(true), true},
-		{false, true, ptr.To(false), true},
-		{false, true, nil, true},
-	} {
-		r := redpanda.RedpandaReconciler{DefaultDisableFlux: tc.forceDefluxed}
-		assert.Equal(t, tc.expected, r.IsFluxEnabled(tc.useFluxCRD))
-		// When it comes for helmrepository and helmrelease they should be suspended
-		assert.Equal(t, tc.expectedSuspended, !r.IsFluxEnabled(tc.useFluxCRD))
-	}
-}
-
-func TestHelmRepositoryURL(t *testing.T) {
-	for _, tc := range []struct {
-		helmRepoURL string
-	}{
-		{""},
-		{"http://some-url.com/"},
-		{"address-that-can-be-resolved"},
-	} {
-		r := redpanda.RedpandaReconciler{HelmRepositoryURL: tc.helmRepoURL}
-		rp := &redpandav1alpha2.Redpanda{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "Redpanda-resource",
-			},
-			Spec: redpandav1alpha2.RedpandaSpec{
-				ChartRef: redpandav1alpha2.ChartRef{
-					ChartVersion: "5.x.x",
-				},
-				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{},
-			},
-		}
-		repo := r.HelmRepositoryFromTemplate(rp)
-		assert.Equal(t, tc.helmRepoURL, repo.Spec.URL)
-	}
 }
 
 // TestControllerRBAC asserts that the declared Roles and ClusterRoles of the

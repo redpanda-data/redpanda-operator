@@ -24,7 +24,6 @@ import (
 
 var (
 	//go:embed *.yaml
-	//go:embed toolkit.fluxcd.io/*.yaml
 	crdFS embed.FS
 
 	crds   []*apiextensionsv1.CustomResourceDefinition
