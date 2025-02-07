@@ -396,11 +396,8 @@ Certificate configures TLS certificates.
 for hooks) during Helm actions. Defaults to `15m0s`. + |  | Pattern: `^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$` +
 Type: string +
 
-| *`upgrade`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-helmupgrade[$$HelmUpgrade$$]__ | Defines how to handle upgrades, including failures. + |  | 
-| *`useFlux`* __boolean__ | IMPORTANT: Beta Feature +
-
-
-Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart. +
+| *`upgrade`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Defines how to handle upgrades, including failures. + |  | 
+| *`useFlux`* __boolean__ | Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart. +
 This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other +
 ChartRef fields to be ignored. +
 
@@ -983,30 +980,6 @@ HTTP configures settings for the HTTP Proxy listeners.
 | *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-helmupgrade"]
-==== HelmUpgrade
-
-
-
-HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-chartref[$$ChartRef$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`remediation`* __link:https://v2-2.docs.fluxcd.io/flux/components/helm/api/v2beta2/#helm.toolkit.fluxcd.io/v2beta2.InstallRemediation[$$UpgradeRemediation$$]__ | Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation. + |  | 
-| *`force`* __boolean__ | Enables forceful updates during an upgrade. + |  | 
-| *`preserveValues`* __boolean__ | Specifies whether to preserve user-configured values during an upgrade. + |  | 
-| *`cleanupOnFail`* __boolean__ | Specifies whether to perform cleanup in case of failed upgrades. + |  | 
 |===
 
 
@@ -2099,10 +2072,10 @@ RedpandaStatus defines the observed state of Redpanda
 |===
 | Field | Description | Default | Validation
 | *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 | *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +
 reconcile request value, so a change of the annotation value +
 can be detected. + |  | 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 | *`lastAppliedRevision`* __string__ | LastAppliedRevision is the revision of the last successfully applied source. + |  | 
 | *`lastAttemptedRevision`* __string__ | LastAttemptedRevision is the revision of the last reconciliation attempt. + |  | 
 | *`helmRelease`* __string__ |  |  | 
@@ -2118,8 +2091,6 @@ decommissioned from the cluster and provides its ordinal number. + |  |
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
 installed license in the Redpanda cluster. + |  | 
 |===
-
-
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetemplate"]

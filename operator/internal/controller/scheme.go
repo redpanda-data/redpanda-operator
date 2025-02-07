@@ -11,10 +11,6 @@ package controller
 
 import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	helmControllerAPIv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-	helmControllerAPIv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	sourceControllerAPIv1 "github.com/fluxcd/source-controller/api/v1"
-	sourceControllerAPIv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -34,12 +30,8 @@ var (
 	v2SchemeFns = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		certmanagerv1.AddToScheme,
-		helmControllerAPIv2beta1.AddToScheme,
-		helmControllerAPIv2beta2.AddToScheme,
 		redpandav1alpha1.AddToScheme,
 		redpandav1alpha2.AddToScheme,
-		sourceControllerAPIv1.AddToScheme,
-		sourceControllerAPIv1beta2.AddToScheme,
 		monitoringv1.AddToScheme,
 	}
 

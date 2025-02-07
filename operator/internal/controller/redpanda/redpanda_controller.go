@@ -12,8 +12,6 @@ package redpanda
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"slices"
 	"sort"
@@ -21,11 +19,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	helmv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/logger"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,12 +52,6 @@ const (
 
 	NotManaged = "false"
 
-	resourceReadyStrFmt    = "%s '%s/%s' is ready"
-	resourceNotReadyStrFmt = "%s '%s/%s' is not ready"
-
-	resourceTypeHelmRepository = "HelmRepository"
-	resourceTypeHelmRelease    = "HelmRelease"
-
 	managedPath = "/managed"
 
 	revisionPath        = "/revision"
@@ -79,40 +67,14 @@ type gvkKey struct {
 type RedpandaReconciler struct {
 	// KubeConfig is the [kube.Config] that provides the go helm chart
 	// Kubernetes access. It should be the same config used to create client.
-	KubeConfig         kube.Config
-	Client             client.Client
-	Scheme             *runtime.Scheme
-	EventRecorder      kuberecorder.EventRecorder
-	ClientFactory      internalclient.ClientFactory
-	DefaultDisableFlux bool
-	// HelmRepositorySpec.URL points to Redpanda helm repository where the following charts can be located:
-	// * Redpanda
-	// * Console
-	// * Connectors
-	// If not provided the v1alpha2.RedpandaChartRepository constant will be used.
-	HelmRepositoryURL string
+	KubeConfig    kube.Config
+	Client        client.Client
+	Scheme        *runtime.Scheme
+	EventRecorder kuberecorder.EventRecorder
+	ClientFactory internalclient.ClientFactory
 }
 
-// flux resources main resources
-// +kubebuilder:rbac:groups=helm.toolkit.fluxcd.io,namespace=default,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=helm.toolkit.fluxcd.io,namespace=default,resources=helmreleases/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=helm.toolkit.fluxcd.io,namespace=default,resources=helmreleases/finalizers,verbs=update
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmcharts,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmcharts/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmcharts/finalizers,verbs=get;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmrepositories,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmrepositories/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=helmrepositories/finalizers,verbs=get;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=gitrepository,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=gitrepository/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=gitrepository/finalizers,verbs=get;create;update;patch;delete
-
-// flux additional resources
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=buckets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=source.toolkit.fluxcd.io,namespace=default,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,namespace=default,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
-
-// any resource that Redpanda helm creates and flux controller needs to reconcile them
+// Any resource that the Redpanda helm chart creates and needs to reconcile.
 // +kubebuilder:rbac:groups="",namespace=default,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,namespace=default,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -167,9 +129,6 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Redpanda{}).
-		Owns(&sourcev1.HelmRepository{}).
-		Owns(&helmv2beta1.HelmRelease{}).
-		Owns(&helmv2beta2.HelmRelease{}).
 		Watches(&appsv1.StatefulSet{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
 		Watches(&appsv1.Deployment{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
 		Complete(r)
@@ -227,12 +186,20 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	rp, err := r.reconcileFlux(ctx, rp)
-	if err != nil {
-		return ctrl.Result{}, err
+	// Upgrade checks. Don't reconcile if UseFlux is true or if ChartRef is set.
+	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux {
+		log.Error(nil, "useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
+		return ctrl.Result{}, nil
 	}
 
-	if err := r.reconcileDefluxed(ctx, rp); err != nil {
+	if rp.Spec.ChartRef.ChartVersion != "" {
+		msg := "Specifying chartVersion is no longer supported. Please downgrade or unset `chartRef.chartVersion`"
+		log.Error(nil, msg)
+		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, msg)
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.reconcileResources(ctx, rp); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -262,20 +229,6 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 }
 
 func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
-		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.Status.HelmRepository)
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
-		return nil
-	}
-
-	if !ptr.Deref(rp.Status.HelmReleaseReady, false) {
-		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
-		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRelease, rp.GetNamespace(), rp.GetHelmReleaseName())
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
-		return nil
-	}
-
 	// pull our deployments and stateful sets
 	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
 	if err != nil {
@@ -327,29 +280,8 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
-
-	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
-		log.V(logger.TraceLevel).Info("useFlux is true; skipping non-flux reconciliation...")
-		return nil
-	}
-
-	chartVersion := rp.Spec.ChartRef.ChartVersion
-	desiredChartVersion := redpanda.Chart.Metadata().Version
-
-	if !(chartVersion == "" || chartVersion == desiredChartVersion) {
-		msg := fmt.Sprintf(".spec.chartRef.chartVersion needs to be %q or %q. got %q", desiredChartVersion, "", chartVersion)
-
-		// NB: passing `nil` as err is acceptable for log.Error.
-		log.Error(nil, msg, "chart version", rp.Spec.ChartRef.ChartVersion)
-		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, msg)
-
-		redpandav1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", msg)
-
-		// Do not error out to not requeue. User needs to first migrate helm release to either "" or the pinned chart's version.
-		return nil
-	}
 
 	// DeepCopy values to prevent any accidental mutations that may occur
 	// within the chart itself.
@@ -423,7 +355,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 	}
 
 	// Garbage collect any objects that are no longer needed.
-	if err := r.reconcileDefluxGC(ctx, rp, created); err != nil {
+	if err := r.reconcileGC(ctx, rp, created); err != nil {
 		return err
 	}
 
@@ -433,7 +365,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *redpandav1alpha2.Redpanda, conditionType string) bool {
 	log := ctrl.LoggerFrom(ctx)
 
-	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
+	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, redpandav1alpha2.ReadyCondition)
 
 	if !(rp.GenerationObserved() || redpandaReady) {
 		log.V(logger.TraceLevel).Info(fmt.Sprintf("redpanda not yet ready. skipping %s reconciliation.", conditionType))
@@ -580,17 +512,6 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		return nil
 	}
 
-	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
-		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-			Type:               redpandav1alpha2.ClusterConfigSynced,
-			Status:             metav1.ConditionUnknown,
-			ObservedGeneration: rp.Generation,
-			Reason:             "HandledByFlux",
-			Message:            "cluster configuration is not managed by the operator when Flux is enabled",
-		})
-		return nil
-	}
-
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
 		return err
@@ -686,7 +607,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	return desired, nil
 }
 
-func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpandav1alpha2.Redpanda, created map[gvkKey]struct{}) error {
+func (r *RedpandaReconciler) reconcileGC(ctx context.Context, rp *redpandav1alpha2.Redpanda, created map[gvkKey]struct{}) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	types, err := allListTypes(r.Client)
@@ -757,27 +678,6 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpanda
 	return errors.Join(errs...)
 }
 
-func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *redpandav1alpha2.Redpanda) (*redpandav1alpha2.Redpanda, error) {
-	log := ctrl.LoggerFrom(ctx)
-	log.WithName("RedpandaReconciler.reconcile")
-
-	// Check if HelmRepository exists or create it
-	if err := r.reconcileHelmRepository(ctx, rp); err != nil {
-		return rp, err
-	}
-
-	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
-		return rp, nil
-	}
-
-	// Check if HelmRelease exists or create it also
-	if err := r.reconcileHelmRelease(ctx, rp); err != nil {
-		return rp, err
-	}
-
-	return rp, nil
-}
-
 func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpandav1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
@@ -802,57 +702,6 @@ func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpanda
 	return len(health.AllNodes) > desiredReplicas, nil
 }
 
-func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	hr, err := r.createHelmReleaseFromTemplate(ctx, rp)
-	if err != nil {
-		return err
-	}
-
-	if err := r.apply(ctx, hr); err != nil {
-		return err
-	}
-
-	isGenerationCurrent := hr.Generation == hr.Status.ObservedGeneration
-	isStatusConditionReady := apimeta.IsStatusConditionTrue(hr.Status.Conditions, meta.ReadyCondition) || apimeta.IsStatusConditionTrue(hr.Status.Conditions, helmv2beta2.RemediatedCondition)
-
-	// When UseFlux is false, we suspend the HelmRelease which completely
-	// disables the controller. In such cases, we have to lie a bit to keep
-	// everything else chugging along as expected.
-	if hr.Spec.Suspend {
-		isGenerationCurrent = true
-		isStatusConditionReady = true
-	}
-
-	rp.Status.HelmRelease = hr.Name
-	rp.Status.HelmReleaseReady = ptr.To(isGenerationCurrent && isStatusConditionReady)
-
-	return nil
-}
-
-func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	repo := r.HelmRepositoryFromTemplate(rp)
-
-	if err := r.apply(ctx, repo); err != nil {
-		return fmt.Errorf("applying HelmRepository: %w", err)
-	}
-
-	isGenerationCurrent := repo.Generation == repo.Status.ObservedGeneration
-	isStatusConditionReady := apimeta.IsStatusConditionTrue(repo.Status.Conditions, meta.ReadyCondition)
-
-	// When UseFlux is false, we suspend the HelmRepository which completely
-	// disables the controller. In such cases, we have to lie a bit to keep
-	// everything else chugging along as expected.
-	if repo.Spec.Suspend {
-		isGenerationCurrent = true
-		isStatusConditionReady = true
-	}
-
-	rp.Status.HelmRepository = repo.Name
-	rp.Status.HelmRepositoryReady = ptr.To(isStatusConditionReady && isGenerationCurrent)
-
-	return nil
-}
-
 func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
@@ -861,112 +710,6 @@ func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1
 		}
 	}
 	return nil
-}
-
-func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *redpandav1alpha2.Redpanda) (*helmv2beta2.HelmRelease, error) {
-	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.createHelmReleaseFromTemplate")
-
-	values, err := rp.ValuesJSON()
-	if err != nil {
-		return nil, fmt.Errorf("could not parse clusterSpec to json: %w", err)
-	}
-
-	log.V(logger.DebugLevel).Info("helm release values", "raw-values", string(values.Raw))
-
-	hasher := sha256.New()
-	hasher.Write(values.Raw)
-	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-	// TODO possibly add the SHA to the status
-	log.V(logger.TraceLevel).Info(fmt.Sprintf("SHA of values file to use: %s", sha))
-
-	timeout := rp.Spec.ChartRef.Timeout
-	if timeout == nil {
-		timeout = &metav1.Duration{Duration: 15 * time.Minute}
-	}
-
-	chartVersion := rp.Spec.ChartRef.ChartVersion
-	if chartVersion == "" {
-		chartVersion = redpanda.Chart.Metadata().Version
-	}
-
-	upgrade := &helmv2beta2.Upgrade{
-		// we skip waiting since relying on the Helm release process
-		// to actually happen means that we block running any sort
-		// of pending upgrades while we are attempting the upgrade job.
-		DisableWait:        true,
-		DisableWaitForJobs: true,
-	}
-
-	helmUpgrade := rp.Spec.ChartRef.Upgrade
-	if rp.Spec.ChartRef.Upgrade != nil {
-		if helmUpgrade.Force != nil {
-			upgrade.Force = ptr.Deref(helmUpgrade.Force, false)
-		}
-		if helmUpgrade.CleanupOnFail != nil {
-			upgrade.CleanupOnFail = ptr.Deref(helmUpgrade.CleanupOnFail, false)
-		}
-		if helmUpgrade.PreserveValues != nil {
-			upgrade.PreserveValues = ptr.Deref(helmUpgrade.PreserveValues, false)
-		}
-		if helmUpgrade.Remediation != nil {
-			upgrade.Remediation = helmUpgrade.Remediation
-		}
-	}
-
-	return &helmv2beta2.HelmRelease{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            rp.GetHelmReleaseName(),
-			Namespace:       rp.Namespace,
-			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
-		},
-		Spec: helmv2beta2.HelmReleaseSpec{
-			Suspend: !r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux),
-			Chart: helmv2beta2.HelmChartTemplate{
-				Spec: helmv2beta2.HelmChartTemplateSpec{
-					Chart:    "redpanda",
-					Version:  chartVersion,
-					Interval: &metav1.Duration{Duration: 1 * time.Minute},
-					SourceRef: helmv2beta2.CrossNamespaceObjectReference{
-						Kind:      "HelmRepository",
-						Name:      rp.GetHelmRepositoryName(),
-						Namespace: rp.Namespace,
-					},
-				},
-			},
-			Values:   values,
-			Interval: metav1.Duration{Duration: 30 * time.Second},
-			Timeout:  timeout,
-			Upgrade:  upgrade,
-			Install: &helmv2beta2.Install{
-				Remediation: &helmv2beta2.InstallRemediation{
-					// Per the flux helm remediation docs negative value is set to
-					// reconcile even if client-side cache has stale data.
-					//
-					// Flux Docs:
-					// Retries is the number of retries that should be attempted on
-					// failures before bailing. Remediation, using an uninstall,
-					// is performed between each attempt. Defaults to '0', a negative
-					// integer equals to unlimited retries.
-					Retries: -1,
-				},
-			},
-		},
-	}, nil
-}
-
-func (r *RedpandaReconciler) HelmRepositoryFromTemplate(rp *redpandav1alpha2.Redpanda) *sourcev1.HelmRepository {
-	return &sourcev1.HelmRepository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            rp.GetHelmRepositoryName(),
-			Namespace:       rp.Namespace,
-			OwnerReferences: []metav1.OwnerReference{rp.OwnerShipRefObj()},
-		},
-		Spec: sourcev1.HelmRepositorySpec{
-			Suspend:  !r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux),
-			Interval: metav1.Duration{Duration: 30 * time.Second},
-			URL:      r.HelmRepositoryURL,
-		},
-	}
 }
 
 func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
@@ -1057,8 +800,4 @@ func allListTypes(c client.Client) ([]client.ObjectList, error) {
 		types = append(types, list.(client.ObjectList))
 	}
 	return types, nil
-}
-
-func (r *RedpandaReconciler) IsFluxEnabled(useFlux *bool) bool {
-	return ptr.Deref(useFlux, !r.DefaultDisableFlux)
 }

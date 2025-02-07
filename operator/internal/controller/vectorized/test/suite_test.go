@@ -20,11 +20,6 @@ import (
 	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	helmControllerAPIV2Beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
-	helmControllerAPIV2Beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	fluxclient "github.com/fluxcd/pkg/runtime/client"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	sourcev1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -42,7 +37,6 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -111,16 +105,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).NotTo(HaveOccurred())
 	err = certmanagerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = helmControllerAPIV2Beta1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = helmControllerAPIV2Beta2.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = helmControllerAPIV2Beta2.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = sourcev1beta2.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = sourcev1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
@@ -134,10 +118,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 	ctx = ctrl.SetupSignalHandler()
 	ctx, controllerCancel = context.WithCancel(ctx)
-
-	for _, controller := range flux.NewFluxControllers(k8sManager, fluxclient.Options{}, fluxclient.KubeConfigOptions{}) {
-		Expect(controller.SetupWithManager(ctx, k8sManager)).ToNot(HaveOccurred())
-	}
 
 	testAdminAPI = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI")}
 	testAdminAPIFactory = func(
@@ -200,12 +180,11 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:        kube.RestToConfig(k8sManager.GetConfig()),
-		Client:            k8sManager.GetClient(),
-		ClientFactory:     internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		Scheme:            k8sManager.GetScheme(),
-		EventRecorder:     k8sManager.GetEventRecorderFor("RedpandaReconciler"),
-		HelmRepositoryURL: "https://charts.redpanda.com/",
+		KubeConfig:    kube.RestToConfig(k8sManager.GetConfig()),
+		Client:        k8sManager.GetClient(),
+		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
+		Scheme:        k8sManager.GetScheme(),
+		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
