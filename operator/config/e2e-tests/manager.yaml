@@ -19,7 +19,7 @@ spec:
         - "--configurator-image-pull-policy=Never"
         - "--superusers-prefix=__redpanda_system__"
         - "--log-level=trace"
-        - "--unsafe-decommission-failed-brokers=true"
+        - "--enable-sts-decommissioner"
         - "--unbind-pvcs-after=5s"
         livenessProbe:
           timeoutSeconds: 10

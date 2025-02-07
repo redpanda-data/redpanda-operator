@@ -15,10 +15,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/fluxcd/pkg/runtime/client"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/kube"
@@ -27,6 +34,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	kubeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -114,28 +122,29 @@ func (s *LabelSelectorValue) Type() string {
 
 func Command() *cobra.Command {
 	var (
-		clusterDomain               string
-		metricsAddr                 string
-		probeAddr                   string
-		pprofAddr                   string
-		enableLeaderElection        bool
-		webhookEnabled              bool
-		configuratorBaseImage       string
-		configuratorTag             string
-		configuratorImagePullPolicy string
-		decommissionWaitInterval    time.Duration
-		metricsTimeout              time.Duration
-		restrictToRedpandaVersion   string
-		namespace                   string
-		additionalControllers       []string
-		operatorMode                bool
-		enableHelmControllers       bool
-		ghostbuster                 bool
-		unbindPVCsAfter             time.Duration
-		unbinderSelector            LabelSelectorValue
-		autoDeletePVCs              bool
-		forceDefluxedMode           bool
-		helmRepositoryURL           string
+		clusterDomain                   string
+		metricsAddr                     string
+		probeAddr                       string
+		pprofAddr                       string
+		enableLeaderElection            bool
+		webhookEnabled                  bool
+		configuratorBaseImage           string
+		configuratorTag                 string
+		configuratorImagePullPolicy     string
+		decommissionWaitInterval        time.Duration
+		metricsTimeout                  time.Duration
+		restrictToRedpandaVersion       string
+		namespace                       string
+		additionalControllers           []string
+		operatorMode                    bool
+		enableHelmControllers           bool
+		ghostbuster                     bool
+		unbindPVCsAfter                 time.Duration
+		unbinderSelector                LabelSelectorValue
+		autoDeletePVCs                  bool
+		forceDefluxedMode               bool
+		helmRepositoryURL               string
+		enableStatefulSetDecommissioner bool
 	)
 
 	cmd := &cobra.Command{
@@ -168,6 +177,7 @@ func Command() *cobra.Command {
 				forceDefluxedMode,
 				pprofAddr,
 				helmRepositoryURL,
+				enableStatefulSetDecommissioner,
 			)
 		},
 	}
@@ -201,6 +211,7 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
 	cmd.Flags().StringVar(&helmRepositoryURL, "helm-repository-url", "https://charts.redpanda.com/", "URL to overwrite official `https://charts.redpanda.com/` Redpanda Helm chart repository")
+	cmd.Flags().BoolVar(&enableStatefulSetDecommissioner, "enable-sts-decommissioner", false, "Enable StatefulSet decommissioner. It can decommission Ghost Brokers.")
 
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
@@ -211,6 +222,21 @@ func Command() *cobra.Command {
 	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
 
 	return cmd
+}
+
+type v1Fetcher struct {
+	client kubeClient.Client
+}
+
+func (f *v1Fetcher) FetchLatest(ctx context.Context, name, namespace string) (any, error) {
+	var vectorizedCluster vectorizedv1alpha1.Cluster
+	if err := f.client.Get(ctx, types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, &vectorizedCluster); err != nil {
+		return nil, err
+	}
+	return &vectorizedCluster, nil
 }
 
 //nolint:funlen,gocyclo // length looks good
@@ -238,6 +264,7 @@ func Run(
 	forceDefluxedMode bool,
 	pprofAddr string,
 	helmRepositoryURL string,
+	enableStatefulSetDecommissioner bool,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -495,6 +522,47 @@ func Run(
 			Selector: unbinderSelector,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+			return err
+		}
+	}
+
+	if enableStatefulSetDecommissioner {
+		d := decommissioning.NewStatefulSetDecommissioner(mgr, &v1Fetcher{client: mgr.GetClient()},
+			decommissioning.WithCleanupPVCs(false),
+			decommissioning.WithFactory(internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient())),
+			decommissioning.WithFilter(func(ctx context.Context, sts *appsv1.StatefulSet) (bool, error) {
+				if !slices.ContainsFunc(
+					sts.OwnerReferences,
+					func(ownerRef metav1.OwnerReference) bool {
+						return ownerRef.APIVersion == vectorizedv1alpha1.GroupVersion.String() && ownerRef.Kind == "Cluster"
+					}) {
+					return false, nil
+				}
+
+				instance, ok := sts.Labels["app.kubernetes.io/instance"]
+				if !ok {
+					return false, errors.New("expected to find app.kubernetes.io/instance label, but it's missing")
+				}
+
+				var vectorizedCluster vectorizedv1alpha1.Cluster
+				if err := mgr.GetClient().Get(ctx, types.NamespacedName{
+					Name:      instance,
+					Namespace: sts.Namespace,
+				}, &vectorizedCluster); err != nil {
+					return false, fmt.Errorf("could not get Cluster: %w", err)
+				}
+
+				managedAnnotationKey := vectorizedv1alpha1.GroupVersion.Group + "/managed"
+				if managed, exists := vectorizedCluster.Annotations[managedAnnotationKey]; exists && managed == "false" {
+					ctrl.Log.V(1).Info("ignoring StatefulSet of unmanaged V1 Cluster", "sts", sts.Name, "namespace", sts.Namespace)
+					return false, nil
+				}
+
+				return true, nil
+			}),
+		)
+		if err := d.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
 	}

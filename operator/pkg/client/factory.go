@@ -13,6 +13,8 @@ import (
 	"context"
 	"errors"
 
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/spf13/afero"
@@ -180,6 +182,10 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.redpandaAdminForCluster(cluster)
+	}
+
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.redpandaAdminForV1Cluster(cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
