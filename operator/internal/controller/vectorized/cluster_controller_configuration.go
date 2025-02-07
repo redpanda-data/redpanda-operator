@@ -68,7 +68,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return errorWithContext(err, "could not load the last applied configuration")
 	}
 
-	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider())
+	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
 		return errorWithContext(err, "error creating the admin API client")
 	}

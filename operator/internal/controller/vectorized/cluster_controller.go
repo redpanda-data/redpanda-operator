@@ -40,6 +40,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -79,6 +80,7 @@ type ClusterReconciler struct {
 	RestrictToRedpandaVersion string
 	GhostDecommissioning      bool
 	AutoDeletePVCs            bool
+	Dialer                    redpanda.DialContextFunc
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -240,7 +242,7 @@ func (r *ClusterReconciler) Reconcile(
 		return result, nil
 	}
 
-	adminAPI, err := r.AdminAPIClientFactory(ctx, r.Client, &vectorizedCluster, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider())
+	adminAPI, err := r.AdminAPIClientFactory(ctx, r.Client, &vectorizedCluster, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil && !errors.Is(err, &adminutils.NoInternalAdminAPI{}) {
 		return ctrl.Result{}, fmt.Errorf("creating admin api client: %w", err)
 	}
@@ -461,7 +463,7 @@ func (r *ClusterReconciler) fetchAdminNodeID(ctx context.Context, rp *vectorized
 		return -1, fmt.Errorf("getting pki: %w", err)
 	}
 
-	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), pod.Name)
+	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), r.Dialer, pod.Name)
 	if err != nil {
 		return -1, fmt.Errorf("unable to create admin client: %w", err)
 	}
@@ -892,7 +894,7 @@ func (r *ClusterReconciler) rpBrokerList(ctx context.Context, vCluster *vectoriz
 		return nil, nil, nil, fmt.Errorf("getting pki: %w", err)
 	}
 
-	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, vCluster, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider())
+	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, vCluster, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("creating admin client: %w", err)
 	}

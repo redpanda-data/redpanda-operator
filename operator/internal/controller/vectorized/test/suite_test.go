@@ -40,11 +40,12 @@ import (
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -146,6 +147,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		_ *vectorizedv1alpha1.Cluster,
 		_ string,
 		_ types.AdminTLSConfigProvider,
+		_ redpanda.DialContextFunc,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
 		if len(pods) == 1 {
@@ -198,7 +200,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 
 	// Redpanda Reconciler
-	err = (&redpanda.RedpandaReconciler{
+	err = (&redpandacontrollers.RedpandaReconciler{
 		Client:            k8sManager.GetClient(),
 		ClientFactory:     internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
 		Scheme:            k8sManager.GetScheme(),
@@ -207,19 +209,19 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&redpanda.DecommissionReconciler{
+	err = (&redpandacontrollers.DecommissionReconciler{
 		Client:       k8sManager.GetClient(),
 		OperatorMode: false,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&redpanda.RedpandaNodePVCReconciler{
+	err = (&redpandacontrollers.RedpandaNodePVCReconciler{
 		Client:       k8sManager.GetClient(),
 		OperatorMode: false,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&redpanda.ManagedDecommissionReconciler{
+	err = (&redpandacontrollers.ManagedDecommissionReconciler{
 		Client: k8sManager.GetClient(),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())

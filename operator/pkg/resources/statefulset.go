@@ -36,6 +36,7 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -121,6 +122,7 @@ type StatefulSetResource struct {
 	nodePool          vectorizedv1alpha1.NodePoolSpecWithDeleted
 
 	autoDeletePVCs bool
+	dialer         redpanda.DialContextFunc
 }
 
 func (r *StatefulSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {

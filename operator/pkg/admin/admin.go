@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	"github.com/scalalang2/golang-fifo/sieve"
 	fifotypes "github.com/scalalang2/golang-fifo/types"
 	corev1 "k8s.io/api/core/v1"
@@ -57,6 +58,7 @@ func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) 
 		redpandaCluster *vectorizedv1alpha1.Cluster,
 		fqdn string,
 		adminTLSProvider types.AdminTLSConfigProvider,
+		dialer redpanda.DialContextFunc,
 		pods ...string,
 	) (AdminAPIClient, error) {
 		// If no pods are provided, list them, and do not rely on the inner uncached client to do this for us.
@@ -87,7 +89,7 @@ func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) 
 			return client, nil
 		}
 
-		client, err := factory(ctx, k8sClient, redpandaCluster, fqdn, adminTLSProvider, pods...) //nolint:gocritic // Same as above.
+		client, err := factory(ctx, k8sClient, redpandaCluster, fqdn, adminTLSProvider, dialer, pods...) //nolint:gocritic // Same as above.
 		if err != nil {
 			return nil, err
 		}
@@ -105,6 +107,7 @@ func NewNodePoolInternalAdminAPI(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	adminTLSProvider types.AdminTLSConfigProvider,
+	dialer redpanda.DialContextFunc,
 	pods ...string,
 ) (AdminAPIClient, error) {
 	adminInternal := redpandaCluster.AdminAPIInternal()
@@ -146,7 +149,7 @@ func NewNodePoolInternalAdminAPI(
 		urls = append(urls, fmt.Sprintf("%s.%s:%d", pod, fqdn, adminInternalPort))
 	}
 
-	adminAPI, err := rpadmin.NewAdminAPI(urls, &rpadmin.NopAuth{}, tlsConfig) // If RPAdmin receives support for ServiceDiscovery, we can leverage it here.
+	adminAPI, err := rpadmin.NewAdminAPIWithDialer(urls, &rpadmin.NopAuth{}, tlsConfig, dialer) // If RPAdmin receives support for ServiceDiscovery, we can leverage it here.
 	if err != nil {
 		return nil, fmt.Errorf("error creating admin api for cluster %s/%s using urls %v (tls=%v): %w", redpandaCluster.Namespace, redpandaCluster.Name, urls, tlsConfig != nil, err)
 	}
@@ -193,6 +196,7 @@ type NodePoolAdminAPIClientFactory func(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	adminTLSProvider types.AdminTLSConfigProvider,
+	dialer redpanda.DialContextFunc,
 	pods ...string,
 ) (AdminAPIClient, error)
 

@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -40,6 +41,7 @@ type KafkaSA struct {
 	adminAPI           adminutils.NodePoolAdminAPIClientFactory
 	superUsersResource *resources.SuperUsersResource
 	log                logr.Logger
+	dialer             redpanda.DialContextFunc
 }
 
 // NewKafkaSA instantiates a new KafkaSA
@@ -115,7 +117,7 @@ func (k *KafkaSA) Ensure(ctx context.Context) error {
 	username := string(secret.Data[corev1.BasicAuthUsernameKey])
 	password := string(secret.Data[corev1.BasicAuthPasswordKey])
 
-	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.log)
+	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.log)
 	if err != nil {
 		return err
 	}
@@ -161,7 +163,7 @@ func (k *KafkaSA) Cleanup(ctx context.Context) error {
 		return k.Update(ctx, k.consoleobj)
 	}
 
-	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.log)
+	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.log)
 	if err != nil {
 		return err
 	}
