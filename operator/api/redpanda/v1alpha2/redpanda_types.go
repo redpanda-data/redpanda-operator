@@ -16,11 +16,10 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
-	"github.com/fluxcd/pkg/apis/meta"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
@@ -52,10 +51,9 @@ type ChartRef struct {
 	// +kubebuilder:validation:Pattern="^([0-9]+(\\.[0-9]+)?(ms|s|m|h))+$"
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// Defines how to handle upgrades, including failures.
-	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
-	// IMPORTANT: Beta Feature
-	//
+	Upgrade *runtime.RawExtension `json:"upgrade,omitempty"`
 	// Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
 	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
 	// ChartRef fields to be ignored.
@@ -106,11 +104,15 @@ type RedpandaStatus struct {
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	meta.ReconcileRequestStatus `json:",inline"`
-
 	// Conditions holds the conditions for the Redpanda.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// LastHandledReconcileAt holds the value of the most recent
+	// reconcile request value, so a change of the annotation value
+	// can be detected.
+	// +optional
+	LastHandledReconcileAt string `json:"lastHandledReconcileAt,omitempty"`
 
 	// LastAppliedRevision is the revision of the last successfully applied source.
 	// +optional
@@ -180,20 +182,6 @@ func (s *RedpandaLicenseStatus) String() string {
 	return fmt.Sprintf("License Status: Expired(%s), Expiration(%s), Features([%s])", expired, expiration, strings.Join(s.InUseFeatures, ", "))
 }
 
-type RemediationStrategy string
-
-// HelmUpgrade configures the behavior and strategy for Helm chart upgrades.
-type HelmUpgrade struct {
-	// Specifies the actions to take on upgrade failures. See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
-	Remediation *helmv2beta2.UpgradeRemediation `json:"remediation,omitempty"`
-	// Enables forceful updates during an upgrade.
-	Force *bool `json:"force,omitempty"`
-	// Specifies whether to preserve user-configured values during an upgrade.
-	PreserveValues *bool `json:"preserveValues,omitempty"`
-	// Specifies whether to perform cleanup in case of failed upgrades.
-	CleanupOnFail *bool `json:"cleanupOnFail,omitempty"`
-}
-
 // Redpanda defines the CRD for Redpanda clusters.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -255,7 +243,7 @@ func (in *Redpanda) GenerationObserved() bool {
 // RedpandaReady registers a successful reconciliation of the given HelmRelease.
 func RedpandaReady(rp *Redpanda) *Redpanda {
 	newCondition := metav1.Condition{
-		Type:    meta.ReadyCondition,
+		Type:    ReadyCondition,
 		Status:  metav1.ConditionTrue,
 		Reason:  "RedpandaClusterDeployed",
 		Message: "Redpanda reconciliation succeeded",
@@ -268,7 +256,7 @@ func RedpandaReady(rp *Redpanda) *Redpanda {
 // RedpandaNotReady registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
 	newCondition := metav1.Condition{
-		Type:    meta.ReadyCondition,
+		Type:    ReadyCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: message,

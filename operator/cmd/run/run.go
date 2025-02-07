@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	helmkube "helm.sh/helm/v3/pkg/kube"
@@ -41,7 +40,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
@@ -72,21 +70,13 @@ const (
 	OperatorV2Mode          = OperatorState("Namespaced-v2")
 	NamespaceControllerMode = OperatorState("Namespaced-Controllers")
 
-	controllerName               = "redpanda-controller"
-	helmReleaseControllerName    = "redpanda-helmrelease-controller"
-	helmChartControllerName      = "redpanda-helmchart-reconciler"
-	helmRepositoryControllerName = "redpanda-helmrepository-controller"
+	controllerName = "redpanda-controller"
 )
 
-var (
-	clientOptions  client.Options
-	kubeConfigOpts client.KubeConfigOptions
-
-	availableControllers = []string{
-		NodeController.toString(),
-		DecommissionController.toString(),
-	}
-)
+var availableControllers = []string{
+	NodeController.toString(),
+	DecommissionController.toString(),
+}
 
 type LabelSelectorValue struct {
 	Selector labels.Selector
@@ -137,13 +127,10 @@ func Command() *cobra.Command {
 		namespace                   string
 		additionalControllers       []string
 		operatorMode                bool
-		enableHelmControllers       bool
 		ghostbuster                 bool
 		unbindPVCsAfter             time.Duration
 		unbinderSelector            LabelSelectorValue
 		autoDeletePVCs              bool
-		forceDefluxedMode           bool
-		helmRepositoryURL           string
 		webhookCertPath             string
 		webhookCertName             string
 		webhookCertKey              string
@@ -176,14 +163,11 @@ func Command() *cobra.Command {
 				namespace,
 				additionalControllers,
 				operatorMode,
-				enableHelmControllers,
 				ghostbuster,
 				unbindPVCsAfter,
 				unbinderSelector.Selector,
 				autoDeletePVCs,
-				forceDefluxedMode,
 				pprofAddr,
-				helmRepositoryURL,
 				webhookCertPath,
 				webhookCertName,
 				webhookCertKey,
@@ -220,28 +204,22 @@ func Command() *cobra.Command {
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
 	cmd.Flags().StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	cmd.Flags().BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
-	cmd.Flags().BoolVar(&enableHelmControllers, "enable-helm-controllers", true, "if a namespace is defined and operator mode is true, this enables the use of helm controllers to manage fluxcd helm resources.")
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().Var(&unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
-	cmd.Flags().BoolVar(&forceDefluxedMode, "force-defluxed-mode", false, "specifies the default value for useFlux of Redpanda CRs if not specified. May be used in conjunction with enable-helm-controllers=false")
-	cmd.Flags().StringVar(&helmRepositoryURL, "helm-repository-url", "https://charts.redpanda.com/", "URL to overwrite official `https://charts.redpanda.com/` Redpanda Helm chart repository")
-
 	cmd.Flags().StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
 	cmd.Flags().StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
 	cmd.Flags().StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
-	cmd.Flags().StringVar(&metricsCertPath, "metrics-cert-path", "",
-		"The directory that contains the metrics server certificate.")
+	cmd.Flags().StringVar(&metricsCertPath, "metrics-cert-path", "", "The directory that contains the metrics server certificate.")
 	cmd.Flags().StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
 	cmd.Flags().StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
-
-	// 3rd party flags.
-	clientOptions.BindFlags(cmd.Flags())
-	kubeConfigOpts.BindFlags(cmd.Flags())
 
 	// Deprecated flags.
 	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
 	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
+	cmd.Flags().Bool("enable-helm-controllers", false, "A deprecated and unused flag")
+	cmd.Flags().String("helm-repository-url", "https://charts.redpanda.com/", "A deprecated and unused flag")
+	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
 
 	return cmd
 }
@@ -265,14 +243,11 @@ func Run(
 	namespace string,
 	additionalControllers []string,
 	operatorMode bool,
-	enableHelmControllers bool,
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
 	unbinderSelector labels.Selector,
 	autoDeletePVCs bool,
-	forceDefluxedMode bool,
 	pprofAddr string,
-	helmRepositoryURL string,
 	webhookCertPath string,
 	webhookCertName string,
 	webhookCertKey string,
@@ -504,30 +479,15 @@ func Run(
 			})
 		}
 	case OperatorV2Mode:
-		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "helm controllers enabled", enableHelmControllers, "namespace", namespace)
-
-		// if we enable these controllers then run them, otherwise, do not
-		//nolint:nestif // not really nested, required.
-		if enableHelmControllers {
-			controllers := flux.NewFluxControllers(mgr, clientOptions, kubeConfigOpts)
-
-			for _, controller := range controllers {
-				if err := controller.SetupWithManager(ctx, mgr); err != nil {
-					setupLog.Error(err, "Unable to create flux controller")
-					return err
-				}
-			}
-		}
+		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "namespace", namespace)
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:         kube.RestToConfig(mgr.GetConfig()),
-			Client:             mgr.GetClient(),
-			Scheme:             mgr.GetScheme(),
-			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
-			ClientFactory:      internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
-			DefaultDisableFlux: forceDefluxedMode,
-			HelmRepositoryURL:  helmRepositoryURL,
+			KubeConfig:    kube.RestToConfig(mgr.GetConfig()),
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
+			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err

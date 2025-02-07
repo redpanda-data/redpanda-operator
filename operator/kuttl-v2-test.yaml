@@ -13,12 +13,11 @@ commands:
     ignoreFailure: true
   - command: ./hack/install-cert-manager.sh tests/_e2e_artifacts_v2
   - script: kubectl kustomize ./config/crd | kubectl apply --server-side -f -
-  - command: helm repo add redpanda https://charts.redpanda.com
-  - command: helm repo update
-  - command: helm install --set logLevel=trace --set image.tag=dev
-      --set image.repository=localhost/redpanda-operator --namespace redpanda --create-namespace redpanda-operator
-       redpanda/operator --set rbac.createAdditionalControllerCRs=true --set additionalCmdFlags="{--additional-controllers=all,--force-defluxed-mode,--enable-helm-controllers=false}"
-      --set rbac.createRPKBundleCRs=true --wait
+  - command: helm install redpanda-operator ../charts/operator
+      --dependency-update --namespace redpanda --create-namespace --wait
+      --set logLevel=trace --set image.tag=dev --set image.repository=localhost/redpanda-operator
+      --set additionalCmdFlags="{--additional-controllers=all}"
+      --set rbac.createAdditionalControllerCRs=true --set rbac.createRPKBundleCRs=true
 artifactsDir: tests/_e2e_artifacts_v2
 timeout: 720
 reportFormat: xml

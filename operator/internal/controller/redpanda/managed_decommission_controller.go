@@ -341,6 +341,10 @@ func updateRedpanda(ctx context.Context, rp *redpandav1alpha2.Redpanda, c k8scli
 		return fmt.Errorf("getting latest Redpanda resource: %w", err)
 	}
 
+	// HACK: Disable optimistic locking. Technically, the correct way to do
+	// this is to set both objects' ResourceVersion to "". It's a waste of
+	// resources deep copy rp, so we just copy it over.
+	latest.ResourceVersion = rp.ResourceVersion
 	err := c.Status().Patch(ctx, rp, k8sclient.MergeFrom(latest))
 	if err != nil {
 		return fmt.Errorf("patching Redpanda status: %w", err)

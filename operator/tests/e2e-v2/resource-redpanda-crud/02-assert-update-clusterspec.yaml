@@ -17,10 +17,6 @@ status:
       type: Ready
     - type: ClusterLicenseValid
     - type: ClusterConfigSynced
-  helmRelease: redpanda
-  helmReleaseReady: true
-  helmRepository: redpanda-repository
-  helmRepositoryReady: true
 ---
 apiVersion: apps/v1
 kind: StatefulSet

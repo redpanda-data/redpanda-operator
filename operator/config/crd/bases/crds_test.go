@@ -19,18 +19,12 @@ import (
 
 func TestCRDS(t *testing.T) {
 	names := map[string]struct{}{
-		"buckets.source.toolkit.fluxcd.io":          {},
-		"clusters.redpanda.vectorized.io":           {},
-		"consoles.redpanda.vectorized.io":           {},
-		"gitrepositories.source.toolkit.fluxcd.io":  {},
-		"helmcharts.source.toolkit.fluxcd.io":       {},
-		"helmreleases.helm.toolkit.fluxcd.io":       {},
-		"helmrepositories.source.toolkit.fluxcd.io": {},
-		"ocirepositories.source.toolkit.fluxcd.io":  {},
-		"redpandas.cluster.redpanda.com":            {},
-		"schemas.cluster.redpanda.com":              {},
-		"topics.cluster.redpanda.com":               {},
-		"users.cluster.redpanda.com":                {},
+		"clusters.redpanda.vectorized.io": {},
+		"consoles.redpanda.vectorized.io": {},
+		"redpandas.cluster.redpanda.com":  {},
+		"schemas.cluster.redpanda.com":    {},
+		"topics.cluster.redpanda.com":     {},
+		"users.cluster.redpanda.com":      {},
 	}
 
 	foundNames := map[string]struct{}{}
