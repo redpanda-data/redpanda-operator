@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 var _ Resource = &StatefulSetResource{}
