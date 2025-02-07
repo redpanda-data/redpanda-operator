@@ -34,8 +34,6 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -43,6 +41,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 var _ Resource = &StatefulSetResource{}
@@ -143,6 +142,7 @@ func NewStatefulSet(
 	configuratorSettings ConfiguratorSettings,
 	nodeConfigMapHashGetter func(context.Context) (string, error),
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
+	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,
@@ -163,6 +163,7 @@ func NewStatefulSet(
 		configuratorSettings:     configuratorSettings,
 		nodeConfigMapHashGetter:  nodeConfigMapHashGetter,
 		adminAPIClientFactory:    adminAPIClientFactory,
+		dialer:                   dialer,
 		decommissionWaitInterval: decommissionWaitInterval,
 		logger:                   logger.WithName("StatefulSetResource"),
 		metricsTimeout:           defaultAdminAPITimeout,

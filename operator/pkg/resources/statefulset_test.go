@@ -175,6 +175,7 @@ func TestEnsure(t *testing.T) {
 					adminAPI.SetClusterHealth(health)
 					return adminAPI, nil
 				},
+				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
@@ -650,6 +651,7 @@ func TestCurrentVersion(t *testing.T) {
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
+				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
@@ -905,7 +907,7 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.fields.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				tt.fields.logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))}},
@@ -1030,7 +1032,7 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
@@ -1122,7 +1124,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
