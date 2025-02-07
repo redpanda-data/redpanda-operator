@@ -7,7 +7,3 @@ processor:
 
 render:
   kubernetesVersion: 1.28
-  knownTypes:
-  - name: UpgradeRemediation
-    package: github.com/fluxcd/helm-controller/api/v2beta2
-    link: https://v2-2.docs.fluxcd.io/flux/components/helm/api/v2beta2/#helm.toolkit.fluxcd.io/v2beta2.InstallRemediation

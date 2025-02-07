@@ -68,54 +68,8 @@ spec:
                       for hooks) during Helm actions. Defaults to `15m0s`.
                     pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$
                     type: string
-                  upgrade:
-                    description: Defines how to handle upgrades, including failures.
-                    properties:
-                      cleanupOnFail:
-                        description: Specifies whether to perform cleanup in case
-                          of failed upgrades.
-                        type: boolean
-                      force:
-                        description: Enables forceful updates during an upgrade.
-                        type: boolean
-                      preserveValues:
-                        description: Specifies whether to preserve user-configured
-                          values during an upgrade.
-                        type: boolean
-                      remediation:
-                        description: Specifies the actions to take on upgrade failures.
-                          See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
-                        properties:
-                          ignoreTestFailures:
-                            description: |-
-                              IgnoreTestFailures tells the controller to skip remediation when the Helm
-                              tests are run after an upgrade action but fail.
-                              Defaults to 'Test.IgnoreFailures'.
-                            type: boolean
-                          remediateLastFailure:
-                            description: |-
-                              RemediateLastFailure tells the controller to remediate the last failure, when
-                              no retries remain. Defaults to 'false' unless 'Retries' is greater than 0.
-                            type: boolean
-                          retries:
-                            description: |-
-                              Retries is the number of retries that should be attempted on failures before
-                              bailing. Remediation, using 'Strategy', is performed between each attempt.
-                              Defaults to '0', a negative integer equals to unlimited retries.
-                            type: integer
-                          strategy:
-                            description: Strategy to use for failure remediation.
-                              Defaults to 'rollback'.
-                            enum:
-                            - rollback
-                            - uninstall
-                            type: string
-                        type: object
-                    type: object
                   useFlux:
                     description: |-
-                      IMPORTANT: Beta Feature
-
                       Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
                       This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
                       ChartRef fields to be ignored.
@@ -20218,14 +20172,6 @@ spec:
                   state. It is reset after a successful reconciliation.
                 format: int64
                 type: integer
-              helmRelease:
-                type: string
-              helmReleaseReady:
-                type: boolean
-              helmRepository:
-                type: string
-              helmRepositoryReady:
-                type: boolean
               installFailures:
                 format: int64
                 type: integer
@@ -20236,12 +20182,6 @@ spec:
               lastAttemptedRevision:
                 description: LastAttemptedRevision is the revision of the last reconciliation
                   attempt.
-                type: string
-              lastHandledReconcileAt:
-                description: |-
-                  LastHandledReconcileAt holds the value of the most recent
-                  reconcile request value, so a change of the annotation value
-                  can be detected.
                 type: string
               license:
                 description: |-
@@ -20269,9 +20209,6 @@ spec:
                 type: object
               observedGeneration:
                 description: Specifies the last observed generation.
-                format: int64
-                type: integer
-              upgradeFailures:
                 format: int64
                 type: integer
             type: object
@@ -20335,54 +20272,8 @@ spec:
                       for hooks) during Helm actions. Defaults to `15m0s`.
                     pattern: ^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$
                     type: string
-                  upgrade:
-                    description: Defines how to handle upgrades, including failures.
-                    properties:
-                      cleanupOnFail:
-                        description: Specifies whether to perform cleanup in case
-                          of failed upgrades.
-                        type: boolean
-                      force:
-                        description: Enables forceful updates during an upgrade.
-                        type: boolean
-                      preserveValues:
-                        description: Specifies whether to preserve user-configured
-                          values during an upgrade.
-                        type: boolean
-                      remediation:
-                        description: Specifies the actions to take on upgrade failures.
-                          See https://pkg.go.dev/github.com/fluxcd/helm-controller/api/v2beta1#UpgradeRemediation.
-                        properties:
-                          ignoreTestFailures:
-                            description: |-
-                              IgnoreTestFailures tells the controller to skip remediation when the Helm
-                              tests are run after an upgrade action but fail.
-                              Defaults to 'Test.IgnoreFailures'.
-                            type: boolean
-                          remediateLastFailure:
-                            description: |-
-                              RemediateLastFailure tells the controller to remediate the last failure, when
-                              no retries remain. Defaults to 'false' unless 'Retries' is greater than 0.
-                            type: boolean
-                          retries:
-                            description: |-
-                              Retries is the number of retries that should be attempted on failures before
-                              bailing. Remediation, using 'Strategy', is performed between each attempt.
-                              Defaults to '0', a negative integer equals to unlimited retries.
-                            type: integer
-                          strategy:
-                            description: Strategy to use for failure remediation.
-                              Defaults to 'rollback'.
-                            enum:
-                            - rollback
-                            - uninstall
-                            type: string
-                        type: object
-                    type: object
                   useFlux:
                     description: |-
-                      IMPORTANT: Beta Feature
-
                       Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
                       This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
                       ChartRef fields to be ignored.
@@ -40485,14 +40376,6 @@ spec:
                   state. It is reset after a successful reconciliation.
                 format: int64
                 type: integer
-              helmRelease:
-                type: string
-              helmReleaseReady:
-                type: boolean
-              helmRepository:
-                type: string
-              helmRepositoryReady:
-                type: boolean
               installFailures:
                 format: int64
                 type: integer
@@ -40503,12 +40386,6 @@ spec:
               lastAttemptedRevision:
                 description: LastAttemptedRevision is the revision of the last reconciliation
                   attempt.
-                type: string
-              lastHandledReconcileAt:
-                description: |-
-                  LastHandledReconcileAt holds the value of the most recent
-                  reconcile request value, so a change of the annotation value
-                  can be detected.
                 type: string
               license:
                 description: |-
@@ -40536,9 +40413,6 @@ spec:
                 type: object
               observedGeneration:
                 description: Specifies the last observed generation.
-                format: int64
-                type: integer
-              upgradeFailures:
                 format: int64
                 type: integer
             type: object

@@ -1,0 +1,4 @@
+project: operator
+kind: Removed
+body: Removed bundled FluxCD controllers, bundled FluxCD CRDs, and support for delegating control to FluxCD.
+time: 2025-02-07T17:04:19.955274-05:00

@@ -13,10 +13,6 @@ status:
       type: Ready
     - type: ClusterLicenseValid
     - type: ClusterConfigSynced
-  helmRelease: decommission
-  helmReleaseReady: true
-  helmRepository: redpanda-repository
-  helmRepositoryReady: true
   observedGeneration: 1
 ---
 apiVersion: apps/v1
