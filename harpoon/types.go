@@ -27,6 +27,9 @@ import (
 
 type TagHandler func(ctx context.Context, t TestingT, arguments ...string) context.Context
 
+// HelmDependency is an alias for the internal helm dependency struct
+type HelmDependency = internaltesting.HelmDependency
+
 type TestingT interface {
 	godog.TestingT
 	client.Client
@@ -40,7 +43,7 @@ type TestingT interface {
 	IsolateNamespace(ctx context.Context) string
 
 	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)
-	InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...internaltesting.HelmDependency)
+	InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...HelmDependency)
 
 	Namespace() string
 	RestConfig() *rest.Config
