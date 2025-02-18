@@ -99,6 +99,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 		},
 		func(ctx context.Context) (string, error) { return hash, nil },
 		adminutils.NewNodePoolInternalAdminAPI,
+		nil,
 		time.Second,
 		ctrl.Log.WithName("test"),
 		0,

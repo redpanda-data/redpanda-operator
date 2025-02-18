@@ -31,6 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -236,6 +237,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 					redpandaCluster *vectorizedv1alpha1.Cluster,
 					fqdn string,
 					adminTLSProvider types.AdminTLSConfigProvider,
+					_ redpanda.DialContextFunc,
 					pods ...string,
 				) (adminutils.AdminAPIClient, error) {
 					return &adminutils.MockAdminAPI{

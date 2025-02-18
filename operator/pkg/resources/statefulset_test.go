@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -168,12 +169,13 @@ func TestEnsure(t *testing.T) {
 					ImagePullPolicy:       "Always",
 				},
 				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
 					adminAPI.SetClusterHealth(health)
 					return adminAPI, nil
 				},
+				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
@@ -567,7 +569,7 @@ func TestVersion(t *testing.T) {
 
 //nolint:funlen // this is ok for a test
 func TestCurrentVersion(t *testing.T) {
-	redpanda := pandaCluster()
+	cluster := pandaCluster()
 	tests := []struct {
 		name             string
 		pods             []corev1.Pod
@@ -579,7 +581,7 @@ func TestCurrentVersion(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: redpanda.Namespace,
+					Namespace: cluster.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
 				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
@@ -589,7 +591,7 @@ func TestCurrentVersion(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: redpanda.Namespace,
+					Namespace: cluster.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
 				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionFalse}}},
@@ -599,7 +601,7 @@ func TestCurrentVersion(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: redpanda.Namespace,
+					Namespace: cluster.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
 				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
@@ -609,7 +611,7 @@ func TestCurrentVersion(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: redpanda.Namespace,
+					Namespace: cluster.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v21.11.11"}}},
 				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
@@ -617,7 +619,7 @@ func TestCurrentVersion(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test2",
-					Namespace: redpanda.Namespace,
+					Namespace: cluster.Namespace,
 				},
 				Spec:   corev1.PodSpec{Containers: []corev1.Container{{Name: redpandaContainerName, Image: "vectorized/redpanda:v22.2.2"}}},
 				Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}, {Type: corev1.ContainersReady, Status: corev1.ConditionTrue}}, Phase: corev1.PodRunning},
@@ -630,10 +632,10 @@ func TestCurrentVersion(t *testing.T) {
 			c := fake.NewClientBuilder().Build()
 			for i := range tt.pods {
 				pod := tt.pods[i]
-				pod.Labels = labels.ForCluster(redpanda).WithNodePool(redpanda.Spec.NodePools[0].Name)
+				pod.Labels = labels.ForCluster(cluster).WithNodePool(cluster.Spec.NodePools[0].Name)
 				assert.NoError(t, c.Create(context.TODO(), &pod))
 			}
-			sts := resources.NewStatefulSet(c, redpanda, scheme.Scheme,
+			sts := resources.NewStatefulSet(c, cluster, scheme.Scheme,
 				"cluster.local",
 				"servicename",
 				types.NamespacedName{Name: "test", Namespace: "test"},
@@ -646,13 +648,14 @@ func TestCurrentVersion(t *testing.T) {
 					ImagePullPolicy:       "Always",
 				},
 				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, pods ...string) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
+				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
-				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: redpanda.Spec.NodePools[0]},
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: cluster.Spec.NodePools[0]},
 				true)
 			sts.LastObservedState = &appsv1.StatefulSet{
 				Spec: appsv1.StatefulSetSpec{
@@ -904,7 +907,7 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.fields.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				tt.fields.logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))}},
@@ -1029,7 +1032,7 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
@@ -1121,7 +1124,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, time.Hour,
+				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},

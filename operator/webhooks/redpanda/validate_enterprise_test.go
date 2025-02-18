@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
@@ -36,7 +37,7 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	"github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
+	webhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 )
 
 type mockKafkaAdmin struct{}
@@ -72,6 +73,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 		_ *vectorizedv1alpha1.Cluster,
 		_ string,
 		_ types.AdminTLSConfigProvider,
+		_ redpanda.DialContextFunc,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
 		if len(pods) == 1 {
@@ -121,13 +123,13 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 	require.NoError(t, err)
 
 	hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-		Handler: &redpanda.ConsoleDefaulter{
+		Handler: &webhooks.ConsoleDefaulter{
 			Client:  mgr.GetClient(),
 			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
 	})
 	hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-		Handler: &redpanda.ConsoleValidator{
+		Handler: &webhooks.ConsoleValidator{
 			Client:  mgr.GetClient(),
 			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
@@ -423,7 +425,7 @@ func TestValidatePrometheus(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			errs, err := redpanda.ValidatePrometheus(context.TODO(), ctl, &vectorizedv1alpha1.Console{
+			errs, err := webhooks.ValidatePrometheus(context.TODO(), ctl, &vectorizedv1alpha1.Console{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "console",
 					Namespace: consoleNamespace,
