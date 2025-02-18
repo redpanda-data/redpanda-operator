@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,8 +35,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -121,6 +121,7 @@ type StatefulSetResource struct {
 	nodePool          vectorizedv1alpha1.NodePoolSpecWithDeleted
 
 	autoDeletePVCs bool
+	dialer         redpanda.DialContextFunc
 }
 
 func (r *StatefulSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {
@@ -141,6 +142,7 @@ func NewStatefulSet(
 	configuratorSettings ConfiguratorSettings,
 	nodeConfigMapHashGetter func(context.Context) (string, error),
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
+	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,
@@ -161,6 +163,7 @@ func NewStatefulSet(
 		configuratorSettings:     configuratorSettings,
 		nodeConfigMapHashGetter:  nodeConfigMapHashGetter,
 		adminAPIClientFactory:    adminAPIClientFactory,
+		dialer:                   dialer,
 		decommissionWaitInterval: decommissionWaitInterval,
 		logger:                   logger.WithName("StatefulSetResource"),
 		metricsTimeout:           defaultAdminAPITimeout,

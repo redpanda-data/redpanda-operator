@@ -403,7 +403,7 @@ func (r *StatefulSetResource) handleRecommission(ctx context.Context) error {
 func (r *StatefulSetResource) getAdminAPIClient(
 	ctx context.Context, pods ...string,
 ) (adminutils.AdminAPIClient, error) {
-	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, pods...)
+	return r.adminAPIClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, r.dialer, pods...)
 }
 
 // disableMaintenanceModeOnDecommissionedNodes can be used to put a cluster in a consistent state, disabling maintenance mode on
