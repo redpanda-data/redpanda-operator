@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
@@ -48,6 +49,7 @@ type ClusterConfigurationDriftReconciler struct {
 	DriftCheckPeriod          *time.Duration
 	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
 	RestrictToRedpandaVersion string
+	Dialer                    redpanda.DialContextFunc
 }
 
 // Reconcile detects drift in configuration for clusters and schedules a patch.
@@ -140,7 +142,7 @@ func (r *ClusterConfigurationDriftReconciler) Reconcile(
 		return ctrl.Result{RequeueAfter: r.getDriftCheckPeriod()}, nil
 	}
 
-	adminAPI, err := r.AdminAPIClientFactory(ctx, r, &redpandaCluster, headlessSvc.HeadlessServiceFQDN(r.clusterDomain), pki.AdminAPIConfigProvider())
+	adminAPI, err := r.AdminAPIClientFactory(ctx, r, &redpandaCluster, headlessSvc.HeadlessServiceFQDN(r.clusterDomain), pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not get admin API to check drifts on the cluster: %w", err)
 	}

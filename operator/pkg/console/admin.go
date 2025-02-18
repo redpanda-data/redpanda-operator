@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -38,6 +39,7 @@ func NewAdminAPI(
 	cluster *vectorizedv1alpha1.Cluster,
 	clusterDomain string,
 	adminAPI adminutils.NodePoolAdminAPIClientFactory,
+	dialer redpanda.DialContextFunc,
 	log logr.Logger,
 ) (adminutils.AdminAPIClient, error) {
 	headlessSvc := resources.NewHeadlessService(cl, cluster, scheme, nil, log)
@@ -61,6 +63,7 @@ func NewAdminAPI(
 		cluster,
 		headlessSvc.HeadlessServiceFQDN(clusterDomain),
 		adminTLSConfigProvider,
+		dialer,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating AdminAPIClient: %w", err)
