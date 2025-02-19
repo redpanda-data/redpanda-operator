@@ -619,7 +619,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		return errors.WithStack(err)
 	}
 
-	syncer := syncclusterconfig.Syncer{Client: client}
+	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
 
 	if err := syncer.Sync(ctx, config, usersTXT); err != nil {
 		return errors.WithStack(err)
