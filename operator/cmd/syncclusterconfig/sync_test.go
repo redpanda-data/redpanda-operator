@@ -90,9 +90,10 @@ func TestSync(t *testing.T) {
 	usersTxtYAMLPath := testutils.WriteFile(t, "users-*.txt", []byte(strings.Join([]string{admin, password, saslMechanism}, ":")))
 
 	cases := []struct {
-		Config      map[string]any
-		Expected    map[string]any
-		UsersTXTDir string
+		Config          map[string]any
+		Expected        map[string]any
+		UsersTXTDir     string
+		DeclarativeMode bool
 	}{
 		{
 			// No superusers entry, the value just gets pulled from
@@ -185,6 +186,39 @@ func TestSync(t *testing.T) {
 				"superusers":                    []any{user},
 			},
 		},
+		{
+			// In declarative mode, push everything supplied through
+			Config: map[string]any{
+				"abort_index_segment_size":      10,
+				"audit_queue_drain_interval_ms": 70,
+				"superusers":                    []any{user},
+			},
+			UsersTXTDir: os.TempDir() + "/this-path-does-not-exist",
+			Expected: map[string]any{
+				"abort_index_segment_size":      10,
+				"audit_queue_drain_interval_ms": 70,
+				"superusers":                    []any{user},
+			},
+		},
+		{
+			// In declarative mode, we'll drop any unspecified configuration
+			Config:          map[string]any{},
+			UsersTXTDir:     os.TempDir() + "/this-path-does-not-exist",
+			DeclarativeMode: true,
+			Expected:        map[string]any{},
+		},
+		{
+			// Even in declarative mode, the implicit settings from UsersTXT
+			// should still be applied.
+			Config: map[string]any{
+				"superusers": []string{user},
+			},
+			UsersTXTDir:     filepath.Dir(usersTxtYAMLPath),
+			DeclarativeMode: true,
+			Expected: map[string]any{
+				"superusers": []any{admin, user},
+			},
+		},
 	}
 
 	for i, tc := range cases {
@@ -194,11 +228,15 @@ func TestSync(t *testing.T) {
 		require.NoError(t, err)
 
 		cmd := Command()
-		cmd.SetArgs([]string{
+		args := []string{
 			"--users-directory", tc.UsersTXTDir,
 			"--redpanda-yaml", redpandaYAMLPath,
 			"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
-		})
+		}
+		if tc.DeclarativeMode {
+			args = append(args, "--mode", "declarative")
+		}
+		cmd.SetArgs(args)
 
 		require.NoError(t, cmd.ExecuteContext(ctx))
 

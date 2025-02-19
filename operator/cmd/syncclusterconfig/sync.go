@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,9 +47,10 @@ func Command() *cobra.Command {
 	var usersDirectoryPath string
 	var redpandaYAMLPath string
 	var bootstrapYAMLPath string
+	mergeMode := "additive"
 
 	cmd := &cobra.Command{
-		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-directory file]",
+		Use: "sync-cluster-config [--bootstrap-yaml file] [--redpanda-yaml file] [--users-directory file] [--mode mode]",
 		Long: fmt.Sprintf(`sync-cluster-config patches a cluster's configuration with values from the provided bootstrap.yaml.
 If present and not empty, the $%s environment variable will be set as the cluster's license.
 `, licenseEnvvar),
@@ -56,6 +58,11 @@ If present and not empty, the $%s environment variable will be set as the cluste
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := log.FromContext(ctx)
+
+			syncerMode, err := StringToMode(mergeMode)
+			if err != nil {
+				return err
+			}
 
 			client, err := adminAPIFromRPKConfig(redpandaYAMLPath)
 			if err != nil {
@@ -81,7 +88,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
-			syncer := Syncer{Client: client}
+			syncer := Syncer{Client: client, Mode: syncerMode}
 
 			if err := syncer.Sync(ctx, clusterConfig, usersTXTs); err != nil {
 				return err
@@ -111,6 +118,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted")
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml")
 	cmd.Flags().StringVar(&bootstrapYAMLPath, "bootstrap-yaml", "/etc/redpanda/.bootstrap.yaml", "Path to .bootstrap.yaml")
+	cmd.Flags().StringVar(&mergeMode, "mode", "additive", "Specify mode: additive | declarative")
 
 	return cmd
 }
@@ -231,8 +239,29 @@ func mapConvertibleTo[T any](logger logr.Logger, array []any) []T {
 	return converted
 }
 
+type SyncerMode int
+
+const (
+	SyncerModeAdditive = SyncerMode(iota)
+	SyncerModeDeclarative
+)
+
+var ErrSyncerMode = errors.New("unrecognised syncer mode")
+
+func StringToMode(m string) (SyncerMode, error) {
+	switch m {
+	case "additive":
+		return SyncerModeAdditive, nil
+	case "declarative":
+		return SyncerModeDeclarative, nil
+	}
+	// Let Unwrap identify the concrete error
+	return SyncerModeAdditive, fmt.Errorf("cannot parse %s: %w", m, ErrSyncerMode)
+}
+
 type Syncer struct {
 	Client *rpadmin.AdminAPI
+	Mode   SyncerMode
 }
 
 func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) error {
@@ -250,14 +279,16 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
 	removed := []string{}
 
-	// TODO: Uncomment this block to make cluster config syncing fully
-	// declarative. The historical behavior has not been, so this is
-	// technically a breaking change.
-	// for key := range current {
-	// 	if _, ok := desired[key]; !ok {
-	// 		removed = append(removed, key)
-	// 	}
-	// }
+	if s.Mode == SyncerModeDeclarative {
+		// Make cluster config syncing fully declarative.
+		// The historical behavior has not been, so this is
+		// technically a breaking change.
+		for key := range current {
+			if _, ok := desired[key]; !ok {
+				removed = append(removed, key)
+			}
+		}
+	}
 
 	for key, value := range desired {
 		if currentValue, ok := current[key]; !ok {
