@@ -1,8 +1,5 @@
 version: '3'
 
-vars:
-  DOCKER_REGISTRY: '778696301129.dkr.ecr.us-west-2.amazonaws.com'
-
 tasks:
 
   configure:
@@ -80,7 +77,10 @@ tasks:
 
   run-kuttl-tests:
     cmds:
-      - defer: 'task ci:kuttl-artifact-upload KUTTL_CONFIG_FILE={{.KUTTL_CONFIG_FILE}}'
+      - defer:
+          task: ci:kuttl-artifact-upload
+          vars:
+            KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
       - task: :k8s:run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
@@ -114,17 +114,49 @@ tasks:
       - task: publish-k8s-operator-images
 
   publish-k8s-operator-images:
+    deps:
+      - :dev:create-buildx-builder
     cmds:
+      - 'echo "~~~ Logging into Dockerhub :docker:"'
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - defer: docker logout
       - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
-      - task: :k8s:build-tag-and-push-images
+      - task: :build:operator-image
+        vars:
+          TAGS:
+          - docker.io/vectorized/redpanda-operator:{{.OPERATOR_VERSION}}
+          - docker.io/redpandadata/redpanda-operator:{{.OPERATOR_VERSION}}
+          PLATFORMS:
+          - linux/amd64
+          - linux/arm64
+          CLI_ARGS: "--push"
     status:
       - test -z '{{.TAG_NAME}}' # only run for tagged commits
+      - test -n "$DOCKERHUB_USER"
+      - test -n "$DOCKERHUB_TOKEN"
 
   publish-k8s-nightly-artifacts:
+    args:
+      TAGS:
+      - docker.io/redpandadata/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
+    deps:
+      - :dev:create-buildx-builder
     cmds:
+      - 'echo "~~~ Logging into Dockerhub :docker:"'
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - defer: docker logout
       - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
-      - task: :goreleaser:build-operator-binaries
-      - task: :k8s:build-and-push-operator-container-image
+      - task: :build:operator-image
+        vars:
+          TAGS:
+          - docker.io/vectorized/redpanda-operator:{{.OPERATOR_VERSION}}
+          - docker.io/redpandadata/redpanda-operator:{{.OPERATOR_VERSION}}
+          PLATFORMS:
+          - linux/amd64
+          - linux/arm64
+          CLI_ARGS: "--push"
       # Package and push Operator helm chart to Dockerhub
       - task: :k8s:package-and-publish-operator-chart
 

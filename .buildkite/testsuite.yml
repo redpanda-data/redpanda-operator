@@ -217,7 +217,7 @@ steps:
           failed: true
         message: ':cloud: Kuttl-V1-Nodepools Tests Job Failed'
         slack_token_env_var_name: SLACK_VBOT_TOKEN
-    soft_fail: true
+    soft_fail: false
     timeout_in_minutes: 30
   - continue_on_failure: true
     wait: null
