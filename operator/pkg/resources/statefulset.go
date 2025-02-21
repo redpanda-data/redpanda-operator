@@ -80,9 +80,6 @@ var (
 
 	// terminationGracePeriodSeconds should account for additional delay introduced by hooks
 	terminationGracePeriodSeconds int64 = 120
-
-	// additionalListenerCfgNames contains the list of the listener names supported in additionalConfiguration.
-	additionalListenerCfgNames = []string{"redpanda.kafka_api", "redpanda.advertised_kafka_api", "pandaproxy.pandaproxy_api", "pandaproxy.advertised_pandaproxy_api"}
 )
 
 // ConfiguratorSettings holds settings related to configurator container and deployment
@@ -950,6 +947,7 @@ func (r *StatefulSetResource) portsConfiguration() string {
 	return fmt.Sprintf("--advertise-rpc-addr=$(POD_NAME).%s:%d", serviceFQDN, rpcAPIPort)
 }
 
+// TODO
 func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{{
 		Name:          AdminPortName,
@@ -999,36 +997,159 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	return ports
 }
 
-// AdditionalListenersEnvVars returns the env var containing the additioanl listeners specified in additionalConfiguration.
-func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
-	if len(r.pandaCluster.Spec.AdditionalConfiguration) == 0 {
-		return nil
-	}
-
-	cfg := map[string]string{}
-	for _, k := range additionalListenerCfgNames {
-		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
-			cfg[k] = v
+func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (listeners, advertisedlisteners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
+	tlsMountPoints := resourcetypes.GetTLSMountPoints().KafkaAPI
+	for _, k := range r.pandaCluster.Spec.Configuration.KafkaAPI {
+		if !k.External.Enabled || k.Name == DefaultExternalKafkaListenerName {
+			continue
+		}
+		port := strconv.Itoa(k.Port)
+		advertisedPort := port
+		if k.External.PortTemplate != "" {
+			advertisedPort = k.External.PortTemplate
+		}
+		listeners = append(listeners, listenerTemplateSpec{
+			Name:                 k.Name,
+			Address:              "0.0.0.0",
+			Port:                 port,
+			AuthenticationMethod: k.AuthenticationMethod,
+		})
+		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
+			Name:    k.Name,
+			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
+			Port:    advertisedPort,
+		})
+		if k.TLS.Enabled {
+			tlsSpec := tlsTemplateSpec{
+				Name:     k.Name,
+				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
+				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
+			}
+			if k.TLS.RequireClientAuth {
+				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
+				tlsSpec.RequireClientAuth = true
+			}
+			tlsSpecs = append(tlsSpecs, tlsSpec)
 		}
 	}
-	if len(cfg) == 0 {
-		return nil
+	return listeners, advertisedlisteners, tlsSpecs
+}
+
+func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (listeners, advertisedlisteners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
+	tlsMountPoints := resourcetypes.GetTLSMountPoints().PandaProxyAPI
+	for _, k := range r.pandaCluster.Spec.Configuration.PandaproxyAPI {
+		if !k.External.Enabled || k.Name == DefaultExternalProxyListenerName {
+			continue
+		}
+		port := strconv.Itoa(k.Port)
+		advertisedPort := port
+		if k.External.PortTemplate != "" {
+			advertisedPort = k.External.PortTemplate
+		}
+		listeners = append(listeners, listenerTemplateSpec{
+			Name:                 k.Name,
+			Address:              "0.0.0.0",
+			Port:                 port,
+			AuthenticationMethod: k.AuthenticationMethod,
+		})
+		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
+			Name:    k.Name,
+			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
+			Port:    advertisedPort,
+		})
+		if k.TLS.Enabled {
+			tlsSpec := tlsTemplateSpec{
+				Name:     k.Name,
+				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
+				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
+			}
+			if k.TLS.RequireClientAuth {
+				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
+				tlsSpec.RequireClientAuth = true
+			}
+			tlsSpecs = append(tlsSpecs, tlsSpec)
+		}
 	}
-	jsonStr, err := json.Marshal(cfg)
+	return listeners, advertisedlisteners, tlsSpecs
+}
+
+func (r *StatefulSetResource) AdditionalSchemaRegistryExternalListeners() (listeners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
+	tlsMountPoints := resourcetypes.GetTLSMountPoints().SchemaRegistryAPI
+	for _, k := range r.pandaCluster.Spec.Configuration.AdditionalSchemaRegistry {
+		if !k.External.Enabled {
+			continue
+		}
+		port := strconv.Itoa(k.Port)
+		listeners = append(listeners, listenerTemplateSpec{
+			Name:                 k.Name,
+			Address:              "0.0.0.0",
+			Port:                 port,
+			AuthenticationMethod: k.AuthenticationMethod,
+		})
+		if k.TLS.Enabled {
+			tlsSpec := tlsTemplateSpec{
+				Name:     k.Name,
+				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
+				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
+			}
+			if k.TLS.RequireClientAuth {
+				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
+				tlsSpec.RequireClientAuth = true
+			}
+			tlsSpecs = append(tlsSpecs, tlsSpec)
+		}
+	}
+	return listeners, tlsSpecs
+}
+
+// allAdditionalExternalListenersFromSpecAPIs returns all additional external listeners from the API blocks under
+// the spec configuration, including KafkaAPI, PandaproxyAPI, and AdditionalSchemaRegistry.
+func (r *StatefulSetResource) allAdditionalExternalListenersFromSpecAPIs() *allListenersTemplateSpec {
+	kafkaListeners, kafkaAdvertisedListeners, kafkaTLSSpecs := r.AdditionalKafkaExternalListeners()
+	proxyListeners, proxyAdvertisedListeners, proxyTLSSpecs := r.AdditionalPandaProxyExternalListeners()
+	schemaRegistryListeners, schemaRegisryTLSSpecs := r.AdditionalSchemaRegistryExternalListeners()
+
+	return &allListenersTemplateSpec{
+		KafkaListeners:           kafkaListeners,
+		KafkaAdvertisedListeners: kafkaAdvertisedListeners,
+		KafkaTLSSpec:             kafkaTLSSpecs,
+		ProxyListeners:           proxyListeners,
+		ProxyAdvertisedListeners: proxyAdvertisedListeners,
+		ProxyTLSSpec:             proxyTLSSpecs,
+		SchemaRegistryListeners:  schemaRegistryListeners,
+		SchemaRegistryTLSSpec:    schemaRegisryTLSSpecs,
+	}
+}
+
+// AdditionalListenersEnvVars returns the env var passed to the configurator for configuring additioanl listeners.
+func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
+	listenersFromAdditionalCfg := map[string]string{}
+	if len(r.pandaCluster.Spec.AdditionalConfiguration) > 0 {
+		for _, k := range AdditionalListenerCfgNames {
+			if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
+				listenersFromAdditionalCfg[k] = v
+			}
+		}
+	}
+
+	listeners := r.allAdditionalExternalListenersFromSpecAPIs()
+	jsonStr, err := listeners.Concat(listenersFromAdditionalCfg)
 	if err != nil {
+		r.logger.Error(err, "failed to concat additional listeners")
 		return nil
 	}
 	return []corev1.EnvVar{{
 		Name:  "ADDITIONAL_LISTENERS",
-		Value: string(jsonStr),
+		Value: jsonStr,
 	}}
 }
 
-// GetPortsForListenersInAdditionalConfig gets the ports for the additional listeners and advertised APIs set in addtionalConfiguration.
+// GetPortsForListenersInAdditionalConfig gets the ports for the additional listeners and advertised APIs set in additionalConfiguration.
 // - redpanda.kafka_api
 // - redpanda.advertised_kafka_api
 // - pandaproxy.pandaproxy_api
 // - pandaproxy.advertised_pandaproxy_api
+// - schema_registry.schema_registry_api
 // example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
 func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{}
@@ -1062,8 +1183,8 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		return nil
 	}
 
-	ports = append(ports, getPorts("redpanda.kafka_api")...)
-	ports = append(ports, getPorts("pandaproxy.pandaproxy_api")...)
+	ports = append(ports, getPorts(KafkaAPIConfigPath)...)
+	ports = append(ports, getPorts(PandaproxyAPIConfigPath)...)
 
 	return ports
 }
