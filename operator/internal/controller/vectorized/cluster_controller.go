@@ -1090,21 +1090,21 @@ func collectNodePorts(
 	redpandaPorts *networking.RedpandaPorts,
 ) []resources.NamedServiceNodePort {
 	nodeports := []resources.NamedServiceNodePort{}
-	kafkaAPINamedNodePort := redpandaPorts.KafkaAPI.ToNamedServiceNodePort()
-	if kafkaAPINamedNodePort != nil {
-		nodeports = append(nodeports, *kafkaAPINamedNodePort)
+	kafkaAPINamedNodePorts := redpandaPorts.KafkaAPI.ToNamedServiceNodePorts()
+	if kafkaAPINamedNodePorts != nil {
+		nodeports = append(nodeports, kafkaAPINamedNodePorts...)
 	}
-	adminAPINodePort := redpandaPorts.AdminAPI.ToNamedServiceNodePort()
-	if adminAPINodePort != nil {
-		nodeports = append(nodeports, *adminAPINodePort)
+	adminAPINodePorts := redpandaPorts.AdminAPI.ToNamedServiceNodePorts()
+	if adminAPINodePorts != nil {
+		nodeports = append(nodeports, adminAPINodePorts...)
 	}
-	pandaProxyNodePort := redpandaPorts.PandaProxy.ToNamedServiceNodePort()
-	if pandaProxyNodePort != nil {
-		nodeports = append(nodeports, *pandaProxyNodePort)
+	pandaProxyNodePorts := redpandaPorts.PandaProxy.ToNamedServiceNodePorts()
+	if pandaProxyNodePorts != nil {
+		nodeports = append(nodeports, pandaProxyNodePorts...)
 	}
-	schemaRegistryNodePort := redpandaPorts.SchemaRegistry.ToNamedServiceNodePort()
-	if schemaRegistryNodePort != nil {
-		nodeports = append(nodeports, *schemaRegistryNodePort)
+	schemaRegistryNodePorts := redpandaPorts.SchemaRegistry.ToNamedServiceNodePorts()
+	if schemaRegistryNodePorts != nil {
+		nodeports = append(nodeports, schemaRegistryNodePorts...)
 	}
 	return nodeports
 }
@@ -1129,8 +1129,10 @@ func collectLBPorts(
 	redpandaPorts *networking.RedpandaPorts,
 ) []resources.NamedServicePort {
 	lbPorts := []resources.NamedServicePort{}
-	if redpandaPorts.KafkaAPI.ExternalBootstrap != nil {
-		lbPorts = append(lbPorts, *redpandaPorts.KafkaAPI.ExternalBootstrap)
+	for _, e := range redpandaPorts.KafkaAPI.External {
+		if e.ExternalBootstrap != nil {
+			lbPorts = append(lbPorts, *e.ExternalBootstrap)
+		}
 	}
 	return lbPorts
 }
@@ -1141,11 +1143,10 @@ func collectClusterPorts(
 ) []resources.NamedServicePort {
 	clusterPorts := []resources.NamedServicePort{}
 	if redpandaPorts.PandaProxy.External != nil {
-		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.PandaproxyPortExternalName, Port: *redpandaPorts.PandaProxy.ExternalPort()})
+		clusterPorts = append(clusterPorts, redpandaPorts.PandaProxy.ToNamedServicePorts()...)
 	}
 	if redpandaCluster.Spec.Configuration.SchemaRegistry != nil {
-		port := redpandaCluster.Spec.Configuration.SchemaRegistry.Port
-		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.SchemaRegistryPortName, Port: port})
+		clusterPorts = append(clusterPorts, redpandaPorts.SchemaRegistry.ToNamedServicePorts()...)
 	}
 	if redpandaPorts.KafkaAPI.Internal != nil {
 		port := redpandaPorts.KafkaAPI.Internal.Port
