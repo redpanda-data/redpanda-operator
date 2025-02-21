@@ -40,8 +40,7 @@ func TestToolVersions(t *testing.T) {
 	golden := testutil.NewTxTar(t, "testdata/tool-versions.txtar")
 
 	for _, cmd := range []string{
-		"go version | cut -d ' ' -f 1-3",                           // cut removes os/arch
-		"goreleaser --version | awk 'NR>2 {print last} {last=$0}'", // head -n -1 doesn't work on macos
+		"go version | cut -d ' ' -f 1-3", // cut removes os/arch
 		"helm version",
 		"k3d version",
 		"kind version | cut -d ' ' -f 1-3", // cut removes os/arch

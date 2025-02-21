@@ -52,7 +52,7 @@ var suites = []TestSuite{
 	},
 	{
 		Name:         "kuttl-v1-nodepools",
-		Required:     false,
+		Required:     true,
 		Timeout:      30 * time.Minute,
 		JUnitPattern: ptr.To("work/operator/tests/_e2e_with_flags_artifacts/kuttl-report.xml"),
 	},

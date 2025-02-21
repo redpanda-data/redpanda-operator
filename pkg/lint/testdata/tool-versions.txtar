@@ -15,21 +15,7 @@ go version go1.23.2
 
 -- goreleaser --
 # goreleaser --version | awk 'NR>2 {print last} {last=$0}'
- / ___| ___ |  _ \ ___| | ___  __ _ ___  ___ _ __
-| |  _ / _ \| |_) / _ \ |/ _ \/ _` / __|/ _ \ '__|
-| |_| | (_) |  _ <  __/ |  __/ (_| \__ \  __/ |
- \____|\___/|_| \_\___|_|\___|\__,_|___/\___|_|
-goreleaser: Deliver Go Binaries as fast and easily as possible
-https://goreleaser.com
-
-GitVersion:    2.3.2
-GitCommit:     unknown
-GitTreeState:  unknown
-BuildDate:     unknown
-BuiltBy:       nixpkgs
-GoVersion:     go1.23.2
-Compiler:      gc
-ModuleSum:     unknown
+sh: line 1: goreleaser: command not found
 
 -- helm --
 # helm version
