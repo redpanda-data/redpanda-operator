@@ -58,7 +58,7 @@
               pkgs.go-licenses
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go_1_23
+              pkgs.go_1_24
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.goreleaser
