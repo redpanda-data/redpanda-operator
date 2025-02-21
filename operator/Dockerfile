@@ -8,8 +8,11 @@ ARG TARGETOS
 WORKDIR /
 USER 65532:65532
 
-# For backwards compatibility with deployments that specify the
-# entrypoint/command.
-COPY manager-${TARGETOS}-${TARGETARCH} /manager
 COPY redpanda-operator-${TARGETOS}-${TARGETARCH} /redpanda-operator
-ENTRYPOINT ["/redpanda-operator", "run"]
+
+# No `ln` in rootless so we build an "alias" binary that exec's
+# "/bin/redpanda-operator run" for backwards compatibility with deployments
+# that still specify old entrypoints/commands.
+COPY alias-${TARGETOS}-${TARGETARCH} /manager
+
+ENTRYPOINT ["redpanda-operator", "run"]

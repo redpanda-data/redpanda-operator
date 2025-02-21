@@ -1,8 +1,0 @@
-version: '3'
-
-tasks:
-  build-operator-binaries:
-    deps:
-      - task: :k8s:generate
-    cmds:
-      - 'goreleaser build --snapshot --clean {{.CLI_ARGS}}'

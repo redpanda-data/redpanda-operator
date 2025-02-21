@@ -61,7 +61,6 @@
               pkgs.go_1_23
               pkgs.gofumpt
               pkgs.golangci-lint
-              pkgs.goreleaser
               pkgs.gotestsum
               pkgs.helm-3-10-3
               pkgs.helm-docs
