@@ -20,13 +20,21 @@ vars:
     sh: shopt -s globstar; dirname $(ls **/go.mod | grep -o '^[^s].*')
   PKG: './...'
   MOD: '{{default ._MOD .MOD}}'
+  OPERATOR_VERSION:
+    # TODO this should eventually be updated to 'operator/v*' to match go modules' tagging conventions.
+    sh: git describe --dirty --match 'v*'
+  TIMESTAMP: # Timestamp used for any build artifacts.
+    # MacOS' man page isn't helpful. https://man7.org/linux/man-pages/man1/date.1.html
+    # Roughly ISO 8601
+    sh: date -u '+%Y-%m-%dT%T:%SZ'
+  COMMIT: # The commit to bake into any build artifacts.
+    sh: git rev-parse HEAD
 
 includes:
   build: taskfiles/build.yml
   charts: taskfiles/charts.yml
   ci: taskfiles/ci.yml
   dev: taskfiles/dev.yml
-  goreleaser: taskfiles/goreleaser.yml
   k8s: taskfiles/k8s.yml
 
 tasks:
@@ -118,17 +126,15 @@ tasks:
 
   build:
     cmds:
-      - task: build:binaries
+      - task: build:operator
 
-  build:binaries:
+  build:image:
+    aliases:
+    - build:images
     cmds:
-      # TODO(chrisseto): Ditch goreleaser in favor of just go build in task
-      # files. We're not using it for anything other than an arch build matrix.
-      - task: goreleaser:build-operator-binaries
-
-  build:images:
-    cmds:
-      - task: k8s:build-operator-images
+      - task: build:operator-image
+        vars:
+          CLI_ARGS: '--load {{.CLI_ARGS}}'
 
   test:unit:
     desc: "Run all unit tests (~5m)"
@@ -154,7 +160,7 @@ tasks:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
       CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
     cmds:
-    - task: k8s:build-operator-images
+    - task: build:image
     - kind load docker-image localhost/redpanda-operator:dev
     - task: test:unit
       vars:

@@ -2,6 +2,76 @@ version: '3'
 
 tasks:
 
+  operator-image:
+    deps:
+    - alias # alias is used for backwards compat of entry points due to the lack of ln in distroless.
+    - operator
+    vars:
+      # Tags to tag this image as, defaulting to localhost/redpanda-operator:dev
+      TAGS: '{{ range $tag := (.TAGS | default (list "localhost/redpanda-operator:dev"))}} --tag {{ $tag }} {{end}}'
+      # Platforms to build the image for. NB: It's possible to build
+      # multi-platform images on machines without the containerd image store by
+      # using a docker-container buildkit builder. HOWEVER, it's not possible
+      # to `--load` the resultant image into docker if containerd image store
+      # is not enabled but you can `--push` it to a registry. Until our CI
+      # agents are updated to use the containerd image store, we have to dance
+      # around this limitation by modifying .CLI_ARGS and .PLATFORMS depending
+      # on the use of the built image.
+      # For local testing: 1 Platform (default should work) and `--load`. (build:image alias does this).
+      # For releases: Both platforms and `--push`.
+      PLATFORMS: '{{ join "," (.PLATFORMS | default (list (printf "linux/%s" ARCH)))}}'
+    cmds:
+    - docker buildx build
+          --platform {{ .PLATFORMS }}
+          --provenance false
+          --sbom false
+          --file operator/Dockerfile
+          --target=manager
+          {{ .TAGS }}
+          {{ .CLI_ARGS }}
+          .build
+
+  operator:
+    vars:
+      LD_FLAGS: >-
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.TIMESTAMP}}"
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.COMMIT}}"
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"
+    cmds:
+    - for:
+        matrix:
+          GOOS: ["linux", "darwin"]
+          GOARCH: ["arm64", "amd64"]
+      # Can't nest tasks in for loops, so pulling these out into vars doesn't work.
+      # Instead >- will join and strip whitespace for us.
+      cmd: >-
+        CGO_ENABLED=0
+        GOOS={{.ITEM.GOOS}}
+        GOARCH={{.ITEM.GOARCH}}
+        go build
+        -C ./operator
+        -o ../.build/redpanda-operator-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
+        -ldflags='{{.LD_FLAGS}}'
+        ./cmd/main.go
+
+  alias:
+    cmds:
+    - for:
+        matrix:
+          GOOS: ["linux", "darwin"]
+          GOARCH: ["arm64", "amd64"]
+      # Can't nest tasks in for loops, so pulling these out into vars doesn't work.
+      # Instead >- will join and strip whitespace for us.
+      cmd: >-
+        CGO_ENABLED=0
+        GOOS={{.ITEM.GOOS}}
+        GOARCH={{.ITEM.GOARCH}}
+        go build
+        -C ./alias
+        -o ../.build/alias-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
+        -ldflags='-X "main.AliasTo=/redpanda-operator run"'
+        .
+
   gen:
     cmds:
       - task: go:build
