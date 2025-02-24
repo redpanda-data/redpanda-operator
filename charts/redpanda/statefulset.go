@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
@@ -188,15 +189,6 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 				},
 			},
 		},
-		{
-			Name: fmt.Sprintf("%s-config-watcher", fullname),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  fmt.Sprintf("%s-config-watcher", fullname),
-					DefaultMode: ptr.To[int32](0o775),
-				},
-			},
-		},
 	}...)
 
 	if values.Statefulset.InitContainers.FSValidator.Enabled {
@@ -226,13 +218,11 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 	// Volume is used when:
 	// * service account automount is set to false
 	// * one of the below condition:
-	//   * sidecars controllers are enabled (decommission, node-watcher) and rbac is enabled
+	//   * deprecated: sidecars controllers are enabled (decommission, node-watcher) and rbac is enabled
 	//   * rack awareness is enabled
+	//   * either broker decommissioner or pvc unbinder are enabled
 	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
-		((values.RBAC.Enabled &&
-			values.Statefulset.SideCars.Controllers.Enabled &&
-			values.Statefulset.SideCars.Controllers.CreateRBAC) ||
-			values.RackAwareness.Enabled) {
+		(values.Statefulset.SideCars.AdditionalSidecarControllersEnabled() || values.RackAwareness.Enabled) {
 		foundK8STokenVolume := false
 		for _, v := range volumes {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", v.Name) {
@@ -648,10 +638,7 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 func StatefulSetContainers(dot *helmette.Dot) []corev1.Container {
 	var containers []corev1.Container
 	containers = append(containers, statefulSetContainerRedpanda(dot))
-	if c := statefulSetContainerConfigWatcher(dot); c != nil {
-		containers = append(containers, *c)
-	}
-	if c := statefulSetContainerControllers(dot); c != nil {
+	if c := statefulSetContainerSidecar(dot); c != nil {
 		containers = append(containers, *c)
 	}
 	return containers
@@ -758,36 +745,6 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		Resources:       values.Resources.GetResourceRequirements(),
 	}
 
-	if !helmette.Dig(values.Config.Node, false, `recovery_mode_enabled`).(bool) {
-		// the readiness probe just checks that the cluster is healthy according to rpk cluster health.
-		// It's ok that this cluster-wide check affects all the pods as it's only used for the
-		// PodDisruptionBudget and we don't want to roll any pods if the Redpanda cluster isn't healthy.
-		// https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets
-		// All services set `publishNotReadyAddresses:true` to prevent this from affecting cluster access
-		container.ReadinessProbe = &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				Exec: &corev1.ExecAction{
-					Command: []string{
-						`/bin/sh`,
-						`-c`,
-						helmette.Join("\n", []string{
-							`set -x`,
-							`RESULT=$(rpk cluster health)`,
-							`echo $RESULT`,
-							`echo $RESULT | grep 'Healthy:.*true'`,
-							``,
-						}),
-					},
-				},
-			},
-			InitialDelaySeconds: values.Statefulset.ReadinessProbe.InitialDelaySeconds,
-			TimeoutSeconds:      values.Statefulset.ReadinessProbe.TimeoutSeconds,
-			PeriodSeconds:       values.Statefulset.ReadinessProbe.PeriodSeconds,
-			SuccessThreshold:    values.Statefulset.ReadinessProbe.SuccessThreshold,
-			FailureThreshold:    values.Statefulset.ReadinessProbe.FailureThreshold,
-		}
-	}
-
 	// admin http kafka schemaRegistry rpc
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "admin",
@@ -876,98 +833,118 @@ func adminApiURLs(dot *helmette.Dot) string {
 	)
 }
 
-func statefulSetContainerConfigWatcher(dot *helmette.Dot) *corev1.Container {
+//nolint:stylecheck
+func adminURLsCLI(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.ConfigWatcher.Enabled {
-		return nil
-	}
-
-	return &corev1.Container{
-		Name:    "config-watcher",
-		Image:   fmt.Sprintf(`%s:%s`, values.Image.Repository, Tag(dot)),
-		Command: []string{`/bin/sh`},
-		Args: []string{
-			`-c`,
-			`trap "exit 0" TERM; exec /etc/secrets/config-watcher/scripts/sasl-user.sh & wait $!`,
-		},
-		Env:             rpkEnvVars(dot, nil),
-		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.ConfigWatcher.Resources),
-		SecurityContext: values.Statefulset.SideCars.ConfigWatcher.SecurityContext,
-		VolumeMounts: append(
-			append(CommonMounts(dot),
-				corev1.VolumeMount{
-					Name:      "config",
-					MountPath: "/etc/redpanda",
-				},
-				corev1.VolumeMount{
-					Name:      fmt.Sprintf(`%s-config-watcher`, Fullname(dot)),
-					MountPath: "/etc/secrets/config-watcher/scripts",
-				},
-			),
-			templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...,
-		),
-	}
+	return fmt.Sprintf(`$(SERVICE_NAME).%s:%d`,
+		InternalDomain(dot),
+		values.Listeners.Admin.Port,
+	)
 }
 
-func statefulSetContainerControllers(dot *helmette.Dot) *corev1.Container {
+func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.RBAC.Enabled || !values.Statefulset.SideCars.Controllers.Enabled {
-		return nil
+	args := []string{
+		`sidecar`,
+		`--redpanda-yaml`,
+		`/etc/redpanda/redpanda.yaml`,
+		`--redpanda-cluster-namespace`,
+		dot.Release.Namespace,
+		`--redpanda-cluster-name`,
+		Fullname(dot),
+		`--run-broker-probe`,
+		`--broker-probe-broker-url`,
+		// even though this is named "...URLs", it returns
+		// only the url for the given pod
+		adminURLsCLI(dot),
 	}
 
-	volumeMounts := []corev1.VolumeMount{}
-	if values.RBAC.Enabled &&
-		values.Statefulset.SideCars.Controllers.Enabled &&
-		values.Statefulset.SideCars.Controllers.CreateRBAC &&
-		!ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
+	if values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
+		args = append(args, []string{
+			`--run-decommissioner`,
+			fmt.Sprintf("--decommission-vote-interval=%s", values.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
+			fmt.Sprintf("--decommission-requeue-timeout=%s", values.Statefulset.SideCars.BrokerDecommissioner.DecommissionRequeueTimeout),
+			`--decommission-vote-count=2`,
+		}...)
+	}
+
+	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" && values.Statefulset.SideCars.ConfigWatcher.Enabled {
+		args = append(args, []string{
+			`--watch-users`,
+			`--users-directory=/etc/secrets/users/`,
+		}...)
+	}
+
+	if values.Statefulset.SideCars.PVCUnbinder.Enabled {
+		args = append(args, []string{
+			`--run-pvc-unbinder`,
+			fmt.Sprintf("--pvc-unbinder-timeout=%s", values.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
+		}...)
+	}
+
+	volumeMounts := append(
+		append(CommonMounts(dot),
+			corev1.VolumeMount{
+				Name:      "config",
+				MountPath: "/etc/redpanda",
+			},
+		),
+		templateToVolumeMounts(dot, values.Statefulset.SideCars.ExtraVolumeMounts)...,
+	)
+
+	volumeMounts = append(
+		volumeMounts,
+		templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...,
+	)
+
+	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
+		(values.Statefulset.SideCars.AdditionalSidecarControllersEnabled()) {
+
 		mountName := ServiceAccountVolumeName
 		for _, vol := range StatefulSetVolumes(dot) {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
 				mountName = vol.Name
+				break
 			}
 		}
 
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      mountName,
-			ReadOnly:  true,
-			MountPath: DefaultAPITokenMountPath,
-		})
+		if mountName != "" {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      mountName,
+				ReadOnly:  true,
+				MountPath: DefaultAPITokenMountPath,
+			})
+		}
 	}
 
 	return &corev1.Container{
-		Name: RedpandaControllersContainerName,
-		Image: fmt.Sprintf(`%s:%s`,
-			values.Statefulset.SideCars.Controllers.Image.Repository,
-			values.Statefulset.SideCars.Controllers.Image.Tag,
-		),
-		Command: []string{`/manager`},
-		Args: []string{
-			`--operator-mode=false`,
-			fmt.Sprintf(`--namespace=%s`, dot.Release.Namespace),
-			fmt.Sprintf(`--health-probe-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.HealthProbeAddress,
-			),
-			fmt.Sprintf(`--metrics-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.MetricsAddress,
-			),
-			fmt.Sprintf(`--pprof-bind-address=%s`,
-				values.Statefulset.SideCars.Controllers.PprofAddress,
-			),
-			fmt.Sprintf(`--additional-controllers=%s`,
-				helmette.Join(",", values.Statefulset.SideCars.Controllers.Run),
-			),
-		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "REDPANDA_HELM_RELEASE_NAME",
-				Value: dot.Release.Name,
-			},
-		},
-		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.Controllers.Resources),
-		SecurityContext: values.Statefulset.SideCars.Controllers.SecurityContext,
+		Name:            "sidecar",
+		Image:           fmt.Sprintf(`%s:%s`, values.Statefulset.SideCars.Image.Repository, values.Statefulset.SideCars.Image.Tag),
+		Command:         []string{`/redpanda-operator`},
+		Args:            args,
+		Env:             append(rpkEnvVars(dot, nil), statefulSetRedpandaEnv()...),
+		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.SideCars.Resources),
+		SecurityContext: values.Statefulset.SideCars.SecurityContext,
 		VolumeMounts:    volumeMounts,
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					// This endpoint is the endpoint for the modified health probe initialized by
+					// the sidecar. When it's hit it performs an authenticated request to the cluster
+					// and ensures that the broker is in a "healthy" state, i.e. it doesn't have
+					// under-replicated partitions, it's part of the cluster quorum, etc.
+					Path: "/healthz",
+					Port: intstr.FromInt32(8093),
+				},
+			},
+			InitialDelaySeconds: values.Statefulset.ReadinessProbe.InitialDelaySeconds,
+			TimeoutSeconds:      values.Statefulset.ReadinessProbe.TimeoutSeconds,
+			PeriodSeconds:       values.Statefulset.ReadinessProbe.PeriodSeconds,
+			SuccessThreshold:    values.Statefulset.ReadinessProbe.SuccessThreshold,
+			FailureThreshold:    values.Statefulset.ReadinessProbe.FailureThreshold,
+		},
 	}
 }
 
