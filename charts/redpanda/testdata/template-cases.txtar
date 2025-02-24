@@ -437,7 +437,7 @@ statefulset:
 # By default Admin API listeners has enabled TLS but this explicitly enable this
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[8].name}", "kube-api-access-overwrite"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[7].name}", "kube-api-access-overwrite"]
 # ASSERT-FIELD-EQUALS ["v1/ServiceAccount", "default/redpanda-console", "{.automountServiceAccountToken}", false]
 # ASSERT-FIELD-EQUALS ["v1/ServiceAccount", "default/redpanda", "{.automountServiceAccountToken}", true]
 # ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.automountServiceAccountToken}", false]
@@ -569,9 +569,9 @@ external:
 -- extra-volumes-and-volumesmounts --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[8].name}", "test-extra-volume"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[7].name}", "test-extra-volume"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"redpanda\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/lifecycle"]
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"config-watcher\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/config-watcher"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"sidecar\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/config-watcher"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"tuning\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/tuning"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"set-datadir-ownership\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/setDataDirOwnership"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"fs-validator\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/fsValidator"]
@@ -1481,6 +1481,6 @@ tuning:
 # assertion prevents any rogue containers from the default podTemplate from
 # slipping in.
 # ASSERT-NO-ERROR
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "config-watcher"]]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "sidecar"]]
 nameOverride: "not-redpanda"
 fullnameOverride: "also-not-redpanda"

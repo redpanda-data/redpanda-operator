@@ -229,31 +229,10 @@ type PartialStatefulset struct {
 	Tolerations        []corev1.Toleration     "json:\"tolerations,omitempty\" jsonschema:\"required\""
 	PodSecurityContext *PartialSecurityContext "json:\"podSecurityContext,omitempty\""
 	SecurityContext    *PartialSecurityContext "json:\"securityContext,omitempty\" jsonschema:\"required\""
-	SideCars           *struct {
-		ConfigWatcher *struct {
-			Enabled           *bool                   "json:\"enabled,omitempty\""
-			ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
-			Resources         map[string]any          "json:\"resources,omitempty\""
-			SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
-		} "json:\"configWatcher,omitempty\""
-		Controllers *struct {
-			Image *struct {
-				Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-				Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-			} "json:\"image,omitempty\""
-			Enabled            *bool                   "json:\"enabled,omitempty\""
-			CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
-			Resources          any                     "json:\"resources,omitempty\""
-			SecurityContext    *corev1.SecurityContext "json:\"securityContext,omitempty\""
-			HealthProbeAddress *string                 "json:\"healthProbeAddress,omitempty\""
-			MetricsAddress     *string                 "json:\"metricsAddress,omitempty\""
-			PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
-			Run                []string                "json:\"run,omitempty\""
-		} "json:\"controllers,omitempty\""
-	} "json:\"sideCars,omitempty\" jsonschema:\"required\""
-	ExtraVolumes      *string "json:\"extraVolumes,omitempty\""
-	ExtraVolumeMounts *string "json:\"extraVolumeMounts,omitempty\""
-	InitContainers    *struct {
+	SideCars           *PartialSidecars        "json:\"sideCars,omitempty\" jsonschema:\"required\""
+	ExtraVolumes       *string                 "json:\"extraVolumes,omitempty\""
+	ExtraVolumeMounts  *string                 "json:\"extraVolumeMounts,omitempty\""
+	InitContainers     *struct {
 		Configurator *struct {
 			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
 			Resources         map[string]any "json:\"resources,omitempty\""
@@ -375,6 +354,45 @@ type PartialSecurityContext struct {
 	RunAsNonRoot              *bool                          "json:\"runAsNonRoot,omitempty\""
 	FSGroup                   *int64                         "json:\"fsGroup,omitempty\""
 	FSGroupChangePolicy       *corev1.PodFSGroupChangePolicy "json:\"fsGroupChangePolicy,omitempty\""
+}
+
+type PartialSidecars struct {
+	Image *struct {
+		Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+		Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+	} "json:\"image,omitempty\""
+	ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
+	Resources         map[string]any          "json:\"resources,omitempty\""
+	SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
+	PVCUnbinder       *struct {
+		Enabled     *bool   "json:\"enabled,omitempty\""
+		UnbindAfter *string "json:\"unbindAfter,omitempty\""
+	} "json:\"pvcUnbinder,omitempty\""
+	BrokerDecommissioner *struct {
+		Enabled                    *bool   "json:\"enabled,omitempty\""
+		DecommissionAfter          *string "json:\"decommissionAfter,omitempty\""
+		DecommissionRequeueTimeout *string "json:\"decommissionRequeueTimeout,omitempty\""
+	} "json:\"brokerDecommissioner,omitempty\""
+	ConfigWatcher *struct {
+		Enabled           *bool                   "json:\"enabled,omitempty\""
+		ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
+		Resources         map[string]any          "json:\"resources,omitempty\""
+		SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
+	} "json:\"configWatcher,omitempty\""
+	Controllers *struct {
+		Image *struct {
+			Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+			Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+		} "json:\"image,omitempty\""
+		Enabled            *bool                   "json:\"enabled,omitempty\""
+		CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
+		Resources          any                     "json:\"resources,omitempty\""
+		SecurityContext    *corev1.SecurityContext "json:\"securityContext,omitempty\""
+		HealthProbeAddress *string                 "json:\"healthProbeAddress,omitempty\""
+		MetricsAddress     *string                 "json:\"metricsAddress,omitempty\""
+		PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
+		Run                []string                "json:\"run,omitempty\""
+	} "json:\"controllers,omitempty\""
 }
 
 type PartialAdminListeners struct {

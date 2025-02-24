@@ -155,7 +155,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
 		return nil
 	}
 
@@ -172,9 +172,29 @@ func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
+				Verbs:     []string{"delete", "get", "list", "patch", "update", "watch"},
 				APIGroups: []string{""},
-				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch"},
+				Resources: []string{"persistentvolumeclaims"},
+			},
+			{
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+			},
+			{
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets"},
+			},
+			{
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+			},
+			{
+				Verbs:     []string{"create", "patch"},
+				APIGroups: []string{""},
+				Resources: []string{"events"},
 			},
 			{
 				APIGroups: []string{""},
@@ -188,7 +208,7 @@ func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
 func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
 		return nil
 	}
 
@@ -221,7 +241,7 @@ func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRole
 func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
 		return nil
 	}
 
@@ -265,7 +285,7 @@ func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 func SidecarControllersRoleBinding(dot *helmette.Dot) *rbacv1.RoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.Controllers.Enabled || !values.Statefulset.SideCars.Controllers.CreateRBAC {
+	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
 		return nil
 	}
 
