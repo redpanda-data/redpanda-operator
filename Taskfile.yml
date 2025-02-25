@@ -20,15 +20,27 @@ vars:
     sh: shopt -s globstar; dirname $(ls **/go.mod | grep -o '^[^s].*')
   PKG: './...'
   MOD: '{{default ._MOD .MOD}}'
-  OPERATOR_VERSION:
-    # TODO this should eventually be updated to 'operator/v*' to match go modules' tagging conventions.
-    sh: git describe --dirty --match 'v*'
   TIMESTAMP: # Timestamp used for any build artifacts.
     # MacOS' man page isn't helpful. https://man7.org/linux/man-pages/man1/date.1.html
     # Roughly ISO 8601
     sh: date -u '+%Y-%m-%dT%T:%SZ'
   COMMIT: # The commit to bake into any build artifacts.
     sh: git rev-parse HEAD
+  # Version stamps for baking into build artifacts and use as tags.
+  # `git describe --dirty` can generate 1 of 4 outputs:
+  # 1. v0.0.0 - HEAD is tagged as v0.0.0 and no changes are in the index.
+  # 2. v0.0.0-dirty - HEAD is tagged as v0.0.0 and there are changes in the index.
+  # 3. v0.0.0-<N>-g<commit> - HEAD is at <commit> which is N commits away from v0.0.0; no changes in index.
+  # 4. v0.0.0-<N>-g<commit>-dirty - HEAD is at <commit> which is N commits away from v0.0.0; changes in index.
+  # `--tags` is required to match tags with `/`'s in them which we have due to go modules' tagging conventions.
+  # `--match` is used to target tags that apply to a specific module.
+  # `--always` is a fallback to print out the commit if no tag is found.
+  # `sed` is used to trim off the qualifying parts of the tag so we just get the "version".
+  OPERATOR_VERSION:
+    sh: git describe --dirty --tags --match 'v*' --match 'operator/v*' | sed 's#^operator/##'
+  OPERATOR_CHART_VERSION:
+    # NB: OPERATOR_CHART_VERSION is currently only used for the operator chart's nightly releases.
+    sh: git describe --dirty --tags --match 'charts/operator/v*' --always | sed 's#^charts/operator/##'
 
 includes:
   build: taskfiles/build.yml
