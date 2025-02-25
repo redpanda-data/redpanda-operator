@@ -31,21 +31,30 @@ steps:
     agents:
       queue: pipeline-uploader
     # Run for:
-    # - all pull requests that aren't from forks.
+    # - all pull requests that aren't from forks
     # - nightly test schedule
+    # - changes to main or release/* branches (webhooks are from github)
     if: |
-      (build.pull_request.id != null && !build.pull_request.repository.fork) || (build.source == "schedule" && build.env("K8S_NIGHTLY") == "1")
+      (build.pull_request.id != null && !build.pull_request.repository.fork) ||
+      (build.source == "schedule" && build.env("K8S_NIGHTLY") == "1") ||
+      ((build.branch == "main" || build.branch =~ /^release\//) && build.source == "webhook")
     command: buildkite-agent pipeline upload .buildkite/testsuite.yml
 
+    # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.
+    # It's recommended to check that tests have passed for the given commit before using it.
   - key: release-nightly
-    label: ":gandalf: Nightly Operator release"
+    label: ":gandalf: Nightly Releases"
     timeout_in_minutes: 10
     agents:
       queue: v6-amd64-builders-m6id
     commands:
       - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-k8s-nightly-artifacts
-    if: build.branch == "main" && build.source == "schedule" && build.env("NIGHTLY_RELEASE") == "true"
+        ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-nightly-artifacts
+    # Build nightly releases whenever NIGHTLY_RELEASE is set and it's triggered
+    # from a schedule or the BK UI. Notably, we permit building nightlies from
+    # any branch as the version stamps contain enough information to easily
+    # track down the source.
+    if: build.env("NIGHTLY_RELEASE") == "true" && (build.source == "schedule" || build.source == "ui")
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
@@ -58,24 +67,28 @@ steps:
             - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
             - secret-id: sdlc/prod/buildkite/slack_vbot_token
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: "Nightly release failed"
+          message: "Nightly releases failed"
           channel_name: "kubernetes-tests"
           slack_token_env_var_name: "SLACK_VBOT_TOKEN"
           conditions:
             failed: true
-            branches:
-              - main
 
-  # Legacy pipeline that appears to be responsible for minting releases,
-  # provided that kuttl-v1 tests pass.
-  # TODO: Scope this to just producing releases, both nightly and on tag.
-  - key: k8s-operator
-    label: Operator v1 E2E tests or release
+    # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.
+    # Manually verify that the test suite has successfully run on the RC before tagging.
+  - key: operator-release
+    label: Operator Release
     timeout_in_minutes: 180
-    if: build.env("NIGHTLY_RELEASE") != "true" && build.pull_request.id == null
-    commands:
-      - |
-        TAG_NAME=$(ci/scripts/tag-check.sh) ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:k8s
+    if: |
+      // Only run if:
+      // 1. There's a tag and it's of the form 'v*' or 'operator/v*'
+      // 2. Source branch is main or release/*
+      // 3. NIGHTLY_RELEASE envvar isn't set (paranoid check)
+      // 4. This isn't a pull request (paranoid check)
+      (build.tag =~ /^v/ || build.tag =~ /^operator\/v/) &&
+      (build.branch == "main" || build.branch =~ /^release\//) &&
+      build.pull_request.id == null &&
+      build.env("NIGHTLY_RELEASE") != "true"
+    command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
     agents:
       queue: v6-amd64-builders-m6id
     plugins:
@@ -100,10 +113,8 @@ steps:
             - secret-id: sdlc/prod/buildkite/teleport_bot_token
             - secret-id: sdlc/prod/buildkite/test_result_dsn
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
-          message: ":cloud: K8s Operator v1 e2e tests Jobs failed"
+          message: ":cloud: Operator Release Job Failed"
           channel_name: "kubernetes-tests"
           slack_token_env_var_name: "SLACK_VBOT_TOKEN"
           conditions:
             failed: true
-            branches:
-              - main
