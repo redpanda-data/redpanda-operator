@@ -84,9 +84,9 @@ func Command() *cobra.Command {
 	}
 
 	// runtime flags
-	cmd.Flags().StringVar(&metricsAddr, "runtime-metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	cmd.Flags().StringVar(&probeAddr, "runtime-health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	cmd.Flags().StringVar(&pprofAddr, "runtime-pprof-bind-address", ":8082", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&metricsAddr, "runtime-metrics-bind-address", ":8090", "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&probeAddr, "runtime-health-probe-bind-address", ":8091", "The address the probe endpoint binds to.")
+	cmd.Flags().StringVar(&pprofAddr, "runtime-pprof-bind-address", ":8092", "The address the metric endpoint binds to.")
 
 	// rpk flags
 	cmd.Flags().StringVar(&redpandaYAMLPath, "redpanda-yaml", "/etc/redpanda/redpanda.yaml", "Path to redpanda.yaml whose rpk stanza will be used for connecting to a Redpanda cluster.")
@@ -107,7 +107,7 @@ func Command() *cobra.Command {
 
 	// broker probe flags
 	cmd.Flags().BoolVar(&runBrokerProbe, "run-broker-probe", false, "Specifies if the sidecar should run the health probe.")
-	cmd.Flags().StringVar(&brokerProbeAddr, "broker-probe-bind-address", ":8083", "The address the broker probe endpoint binds to.")
+	cmd.Flags().StringVar(&brokerProbeAddr, "broker-probe-bind-address", ":8093", "The address the broker probe endpoint binds to.")
 	cmd.Flags().DurationVar(&brokerProbeShutdownTimeout, "broker-probe-shutdown-timeout", 10*time.Second, "The time period to wait to gracefully shutdown the broker probe before terminating.")
 	cmd.Flags().StringVar(&brokerProbeBrokerURL, "broker-probe-broker-url", "", "The URL of the broker instance this sidecar is for.")
 
