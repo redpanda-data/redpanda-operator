@@ -111,7 +111,14 @@ func (s *Server) HandleReadyCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
+func (s *Server) NeedLeaderElection() bool {
+	// explicitly elect this as not needing leadership election
+	return false
+}
+
 func (s *Server) Start(ctx context.Context) error {
+	s.logger.Info("running health probe server", "address", s.server.Addr)
+
 	shutdownServer := func() error {
 		// we use the background context here since the parent context might
 		// already be canceled
