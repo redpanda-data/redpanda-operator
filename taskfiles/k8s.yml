@@ -115,21 +115,21 @@ tasks:
         sh: mktemp --directory --tmpdir "helm-package-XXXXXXXXXX"
     cmds:
       - defer: 'rm -r {{.TMP_PATH}}'
-      - defer: 'helm registry logout registry-1.docker.io'
-      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
-      - cp -r charts/operator/ {{.TMP_PATH}}
+      # NB: cp -r/-R is dependent on the implementation (macOS vs Linux).
+      # cp -R src/. dest/ <- Same behavior, copy contents of src to dest.
+      # cp -r src/ dest <- Different. macOS == copy contents, linux == copy src folder into dest.
+      - cp -R charts/operator/. {{.TMP_PATH}}
       # The Chart.yaml name needs to match with docker hub OCI registry, so that helm push correctly
       # finds OCI registry.
       # Reference
       # https://hub.docker.com/r/redpandadata/redpanda-operator-nightly
-      - yq -i '.name = "redpanda-operator-nightly"' {{.TMP_PATH}}/operator/Chart.yaml
+      - yq -i '.name = "redpanda-operator-nightly"' {{.TMP_PATH}}/Chart.yaml
       # The version has suffix -helm-chart to overcome docker hub limitation of the oci artifact types
       # Reference
       # https://forums.docker.com/t/tag-overlap-in-oci-artifacts/131453
       # For usage of operator artifact please go to specific reference like the one below
       # https://hub.docker.com/layers/redpandadata/redpanda-operator-nightly/v0.0.0-20250104git4a5a076-helm-chart/images/sha256-ffaea8752b6bd00a26589a168830a87d498106e470f11af0f08267bc13fbd078
-      - helm package {{.TMP_PATH}}/operator --version "{{.TAG_NAME}}-helm-chart" --destination {{.TMP_PATH}} --dependency-update
-      - helm push `ls {{.TMP_PATH}}/redpanda-operator-nightly*.tgz` oci://registry-1.docker.io/redpandadata
-    preconditions:
-      - test -n "$DOCKERHUB_USER"
-      - test -n "$DOCKERHUB_TOKEN"
+      - helm package {{.TMP_PATH}} --version "{{.OPERATOR_CHART_VERSION}}-helm-chart" --destination {{.BUILD_ROOT}} --dependency-update
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - defer: 'helm registry logout registry-1.docker.io'
+      - helm push '{{.BUILD_ROOT}}/redpanda-operator-nightly-{{.OPERATOR_CHART_VERSION}}-helm-chart.tgz' oci://registry-1.docker.io/redpandadata

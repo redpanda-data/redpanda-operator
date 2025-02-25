@@ -108,12 +108,7 @@ tasks:
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz"
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR}}/kuttl-report.xml"
 
-  k8s:
-    cmds:
-      - task: run-k8s-tests
-      - task: publish-k8s-operator-images
-
-  publish-k8s-operator-images:
+  publish-operator-image:
     deps:
       - :dev:create-buildx-builder
     cmds:
@@ -131,15 +126,8 @@ tasks:
           - linux/amd64
           - linux/arm64
           CLI_ARGS: "--push"
-    status:
-      - test -z '{{.TAG_NAME}}' # only run for tagged commits
-      - test -n "$DOCKERHUB_USER"
-      - test -n "$DOCKERHUB_TOKEN"
 
-  publish-k8s-nightly-artifacts:
-    args:
-      TAGS:
-      - docker.io/redpandadata/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
+  publish-nightly-artifacts:
     deps:
       - :dev:create-buildx-builder
     cmds:
@@ -151,8 +139,7 @@ tasks:
       - task: :build:operator-image
         vars:
           TAGS:
-          - docker.io/vectorized/redpanda-operator:{{.OPERATOR_VERSION}}
-          - docker.io/redpandadata/redpanda-operator:{{.OPERATOR_VERSION}}
+          - docker.io/redpandadata/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
           PLATFORMS:
           - linux/amd64
           - linux/arm64
