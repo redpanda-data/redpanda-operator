@@ -117,7 +117,7 @@ func (s *Server) NeedLeaderElection() bool {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info("Running health probe server")
+	s.logger.Info("running health probe server", "address", s.server.Addr)
 
 	shutdownServer := func() error {
 		// we use the background context here since the parent context might
