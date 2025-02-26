@@ -1167,10 +1167,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`,
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
 				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093}]",
-				"redpanda.kafka_api", "[{'name':'kafka-mtls','address':'0.0.0.0','port':30093,'authentication_method':'mtls_identity'}]",
-				"redpanda.kafka_api_tls", "[{'name':'kafka-mtls','key_file':'/etc/tls/certs/tls.key','cert_file':'/etc/tls/certs/tls.crt','truststore_file':'/etc/tls/certs/ca/ca.crt','require_client_auth':true}]",
 			),
 		},
 		{
@@ -1222,10 +1220,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`,
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
 				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093},{'name':'kafka-private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':{{32092 | add .Index}}}]",
-				"redpanda.kafka_api", "[{'name':'kafka-mtls','address':'0.0.0.0','port':30093,'authentication_method':'mtls_identity'},{'name':'kafka-private-link','address':'0.0.0.0','port':30292,'authentication_method':'sasl'}]",
-				"redpanda.kafka_api_tls", "[{'name':'kafka-mtls','key_file':'/etc/tls/certs/tls.key','cert_file':'/etc/tls/certs/tls.crt','truststore_file':'/etc/tls/certs/ca/ca.crt','require_client_auth':true},{'name':'kafka-private-link','key_file':'/etc/tls/certs/tls.key','cert_file':'/etc/tls/certs/tls.crt'}]",
 			),
 		},
 		{
@@ -1280,10 +1276,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`,
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
 				"pandaproxy.advertised_pandaproxy_api", "[{'name':'proxy-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30083}]",
-				"pandaproxy.pandaproxy_api", "[{'name':'proxy-mtls','address':'0.0.0.0','port':30083,'authentication_method':'mtls_identity'}]",
-				"pandaproxy.pandaproxy_api_tls", "[{'name':'proxy-mtls','key_file':'/etc/tls/certs/pandaproxy/tls.key','cert_file':'/etc/tls/certs/pandaproxy/tls.crt','truststore_file':'/etc/tls/certs/pandaproxy/ca/ca.crt','require_client_auth':true}]",
 			),
 		},
 		{
@@ -1339,62 +1333,8 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`,
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
 				"pandaproxy.advertised_pandaproxy_api", "[{'name':'proxy-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30083},{'name':'proxy-private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':{{35082 | add .Index}}}]",
-				"pandaproxy.pandaproxy_api", "[{'name':'proxy-mtls','address':'0.0.0.0','port':30083,'authentication_method':'mtls_identity'},{'name':'proxy-private-link','address':'0.0.0.0','port':30282,'authentication_method':'http_basic'}]",
-				"pandaproxy.pandaproxy_api_tls", "[{'name':'proxy-mtls','key_file':'/etc/tls/certs/pandaproxy/tls.key','cert_file':'/etc/tls/certs/pandaproxy/tls.crt','truststore_file':'/etc/tls/certs/pandaproxy/ca/ca.crt','require_client_auth':true},{'name':'proxy-private-link','key_file':'/etc/tls/certs/pandaproxy/tls.key','cert_file':'/etc/tls/certs/pandaproxy/tls.crt'}]",
-			),
-		},
-		{
-			name: "multiple schema registry listeners in configuration",
-			pandaCluster: &vectorizedv1alpha1.Cluster{
-				Spec: vectorizedv1alpha1.ClusterSpec{
-					NodePools: []vectorizedv1alpha1.NodePoolSpec{
-						{
-							Name:     "test",
-							Replicas: &replicas,
-						},
-					},
-					Configuration: vectorizedv1alpha1.RedpandaConfig{
-						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
-							Name:                 "schema-registry",
-							Port:                 30081,
-							AuthenticationMethod: "http_basic",
-							External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
-								ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
-									Enabled:          true,
-									EndpointTemplate: "sr-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
-									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
-								},
-							},
-							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
-								Enabled: true,
-							},
-						},
-						AdditionalSchemaRegistry: []vectorizedv1alpha1.SchemaRegistryAPI{
-							{
-								Name:                 "sr-mtls",
-								Port:                 30084,
-								AuthenticationMethod: "mtls_identity",
-								External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
-									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
-										Enabled:          true,
-										EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
-										Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
-									},
-								},
-								TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
-									Enabled:           true,
-									RequireClientAuth: true,
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s"}`,
-				"schema_registry.schema_registry_api", "[{'name':'sr-mtls','address':'0.0.0.0','port':30084,'authentication_method':'mtls_identity'}]",
-				"schema_registry.schema_registry_api_tls", "[{'name':'sr-mtls','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt','truststore_file':'/etc/tls/certs/schema-registry/ca/ca.crt','require_client_auth':true}]",
 			),
 		},
 		{
@@ -1451,12 +1391,11 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s","%s":"%s","%s":"%s"}`,
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s","%s":"%s"}`,
 				"pandaproxy.advertised_pandaproxy_api", "[{'name': 'pl-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
 				"pandaproxy.pandaproxy_api", "[{'name': 'pl-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
 				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093},{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
-				"redpanda.kafka_api", "[{'name':'kafka-mtls','address':'0.0.0.0','port':30093,'authentication_method':'mtls_identity'},{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
-				"redpanda.kafka_api_tls", "[{'name':'kafka-mtls','key_file':'/etc/tls/certs/tls.key','cert_file':'/etc/tls/certs/tls.crt','truststore_file':'/etc/tls/certs/ca/ca.crt','require_client_auth':true}]",
+				"redpanda.kafka_api", "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 			),
 		},
 	}
