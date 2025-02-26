@@ -29,7 +29,7 @@ nameOverride: ""
 # -- Override `redpanda.fullname` template.
 fullnameOverride: ""
 # -- Default Kubernetes cluster domain.
-clusterDomain: cluster.local
+clusterDomain: cluster.local.
 # -- Additional labels to add to all Kubernetes objects.
 # For example, `my.k8s.service: redpanda`.
 commonLabels: {}
