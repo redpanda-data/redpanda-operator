@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 const (
@@ -64,7 +64,7 @@ func isValidReleaseName(releaseName string, redpandaNameList []string) bool {
 
 func getHelmValues(ctx context.Context, c client.Client, log logr.Logger, releaseName, namespace string, operatorMode bool) (map[string]interface{}, error) {
 	if operatorMode {
-		rp := v1alpha2.Redpanda{}
+		rp := redpandav1alpha2.Redpanda{}
 		err := c.Get(ctx, client.ObjectKey{Name: releaseName, Namespace: namespace}, &rp)
 		if err != nil {
 			return nil, fmt.Errorf("getting Redpanda customer resource: %w", err)

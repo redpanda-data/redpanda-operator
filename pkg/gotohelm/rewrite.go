@@ -17,7 +17,6 @@ import (
 	"go/types"
 
 	"github.com/cockroachdb/errors"
-
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 )

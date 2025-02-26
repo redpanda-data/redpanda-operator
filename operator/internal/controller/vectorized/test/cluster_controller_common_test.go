@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	podutils "github.com/redpanda-data/redpanda-operator/operator/internal/util/pod"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
@@ -59,13 +59,13 @@ func annotationGetter(
 
 func clusterConfiguredConditionGetter(
 	key client.ObjectKey,
-) func() *v1alpha1.ClusterCondition {
-	return func() *v1alpha1.ClusterCondition {
-		var cluster v1alpha1.Cluster
+) func() *vectorizedv1alpha1.ClusterCondition {
+	return func() *vectorizedv1alpha1.ClusterCondition {
+		var cluster vectorizedv1alpha1.Cluster
 		if err := k8sClient.Get(context.Background(), key, &cluster); err != nil {
 			return nil
 		}
-		return cluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+		return cluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 	}
 }
 
@@ -77,10 +77,10 @@ func clusterConfiguredConditionStatusGetter(key client.ObjectKey) func() bool {
 }
 
 func clusterUpdater(
-	clusterNamespacedName types.NamespacedName, upd func(*v1alpha1.Cluster),
+	clusterNamespacedName types.NamespacedName, upd func(*vectorizedv1alpha1.Cluster),
 ) func() error {
 	return func() error {
-		cl := &v1alpha1.Cluster{}
+		cl := &vectorizedv1alpha1.Cluster{}
 		if err := k8sClient.Get(context.Background(), clusterNamespacedName, cl); err != nil {
 			return err
 		}
@@ -91,10 +91,10 @@ func clusterUpdater(
 }
 
 func consoleUpdater(
-	consoleNamespacedName types.NamespacedName, upd func(*v1alpha1.Console),
+	consoleNamespacedName types.NamespacedName, upd func(*vectorizedv1alpha1.Console),
 ) func() error {
 	return func() error {
-		con := &v1alpha1.Console{}
+		con := &vectorizedv1alpha1.Console{}
 		if err := k8sClient.Get(context.Background(), consoleNamespacedName, con); err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func consoleUpdater(
 }
 
 func statefulSetReplicasReconciler(
-	log logr.Logger, key types.NamespacedName, cluster *v1alpha1.Cluster,
+	log logr.Logger, key types.NamespacedName, cluster *vectorizedv1alpha1.Cluster,
 ) func() error {
 	return func() error {
 		var sts appsv1.StatefulSet

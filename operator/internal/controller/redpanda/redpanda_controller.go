@@ -26,6 +26,7 @@ import (
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/pkg/runtime/logger"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta2"
+	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,10 +44,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/common-go/rpadmin"
-
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -167,7 +166,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 	managedWatchOption := builder.WithPredicates(helmManagedComponentPredicate)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.Redpanda{}).
+		For(&redpandav1alpha2.Redpanda{}).
 		Owns(&sourcev1.HelmRepository{}).
 		Owns(&helmv2beta1.HelmRelease{}).
 		Owns(&helmv2beta2.HelmRelease{}).
@@ -190,7 +189,7 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 
 	log.V(logger.TraceLevel).Info("Starting reconcile loop")
 
-	rp := &v1alpha2.Redpanda{}
+	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -262,18 +261,18 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
 		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRepository, rp.Namespace, rp.Status.HelmRepository)
-		_ = v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
 		return nil
 	}
 
 	if !ptr.Deref(rp.Status.HelmReleaseReady, false) {
 		// strip out all of the requeues since this will get requeued based on the Owns in the setup of the reconciler
 		msgNotReady := fmt.Sprintf(resourceNotReadyStrFmt, resourceTypeHelmRelease, rp.GetNamespace(), rp.GetHelmReleaseName())
-		_ = v1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "ArtifactFailed", msgNotReady)
 		return nil
 	}
 
@@ -296,19 +295,19 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.R
 	deployments := append(consoleDeployments, connectorsDeployments...)
 
 	if len(redpandaStatefulSets) == 0 {
-		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created")
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created")
 		return nil
 	}
 
 	// check to make sure that our stateful set pods are all current
 	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
-		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message)
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message)
 		return nil
 	}
 
 	// check to make sure that our deployment pods are all current
 	if message, ready := checkDeploymentsStatus(deployments); !ready {
-		_ = v1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message)
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message)
 		return nil
 	}
 
@@ -320,15 +319,15 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *v1alpha2.R
 	}
 
 	if needsDecommission {
-		_ = v1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes")
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes")
 		return nil
 	}
 
-	_ = v1alpha2.RedpandaReady(rp)
+	_ = redpandav1alpha2.RedpandaReady(rp)
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
@@ -344,9 +343,9 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 
 		// NB: passing `nil` as err is acceptable for log.Error.
 		log.Error(nil, msg, "chart version", rp.Spec.ChartRef.ChartVersion)
-		r.EventRecorder.Eventf(rp, "Warning", v1alpha2.EventSeverityError, msg)
+		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, msg)
 
-		v1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", msg)
+		redpandav1alpha2.RedpandaNotReady(rp, "ChartRefUnsupported", msg)
 
 		// Do not error out to not requeue. User needs to first migrate helm release to either "" or the pinned chart's version.
 		return nil
@@ -431,7 +430,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *v1alpha2
 	return nil
 }
 
-func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *v1alpha2.Redpanda, conditionType string) bool {
+func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *redpandav1alpha2.Redpanda, conditionType string) bool {
 	log := ctrl.LoggerFrom(ctx)
 
 	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, meta.ReadyCondition)
@@ -468,8 +467,8 @@ func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *v1alpha
 	return previouslySynced && !(generationChanged || recheck)
 }
 
-func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.Redpanda) error {
-	if r.ratelimitCondition(ctx, rp, v1alpha2.ClusterLicenseValid) {
+func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterLicenseValid) {
 		return nil
 	}
 
@@ -483,7 +482,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	if err != nil {
 		if internalclient.IsTerminalClientError(err) {
 			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-				Type:               v1alpha2.ClusterLicenseValid,
+				Type:               redpandav1alpha2.ClusterLicenseValid,
 				Status:             metav1.ConditionUnknown,
 				ObservedGeneration: rp.Generation,
 				Reason:             "TerminalError",
@@ -499,7 +498,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	if err != nil {
 		if internalclient.IsTerminalClientError(err) {
 			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-				Type:               v1alpha2.ClusterLicenseValid,
+				Type:               redpandav1alpha2.ClusterLicenseValid,
 				Status:             metav1.ConditionUnknown,
 				ObservedGeneration: rp.Generation,
 				Reason:             "TerminalError",
@@ -531,14 +530,14 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	}
 
 	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-		Type:               v1alpha2.ClusterLicenseValid,
+		Type:               redpandav1alpha2.ClusterLicenseValid,
 		Status:             status,
 		ObservedGeneration: rp.Generation,
 		Reason:             reason,
 		Message:            message,
 	})
 
-	licenseStatus := func() *v1alpha2.RedpandaLicenseStatus {
+	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
 		inUseFeatures := []string{}
 		for _, feature := range features.Features {
 			if feature.Enabled {
@@ -546,7 +545,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 			}
 		}
 
-		status := &v1alpha2.RedpandaLicenseStatus{
+		status := &redpandav1alpha2.RedpandaLicenseStatus{
 			InUseFeatures: inUseFeatures,
 			Violation:     features.Violation,
 		}
@@ -576,14 +575,14 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *v1alpha2.
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1alpha2.Redpanda) error {
-	if r.ratelimitCondition(ctx, rp, v1alpha2.ClusterConfigSynced) {
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterConfigSynced) {
 		return nil
 	}
 
 	if r.IsFluxEnabled(rp.Spec.ChartRef.UseFlux) {
 		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-			Type:               v1alpha2.ClusterConfigSynced,
+			Type:               redpandav1alpha2.ClusterConfigSynced,
 			Status:             metav1.ConditionUnknown,
 			ObservedGeneration: rp.Generation,
 			Reason:             "HandledByFlux",
@@ -615,7 +614,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1a
 	}
 
 	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-		Type:               v1alpha2.ClusterConfigSynced,
+		Type:               redpandav1alpha2.ClusterConfigSynced,
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: rp.Generation,
 		Reason:             "ConfigSynced",
@@ -624,7 +623,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *v1a
 	return nil
 }
 
-func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *v1alpha2.Redpanda) (map[string][]byte, error) {
+func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
 	values, err := rp.GetValues()
 	if err != nil {
 		return nil, err
@@ -647,7 +646,7 @@ func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *v1alpha2.Redpa
 	return users.Data, nil
 }
 
-func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *v1alpha2.Redpanda) (_ map[string]any, err error) {
+func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (_ map[string]any, err error) {
 	// Parinoided panic catch as we're calling directly into helm functions.
 	defer func() {
 		if r := recover(); r != nil {
@@ -687,7 +686,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *v1alpha2.
 	return desired, nil
 }
 
-func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2.Redpanda, created map[gvkKey]struct{}) error {
+func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpandav1alpha2.Redpanda, created map[gvkKey]struct{}) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	types, err := allListTypes(r.Client)
@@ -758,7 +757,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *v1alpha2
 	return errors.Join(errs...)
 }
 
-func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *v1alpha2.Redpanda) (*v1alpha2.Redpanda, error) {
+func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *redpandav1alpha2.Redpanda) (*redpandav1alpha2.Redpanda, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.WithName("RedpandaReconciler.reconcile")
 
@@ -779,7 +778,7 @@ func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *v1alpha2.Red
 	return rp, nil
 }
 
-func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *v1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
+func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpandav1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
 		return false, err
@@ -803,7 +802,7 @@ func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *v1alpha2
 	return len(health.AllNodes) > desiredReplicas, nil
 }
 
-func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	hr, err := r.createHelmReleaseFromTemplate(ctx, rp)
 	if err != nil {
 		return err
@@ -830,7 +829,7 @@ func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *v1alp
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	repo := r.HelmRepositoryFromTemplate(rp)
 
 	if err := r.apply(ctx, repo); err != nil {
@@ -854,7 +853,7 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *v1
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
 		if err := r.Client.Update(ctx, rp); err != nil {
@@ -864,7 +863,7 @@ func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *v1alpha2.R
 	return nil
 }
 
-func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *v1alpha2.Redpanda) (*helmv2beta2.HelmRelease, error) {
+func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, rp *redpandav1alpha2.Redpanda) (*helmv2beta2.HelmRelease, error) {
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.createHelmReleaseFromTemplate")
 
 	values, err := rp.ValuesJSON()
@@ -955,7 +954,7 @@ func (r *RedpandaReconciler) createHelmReleaseFromTemplate(ctx context.Context, 
 	}, nil
 }
 
-func (r *RedpandaReconciler) HelmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *sourcev1.HelmRepository {
+func (r *RedpandaReconciler) HelmRepositoryFromTemplate(rp *redpandav1alpha2.Redpanda) *sourcev1.HelmRepository {
 	return &sourcev1.HelmRepository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            rp.GetHelmRepositoryName(),
@@ -970,9 +969,9 @@ func (r *RedpandaReconciler) HelmRepositoryFromTemplate(rp *v1alpha2.Redpanda) *
 	}
 }
 
-func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *v1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	key := client.ObjectKeyFromObject(rp)
-	latest := &v1alpha2.Redpanda{}
+	latest := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
 		return err
 	}
@@ -995,10 +994,10 @@ func (r *RedpandaReconciler) apply(ctx context.Context, obj client.Object) error
 	return errors.WithStack(r.Client.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("redpanda-operator")))
 }
 
-func isRedpandaManaged(ctx context.Context, redpandaCluster *v1alpha2.Redpanda) bool {
+func isRedpandaManaged(ctx context.Context, redpandaCluster *redpandav1alpha2.Redpanda) bool {
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.isRedpandaManaged")
 
-	managedAnnotationKey := v1alpha2.GroupVersion.Group + managedPath
+	managedAnnotationKey := redpandav1alpha2.GroupVersion.Group + managedPath
 	if managed, exists := redpandaCluster.Annotations[managedAnnotationKey]; exists && managed == NotManaged {
 		log.Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it", managedAnnotationKey))
 		return false

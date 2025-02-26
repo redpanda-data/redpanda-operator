@@ -28,7 +28,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
@@ -41,7 +41,7 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = v1alpha2.AddToScheme(scheme.Scheme)
+	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 
 	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -115,7 +115,7 @@ func TestClientPasswordCreation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = v1alpha2.AddToScheme(scheme.Scheme)
+	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 
 	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -161,22 +161,22 @@ func TestClientPasswordCreation(t *testing.T) {
 			"test": "label",
 		}
 
-		user := &v1alpha2.User{
+		user := &redpandav1alpha2.User{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      username,
 				Namespace: metav1.NamespaceDefault,
 			},
-			Spec: v1alpha2.UserSpec{
-				ClusterSource: &v1alpha2.ClusterSource{
-					ClusterRef: &v1alpha2.ClusterRef{
+			Spec: redpandav1alpha2.UserSpec{
+				ClusterSource: &redpandav1alpha2.ClusterSource{
+					ClusterRef: &redpandav1alpha2.ClusterRef{
 						Name: "bogus",
 					},
 				},
-				Authentication: &v1alpha2.UserAuthenticationSpec{
-					Type: ptr.To(v1alpha2.SASLMechanismScramSHA512),
-					Password: v1alpha2.Password{
+				Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+					Type: ptr.To(redpandav1alpha2.SASLMechanismScramSHA512),
+					Password: redpandav1alpha2.Password{
 						Value: password,
-						ValueFrom: &v1alpha2.PasswordSource{
+						ValueFrom: &redpandav1alpha2.PasswordSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: secret,
@@ -186,9 +186,9 @@ func TestClientPasswordCreation(t *testing.T) {
 						},
 					},
 				},
-				Template: &v1alpha2.UserTemplateSpec{
-					Secret: &v1alpha2.ResourceTemplate{
-						Metadata: v1alpha2.MetadataTemplate{
+				Template: &redpandav1alpha2.UserTemplateSpec{
+					Secret: &redpandav1alpha2.ResourceTemplate{
+						Metadata: redpandav1alpha2.MetadataTemplate{
 							Labels:      labels,
 							Annotations: annotations,
 						},

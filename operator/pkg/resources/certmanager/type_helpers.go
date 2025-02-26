@@ -16,17 +16,16 @@ import (
 	"errors"
 	"fmt"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -362,17 +361,17 @@ func isSelfSigned(ctx context.Context, nodeSecretRef *corev1.ObjectReference, ex
 		return ok, nil // if the ca key exists, it means it's self-signed
 	}
 	if externalIssuerRef != nil {
-		var issuerSpec cmapiv1.IssuerSpec
+		var issuerSpec certmanagerv1.IssuerSpec
 		switch externalIssuerRef.Kind {
 		case "Issuer":
-			var issuer cmapiv1.Issuer
+			var issuer certmanagerv1.Issuer
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: externalIssuerRef.Name, Namespace: clusterNamespace}, &issuer)
 			if err != nil {
 				return false, err
 			}
 			issuerSpec = issuer.Spec
 		case "ClusterIssuer":
-			var issuer cmapiv1.ClusterIssuer
+			var issuer certmanagerv1.ClusterIssuer
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: externalIssuerRef.Name, Namespace: clusterNamespace}, &issuer)
 			if err != nil {
 				return false, err

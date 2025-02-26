@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,7 +48,7 @@ type CertificateResource struct {
 	scheme         *runtime.Scheme
 	pandaCluster   *vectorizedv1alpha1.Cluster
 	key            types.NamespacedName
-	issuerRef      *cmetav1.ObjectReference
+	issuerRef      *cmmetav1.ObjectReference
 	fqdn           []string
 	commonName     CommonName
 	isCA           bool
@@ -62,7 +62,7 @@ func NewCACertificate(
 	scheme *runtime.Scheme,
 	pandaCluster *vectorizedv1alpha1.Cluster,
 	key types.NamespacedName,
-	issuerRef *cmetav1.ObjectReference,
+	issuerRef *cmmetav1.ObjectReference,
 	commonName CommonName,
 	keystoreSecret *types.NamespacedName,
 	logger logr.Logger,
@@ -87,7 +87,7 @@ func NewNodeCertificate(
 	scheme *runtime.Scheme,
 	pandaCluster *vectorizedv1alpha1.Cluster,
 	key types.NamespacedName,
-	issuerRef *cmetav1.ObjectReference,
+	issuerRef *cmmetav1.ObjectReference,
 	fqdn []string,
 	commonName CommonName,
 	keystoreSecret *types.NamespacedName,
@@ -113,7 +113,7 @@ func NewCertificate(
 	scheme *runtime.Scheme,
 	pandaCluster *vectorizedv1alpha1.Cluster,
 	key types.NamespacedName,
-	issuerRef *cmetav1.ObjectReference,
+	issuerRef *cmmetav1.ObjectReference,
 	commonName CommonName,
 	isCA bool,
 	keystoreSecret *types.NamespacedName,
@@ -147,7 +147,7 @@ func (r *CertificateResource) Ensure(ctx context.Context) error {
 // obj returns resource managed client.Object
 func (r *CertificateResource) obj() (k8sclient.Object, error) {
 	objLabels := labels.ForCluster(r.pandaCluster)
-	cert := &cmapiv1.Certificate{
+	cert := &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.Key().Name,
 			Namespace: r.Key().Namespace,
@@ -157,7 +157,7 @@ func (r *CertificateResource) obj() (k8sclient.Object, error) {
 			Kind:       "Certificate",
 			APIVersion: "cert-manager.io/v1",
 		},
-		Spec: cmapiv1.CertificateSpec{
+		Spec: certmanagerv1.CertificateSpec{
 			SecretName:  r.Key().Name,
 			IssuerRef:   *r.issuerRef,
 			IsCA:        r.isCA,
@@ -182,25 +182,25 @@ func (r *CertificateResource) obj() (k8sclient.Object, error) {
 	return cert, nil
 }
 
-func (r *CertificateResource) createKeystores() *cmapiv1.CertificateKeystores {
+func (r *CertificateResource) createKeystores() *certmanagerv1.CertificateKeystores {
 	if r.keystoreSecret == nil {
 		return nil
 	}
 
-	return &cmapiv1.CertificateKeystores{
-		JKS: &cmapiv1.JKSKeystore{
+	return &certmanagerv1.CertificateKeystores{
+		JKS: &certmanagerv1.JKSKeystore{
 			Create: true,
-			PasswordSecretRef: cmetav1.SecretKeySelector{
-				LocalObjectReference: cmetav1.LocalObjectReference{
+			PasswordSecretRef: cmmetav1.SecretKeySelector{
+				LocalObjectReference: cmmetav1.LocalObjectReference{
 					Name: r.keystoreSecret.Name,
 				},
 				Key: passwordKey,
 			},
 		},
-		PKCS12: &cmapiv1.PKCS12Keystore{
+		PKCS12: &certmanagerv1.PKCS12Keystore{
 			Create: true,
-			PasswordSecretRef: cmetav1.SecretKeySelector{
-				LocalObjectReference: cmetav1.LocalObjectReference{
+			PasswordSecretRef: cmmetav1.SecretKeySelector{
+				LocalObjectReference: cmmetav1.LocalObjectReference{
 					Name: r.keystoreSecret.Name,
 				},
 				Key: passwordKey,
@@ -216,6 +216,6 @@ func (r *CertificateResource) Key() types.NamespacedName {
 }
 
 func certificateKind() string {
-	var obj cmapiv1.Certificate
+	var obj certmanagerv1.Certificate
 	return obj.Kind
 }

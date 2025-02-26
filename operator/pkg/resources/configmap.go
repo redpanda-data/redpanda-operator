@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"strconv"
 
-	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,6 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -285,7 +284,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 			RequireClientAuth: kl[i].TLS.RequireClientAuth,
 		}
 		if kl[i].TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.ClientCAMountDir, cmetav1.TLSCAKey)
+			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
 		}
 		cr.KafkaAPITLS = append(cr.KafkaAPITLS, tls)
 	}
@@ -305,7 +304,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 			RequireClientAuth: adminAPITLSListener.TLS.RequireClientAuth,
 		}
 		if adminAPITLSListener.TLS.RequireClientAuth {
-			adminTLS.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, cmetav1.TLSCAKey)
+			adminTLS.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
 		}
 		cr.AdminAPITLS = append(cr.AdminAPITLS, adminTLS)
 	}
@@ -622,7 +621,7 @@ func (r *ConfigMapResource) preparePandaproxyTLS(
 			RequireClientAuth: tlsListener.TLS.RequireClientAuth,
 		}
 		if tlsListener.TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.PandaProxyAPI.ClientCAMountDir, cmetav1.TLSCAKey)
+			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.PandaProxyAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
 		}
 		cfgRpk.Pandaproxy.PandaproxyAPITLS = []config.ServerTLS{tls}
 	}
@@ -643,7 +642,7 @@ func (r *ConfigMapResource) prepareSchemaRegistryTLS(
 			RequireClientAuth: r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth,
 		}
 		if r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, cmetav1.TLSCAKey)
+			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
 		}
 		cfgRpk.SchemaRegistry.SchemaRegistryAPITLS = []config.ServerTLS{tls}
 	}
