@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 var _ = Describe("Redpanda Controller", func() {
@@ -48,12 +48,12 @@ var _ = Describe("Redpanda Controller", func() {
 			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
 			// check if redpanda cluster exists, create it if not
-			RedpandaObj := &v1alpha2.Redpanda{}
+			RedpandaObj := &redpandav1alpha2.Redpanda{}
 			if err := k8sClient.Get(ctx, key, RedpandaObj); err != nil {
 				if !apierrors.IsNotFound(err) {
 					Expect(err).To(Equal(nil))
 				}
-				RedpandaObj = &v1alpha2.Redpanda{
+				RedpandaObj = &redpandav1alpha2.Redpanda{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "cluster.redpanda.com/v1alpha1",
 						Kind:       "Redpanda",
@@ -62,12 +62,12 @@ var _ = Describe("Redpanda Controller", func() {
 						Name:      RedpandaClusterName,
 						Namespace: RedpandaNamespace,
 					},
-					Spec: v1alpha2.RedpandaSpec{
-						ChartRef: v1alpha2.ChartRef{
+					Spec: redpandav1alpha2.RedpandaSpec{
+						ChartRef: redpandav1alpha2.ChartRef{
 							ChartVersion:       "5.x.x",
 							HelmRepositoryName: HelmRepositoryName,
 						},
-						ClusterSpec: &v1alpha2.RedpandaClusterSpec{},
+						ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{},
 					},
 				}
 

@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	corev1ac "k8s.io/client-go/applyconfigurations/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -359,8 +359,8 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			}
 
 			// ensure that the PV has a retain policy
-			if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(corev1ac.PersistentVolume(volume.Name).WithSpec(
-				corev1ac.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
+			if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(applycorev1.PersistentVolume(volume.Name).WithSpec(
+				applycorev1.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
 			)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
 				log.Error(err, "error patching PersistentVolume spec")
 				return err

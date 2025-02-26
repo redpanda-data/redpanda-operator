@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIV2Beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmControllerAPIV2Beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	fluxclient "github.com/fluxcd/pkg/runtime/client"
@@ -38,9 +38,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -49,10 +46,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	//+kubebuilder:scaffold:imports
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -110,7 +108,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).NotTo(HaveOccurred())
 	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = cmapiv1.AddToScheme(scheme.Scheme)
+	err = certmanagerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = helmControllerAPIV2Beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())

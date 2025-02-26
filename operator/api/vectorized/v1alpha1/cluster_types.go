@@ -16,7 +16,7 @@ import (
 	"slices"
 	"time"
 
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -762,7 +762,7 @@ type KafkaAPITLS struct {
 	// Typically you want to provide the issuer when a generated self-signed one
 	// is not enough and you need to have a verifiable chain with a proper CA
 	// certificate.
-	IssuerRef *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
+	IssuerRef *cmmetav1.ObjectReference `json:"issuerRef,omitempty"`
 	// If provided, operator uses certificate in this secret instead of
 	// issuing its own node certificate. The secret is expected to provide
 	// the following keys: 'ca.crt', 'tls.key' and 'tls.crt'
@@ -804,7 +804,7 @@ type AdminAPITLS struct {
 	// Typically you want to provide the issuer when a generated self-signed one
 	// is not enough and you need to have a verifiable chain with a proper CA
 	// certificate.
-	IssuerRef *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
+	IssuerRef *cmmetav1.ObjectReference `json:"issuerRef,omitempty"`
 	// If provided, operator uses certificate in this secret instead of
 	// issuing its own node certificate. The secret is expected to provide
 	// the following keys: 'ca.crt', 'tls.key' and 'tls.crt'
@@ -846,7 +846,7 @@ type PandaproxyAPITLS struct {
 	// Typically you want to provide the issuer when a generated self-signed one
 	// is not enough and you need to have a verifiable chain with a proper CA
 	// certificate.
-	IssuerRef *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
+	IssuerRef *cmmetav1.ObjectReference `json:"issuerRef,omitempty"`
 	// If provided, operator uses certificate in this secret instead of
 	// issuing its own node certificate. The secret is expected to provide
 	// the following keys: 'ca.crt', 'tls.key' and 'tls.crt'
@@ -890,7 +890,7 @@ type SchemaRegistryAPITLS struct {
 	// Typically you want to provide the issuer when a generated self-signed one
 	// is not enough and you need to have a verifiable chain with a proper CA
 	// certificate.
-	IssuerRef *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
+	IssuerRef *cmmetav1.ObjectReference `json:"issuerRef,omitempty"`
 	// If provided, operator uses certificate in this secret instead of
 	// issuing its own node certificate. The secret is expected to provide
 	// the following keys: 'ca.crt', 'tls.key' and 'tls.crt'
@@ -1251,10 +1251,10 @@ func (r *Cluster) GetDesiredReplicas() int32 {
 
 // TLSConfig is a generic TLS configuration
 type TLSConfig struct {
-	Enabled           bool                    `json:"enabled,omitempty"`
-	RequireClientAuth bool                    `json:"requireClientAuth,omitempty"`
-	IssuerRef         *cmmeta.ObjectReference `json:"issuerRef,omitempty"`
-	NodeSecretRef     *corev1.ObjectReference `json:"nodeSecretRef,omitempty"`
+	Enabled           bool                      `json:"enabled,omitempty"`
+	RequireClientAuth bool                      `json:"requireClientAuth,omitempty"`
+	IssuerRef         *cmmetav1.ObjectReference `json:"issuerRef,omitempty"`
+	NodeSecretRef     *corev1.ObjectReference   `json:"nodeSecretRef,omitempty"`
 
 	ClientCACertRef *corev1.TypedLocalObjectReference `json:"clientCACertRef,omitempty"`
 }

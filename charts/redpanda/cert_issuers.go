@@ -14,7 +14,7 @@ import (
 	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -115,7 +115,7 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 						Algorithm: "ECDSA",
 						Size:      256,
 					},
-					IssuerRef: cmmeta.ObjectReference{
+					IssuerRef: cmmetav1.ObjectReference{
 						Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(dot), name),
 						Kind:  "Issuer",
 						Group: "cert-manager.io",

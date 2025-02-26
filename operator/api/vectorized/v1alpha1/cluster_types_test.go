@@ -18,7 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 //nolint:funlen // this is ok for a test
@@ -32,8 +32,8 @@ func TestRedpandaResourceRequirements(t *testing.T) {
 		expectedRedpandaCPU resource.Quantity
 		expectedRedpandaMem resource.Quantity
 	}
-	makeResources := func(t test) v1alpha1.RedpandaResourceRequirements {
-		return v1alpha1.RedpandaResourceRequirements{
+	makeResources := func(t test) vectorizedv1alpha1.RedpandaResourceRequirements {
+		return vectorizedv1alpha1.RedpandaResourceRequirements{
 			ResourceRequirements: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceMemory: t.setRequestsMem,
@@ -143,11 +143,11 @@ func TestConditions(t *testing.T) {
 
 	t.Run("create a condition", func(t *testing.T) {
 		t.Parallel()
-		cluster := &v1alpha1.Cluster{}
-		assert.True(t, cluster.Status.SetCondition(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
+		cluster := &vectorizedv1alpha1.Cluster{}
+		assert.True(t, cluster.Status.SetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
 		require.Len(t, cluster.Status.Conditions, 1)
 		cond := cluster.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ClusterConfiguredConditionType, cond.Type)
+		assert.Equal(t, vectorizedv1alpha1.ClusterConfiguredConditionType, cond.Type)
 		assert.Equal(t, corev1.ConditionTrue, cond.Status)
 		assert.Equal(t, "reason", cond.Reason)
 		assert.Equal(t, "message", cond.Message)
@@ -157,15 +157,15 @@ func TestConditions(t *testing.T) {
 
 	t.Run("update a condition", func(t *testing.T) {
 		t.Parallel()
-		cluster := &v1alpha1.Cluster{}
-		assert.True(t, cluster.Status.SetCondition(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
+		cluster := &vectorizedv1alpha1.Cluster{}
+		assert.True(t, cluster.Status.SetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
 		require.Len(t, cluster.Status.Conditions, 1)
 		cond := cluster.Status.Conditions[0]
 		condTime := cond.LastTransitionTime
-		assert.True(t, cluster.Status.SetConditionUsingClock(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionFalse, "reason2", "message2", earlyClock))
+		assert.True(t, cluster.Status.SetConditionUsingClock(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionFalse, "reason2", "message2", earlyClock))
 		require.Len(t, cluster.Status.Conditions, 1)
 		cond = cluster.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ClusterConfiguredConditionType, cond.Type)
+		assert.Equal(t, vectorizedv1alpha1.ClusterConfiguredConditionType, cond.Type)
 		assert.Equal(t, corev1.ConditionFalse, cond.Status)
 		assert.Equal(t, "reason2", cond.Reason)
 		assert.Equal(t, "message2", cond.Message)
@@ -175,8 +175,8 @@ func TestConditions(t *testing.T) {
 
 	t.Run("update to one condition does not affect the other", func(t *testing.T) {
 		t.Parallel()
-		cluster := &v1alpha1.Cluster{}
-		assert.True(t, cluster.Status.SetCondition(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
+		cluster := &vectorizedv1alpha1.Cluster{}
+		assert.True(t, cluster.Status.SetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
 		assert.True(t, cluster.Status.SetCondition("otherType", corev1.ConditionFalse, "reason2", "message2"))
 		require.Len(t, cluster.Status.Conditions, 2)
 		condCluster := cluster.Status.Conditions[0]
@@ -187,7 +187,7 @@ func TestConditions(t *testing.T) {
 		assert.True(t, cluster.Status.SetConditionUsingClock("otherType", corev1.ConditionUnknown, "reason3", "message3", earlyClock))
 		require.Len(t, cluster.Status.Conditions, 2)
 		condCluster = cluster.Status.Conditions[0]
-		assert.Equal(t, v1alpha1.ClusterConfiguredConditionType, condCluster.Type)
+		assert.Equal(t, vectorizedv1alpha1.ClusterConfiguredConditionType, condCluster.Type)
 		assert.Equal(t, corev1.ConditionTrue, condCluster.Status)
 		assert.Equal(t, "reason", condCluster.Reason)
 		assert.Equal(t, "message", condCluster.Message)
@@ -195,7 +195,7 @@ func TestConditions(t *testing.T) {
 		assert.Equal(t, condClusterTime2, condClusterTime)
 
 		condOther = cluster.Status.Conditions[1]
-		assert.Equal(t, v1alpha1.ClusterConditionType("otherType"), condOther.Type)
+		assert.Equal(t, vectorizedv1alpha1.ClusterConditionType("otherType"), condOther.Type)
 		assert.Equal(t, corev1.ConditionUnknown, condOther.Status)
 		assert.Equal(t, "reason3", condOther.Reason)
 		assert.Equal(t, "message3", condOther.Message)
@@ -205,12 +205,12 @@ func TestConditions(t *testing.T) {
 
 	t.Run("updating a condition with itself does not change transition time", func(t *testing.T) {
 		t.Parallel()
-		cluster := &v1alpha1.Cluster{}
-		assert.True(t, cluster.Status.SetCondition(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
+		cluster := &vectorizedv1alpha1.Cluster{}
+		assert.True(t, cluster.Status.SetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message"))
 		require.Len(t, cluster.Status.Conditions, 1)
 		cond := cluster.Status.Conditions[0]
 		condTime := cond.LastTransitionTime
-		assert.False(t, cluster.Status.SetConditionUsingClock(v1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message", earlyClock))
+		assert.False(t, cluster.Status.SetConditionUsingClock(vectorizedv1alpha1.ClusterConfiguredConditionType, corev1.ConditionTrue, "reason", "message", earlyClock))
 		require.Len(t, cluster.Status.Conditions, 1)
 		cond2 := cluster.Status.Conditions[0]
 		assert.Equal(t, condTime, cond2.LastTransitionTime)

@@ -23,14 +23,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
-
 	"k8s.io/client-go/kubernetes/scheme"
-
+	"k8s.io/utils/ptr"
 	fake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
 var errNotSecret = errors.New("not secret")
@@ -43,20 +41,20 @@ const (
 
 func init() {
 	fakeK8sClient := fake.NewClientBuilder().Build()
-	_ = v1alpha1.AddToScheme(fakeK8sClient.Scheme())
+	_ = vectorizedv1alpha1.AddToScheme(fakeK8sClient.Scheme())
 }
 
 func TestCreateCACertBundle(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().Build()
 	nsPrefix := "test-ns"
 
-	pandaCluster := &v1alpha1.Cluster{
+	pandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterName,
 		},
-		Spec: v1alpha1.ClusterSpec{
+		Spec: vectorizedv1alpha1.ClusterSpec{
 			Replicas:      ptr.To(int32(1)),
-			Configuration: v1alpha1.RedpandaConfig{},
+			Configuration: vectorizedv1alpha1.RedpandaConfig{},
 		},
 	}
 
@@ -122,15 +120,15 @@ func TestCreateCACertBundle(t *testing.T) {
 func TestUpdateCACertBundle(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().Build()
 
-	pandaCluster := &v1alpha1.Cluster{
+	pandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterName,
 			Namespace: ns,
 			UID:       "ff2770aa-c919-43f0-8b4a-30cb7cfdaf79",
 		},
-		Spec: v1alpha1.ClusterSpec{
+		Spec: vectorizedv1alpha1.ClusterSpec{
 			Replicas:      ptr.To(int32(1)),
-			Configuration: v1alpha1.RedpandaConfig{},
+			Configuration: vectorizedv1alpha1.RedpandaConfig{},
 		},
 	}
 
@@ -182,15 +180,15 @@ func TestUpdateCACertBundle(t *testing.T) {
 func TestCACertBundleFailures(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().Build()
 
-	pandaCluster := &v1alpha1.Cluster{
+	pandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterName,
 			Namespace: ns,
 			UID:       "ff2770aa-c919-43f0-8b4a-30cb7cfdaf79",
 		},
-		Spec: v1alpha1.ClusterSpec{
+		Spec: vectorizedv1alpha1.ClusterSpec{
 			Replicas:      ptr.To(int32(1)),
-			Configuration: v1alpha1.RedpandaConfig{},
+			Configuration: vectorizedv1alpha1.RedpandaConfig{},
 		},
 	}
 

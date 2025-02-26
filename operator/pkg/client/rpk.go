@@ -18,12 +18,11 @@ import (
 
 	commonnet "github.com/redpanda-data/common-go/net"
 	"github.com/redpanda-data/common-go/rpadmin"
+	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
-
-	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 // this roughly implements https://github.com/redpanda-data/redpanda/blob/f5a7a13f7fca3f69a4380f0bbfa8fbc3e7f899d6/src/go/rpk/pkg/adminapi/admin.go#L46

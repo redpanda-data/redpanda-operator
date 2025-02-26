@@ -4,23 +4,31 @@ linters:
 
   enable:
   - errcheck
+  - gci
+  - gocritic
   - gofumpt
-  - goimports
   - gosec
   - gosimple
   - govet
   - importas
   - ineffassign
   - misspell
-  - gocritic
   - staticcheck
   - stylecheck
   - unparam
   - unused
 
 linters-settings:
-  goimports:
-    local-prefixes: github.com/redpanda-data/redpanda-operator,github.com/redpanda-data/helm-charts
+  gci:
+    sections:
+    - standard
+    - default
+    - prefix(github.com/redpanda-data/redpanda-operator)
+
+    custom-order: true
+    skip-generated: true
+    no-inline-comments: false
+    no-prefix-comments: false
 
   gosec:
     excludes:
@@ -30,11 +38,24 @@ linters-settings:
       G306: "0644" # Maximum allowed os.WriteFile Permissions
 
   importas:
+    # Disallow not using aliases for all matches of the below alias list.
+    no-unaliased: true
+    # Enforce standard import aliases for k8s type packages of (group)(version)
     alias:
     - pkg: k8s.io/api/(\w+)/(v\d)
       alias: $1$2
     - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
       alias: metav1
+    - pkg: k8s.io/client-go/applyconfigurations/(\w+)/(v\w+)
+      alias: apply$1$2
+    - pkg: github.com/redpanda-data/redpanda-operator/operator/api/(\w+)/(v\w+)
+      alias: $1$2
+    - pkg: github.com/cert-manager/cert-manager/pkg/apis/meta/v1
+      alias: cmmetav1
+    - pkg: github.com/cert-manager/cert-manager/pkg/apis/certmanager/(v\w+)
+      alias: certmanager$1
+    - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
+      alias: monitoring$1
 
   gocritic:
     disable-all: true

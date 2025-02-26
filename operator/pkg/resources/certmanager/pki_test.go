@@ -13,7 +13,7 @@ import (
 	"context"
 	"testing"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -30,7 +30,7 @@ import (
 
 func TestKafkaAPIWithMultipleTLSListeners(t *testing.T) {
 	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
-	require.NoError(t, cmapiv1.AddToScheme(scheme.Scheme))
+	require.NoError(t, certmanagerv1.AddToScheme(scheme.Scheme))
 	clusterWithMultipleTLS := pandaCluster().DeepCopy()
 	clusterWithMultipleTLS.Spec.Configuration.KafkaAPI[0].TLS = vectorizedv1alpha1.KafkaAPITLS{Enabled: true, RequireClientAuth: true}
 	clusterWithMultipleTLS.Spec.Configuration.KafkaAPI = append(clusterWithMultipleTLS.Spec.Configuration.KafkaAPI, vectorizedv1alpha1.KafkaAPI{Port: 30001, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}, TLS: vectorizedv1alpha1.KafkaAPITLS{Enabled: true}})
@@ -61,7 +61,7 @@ func TestKafkaAPIWithMultipleTLSListeners(t *testing.T) {
 			require.NoError(t, pkiRes.Ensure(context.TODO()))
 
 			for _, cert := range tc.expectedCertificates {
-				actual := &cmapiv1.Certificate{}
+				actual := &certmanagerv1.Certificate{}
 				err := c.Get(context.Background(), types.NamespacedName{Name: cert, Namespace: pandaCluster().Namespace}, actual)
 				require.NoError(t, err)
 			}

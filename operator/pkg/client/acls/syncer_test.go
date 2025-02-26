@@ -21,7 +21,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 func TestSyncer(t *testing.T) {
@@ -49,7 +49,7 @@ func TestSyncer(t *testing.T) {
 	syncer := NewSyncer(kafkaClient)
 	defer syncer.Close()
 
-	sortACLs := func(acls []v1alpha2.ACLRule) {
+	sortACLs := func(acls []redpandav1alpha2.ACLRule) {
 		sort.SliceStable(acls, func(i, j int) bool {
 			return acls[i].Resource.Type < acls[j].Resource.Type
 		})
@@ -58,7 +58,7 @@ func TestSyncer(t *testing.T) {
 	principalOne := "User:testuser"
 	principalTwo := "User:testuser2"
 
-	expectACLsMatch := func(t *testing.T, principal string, acls []v1alpha2.ACLRule) {
+	expectACLsMatch := func(t *testing.T, principal string, acls []redpandav1alpha2.ACLRule) {
 		actual, err := syncer.ListACLs(ctx, principal)
 		require.NoError(t, err)
 
@@ -72,7 +72,7 @@ func TestSyncer(t *testing.T) {
 		}
 	}
 
-	expectACLUpdate := func(t *testing.T, principal string, acls []v1alpha2.ACLRule, expectCreated, expectDeleted int) {
+	expectACLUpdate := func(t *testing.T, principal string, acls []redpandav1alpha2.ACLRule, expectCreated, expectDeleted int) {
 		t.Helper()
 
 		created, deleted, err := syncer.sync(ctx, principal, acls)
@@ -84,22 +84,22 @@ func TestSyncer(t *testing.T) {
 		expectACLsMatch(t, principal, acls)
 	}
 
-	initialACLS := []v1alpha2.ACLRule{{
-		Type: v1alpha2.ACLTypeAllow,
-		Resource: v1alpha2.ACLResourceSpec{
-			Type: v1alpha2.ResourceTypeTopic,
+	initialACLS := []redpandav1alpha2.ACLRule{{
+		Type: redpandav1alpha2.ACLTypeAllow,
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type: redpandav1alpha2.ResourceTypeTopic,
 			Name: "1",
 		},
-		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationRead,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationRead,
 		},
 	}, {
-		Type: v1alpha2.ACLTypeAllow,
-		Resource: v1alpha2.ACLResourceSpec{
-			Type: v1alpha2.ResourceTypeCluster,
+		Type: redpandav1alpha2.ACLTypeAllow,
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type: redpandav1alpha2.ResourceTypeCluster,
 		},
-		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationRead,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationRead,
 		},
 	}}
 
@@ -107,47 +107,47 @@ func TestSyncer(t *testing.T) {
 	expectACLUpdate(t, principalOne, initialACLS, 2, 0)
 
 	// remove 1 acl
-	expectACLUpdate(t, principalOne, []v1alpha2.ACLRule{{
-		Type: v1alpha2.ACLTypeAllow,
+	expectACLUpdate(t, principalOne, []redpandav1alpha2.ACLRule{{
+		Type: redpandav1alpha2.ACLTypeAllow,
 		Host: ptr.To("*"),
-		Resource: v1alpha2.ACLResourceSpec{
-			Type: v1alpha2.ResourceTypeCluster,
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type: redpandav1alpha2.ResourceTypeCluster,
 		},
-		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationRead,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationRead,
 		},
 	}}, 0, 1)
 
 	// update acl
-	expectACLUpdate(t, principalOne, []v1alpha2.ACLRule{{
-		Type: v1alpha2.ACLTypeAllow,
+	expectACLUpdate(t, principalOne, []redpandav1alpha2.ACLRule{{
+		Type: redpandav1alpha2.ACLTypeAllow,
 		Host: ptr.To("*"),
-		Resource: v1alpha2.ACLResourceSpec{
-			Type:        v1alpha2.ResourceTypeTopic,
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type:        redpandav1alpha2.ResourceTypeTopic,
 			Name:        "mytopic",
-			PatternType: ptr.To(v1alpha2.PatternTypePrefixed),
+			PatternType: ptr.To(redpandav1alpha2.PatternTypePrefixed),
 		},
-		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationRead,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationRead,
 		},
 	}}, 1, 1)
 
 	// update acl again
-	expectACLUpdate(t, principalOne, []v1alpha2.ACLRule{{
-		Type: v1alpha2.ACLTypeAllow,
+	expectACLUpdate(t, principalOne, []redpandav1alpha2.ACLRule{{
+		Type: redpandav1alpha2.ACLTypeAllow,
 		Host: ptr.To("*"),
-		Resource: v1alpha2.ACLResourceSpec{
-			Type:        v1alpha2.ResourceTypeTopic,
+		Resource: redpandav1alpha2.ACLResourceSpec{
+			Type:        redpandav1alpha2.ResourceTypeTopic,
 			Name:        "mytopic2",
-			PatternType: ptr.To(v1alpha2.PatternTypePrefixed),
+			PatternType: ptr.To(redpandav1alpha2.PatternTypePrefixed),
 		},
-		Operations: []v1alpha2.ACLOperation{
-			v1alpha2.ACLOperationRead,
+		Operations: []redpandav1alpha2.ACLOperation{
+			redpandav1alpha2.ACLOperationRead,
 		},
 	}}, 1, 1)
 
 	// delete all acls
-	expectACLUpdate(t, principalOne, []v1alpha2.ACLRule{}, 0, 1)
+	expectACLUpdate(t, principalOne, []redpandav1alpha2.ACLRule{}, 0, 1)
 
 	// check de-duplication of ACLs
 	created, deleted, err := syncer.sync(ctx, principalOne, append(initialACLS, initialACLS[0]))
@@ -157,7 +157,7 @@ func TestSyncer(t *testing.T) {
 	expectACLsMatch(t, principalOne, initialACLS)
 
 	// make sure we have separation based on principals
-	aclsTwo := []v1alpha2.ACLRule{initialACLS[0]}
+	aclsTwo := []redpandav1alpha2.ACLRule{initialACLS[0]}
 	created, deleted, err = syncer.sync(ctx, principalTwo, aclsTwo)
 	require.NoError(t, err)
 	require.Equal(t, created, 1)
@@ -168,8 +168,8 @@ func TestSyncer(t *testing.T) {
 	// clear all
 	err = syncer.deleteAll(ctx, principalOne)
 	require.NoError(t, err)
-	expectACLsMatch(t, principalOne, []v1alpha2.ACLRule{})
+	expectACLsMatch(t, principalOne, []redpandav1alpha2.ACLRule{})
 	err = syncer.deleteAll(ctx, principalTwo)
 	require.NoError(t, err)
-	expectACLsMatch(t, principalTwo, []v1alpha2.ACLRule{})
+	expectACLsMatch(t, principalTwo, []redpandav1alpha2.ACLRule{})
 }

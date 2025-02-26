@@ -10,7 +10,7 @@
 package v1alpha1
 
 import (
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 var RedpandaChartRepository = "https://charts.redpanda.com/"
@@ -22,11 +22,11 @@ var RedpandaChartRepository = "https://charts.redpanda.com/"
 // +kubebuilder:resource:shortName=rp
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
-type Redpanda v1alpha2.Redpanda
+type Redpanda redpandav1alpha2.Redpanda
 
 // RedpandaList contains a list of Redpanda objects.
 // +kubebuilder:object:root=true
-type RedpandaList v1alpha2.RedpandaList
+type RedpandaList redpandav1alpha2.RedpandaList
 
 func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
@@ -34,10 +34,10 @@ func init() {
 
 // RedpandaReady registers a successful reconciliation of the given HelmRelease.
 func RedpandaReady(rp *Redpanda) *Redpanda {
-	return (*Redpanda)(v1alpha2.RedpandaReady((*v1alpha2.Redpanda)(rp)))
+	return (*Redpanda)(redpandav1alpha2.RedpandaReady((*redpandav1alpha2.Redpanda)(rp)))
 }
 
 // RedpandaNotReady registers a failed reconciliation of the given Redpanda.
 func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
-	return (*Redpanda)(v1alpha2.RedpandaNotReady((*v1alpha2.Redpanda)(rp), reason, message))
+	return (*Redpanda)(redpandav1alpha2.RedpandaNotReady((*redpandav1alpha2.Redpanda)(rp), reason, message))
 }

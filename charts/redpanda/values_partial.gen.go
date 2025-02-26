@@ -14,7 +14,7 @@
 package redpanda
 
 import (
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console"
@@ -461,7 +461,7 @@ type PartialTLSCert struct {
 	CAEnabled             *bool                        "json:\"caEnabled,omitempty\" jsonschema:\"required\""
 	ApplyInternalDNSNames *bool                        "json:\"applyInternalDNSNames,omitempty\""
 	Duration              *string                      "json:\"duration,omitempty\" jsonschema:\"pattern=.*[smh]$\""
-	IssuerRef             *cmmeta.ObjectReference      "json:\"issuerRef,omitempty\""
+	IssuerRef             *cmmetav1.ObjectReference    "json:\"issuerRef,omitempty\""
 	SecretRef             *corev1.LocalObjectReference "json:\"secretRef,omitempty\""
 	ClientSecretRef       *corev1.LocalObjectReference "json:\"clientSecretRef,omitempty\""
 }
