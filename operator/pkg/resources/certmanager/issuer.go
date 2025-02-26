@@ -13,8 +13,8 @@ import (
 	"context"
 	"fmt"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -74,24 +74,24 @@ func (r *IssuerResource) obj() (k8sclient.Object, error) {
 		Labels:    objLabels,
 	}
 
-	var spec cmapiv1.IssuerSpec
+	var spec certmanagerv1.IssuerSpec
 	if r.secretName == "" {
-		spec = cmapiv1.IssuerSpec{
-			IssuerConfig: cmapiv1.IssuerConfig{
-				SelfSigned: &cmapiv1.SelfSignedIssuer{},
+		spec = certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
 			},
 		}
 	} else {
-		spec = cmapiv1.IssuerSpec{
-			IssuerConfig: cmapiv1.IssuerConfig{
-				CA: &cmapiv1.CAIssuer{
+		spec = certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				CA: &certmanagerv1.CAIssuer{
 					SecretName: r.secretName,
 				},
 			},
 		}
 	}
 
-	issuer := &cmapiv1.Issuer{
+	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: objectMeta,
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Issuer",
@@ -115,14 +115,14 @@ func (r *IssuerResource) Key() types.NamespacedName {
 }
 
 // objRef returns the issuer's object reference
-func (r *IssuerResource) objRef() *cmetav1.ObjectReference {
-	return &cmetav1.ObjectReference{
+func (r *IssuerResource) objRef() *cmmetav1.ObjectReference {
+	return &cmmetav1.ObjectReference{
 		Name: r.Key().Name,
 		Kind: issuerKind(),
 	}
 }
 
 func issuerKind() string {
-	var issuer cmapiv1.Issuer
+	var issuer certmanagerv1.Issuer
 	return issuer.Kind
 }

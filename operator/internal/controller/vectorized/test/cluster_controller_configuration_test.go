@@ -21,6 +21,7 @@ import (
 	"github.com/moby/moby/pkg/namesgenerator"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,9 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/common-go/rpadmin"
-
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
@@ -121,7 +120,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting a change")
 			testAdminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
-			var cluster v1alpha1.Cluster
+			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
@@ -179,7 +178,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting an initial change")
 			testAdminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
-			var cluster v1alpha1.Cluster
+			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
@@ -303,7 +302,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Accepting a change that would require restart")
 			testAdminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true})
-			var cluster v1alpha1.Cluster
+			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
@@ -408,7 +407,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Accepting a change to the properties")
 			testAdminAPI.RegisterPropertySchema("prop", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
 			const propValue = "the-value"
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
 				}
@@ -445,7 +444,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an unknown property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
 				}
@@ -454,14 +453,14 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Reflecting the issue in the condition")
 			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
-				cond := redpandaCluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 				if cond == nil {
 					return nil
 				}
 				return fmt.Sprintf("%s/%s", cond.Status, cond.Reason)
 			}), timeout, interval).Should(Equal("False/Error"))
 			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
-				cond := redpandaCluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 				if cond == nil {
 					return nil
 				}
@@ -469,14 +468,14 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(ContainSubstring("Unknown"))
 
 			By("Restoring the state when fixing the property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an invalid property")
 			testAdminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid"}) // triggers mock validation
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
 				}
@@ -485,14 +484,14 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Reflecting the issue in the condition")
 			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
-				cond := redpandaCluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 				if cond == nil {
 					return nil
 				}
 				return fmt.Sprintf("%s/%s", cond.Status, cond.Reason)
 			}), timeout, interval).Should(Equal("False/Error"))
 			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
-				cond := redpandaCluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 				if cond == nil {
 					return nil
 				}
@@ -500,7 +499,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(ContainSubstring("Invalid"))
 
 			By("Restoring the state when fixing the property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.inv")
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -530,7 +529,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an unknown property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
 				}
@@ -539,7 +538,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Reflecting the issue in the condition")
 			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
-				cond := redpandaCluster.Status.GetCondition(v1alpha1.ClusterConfiguredConditionType)
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
 				if cond == nil {
 					return nil
 				}
@@ -547,7 +546,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Equal("False/Error/Mock bad request message"))
 
 			By("Restoring the state when fixing the property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -589,7 +588,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
 
 			By("Restoring the state when fixing the property")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -634,7 +633,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Changing the configuration")
-			Eventually(clusterUpdater(key, func(cluster *v1alpha1.Cluster) {
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
 				}
@@ -726,7 +725,7 @@ func getInitialTestCluster(
 ) (
 	key types.NamespacedName,
 	baseKey types.NamespacedName,
-	cluster *v1alpha1.Cluster,
+	cluster *vectorizedv1alpha1.Cluster,
 	namespace *corev1.Namespace,
 ) {
 	ns := strings.Replace(namesgenerator.GetRandomName(0), "_", "-", 1)
@@ -739,24 +738,24 @@ func getInitialTestCluster(
 		Namespace: ns,
 	}
 
-	cluster = &v1alpha1.Cluster{
+	cluster = &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,
 		},
-		Spec: v1alpha1.ClusterSpec{
+		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:    "vectorized/redpanda",
 			Version:  versionWithCentralizedConfiguration,
 			Replicas: ptr.To(int32(1)),
-			Configuration: v1alpha1.RedpandaConfig{
-				KafkaAPI: []v1alpha1.KafkaAPI{
+			Configuration: vectorizedv1alpha1.RedpandaConfig{
+				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 					{
 						Port: 9092,
 					},
 				},
-				AdminAPI: []v1alpha1.AdminAPI{{Port: 9644}},
+				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
 			},
-			Resources: v1alpha1.RedpandaResourceRequirements{
+			Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 				ResourceRequirements: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("1"),

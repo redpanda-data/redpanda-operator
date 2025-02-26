@@ -25,10 +25,9 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 const (
@@ -94,11 +93,11 @@ type Migration struct {
 	Enabled bool `json:"enabled"`
 	// ClusterRef by default will not be able to reach different namespaces, but it can be
 	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
-	ClusterRef v1alpha1.NamespaceNameRef `json:"clusterRef"`
+	ClusterRef vectorizedv1alpha1.NamespaceNameRef `json:"clusterRef"`
 
 	// ConsoleRef by default will not be able to reach different namespaces, but it can be
 	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
-	ConsoleRef v1alpha1.NamespaceNameRef `json:"consoleRef"`
+	ConsoleRef vectorizedv1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
 // RedpandaStatus defines the observed state of Redpanda

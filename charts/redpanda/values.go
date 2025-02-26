@@ -13,7 +13,7 @@ package redpanda
 import (
 	"fmt"
 
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/invopop/jsonschema"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	_ "github.com/quasilyte/go-ruleguard/dsl"
@@ -1104,7 +1104,7 @@ type TLSCert struct {
 	CAEnabled             bool                         `json:"caEnabled" jsonschema:"required"`
 	ApplyInternalDNSNames *bool                        `json:"applyInternalDNSNames"`
 	Duration              string                       `json:"duration" jsonschema:"pattern=.*[smh]$"`
-	IssuerRef             *cmmeta.ObjectReference      `json:"issuerRef"`
+	IssuerRef             *cmmetav1.ObjectReference    `json:"issuerRef"`
 	SecretRef             *corev1.LocalObjectReference `json:"secretRef"`
 	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef"`
 }

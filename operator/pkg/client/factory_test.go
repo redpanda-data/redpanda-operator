@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -274,22 +274,22 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = kubeClient.Create(ctx, &cmapiv1.Certificate{
+	err = kubeClient.Create(ctx, &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kafka-internal-0",
 			Namespace: name,
 		},
-		Spec: cmapiv1.CertificateSpec{
+		Spec: certmanagerv1.CertificateSpec{
 			EmailAddresses: []string{
 				"test@domain.com",
 			},
 			Duration: ptr.To(metav1.Duration{Duration: 43800 * time.Hour}),
-			IssuerRef: cmetav1.ObjectReference{
+			IssuerRef: cmmetav1.ObjectReference{
 				Name:  "cluster-tls-kafka-internal-0-root-issuer",
 				Kind:  "Issuer",
 				Group: "cert-manager.io",
 			},
-			PrivateKey: &cmapiv1.CertificatePrivateKey{
+			PrivateKey: &certmanagerv1.CertificatePrivateKey{
 				Algorithm: "ECDSA",
 				Size:      256,
 			},

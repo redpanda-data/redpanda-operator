@@ -13,10 +13,9 @@ import (
 	"context"
 
 	"github.com/cucumber/godog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"

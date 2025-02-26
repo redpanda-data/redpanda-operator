@@ -28,7 +28,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
-
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )

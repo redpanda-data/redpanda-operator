@@ -22,17 +22,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-
-	"github.com/redpanda-data/common-go/rpadmin"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 var (

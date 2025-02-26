@@ -13,21 +13,21 @@ package operator
 import (
 	"fmt"
 
-	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
-func Certificate(dot *helmette.Dot) *certv1.Certificate {
+func Certificate(dot *helmette.Dot) *certmanagerv1.Certificate {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.Webhook.Enabled {
 		return nil
 	}
 
-	return &certv1.Certificate{
+	return &certmanagerv1.Certificate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "cert-manager.io/v1",
 			Kind:       "Certificate",
@@ -38,17 +38,17 @@ func Certificate(dot *helmette.Dot) *certv1.Certificate {
 			Labels:      Labels(dot),
 			Annotations: values.Annotations,
 		},
-		Spec: certv1.CertificateSpec{
+		Spec: certmanagerv1.CertificateSpec{
 			DNSNames: []string{
 				fmt.Sprintf("%s-webhook-service.%s.svc", RedpandaOperatorName(dot), dot.Release.Namespace),
 				fmt.Sprintf("%s-webhook-service.%s.svc.%s", RedpandaOperatorName(dot), dot.Release.Namespace, values.ClusterDomain),
 			},
-			IssuerRef: cmmeta.ObjectReference{
+			IssuerRef: cmmetav1.ObjectReference{
 				Kind: "Issuer",
 				Name: cleanForK8sWithSuffix(Fullname(dot), "selfsigned-issuer"),
 			},
 			SecretName: values.WebhookSecretName,
-			PrivateKey: &certv1.CertificatePrivateKey{
+			PrivateKey: &certmanagerv1.CertificatePrivateKey{
 				// There is an issue with gotohelm when RotationPolicyNever is used.
 				// The conversion from constant string to helm template is failing.
 				//
@@ -60,14 +60,14 @@ func Certificate(dot *helmette.Dot) *certv1.Certificate {
 	}
 }
 
-func Issuer(dot *helmette.Dot) *certv1.Issuer {
+func Issuer(dot *helmette.Dot) *certmanagerv1.Issuer {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.Webhook.Enabled {
 		return nil
 	}
 
-	return &certv1.Issuer{
+	return &certmanagerv1.Issuer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "cert-manager.io/v1",
 			Kind:       "Issuer",
@@ -78,9 +78,9 @@ func Issuer(dot *helmette.Dot) *certv1.Issuer {
 			Labels:      Labels(dot),
 			Annotations: values.Annotations,
 		},
-		Spec: certv1.IssuerSpec{
-			IssuerConfig: certv1.IssuerConfig{
-				SelfSigned: &certv1.SelfSignedIssuer{},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
 			},
 		},
 	}

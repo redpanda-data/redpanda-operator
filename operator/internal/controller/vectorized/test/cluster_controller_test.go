@@ -31,9 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
-
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -92,7 +91,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "redpanda-init-configurator",
 				Namespace: "",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
@@ -100,37 +99,37 @@ var _ = Describe("RedPandaCluster controller", func() {
 						"app": "redpanda",
 					},
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{Port: kafkaPort},
-							{External: v1alpha1.ExternalConnectivityConfig{Enabled: true}},
+							{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{
 							{Port: adminPort},
-							{External: v1alpha1.ExternalConnectivityConfig{
+							{External: vectorizedv1alpha1.ExternalConnectivityConfig{
 								Enabled: true,
 							}},
 						},
-						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 							{Port: pandaProxyPort},
-							{External: v1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: v1alpha1.ExternalConnectivityConfig{
+							{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
 								Enabled: true,
 							}}},
 						},
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
 							Port: schemaRegistryPort,
-							External: &v1alpha1.SchemaRegistryExternalConnectivityConfig{
-								ExternalConnectivityConfig: v1alpha1.ExternalConnectivityConfig{
+							External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
+								ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
 									Enabled: true,
 								},
 							},
 						},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resourceLimits,
 							Requests: resourceRequests,
@@ -268,7 +267,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			Expect(sts.Spec.Template.Spec.Containers[0].Env).Should(ContainElement(corev1.EnvVar{Name: "REDPANDA_ENVIRONMENT", Value: "kubernetes"}))
 
 			By("Reporting nodes internal and external")
-			var rc v1alpha1.Cluster
+			var rc vectorizedv1alpha1.Cluster
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), key, &rc)
 				return err == nil &&
@@ -291,25 +290,25 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "redpanda-test-tls",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
-								TLS:  v1alpha1.KafkaAPITLS{Enabled: true, RequireClientAuth: true},
+								TLS:  vectorizedv1alpha1.KafkaAPITLS{Enabled: true, RequireClientAuth: true},
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -393,24 +392,24 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "internal-redpanda",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -452,7 +451,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("report only internal address")
-			var cluster v1alpha1.Cluster
+			var cluster vectorizedv1alpha1.Cluster
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), key, &cluster)
 				return err == nil &&
@@ -471,31 +470,31 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "external-fixed-redpanda",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
 							},
 							{
 								Port: 31111,
-								External: v1alpha1.ExternalConnectivityConfig{
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
 									Enabled:   true,
 									Subdomain: "vectorized.io",
 								},
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -545,30 +544,30 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "preferred-address-redpanda",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
 							},
 							{
-								External: v1alpha1.ExternalConnectivityConfig{
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
 									Enabled:              true,
 									PreferredAddressType: "InternalIP",
 								},
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -622,7 +621,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Reporting external connectivity through InternalIP")
-			var rc v1alpha1.Cluster
+			var rc vectorizedv1alpha1.Cluster
 			nodeport := svc.Spec.Ports[0].NodePort
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), key, &rc)
@@ -640,24 +639,24 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "bootstrap-redpanda",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
 							},
 							{
-								External: v1alpha1.ExternalConnectivityConfig{
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
 									Enabled: true,
-									Bootstrap: &v1alpha1.LoadBalancerConfig{
+									Bootstrap: &vectorizedv1alpha1.LoadBalancerConfig{
 										Annotations: map[string]string{
 											"key": "val",
 										},
@@ -666,9 +665,9 @@ var _ = Describe("RedPandaCluster controller", func() {
 								},
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -722,7 +721,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Reporting external connectivity bootstrap load balancer")
-			var rc v1alpha1.Cluster
+			var rc vectorizedv1alpha1.Cluster
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), key, &rc)
 				return err == nil &&
@@ -740,24 +739,24 @@ var _ = Describe("RedPandaCluster controller", func() {
 				Name:      "redpanda-no-restart",
 				Namespace: "default",
 			}
-			redpandaCluster := &v1alpha1.Cluster{
+			redpandaCluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: v1alpha1.ClusterSpec{
+				Spec: vectorizedv1alpha1.ClusterSpec{
 					Image:    redpandaContainerImage,
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
-					Configuration: v1alpha1.RedpandaConfig{
-						KafkaAPI: []v1alpha1.KafkaAPI{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
 							},
 						},
-						AdminAPI: []v1alpha1.AdminAPI{{Port: adminPort}},
+						AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: adminPort}},
 					},
-					Resources: v1alpha1.RedpandaResourceRequirements{
+					Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 						ResourceRequirements: corev1.ResourceRequirements{
 							Limits:   resources,
 							Requests: resources,
@@ -779,7 +778,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			// configmap annotation should not change when scaling out cluster replicas
 			// to avoid an unnecessary rolling restart
 			configMapHash := sts.Annotations[res.ConfigMapHashAnnotationKey]
-			var existingCluster v1alpha1.Cluster
+			var existingCluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &existingCluster)).Should(Succeed())
 			latest := existingCluster.DeepCopy()
 			var newReplicas int32 = replicas + 2
@@ -804,13 +803,13 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Namespace: licenseNamespace,
 					Name:      licenseName,
 				},
-				StringData: map[string]string{v1alpha1.DefaultLicenseSecretKey: "fake-license"},
+				StringData: map[string]string{vectorizedv1alpha1.DefaultLicenseSecretKey: "fake-license"},
 			}
 			Expect(k8sClient.Create(context.Background(), licenseSecret)).Should(Succeed())
 
 			By("Creating a Cluster")
 			key, _, redpandaCluster, namespace := getInitialTestCluster(clusterNameWithLicense)
-			redpandaCluster.Spec.LicenseRef = &v1alpha1.SecretKeyRef{Namespace: licenseNamespace, Name: licenseName}
+			redpandaCluster.Spec.LicenseRef = &vectorizedv1alpha1.SecretKeyRef{Namespace: licenseNamespace, Name: licenseName}
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -855,7 +854,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			_, err := r.Reconcile(context.Background(), ctrl.Request{NamespacedName: key})
 			Expect(err).To(Succeed())
 			By("Reporting the existence of cluster")
-			var rc v1alpha1.Cluster
+			var rc vectorizedv1alpha1.Cluster
 			Eventually(func() bool {
 				err := fc.Get(context.Background(), key, &rc)
 				return err == nil
@@ -884,7 +883,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			_, err := r.Reconcile(context.Background(), ctrl.Request{NamespacedName: key})
 			Expect(err).To(Succeed())
 			By("Reporting the existence of cluster and allowed version status")
-			var rc v1alpha1.Cluster
+			var rc vectorizedv1alpha1.Cluster
 			Eventually(func() bool {
 				err := fc.Get(context.Background(), key, &rc)
 				return err == nil && rc.Status.Version == allowedVersion
@@ -920,7 +919,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 		Entry("Random image pull policy", "asdvasd", Not(Succeed())))
 })
 
-func readyPodsForCluster(cluster *v1alpha1.Cluster) []*corev1.Pod {
+func readyPodsForCluster(cluster *vectorizedv1alpha1.Cluster) []*corev1.Pod {
 	var result []*corev1.Pod
 	for i := 0; i < int(*cluster.Spec.Replicas); i++ {
 		pod := &corev1.Pod{
@@ -950,18 +949,18 @@ func readyPodsForCluster(cluster *v1alpha1.Cluster) []*corev1.Pod {
 
 func getVersionedRedpanda(
 	name string, version string,
-) (key types.NamespacedName, cluster *v1alpha1.Cluster) {
+) (key types.NamespacedName, cluster *vectorizedv1alpha1.Cluster) {
 	key = types.NamespacedName{
 		Name:      name,
 		Namespace: "default",
 	}
-	config := v1alpha1.RedpandaConfig{
-		KafkaAPI: []v1alpha1.KafkaAPI{
+	config := vectorizedv1alpha1.RedpandaConfig{
+		KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 			{
 				Port: 9644,
 			},
 		},
-		AdminAPI: []v1alpha1.AdminAPI{
+		AdminAPI: []vectorizedv1alpha1.AdminAPI{
 			{
 				Port: 9092,
 			},
@@ -971,19 +970,19 @@ func getVersionedRedpanda(
 		corev1.ResourceCPU:    resource.MustParse("1"),
 		corev1.ResourceMemory: resource.MustParse("2Gi"),
 	}
-	rpresources := v1alpha1.RedpandaResourceRequirements{
+	rpresources := vectorizedv1alpha1.RedpandaResourceRequirements{
 		ResourceRequirements: corev1.ResourceRequirements{
 			Limits:   resources,
 			Requests: resources,
 		},
 		Redpanda: nil,
 	}
-	redpandaCluster := &v1alpha1.Cluster{
+	redpandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,
 		},
-		Spec: v1alpha1.ClusterSpec{
+		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:         "vectorized/redpanda",
 			Version:       version,
 			Replicas:      ptr.To(int32(1)),
@@ -1004,7 +1003,7 @@ func findPort(ports []corev1.ServicePort, name string) int32 {
 }
 
 func validOwner(
-	cluster *v1alpha1.Cluster, owners []metav1.OwnerReference,
+	cluster *vectorizedv1alpha1.Cluster, owners []metav1.OwnerReference,
 ) bool {
 	if len(owners) != 1 {
 		return false

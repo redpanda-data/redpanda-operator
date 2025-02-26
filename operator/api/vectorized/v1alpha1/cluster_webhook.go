@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
@@ -950,7 +950,7 @@ func hasDifferentNodeSecret(listener1, listener2 KafkaAPITLS) bool {
 
 func validateListener(
 	tlsEnabled, requireClientAuth bool,
-	issuerRef *cmmeta.ObjectReference,
+	issuerRef *cmmetav1.ObjectReference,
 	nodeSecretRef *corev1.ObjectReference,
 	clientCACertRef *corev1.TypedLocalObjectReference,
 	path *field.Path,
@@ -1034,7 +1034,7 @@ func validateExternalCA(
 		return allErrs
 	}
 
-	crt, found := secret.Data[cmmeta.TLSCAKey]
+	crt, found := secret.Data[cmmetav1.TLSCAKey]
 	if !found {
 		allErrs = append(allErrs,
 			field.Invalid(
