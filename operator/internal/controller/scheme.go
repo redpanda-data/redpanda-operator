@@ -10,7 +10,7 @@
 package controller
 
 import (
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	helmControllerAPIv2beta1 "github.com/fluxcd/helm-controller/api/v2beta1"
 	helmControllerAPIv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	sourceControllerAPIv1 "github.com/fluxcd/source-controller/api/v1"
@@ -28,12 +28,12 @@ import (
 var (
 	v1SchemeFns = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
-		cmapiv1.AddToScheme,
+		certmanagerv1.AddToScheme,
 		vectorizedv1alpha1.AddToScheme,
 	}
 	v2SchemeFns = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
-		cmapiv1.AddToScheme,
+		certmanagerv1.AddToScheme,
 		helmControllerAPIv2beta1.AddToScheme,
 		helmControllerAPIv2beta2.AddToScheme,
 		redpandav1alpha1.AddToScheme,

@@ -14,9 +14,10 @@ import (
 	"fmt"
 	"testing"
 
-	cmapiv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,9 +25,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
@@ -44,13 +43,13 @@ func TestClusterCertificates(t *testing.T) {
 			"ca.crt":  []byte("XXX"),
 		},
 	}
-	issuer := cmapiv1.Issuer{
+	issuer := certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "issuer",
 			Namespace: "test",
 		},
-		Spec: cmapiv1.IssuerSpec{
-			IssuerConfig: cmapiv1.IssuerConfig{
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
 				SelfSigned: nil,
 			},
 		},
@@ -84,19 +83,19 @@ func TestClusterCertificates(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		pandaCluster      *v1alpha1.Cluster
+		pandaCluster      *vectorizedv1alpha1.Cluster
 		expectedNames     []string
 		volumesCount      int
 		verifyVolumes     func(vols []corev1.Volume) bool
 		expectedBrokerTLS *config.ServerTLS
 	}{
-		{"kafka tls disabled", &v1alpha1.Cluster{
+		{"kafka tls disabled", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: false,
 							},
 						},
@@ -104,13 +103,13 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 		}, []string{}, 0, nil, nil},
-		{"kafka tls", &v1alpha1.Cluster{
+		{"kafka tls", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 							},
 						},
@@ -129,16 +128,16 @@ func TestClusterCertificates(t *testing.T) {
 			Enabled:        true,
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
-		{"kafka tls on external only", &v1alpha1.Cluster{
+		{"kafka tls on external only", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							External: v1alpha1.ExternalConnectivityConfig{
+							External: vectorizedv1alpha1.ExternalConnectivityConfig{
 								Enabled: true,
 							},
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 							},
 						},
@@ -148,21 +147,21 @@ func TestClusterCertificates(t *testing.T) {
 		}, []string{"test-kafka-selfsigned-issuer", "test-kafka-root-certificate", "test-kafka-root-issuer", "test-redpanda"}, 1, func(vols []corev1.Volume) bool {
 			return true
 		}, nil},
-		{"kafka tls with two tls listeners", &v1alpha1.Cluster{
+		{"kafka tls with two tls listeners", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 							},
 						},
 						{
-							External: v1alpha1.ExternalConnectivityConfig{
+							External: vectorizedv1alpha1.ExternalConnectivityConfig{
 								Enabled: true,
 							},
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 							},
 						},
@@ -173,13 +172,13 @@ func TestClusterCertificates(t *testing.T) {
 			Enabled:        true,
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
-		{"kafka tls with external node issuer", &v1alpha1.Cluster{
+		{"kafka tls with external node issuer", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 								IssuerRef: &cmmetav1.ObjectReference{
 									Name: "issuer",
@@ -205,22 +204,22 @@ func TestClusterCertificates(t *testing.T) {
 		}, &config.ServerTLS{
 			Enabled: true,
 		}},
-		{"kafka mutual tls", &v1alpha1.Cluster{
+		{"kafka mutual tls", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 							},
 						},
 						{
-							External: v1alpha1.ExternalConnectivityConfig{
+							External: vectorizedv1alpha1.ExternalConnectivityConfig{
 								Enabled: true,
 							},
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled: true,
 							},
 						},
@@ -254,13 +253,13 @@ func TestClusterCertificates(t *testing.T) {
 			CertFile:       "/etc/tls/certs/ca/tls.crt",
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
-		{"kafka mutual tls with two tls listeners", &v1alpha1.Cluster{
+		{"kafka mutual tls with two tls listeners", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					KafkaAPI: []v1alpha1.KafkaAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 						{
-							TLS: v1alpha1.KafkaAPITLS{
+							TLS: vectorizedv1alpha1.KafkaAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 							},
@@ -274,13 +273,13 @@ func TestClusterCertificates(t *testing.T) {
 			CertFile:       "/etc/tls/certs/ca/tls.crt",
 			TruststoreFile: "/etc/tls/certs/ca.crt",
 		}},
-		{"admin api tls disabled", &v1alpha1.Cluster{
+		{"admin api tls disabled", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					AdminAPI: []v1alpha1.AdminAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					AdminAPI: []vectorizedv1alpha1.AdminAPI{
 						{
-							TLS: v1alpha1.AdminAPITLS{
+							TLS: vectorizedv1alpha1.AdminAPITLS{
 								Enabled: false,
 							},
 						},
@@ -288,13 +287,13 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 		}, []string{}, 0, nil, nil},
-		{"admin api tls", &v1alpha1.Cluster{
+		{"admin api tls", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					AdminAPI: []v1alpha1.AdminAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					AdminAPI: []vectorizedv1alpha1.AdminAPI{
 						{
-							TLS: v1alpha1.AdminAPITLS{
+							TLS: vectorizedv1alpha1.AdminAPITLS{
 								Enabled: true,
 							},
 						},
@@ -302,13 +301,13 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 		}, []string{"test-admin-selfsigned-issuer", "test-admin-root-certificate", "test-admin-root-issuer", "test-admin-api-node"}, 1, nil, nil},
-		{"admin api mutual tls", &v1alpha1.Cluster{
+		{"admin api mutual tls", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					AdminAPI: []v1alpha1.AdminAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					AdminAPI: []vectorizedv1alpha1.AdminAPI{
 						{
-							TLS: v1alpha1.AdminAPITLS{
+							TLS: vectorizedv1alpha1.AdminAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 							},
@@ -317,13 +316,13 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 		}, []string{"test-admin-selfsigned-issuer", "test-admin-root-certificate", "test-admin-root-issuer", "test-admin-api-node", "test-admin-api-client"}, 2, nil, nil},
-		{"pandaproxy api tls disabled", &v1alpha1.Cluster{
+		{"pandaproxy api tls disabled", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 						{
-							TLS: v1alpha1.PandaproxyAPITLS{
+							TLS: vectorizedv1alpha1.PandaproxyAPITLS{
 								Enabled: false,
 							},
 						},
@@ -332,13 +331,13 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{}, 0, nil, nil},
 		{
-			"pandaproxy api tls", &v1alpha1.Cluster{
+			"pandaproxy api tls", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 							{
-								TLS: v1alpha1.PandaproxyAPITLS{
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
 									Enabled: true,
 								},
 							},
@@ -350,13 +349,13 @@ func TestClusterCertificates(t *testing.T) {
 			1, validateVolumesFn("tlspandaproxycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{
-			"pandaproxy api mutual tls", &v1alpha1.Cluster{
+			"pandaproxy api mutual tls", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 							{
-								TLS: v1alpha1.PandaproxyAPITLS{
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
 									Enabled:           true,
 									RequireClientAuth: true,
 								},
@@ -370,13 +369,13 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"pandaproxy api mutual tls with external ca provided by customer",
-			&v1alpha1.Cluster{
+			&vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 							{
-								TLS: v1alpha1.PandaproxyAPITLS{
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
 									Enabled:           true,
 									RequireClientAuth: true,
 									ClientCACertRef: &corev1.TypedLocalObjectReference{
@@ -393,13 +392,13 @@ func TestClusterCertificates(t *testing.T) {
 		},
 		{
 			"pandaproxy api mutual tls with external ca provided by customer and external node issuer",
-			&v1alpha1.Cluster{
+			&vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						PandaproxyAPI: []v1alpha1.PandaproxyAPI{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
 							{
-								TLS: v1alpha1.PandaproxyAPITLS{
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
 									Enabled:           true,
 									RequireClientAuth: true,
 									ClientCACertRef: &corev1.TypedLocalObjectReference{
@@ -418,12 +417,12 @@ func TestClusterCertificates(t *testing.T) {
 			[]string{"test-proxy-api-trusted-client-ca", "test-proxy-selfsigned-issuer", "test-proxy-root-certificate", "test-proxy-root-issuer", "test-proxy-api-node", "test-proxy-api-client"},
 			2, validateVolumesFn("tlspandaproxycert", []string{"tls.crt", "tls.key"}), nil,
 		},
-		{"schematregistry api tls disabled", &v1alpha1.Cluster{
+		{"schematregistry api tls disabled", &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-			Spec: v1alpha1.ClusterSpec{
-				Configuration: v1alpha1.RedpandaConfig{
-					SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-						TLS: &v1alpha1.SchemaRegistryAPITLS{
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+						TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 							Enabled: false,
 						},
 					},
@@ -431,12 +430,12 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		}, []string{}, 0, nil, nil},
 		{
-			"schematregistry api tls", &v1alpha1.Cluster{
+			"schematregistry api tls", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled: true,
 							},
 						},
@@ -447,12 +446,12 @@ func TestClusterCertificates(t *testing.T) {
 			1, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{
-			"schematregistry api mutual tls", &v1alpha1.Cluster{
+			"schematregistry api mutual tls", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 							},
@@ -464,12 +463,12 @@ func TestClusterCertificates(t *testing.T) {
 			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{
-			"schematregistry with tls, nodesecretref and without requireClientAuth", &v1alpha1.Cluster{
+			"schematregistry with tls, nodesecretref and without requireClientAuth", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled:           true,
 								RequireClientAuth: false,
 								NodeSecretRef: &corev1.ObjectReference{
@@ -485,12 +484,12 @@ func TestClusterCertificates(t *testing.T) {
 			1, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{
-			"kafka and schematregistry with nodesecretref", &v1alpha1.Cluster{
+			"kafka and schematregistry with nodesecretref", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 								NodeSecretRef: &corev1.ObjectReference{
@@ -499,9 +498,9 @@ func TestClusterCertificates(t *testing.T) {
 								},
 							},
 						},
-						KafkaAPI: []v1alpha1.KafkaAPI{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
-								TLS: v1alpha1.KafkaAPITLS{
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
 									Enabled:           true,
 									RequireClientAuth: true,
 									NodeSecretRef: &corev1.ObjectReference{
@@ -523,12 +522,12 @@ func TestClusterCertificates(t *testing.T) {
 			},
 		},
 		{
-			"schematregistry api mutual tls with external ca provided by customer", &v1alpha1.Cluster{
+			"schematregistry api mutual tls with external ca provided by customer", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 								ClientCACertRef: &corev1.TypedLocalObjectReference{
@@ -543,12 +542,12 @@ func TestClusterCertificates(t *testing.T) {
 			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 		{
-			"schematregistry api mutual tls with external ca provided by customer and external node issuer", &v1alpha1.Cluster{
+			"schematregistry api mutual tls with external ca provided by customer and external node issuer", &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
-				Spec: v1alpha1.ClusterSpec{
-					Configuration: v1alpha1.RedpandaConfig{
-						SchemaRegistry: &v1alpha1.SchemaRegistryAPI{
-							TLS: &v1alpha1.SchemaRegistryAPITLS{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							TLS: &vectorizedv1alpha1.SchemaRegistryAPITLS{
 								Enabled:           true,
 								RequireClientAuth: true,
 								ClientCACertRef: &corev1.TypedLocalObjectReference{

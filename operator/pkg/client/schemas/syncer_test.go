@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 const (
@@ -54,7 +54,7 @@ const (
 }`
 )
 
-func normalizeSchema(t *testing.T, ctx context.Context, syncer *Syncer, schema *v1alpha2.Schema) {
+func normalizeSchema(t *testing.T, ctx context.Context, syncer *Syncer, schema *redpandav1alpha2.Schema) {
 	actualSchema, err := syncer.getLatest(ctx, schema)
 	require.NoError(t, err)
 	schema.Spec.Text = actualSchema.Schema
@@ -63,7 +63,7 @@ func normalizeSchema(t *testing.T, ctx context.Context, syncer *Syncer, schema *
 	schema.Status.SchemaHash = hash
 }
 
-func expectSchemasMatch(t *testing.T, ctx context.Context, syncer *Syncer, schema *v1alpha2.Schema) {
+func expectSchemasMatch(t *testing.T, ctx context.Context, syncer *Syncer, schema *redpandav1alpha2.Schema) {
 	normalizeSchema(t, ctx, syncer, schema)
 
 	expectedSchema, err := schemaFromV1Alpha2Schema(schema)
@@ -77,7 +77,7 @@ func expectSchemasMatch(t *testing.T, ctx context.Context, syncer *Syncer, schem
 	require.True(t, expectedSchema.SchemaEquals(actualSchema), "Schemas not equal %+v != %+v", actualSchema, expectedSchema)
 }
 
-func expectSchemaUpdate(t *testing.T, ctx context.Context, syncer *Syncer, schema *v1alpha2.Schema, update bool) {
+func expectSchemaUpdate(t *testing.T, ctx context.Context, syncer *Syncer, schema *redpandav1alpha2.Schema, update bool) {
 	t.Helper()
 
 	_, versions, err := syncer.Sync(ctx, schema)
@@ -120,26 +120,26 @@ func TestSyncer(t *testing.T) {
 
 	syncer := NewSyncer(schemaRegistryClient)
 
-	for schemaType, schemaText := range map[v1alpha2.SchemaType]string{
-		v1alpha2.SchemaTypeAvro: validAvroSchema,
-		v1alpha2.SchemaTypeJSON: validJSONSchema,
+	for schemaType, schemaText := range map[redpandav1alpha2.SchemaType]string{
+		redpandav1alpha2.SchemaTypeAvro: validAvroSchema,
+		redpandav1alpha2.SchemaTypeJSON: validJSONSchema,
 	} {
 		t.Run(string(schemaType), func(t *testing.T) {
-			schema := &v1alpha2.Schema{
+			schema := &redpandav1alpha2.Schema{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "schema-" + string(schemaType),
 				},
-				Spec: v1alpha2.SchemaSpec{
+				Spec: redpandav1alpha2.SchemaSpec{
 					Type: ptr.To(schemaType),
 					Text: schemaText,
 				},
 			}
 
-			reference := &v1alpha2.Schema{
+			reference := &redpandav1alpha2.Schema{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "reference" + string(schemaType),
 				},
-				Spec: v1alpha2.SchemaSpec{
+				Spec: redpandav1alpha2.SchemaSpec{
 					Type: ptr.To(schemaType),
 					Text: schemaText,
 				},
@@ -150,7 +150,7 @@ func TestSyncer(t *testing.T) {
 			expectSchemaUpdate(t, ctx, syncer, reference, true)
 
 			// update references
-			schema.Spec.References = []v1alpha2.SchemaReference{
+			schema.Spec.References = []redpandav1alpha2.SchemaReference{
 				{
 					Subject: reference.Name,
 					Name:    "test",
@@ -160,7 +160,7 @@ func TestSyncer(t *testing.T) {
 			expectSchemaUpdate(t, ctx, syncer, schema, true)
 
 			// update compatibility level
-			schema.Spec.CompatibilityLevel = ptr.To(v1alpha2.CompatabilityLevelFull)
+			schema.Spec.CompatibilityLevel = ptr.To(redpandav1alpha2.CompatabilityLevelFull)
 			expectSchemaUpdate(t, ctx, syncer, schema, false)
 
 			// TODO: Request from core support for the following

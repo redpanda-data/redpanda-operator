@@ -11,21 +11,21 @@
 package operator
 
 import (
-	monitorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
-func ServiceMonitor(dot *helmette.Dot) *monitorv1.ServiceMonitor {
+func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.Monitoring.Enabled {
 		return nil
 	}
 
-	return &monitorv1.ServiceMonitor{
+	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceMonitor",
 			APIVersion: "monitoring.coreos.com/v1",
@@ -36,21 +36,21 @@ func ServiceMonitor(dot *helmette.Dot) *monitorv1.ServiceMonitor {
 			Namespace:   dot.Release.Namespace,
 			Annotations: values.Annotations,
 		},
-		Spec: monitorv1.ServiceMonitorSpec{
-			Endpoints: []monitorv1.Endpoint{
+		Spec: monitoringv1.ServiceMonitorSpec{
+			Endpoints: []monitoringv1.Endpoint{
 				{
 					Port:   "https",
 					Path:   "/metrics",
 					Scheme: "https",
-					TLSConfig: &monitorv1.TLSConfig{
-						SafeTLSConfig: monitorv1.SafeTLSConfig{
+					TLSConfig: &monitoringv1.TLSConfig{
+						SafeTLSConfig: monitoringv1.SafeTLSConfig{
 							InsecureSkipVerify: ptr.To(true),
 						},
 					},
 					BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
 				},
 			},
-			NamespaceSelector: monitorv1.NamespaceSelector{
+			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{dot.Release.Namespace},
 			},
 			Selector: metav1.LabelSelector{

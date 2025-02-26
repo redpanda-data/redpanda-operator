@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -62,7 +62,7 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 		}
 
 		duration := helmette.Default("43800h", data.Duration)
-		issuerRef := ptr.Deref(data.IssuerRef, cmmeta.ObjectReference{
+		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
 			Kind:  "Issuer",
 			Group: "cert-manager.io",
 			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
@@ -103,7 +103,7 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 		return certs
 	}
 
-	issuerRef := cmmeta.ObjectReference{
+	issuerRef := cmmetav1.ObjectReference{
 		Group: "cert-manager.io",
 		Kind:  "Issuer",
 		Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),

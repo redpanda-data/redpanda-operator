@@ -34,7 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
@@ -113,12 +113,12 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 
 		t.Logf("%s", rawValue)
 
-		rp := v1alpha2.Redpanda{
-			Spec: v1alpha2.RedpandaSpec{
-				ClusterSpec: &v1alpha2.RedpandaClusterSpec{
-					Storage: &v1alpha2.Storage{
-						Tiered: &v1alpha2.Tiered{
-							Config: &v1alpha2.TieredConfig{
+		rp := redpandav1alpha2.Redpanda{
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					Storage: &redpandav1alpha2.Storage{
+						Tiered: &redpandav1alpha2.Tiered{
+							Config: &redpandav1alpha2.TieredConfig{
 								CloudStorageEnabled: &apiutil.JSONBoolean{Raw: rawValue},
 							},
 						},
@@ -190,7 +190,7 @@ func TestHelmValuesCompat(t *testing.T) {
 	}
 
 	t.Run("clusterSpec", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[redpanda.PartialValues, v1alpha2.RedpandaClusterSpec](t, cfg, func(from *redpanda.PartialValues) {
+		AssertJSONCompat[redpanda.PartialValues, redpandav1alpha2.RedpandaClusterSpec](t, cfg, func(from *redpanda.PartialValues) {
 			if from.Storage != nil && from.Storage.Tiered != nil && from.Storage.Tiered.PersistentVolume != nil {
 				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
 				from.Storage.Tiered.PersistentVolume.Size = nil
@@ -199,11 +199,11 @@ func TestHelmValuesCompat(t *testing.T) {
 	}))
 
 	t.Run("connectors", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[connectors.PartialValues, v1alpha2.RedpandaConnectors](t, cfg, nil)
+		AssertJSONCompat[connectors.PartialValues, redpandav1alpha2.RedpandaConnectors](t, cfg, nil)
 	}))
 
 	t.Run("console", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[console.PartialValues, v1alpha2.RedpandaConsole](t, cfg, nil)
+		AssertJSONCompat[console.PartialValues, redpandav1alpha2.RedpandaConsole](t, cfg, nil)
 	}))
 }
 
@@ -217,7 +217,7 @@ func TestClusterSpecBackwardsCompat(t *testing.T) {
 	})
 
 	scheme := runtime.NewScheme()
-	require.NoError(t, v1alpha2.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.AddToScheme(scheme))
 
 	c, err := client.New(cfg, client.Options{
 		Scheme: scheme,
@@ -227,7 +227,7 @@ func TestClusterSpecBackwardsCompat(t *testing.T) {
 	cr := unstructured.Unstructured{Object: make(map[string]interface{})}
 	cr.SetNamespace("default")
 	cr.SetName("namespace-selector")
-	cr.SetGroupVersionKind(v1alpha2.GroupVersion.WithKind("Redpanda"))
+	cr.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
 
 	// Create a minimal redpanda CR with an extranious field in the namespace
 	// selector (which was previously mistyped as a map[string]any).

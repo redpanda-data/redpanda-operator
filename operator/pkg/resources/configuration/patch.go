@@ -19,9 +19,8 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
-
 	"github.com/redpanda-data/common-go/rpadmin"
+	"gopkg.in/yaml.v3"
 )
 
 const (
