@@ -1,0 +1,14 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+    `clusterDomain` now defaults to `cluster.local.` (A trialing `.` has been added) and the chart no longer adds trailing `.`'s to internal domains.
+
+      For users not experiencing issues with trailing `.`'s this change has no
+      effect. For users that have had issues with trailing `.`'s, it's now possible
+      to opt-out of this behavior by explicitly setting `clusterDomain` to `cluster.local`.
+
+      For users that override `clusterDomain`, copied a previous releases
+      values.yaml, or use the `--reuse-values` flag, trailing `.`'s will be tripped
+      from domains upon updating. This behavior may be opted into by appending a
+      `.` to `clusterDomain` prior to upgrading.
+time: 2025-02-26T13:59:13.035962-05:00

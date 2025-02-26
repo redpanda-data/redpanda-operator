@@ -756,12 +756,12 @@ func adminInternalHTTPProtocol(dot *helmette.Dot) string {
 func adminInternalURL(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	return fmt.Sprintf("%s://%s.%s.%s.svc.%s:%d",
+	// NB: SERVICE_NAME here actually refers to the podname via the downward
+	// API.
+	return fmt.Sprintf("%s://%s.%s:%d",
 		adminInternalHTTPProtocol(dot),
 		`${SERVICE_NAME}`,
-		ServiceName(dot),
-		dot.Release.Namespace,
-		strings.TrimSuffix(values.ClusterDomain, "."),
+		strings.TrimSuffix(InternalDomain(dot), "."),
 		values.Listeners.Admin.Port,
 	)
 }
