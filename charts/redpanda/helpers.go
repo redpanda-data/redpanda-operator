@@ -136,9 +136,8 @@ func InternalDomain(dot *helmette.Dot) string {
 
 	service := ServiceName(dot)
 	ns := dot.Release.Namespace
-	domain := strings.TrimSuffix(values.ClusterDomain, ".")
 
-	return fmt.Sprintf("%s.%s.svc.%s.", service, ns, domain)
+	return fmt.Sprintf("%s.%s.svc.%s", service, ns, values.ClusterDomain)
 }
 
 // check if client auth is enabled for any of the listeners

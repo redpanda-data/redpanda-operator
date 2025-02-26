@@ -32,6 +32,8 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 	fullname := Fullname(dot)
 	service := ServiceName(dot)
 	ns := dot.Release.Namespace
+	// Trailing .'s don't play nice with TLS/SNI: https://datatracker.ietf.org/doc/html/rfc6066#section-3
+	// So we trim it when generating certificates.
 	domain := strings.TrimSuffix(values.ClusterDomain, ".")
 
 	var certs []*certmanagerv1.Certificate
