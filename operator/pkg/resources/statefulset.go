@@ -997,8 +997,7 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	return ports
 }
 
-func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (listeners, advertisedlisteners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
-	tlsMountPoints := resourcetypes.GetTLSMountPoints().KafkaAPI
+func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
 	for _, k := range r.pandaCluster.Spec.Configuration.KafkaAPI {
 		if !k.External.Enabled || k.Name == DefaultExternalKafkaListenerName {
 			continue
@@ -1008,35 +1007,16 @@ func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (listeners, adv
 		if k.External.PortTemplate != "" {
 			advertisedPort = k.External.PortTemplate
 		}
-		listeners = append(listeners, listenerTemplateSpec{
-			Name:                 k.Name,
-			Address:              "0.0.0.0",
-			Port:                 port,
-			AuthenticationMethod: k.AuthenticationMethod,
-		})
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
 			Name:    k.Name,
 			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
 			Port:    advertisedPort,
 		})
-		if k.TLS.Enabled {
-			tlsSpec := tlsTemplateSpec{
-				Name:     k.Name,
-				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
-				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
-			}
-			if k.TLS.RequireClientAuth {
-				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
-				tlsSpec.RequireClientAuth = true
-			}
-			tlsSpecs = append(tlsSpecs, tlsSpec)
-		}
 	}
-	return listeners, advertisedlisteners, tlsSpecs
+	return advertisedlisteners
 }
 
-func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (listeners, advertisedlisteners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
-	tlsMountPoints := resourcetypes.GetTLSMountPoints().PandaProxyAPI
+func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
 	for _, k := range r.pandaCluster.Spec.Configuration.PandaproxyAPI {
 		if !k.External.Enabled || k.Name == DefaultExternalProxyListenerName {
 			continue
@@ -1046,78 +1026,24 @@ func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (listeners
 		if k.External.PortTemplate != "" {
 			advertisedPort = k.External.PortTemplate
 		}
-		listeners = append(listeners, listenerTemplateSpec{
-			Name:                 k.Name,
-			Address:              "0.0.0.0",
-			Port:                 port,
-			AuthenticationMethod: k.AuthenticationMethod,
-		})
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
 			Name:    k.Name,
 			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
 			Port:    advertisedPort,
 		})
-		if k.TLS.Enabled {
-			tlsSpec := tlsTemplateSpec{
-				Name:     k.Name,
-				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
-				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
-			}
-			if k.TLS.RequireClientAuth {
-				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
-				tlsSpec.RequireClientAuth = true
-			}
-			tlsSpecs = append(tlsSpecs, tlsSpec)
-		}
 	}
-	return listeners, advertisedlisteners, tlsSpecs
-}
-
-func (r *StatefulSetResource) AdditionalSchemaRegistryExternalListeners() (listeners []listenerTemplateSpec, tlsSpecs []tlsTemplateSpec) {
-	tlsMountPoints := resourcetypes.GetTLSMountPoints().SchemaRegistryAPI
-	for _, k := range r.pandaCluster.Spec.Configuration.AdditionalSchemaRegistry {
-		if !k.External.Enabled {
-			continue
-		}
-		port := strconv.Itoa(k.Port)
-		listeners = append(listeners, listenerTemplateSpec{
-			Name:                 k.Name,
-			Address:              "0.0.0.0",
-			Port:                 port,
-			AuthenticationMethod: k.AuthenticationMethod,
-		})
-		if k.TLS.Enabled {
-			tlsSpec := tlsTemplateSpec{
-				Name:     k.Name,
-				KeyFile:  tlsKeyPath(tlsMountPoints.NodeCertMountDir),
-				CertFile: tlsCertPath(tlsMountPoints.NodeCertMountDir),
-			}
-			if k.TLS.RequireClientAuth {
-				tlsSpec.TruststoreFile = tlsCAPath(tlsMountPoints.ClientCAMountDir)
-				tlsSpec.RequireClientAuth = true
-			}
-			tlsSpecs = append(tlsSpecs, tlsSpec)
-		}
-	}
-	return listeners, tlsSpecs
+	return advertisedlisteners
 }
 
 // allAdditionalExternalListenersFromSpecAPIs returns all additional external listeners from the API blocks under
 // the spec configuration, including KafkaAPI, PandaproxyAPI, and AdditionalSchemaRegistry.
 func (r *StatefulSetResource) allAdditionalExternalListenersFromSpecAPIs() *allListenersTemplateSpec {
-	kafkaListeners, kafkaAdvertisedListeners, kafkaTLSSpecs := r.AdditionalKafkaExternalListeners()
-	proxyListeners, proxyAdvertisedListeners, proxyTLSSpecs := r.AdditionalPandaProxyExternalListeners()
-	schemaRegistryListeners, schemaRegisryTLSSpecs := r.AdditionalSchemaRegistryExternalListeners()
+	kafkaAdvertisedListeners := r.AdditionalKafkaExternalListeners()
+	proxyAdvertisedListeners := r.AdditionalPandaProxyExternalListeners()
 
 	return &allListenersTemplateSpec{
-		KafkaListeners:           kafkaListeners,
 		KafkaAdvertisedListeners: kafkaAdvertisedListeners,
-		KafkaTLSSpec:             kafkaTLSSpecs,
-		ProxyListeners:           proxyListeners,
 		ProxyAdvertisedListeners: proxyAdvertisedListeners,
-		ProxyTLSSpec:             proxyTLSSpecs,
-		SchemaRegistryListeners:  schemaRegistryListeners,
-		SchemaRegistryTLSSpec:    schemaRegisryTLSSpecs,
 	}
 }
 
