@@ -157,7 +157,7 @@ Optional list of superusers. These superusers will be created in the Secret whos
 
 Default Kubernetes cluster domain.
 
-**Default:** `"cluster.local"`
+**Default:** `"cluster.local."`
 
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=commonLabels)
 

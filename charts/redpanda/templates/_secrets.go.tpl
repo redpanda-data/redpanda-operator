@@ -410,7 +410,7 @@ echo "passed"`) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf "%s://%s.%s.%s.svc.%s:%d" (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $dot) ))) "r") `${SERVICE_NAME}` (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $dot) ))) "r") $dot.Release.Namespace (trimSuffix "." $values.clusterDomain) ($values.listeners.admin.port | int))) | toJson -}}
+{{- (dict "r" (printf "%s://%s.%s:%d" (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $dot) ))) "r") `${SERVICE_NAME}` (trimSuffix "." (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $dot) ))) "r")) ($values.listeners.admin.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
