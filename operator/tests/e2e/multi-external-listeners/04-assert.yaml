@@ -1,0 +1,50 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: multi-external-listeners
+status:
+  replicas: 1
+  restarting: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-external-listeners-external
+spec:
+  ports:
+  - name: kafka-external
+    nodePort: 30092
+    port: 30092
+    protocol: TCP
+    targetPort: 30092
+  - name: kafka-sasl
+    nodePort: 30094
+    port: 30094
+    protocol: TCP
+    targetPort: 30094
+  - name: proxy-sasl
+    nodePort: 30086
+    port: 30086
+    protocol: TCP
+    targetPort: 30086
+  - name: proxy-mtls
+    nodePort: 30082
+    port: 30082
+    protocol: TCP
+    targetPort: 30082
+  - name: sr-sasl
+    nodePort: 30083
+    port: 30083
+    protocol: TCP
+    targetPort: 30083
+  type: NodePort
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: multi-external-listeners-proxy-api-trusted-client-ca
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

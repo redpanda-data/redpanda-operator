@@ -1304,8 +1304,8 @@ func (in *RedpandaConfig) DeepCopyInto(out *RedpandaConfig) {
 		*out = new(SchemaRegistryAPI)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AdditionalSchemaRegistry != nil {
-		in, out := &in.AdditionalSchemaRegistry, &out.AdditionalSchemaRegistry
+	if in.SchemaRegistryAPI != nil {
+		in, out := &in.SchemaRegistryAPI, &out.SchemaRegistryAPI
 		*out = make([]SchemaRegistryAPI, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])

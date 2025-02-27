@@ -1142,11 +1142,13 @@ func collectClusterPorts(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 ) []resources.NamedServicePort {
 	clusterPorts := []resources.NamedServicePort{}
-	if redpandaPorts.PandaProxy.External != nil {
-		clusterPorts = append(clusterPorts, redpandaPorts.PandaProxy.ToNamedServicePorts()...)
+	if redpandaPorts.PandaProxy.Internal != nil {
+		port := redpandaPorts.PandaProxy.Internal.Port
+		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.InternalProxyListenerName, Port: port})
 	}
 	if redpandaCluster.Spec.Configuration.SchemaRegistry != nil {
-		clusterPorts = append(clusterPorts, redpandaPorts.SchemaRegistry.ToNamedServicePorts()...)
+		port := redpandaCluster.Spec.Configuration.SchemaRegistry.Port
+		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.SchemaRegistryPortName, Port: port})
 	}
 	if redpandaPorts.KafkaAPI.Internal != nil {
 		port := redpandaPorts.KafkaAPI.Internal.Port

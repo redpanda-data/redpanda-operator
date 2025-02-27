@@ -45,7 +45,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.ExternalListenerName,
 							Port: 124,
 						},
@@ -60,7 +60,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.AdminPortExternalName,
 							Port: 346,
 						},
@@ -75,7 +75,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.PandaproxyPortExternalName,
 							Port: 334,
 						},
@@ -86,7 +86,7 @@ func TestRedpandaPorts(t *testing.T) {
 			SchemaRegistry: networking.PortsDefinition{
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.SchemaRegistryPortName,
 							Port: 444,
 						},
@@ -152,7 +152,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.ExternalListenerName,
 							Port: 30001,
 						},
@@ -166,7 +166,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.AdminPortExternalName,
 							Port: 30002,
 						},
@@ -180,7 +180,7 @@ func TestRedpandaPorts(t *testing.T) {
 				},
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.PandaproxyPortExternalName,
 							Port: 30003,
 						},
@@ -190,7 +190,7 @@ func TestRedpandaPorts(t *testing.T) {
 			SchemaRegistry: networking.PortsDefinition{
 				External: []networking.ExternalPortDefinition{
 					{
-						Port: &resources.NamedServicePort{
+						NamedServicePort: resources.NamedServicePort{
 							Name: resources.SchemaRegistryPortName,
 							Port: 30004,
 						},
@@ -227,7 +227,7 @@ func TestRedpandaPorts(t *testing.T) {
 					},
 					External: []networking.ExternalPortDefinition{
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: resources.ExternalListenerName,
 								Port: 124,
 							},
@@ -261,8 +261,8 @@ func TestRedpandaPorts(t *testing.T) {
 								Name: "kafka-1",
 								Port: 12345,
 								External: vectorizedv1alpha1.ExternalConnectivityConfig{
-									Enabled:        true,
-									NoPortExposure: true,
+									Enabled:            true,
+									ExcludeFromService: true,
 								},
 							},
 							{
@@ -284,13 +284,13 @@ func TestRedpandaPorts(t *testing.T) {
 					},
 					External: []networking.ExternalPortDefinition{
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: resources.ExternalListenerName,
 								Port: 1231,
 							},
 						},
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: "kafka-2",
 								Port: 1232,
 							},
@@ -321,8 +321,8 @@ func TestRedpandaPorts(t *testing.T) {
 								Port: 12345,
 								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
 									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
-										Enabled:        true,
-										NoPortExposure: true,
+										Enabled:            true,
+										ExcludeFromService: true,
 									},
 								},
 							},
@@ -347,13 +347,13 @@ func TestRedpandaPorts(t *testing.T) {
 					},
 					External: []networking.ExternalPortDefinition{
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: resources.PandaproxyPortExternalName,
 								Port: 1231,
 							},
 						},
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: "proxy-2",
 								Port: 1232,
 							},
@@ -375,14 +375,14 @@ func TestRedpandaPorts(t *testing.T) {
 								},
 							},
 						},
-						AdditionalSchemaRegistry: []vectorizedv1alpha1.SchemaRegistryAPI{
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
 							{
 								Name: "sr-1",
 								Port: 1234,
 								External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
 									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
-										Enabled:        true,
-										NoPortExposure: true,
+										Enabled:            true,
+										ExcludeFromService: true,
 									},
 								},
 							},
@@ -404,14 +404,14 @@ func TestRedpandaPorts(t *testing.T) {
 				SchemaRegistry: networking.PortsDefinition{
 					External: []networking.ExternalPortDefinition{
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: resources.SchemaRegistryPortName,
 								Port: 123,
 							},
 							ExternalPortIsGenerated: true,
 						},
 						{
-							Port: &resources.NamedServicePort{
+							NamedServicePort: resources.NamedServicePort{
 								Name: "sr-2",
 								Port: 321,
 							},
