@@ -89,8 +89,11 @@ func schemaRegistryAPIListeners(r *vectorizedv1alpha1.Cluster) []APIListener {
 	if r.Spec.Configuration.SchemaRegistry == nil {
 		return []APIListener{}
 	}
-
-	return []APIListener{*r.Spec.Configuration.SchemaRegistry}
+	listeners := []APIListener{*r.Spec.Configuration.SchemaRegistry}
+	for i := range r.Spec.Configuration.SchemaRegistryAPI {
+		listeners = append(listeners, r.Spec.Configuration.SchemaRegistryAPI[i])
+	}
+	return listeners
 }
 
 // PandaProxyAPIListeners returns all PandaProxyAPI listeners
@@ -314,9 +317,11 @@ func (cc *ClusterCertificates) prepareAPI(
 	}
 
 	generateClientCerts := false
+	result.externalClientCACertificate = firstTLSListener.ClientCACertRef
 	for _, l := range tlsListeners {
 		if l.GetTLS().RequireClientAuth {
 			generateClientCerts = true
+			result.externalClientCACertificate = l.GetTLS().ClientCACertRef
 			break
 		}
 	}
@@ -331,7 +336,6 @@ func (cc *ClusterCertificates) prepareAPI(
 		}
 	}
 
-	result.externalClientCACertificate = firstTLSListener.ClientCACertRef
 	if result.externalClientCACertificate != nil {
 		result.caCertificateBundle = NewCACertificateBundle(cc.client, cc.scheme, cc.pandaCluster,
 			[]*types.NamespacedName{result.clientCACertificateName(), rootResourceKey, result.nodeCertificateName()}, caCertBundleSuffix, cc.logger)

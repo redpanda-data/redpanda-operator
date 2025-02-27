@@ -1,0 +1,94 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: multi-external-listeners
+status:
+  readyReplicas: 1
+  replicas: 1
+  upgrading: false
+  restarting: false
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/multi-external-listeners --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: multi-external-listeners-schema-registry-trusted-client-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: multi-external-listeners-schema-registry-selfsigned-issuer
+status:
+  conditions:
+    - reason: IsReady
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: multi-external-listeners-schema-registry-root-issuer
+status:
+  conditions:
+    - reason: KeyPairVerified
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: multi-external-listeners-schema-registry-root-certificate
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: multi-external-listeners-kafka-api-trusted-client-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: multi-external-listeners-schema-registry-node
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-external-listeners-external
+spec:
+  ports:
+  - name: kafka-external
+    nodePort: 30092
+    port: 30092
+    protocol: TCP
+    targetPort: 30092
+  - name: proxy-sasl
+    nodePort: 30086
+    port: 30086
+    protocol: TCP
+    targetPort: 30086
+  - name: sr-sasl
+    nodePort: 30083
+    port: 30083
+    protocol: TCP
+    targetPort: 30083
+  type: NodePort
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

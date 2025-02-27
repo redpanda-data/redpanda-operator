@@ -947,7 +947,6 @@ func (r *StatefulSetResource) portsConfiguration() string {
 	return fmt.Sprintf("--advertise-rpc-addr=$(POD_NAME).%s:%d", serviceFQDN, rpcAPIPort)
 }
 
-// TODO
 func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{{
 		Name:          AdminPortName,
@@ -998,45 +997,47 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 }
 
 func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
-	for _, k := range r.pandaCluster.Spec.Configuration.KafkaAPI {
-		if !k.External.Enabled || k.Name == DefaultExternalKafkaListenerName {
+	listeners := r.pandaCluster.KafkaAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalKafkaListenerName {
 			continue
 		}
-		port := strconv.Itoa(k.Port)
+		port := strconv.Itoa(l.Port)
 		advertisedPort := port
-		if k.External.PortTemplate != "" {
-			advertisedPort = k.External.PortTemplate
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
 		}
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
-			Name:    k.Name,
-			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
-			Port:    advertisedPort,
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
+			Port:    TemplatedInt(advertisedPort),
 		})
 	}
 	return advertisedlisteners
 }
 
 func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
-	for _, k := range r.pandaCluster.Spec.Configuration.PandaproxyAPI {
-		if !k.External.Enabled || k.Name == DefaultExternalProxyListenerName {
+	listeners := r.pandaCluster.PandaproxyAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalProxyListenerName {
 			continue
 		}
-		port := strconv.Itoa(k.Port)
+		port := strconv.Itoa(l.Port)
 		advertisedPort := port
-		if k.External.PortTemplate != "" {
-			advertisedPort = k.External.PortTemplate
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
 		}
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
-			Name:    k.Name,
-			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
-			Port:    advertisedPort,
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
+			Port:    TemplatedInt(advertisedPort),
 		})
 	}
 	return advertisedlisteners
 }
 
 // allAdditionalExternalListenersFromSpecAPIs returns all additional external listeners from the API blocks under
-// the spec configuration, including KafkaAPI, PandaproxyAPI, and AdditionalSchemaRegistry.
+// the spec configuration, including KafkaAPI, PandaproxyAPI, and SchemaRegistryAPI.
 func (r *StatefulSetResource) allAdditionalExternalListenersFromSpecAPIs() *allListenersTemplateSpec {
 	kafkaAdvertisedListeners := r.AdditionalKafkaExternalListeners()
 	proxyAdvertisedListeners := r.AdditionalPandaProxyExternalListeners()
@@ -1059,7 +1060,7 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 	}
 
 	listeners := r.allAdditionalExternalListenersFromSpecAPIs()
-	jsonStr, err := listeners.Concat(listenersFromAdditionalCfg)
+	jsonStr, err := listeners.Append(listenersFromAdditionalCfg)
 	if err != nil {
 		r.logger.Error(err, "failed to concat additional listeners")
 		return nil

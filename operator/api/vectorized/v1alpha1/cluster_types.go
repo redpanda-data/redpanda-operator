@@ -413,9 +413,9 @@ type ExternalConnectivityConfig struct {
 	// If not provided, the port will be the same as the internal one defined
 	// in the listener/endpoint's configuration such as KafkaAPI.Port.
 	PortTemplate string `json:"portTemplate,omitempty"`
-	// NoPortExposure is an indication that tells the controller not to expose the node port
+	// ExcludeFromService is an indication that tells the controller not to expose the node port
 	// in a Kubernetes service. This is useful when the port is exposed by other means.
-	NoPortExposure bool `json:"noPortExposure,omitempty"`
+	ExcludeFromService bool `json:"excludeFromService,omitempty"`
 	// The preferred address type to be assigned to the external
 	// advertised addresses. The valid types are ExternalDNS,
 	// ExternalIP, InternalDNS, InternalIP, and Hostname.
@@ -631,7 +631,9 @@ type RedpandaConfig struct {
 	PandaproxyAPI  []PandaproxyAPI    `json:"pandaproxyApi,omitempty"`
 	SchemaRegistry *SchemaRegistryAPI `json:"schemaRegistry,omitempty"`
 
-	AdditionalSchemaRegistry []SchemaRegistryAPI `json:"additionalSchemaRegistry,omitempty"`
+	// SchemaRegistryAPI intends to replace SchemaRegistry field.
+	// It is a list of all Schema Registry listeners.
+	SchemaRegistryAPI []SchemaRegistryAPI `json:"schemaRegistryApi,omitempty"`
 
 	DeveloperMode bool `json:"developerMode,omitempty"`
 	// Number of partitions in the internal group membership topic
@@ -658,7 +660,10 @@ type AdminAPI struct {
 // KafkaAPI configures listener for the Kafka API
 type KafkaAPI struct {
 	Port int `json:"port,omitempty"`
-	// The name of Kafka API endpoint.
+	// Name is the name of this Kafka listener. It will be set to the default
+	// value if not provided.
+	//   "kafka" for an internal listener
+	//   "kafka-external" for an external listener.
 	Name string `json:"name,omitempty"`
 	// External enables user to expose Redpanda
 	// nodes outside of a Kubernetes cluster. For more
@@ -953,8 +958,8 @@ func (r *Cluster) FullImageName() string {
 	return fmt.Sprintf("%s:%s", r.Spec.Image, r.Spec.Version)
 }
 
-// AllKafkaAPIExternalListeners returns all the Kafka external listeners.
-func (r *Cluster) AllKafkaAPIExternalListeners() []KafkaAPI {
+// KafkaAPIExternalListeners returns all the Kafka external listeners.
+func (r *Cluster) KafkaAPIExternalListeners() []KafkaAPI {
 	if r == nil {
 		return nil
 	}
@@ -971,10 +976,16 @@ func (r *Cluster) AllKafkaAPIExternalListeners() []KafkaAPI {
 	return res
 }
 
-// ExternalListener returns an external listener if found in configuration. Returns
+// ExternalListener returns the first external kafka listener.
+// Deprecated: Prefer FirstExternalListener or KafkaAPIExternalListeners
+func (r *Cluster) ExternalListener() *KafkaAPI {
+	return r.FirstExternalListener()
+}
+
+// FirstExternalListener returns an external listener if found in configuration. Returns
 // nil if no external listener is configured. Right now we support only one
 // external listener which is enforced by webhook
-func (r *Cluster) ExternalListener() *KafkaAPI {
+func (r *Cluster) FirstExternalListener() *KafkaAPI {
 	if r == nil {
 		return nil
 	}
@@ -1141,8 +1152,8 @@ func (r *Cluster) PandaproxyAPIInternal() *PandaproxyAPI {
 	return nil
 }
 
-// AllPandaproxyAPIExternalListeners returns all the external pandaproxy listeners
-func (r *Cluster) AllPandaproxyAPIExternalListeners() []PandaproxyAPI {
+// PandaproxyAPIExternalListeners returns all the external pandaproxy listeners
+func (r *Cluster) PandaproxyAPIExternalListeners() []PandaproxyAPI {
 	if r == nil {
 		return nil
 	}
@@ -1159,8 +1170,14 @@ func (r *Cluster) AllPandaproxyAPIExternalListeners() []PandaproxyAPI {
 	return res
 }
 
-// PandaproxyAPIExternal returns the external pandaproxy listener
+// PandaproxyAPIExternal returns the first external pandaproxy listener
+// Deprecated: Prefer FirstPandaproxyAPIExternal or PandaproxyAPIExternalListeners
 func (r *Cluster) PandaproxyAPIExternal() *PandaproxyAPI {
+	return r.FirstPandaproxyAPIExternal()
+}
+
+// FirstPandaproxyAPIExternal returns the first external pandaproxy listener in the list.
+func (r *Cluster) FirstPandaproxyAPIExternal() *PandaproxyAPI {
 	if r == nil {
 		return nil
 	}
@@ -1173,9 +1190,15 @@ func (r *Cluster) PandaproxyAPIExternal() *PandaproxyAPI {
 	return nil
 }
 
-// PandaproxyAPITLS returns a Pandaproxy listener that has TLS enabled.
-// It returns nil if no TLS is configured.
+// PandaproxyAPITLS returns the first Pandaproxy listener that has TLS enabled.
+// Deprecated: Prefer PandaproxyAPITLS or PandaproxyAPITLSs
 func (r *Cluster) PandaproxyAPITLS() *PandaproxyAPI {
+	return r.FirstPandaproxyAPITLS()
+}
+
+// PandaproxyAPITLS returns the first Pandaproxy listener that has TLS enabled.
+// It returns nil if no TLS is configured.
+func (r *Cluster) FirstPandaproxyAPITLS() *PandaproxyAPI {
 	if r == nil {
 		return nil
 	}
@@ -1188,8 +1211,8 @@ func (r *Cluster) PandaproxyAPITLS() *PandaproxyAPI {
 	return nil
 }
 
-// AllPandaproxyAPITLS returns all Pandaproxy listeners that have TLS enabled.
-func (r *Cluster) AllPandaproxyAPITLS() []PandaproxyAPI {
+// PandaproxyAPITLSs returns all Pandaproxy listeners that have TLS enabled.
+func (r *Cluster) PandaproxyAPITLSs() []PandaproxyAPI {
 	if r == nil {
 		return nil
 	}
@@ -1228,63 +1251,74 @@ func (r *Cluster) SchemaRegistryAPIURL() string {
 // SchemaRegistryAPITLS returns a SchemaRegistry listener that has TLS enabled.
 // It returns nil if no TLS is configured.
 func (r *Cluster) SchemaRegistryAPITLS() *SchemaRegistryAPI {
-	if r == nil {
-		return nil
-	}
-	schemaRegistry := r.Spec.Configuration.SchemaRegistry
-	if schemaRegistry != nil && schemaRegistry.TLS != nil && schemaRegistry.TLS.Enabled {
-		return schemaRegistry
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		schemaRegistry := &allSchemaRegistry[i]
+		if schemaRegistry.TLS != nil && schemaRegistry.TLS.Enabled {
+			return schemaRegistry
+		}
 	}
 	return nil
 }
 
-// AllSchemaRegistryListeners returns all schema registry listeners
-func (r *Cluster) AllSchemaRegistryListeners() []SchemaRegistryAPI {
+// SchemaRegistryListeners returns all schema registry listeners
+func (r *Cluster) SchemaRegistryListeners() []SchemaRegistryAPI {
 	if r == nil || r.Spec.Configuration.SchemaRegistry == nil {
 		return nil
 	}
-	res := []SchemaRegistryAPI{*r.Spec.Configuration.SchemaRegistry}
-	for _, sr := range r.Spec.Configuration.AdditionalSchemaRegistry {
-		if sr.Name == "" {
-			sr.Name = SchemaRegistryExternalListenerName
-		}
-		res = append(res, sr)
+	if r.Spec.Configuration.SchemaRegistry.Name == "" {
+		r.Spec.Configuration.SchemaRegistry.Name = SchemaRegistryExternalListenerName
 	}
-	return res
+	res := []SchemaRegistryAPI{*r.Spec.Configuration.SchemaRegistry}
+	return append(res, r.Spec.Configuration.SchemaRegistryAPI...)
 }
 
 // IsSchemaRegistryExternallyAvailable returns true if schema registry
 // is enabled with external connectivity
 func (r *Cluster) IsSchemaRegistryExternallyAvailable() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.External != nil &&
-		r.Spec.Configuration.SchemaRegistry.External.Enabled
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].External != nil && allSchemaRegistry[i].External.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryTLSEnabled returns true if schema registry
 // is enabled with TLS
 func (r *Cluster) IsSchemaRegistryTLSEnabled() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.TLS != nil &&
-		r.Spec.Configuration.SchemaRegistry.TLS.Enabled
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].TLS != nil && allSchemaRegistry[i].TLS.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryMutualTLSEnabled returns true if schema registry
 // is enabled with mutual TLS
 func (r *Cluster) IsSchemaRegistryMutualTLSEnabled() bool {
-	return r != nil &&
-		r.IsSchemaRegistryTLSEnabled() &&
-		r.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].TLS != nil && allSchemaRegistry[i].TLS.RequireClientAuth {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryAuthHTTPBasic returns true if schema registry authentication method
 // is enabled with HTTP Basic
 func (r *Cluster) IsSchemaRegistryAuthHTTPBasic() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.AuthenticationMethod == httpBasicAuthorizationMechanism
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].AuthenticationMethod == httpBasicAuthorizationMechanism {
+			return true
+		}
+	}
+	return false
 }
 
 // IsUsingMaintenanceModeHooks tells if the cluster is configured to use maintenance mode hooks on the pods.

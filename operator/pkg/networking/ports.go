@@ -19,7 +19,7 @@ import (
 
 // ExternalPortDefinition defines external port for exposing a listener
 type ExternalPortDefinition struct {
-	Port *resources.NamedServicePort
+	resources.NamedServicePort
 	// if this is set to true, it means that if using nodeport, we should let it
 	// generate nodeport rather than fixing it to the given number. If this
 	// property is set to false, External port will be used for both container
@@ -47,11 +47,11 @@ type RedpandaPorts struct {
 // configuration and internal conventions.
 func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 	internalListener := rpCluster.InternalListener()
-	externalListeners := rpCluster.AllKafkaAPIExternalListeners()
+	externalListeners := rpCluster.KafkaAPIExternalListeners()
 	adminAPIInternal := rpCluster.AdminAPIInternal()
 	adminAPIExternal := rpCluster.AdminAPIExternal()
 	proxyAPIInternal := rpCluster.PandaproxyAPIInternal()
-	proxyAPIExternals := rpCluster.AllPandaproxyAPIExternalListeners()
+	proxyAPIExternals := rpCluster.PandaproxyAPIExternalListeners()
 
 	getPortName := func(listenerName, baseName string, i int) string {
 		if listenerName != "" {
@@ -71,21 +71,20 @@ func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 		}
 	}
 	for i, externalListener := range externalListeners {
-		if externalListener.External.NoPortExposure {
+		if externalListener.External.ExcludeFromService {
 			continue
 		}
 
 		portName := getPortName(externalListener.Name, resources.ExternalListenerName, i)
 		externalPort := ExternalPortDefinition{}
 		if externalListener.Port != 0 {
-			// if port is defined, we use the port as external port, this is right
-			// now supported only for kafkaAPI
-			externalPort.Port = &resources.NamedServicePort{
+			externalPort.NamedServicePort = resources.NamedServicePort{
 				Port: externalListener.Port,
 				Name: portName,
 			}
 		} else {
-			externalPort.Port = &resources.NamedServicePort{
+			// if port is not set for Kafka API, we default to internal + 1
+			externalPort.NamedServicePort = resources.NamedServicePort{
 				Port: internalListener.Port + 1,
 				Name: portName,
 			}
@@ -94,7 +93,7 @@ func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 		if externalListener.External.Bootstrap != nil {
 			externalPort.ExternalBootstrap = &resources.NamedServicePort{
 				Port:       externalListener.External.Bootstrap.Port,
-				TargetPort: externalPort.Port.Port,
+				TargetPort: externalPort.NamedServicePort.Port,
 				Name:       portName + "-bootstrap",
 			}
 		}
@@ -106,17 +105,16 @@ func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 			Name: resources.AdminPortName,
 		}
 	}
-	if adminAPIExternal != nil && !adminAPIExternal.External.NoPortExposure {
+	if adminAPIExternal != nil && !adminAPIExternal.External.ExcludeFromService {
 		externalPort := ExternalPortDefinition{}
 		if adminAPIExternal.Port != 0 {
-			// if port is defined, we use the port as external port
-			externalPort.Port = &resources.NamedServicePort{
+			externalPort.NamedServicePort = resources.NamedServicePort{
 				Port: adminAPIExternal.Port,
 				Name: resources.AdminPortExternalName,
 			}
 		} else {
-			// for admin API, we default to internal + 1
-			externalPort.Port = &resources.NamedServicePort{
+			// if port is not set for admin API, we default to internal + 1
+			externalPort.NamedServicePort = resources.NamedServicePort{
 				Port: adminAPIInternal.Port + 1,
 				Name: resources.AdminPortExternalName,
 			}
@@ -131,21 +129,20 @@ func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 		}
 
 		for i, proxyAPIExternal := range proxyAPIExternals {
-			if proxyAPIExternal.External.NoPortExposure {
+			if proxyAPIExternal.External.ExcludeFromService {
 				continue
 			}
 
 			externalPort := ExternalPortDefinition{}
 			portName := getPortName(proxyAPIExternal.Name, resources.PandaproxyPortExternalName, i)
 			if proxyAPIExternal.Port != 0 {
-				// if port is defined, we use the port as external port
-				externalPort.Port = &resources.NamedServicePort{
+				externalPort.NamedServicePort = resources.NamedServicePort{
 					Port: proxyAPIExternal.Port,
 					Name: portName,
 				}
 			} else {
-				// for pandaproxy, we default to internal + 1
-				externalPort.Port = &resources.NamedServicePort{
+				// if port is not set for pandaproxy, we default to internal + 1
+				externalPort.NamedServicePort = resources.NamedServicePort{
 					Port: proxyAPIInternal.Port + 1,
 					Name: portName,
 				}
@@ -155,22 +152,22 @@ func NewRedpandaPorts(rpCluster *vectorizedv1alpha1.Cluster) *RedpandaPorts {
 		}
 	}
 
-	for i, sr := range rpCluster.AllSchemaRegistryListeners() {
+	for i, sr := range rpCluster.SchemaRegistryListeners() {
 		externalPort := ExternalPortDefinition{}
 		portName := getPortName(sr.Name, resources.SchemaRegistryPortName, i)
-		schemaRegistryPort := &resources.NamedServicePort{
+		schemaRegistryPort := resources.NamedServicePort{
 			Port: sr.Port,
 			Name: portName,
 		}
 		if sr.IsExternallyAvailable() {
-			if sr.External.NoPortExposure {
+			if sr.External.ExcludeFromService {
 				continue
 			}
-			externalPort.Port = schemaRegistryPort
+			externalPort.NamedServicePort = schemaRegistryPort
 			externalPort.ExternalPortIsGenerated = !sr.External.StaticNodePort
 			result.SchemaRegistry.External = append(result.SchemaRegistry.External, externalPort)
 		} else {
-			result.SchemaRegistry.Internal = schemaRegistryPort
+			result.SchemaRegistry.Internal = &schemaRegistryPort
 		}
 	}
 
@@ -185,20 +182,7 @@ func (pd PortsDefinition) ToNamedServiceNodePorts() []resources.NamedServiceNode
 	}
 	namedPorts := make([]resources.NamedServiceNodePort, 0, len(pd.External))
 	for _, port := range pd.External {
-		namedPorts = append(namedPorts, resources.NamedServiceNodePort{NamedServicePort: *port.Port, GenerateNodePort: port.ExternalPortIsGenerated})
-	}
-	return namedPorts
-}
-
-// ToNamedServicePorts returns named ports if available for given API. If
-// no external port is defined, this will be nil
-func (pd PortsDefinition) ToNamedServicePorts() []resources.NamedServicePort {
-	if pd.External == nil {
-		return nil
-	}
-	namedPorts := make([]resources.NamedServicePort, 0, len(pd.External))
-	for _, port := range pd.External {
-		namedPorts = append(namedPorts, *port.Port)
+		namedPorts = append(namedPorts, resources.NamedServiceNodePort{NamedServicePort: port.NamedServicePort, GenerateNodePort: port.ExternalPortIsGenerated})
 	}
 	return namedPorts
 }
@@ -209,16 +193,4 @@ func (pd PortsDefinition) InternalPort() *int {
 		return nil
 	}
 	return &pd.Internal.Port
-}
-
-// ExternalPorts returns ports of the external listeners
-func (pd PortsDefinition) ExternalPorts() []int {
-	if pd.External == nil {
-		return nil
-	}
-	ports := make([]int, 0, len(pd.External))
-	for _, port := range pd.External {
-		ports = append(ports, port.Port.Port)
-	}
-	return ports
 }
