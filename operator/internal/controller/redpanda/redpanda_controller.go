@@ -399,9 +399,15 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 			continue
 		}
 
+		var errs []error
+
 		// TODO: how to handle immutable issues?
 		if err := r.apply(ctx, obj); err != nil {
-			return errors.Wrapf(err, "deploying %T: %q", obj, obj.GetName())
+			errs = append(errs, errors.Wrapf(err, "deploying %T: %q", obj, obj.GetName()))
+		}
+
+		if len(errs) > 0 {
+			return errors.Join(errs...)
 		}
 
 		log.V(logger.TraceLevel).Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))

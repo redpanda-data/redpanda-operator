@@ -13,12 +13,14 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,6 +31,17 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
+
+var releaseBranch string
+
+func init() {
+	branch, err := fs.ReadFile(os.DirFS("../.."), "RELEASE_BRANCH")
+	if err != nil {
+		log.Println("WARNING: unable to determine target release branch")
+		return
+	}
+	releaseBranch = strings.TrimSpace(string(branch))
+}
 
 type ChartYAML struct {
 	Version     string            `json:"version"`
@@ -307,10 +320,26 @@ Dependencies on commits from github.com/redpanda-data/redpanda-operator modules 
 	}
 }
 
+var (
+	releaseFetchOnce sync.Once
+	fetchErr         error
+)
+
+func fetchReleaseBranch(branch string) bool {
+	releaseFetchOnce.Do(func() {
+		fetchErr = exec.Command("git", "fetch", "origin", branch).Run()
+	})
+
+	return fetchErr == nil
+}
+
 func presentInMainOrRelease(shortSha string) bool {
 	isAncestor := func(ancestor, commitish string) bool {
 		err := exec.Command("git", "merge-base", "--is-ancestor", ancestor, commitish).Run()
 		return err == nil
 	}
-	return isAncestor(shortSha, "main") // TODO include release branches
+	if releaseBranch != "" && fetchReleaseBranch(releaseBranch) && isAncestor(shortSha, "origin/"+releaseBranch) {
+		return true
+	}
+	return isAncestor(shortSha, "main")
 }

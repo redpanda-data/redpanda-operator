@@ -31,6 +31,10 @@ For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions
 * Toggling `useFlux`, in either direction, no longer causes the bootstrap user's password to be regenerated.
 
   Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
+* Reverse order of applying resources to first create ClusterRole and then ClusterRoleBinding.
+  When Redpanda custom resource has enabled RBAC the reconciliation was blocked due
+  ClusterRoleBinding referencing not yet created ClusterRole.
+
 
 ## v2.3.6-24.3.3 - 2025-01-17
 ### Added
