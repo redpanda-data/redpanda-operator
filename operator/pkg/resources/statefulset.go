@@ -998,18 +998,19 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 }
 
 func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
-	for _, k := range r.pandaCluster.Spec.Configuration.KafkaAPI {
-		if !k.External.Enabled || k.Name == DefaultExternalKafkaListenerName {
+	listeners := r.pandaCluster.AllKafkaAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalKafkaListenerName {
 			continue
 		}
-		port := strconv.Itoa(k.Port)
+		port := strconv.Itoa(l.Port)
 		advertisedPort := port
-		if k.External.PortTemplate != "" {
-			advertisedPort = k.External.PortTemplate
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
 		}
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
-			Name:    k.Name,
-			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
 			Port:    advertisedPort,
 		})
 	}
@@ -1017,18 +1018,19 @@ func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlist
 }
 
 func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
-	for _, k := range r.pandaCluster.Spec.Configuration.PandaproxyAPI {
-		if !k.External.Enabled || k.Name == DefaultExternalProxyListenerName {
+	listeners := r.pandaCluster.AllPandaproxyAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalProxyListenerName {
 			continue
 		}
-		port := strconv.Itoa(k.Port)
+		port := strconv.Itoa(l.Port)
 		advertisedPort := port
-		if k.External.PortTemplate != "" {
-			advertisedPort = k.External.PortTemplate
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
 		}
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
-			Name:    k.Name,
-			Address: fmt.Sprintf("%s.%s", k.External.EndpointTemplate, k.External.Subdomain),
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
 			Port:    advertisedPort,
 		})
 	}

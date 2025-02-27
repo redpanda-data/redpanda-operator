@@ -114,6 +114,217 @@ func TestEnsureConfigMap(t *testing.T) {
 	}
 }
 
+// validateTLS checks whether TLS1 is equal to TLS2.
+func validateTLS[V any](t *testing.T, cfg1, cfg2 []V, getName func(V) string) {
+	require.Equal(t, len(cfg1), len(cfg2))
+
+	m := map[string]*V{}
+	for i := 0; i < len(cfg1); i++ {
+		m[getName(cfg1[i])] = &cfg1[i]
+	}
+
+	for _, c := range cfg2 {
+		v, found := m[getName(c)]
+		require.True(t, found, "name", getName(c))
+		require.Equal(t, *v, c)
+	}
+}
+
+// validateAuthNListeners checks whether listeners1 is equal to listeners2.
+func validateAuthNListeners(t *testing.T, cfg1, cfg2 []config.NamedAuthNSocketAddress) {
+	require.Equal(t, len(cfg1), len(cfg2))
+
+	m := map[string]*config.NamedAuthNSocketAddress{}
+	for i := 0; i < len(cfg1); i++ {
+		m[cfg1[i].Name] = &cfg1[i]
+	}
+
+	for _, c := range cfg2 {
+		v, found := m[c.Name]
+		require.True(t, found, "name", c.Name)
+		require.Equal(t, v.Address, c.Address)
+		require.Equal(t, v.Port, c.Port)
+		require.Equal(t, *v.AuthN, *c.AuthN)
+	}
+}
+
+func TestMultiExternalListenersConfigMap(t *testing.T) {
+	sasl := "sasl"
+	httpBasic := "http_basic"
+	mtls := "mtls_identity"
+
+	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
+	cluster := pandaCluster().DeepCopy()
+	cluster.Spec.Configuration.KafkaAPI[0] = vectorizedv1alpha1.KafkaAPI{AuthenticationMethod: sasl, Port: 30001, Name: "kafka"}
+	cluster.Spec.Configuration.KafkaAPI = append(cluster.Spec.Configuration.KafkaAPI,
+		vectorizedv1alpha1.KafkaAPI{
+			AuthenticationMethod: "sasl", Port: 30002,
+			External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
+			TLS:      vectorizedv1alpha1.KafkaAPITLS{Enabled: true},
+		},
+		vectorizedv1alpha1.KafkaAPI{
+			Name: "kafka-mtls", AuthenticationMethod: mtls, Port: 30003,
+			External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
+			TLS:      vectorizedv1alpha1.KafkaAPITLS{Enabled: true, RequireClientAuth: true, ClientCACertRef: &corev1.TypedLocalObjectReference{Name: "kafka-ca-secret", Kind: "secret"}},
+		},
+	)
+	cluster.Spec.Configuration.PandaproxyAPI = append(cluster.Spec.Configuration.PandaproxyAPI,
+		vectorizedv1alpha1.PandaproxyAPI{AuthenticationMethod: httpBasic, Port: 30010},
+		vectorizedv1alpha1.PandaproxyAPI{
+			AuthenticationMethod: httpBasic, Port: 30011,
+			External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+			TLS:      vectorizedv1alpha1.PandaproxyAPITLS{Enabled: true},
+		},
+		vectorizedv1alpha1.PandaproxyAPI{
+			Name: "proxy-mtls", AuthenticationMethod: mtls, Port: 30012,
+			External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+			TLS:      vectorizedv1alpha1.PandaproxyAPITLS{Enabled: true, RequireClientAuth: true, ClientCACertRef: &corev1.TypedLocalObjectReference{Name: "proxy-ca-secret", Kind: "secret"}},
+		},
+	)
+	cluster.Spec.Configuration.SchemaRegistry = &vectorizedv1alpha1.SchemaRegistryAPI{
+		Port: 30020, AuthenticationMethod: httpBasic,
+		External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{StaticNodePort: true, ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+		TLS:      &vectorizedv1alpha1.SchemaRegistryAPITLS{Enabled: true},
+	}
+	cluster.Spec.Configuration.AdditionalSchemaRegistry = []vectorizedv1alpha1.SchemaRegistryAPI{
+		{
+			Name: "sr-mtls", AuthenticationMethod: mtls, Port: 30021,
+			External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{StaticNodePort: true, ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+			TLS:      &vectorizedv1alpha1.SchemaRegistryAPITLS{Enabled: true, RequireClientAuth: true, ClientCACertRef: &corev1.TypedLocalObjectReference{Name: "sr-ca-secret", Kind: "secret"}},
+		},
+	}
+
+	clusterListenerNamesSpecified := cluster.DeepCopy()
+	clusterListenerNamesSpecified.Spec.Configuration.KafkaAPI[1].Name = "kafka-sasl"
+	clusterListenerNamesSpecified.Spec.Configuration.PandaproxyAPI[1].Name = "proxy-sasl"
+	clusterListenerNamesSpecified.Spec.Configuration.SchemaRegistry.Name = "sr-sasl"
+
+	testcases := []struct {
+		name                      string
+		cluster                   vectorizedv1alpha1.Cluster
+		expectedKafka             []config.NamedAuthNSocketAddress
+		expectedPandaproxy        []config.NamedAuthNSocketAddress
+		expectedSchemaRegistry    []config.NamedAuthNSocketAddress
+		expectedKafkaTLS          []config.ServerTLS
+		expectedPandaproxyTLS     []config.ServerTLS
+		expectedSchemaRegistryTLS []config.ServerTLS
+	}{
+		{
+			name:    "Mutli external listeners",
+			cluster: *cluster,
+			expectedKafka: []config.NamedAuthNSocketAddress{
+				{Name: "kafka", AuthN: &sasl, Address: "0.0.0.0", Port: 30001},
+				{Name: "kafka-external", AuthN: &sasl, Address: "0.0.0.0", Port: 30002},
+				{Name: "kafka-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30003},
+			},
+			expectedPandaproxy: []config.NamedAuthNSocketAddress{
+				{Name: "proxy", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30010},
+				{Name: "proxy-external", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30011},
+				{Name: "proxy-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30012},
+			},
+			expectedSchemaRegistry: []config.NamedAuthNSocketAddress{
+				{Name: "schema-registry", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30020},
+				{Name: "sr-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30021},
+			},
+			expectedKafkaTLS: []config.ServerTLS{
+				{Name: "kafka-external", KeyFile: "/etc/tls/certs/tls.key", CertFile: "/etc/tls/certs/tls.crt", Enabled: true},
+				{Name: "kafka-mtls", KeyFile: "/etc/tls/certs/tls.key", CertFile: "/etc/tls/certs/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/ca/ca.crt"},
+			},
+			expectedPandaproxyTLS: []config.ServerTLS{
+				{Name: "proxy-external", KeyFile: "/etc/tls/certs/pandaproxy/tls.key", CertFile: "/etc/tls/certs/pandaproxy/tls.crt", Enabled: true},
+				{Name: "proxy-mtls", KeyFile: "/etc/tls/certs/pandaproxy/tls.key", CertFile: "/etc/tls/certs/pandaproxy/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/pandaproxy/ca/ca.crt"},
+			},
+			expectedSchemaRegistryTLS: []config.ServerTLS{
+				{Name: "schema-registry", KeyFile: "/etc/tls/certs/schema-registry/tls.key", CertFile: "/etc/tls/certs/schema-registry/tls.crt", Enabled: true},
+				{Name: "sr-mtls", KeyFile: "/etc/tls/certs/schema-registry/tls.key", CertFile: "/etc/tls/certs/schema-registry/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/schema-registry/ca/ca.crt"},
+			},
+		},
+		{
+			name:    "Multiple external listeners with all listener names specified",
+			cluster: *clusterListenerNamesSpecified,
+			expectedKafka: []config.NamedAuthNSocketAddress{
+				{Name: "kafka", AuthN: &sasl, Address: "0.0.0.0", Port: 30001},
+				{Name: "kafka-sasl", AuthN: &sasl, Address: "0.0.0.0", Port: 30002},
+				{Name: "kafka-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30003},
+			},
+			expectedPandaproxy: []config.NamedAuthNSocketAddress{
+				{Name: "proxy", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30010},
+				{Name: "proxy-sasl", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30011},
+				{Name: "proxy-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30012},
+			},
+			expectedSchemaRegistry: []config.NamedAuthNSocketAddress{
+				{Name: "sr-sasl", AuthN: &httpBasic, Address: "0.0.0.0", Port: 30020},
+				{Name: "sr-mtls", AuthN: &mtls, Address: "0.0.0.0", Port: 30021},
+			},
+			expectedKafkaTLS: []config.ServerTLS{
+				{Name: "kafka-sasl", KeyFile: "/etc/tls/certs/tls.key", CertFile: "/etc/tls/certs/tls.crt", Enabled: true},
+				{Name: "kafka-mtls", KeyFile: "/etc/tls/certs/tls.key", CertFile: "/etc/tls/certs/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/ca/ca.crt"},
+			},
+			expectedPandaproxyTLS: []config.ServerTLS{
+				{Name: "proxy-sasl", KeyFile: "/etc/tls/certs/pandaproxy/tls.key", CertFile: "/etc/tls/certs/pandaproxy/tls.crt", Enabled: true},
+				{Name: "proxy-mtls", KeyFile: "/etc/tls/certs/pandaproxy/tls.key", CertFile: "/etc/tls/certs/pandaproxy/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/pandaproxy/ca/ca.crt"},
+			},
+			expectedSchemaRegistryTLS: []config.ServerTLS{
+				{Name: "sr-sasl", KeyFile: "/etc/tls/certs/schema-registry/tls.key", CertFile: "/etc/tls/certs/schema-registry/tls.crt", Enabled: true},
+				{Name: "sr-mtls", KeyFile: "/etc/tls/certs/schema-registry/tls.key", CertFile: "/etc/tls/certs/schema-registry/tls.crt", Enabled: true, RequireClientAuth: true, TruststoreFile: "/etc/tls/certs/schema-registry/ca/ca.crt"},
+			},
+		},
+	}
+	for i, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().Build()
+			secret := corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "archival",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"archival": []byte("XXX"),
+				},
+			}
+			require.NoError(t, c.Create(context.TODO(), &secret))
+			cfgRes := resources.NewConfigMap(
+				c,
+				&testcases[i].cluster,
+				scheme.Scheme,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+				ctrl.Log.WithName("test"))
+			require.NoError(t, cfgRes.Ensure(context.TODO()))
+
+			actual := &corev1.ConfigMap{}
+			err := c.Get(context.Background(), cfgRes.Key(), actual)
+			require.NoError(t, err)
+
+			data := actual.Data["redpanda.yaml"]
+			cfg := config.ProdDefault()
+			err = yaml.Unmarshal([]byte(data), cfg)
+			require.NoError(t, err)
+
+			if len(tc.expectedKafka) > 0 {
+				validateAuthNListeners(t, tc.expectedKafka, cfg.Redpanda.KafkaAPI)
+			}
+			if len(tc.expectedPandaproxy) > 0 {
+				validateAuthNListeners(t, tc.expectedPandaproxy, cfg.Pandaproxy.PandaproxyAPI)
+			}
+			if len(tc.expectedSchemaRegistry) > 0 {
+				validateAuthNListeners(t, tc.expectedSchemaRegistry, cfg.SchemaRegistry.SchemaRegistryAPI)
+			}
+			if len(tc.expectedKafkaTLS) > 0 {
+				validateTLS(t, tc.expectedKafkaTLS, cfg.Redpanda.KafkaAPITLS, func(c config.ServerTLS) string { return c.Name })
+			}
+			if len(tc.expectedPandaproxyTLS) > 0 {
+				validateTLS(t, tc.expectedPandaproxyTLS, cfg.Pandaproxy.PandaproxyAPITLS, func(c config.ServerTLS) string { return c.Name })
+			}
+			if len(tc.expectedSchemaRegistryTLS) > 0 {
+				validateTLS(t, tc.expectedSchemaRegistryTLS, cfg.SchemaRegistry.SchemaRegistryAPITLS, func(c config.ServerTLS) string { return c.Name })
+			}
+		})
+	}
+}
+
 func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
 

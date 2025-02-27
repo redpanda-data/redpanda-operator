@@ -1243,14 +1243,11 @@ func (r *Cluster) AllSchemaRegistryListeners() []SchemaRegistryAPI {
 	if r == nil || r.Spec.Configuration.SchemaRegistry == nil {
 		return nil
 	}
-	res := []SchemaRegistryAPI{*r.Spec.Configuration.SchemaRegistry}
-	for _, sr := range r.Spec.Configuration.AdditionalSchemaRegistry {
-		if sr.Name == "" {
-			sr.Name = SchemaRegistryExternalListenerName
-		}
-		res = append(res, sr)
+	if r.Spec.Configuration.SchemaRegistry.Name == "" {
+		r.Spec.Configuration.SchemaRegistry.Name = SchemaRegistryExternalListenerName
 	}
-	return res
+	res := []SchemaRegistryAPI{*r.Spec.Configuration.SchemaRegistry}
+	return append(res, r.Spec.Configuration.AdditionalSchemaRegistry...)
 }
 
 // IsSchemaRegistryExternallyAvailable returns true if schema registry
