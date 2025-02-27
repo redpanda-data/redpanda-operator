@@ -15,6 +15,8 @@ import (
 	"regexp"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
@@ -62,186 +64,137 @@ var AdditionalListenerCfgNames = []string{
 	SchemaRegistryAPIConfigTLSPath,
 }
 
-// listenerTemplateSpec defines the external listener.
-type listenerTemplateSpec struct {
-	Name                 string
-	Address              string
-	Port                 string
-	AuthenticationMethod string
+// TemplateInt defines for a template used to compute an integer value, like port {{39002 | add .Index}}
+type TemplatedInt string
+
+const (
+	removeQuote          = "removequote"
+	removeQuoteRegexStr  = `"` + removeQuote + `|` + removeQuote + `"`
+	portTemplateRegexStr = `'port'\s*:\s*\{\{.*?\}\}`
+)
+
+var (
+	regexRemoveQuotes    = regexp.MustCompile(removeQuoteRegexStr)
+	regexAddSingleQuotes = regexp.MustCompile(portTemplateRegexStr)
+)
+
+// MarshalJSON converts a TemplatedInt into a templated string. Since the final port value must be
+// an integer rather than a string, we encode it using the "removequote" marker to ensure the
+// quotes are stripped, allowing the port to be interpreted as an integer.
+func (t TemplatedInt) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s%s%s"`, removeQuote, t, removeQuote)), nil
 }
 
-// Encode returns the listenerTemplateSpec as a string in the format as below:
-// {'name':'private-link-kafka','address':'0.0.0.0','port':{{39002 | add .Index}},'authentication_method':'sasl'}
-func (l *listenerTemplateSpec) Encode() string {
-	args := []any{l.Name}
-	s := "{'name':'%s'"
-	if l.Address != "" {
-		s += ",'address':'%s'"
-		args = append(args, l.Address)
-	}
-	if l.Port != "" {
-		s += ",'port':%s"
-		args = append(args, l.Port)
-	}
-	if l.AuthenticationMethod != "" {
-		s += ",'authentication_method':'%s'"
-		args = append(args, l.AuthenticationMethod)
-	}
-	s += "}"
-	return fmt.Sprintf(s, args...)
+// listenerTemplateSpec defines the external listener.
+type listenerTemplateSpec struct {
+	Name                 string       `json:"name" yaml:"name" `
+	Address              string       `json:"address,omitempty" yaml:"address,omitempty"`
+	Port                 TemplatedInt `json:"port,omitempty" yaml:"port,omitempty"`
+	AuthenticationMethod string       `json:"authentication_method,omitempty" yaml:"authentication_method,omitempty"`
 }
 
 // tlsTemplateSpec defines the TLS configuration for a listener.
 type tlsTemplateSpec struct {
-	Name              string
-	KeyFile           string
-	CertFile          string
-	TruststoreFile    string
-	RequireClientAuth bool
-}
-
-// Encode returns the tlsTemplateSpec as a string in the format as below:
-// {'name':'mtls-kafka','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt','truststore_file':'/etc/tls/certs/schema-registry/ca.crt','required_client_auth':true}
-func (t *tlsTemplateSpec) Encode() string {
-	args := []any{t.Name}
-	s := "{'name':'%s'"
-	if t.KeyFile != "" {
-		s += ",'key_file':'%s'"
-		args = append(args, t.KeyFile)
-	}
-	if t.CertFile != "" {
-		s += ",'cert_file':'%s'"
-		args = append(args, t.CertFile)
-	}
-	if t.TruststoreFile != "" {
-		s += ",'truststore_file':'%s'"
-		args = append(args, t.TruststoreFile)
-	}
-	if t.RequireClientAuth {
-		s += ",'require_client_auth':%t"
-		args = append(args, t.RequireClientAuth)
-	}
-	s += "}"
-	return fmt.Sprintf(s, args...)
+	Name              string `json:"name" yaml:"name"`
+	KeyFile           string `json:"key_file,omitempty" yaml:"key_file,omitempty"`
+	CertFile          string `json:"cert_file,omitempty" yaml:"cert_file,omitempty"`
+	TruststoreFile    string `json:"truststore_file,omitempty" yaml:"truststore_file,omitempty"`
+	RequireClientAuth bool   `json:"require_client_auth,omitempty" yaml:"require_client_auth,omitempty"`
 }
 
 // allListenersTemplateSpec defines all the external listeners.
-// The encoded value will be passed to the configurator for configuring the listeners at the init time.
+// The encoded value will be passed to Configurator via ADDITIONAL_LISTENERS env for configuring additional listeners.
 type allListenersTemplateSpec struct {
-	KafkaListeners           []listenerTemplateSpec
-	KafkaAdvertisedListeners []listenerTemplateSpec
-	KafkaTLSSpec             []tlsTemplateSpec
-	ProxyListeners           []listenerTemplateSpec
-	ProxyAdvertisedListeners []listenerTemplateSpec
-	ProxyTLSSpec             []tlsTemplateSpec
-	SchemaRegistryListeners  []listenerTemplateSpec
-	SchemaRegistryTLSSpec    []tlsTemplateSpec
+	KafkaListeners           []listenerTemplateSpec `json:"redpanda.kafka_api,omitempty" yaml:"redpanda.kafka_api,omitempty"`
+	KafkaAdvertisedListeners []listenerTemplateSpec `json:"redpanda.advertised_kafka_api,omitempty" yaml:"redpanda.advertised_kafka_api,omitempty"`
+	KafkaTLSSpec             []tlsTemplateSpec      `json:"redpanda.kafka_api_tls,omitempty" yaml:"redpanda.kafka_api_tls,omitempty"`
+	ProxyListeners           []listenerTemplateSpec `json:"pandaproxy.pandaproxy_api,omitempty" yaml:"pandaproxy.pandaproxy_api,omitempty"`
+	ProxyAdvertisedListeners []listenerTemplateSpec `json:"pandaproxy.advertised_pandaproxy_api,omitempty" yaml:"pandaproxy.advertised_pandaproxy_api,omitempty"`
+	ProxyTLSSpec             []tlsTemplateSpec      `json:"pandaproxy.pandaproxy_api_tls,omitempty" yaml:"pandaproxy.pandaproxy_api_tls,omitempty"`
+	SchemaRegistryListeners  []listenerTemplateSpec `json:"schema_registry.schema_registry_api,omitempty" yaml:"schema_registry.schema_registry_api,omitempty"`
+	SchemaRegistryTLSSpec    []tlsTemplateSpec      `json:"schema_registry.schema_registry_api_tls,omitempty" yaml:"schema_registry.schema_registry_api_tls,omitempty"`
 }
 
 // Encode returns the allListenersTemplateSpec as a string in the format as below:
+// The port value can be a templated integer in string without quotes, like {{39002 | add .Index}}
 //
 //	{
-//	   "redpanda.advertised_kafka_api":"[{'name':'pl-kafka-external','port':{{32092 | add .Index | add .HostIndexOffset}}},{'name':'kafka-mtls','port': 30094}]",
-//	   "redpanda.kafka_api":"[{'name':'pl-kafka-external','address':'0.0.0.0','port':32092,{'name':'kafka-mtls','address':'0.0.0.0','port':30094}]",
-//	   "pandaproxy.advertised_pandaproxy_api":"[{'name':'pl-proxy-external','port':{{35082 | add .Index | add .HostIndexOffset}}},{'name':'proxy-mtls','port':30084}]",
-//	   "pandaproxy.pandaproxy_api":"[{'name':'pl-proxy-external','address':'0.0.0.0','port':31082},{'name':'proxy-mtls','address':'0.0.0.0','port':30084}]",
-//	   "schema_registry.schema_registry_api":"[{'name':'schema-registry','address':'0.0.0.0','port': 30081},{'name':'schema-registry-mtls','address':'0.0.0.0','port':30083}]"
-//	   "redpanda.kafka_api_tls":"[{'name':'pl-kafka-external','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt'},{'name':'kafka-mtls','truststore_file':'/etc/tls/certs/schema-registry/ca.crt']",
-//	   "pandaproxy.pandaproxy_api_tls":"[{'name':'pl-proxy-external','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt'},{'name':'schema-registry-mtls','truststore_file':'/etc/tls/certs/schema-registry/ca.crt']",
-//	   "schema_registry.schema_registry_api_tls":"[{'name':'schema-registry','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt'},{'name':'schema-registry-mtls','truststore_file':'/etc/tls/certs/schema-registry/ca.crt']"
+//	   "redpanda.advertised_kafka_api":[{"name":"pl-kafka-external","port":{{32092 | add .Index | add .HostIndexOffset}}},{"name":"kafka-mtls","port": 30094}],
+//	   "redpanda.kafka_api":[{"name":"pl-kafka-external","address":"0.0.0.0","port":32092,{"name":"kafka-mtls","address":"0.0.0.0","port":30094}],
+//	   "pandaproxy.advertised_pandaproxy_api":[{"name":"pl-proxy-external","port":{{35082 | add .Index | add .HostIndexOffset}}},{"name":"proxy-mtls","port":30084}],
+//	   "pandaproxy.pandaproxy_api":[{"name":"pl-proxy-external","address":"0.0.0.0","port":31082},{"name":"proxy-mtls","address":"0.0.0.0","port":30084}],
+//	   "schema_registry.schema_registry_api":[{"name":"schema-registry","address":"0.0.0.0","port": 30081},{"name":"schema-registry-mtls","address":"0.0.0.0","port":30083}]
+//	   "redpanda.kafka_api_tls":[{"name":"pl-kafka-external","key_file":"/etc/tls/certs/schema-registry/tls.key","cert_file":"/etc/tls/certs/schema-registry/tls.crt"},{"name":"kafka-mtls","truststore_file":"/etc/tls/certs/schema-registry/ca.crt"],
+//	   "pandaproxy.pandaproxy_api_tls":[{"name":"pl-proxy-external","key_file":"/etc/tls/certs/schema-registry/tls.key","cert_file":"/etc/tls/certs/schema-registry/tls.crt"},{"name":"schema-registry-mtls","truststore_file":"/etc/tls/certs/schema-registry/ca.crt"],
+//	   "schema_registry.schema_registry_api_tls":[{"name":"schema-registry","key_file":"/etc/tls/certs/schema-registry/tls.key","cert_file":"/etc/tls/certs/schema-registry/tls.crt"},{"name":"schema-registry-mtls","truststore_file":"/etc/tls/certs/schema-registry/ca.crt"]
 //	}
-func (a *allListenersTemplateSpec) Encode() string {
-	encodeListeners := func(listeners []listenerTemplateSpec) string {
-		encoded := []string{}
-		for _, l := range listeners {
-			encoded = append(encoded, l.Encode())
-		}
-		return strings.Join(encoded, ",")
-	}
-	encodeTLSSpecs := func(listeners []tlsTemplateSpec) string {
-		encoded := []string{}
-		for _, l := range listeners {
-			encoded = append(encoded, l.Encode())
-		}
-		return strings.Join(encoded, ",")
-	}
-
-	s := "{\n"
-	args := []any{}
-
-	for _, v := range []struct {
-		key string
-		val []listenerTemplateSpec
-	}{
-		{KafkaAPIConfigPath, a.KafkaListeners},
-		{AdvertisedKafkaAPIConfigPath, a.KafkaAdvertisedListeners},
-		{PandaproxyAPIConfigPath, a.ProxyListeners},
-		{AdvertisedPandaproxyAPIConfigPath, a.ProxyAdvertisedListeners},
-		{SchemaRegistryAPIConfigPath, a.SchemaRegistryListeners},
-	} {
-		if len(v.val) > 0 {
-			if len(args) > 0 {
-				s += ",\n"
-			}
-			s += `"` + v.key + `":"[%s]"`
-			args = append(args, encodeListeners(v.val))
-		}
-	}
-
-	for _, v := range []struct {
-		key string
-		val []tlsTemplateSpec
-	}{
-		{KafkaAPIConfigTLSPath, a.KafkaTLSSpec},
-		{PandaproxyAPIConfigTLSPath, a.ProxyTLSSpec},
-		{SchemaRegistryAPIConfigTLSPath, a.SchemaRegistryTLSSpec},
-	} {
-		if len(v.val) > 0 {
-			if len(args) > 0 {
-				s += ",\n"
-			}
-			s += `"` + v.key + `":"[%s]"`
-			args = append(args, encodeTLSSpecs(v.val))
-		}
-	}
-
-	s += "\n}"
-	return fmt.Sprintf(s, args...)
-}
-
-// Concat concatenates the given spec1 with the current spec.
-// For each of the keys in the given spec1, the value is concatenated with the value in the current spec.
-// The concatenated value is a list of listeners printed as a string.
-//
-//	vaule1 = [{'name':'mtls-kafka','port':{{9094 | add .Index | add .HostIndexOffset}}}]
-//	value2 = [{'name':'sasl-kafka','port': {{9092 | add .Index | add .HostIndexOffset}}}]
-//	Concat value = [{'name':'mtls-kafka','port':{{9094 | add .Index | add .HostIndexOffset}},{'name':'pl2-kafka','port': {{9092 | add .Index | add .HostIndexOffset}}}]
-func (a *allListenersTemplateSpec) Concat(spec1 map[string]string) (string, error) {
-	regex := regexp.MustCompile(`\[(.*)\]`)
-	encoded := a.Encode()
-	spec := map[string]string{}
-	err := json.Unmarshal([]byte(encoded), &spec)
+func (a *allListenersTemplateSpec) Encode() (string, error) {
+	s, err := json.Marshal(a)
 	if err != nil {
 		return "", err
 	}
-	for k, v1 := range spec1 {
-		matches1 := regex.FindStringSubmatch(v1)
-		if len(matches1) < 2 {
-			return "", fmt.Errorf("invalid value for key %s: %s", k, v1)
-		}
-		v := spec[k]
-		if v == "" {
-			spec[k] = v1
-			continue
-		}
-		matches := regex.FindStringSubmatch(v)
-		if len(matches) < 2 {
-			return "", fmt.Errorf("invalid value for key %s: %s", k, v)
-		}
-		spec[k] = fmt.Sprintf("[%s,%s]", matches[1], matches1[1])
+	return regexRemoveQuotes.ReplaceAllString(string(s), ""), nil
+}
+
+// Append adds the listener configs in the given spec1 to the current spec.
+//
+//	input = [{'name':'mtls-kafka','port':{{9094 | add .Index | add .HostIndexOffset}}}]
+//	current = [{"name":"sasl-kafka","port": 9092}]
+//	Final value = [{"name":"mtls-kafka","port":{{9094 | add .Index | add .HostIndexOffset}},{"name":"sasl-kafka","port": 9092}]
+func (a *allListenersTemplateSpec) Append(spec1 map[string]string) (string, error) {
+	inputSpec := &allListenersTemplateSpec{}
+	var err error
+	if len(a.KafkaListeners) == 0 && len(a.KafkaAdvertisedListeners) == 0 && len(a.KafkaTLSSpec) == 0 &&
+		len(a.ProxyListeners) == 0 && len(a.ProxyAdvertisedListeners) == 0 && len(a.ProxyTLSSpec) == 0 &&
+		len(a.SchemaRegistryListeners) == 0 && len(a.SchemaRegistryTLSSpec) == 0 {
+
+		result, err := json.Marshal(spec1)
+		return string(result), err
 	}
 
-	s, err := json.Marshal(spec)
+	for _, cfgName := range AdditionalListenerCfgNames {
+		v, ok := spec1[cfgName]
+		if !ok {
+			continue
+		}
+		// Replace 'port': {{ ... }} with 'port': '{{ ... }}' for working with yaml.Unmarshal
+		v = regexAddSingleQuotes.ReplaceAllStringFunc(v, func(match string) string {
+			index := strings.Index(match, "{{")
+			return "'port':'" + match[index:] + "'"
+		})
+
+		switch cfgName {
+		case KafkaAPIConfigPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.KafkaListeners)
+		case AdvertisedKafkaAPIConfigPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.KafkaAdvertisedListeners)
+		case KafkaAPIConfigTLSPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.KafkaTLSSpec)
+		case PandaproxyAPIConfigPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.ProxyListeners)
+		case AdvertisedPandaproxyAPIConfigPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.ProxyAdvertisedListeners)
+		case PandaproxyAPIConfigTLSPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.ProxyTLSSpec)
+		case SchemaRegistryAPIConfigPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.SchemaRegistryListeners)
+		case SchemaRegistryAPIConfigTLSPath:
+			err = yaml.Unmarshal([]byte(v), &inputSpec.SchemaRegistryTLSSpec)
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	a.KafkaListeners = append(a.KafkaListeners, inputSpec.KafkaListeners...)
+	a.KafkaAdvertisedListeners = append(a.KafkaAdvertisedListeners, inputSpec.KafkaAdvertisedListeners...)
+	a.KafkaTLSSpec = append(a.KafkaTLSSpec, inputSpec.KafkaTLSSpec...)
+	a.ProxyListeners = append(a.ProxyListeners, inputSpec.ProxyListeners...)
+	a.ProxyAdvertisedListeners = append(a.ProxyAdvertisedListeners, inputSpec.ProxyAdvertisedListeners...)
+	a.ProxyTLSSpec = append(a.ProxyTLSSpec, inputSpec.ProxyTLSSpec...)
+	a.SchemaRegistryListeners = append(a.SchemaRegistryListeners, inputSpec.SchemaRegistryListeners...)
+	a.SchemaRegistryTLSSpec = append(a.SchemaRegistryTLSSpec, inputSpec.SchemaRegistryTLSSpec...)
+
+	s, err := a.Encode()
 	if err != nil {
 		return "", err
 	}
