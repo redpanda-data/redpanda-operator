@@ -622,7 +622,7 @@ func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
 		return allErrs
 	}
 	schemaRegistries := []SchemaRegistryAPI{*sr}
-	schemaRegistries = append(schemaRegistries, r.Spec.Configuration.AdditionalSchemaRegistry...)
+	schemaRegistries = append(schemaRegistries, r.Spec.Configuration.SchemaRegistryAPI...)
 	indices := make(map[string]int)
 	for i, schemaRegistry := range schemaRegistries {
 		if _, found := indices[schemaRegistry.Name]; found {
@@ -645,7 +645,7 @@ func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
 			)
 			allErrs = append(allErrs, tlsErrs...)
 		}
-		if !r.IsSchemaRegistryExternallyAvailable() {
+		if !schemaRegistry.IsExternallyAvailable() {
 			return allErrs
 		}
 		kafkaExternal := r.ExternalListener()
@@ -1210,7 +1210,7 @@ func (r *Cluster) checkCollidingPorts() field.ErrorList {
 
 	for i := range ports {
 		for j := len(ports) - 1; j > i; j-- {
-			if ports[i].port == ports[j].port {
+			if ports[i].port == ports[j].port && ports[i].port != 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("configuration", ports[i].name, "port"),
 					ports[i].port,
 					fmt.Sprintf("%s port collide with Spec.Configuration.%s Port", ports[i].name, ports[j].name)))
@@ -1223,19 +1223,19 @@ func (r *Cluster) checkCollidingPorts() field.ErrorList {
 			if ports[i].externalPort != nil {
 				externalPortI = *ports[i].externalPort
 			}
-			if ports[j].externalConnectivity && ports[i].port == externalPortJ {
+			if ports[j].externalConnectivity && ports[i].port == externalPortJ && ports[i].port != 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("configuration", ports[i].name, "port"),
 					ports[i].port,
 					fmt.Sprintf("%s port collide with external %s port", ports[i].name, ports[j].name)))
 			}
 
-			if ports[i].externalConnectivity && externalPortI == ports[j].port {
+			if ports[i].externalConnectivity && externalPortI == ports[j].port && ports[j].port != 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("configuration", ports[i].name, "port"),
 					ports[i].port,
 					fmt.Sprintf("external %s port collide with Spec.Configuration.%s port", ports[i].name, ports[j].name)))
 			}
 
-			if ports[i].externalConnectivity && ports[j].externalConnectivity && externalPortI == externalPortJ {
+			if ports[i].externalConnectivity && ports[j].externalConnectivity && externalPortI == externalPortJ && externalPortI != 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("configuration", ports[i].name, "port"),
 					ports[i].port,
 					fmt.Sprintf("external %s port collide with external %s Port that is not defined in CR", ports[i].name, ports[j].name)))
@@ -1256,17 +1256,22 @@ func (r *Cluster) getAllPorts() []listenersPorts {
 	}
 
 	if internal := r.InternalListener(); internal != nil {
-		externalListener := r.ExternalListener()
-		var externalPort *int
-		if externalListener != nil && externalListener.Port != 0 {
-			externalPort = &externalListener.Port
-		}
 		ports = append(ports, listenersPorts{
 			name:                 "kafkaApi",
 			port:                 internal.Port,
-			externalConnectivity: externalListener != nil,
-			externalPort:         externalPort,
+			externalConnectivity: false,
+			externalPort:         nil,
 		})
+		externalListeners := r.KafkaAPIExternalListeners()
+		for i := range externalListeners {
+			externalListener := &externalListeners[i]
+			ports = append(ports, listenersPorts{
+				name:                 "kafkaApi" + strconv.Itoa(i),
+				port:                 externalListener.Port,
+				externalConnectivity: true,
+				externalPort:         &externalListener.Port,
+			})
+		}
 	}
 
 	if internal := r.AdminAPIInternal(); internal != nil {
@@ -1284,29 +1289,36 @@ func (r *Cluster) getAllPorts() []listenersPorts {
 	}
 
 	if internal := r.PandaproxyAPIInternal(); internal != nil {
-		externalListener := r.PandaproxyAPIExternal()
-		var externalPort *int
-		if externalListener != nil && externalListener.Port != 0 {
-			externalPort = &externalListener.Port
-		}
 		ports = append(ports, listenersPorts{
 			name:                 "pandaproxyApi",
 			port:                 internal.Port,
-			externalConnectivity: r.PandaproxyAPIExternal() != nil,
-			externalPort:         externalPort,
+			externalConnectivity: false,
+			externalPort:         nil,
 		})
+		externalListeners := r.PandaproxyAPIExternalListeners()
+		for i := range externalListeners {
+			externalListener := &externalListeners[i]
+			ports = append(ports, listenersPorts{
+				name:                 "pandaproxyApi" + strconv.Itoa(i),
+				port:                 externalListener.Port,
+				externalConnectivity: true,
+				externalPort:         &externalListener.Port,
+			})
+		}
 	}
 
-	if r.Spec.Configuration.SchemaRegistry != nil {
+	allSchemaRegistry := r.SchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		sr := &allSchemaRegistry[i]
 		var externalConnectivity bool
 		var externalPort *int
-		if ext := r.Spec.Configuration.SchemaRegistry.External; ext != nil && ext.Enabled && ext.StaticNodePort {
+		if ext := sr.External; ext != nil && ext.Enabled && ext.StaticNodePort {
 			externalConnectivity = true
-			externalPort = &r.Spec.Configuration.SchemaRegistry.Port
+			externalPort = &sr.Port
 		}
 		ports = append(ports, listenersPorts{
-			name:                 "schemaRegistryApi",
-			port:                 r.Spec.Configuration.SchemaRegistry.Port,
+			name:                 "schemaRegistryApi" + strconv.Itoa(i),
+			port:                 sr.Port,
 			externalConnectivity: externalConnectivity,
 			externalPort:         externalPort,
 		})

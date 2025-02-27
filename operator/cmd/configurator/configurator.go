@@ -586,35 +586,75 @@ func hostIndex(hostName string) (brokerID, error) {
 	return brokerID(i), err
 }
 
+type allListenersTemplateSpec struct {
+	KafkaListeners           []config.NamedAuthNSocketAddress `json:"redpanda.kafka_api,omitempty" yaml:"redpanda.kafka_api,omitempty"`
+	KafkaAdvertisedListeners []config.NamedSocketAddress      `json:"redpanda.advertised_kafka_api,omitempty" yaml:"redpanda.advertised_kafka_api,omitempty"`
+	KafkaTLS                 []config.ServerTLS               `json:"redpanda.kafka_api_tls,omitempty" yaml:"redpanda.kafka_api_tls,omitempty"`
+	ProxyListeners           []config.NamedAuthNSocketAddress `json:"pandaproxy.pandaproxy_api,omitempty" yaml:"pandaproxy.pandaproxy_api,omitempty"`
+	ProxyAdvertisedListeners []config.NamedSocketAddress      `json:"pandaproxy.advertised_pandaproxy_api,omitempty" yaml:"pandaproxy.advertised_pandaproxy_api,omitempty"`
+	ProxyTLS                 []config.ServerTLS               `json:"pandaproxy.pandaproxy_api_tls,omitempty" yaml:"pandaproxy.pandaproxy_api_tls,omitempty"`
+	SchemaRegistryListeners  []config.NamedAuthNSocketAddress `json:"schema_registry.schema_registry_api,omitempty" yaml:"schema_registry.schema_registry_api,omitempty"`
+	SchemaRegistryTLS        []config.ServerTLS               `json:"schema_registry.schema_registry_api_tls,omitempty" yaml:"schema_registry.schema_registry_api_tls,omitempty"`
+}
+
 // setAdditionalListeners sets the additional listeners in the input Redpanda config.
-// sample additional listeners config string:
-// {"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]","redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{30092 | add .Index}}}]","redpanda.kafka_api":"[{'name': 'private-link-kakfa', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]"}
+// It can take two types of configuration inputs, a structured JSON and a string.
+// It tries to first decode the input as a string (see example below).
+// If fails, it will try to decode it as a structured JSON.
+// sample listeners config string:
+//   - structured: {"pandaproxy.advertised_pandaproxy_api":[{"name":"private-link-proxy","address:"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com","port":{{39282 | add .Index}}}],"pandaproxy.pandaproxy_api":[{"name":"private-link-proxy","address":"0.0.0.0","port":"port":{{39282 | add .Index}}}]}
+//   - string:     {"pandaproxy.advertised_pandaproxy_api":"[{'name':'private-link-proxy','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port':{{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name':'private-link-proxy','address':'0.0.0.0','port':'port':{{39282 | add .Index}}}]"}
 func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.RedpandaYaml, hostIndexOffset int) error {
 	if additionalListenersCfg == "" || additionalListenersCfg == "{}" {
 		return nil
 	}
 
-	additionalListeners := map[string]string{}
-	err := json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
+	additionalListenersCfg, err := utils.Compute(additionalListenersCfg, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
 	if err != nil {
 		return err
 	}
 
-	additionalListenerCfgNames := resources.AdditionalListenerCfgNames
+	structuredDecode := false
+	additionalListeners := map[string]string{}
+	structuredAdditionalListeners := &allListenersTemplateSpec{}
+	err = json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
+	if err != nil {
+		err = json.Unmarshal([]byte(additionalListenersCfg), &structuredAdditionalListeners)
+		if err != nil {
+			return err
+		}
+		structuredDecode = true
+	}
+
 	nodeConfig := config.ProdDefault()
-	for _, k := range additionalListenerCfgNames {
-		if v, found := additionalListeners[k]; found {
-			res, err := utils.Compute(v, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
-			if err != nil {
-				return err
-			}
-			err = config.Set(nodeConfig, k, res)
-			if err != nil {
-				return err
+	if structuredDecode {
+		nodeConfig.Redpanda.KafkaAPI = structuredAdditionalListeners.KafkaListeners
+		nodeConfig.Redpanda.AdvertisedKafkaAPI = structuredAdditionalListeners.KafkaAdvertisedListeners
+		nodeConfig.Redpanda.KafkaAPITLS = structuredAdditionalListeners.KafkaTLS
+		nodeConfig.Pandaproxy.PandaproxyAPI = structuredAdditionalListeners.ProxyListeners
+		nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI = structuredAdditionalListeners.ProxyAdvertisedListeners
+		nodeConfig.Pandaproxy.PandaproxyAPITLS = structuredAdditionalListeners.ProxyTLS
+		nodeConfig.SchemaRegistry.SchemaRegistryAPI = structuredAdditionalListeners.SchemaRegistryListeners
+		nodeConfig.SchemaRegistry.SchemaRegistryAPITLS = structuredAdditionalListeners.SchemaRegistryTLS
+	} else {
+		nodeConfig.Redpanda.KafkaAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.Redpanda.AdvertisedKafkaAPI = []config.NamedSocketAddress{}
+		nodeConfig.Redpanda.KafkaAPITLS = []config.ServerTLS{}
+		nodeConfig.Pandaproxy.PandaproxyAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI = []config.NamedSocketAddress{}
+		nodeConfig.Pandaproxy.PandaproxyAPITLS = []config.ServerTLS{}
+		nodeConfig.SchemaRegistry.SchemaRegistryAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.SchemaRegistry.SchemaRegistryAPITLS = []config.ServerTLS{}
+
+		for _, k := range resources.AdditionalListenerCfgNames {
+			if v, found := additionalListeners[k]; found {
+				err = config.Set(nodeConfig, k, v)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
-
 	// Merge additional listeners to the input config
 	if len(nodeConfig.Redpanda.KafkaAPI) > 0 {
 		setAuthnAdditionalListeners(resources.ExternalListenerName, &cfg.Redpanda.KafkaAPI, nodeConfig.Redpanda.KafkaAPI)
@@ -721,6 +761,11 @@ func setAdditionalAdvertisedListeners(externalListenerName string, advListeners 
 	setTLSConfigForAdditionalListeners(externalListenerName, advertisedListenerNames(additionalAdvListeners), tlsCfgs, additionalTLSCfgs)
 }
 
+// setTLSConfigForAdditionalListeners sets the TLS config in the additional listeners if not set.
+// Each of additionalTLSCfgs might not have all the fields (CertFile, KeyFile, RequiredClientAuth, TruststoreFile) set.
+// The function tries to set each of the unset fields.
+// It looks for the default external listener or the first listener if not found, and
+// use the TLS configuration in the listener to set each of the ServerTLS fields.
 func setTLSConfigForAdditionalListeners(defaultExternalListenerName string, listenerNames []string, tlsCfgs *[]config.ServerTLS, additionalTLSCfgs []config.ServerTLS) {
 	var serverTLSCfg *config.ServerTLS
 	// Find TLS config for the default listener.

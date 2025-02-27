@@ -1,0 +1,85 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: multi-external-listeners
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 256Mi
+    limits:
+      cpu: "100m"
+      memory: 256Mi
+  configuration:
+    additionalCommandlineArguments:
+      default-log-level: trace
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
+    rpcServer:
+      port: 33145
+    kafkaApi:
+    - authenticationMethod: sasl
+      port: 9092
+    - authenticationMethod: mtls_identity
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      port: 30092
+      tls:
+        clientCACertRef:
+          apiGroup: ""
+          kind: Secret
+          name: ml-ca-cert
+        enabled: true
+        requireClientAuth: true
+    pandaproxyApi:
+    - external: {}
+      port: 8082
+      tls: {}
+    - authenticationMethod: http_basic
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+        excludeFromService: true
+      name: proxy-sasl-npe
+      port: 30084
+      tls:
+        enabled: true
+    - authenticationMethod: http_basic
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      name: proxy-sasl
+      port: 30086
+      tls:
+        enabled: true
+    schemaRegistry:
+      port: 8081
+      external: {}
+      tls:
+        enabled: true
+    schemaRegistryApi:
+    - authenticationMethod: http_basic
+      name: sr-sasl
+      port: 30083
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+        staticNodePort: true
+      tls:
+        enabled: true
+        requireClientAuth: true
+        clientCACertRef:
+          kind: Secret
+          name: ml-ca-cert
+          apiGroup: ''
+    adminApi:
+      - port: 9644
+    developerMode: true
