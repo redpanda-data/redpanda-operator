@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,12 +26,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	helmkube "helm.sh/helm/v3/pkg/kube"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
+	kubeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -120,36 +125,37 @@ func (s *LabelSelectorValue) Type() string {
 
 func Command() *cobra.Command {
 	var (
-		clusterDomain               string
-		metricsAddr                 string
-		secureMetrics               bool
-		enableHTTP2                 bool
-		probeAddr                   string
-		pprofAddr                   string
-		enableLeaderElection        bool
-		webhookEnabled              bool
-		configuratorBaseImage       string
-		configuratorTag             string
-		configuratorImagePullPolicy string
-		decommissionWaitInterval    time.Duration
-		metricsTimeout              time.Duration
-		restrictToRedpandaVersion   string
-		namespace                   string
-		additionalControllers       []string
-		operatorMode                bool
-		enableHelmControllers       bool
-		ghostbuster                 bool
-		unbindPVCsAfter             time.Duration
-		unbinderSelector            LabelSelectorValue
-		autoDeletePVCs              bool
-		forceDefluxedMode           bool
-		helmRepositoryURL           string
-		webhookCertPath             string
-		webhookCertName             string
-		webhookCertKey              string
-		metricsCertPath             string
-		metricsCertName             string
-		metricsCertKey              string
+		clusterDomain                   string
+		metricsAddr                     string
+		secureMetrics                   bool
+		enableHTTP2                     bool
+		probeAddr                       string
+		pprofAddr                       string
+		enableLeaderElection            bool
+		webhookEnabled                  bool
+		configuratorBaseImage           string
+		configuratorTag                 string
+		configuratorImagePullPolicy     string
+		decommissionWaitInterval        time.Duration
+		metricsTimeout                  time.Duration
+		restrictToRedpandaVersion       string
+		namespace                       string
+		additionalControllers           []string
+		operatorMode                    bool
+		enableHelmControllers           bool
+		ghostbuster                     bool
+		unbindPVCsAfter                 time.Duration
+		unbinderSelector                LabelSelectorValue
+		autoDeletePVCs                  bool
+		forceDefluxedMode               bool
+		helmRepositoryURL               string
+		webhookCertPath                 string
+		webhookCertName                 string
+		webhookCertKey                  string
+		metricsCertPath                 string
+		metricsCertName                 string
+		metricsCertKey                  string
+		enableGhostBrokerDecommissioner bool
 	)
 
 	cmd := &cobra.Command{
@@ -190,6 +196,7 @@ func Command() *cobra.Command {
 				metricsCertPath,
 				metricsCertName,
 				metricsCertKey,
+				enableGhostBrokerDecommissioner,
 			)
 		},
 	}
@@ -234,6 +241,7 @@ func Command() *cobra.Command {
 		"The directory that contains the metrics server certificate.")
 	cmd.Flags().StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
 	cmd.Flags().StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
+	cmd.Flags().BoolVar(&enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
@@ -244,6 +252,21 @@ func Command() *cobra.Command {
 	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
 
 	return cmd
+}
+
+type v1Fetcher struct {
+	client kubeClient.Client
+}
+
+func (f *v1Fetcher) FetchLatest(ctx context.Context, name, namespace string) (any, error) {
+	var vectorizedCluster vectorizedv1alpha1.Cluster
+	if err := f.client.Get(ctx, types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, &vectorizedCluster); err != nil {
+		return nil, err
+	}
+	return &vectorizedCluster, nil
 }
 
 //nolint:funlen,gocyclo // length looks good
@@ -279,6 +302,7 @@ func Run(
 	metricsCertPath string,
 	metricsCertName string,
 	metricsCertKey string,
+	enableGhostBrokerDecommissioner bool,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -631,6 +655,43 @@ func Run(
 			Selector: unbinderSelector,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+			return err
+		}
+	}
+
+	if enableGhostBrokerDecommissioner {
+		d := decommissioning.NewStatefulSetDecommissioner(mgr, &v1Fetcher{client: mgr.GetClient()},
+			decommissioning.WithCleanupPVCs(false),
+			decommissioning.WithFactory(internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient())),
+			decommissioning.WithFilter(func(ctx context.Context, sts *appsv1.StatefulSet) (bool, error) {
+				idx := slices.IndexFunc(
+					sts.OwnerReferences,
+					func(ownerRef metav1.OwnerReference) bool {
+						return ownerRef.APIVersion == vectorizedv1alpha1.GroupVersion.String() && ownerRef.Kind == "Cluster"
+					})
+				if idx == -1 {
+					return false, nil
+				}
+
+				var vectorizedCluster vectorizedv1alpha1.Cluster
+				if err := mgr.GetClient().Get(ctx, types.NamespacedName{
+					Name:      sts.OwnerReferences[idx].Name,
+					Namespace: sts.Namespace,
+				}, &vectorizedCluster); err != nil {
+					return false, fmt.Errorf("could not get Cluster: %w", err)
+				}
+
+				managedAnnotationKey := vectorizedv1alpha1.GroupVersion.Group + "/managed"
+				if managed, exists := vectorizedCluster.Annotations[managedAnnotationKey]; exists && managed == "false" {
+					ctrl.Log.V(1).Info("ignoring StatefulSet of unmanaged V1 Cluster", "sts", sts.Name, "namespace", sts.Namespace)
+					return false, nil
+				}
+
+				return true, nil
+			}),
+		)
+		if err := d.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
 	}
