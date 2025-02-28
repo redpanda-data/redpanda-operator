@@ -129,11 +129,11 @@ func render(dot *helmette.Dot) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClusterRoleBindings(dot) {
+	for _, obj := range ClusterRoles(dot) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClusterRoles(dot) {
+	for _, obj := range ClusterRoleBindings(dot) {
 		manifests = append(manifests, obj)
 	}
 
