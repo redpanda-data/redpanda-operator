@@ -1,0 +1,4 @@
+project: charts/operator
+kind: Changed
+body: Bump AppVersion to v2.3.7-24.3.6 Operator release
+time: 2025-02-28T13:08:00.611791+01:00
