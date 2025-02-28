@@ -1,7 +1,0 @@
-project: operator
-kind: Changed
-body: |
-  Bumped internal redpanda chart to  v5.9.19.
-    `chartRef` now defaults to v5.9.19.
-    When `useFlux` is `false`, the equivalent of chart v5.9.19 will be deployed.
-time: 2025-01-27T13:59:09.750942-05:00
