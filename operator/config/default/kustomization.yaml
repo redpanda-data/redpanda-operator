@@ -13,6 +13,8 @@ namePrefix: redpanda-
 #  someName: someValue
 
 resources:
+- manager_metrics_patch.yaml
+- manager_webhook_patch.yaml
 - ../crd
 - ../rbac
 - ../manager
