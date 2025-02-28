@@ -955,6 +955,9 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 						Overprovisioned: ptr.To(true),
 					},
 				},
+				RBAC: &redpandav1alpha2.RBAC{
+					Enabled: ptr.To(true),
+				},
 			},
 		},
 	}
