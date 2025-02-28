@@ -1,7 +1,0 @@
-project: operator
-kind: Fixed
-body: |
-  Reverse order of applying resources to first create ClusterRole and then ClusterRoleBinding.
-    When Redpanda custom resource has enabled RBAC the reconciliation was blocked due
-    ClusterRoleBinding referencing not yet created ClusterRole.
-time: 2025-02-28T15:39:09.890557+01:00
