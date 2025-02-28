@@ -12,9 +12,11 @@ package kube
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -191,4 +194,33 @@ func TestDialer(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("roundTripperFor", func(t *testing.T) {
+		const canary = "You've used the customized dialer!"
+
+		// Reuse the existing kube-apiserver so the initial request succeeds
+		// and goes on to the SPDY upgrade process.
+		cfg := rest.CopyConfig(restcfg)
+
+		// Prior to our own implementation of roundTripperFor, our custom
+		// dialer would only get called once. Though that's a bit difficult to
+		// showcase with a test...
+		var calls int32
+		cfg.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
+			switch atomic.AddInt32(&calls, 1) {
+			case 0:
+				return net.Dial(network, address)
+			case 1:
+				return nil, errors.New(canary)
+			}
+			t.Fatalf("shouldn't get called more than twice")
+			panic("unreachable")
+		}
+
+		dialer := NewPodDialer(cfg)
+
+		_, err := dialer.DialContext(context.Background(), "tcp", "name:80")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), canary)
+	})
 }
