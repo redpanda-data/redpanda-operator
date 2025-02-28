@@ -159,11 +159,13 @@ func TestTranspile(t *testing.T) {
 
 	// Create and populate the test environment.
 	ctl := kubetest.NewEnv(t)
+	kubeConfigPath := t.TempDir() + "/kubeconfig"
+	require.NoError(t, kube.WriteToFile(kube.RestToConfig(ctl.RestConfig()), kubeConfigPath))
 	for _, obj := range seedObjects {
 		require.NoError(t, ctl.Create(context.Background(), obj))
 	}
 
-	goRunner := NewGoRunner(t, td)
+	goRunner := NewGoRunner(t, td, kubeConfigPath)
 
 	// To test package dependencies (subcharting), a single package (aaacommon)
 	// has been elected as the dependency for all others.
@@ -238,7 +240,6 @@ func TestTranspile(t *testing.T) {
 							Name:      "release-name",
 							Namespace: "release-namespace",
 						},
-						KubeConfig: ptr.To(kube.RestToConfig(ctl.RestConfig())),
 					}
 
 					// MUST round trip values through JSON marshalling to
@@ -419,9 +420,13 @@ type GoRunner struct {
 	cmd      *exec.Cmd
 }
 
-func NewGoRunner(t *testing.T, root string) *GoRunner {
-	cmd := exec.Command("go", "run", "main.go")
+func NewGoRunner(t *testing.T, root string, kubeConfigPath string) *GoRunner {
+	cmd := exec.Command("go", "run", "main.go", kubeConfigPath)
 	cmd.Dir = filepath.Join(root, "src", "example")
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("KUBECONFIG=%s", kubeConfigPath),
+	)
 
 	runner := &GoRunner{
 		cmd:      cmd,
@@ -511,7 +516,7 @@ func (g *GoRunner) run() error {
 			return nil
 		}
 
-		if err := enc.Encode(in); err != nil {
+		if err := enc.Encode(in); err != nil { //nolint:staticcheck // KubeConfig is always nil here.
 			stderrout, _ := io.ReadAll(stderr)
 			return errors.Wrapf(err, "stderr: %s", stderrout)
 		}

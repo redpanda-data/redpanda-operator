@@ -32,9 +32,20 @@ import (
 	"example.com/example/typing"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func main() {
+	// Attempt to load a Kubernetes client config from KUBECONFIG. We ignore
+	// any errors as failures will surface in a different way and doing so
+	// preserves the ability to run this binary directly for debugging
+	// purposes.
+	var kubeConfig *kube.RESTConfig
+	ctl, err := kube.FromEnv()
+	if err == nil {
+		kubeConfig = ctl.RestConfig()
+	}
+
 	enc := json.NewEncoder(os.Stdout)
 	dec := json.NewDecoder(os.Stdin)
 
@@ -51,6 +62,9 @@ func main() {
 		// HACK: Inject an FS into .Templates to test `tpl`. This is done
 		// "lazily" so this FS always contains freshly transpiled templates.
 		dot.Templates = os.DirFS("./" + dot.Chart.Name)
+
+		// HACK: Inject the kube rest client we've picked up from KUBECONFIG.
+		dot.KubeConfig = kubeConfig
 
 		out, err := runChart(&dot)
 
