@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/httpstream"
+	httpstreamspdy "k8s.io/apimachinery/pkg/util/httpstream/spdy"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/transport/spdy"
 )
@@ -204,7 +205,7 @@ func (p *PodDialer) parseDNS(fqdn string) (types.NamespacedName, int, error) {
 }
 
 func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Connection, error) {
-	transport, upgrader, err := spdy.RoundTripperFor(p.config)
+	transport, upgrader, err := roundTripperFor(p.config)
 	if err != nil {
 		return nil, err
 	}
@@ -386,3 +387,43 @@ type addr struct {
 
 func (a addr) Network() string { return a.Net }
 func (a addr) String() string  { return a.Addr }
+
+// roundTripperFor is a re-implementation of [spdy.RoundTripperFor] that
+// supports nested PodDialers (vClusters).
+// The SpdyRoundTripper implementation makes specifying Proxier (HTTP proxy
+// support) and specifying UpgradeTransport (Transport level proxy support)
+// mutually exclusive. The "official" implementation of RoundTripperFor opted
+// to support only HTTP Proxies.
+// This implementation drops the HTTP proxy support in favor of supporting
+// Transport layer proxying.
+func roundTripperFor(config *rest.Config) (http.RoundTripper, spdy.Upgrader, error) {
+	// TransportFor will appropriately aggregate TLSClientConfig and preserve
+	// any dialer adjustments for us to pass on to the spdy roundtripper.
+	rt, err := rest.TransportFor(config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// The original implementation calls rest.TLSConfigFor and passes in nil
+	// for UpgradeTransport to permit Proxier being non-nil. The round tripper
+	// will extract the TLSConfig and Dial from the transport.
+	upgradeRoundTripper, err := httpstreamspdy.NewRoundTripperWithConfig(httpstreamspdy.RoundTripperConfig{
+		PingPeriod:       time.Second * 5,
+		UpgradeTransport: rt,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	wrapper, err := rest.HTTPWrappersForConfig(config, upgradeRoundTripper)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// IMPORTANT!! wrapper and upgradeRoundTripper MUST have the same
+	// SpdyRoundTripper instance. The RoundTrip call stashes the HTTP
+	// connection into itself which is later reused by NewConnection.
+	// (Super janky, right? Thanks K8s.)
+	// P.S. There's no error checking or synchronization.
+	return wrapper, upgradeRoundTripper, nil
+}
