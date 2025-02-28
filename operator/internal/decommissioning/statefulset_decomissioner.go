@@ -111,6 +111,12 @@ func WithDelayedCacheMaxCount(count int) Option {
 	}
 }
 
+func WithCleanupPVCs(cleanup bool) Option {
+	return func(decommissioner *StatefulSetDecomissioner) {
+		decommissioner.cleanupPVCs = cleanup
+	}
+}
+
 type StatefulSetDecomissioner struct {
 	client               client.Client
 	factory              internalclient.ClientFactory
@@ -122,6 +128,7 @@ type StatefulSetDecomissioner struct {
 	delayedBrokerIDCache *CategorizedDelayedCache[types.NamespacedName, int]
 	delayedVolumeCache   *CategorizedDelayedCache[types.NamespacedName, types.NamespacedName]
 	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
+	cleanupPVCs          bool
 }
 
 func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...Option) *StatefulSetDecomissioner {
@@ -136,6 +143,7 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 		delayedCacheInterval: defaultDelayedCacheInterval,
 		delayedCacheMaxCount: defaultDelayedMaxCacheCount,
 		filter:               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) { return true, nil },
+		cleanupPVCs:          true,
 	}
 
 	for _, opt := range options {
@@ -307,12 +315,6 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 
 	log := ctrl.LoggerFrom(ctx, "namespace", set.Namespace, "name", set.Name).WithName("StatefulSetDecommissioner.Decomission")
 
-	// if helm is not managing it, move on.
-	if managedBy, ok := set.Labels[k8sManagedByLabelKey]; managedBy != "Helm" || !ok {
-		log.V(traceLevel).Info("not managed by helm")
-		return false, nil
-	}
-
 	keep, err := s.filter(ctx, set)
 	if err != nil {
 		log.Error(err, "error filtering StatefulSet")
@@ -324,73 +326,74 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		return false, nil
 	}
 
-	unboundVolumeClaims, err := s.findUnboundVolumeClaims(ctx, set)
-	if err != nil {
-		log.Error(err, "error finding unbound PersistentVolumeClaims")
-		return false, err
-	}
-
-	log.V(traceLevel).Info("fetched unbound volume claims", "claims", functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
-		return claim.Name
-	}, unboundVolumeClaims))
-
 	setCacheKey := client.ObjectKeyFromObject(set)
-
-	// remove any volumes from the cache that are no longer considered unbound
-	s.delayedVolumeCache.Filter(setCacheKey, functional.MapFn(func(claim *corev1.PersistentVolumeClaim) types.NamespacedName {
-		return client.ObjectKeyFromObject(claim)
-	}, unboundVolumeClaims)...)
-
-	// first mark all of the claims as needing potential expiration
-	for _, claim := range unboundVolumeClaims {
-		s.delayedVolumeCache.Mark(setCacheKey, client.ObjectKeyFromObject(claim))
-	}
-
-	// now we attempt to clean up the first of the PVCs that meets the treshold of the cache,
-	// ensuring that their PVs have a retain policy, and short-circuiting the rest of reconciliation
-	// if we actually delete a claim
-	for _, claim := range unboundVolumeClaims {
-		deleted, err := s.delayedVolumeCache.Process(setCacheKey, client.ObjectKeyFromObject(claim), func() error {
-			// first mark all of the claims as needing potential expiration
-			volume := &corev1.PersistentVolume{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: claim.Spec.VolumeName,
-				},
-			}
-
-			// ensure that the PV has a retain policy
-			if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(applycorev1.PersistentVolume(volume.Name).WithSpec(
-				applycorev1.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
-			)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
-				log.Error(err, "error patching PersistentVolume spec")
-				return err
-			}
-
-			// now that we've patched the PV, delete the PVC
-			if err := s.client.Delete(ctx, claim); err != nil {
-				log.Error(err, "error deleting PersistentVolumeClaim")
-				return err
-			}
-
-			message := fmt.Sprintf(
-				"unbound persistent volume claims: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
-					return client.ObjectKeyFromObject(claim).String()
-				}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
-			)
-
-			log.V(traceLevel).Info(message)
-			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
-
-			return nil
-		})
+	if s.cleanupPVCs {
+		unboundVolumeClaims, err := s.findUnboundVolumeClaims(ctx, set)
 		if err != nil {
+			log.Error(err, "error finding unbound PersistentVolumeClaims")
 			return false, err
 		}
 
-		// if anything was actually deleted, just return immediately and we'll pick things up on
-		// the next pass
-		if deleted {
-			return true, nil
+		log.V(traceLevel).Info("fetched unbound volume claims", "claims", functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
+			return claim.Name
+		}, unboundVolumeClaims))
+
+		// remove any volumes from the cache that are no longer considered unbound
+		s.delayedVolumeCache.Filter(setCacheKey, functional.MapFn(func(claim *corev1.PersistentVolumeClaim) types.NamespacedName {
+			return client.ObjectKeyFromObject(claim)
+		}, unboundVolumeClaims)...)
+
+		// first mark all of the claims as needing potential expiration
+		for _, claim := range unboundVolumeClaims {
+			s.delayedVolumeCache.Mark(setCacheKey, client.ObjectKeyFromObject(claim))
+		}
+
+		// now we attempt to clean up the first of the PVCs that meets the treshold of the cache,
+		// ensuring that their PVs have a retain policy, and short-circuiting the rest of reconciliation
+		// if we actually delete a claim
+		for _, claim := range unboundVolumeClaims {
+			deleted, err := s.delayedVolumeCache.Process(setCacheKey, client.ObjectKeyFromObject(claim), func() error {
+				// first mark all of the claims as needing potential expiration
+				volume := &corev1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: claim.Spec.VolumeName,
+					},
+				}
+
+				// ensure that the PV has a retain policy
+				if err := s.client.Patch(ctx, volume, kubernetes.ApplyPatch(applycorev1.PersistentVolume(volume.Name).WithSpec(
+					applycorev1.PersistentVolumeSpec().WithPersistentVolumeReclaimPolicy(corev1.PersistentVolumeReclaimRetain),
+				)), client.ForceOwnership, client.FieldOwner("owner")); err != nil {
+					log.Error(err, "error patching PersistentVolume spec")
+					return err
+				}
+
+				// now that we've patched the PV, delete the PVC
+				if err := s.client.Delete(ctx, claim); err != nil {
+					log.Error(err, "error deleting PersistentVolumeClaim")
+					return err
+				}
+
+				message := fmt.Sprintf(
+					"unbound persistent volume claims: [%s], decommissioning: %s", strings.Join(functional.MapFn(func(claim *corev1.PersistentVolumeClaim) string {
+						return client.ObjectKeyFromObject(claim).String()
+					}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
+				)
+
+				log.V(traceLevel).Info(message)
+				s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
+
+				return nil
+			})
+			if err != nil {
+				return false, err
+			}
+
+			// if anything was actually deleted, just return immediately and we'll pick things up on
+			// the next pass
+			if deleted {
+				return true, nil
+			}
 		}
 	}
 
@@ -609,6 +612,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			// only record the event here since this is when we trigger a decommission
 			s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonBroker, "brokers needing decommissioning: [%s], decommissioning: %d", formatBrokerList(brokersToDecommission), broker)
 
+			log.Info("Decommissioning broker", "broker", broker)
 			if err := adminClient.DecommissionBroker(ctx, broker); err != nil {
 				log.Error(err, "decommissioning broker", "broker", broker)
 				return err

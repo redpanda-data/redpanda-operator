@@ -29,6 +29,7 @@ import (
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
@@ -179,6 +180,10 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.redpandaAdminForCluster(cluster)
+	}
+
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.redpandaAdminForV1Cluster(cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
