@@ -206,7 +206,7 @@ func mergeRootValueWithDependency(rootValues helmette.Values, dependencyValues h
 
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
 // taking into consideration the dependencies' condition.
-func (c *GoChart) Dot(cfg *kube.Config, release helmette.Release, values any) (*helmette.Dot, error) {
+func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any) (*helmette.Dot, error) {
 	subcharts := map[string]*helmette.Dot{}
 
 	loaded, err := c.LoadValues(values)
@@ -279,7 +279,7 @@ func (c *GoChart) Dot(cfg *kube.Config, release helmette.Release, values any) (*
 //
 // If cfg is null, the chart will be rendered "offline" causing functions like
 // [helmette.Lookup] to always return false.
-func (c *GoChart) Render(cfg *kube.Config, release helmette.Release, values any) ([]kube.Object, error) {
+func (c *GoChart) Render(cfg *kube.RESTConfig, release helmette.Release, values any) ([]kube.Object, error) {
 	dot, err := c.Dot(cfg, release, values)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,11 @@ func (c *GoChart) Metadata() chart.Metadata {
 // errors.
 func (c *GoChart) doRender(dot *helmette.Dot) (_ []kube.Object, err error) {
 	defer func() {
-		if r := recover(); r != nil {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "chart execution failed")
+		default:
 			err = errors.Newf("chart execution failed: %#v", r)
 		}
 	}()
