@@ -560,7 +560,7 @@ func (s *RedpandaControllerSuite) TestConnectorsIntegration() {
 	var deployments appsv1.DeploymentList
 	s.NoError(s.client.List(s.ctx, &deployments))
 	s.Len(deployments.Items, 1)
-	s.Equal(1, deployments.Items[0].Status.ReadyReplicas)
+	s.Equal(int32(1), deployments.Items[0].Status.ReadyReplicas)
 
 	s.deleteAndWait(rp)
 }
