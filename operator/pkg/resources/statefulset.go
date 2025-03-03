@@ -947,7 +947,6 @@ func (r *StatefulSetResource) portsConfiguration() string {
 	return fmt.Sprintf("--advertise-rpc-addr=$(POD_NAME).%s:%d", serviceFQDN, rpcAPIPort)
 }
 
-// TODO
 func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{{
 		Name:          AdminPortName,

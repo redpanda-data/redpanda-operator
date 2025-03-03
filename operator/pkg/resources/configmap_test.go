@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
@@ -114,46 +115,11 @@ func TestEnsureConfigMap(t *testing.T) {
 	}
 }
 
-// validateTLS checks whether TLS1 is equal to TLS2.
-func validateTLS[V any](t *testing.T, cfg1, cfg2 []V, getName func(V) string) {
-	require.Equal(t, len(cfg1), len(cfg2))
-
-	m := map[string]*V{}
-	for i := 0; i < len(cfg1); i++ {
-		m[getName(cfg1[i])] = &cfg1[i]
-	}
-
-	for _, c := range cfg2 {
-		v, found := m[getName(c)]
-		require.True(t, found, "name", getName(c))
-		require.Equal(t, *v, c)
-	}
-}
-
-// validateAuthNListeners checks whether listeners1 is equal to listeners2.
-func validateAuthNListeners(t *testing.T, cfg1, cfg2 []config.NamedAuthNSocketAddress) {
-	require.Equal(t, len(cfg1), len(cfg2))
-
-	m := map[string]*config.NamedAuthNSocketAddress{}
-	for i := 0; i < len(cfg1); i++ {
-		m[cfg1[i].Name] = &cfg1[i]
-	}
-
-	for _, c := range cfg2 {
-		v, found := m[c.Name]
-		require.True(t, found, "name", c.Name)
-		require.Equal(t, v.Address, c.Address)
-		require.Equal(t, v.Port, c.Port)
-		require.Equal(t, *v.AuthN, *c.AuthN)
-	}
-}
-
 func TestMultiExternalListenersConfigMap(t *testing.T) {
 	sasl := "sasl"
 	httpBasic := "http_basic"
 	mtls := "mtls_identity"
 
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
 	cluster := pandaCluster().DeepCopy()
 	cluster.Spec.Configuration.KafkaAPI[0] = vectorizedv1alpha1.KafkaAPI{AuthenticationMethod: sasl, Port: 30001, Name: "kafka"}
 	cluster.Spec.Configuration.KafkaAPI = append(cluster.Spec.Configuration.KafkaAPI,
@@ -286,7 +252,7 @@ func TestMultiExternalListenersConfigMap(t *testing.T) {
 			cfgRes := resources.NewConfigMap(
 				c,
 				&testcases[i].cluster,
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				"cluster.local",
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
@@ -304,22 +270,22 @@ func TestMultiExternalListenersConfigMap(t *testing.T) {
 			require.NoError(t, err)
 
 			if len(tc.expectedKafka) > 0 {
-				validateAuthNListeners(t, tc.expectedKafka, cfg.Redpanda.KafkaAPI)
+				require.ElementsMatch(t, tc.expectedKafka, cfg.Redpanda.KafkaAPI)
 			}
 			if len(tc.expectedPandaproxy) > 0 {
-				validateAuthNListeners(t, tc.expectedPandaproxy, cfg.Pandaproxy.PandaproxyAPI)
+				require.ElementsMatch(t, tc.expectedPandaproxy, cfg.Pandaproxy.PandaproxyAPI)
 			}
 			if len(tc.expectedSchemaRegistry) > 0 {
-				validateAuthNListeners(t, tc.expectedSchemaRegistry, cfg.SchemaRegistry.SchemaRegistryAPI)
+				require.ElementsMatch(t, tc.expectedSchemaRegistry, cfg.SchemaRegistry.SchemaRegistryAPI)
 			}
 			if len(tc.expectedKafkaTLS) > 0 {
-				validateTLS(t, tc.expectedKafkaTLS, cfg.Redpanda.KafkaAPITLS, func(c config.ServerTLS) string { return c.Name })
+				require.ElementsMatch(t, tc.expectedKafkaTLS, cfg.Redpanda.KafkaAPITLS)
 			}
 			if len(tc.expectedPandaproxyTLS) > 0 {
-				validateTLS(t, tc.expectedPandaproxyTLS, cfg.Pandaproxy.PandaproxyAPITLS, func(c config.ServerTLS) string { return c.Name })
+				require.ElementsMatch(t, tc.expectedPandaproxyTLS, cfg.Pandaproxy.PandaproxyAPITLS)
 			}
 			if len(tc.expectedSchemaRegistryTLS) > 0 {
-				validateTLS(t, tc.expectedSchemaRegistryTLS, cfg.SchemaRegistry.SchemaRegistryAPITLS, func(c config.ServerTLS) string { return c.Name })
+				require.ElementsMatch(t, tc.expectedSchemaRegistryTLS, cfg.SchemaRegistry.SchemaRegistryAPITLS)
 			}
 		})
 	}
