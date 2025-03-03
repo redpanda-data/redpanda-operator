@@ -57,7 +57,6 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			},
 		}).
 		WithCRDDirectory("../operator/config/crd/bases").
-		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			t.Log("Installing Redpanda operator chart")
 			t.InstallLocalHelmChart(ctx, "../charts/operator", helm.InstallOptions{
