@@ -429,7 +429,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 	})
 
-	Context("When setting invalid configuration on the cluster", func() {
+	Context("When setting invalid configuration on the cluster - unknown properties", func() {
 		It("Should reflect any invalid status in the condition", func() {
 			By("Allowing creation of a new cluster")
 			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-check")
@@ -471,6 +471,118 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
 			}), timeout, interval).Should(Succeed())
+			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+
+			By("None of the property used here should change the hash")
+			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+
+			By("Deleting the cluster")
+			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
+			testutils.DeleteAllInNamespace(testEnv, k8sClient, namespace)
+		})
+
+		It("Should report direct validation errors in the condition", func() {
+			// admin API will return 400 bad request on invalid configuration (default behavior)
+			testAdminAPI.SetDirectValidationEnabled(true)
+
+			By("Allowing creation of a new cluster")
+			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-validation")
+			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
+			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
+
+			By("Creating the Configmap and the statefulset")
+			Eventually(resourceGetter(baseKey, &corev1.ConfigMap{}), timeout, interval).Should(Succeed())
+			Eventually(resourceGetter(key, &appsv1.StatefulSet{}), timeout, interval).Should(Succeed())
+
+			By("Configuring the cluster")
+			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+
+			By("Accepting an unknown property")
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
+				if cluster.Spec.AdditionalConfiguration == nil {
+					cluster.Spec.AdditionalConfiguration = make(map[string]string)
+				}
+				cluster.Spec.AdditionalConfiguration["redpanda.unk"] = "nown-value"
+			}), timeout, interval).Should(Succeed())
+
+			By("Reflecting the issue in the condition")
+			Eventually(resourceDataGetter(key, redpandaCluster, func() interface{} {
+				cond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
+				if cond == nil {
+					return nil
+				}
+				return fmt.Sprintf("%s/%s/%s", cond.Status, cond.Reason, cond.Message)
+			}), timeout, interval).Should(Equal("False/Error/Mock bad request message"))
+
+			By("Restoring the state when fixing the property")
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
+				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
+			}), timeout, interval).Should(Succeed())
+			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+
+			By("None of the property used here should change the hash")
+			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+
+			By("Deleting the cluster")
+			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
+			testutils.DeleteAllInNamespace(testEnv, k8sClient, namespace)
+		})
+
+		It("Should report configuration errors present in the .bootstrap.yaml file", func() {
+			// Inject property before creating the cluster, simulating .bootstrap.yaml
+			const val = "nown"
+			_, err := testAdminAPI.PatchClusterConfig(context.Background(), map[string]interface{}{
+				"unk": val,
+			}, nil)
+			Expect(err).To(BeNil())
+
+			By("Allowing creation of a new cluster")
+			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-bootstrap-failure")
+			if redpandaCluster.Spec.AdditionalConfiguration == nil {
+				redpandaCluster.Spec.AdditionalConfiguration = make(map[string]string)
+			}
+			redpandaCluster.Spec.AdditionalConfiguration["redpanda.unk"] = val
+			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
+			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
+
+			By("Creating the Configmap and the statefulset")
+			Eventually(resourceGetter(baseKey, &corev1.ConfigMap{}), timeout, interval).Should(Succeed())
+			Eventually(resourceGetter(key, &appsv1.StatefulSet{}), timeout, interval).Should(Succeed())
+
+			By("Always adding the last-applied-configuration annotation on the configmap")
+			Eventually(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfiguraitonHashKey), timeout, interval).ShouldNot(BeEmpty())
+
+			By("Marking the cluster as not properly configured")
+			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeFalse())
+			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
+
+			By("Restoring the state when fixing the property")
+			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
+				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
+			}), timeout, interval).Should(Succeed())
+			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+
+			By("None of the property used here should change the hash")
+			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+
+			By("Deleting the cluster")
+			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
+			testutils.DeleteAllInNamespace(testEnv, k8sClient, namespace)
+		})
+	})
+
+	Context("When setting invalid configuration on the cluster - invalid properties", func() {
+		It("Should reflect any invalid status in the condition", func() {
+			By("Allowing creation of a new cluster")
+			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-check")
+			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
+			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
+
+			By("Creating the Configmap and the statefulset")
+			Eventually(resourceGetter(baseKey, &corev1.ConfigMap{}), timeout, interval).Should(Succeed())
+			Eventually(resourceGetter(key, &appsv1.StatefulSet{}), timeout, interval).Should(Succeed())
+
+			By("Configuring the cluster")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an invalid property")
@@ -605,6 +717,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 	Context("When external factors change configuration of a cluster", func() {
 		It("The drift detector restore all managed properties", func() {
 			// Registering two properties, one of them managed by the operator
+			// The unmanaged property will be removed by `Declarative` mode.
 			const (
 				unmanagedProp = "unmanaged_prop"
 				managedProp   = "managed_prop"
@@ -642,7 +755,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Having it reflected in the configuration")
 			Eventually(testAdminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
-			Eventually(testAdminAPI.PropertyGetter(unmanagedProp), timeout, interval).Should(Equal(unmanagedPropValue))
+			// Unmanaged properties are removed by Declarative mode
+			Eventually(testAdminAPI.PropertyGetter(unmanagedProp), timeout, interval).Should(BeNil())
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -654,8 +768,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Having the managed property restored to the original value")
 			Eventually(testAdminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
 
-			By("Leaving the unmanaged property as is")
-			Expect(testAdminAPI.PropertyGetter(unmanagedProp)()).To(Equal(externalChangeUnmanagedPropValue))
+			By("Removing the unmanaged property via Declarative mode")
+			Expect(testAdminAPI.PropertyGetter(unmanagedProp)()).Should(BeNil())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())

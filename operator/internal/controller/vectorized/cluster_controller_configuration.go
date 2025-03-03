@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
@@ -85,12 +86,12 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		}
 	}
 
-	schema, clusterConfig, status, err := r.retrieveClusterState(ctx, redpandaCluster, adminAPI)
+	schema, _, _, err := r.retrieveClusterState(ctx, redpandaCluster, adminAPI)
 	if err != nil {
 		return err
 	}
 
-	patchSuccess, err := r.applyPatchIfNeeded(ctx, redpandaCluster, adminAPI, config, schema, clusterConfig, status, lastAppliedConfiguration, log)
+	patchSuccess, err := r.applyPatchIfNeeded(ctx, redpandaCluster, adminAPI, config, schema, log)
 	if err != nil || !patchSuccess {
 		// patchSuccess=false indicates an error set on the condition that should not be propagated (but we terminate reconciliation anyway)
 		return err
@@ -169,27 +170,31 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	adminAPI adminutils.AdminAPIClient,
 	cfg *configuration.GlobalConfiguration,
 	schema rpadmin.ConfigSchema,
-	clusterConfig rpadmin.Config,
-	status rpadmin.ConfigStatusResponse,
-	lastAppliedConfiguration map[string]interface{},
 	l logr.Logger,
 ) (success bool, err error) {
 	log := l.WithName("applyPatchIfNeeded")
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
 
-	var invalidProperties []string
-	for i := range status {
-		invalidProperties = append(invalidProperties, status[i].Invalid...)
-		invalidProperties = append(invalidProperties, status[i].Unknown...)
+	// Massage the clusterConfig into an appropriate set of values.
+	// Because we're going to perform a declarative application, invalid values will either
+	// be overwritten (if they're supplied in the cfg), or removed (if they're not).
+	// No additional handling is needed.
+	properties := map[string]any{}
+	for k, v := range cfg.ClusterConfiguration {
+		metadata := schema[k]
+		properties[k] = configuration.ParseConfigValueBeforeUpsert(log, v, &metadata)
 	}
 
-	patch := configuration.ThreeWayMerge(log, cfg.ClusterConfiguration, clusterConfig, lastAppliedConfiguration, invalidProperties, schema)
-	if patch.Empty() {
-		return true, nil
+	// Unconditionally apply the update
+	syncer := syncclusterconfig.Syncer{
+		Client: adminAPI,
+		Mode:   syncclusterconfig.SyncerModeDeclarative,
+		EqualityCheck: func(key string, desired, current any) bool {
+			return configuration.PropertiesEqual(log, desired, current, schema[key])
+		},
 	}
-
-	log.Info("Applying patch to the cluster configuration", "patch", patch.String())
-	wr, err := adminAPI.PatchClusterConfig(ctx, patch.Upsert, patch.Remove)
+	// The updated config_version is logged by syncer
+	err = syncer.Sync(ctx, properties, nil)
 	if err != nil {
 		var conditionData *vectorizedv1alpha1.ClusterCondition
 		conditionData, err = tryMapErrorToCondition(err)
@@ -216,7 +221,6 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 		// Patch issue is due to user error, so it's unrecoverable
 		return false, nil
 	}
-	log.Info("Patch written to the cluster", "config_version", wr.ConfigVersion)
 	return true, nil
 }
 
