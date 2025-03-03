@@ -81,13 +81,19 @@ steps:
     if: |
       // Only run if:
       // 1. There's a tag and it's of the form 'v*' or 'operator/v*'
-      // 2. Source branch is main or release/*
-      // 3. NIGHTLY_RELEASE envvar isn't set (paranoid check)
-      // 4. This isn't a pull request (paranoid check)
+      // 2. NIGHTLY_RELEASE envvar isn't set (paranoid check)
+      // 3. This isn't a pull request (paranoid check)
+      // 4. As buildkite schedule build on tag with the same branch settings as per the following (paranoid check)
+      //
+      // > Due to how tags work in git, a branch is not easily inferred, nor is it required to check out a tag.
+      // > For this reason we’re setting BUILDKITE_BRANCH and BUILDKITE_TAG to the same value. This is the
+      // > intended behaviour. Our docs aren’t really clear on this and we’re updating them now.
+      //
+      // https://forum.buildkite.community/t/branch-names-vs-tag-names/974/2
       (build.tag =~ /^v/ || build.tag =~ /^operator\/v/) &&
-      (build.branch == "main" || build.branch =~ /^release\//) &&
       build.pull_request.id == null &&
-      build.env("NIGHTLY_RELEASE") != "true"
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.branch == build.tag
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
     agents:
       queue: v6-amd64-builders-m6id
