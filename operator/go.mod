@@ -33,7 +33,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/redpanda v0.0.0-20250228163934-c445c9211ec5
+	github.com/redpanda-data/redpanda-operator/charts/redpanda v0.0.0-20250207141022-1388ec6c6b63
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
