@@ -217,12 +217,7 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 
 	// Volume is used when:
 	// * service account automount is set to false
-	// * one of the below condition:
-	//   * deprecated: sidecars controllers are enabled (decommission, node-watcher) and rbac is enabled
-	//   * rack awareness is enabled
-	//   * either broker decommissioner or pvc unbinder are enabled
-	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
-		(values.Statefulset.SideCars.AdditionalSidecarControllersEnabled() || values.RackAwareness.Enabled) {
+	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
 		foundK8STokenVolume := false
 		for _, v := range volumes {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", v.Name) {
@@ -899,9 +894,7 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 		templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...,
 	)
 
-	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
-		(values.Statefulset.SideCars.AdditionalSidecarControllersEnabled()) {
-
+	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
 		mountName := ServiceAccountVolumeName
 		for _, vol := range StatefulSetVolumes(dot) {
 			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
