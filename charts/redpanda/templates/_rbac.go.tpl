@@ -85,14 +85,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (not (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars) ))) "r")) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
 {{- $sidecarControllerName := (printf "%s-sidecar-controllers" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot) ))) "r")) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil) ) "rules" (coalesce nil) ) (mustMergeOverwrite (dict ) (dict "apiVersion" "rbac.authorization.k8s.io/v1" "kind" "Role" )) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil) ) (dict "name" $sidecarControllerName "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot) ))) "r") "annotations" $values.serviceAccount.annotations )) "rules" (list (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "apps") "resources" (list "statefulsets/status") "verbs" (list "patch" "update") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "") "resources" (list "secrets" "pods") "verbs" (list "get" "list" "watch") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "apps") "resources" (list "statefulsets") "verbs" (list "get" "patch" "update" "list" "watch") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "") "resources" (list "persistentvolumeclaims") "verbs" (list "delete" "get" "list" "patch" "update" "watch") ))) ))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil) ) "rules" (coalesce nil) ) (mustMergeOverwrite (dict ) (dict "apiVersion" "rbac.authorization.k8s.io/v1" "kind" "Role" )) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil) ) (dict "name" $sidecarControllerName "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot) ))) "r") "annotations" $values.serviceAccount.annotations )) "rules" (list (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "verbs" (list "create" "delete" "get" "list" "patch" "update" "watch") "apiGroups" (list "coordination.k8s.io") "resources" (list "leases") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "verbs" (list "create" "patch") "apiGroups" (list "") "resources" (list "events") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "apps") "resources" (list "statefulsets/status") "verbs" (list "patch" "update") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "") "resources" (list "secrets" "pods") "verbs" (list "get" "list" "watch") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "apps") "resources" (list "statefulsets") "verbs" (list "get" "list" "patch" "update" "watch") )) (mustMergeOverwrite (dict "verbs" (coalesce nil) ) (dict "apiGroups" (list "") "resources" (list "persistentvolumeclaims") "verbs" (list "delete" "get" "list" "patch" "update" "watch") ))) ))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -102,11 +97,6 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (not (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars) ))) "r")) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
 {{- $sidecarControllerName := (printf "%s-sidecar-controllers" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot) ))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil) ) "roleRef" (dict "apiGroup" "" "kind" "" "name" "" ) ) (mustMergeOverwrite (dict ) (dict "apiVersion" "rbac.authorization.k8s.io/v1" "kind" "RoleBinding" )) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil) ) (dict "name" $sidecarControllerName "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot) ))) "r") "annotations" $values.serviceAccount.annotations )) "roleRef" (mustMergeOverwrite (dict "apiGroup" "" "kind" "" "name" "" ) (dict "apiGroup" "rbac.authorization.k8s.io" "kind" "Role" "name" $sidecarControllerName )) "subjects" (list (mustMergeOverwrite (dict "kind" "" "name" "" ) (dict "kind" "ServiceAccount" "name" (get (fromJson (include "redpanda.ServiceAccountName" (dict "a" (list $dot) ))) "r") "namespace" $dot.Release.Namespace ))) ))) | toJson -}}
