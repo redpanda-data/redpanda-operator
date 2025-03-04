@@ -62,80 +62,59 @@ var AdditionalListenerCfgNames = []string{
 	SchemaRegistryAPIConfigTLSPath,
 }
 
-// listenerTemplateSpec defines the external listener.
-type listenerTemplateSpec struct {
-	Name                 string
-	Address              string
-	Port                 string
-	AuthenticationMethod string
+type TemplatedInt string
+
+func (t TemplatedInt) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"removequote%sremovequote"`, t)), nil
 }
 
-// Encode returns the listenerTemplateSpec as a string in the format as below:
+// listenerTemplateSpec defines the external listener.
+// An example of the encoded value is as below:
 // {'name':'private-link-kafka','address':'0.0.0.0','port':{{39002 | add .Index}},'authentication_method':'sasl'}
-func (l *listenerTemplateSpec) Encode() string {
-	args := []any{l.Name}
-	s := "{'name':'%s'"
-	if l.Address != "" {
-		s += ",'address':'%s'"
-		args = append(args, l.Address)
-	}
-	if l.Port != "" {
-		s += ",'port':%s"
-		args = append(args, l.Port)
-	}
-	if l.AuthenticationMethod != "" {
-		s += ",'authentication_method':'%s'"
-		args = append(args, l.AuthenticationMethod)
-	}
-	s += "}"
-	return fmt.Sprintf(s, args...)
+type listenerTemplateSpec struct {
+	Name                 string       `json:"name"`
+	Address              string       `json:"address,omitempty"`
+	Port                 TemplatedInt `json:"port,omitempty"`
+	AuthenticationMethod string       `json:"authentication_method,omitempty"`
 }
 
 // tlsTemplateSpec defines the TLS configuration for a listener.
-type tlsTemplateSpec struct {
-	Name              string
-	KeyFile           string
-	CertFile          string
-	TruststoreFile    string
-	RequireClientAuth bool
-}
-
-// Encode returns the tlsTemplateSpec as a string in the format as below:
+// An example of the encoded value is as below:
 // {'name':'mtls-kafka','key_file':'/etc/tls/certs/schema-registry/tls.key','cert_file':'/etc/tls/certs/schema-registry/tls.crt','truststore_file':'/etc/tls/certs/schema-registry/ca.crt','required_client_auth':true}
-func (t *tlsTemplateSpec) Encode() string {
-	args := []any{t.Name}
-	s := "{'name':'%s'"
-	if t.KeyFile != "" {
-		s += ",'key_file':'%s'"
-		args = append(args, t.KeyFile)
-	}
-	if t.CertFile != "" {
-		s += ",'cert_file':'%s'"
-		args = append(args, t.CertFile)
-	}
-	if t.TruststoreFile != "" {
-		s += ",'truststore_file':'%s'"
-		args = append(args, t.TruststoreFile)
-	}
-	if t.RequireClientAuth {
-		s += ",'require_client_auth':%t"
-		args = append(args, t.RequireClientAuth)
-	}
-	s += "}"
-	return fmt.Sprintf(s, args...)
+type tlsTemplateSpec struct {
+	Name              string `json:"name"`
+	KeyFile           string `json:"key_file,omitempty"`
+	CertFile          string `json:"cert_file,omitempty"`
+	TruststoreFile    string `json:"truststore_file,omitempty"`
+	RequireClientAuth bool   `json:"require_client_auth,omitempty"`
 }
 
 // allListenersTemplateSpec defines all the external listeners.
 // The encoded value will be passed to the configurator for configuring the listeners at the init time.
 type allListenersTemplateSpec struct {
-	KafkaListeners           []listenerTemplateSpec
-	KafkaAdvertisedListeners []listenerTemplateSpec
-	KafkaTLSSpec             []tlsTemplateSpec
-	ProxyListeners           []listenerTemplateSpec
-	ProxyAdvertisedListeners []listenerTemplateSpec
-	ProxyTLSSpec             []tlsTemplateSpec
-	SchemaRegistryListeners  []listenerTemplateSpec
-	SchemaRegistryTLSSpec    []tlsTemplateSpec
+	KafkaListeners           []listenerTemplateSpec `json:"redpanda.kafka_api,omitempty"`
+	KafkaAdvertisedListeners []listenerTemplateSpec `json:"redpanda.advertised_kafka_api,omitempty"`
+	KafkaTLSSpec             []tlsTemplateSpec      `json:"redpanda.kafka_api_tls,omitempty"`
+	ProxyListeners           []listenerTemplateSpec `json:"pandaproxy.pandaproxy_api,omitempty"`
+	ProxyAdvertisedListeners []listenerTemplateSpec `json:"pandaproxy.advertised_pandaproxy_api,omitempty"`
+	ProxyTLSSpec             []tlsTemplateSpec      `json:"pandaproxy.pandaproxy_api_tls,omitempty"`
+	SchemaRegistryListeners  []listenerTemplateSpec `json:"schema_registry.schema_registry_api,omitempty"`
+	SchemaRegistryTLSSpec    []tlsTemplateSpec      `json:"schema_registry.schema_registry_api_tls,omitempty"`
+}
+
+func afterJSONEncoding(a interface{}) string {
+	s, _ := json.Marshal(a)
+	re1 := regexp.MustCompile(`(^|[^\\])(\\{2})*"`)
+	strSingleQuotes := re1.ReplaceAllStringFunc(string(s), func(match string) string {
+		if match == `"` {
+			return `'`
+		}
+		return match[:len(match)-1] + `'`
+	})
+
+	re2 := regexp.MustCompile(`'removequote|removequote'`)
+	// Remove the single quote pattens from the encoded string for templated int values.
+	return re2.ReplaceAllString(strSingleQuotes, "")
 }
 
 // Encode returns the allListenersTemplateSpec as a string in the format as below:
@@ -154,14 +133,14 @@ func (a *allListenersTemplateSpec) Encode() string {
 	encodeListeners := func(listeners []listenerTemplateSpec) string {
 		encoded := []string{}
 		for _, l := range listeners {
-			encoded = append(encoded, l.Encode())
+			encoded = append(encoded, afterJSONEncoding(l))
 		}
 		return strings.Join(encoded, ",")
 	}
 	encodeTLSSpecs := func(listeners []tlsTemplateSpec) string {
 		encoded := []string{}
 		for _, l := range listeners {
-			encoded = append(encoded, l.Encode())
+			encoded = append(encoded, afterJSONEncoding(l))
 		}
 		return strings.Join(encoded, ",")
 	}
@@ -220,8 +199,10 @@ func (a *allListenersTemplateSpec) Concat(spec1 map[string]string) (string, erro
 	regex := regexp.MustCompile(`\[(.*)\]`)
 	encoded := a.Encode()
 	spec := map[string]string{}
+	fmt.Println(encoded)
 	err := json.Unmarshal([]byte(encoded), &spec)
 	if err != nil {
+		fmt.Println(err)
 		return "", err
 	}
 	for k, v1 := range spec1 {
