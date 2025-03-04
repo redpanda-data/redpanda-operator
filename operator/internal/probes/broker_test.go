@@ -64,6 +64,7 @@ type ProberSuite struct {
 var _ suite.SetupAllSuite = (*ProberSuite)(nil)
 
 func (s *ProberSuite) TestProbes() {
+	s.T().Skip("Redpanda now does not allow decommissioning that mimic under-replicated partition")
 	chart := s.installChart("default", "")
 	adminClient := s.adminClientFor(chart)
 	defer adminClient.Close()
