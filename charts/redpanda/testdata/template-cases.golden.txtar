@@ -871,6 +871,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -1004,6 +1007,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -2101,6 +2122,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -2218,6 +2242,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -3185,6 +3227,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -3318,6 +3363,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -4491,6 +4554,9 @@ spec:
           readOnly: true
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -4626,6 +4692,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -5698,6 +5782,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -5849,6 +5936,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -7198,6 +7303,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -8668,6 +8776,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -8809,6 +8920,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -10123,6 +10252,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -10256,6 +10388,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -11527,6 +11677,9 @@ spec:
           name: config
         - mountPath: /fake/lifecycle
           name: test-extra-volume
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -11744,6 +11897,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -12956,6 +13127,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -13089,6 +13263,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -14398,6 +14590,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -14549,6 +14744,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -15778,6 +15991,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -15911,6 +16127,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -17115,6 +17349,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -17248,6 +17485,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -18282,6 +18537,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -18399,6 +18657,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -19433,6 +19709,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -19566,6 +19845,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -21086,6 +21383,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -21219,6 +21519,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -22434,6 +22752,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -22567,6 +22888,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -23779,6 +24118,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -23912,6 +24254,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -25189,6 +25549,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -25337,6 +25700,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -26613,6 +26994,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -26761,6 +27145,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -28035,6 +28437,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -28183,6 +28588,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -29403,6 +29826,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -29551,6 +29977,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -30827,6 +31271,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -30977,6 +31424,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -32270,6 +32735,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -32420,6 +32888,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -33711,6 +34197,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -33861,6 +34350,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -35099,6 +35606,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -35249,6 +35759,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -36541,6 +37069,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -36691,6 +37222,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -37984,6 +38533,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -38134,6 +38686,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -39425,6 +39995,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -39575,6 +40148,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -40813,6 +41404,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -40963,6 +41557,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -42192,6 +42804,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -42325,6 +42940,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -43538,6 +44171,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -43671,6 +44307,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -44883,6 +45537,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -45016,6 +45673,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -46319,6 +46994,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -46452,6 +47130,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -47682,6 +48378,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -47818,6 +48517,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -49306,6 +50023,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -49439,6 +50159,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -50884,6 +51622,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -51060,6 +51801,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -52486,6 +53245,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -52619,6 +53381,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -53831,6 +54611,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -53964,6 +54747,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -55187,6 +55988,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -55321,6 +56125,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -56573,6 +57395,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -56712,6 +57537,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -57952,6 +58795,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -58091,6 +58937,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -59324,6 +60188,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       imagePullSecrets:
       - name: secret-1
       - name: secret-2
@@ -59460,6 +60327,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -60478,6 +61363,9 @@ spec:
           name: redpanda-kafka-internal-0-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -60619,6 +61507,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -61936,6 +62842,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -62069,6 +62978,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -63379,6 +64306,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -63530,6 +64460,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -64816,6 +65764,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -64949,6 +65900,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -66168,6 +67137,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -66301,6 +67273,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -67760,6 +68750,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -67893,6 +68886,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -69156,6 +70167,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -69289,6 +70303,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -70502,6 +71534,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -70635,6 +71670,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -71848,6 +72901,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -71981,6 +73037,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -73290,6 +74364,9 @@ spec:
           name: redpanda-selfsigned-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - args:
         - -c
@@ -73488,6 +74565,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -74853,6 +75948,9 @@ spec:
           name: redpanda-selfsigned-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - args:
         - -c
@@ -75051,6 +76149,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -76326,6 +77442,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -76459,6 +77578,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -77762,6 +78899,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -77913,6 +79053,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -79166,6 +80324,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -79299,6 +80460,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -80565,6 +81744,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -80698,6 +81880,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -81917,6 +83117,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -83295,6 +84498,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -83428,6 +84634,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -84694,6 +85918,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -84827,6 +86054,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -86046,6 +87291,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -87412,6 +88660,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -87545,6 +88796,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -88811,6 +90080,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -88944,6 +90216,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -90163,6 +91453,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -91529,6 +92822,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -91662,6 +92958,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -92928,6 +94242,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -93061,6 +94378,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -94280,6 +95615,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -95647,6 +96985,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -95780,6 +97121,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -97047,6 +98406,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -97180,6 +98542,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -98400,6 +99780,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -99767,6 +101150,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -99900,6 +101286,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -101167,6 +102571,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -101300,6 +102707,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -102520,6 +103945,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -103886,6 +105314,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -104019,6 +105450,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -105043,6 +106492,9 @@ spec:
           name: redpanda-for-internal-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -105176,6 +106628,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -106486,6 +107956,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -106619,6 +108092,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -108134,6 +109625,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -108285,6 +109779,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -109728,6 +111240,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -109861,6 +111376,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -114429,6 +115962,9 @@ spec:
           name: config
         - mountPath: /fake/config-watcher
           name: test-extra-volume
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -114628,6 +116164,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -115930,6 +117484,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -116063,6 +117620,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -117369,6 +118944,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -117502,6 +119080,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -118848,6 +120444,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -119015,6 +120614,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -120246,6 +121863,9 @@ spec:
           name: redpanda-kafka-internal-0-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -120387,6 +122007,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -121727,6 +123365,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -121860,6 +123501,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -123072,6 +124731,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -123205,6 +124867,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -124433,6 +126113,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -124566,6 +126249,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -126143,6 +127844,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -126318,6 +128022,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -127742,6 +129464,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -127875,6 +129600,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -129141,6 +130884,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -129274,6 +131020,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -130493,6 +132257,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -131860,6 +133627,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -131993,6 +133763,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -133260,6 +135048,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -133393,6 +135184,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -134613,6 +136422,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -135996,6 +137808,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -136129,6 +137944,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -137370,6 +139203,9 @@ spec:
           name: redpanda-external-cert
         - mountPath: /etc/redpanda
           name: config
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       initContainers:
       - command:
         - /bin/bash
@@ -137503,6 +139339,24 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:

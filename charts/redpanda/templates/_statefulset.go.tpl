@@ -101,7 +101,7 @@
 {{- if (ne (toJson $v_6) "null") -}}
 {{- $volumes = (concat (default (list ) $volumes) (list $v_6)) -}}
 {{- end -}}
-{{- if (and (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false) ))) "r")) ((or (get (fromJson (include "redpanda.Sidecars.AdditionalSidecarControllersEnabled" (dict "a" (list $values.statefulset.sideCars) ))) "r") $values.rackAwareness.enabled))) -}}
+{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false) ))) "r")) -}}
 {{- $foundK8STokenVolume := false -}}
 {{- range $_, $v := $volumes -}}
 {{- if (hasPrefix $v.name (printf "%s%s" "kube-api-access" "-")) -}}
@@ -249,9 +249,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_443_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership") ))) "r") -}}
-{{- $uid := ((index $_443_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_443_uid_gid 1) | int64) -}}
+{{- $_438_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership") ))) "r") -}}
+{{- $uid := ((index $_438_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_438_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict ) ) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "volumeMounts" (concat (default (list ) (concat (default (list ) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot) ))) "r")) (default (list ) (get (fromJson (include "redpanda.templateToVolumeMounts" (dict "a" (list $dot $values.statefulset.initContainers.setDataDirOwnership.extraVolumeMounts) ))) "r")))) (list (mustMergeOverwrite (dict "name" "" "mountPath" "" ) (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data` )))) "resources" $values.statefulset.initContainers.setDataDirOwnership.resources ))) | toJson -}}
 {{- break -}}
@@ -310,9 +310,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_525_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership") ))) "r") -}}
-{{- $uid := ((index $_525_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_525_uid_gid 1) | int64) -}}
+{{- $_520_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership") ))) "r") -}}
+{{- $uid := ((index $_520_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_520_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $values.storage $dot) ))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot) ))) "r") -}}
 {{- $mounts = (concat (default (list ) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "" ) (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data" )))) -}}
@@ -482,7 +482,7 @@
 {{- end -}}
 {{- $volumeMounts := (concat (default (list ) (concat (default (list ) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot) ))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "" ) (dict "name" "config" "mountPath" "/etc/redpanda" ))))) (default (list ) (get (fromJson (include "redpanda.templateToVolumeMounts" (dict "a" (list $dot $values.statefulset.sideCars.extraVolumeMounts) ))) "r"))) -}}
 {{- $volumeMounts = (concat (default (list ) $volumeMounts) (default (list ) (get (fromJson (include "redpanda.templateToVolumeMounts" (dict "a" (list $dot $values.statefulset.sideCars.configWatcher.extraVolumeMounts) ))) "r"))) -}}
-{{- if (and (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false) ))) "r")) ((get (fromJson (include "redpanda.Sidecars.AdditionalSidecarControllersEnabled" (dict "a" (list $values.statefulset.sideCars) ))) "r"))) -}}
+{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false) ))) "r")) -}}
 {{- $mountName := "kube-api-access" -}}
 {{- range $_, $vol := (get (fromJson (include "redpanda.StatefulSetVolumes" (dict "a" (list $dot) ))) "r") -}}
 {{- if (hasPrefix $vol.name (printf "%s%s" "kube-api-access" "-")) -}}
