@@ -32,11 +32,11 @@ steps:
       queue: pipeline-uploader
     # Run for:
     # - all pull requests that aren't from forks
-    # - nightly test schedule
+    # - nightly test schedule or nightly triggered from buildkite ui
     # - changes to main or release/* branches (webhooks are from github)
     if: |
       (build.pull_request.id != null && !build.pull_request.repository.fork) ||
-      (build.source == "schedule" && build.env("K8S_NIGHTLY") == "1") ||
+      ((build.source == "schedule" || build.source == "ui") && build.env("K8S_NIGHTLY") == "1") ||
       ((build.branch == "main" || build.branch =~ /^release\//) && build.source == "webhook")
     command: buildkite-agent pipeline upload .buildkite/testsuite.yml
 
