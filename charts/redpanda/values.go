@@ -825,31 +825,10 @@ type Statefulset struct {
 	// Deprecated. Prefer [PodTemplate.Spec.SecurityContext].
 	PodSecurityContext *SecurityContext `json:"podSecurityContext"`
 	// Deprecated. Prefer [PodTemplate.Spec.Containers[*].SecurityContext].
-	SecurityContext SecurityContext `json:"securityContext" jsonschema:"required"`
-	SideCars        struct {
-		ConfigWatcher struct {
-			Enabled           bool                    `json:"enabled"`
-			ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-			Resources         map[string]any          `json:"resources"`
-			SecurityContext   *corev1.SecurityContext `json:"securityContext"`
-		} `json:"configWatcher"`
-		Controllers struct {
-			Image struct {
-				Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
-				Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
-			} `json:"image"`
-			Enabled            bool                    `json:"enabled"`
-			CreateRBAC         bool                    `json:"createRBAC"`
-			Resources          any                     `json:"resources"`
-			SecurityContext    *corev1.SecurityContext `json:"securityContext"`
-			HealthProbeAddress string                  `json:"healthProbeAddress"`
-			MetricsAddress     string                  `json:"metricsAddress"`
-			PprofAddress       string                  `json:"pprofAddress"`
-			Run                []string                `json:"run"`
-		} `json:"controllers"`
-	} `json:"sideCars" jsonschema:"required"`
-	ExtraVolumes      string `json:"extraVolumes"`      // XXX this is template-expanded into yaml
-	ExtraVolumeMounts string `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+	SecurityContext   SecurityContext `json:"securityContext" jsonschema:"required"`
+	SideCars          Sidecars        `json:"sideCars" jsonschema:"required"`
+	ExtraVolumes      string          `json:"extraVolumes"`      // XXX this is template-expanded into yaml
+	ExtraVolumeMounts string          `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 	InitContainers    struct {
 		Configurator struct {
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
@@ -925,6 +904,53 @@ func (t *Tuning) Translate() map[string]any {
 	}
 
 	return result
+}
+
+type Sidecars struct {
+	Image struct {
+		Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
+		Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
+	} `json:"image"`
+	ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+	Resources         map[string]any          `json:"resources"`
+	SecurityContext   *corev1.SecurityContext `json:"securityContext"`
+	PVCUnbinder       struct {
+		Enabled     bool   `json:"enabled"`
+		UnbindAfter string `json:"unbindAfter"`
+	} `json:"pvcUnbinder"`
+	BrokerDecommissioner struct {
+		Enabled                    bool   `json:"enabled"`
+		DecommissionAfter          string `json:"decommissionAfter"`
+		DecommissionRequeueTimeout string `json:"decommissionRequeueTimeout"`
+	} `json:"brokerDecommissioner"`
+	ConfigWatcher struct {
+		Enabled           bool                    `json:"enabled"`
+		ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+		Resources         map[string]any          `json:"resources"`
+		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
+	} `json:"configWatcher"`
+	Controllers struct {
+		Image struct {
+			Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
+			Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
+		} `json:"image"`
+		Enabled            bool                    `json:"enabled"`
+		CreateRBAC         bool                    `json:"createRBAC"`
+		Resources          any                     `json:"resources"`
+		SecurityContext    *corev1.SecurityContext `json:"securityContext"`
+		HealthProbeAddress string                  `json:"healthProbeAddress"`
+		MetricsAddress     string                  `json:"metricsAddress"`
+		PprofAddress       string                  `json:"pprofAddress"`
+		Run                []string                `json:"run"`
+	} `json:"controllers"`
+}
+
+func (s *Sidecars) ShouldCreateRBAC() bool {
+	return (s.Controllers.Enabled && s.Controllers.CreateRBAC) || s.AdditionalSidecarControllersEnabled()
+}
+
+func (s *Sidecars) AdditionalSidecarControllersEnabled() bool {
+	return s.PVCUnbinder.Enabled || s.BrokerDecommissioner.Enabled
 }
 
 type Listeners struct {
