@@ -365,6 +365,8 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 		return err
 	}
 
+	var errs []error
+
 	// set for tracking which objects are expected to exist in this reconciliation run.
 	created := make(map[gvkKey]struct{}, len(objs))
 	for _, obj := range objs {
@@ -399,15 +401,10 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 			continue
 		}
 
-		var errs []error
-
 		// TODO: how to handle immutable issues?
 		if err := r.apply(ctx, obj); err != nil {
 			errs = append(errs, errors.Wrapf(err, "deploying %T: %q", obj, obj.GetName()))
-		}
-
-		if len(errs) > 0 {
-			return errors.Join(errs...)
+			continue
 		}
 
 		log.V(logger.TraceLevel).Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))
@@ -417,6 +414,10 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 			Key: client.ObjectKeyFromObject(obj),
 			GVK: obj.GetObjectKind().GroupVersionKind(),
 		}] = struct{}{}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 
 	// If our ObservedGeneration is up to date, .Spec hasn't changed since the
