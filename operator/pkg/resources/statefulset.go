@@ -1010,7 +1010,7 @@ func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlist
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
 			Name:    l.Name,
 			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
-			Port:    advertisedPort,
+			Port:    TemplatedInt(advertisedPort),
 		})
 	}
 	return advertisedlisteners
@@ -1030,7 +1030,7 @@ func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (advertise
 		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
 			Name:    l.Name,
 			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
-			Port:    advertisedPort,
+			Port:    TemplatedInt(advertisedPort),
 		})
 	}
 	return advertisedlisteners
@@ -1060,7 +1060,7 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 	}
 
 	listeners := r.allAdditionalExternalListenersFromSpecAPIs()
-	jsonStr, err := listeners.Concat(listenersFromAdditionalCfg)
+	jsonStr, err := listeners.Append(listenersFromAdditionalCfg)
 	if err != nil {
 		r.logger.Error(err, "failed to concat additional listeners")
 		return nil

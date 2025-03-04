@@ -1146,7 +1146,8 @@ func collectClusterPorts(
 		clusterPorts = append(clusterPorts, redpandaPorts.PandaProxy.ToNamedServicePorts()...)
 	}
 	if redpandaCluster.Spec.Configuration.SchemaRegistry != nil {
-		clusterPorts = append(clusterPorts, redpandaPorts.SchemaRegistry.ToNamedServicePorts()...)
+		port := redpandaCluster.Spec.Configuration.SchemaRegistry.Port
+		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.SchemaRegistryPortName, Port: port})
 	}
 	if redpandaPorts.KafkaAPI.Internal != nil {
 		port := redpandaPorts.KafkaAPI.Internal.Port
