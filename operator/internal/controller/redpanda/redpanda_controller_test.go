@@ -1116,7 +1116,7 @@ func (s *RedpandaControllerSuite) hasChartReplaceDirectives() bool {
 
 	// Very very course check to see if there's a replace directive for a chart to the local version.
 	// NOTE: This (probably) won't handle go.work correctly.
-	matched, err := regexp.Match(`github.com/redpanda-data/redpanda-operator/charts/.+ => \.\.`, out)
+	matched, err := regexp.Match(`^\s*github.com/redpanda-data/redpanda-operator/charts/.+ => \.\.`, out)
 	s.NoError(err)
 
 	return matched
