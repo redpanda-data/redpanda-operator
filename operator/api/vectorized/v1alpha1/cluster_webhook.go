@@ -264,7 +264,7 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 	allErrs = append(allErrs, r.validateKafkaListeners(vcLog)...)
 	allErrs = append(allErrs, r.validateAdminListeners()...)
 	allErrs = append(allErrs, r.validatePandaproxyListeners(vcLog)...)
-	allErrs = append(allErrs, r.validateSchemaRegistryListener()...)
+	allErrs = append(allErrs, r.validateSchemaRegistryListeners()...)
 	allErrs = append(allErrs, r.checkCollidingPorts()...)
 	allErrs = append(allErrs, r.validateRedpandaMemory()...)
 	for _, rf := range sidecarResourceFields(r) {
@@ -403,24 +403,19 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 				"need at least one kafka api listener"))
 	}
 
-	var external *KafkaAPI
-	var externalIdx int
+	externals := []*KafkaAPI{}
+	indices := make(map[string]int)
 	for i := range r.Spec.Configuration.KafkaAPI {
 		p := &r.Spec.Configuration.KafkaAPI[i]
 		if p.External.Enabled {
-			if external != nil {
+			externals = append(externals, p)
+			if _, found := indices[p.Name]; found {
 				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
-						r.Spec.Configuration.KafkaAPI,
-						"only one kafka api listener can be marked as external"))
+					field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(i).Child("name"),
+						p.Name, "kafka api listener name must be unique"))
 			}
-			external = &r.Spec.Configuration.KafkaAPI[i]
-			externalIdx = i
+			indices[p.Name] = i
 		}
-	}
-
-	for i := range r.Spec.Configuration.KafkaAPI {
-		p := &r.Spec.Configuration.KafkaAPI[i]
 		tlsErrs := validateListener(
 			p.TLS.Enabled,
 			p.TLS.RequireClientAuth,
@@ -448,49 +443,51 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 	allErrs = append(allErrs,
 		validateTLSRules(r.KafkaTLSListeners(), field.NewPath("spec").Child("configuration").Child("kafkaApi"))...)
 
-	if !((len(r.Spec.Configuration.KafkaAPI) == 2 && external != nil) || (external == nil && len(r.Spec.Configuration.KafkaAPI) == 1)) {
+	if (len(r.Spec.Configuration.KafkaAPI) - len(externals)) != 1 {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
 				r.Spec.Configuration.KafkaAPI,
-				"one internal listener and up to to one external kafka api listener is required"))
+				"one internal listener is required"))
 	}
-	if external != nil && external.Port != 0 && (external.Port < 30000 || external.Port > 32768) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
-				r.Spec.Configuration.KafkaAPI,
-				"external port must be in the following range: 30000-32768"))
-	}
-	if external != nil && external.External.PreferredAddressType != "" && external.External.Subdomain != "" {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
-				r.Spec.Configuration.KafkaAPI,
-				"cannot provide both a preferred address type and a subdomain"))
-	}
-	if external != nil && external.External.Bootstrap != nil && external.External.Bootstrap.Port == 0 {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
-				r.Spec.Configuration.KafkaAPI,
-				"bootstrap port cannot be empty"))
-	}
-	//nolint:dupl // not identical
-	if external != nil && external.External.EndpointTemplate != "" {
-		if external.External.Subdomain == "" {
+	for _, external := range externals {
+		if external.Port != 0 && (external.Port < 30000 || external.Port > 32768) {
 			allErrs = append(allErrs,
-				field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(externalIdx).Child("external"),
-					external.External,
-					"endpointTemplate can only be used in combination with subdomain"))
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
+					r.Spec.Configuration.KafkaAPI,
+					"external port must be in the following range: 30000-32768"))
 		}
-
-		err := checkValidEndpointTemplate(external.External.EndpointTemplate)
-		if err != nil {
-			log.Error(err, "Invalid endpoint template received", "template", external.External.EndpointTemplate)
+		if external.External.PreferredAddressType != "" && external.External.Subdomain != "" {
 			allErrs = append(allErrs,
-				field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(externalIdx).Child("external").Child("endpointTemplate"),
-					external.External.EndpointTemplate,
-					fmt.Sprintf("template is invalid: %v", err)))
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
+					r.Spec.Configuration.KafkaAPI,
+					"cannot provide both a preferred address type and a subdomain"))
+		}
+		if external.External.Bootstrap != nil && external.External.Bootstrap.Port == 0 {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi"),
+					r.Spec.Configuration.KafkaAPI,
+					"bootstrap port cannot be empty"))
+		}
+		i := indices[external.Name]
+		//nolint:dupl // not identical
+		if external.External.EndpointTemplate != "" {
+			if external.External.Subdomain == "" {
+				allErrs = append(allErrs,
+					field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(i).Child("external"),
+						external.External,
+						"endpointTemplate can only be used in combination with subdomain"))
+			}
+
+			err := checkValidEndpointTemplate(external.External.EndpointTemplate)
+			if err != nil {
+				log.Error(err, "Invalid endpoint template received", "template", external.External.EndpointTemplate)
+				allErrs = append(allErrs,
+					field.Invalid(field.NewPath("spec").Child("configuration").Child("kafkaApi").Index(i).Child("external").Child("endpointTemplate"),
+						external.External.EndpointTemplate,
+						fmt.Sprintf("template is invalid: %v", err)))
+			}
 		}
 	}
-
 	return allErrs
 }
 
@@ -504,7 +501,8 @@ func checkValidEndpointTemplate(tmpl string) error {
 //nolint:funlen,gocyclo // it's a sequence of checks
 func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 	var allErrs field.ErrorList
-	var proxyExternal *PandaproxyAPI
+	proxyExternals := []*PandaproxyAPI{}
+	indices := make(map[string]int)
 	log := l.WithName("validatePandaproxyListeners")
 	kafkaExternal := r.ExternalListener()
 	p := r.Spec.Configuration.PandaproxyAPI
@@ -512,13 +510,14 @@ func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 		if !p[i].External.Enabled {
 			continue
 		}
-		if proxyExternal != nil {
+		proxyExternal := &r.Spec.Configuration.PandaproxyAPI[i]
+		proxyExternals = append(proxyExternals, proxyExternal)
+		if _, found := indices[proxyExternal.Name]; found {
 			allErrs = append(allErrs,
-				field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi").Index(i),
-					r.Spec.Configuration.PandaproxyAPI[i],
-					"only one pandaproxy api listener can be marked as external"))
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi").Index(i).Child("name"),
+					proxyExternal.Name, "pandaproxy api listener name must be unique"))
 		}
-		proxyExternal = &r.Spec.Configuration.PandaproxyAPI[i]
+		indices[proxyExternal.Name] = i
 		if proxyExternal.Port != 0 && (proxyExternal.Port < 30000 || proxyExternal.Port > 32768) {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi").Index(i),
@@ -584,17 +583,7 @@ func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 	}
 
 	// for now only one listener can have TLS to be backward compatible with v1alpha1 API
-	foundListenerWithTLS := false
 	for i := range r.Spec.Configuration.PandaproxyAPI {
-		if p[i].TLS.Enabled {
-			if foundListenerWithTLS {
-				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi").Index(i).Child("tls"),
-						r.Spec.Configuration.PandaproxyAPI[i].TLS,
-						"only one pandaproxy listener can have TLS enabled"))
-			}
-			foundListenerWithTLS = true
-		}
 		tlsErrs := validateListener(
 			p[i].TLS.Enabled,
 			p[i].TLS.RequireClientAuth,
@@ -610,96 +599,105 @@ func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 	}
 
 	// If we have an external proxy listener and no other listeners, we're missing an internal one
-	if proxyExternal != nil && len(r.Spec.Configuration.PandaproxyAPI) == 1 {
+	if (len(r.Spec.Configuration.PandaproxyAPI)-len(proxyExternals)) != 1 && len(r.Spec.Configuration.PandaproxyAPI) != 0 {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi"),
+				r.Spec.Configuration.PandaproxyAPI,
+				"one internal listener for pandaproxy is allowed"))
+	}
+	if len(proxyExternals) > 0 && len(r.Spec.Configuration.PandaproxyAPI) == len(proxyExternals) {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi"),
 				r.Spec.Configuration.PandaproxyAPI,
 				"an internal pandaproxy listener is required when an external one is provided"))
 	}
 
-	if !((len(r.Spec.Configuration.PandaproxyAPI) == 2 && proxyExternal != nil) || (proxyExternal == nil && len(r.Spec.Configuration.PandaproxyAPI) <= 1)) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("pandaproxyApi"),
-				r.Spec.Configuration.PandaproxyAPI,
-				"up to one internal listener and no external listener, or one external and one internal listener for pandaproxy is allowed"))
-	}
-
 	return allErrs
 }
 
-func (r *Cluster) validateSchemaRegistryListener() field.ErrorList {
+func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
 	var allErrs field.ErrorList
-	schemaRegistry := r.Spec.Configuration.SchemaRegistry
-	if schemaRegistry == nil {
+	sr := r.Spec.Configuration.SchemaRegistry
+	if sr == nil {
 		return allErrs
 	}
-	if schemaRegistry.TLS != nil {
-		tlsErrs := validateListener(
-			schemaRegistry.TLS.Enabled,
-			schemaRegistry.TLS.RequireClientAuth,
-			schemaRegistry.TLS.IssuerRef,
-			schemaRegistry.TLS.NodeSecretRef,
-			schemaRegistry.TLS.ClientCACertRef,
-			field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("tls"),
-			schemaRegistry.GetExternal(),
-			field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external"),
-			r.GetNamespace(),
-		)
-		allErrs = append(allErrs, tlsErrs...)
+	schemaRegistries := []SchemaRegistryAPI{*sr}
+	schemaRegistries = append(schemaRegistries, r.Spec.Configuration.AdditionalSchemaRegistry...)
+	indices := make(map[string]int)
+	for i, schemaRegistry := range schemaRegistries {
+		if _, found := indices[schemaRegistry.Name]; found {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("name"),
+					schemaRegistry.Name, "schema registry listener name must be unique"))
+		}
+		indices[schemaRegistry.Name] = i
+		if schemaRegistry.TLS != nil {
+			tlsErrs := validateListener(
+				schemaRegistry.TLS.Enabled,
+				schemaRegistry.TLS.RequireClientAuth,
+				schemaRegistry.TLS.IssuerRef,
+				schemaRegistry.TLS.NodeSecretRef,
+				schemaRegistry.TLS.ClientCACertRef,
+				field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("tls"),
+				schemaRegistry.GetExternal(),
+				field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external"),
+				r.GetNamespace(),
+			)
+			allErrs = append(allErrs, tlsErrs...)
+		}
+		if !r.IsSchemaRegistryExternallyAvailable() {
+			return allErrs
+		}
+		kafkaExternal := r.ExternalListener()
+		if kafkaExternal == nil || !kafkaExternal.External.Enabled {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry"),
+					r.Spec.Configuration.SchemaRegistry,
+					"cannot have a schema registry external listener without a kafka external listener"))
+		}
+		if kafkaExternal == nil && schemaRegistry.External.Subdomain != "" {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("subdomain"),
+					r.Spec.Configuration.SchemaRegistry.External.Subdomain,
+					"the external kafka listener can't be empty if the registry subdomain is set"))
+		}
+		if kafkaExternal != nil && kafkaExternal.External.Subdomain != schemaRegistry.External.Subdomain {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("subdomain"),
+					r.Spec.Configuration.SchemaRegistry.External.Subdomain,
+					"sudomain of external schema registry must be the same as kafka's"))
+		}
+		if schemaRegistry.External.PreferredAddressType != "" {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("preferredAddressType"),
+					r.Spec.Configuration.SchemaRegistry.External.PreferredAddressType,
+					"cannot provide a preferred address type for schema registry"))
+		}
+		if schemaRegistry.External.Bootstrap != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry"),
+					r.Spec.Configuration.SchemaRegistry.External,
+					"bootstrap loadbalancer not available for schema registry"))
+		}
+		if schemaRegistry.External.EndpointTemplate != "" {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("endpointTemplate"),
+					r.Spec.Configuration.SchemaRegistry.External.EndpointTemplate,
+					"cannot provide an endpoint template for schema registry"))
+		}
+		if schemaRegistry.External.StaticNodePort && (schemaRegistry.Port < 30000 || schemaRegistry.Port > 32768) {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("port"),
+					r.Spec.Configuration.SchemaRegistry,
+					"port must be in the range [30000-32768] when using a static node port"))
+		}
+		if schemaRegistry.External.Endpoint != "" && !validHostnameSegment.MatchString(schemaRegistry.External.Endpoint) {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("endpoint"),
+					r.Spec.Configuration.SchemaRegistry.External.Endpoint,
+					fmt.Sprintf("endpoint for schema registry does not match regexp %s", validHostnameSegment.String())))
+		}
 	}
-	if !r.IsSchemaRegistryExternallyAvailable() {
-		return allErrs
-	}
-	kafkaExternal := r.ExternalListener()
-	if kafkaExternal == nil || !kafkaExternal.External.Enabled {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry"),
-				r.Spec.Configuration.SchemaRegistry,
-				"cannot have a schema registry external listener without a kafka external listener"))
-	}
-	if kafkaExternal == nil && schemaRegistry.External.Subdomain != "" {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("subdomain"),
-				r.Spec.Configuration.SchemaRegistry.External.Subdomain,
-				"the external kafka listener can't be empty if the registry subdomain is set"))
-	}
-	if kafkaExternal != nil && kafkaExternal.External.Subdomain != schemaRegistry.External.Subdomain {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("subdomain"),
-				r.Spec.Configuration.SchemaRegistry.External.Subdomain,
-				"sudomain of external schema registry must be the same as kafka's"))
-	}
-	if schemaRegistry.External.PreferredAddressType != "" {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("preferredAddressType"),
-				r.Spec.Configuration.SchemaRegistry.External.PreferredAddressType,
-				"cannot provide a preferred address type for schema registry"))
-	}
-	if schemaRegistry.External.Bootstrap != nil {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry"),
-				r.Spec.Configuration.SchemaRegistry.External,
-				"bootstrap loadbalancer not available for schema registry"))
-	}
-	if schemaRegistry.External.EndpointTemplate != "" {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("endpointTemplate"),
-				r.Spec.Configuration.SchemaRegistry.External.EndpointTemplate,
-				"cannot provide an endpoint template for schema registry"))
-	}
-	if schemaRegistry.External.StaticNodePort && (schemaRegistry.Port < 30000 || schemaRegistry.Port > 32768) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("port"),
-				r.Spec.Configuration.SchemaRegistry,
-				"port must be in the range [30000-32768] when using a static node port"))
-	}
-	if schemaRegistry.External.Endpoint != "" && !validHostnameSegment.MatchString(schemaRegistry.External.Endpoint) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("configuration").Child("schemaRegistry").Child("external").Child("endpoint"),
-				r.Spec.Configuration.SchemaRegistry.External.Endpoint,
-				fmt.Sprintf("endpoint for schema registry does not match regexp %s", validHostnameSegment.String())))
-	}
-
 	return allErrs
 }
 

@@ -1075,7 +1075,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
-			expectedEnvValue: "",
+			expectedEnvValue: "{}",
 		},
 		{
 			name: "additional kafka listeners",
@@ -1116,6 +1116,285 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				"pandaproxy.advertised_pandaproxy_api", "[{'name': 'pl-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
 				"pandaproxy.pandaproxy_api", "[{'name': 'pl-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
 				"redpanda.advertised_kafka_api", "[{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
+				"redpanda.kafka_api", "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
+			),
+		},
+		{
+			name: "multiple kafka listeners in configuration",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+							{
+								Name:                 "kafka",
+								Port:                 9092,
+								AuthenticationMethod: "sasl",
+							},
+							{
+								Name:                 "kafka-external",
+								Port:                 30092,
+								AuthenticationMethod: "sasl",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled: true,
+								},
+							},
+							{
+								Name:                 "kafka-mtls",
+								Port:                 30093,
+								AuthenticationMethod: "mtls_identity",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled:           true,
+									RequireClientAuth: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
+				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093}]",
+			),
+		},
+		{
+			name: "multiple kafka listeners with private link in configuration",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+							{
+								Name:                 "kafka",
+								Port:                 9092,
+								AuthenticationMethod: "sasl",
+							},
+							{
+								Name:                 "kafka-mtls",
+								Port:                 30093,
+								AuthenticationMethod: "mtls_identity",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled:           true,
+									RequireClientAuth: true,
+								},
+							},
+							{
+								Name:                 "kafka-private-link",
+								Port:                 30292,
+								AuthenticationMethod: "sasl",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+									PortTemplate:     "{{32092 | add .Index}}",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
+				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093},{'name':'kafka-private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':{{32092 | add .Index}}}]",
+			),
+		},
+		{
+			name: "multiple proxy listeners in configuration",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
+							{
+								Name:                 "proxy",
+								Port:                 8082,
+								AuthenticationMethod: "http_basic",
+							},
+							{
+								Name:                 "proxy-external",
+								Port:                 30082,
+								AuthenticationMethod: "http_basic",
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:          true,
+										EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+										Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+									},
+								},
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
+									Enabled: true,
+								},
+							},
+							{
+								Name:                 "proxy-mtls",
+								Port:                 30083,
+								AuthenticationMethod: "mtls_identity",
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:          true,
+										EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+										Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+									},
+								},
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
+									Enabled:           true,
+									RequireClientAuth: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
+				"pandaproxy.advertised_pandaproxy_api", "[{'name':'proxy-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30083}]",
+			),
+		},
+		{
+			name: "multiple proxy listeners with private link in configuration",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
+							{
+								Name:                 "proxy",
+								Port:                 8082,
+								AuthenticationMethod: "http_basic",
+							},
+							{
+								Name:                 "proxy-mtls",
+								Port:                 30083,
+								AuthenticationMethod: "mtls_identity",
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:          true,
+										EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+										Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+									},
+								},
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
+									Enabled:           true,
+									RequireClientAuth: true,
+								},
+							},
+							{
+								Name:                 "proxy-private-link",
+								Port:                 30282,
+								AuthenticationMethod: "http_basic",
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:          true,
+										EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+										Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+										PortTemplate:     "{{35082 | add .Index}}",
+									},
+								},
+								TLS: vectorizedv1alpha1.PandaproxyAPITLS{
+									Enabled: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s"}`,
+				"pandaproxy.advertised_pandaproxy_api", "[{'name':'proxy-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30083},{'name':'proxy-private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':{{35082 | add .Index}}}]",
+			),
+		},
+		{
+			name: "listeners in both configuration and additional configuration",
+			pandaCluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					NodePools: []vectorizedv1alpha1.NodePoolSpec{
+						{
+							Name:     "test",
+							Replicas: &replicas,
+						},
+					},
+					AdditionalConfiguration: map[string]string{
+						"redpanda.kafka_api":                   "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
+						"redpanda.advertised_kafka_api":        "[{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
+						"pandaproxy.pandaproxy_api":            "[{'name': 'pl-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
+						"pandaproxy.advertised_pandaproxy_api": "[{'name': 'pl-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
+					},
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+							{
+								Name:                 "kafka",
+								Port:                 9092,
+								AuthenticationMethod: "sasl",
+							},
+							{
+								Name:                 "kafka-external",
+								Port:                 30092,
+								AuthenticationMethod: "sasl",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled: true,
+								},
+							},
+							{
+								Name:                 "kafka-mtls",
+								Port:                 30093,
+								AuthenticationMethod: "mtls_identity",
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:          true,
+									EndpointTemplate: "{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}",
+									Subdomain:        "cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com",
+								},
+								TLS: vectorizedv1alpha1.KafkaAPITLS{
+									Enabled:           true,
+									RequireClientAuth: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedEnvValue: fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s","%s":"%s"}`,
+				"pandaproxy.advertised_pandaproxy_api", "[{'name': 'pl-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39282 | add .Index}}}]",
+				"pandaproxy.pandaproxy_api", "[{'name': 'pl-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]",
+				"redpanda.advertised_kafka_api", "[{'name':'kafka-mtls','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com','port':30093},{'name': 'pl-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",
 				"redpanda.kafka_api", "[{'name': 'pl-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]",
 			),
 		},

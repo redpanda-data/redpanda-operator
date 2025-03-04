@@ -80,9 +80,6 @@ var (
 
 	// terminationGracePeriodSeconds should account for additional delay introduced by hooks
 	terminationGracePeriodSeconds int64 = 120
-
-	// additionalListenerCfgNames contains the list of the listener names supported in additionalConfiguration.
-	additionalListenerCfgNames = []string{"redpanda.kafka_api", "redpanda.advertised_kafka_api", "pandaproxy.pandaproxy_api", "pandaproxy.advertised_pandaproxy_api"}
 )
 
 // ConfiguratorSettings holds settings related to configurator container and deployment
@@ -999,36 +996,87 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 	return ports
 }
 
-// AdditionalListenersEnvVars returns the env var containing the additioanl listeners specified in additionalConfiguration.
-func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
-	if len(r.pandaCluster.Spec.AdditionalConfiguration) == 0 {
-		return nil
+func (r *StatefulSetResource) AdditionalKafkaExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
+	listeners := r.pandaCluster.AllKafkaAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalKafkaListenerName {
+			continue
+		}
+		port := strconv.Itoa(l.Port)
+		advertisedPort := port
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
+		}
+		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
+			Port:    TemplatedInt(advertisedPort),
+		})
 	}
+	return advertisedlisteners
+}
 
-	cfg := map[string]string{}
-	for _, k := range additionalListenerCfgNames {
-		if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
-			cfg[k] = v
+func (r *StatefulSetResource) AdditionalPandaProxyExternalListeners() (advertisedlisteners []listenerTemplateSpec) {
+	listeners := r.pandaCluster.AllPandaproxyAPIExternalListeners()
+	for _, l := range listeners {
+		if l.Name == DefaultExternalProxyListenerName {
+			continue
+		}
+		port := strconv.Itoa(l.Port)
+		advertisedPort := port
+		if l.External.PortTemplate != "" {
+			advertisedPort = l.External.PortTemplate
+		}
+		advertisedlisteners = append(advertisedlisteners, listenerTemplateSpec{
+			Name:    l.Name,
+			Address: fmt.Sprintf("%s.%s", l.External.EndpointTemplate, l.External.Subdomain),
+			Port:    TemplatedInt(advertisedPort),
+		})
+	}
+	return advertisedlisteners
+}
+
+// allAdditionalExternalListenersFromSpecAPIs returns all additional external listeners from the API blocks under
+// the spec configuration, including KafkaAPI, PandaproxyAPI, and AdditionalSchemaRegistry.
+func (r *StatefulSetResource) allAdditionalExternalListenersFromSpecAPIs() *allListenersTemplateSpec {
+	kafkaAdvertisedListeners := r.AdditionalKafkaExternalListeners()
+	proxyAdvertisedListeners := r.AdditionalPandaProxyExternalListeners()
+
+	return &allListenersTemplateSpec{
+		KafkaAdvertisedListeners: kafkaAdvertisedListeners,
+		ProxyAdvertisedListeners: proxyAdvertisedListeners,
+	}
+}
+
+// AdditionalListenersEnvVars returns the env var passed to the configurator for configuring additioanl listeners.
+func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
+	listenersFromAdditionalCfg := map[string]string{}
+	if len(r.pandaCluster.Spec.AdditionalConfiguration) > 0 {
+		for _, k := range AdditionalListenerCfgNames {
+			if v, found := r.pandaCluster.Spec.AdditionalConfiguration[k]; found {
+				listenersFromAdditionalCfg[k] = v
+			}
 		}
 	}
-	if len(cfg) == 0 {
-		return nil
-	}
-	jsonStr, err := json.Marshal(cfg)
+
+	listeners := r.allAdditionalExternalListenersFromSpecAPIs()
+	jsonStr, err := listeners.Concat(listenersFromAdditionalCfg)
 	if err != nil {
+		r.logger.Error(err, "failed to concat additional listeners")
 		return nil
 	}
 	return []corev1.EnvVar{{
 		Name:  "ADDITIONAL_LISTENERS",
-		Value: string(jsonStr),
+		Value: jsonStr,
 	}}
 }
 
-// GetPortsForListenersInAdditionalConfig gets the ports for the additional listeners and advertised APIs set in addtionalConfiguration.
+// GetPortsForListenersInAdditionalConfig gets the ports for the additional listeners and advertised APIs set in additionalConfiguration.
 // - redpanda.kafka_api
 // - redpanda.advertised_kafka_api
 // - pandaproxy.pandaproxy_api
 // - pandaproxy.advertised_pandaproxy_api
+// - schema_registry.schema_registry_api
 // example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
 func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{}
@@ -1062,8 +1110,8 @@ func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.
 		return nil
 	}
 
-	ports = append(ports, getPorts("redpanda.kafka_api")...)
-	ports = append(ports, getPorts("pandaproxy.pandaproxy_api")...)
+	ports = append(ports, getPorts(KafkaAPIConfigPath)...)
+	ports = append(ports, getPorts(PandaproxyAPIConfigPath)...)
 
 	return ports
 }
