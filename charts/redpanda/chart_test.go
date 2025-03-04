@@ -909,6 +909,13 @@ func TestControllersTag(t *testing.T) {
 		string(values.Statefulset.SideCars.Controllers.Image.Tag),
 		"the redpanda chart's values.yaml's controllers tag should be equal to the operator chart's appVersion",
 	)
+
+	require.Equal(
+		t,
+		chart["appVersion"].(string),
+		string(values.Statefulset.SideCars.Image.Tag),
+		"the redpanda chart's values.yaml's sidecar tag should be equal to the operator chart's appVersion",
+	)
 }
 
 func TestGoHelmEquivalence(t *testing.T) {

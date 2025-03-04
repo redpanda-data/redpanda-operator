@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type Server struct {
@@ -115,6 +116,8 @@ func (s *Server) NeedLeaderElection() bool {
 	// explicitly elect this as not needing leadership election
 	return false
 }
+
+var _ manager.LeaderElectionRunnable = (*Server)(nil)
 
 func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("running health probe server", "address", s.server.Addr)
