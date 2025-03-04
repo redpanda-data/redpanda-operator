@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Promoted the config-watcher sidecar into a real go binary that handles user management and simplifies cluster health checks so they no longer fail when the sole issue is that other nodes in the cluster are unavailable. Additionally the new sidecar subsumes the behavior of the `statefulset.sideCars.controllers` stanza which should now be specified via their own `enabled` flags.
-time: 2025-02-25T09:01:19.219637-05:00

@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Bump AppVersion to v24.3.6 Redpanda release
-time: 2025-02-28T13:20:38.392864+01:00
