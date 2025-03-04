@@ -241,10 +241,6 @@ func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRole
 func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
-		return nil
-	}
-
 	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
@@ -259,6 +255,16 @@ func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+			},
+			{
+				Verbs:     []string{"create", "patch"},
+				APIGroups: []string{""},
+				Resources: []string{"events"},
+			},
+			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"statefulsets/status"},
 				Verbs:     []string{"patch", "update"},
@@ -271,7 +277,7 @@ func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"statefulsets"},
-				Verbs:     []string{"get", "patch", "update", "list", "watch"},
+				Verbs:     []string{"get", "list", "patch", "update", "watch"},
 			},
 			{
 				APIGroups: []string{""},
@@ -284,10 +290,6 @@ func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
 
 func SidecarControllersRoleBinding(dot *helmette.Dot) *rbacv1.RoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
-		return nil
-	}
 
 	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
 	return &rbacv1.RoleBinding{
