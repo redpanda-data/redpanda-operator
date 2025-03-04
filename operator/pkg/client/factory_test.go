@@ -364,7 +364,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	testutil.SkipIfNotIntegration(t)
 
 	ctx := context.Background()
-	cluster, err := k3d.NewCluster(t.Name(), k3d.WithAgents(1))
+	cluster, err := k3d.NewCluster("client-tls-listeners", k3d.WithAgents(1))
 	require.NoError(t, err)
 	t.Logf("created cluster %T %q", cluster, cluster.Name)
 
