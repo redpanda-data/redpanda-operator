@@ -71,6 +71,25 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 	}
 	defer client.Close()
 
+	// This is essentially the old health check of our broker nodes, it is here
+	// to act as a fall back for certain 24.x and 23.x clusters that have a broken
+	// /v1/partitions/local_summary endpoint that doesn't properly report on under
+	// replicated partitions (in testing, it generally shows under-replication when
+	// there is none). By placing this here we essentially say, "if the strict cluster
+	// overview health check passes, then don't run the relaxed health check". This has
+	// the benefit of basically acting like our old health check in clusters that are
+	// otherwise broken.
+	//
+	// Reference: https://github.com/redpanda-data/redpanda/pull/24837
+	healthOverview, err := client.GetHealthOverview(ctx)
+	if err != nil {
+		return false, fmt.Errorf("fetching cluser health: %w", err)
+	}
+
+	if healthOverview.IsHealthy {
+		return true, nil
+	}
+
 	// This check is a more relaxed version of our previous "readiness" probe that was
 	// based solely off of the cluster health. It works via doing the following:
 	//
@@ -91,6 +110,7 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 
 	// is the broker marked as active and not being decommissioned
 	if broker.MembershipStatus != rpadmin.MembershipStatusActive {
+		p.logger.Info("broker membership not active")
 		return false, nil
 	}
 
@@ -101,6 +121,7 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 
 	// is the broker in maintenance mode and currently draining
 	if status.Draining {
+		p.logger.Info("broker is draining")
 		return false, nil
 	}
 
@@ -111,6 +132,7 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 
 	// do we have any leaderless or under-replicated nodes?
 	if summary.Leaderless != 0 || summary.UnderReplicated != 0 {
+		p.logger.Info("broker has leaderless or under-replicated partitions", "leaderless", summary.Leaderless, "under-replicated", summary.UnderReplicated)
 		return false, nil
 	}
 
@@ -121,6 +143,7 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 
 	// do we have an elected cluster leader (i.e. are we part of quorum)
 	if clusterHealth.ControllerID < 0 {
+		p.logger.Info("broker has no elected cluster leader")
 		return false, nil
 	}
 
