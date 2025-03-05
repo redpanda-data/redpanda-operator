@@ -155,8 +155,9 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 			w.log.Error(err, "watcher returned an error")
 			time.Sleep(5 * time.Second)
 		case event := <-watcher.Events:
-			file := path.Join(w.usersDirectory, event.Name)
-			w.SyncUsers(ctx, file)
+			if strings.HasSuffix(event.Name, ".txt") {
+				w.SyncUsers(ctx, event.Name)
+			}
 		case <-ctx.Done():
 			return nil
 		}
@@ -170,6 +171,8 @@ func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
 		return
 	}
 	defer file.Close()
+
+	w.log.Info("synchronizing users in file", "file", path)
 
 	// sync our internal superuser first
 	internalSuperuser, password, mechanism := getInternalUser()
@@ -206,6 +209,8 @@ func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
 }
 
 func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {
+	w.log.Info("setting superusers", "users", users)
+
 	if _, err := w.adminClient.PatchClusterConfig(ctx, map[string]any{
 		"superusers": users,
 	}, []string{}); err != nil {
@@ -214,6 +219,8 @@ func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {
 }
 
 func (w *ConfigWatcher) syncUser(ctx context.Context, user, password, mechanism string, recreate bool) {
+	w.log.Info("synchronizing user", "user", user)
+
 	if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			if recreate {
