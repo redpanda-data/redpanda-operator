@@ -35,7 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	// "github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -90,7 +92,10 @@ func New(t *testing.T, options Options) *Env {
 		options.Logger = logr.Discard()
 	}
 
-	cluster, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
+	host, err := k3d.GetOrCreate(k3dClusterName)
+	require.NoError(t, err)
+
+	cluster, err := vcluster.New(context.Background(), host)
 	require.NoError(t, err)
 
 	if len(options.CRDs) > 0 {
@@ -129,9 +134,17 @@ func New(t *testing.T, options Options) *Env {
 		config:    cluster.RESTConfig(),
 	}
 
-	t.Logf("Executing in namespace '%s'", ns.Name)
+	t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
 
-	t.Cleanup(env.shutdown)
+	t.Cleanup(func() {
+		env.cancel()
+		assert.NoError(env.t, env.group.Wait())
+
+		if !testutil.Retain() {
+			require.NoError(t, cluster.Delete())
+		}
+	})
+	// t.Cleanup(env.shutdown)
 
 	return env
 }
