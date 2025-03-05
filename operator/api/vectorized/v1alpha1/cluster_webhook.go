@@ -645,7 +645,7 @@ func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
 			)
 			allErrs = append(allErrs, tlsErrs...)
 		}
-		if !r.IsSchemaRegistryExternallyAvailable() {
+		if !schemaRegistry.IsExternallyAvailable() {
 			return allErrs
 		}
 		kafkaExternal := r.ExternalListener()

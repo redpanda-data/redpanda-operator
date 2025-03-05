@@ -317,9 +317,11 @@ func (cc *ClusterCertificates) prepareAPI(
 	}
 
 	generateClientCerts := false
+	result.externalClientCACertificate = firstTLSListener.ClientCACertRef
 	for _, l := range tlsListeners {
 		if l.GetTLS().RequireClientAuth {
 			generateClientCerts = true
+			result.externalClientCACertificate = l.GetTLS().ClientCACertRef
 			break
 		}
 	}
@@ -334,7 +336,6 @@ func (cc *ClusterCertificates) prepareAPI(
 		}
 	}
 
-	result.externalClientCACertificate = firstTLSListener.ClientCACertRef
 	if result.externalClientCACertificate != nil {
 		result.caCertificateBundle = NewCACertificateBundle(cc.client, cc.scheme, cc.pandaCluster,
 			[]*types.NamespacedName{result.clientCACertificateName(), rootResourceKey, result.nodeCertificateName()}, caCertBundleSuffix, cc.logger)
