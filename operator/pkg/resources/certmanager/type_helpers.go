@@ -89,8 +89,11 @@ func schemaRegistryAPIListeners(r *vectorizedv1alpha1.Cluster) []APIListener {
 	if r.Spec.Configuration.SchemaRegistry == nil {
 		return []APIListener{}
 	}
-
-	return []APIListener{*r.Spec.Configuration.SchemaRegistry}
+	listeners := []APIListener{*r.Spec.Configuration.SchemaRegistry}
+	for i := range r.Spec.Configuration.AdditionalSchemaRegistry {
+		listeners = append(listeners, r.Spec.Configuration.AdditionalSchemaRegistry[i])
+	}
+	return listeners
 }
 
 // PandaProxyAPIListeners returns all PandaProxyAPI listeners

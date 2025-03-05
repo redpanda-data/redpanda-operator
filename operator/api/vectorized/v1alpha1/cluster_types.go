@@ -1215,8 +1215,13 @@ func (r *Cluster) SchemaRegistryAPIURL() string {
 	// Prefer to use internal URL
 	// But if it is externally available with TLS, we cannot call internal URL without TLS and the TLS certs are signed for external URL
 	host := r.Status.Nodes.SchemaRegistry.Internal
-	if r.IsSchemaRegistryExternallyAvailable() && r.IsSchemaRegistryTLSEnabled() {
-		host = r.Status.Nodes.SchemaRegistry.External
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].External != nil && allSchemaRegistry[i].External.Enabled &&
+			allSchemaRegistry[i].TLS != nil && allSchemaRegistry[i].TLS.Enabled {
+			host = r.Status.Nodes.SchemaRegistry.External
+			break
+		}
 	}
 	if sr := r.Spec.Configuration.SchemaRegistry; sr != nil {
 		u := url.URL{Scheme: sr.GetHTTPScheme(), Host: host}
@@ -1228,12 +1233,12 @@ func (r *Cluster) SchemaRegistryAPIURL() string {
 // SchemaRegistryAPITLS returns a SchemaRegistry listener that has TLS enabled.
 // It returns nil if no TLS is configured.
 func (r *Cluster) SchemaRegistryAPITLS() *SchemaRegistryAPI {
-	if r == nil {
-		return nil
-	}
-	schemaRegistry := r.Spec.Configuration.SchemaRegistry
-	if schemaRegistry != nil && schemaRegistry.TLS != nil && schemaRegistry.TLS.Enabled {
-		return schemaRegistry
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		schemaRegistry := &allSchemaRegistry[i]
+		if schemaRegistry.TLS != nil && schemaRegistry.TLS.Enabled {
+			return schemaRegistry
+		}
 	}
 	return nil
 }
@@ -1253,35 +1258,49 @@ func (r *Cluster) AllSchemaRegistryListeners() []SchemaRegistryAPI {
 // IsSchemaRegistryExternallyAvailable returns true if schema registry
 // is enabled with external connectivity
 func (r *Cluster) IsSchemaRegistryExternallyAvailable() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.External != nil &&
-		r.Spec.Configuration.SchemaRegistry.External.Enabled
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].External != nil && allSchemaRegistry[i].External.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryTLSEnabled returns true if schema registry
 // is enabled with TLS
 func (r *Cluster) IsSchemaRegistryTLSEnabled() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.TLS != nil &&
-		r.Spec.Configuration.SchemaRegistry.TLS.Enabled
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].TLS != nil && allSchemaRegistry[i].TLS.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryMutualTLSEnabled returns true if schema registry
 // is enabled with mutual TLS
 func (r *Cluster) IsSchemaRegistryMutualTLSEnabled() bool {
-	return r != nil &&
-		r.IsSchemaRegistryTLSEnabled() &&
-		r.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].TLS != nil && allSchemaRegistry[i].TLS.RequireClientAuth {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSchemaRegistryAuthHTTPBasic returns true if schema registry authentication method
 // is enabled with HTTP Basic
 func (r *Cluster) IsSchemaRegistryAuthHTTPBasic() bool {
-	return r != nil &&
-		r.Spec.Configuration.SchemaRegistry != nil &&
-		r.Spec.Configuration.SchemaRegistry.AuthenticationMethod == httpBasicAuthorizationMechanism
+	allSchemaRegistry := r.AllSchemaRegistryListeners()
+	for i := range allSchemaRegistry {
+		if allSchemaRegistry[i].AuthenticationMethod == httpBasicAuthorizationMechanism {
+			return true
+		}
+	}
+	return false
 }
 
 // IsUsingMaintenanceModeHooks tells if the cluster is configured to use maintenance mode hooks on the pods.
