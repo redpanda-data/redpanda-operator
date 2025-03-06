@@ -1,3 +1,4 @@
+# An explicitly-set property will be reset to its configured value
 apiVersion: batch/v1
 kind: Job
 metadata:
