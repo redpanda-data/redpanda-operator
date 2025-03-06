@@ -19,7 +19,11 @@ buildNpmPackage rec {
 
   # the compiled typescript files don't come in the release tags and neither does a package-lock.json
   # due to this project using yarn, so just copy over the checked in package-lock.json and generate
-  # the typescript files prior to installation so the binary can be run. 
+  # the typescript files prior to installation so the binary can be run.
+  #   
+  # to generate a new package-lock.json if say the version of backport installed needs to be changed
+  # download the version of the backport release you want to install unzip it into your system, run "npm install"
+  # and copy the package-lock.json to "ci/files/backport-package-lock.json"
   preInstall = ''
     npx tsc
   '';
