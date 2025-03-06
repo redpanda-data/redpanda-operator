@@ -1,0 +1,20 @@
+name: Manage Labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/labels.json
+  workflow_dispatch:
+
+concurrency: manage-labels
+
+jobs:
+  manage-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lannonbr/issue-label-manager-action@3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
