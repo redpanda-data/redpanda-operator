@@ -136,17 +136,6 @@ tasks:
     cmds:
     - changie merge -u '## Unreleased' # Ensure CHANGELOG.mds are up to date.
 
-  generate:backport-package:
-    generates:
-    - ci/node-env.nix
-    - ci/node-packages.nix
-    - ci/backport.nix
-    sources:
-    - ./ci/backport-packages.json
-    cmds:
-    - node2nix -i ./ci/backport-packages.json -18 -e ci/node-env.nix -o ci/node-packages.nix -c ci/backport.nix
-    - nix fmt
-
   build:
     cmds:
       - task: build:operator

@@ -27,7 +27,7 @@ buildNpmPackage rec {
   postPatch = ''
     cp ${packageLock} package-lock.json
   '';
-  
+
   npmDepsHash = "sha256-ZjmP/kCDEYHHJLFyITIPlM93TFMYDSLbrRS9MGHAEvE=";
 
   meta = with lib; {
