@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -36,6 +37,8 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 )
 
 const (
@@ -260,11 +263,22 @@ func StringToMode(m string) (SyncerMode, error) {
 }
 
 type Syncer struct {
-	Client *rpadmin.AdminAPI
-	Mode   SyncerMode
+	Client admin.AdminAPIClient
+	// SyncerMode - set to SyncerModeDeclarative to make cluster config syncing fully declarative.
+	// The historical behavior has not been, so this is technically a breaking change.
+	Mode SyncerMode
+	// Function that tests whether two values are identical (for the purposes of requiring a resync).
+	// If unset, this will default to reflect.DeepEqual
+	EqualityCheck func(key string, desired any, current any) bool
 }
 
 func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) error {
+	equal := s.EqualityCheck
+	if equal == nil {
+		equal = func(_ string, desired, current any) bool {
+			return reflect.DeepEqual(desired, current)
+		}
+	}
 	logger := log.FromContext(ctx)
 
 	s.maybeMergeSuperusers(ctx, desired, usersTXT)
@@ -278,29 +292,66 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	var changed []string
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
 	removed := []string{}
+	upsert := maps.Clone(desired)
 
 	if s.Mode == SyncerModeDeclarative {
-		// Make cluster config syncing fully declarative.
-		// The historical behavior has not been, so this is
-		// technically a breaking change.
-		for key := range current {
-			if _, ok := desired[key]; !ok {
+		for key, value := range current {
+			if currentValue, ok := desired[key]; !ok {
 				removed = append(removed, key)
+			} else if equal(key, value, currentValue) {
+				// No change, leave it be
+				delete(upsert, key)
+			}
+		}
+
+		// We need to explicitly mark unknown or invalid properties to remove, because
+		// they will otherwise linger, since AdminAPI.Config does not return those entries.
+		// We always send requests for config status to the leader to avoid inconsistencies
+		// due to config propagation delays.
+		status, err := s.Client.ClusterConfigStatus(ctx, true)
+		if err != nil {
+			return err
+		}
+		for i := range status {
+			for _, invalid := range status[i].Invalid {
+				if _, ok := desired[invalid]; !ok {
+					removed = append(removed, invalid)
+				}
+			}
+			for _, unknown := range status[i].Unknown {
+				if _, ok := desired[unknown]; !ok {
+					removed = append(removed, unknown)
+				}
 			}
 		}
 	}
 
-	for key, value := range desired {
+	for key, value := range upsert {
 		if currentValue, ok := current[key]; !ok {
 			added = append(added, key)
-		} else if !reflect.DeepEqual(value, currentValue) {
+		} else if !equal(key, value, currentValue) {
 			changed = append(changed, key)
 		}
 	}
 
-	logger.Info("updating cluster config", "added", added, "removed", removed, "changed", changed, "config", desired)
+	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
+		logger.Info("no cluster config changes to apply")
+		return nil
+	}
 
-	result, err := s.Client.PatchClusterConfig(ctx, desired, removed)
+	{
+		var keys []string
+		for k := range maps.Keys(desired) {
+			keys = append(keys, k)
+		}
+		sort.Strings(added)
+		sort.Strings(changed)
+		sort.Strings(removed)
+		sort.Strings(keys)
+		logger.Info("updating cluster config", "added", added, "removed", removed, "changed", changed, "config", keys)
+	}
+
+	result, err := s.Client.PatchClusterConfig(ctx, upsert, removed)
 	if err != nil {
 		return err
 	}
