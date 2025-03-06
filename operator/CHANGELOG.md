@@ -49,6 +49,10 @@ For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions
 
   Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
 
+## v2.3.8-24.3.6 - 2025-03-05
+### Fixed
+* Fixed the way that paths are handled for the config watcher routine in the sidecar process.
+
 ## v2.3.6-24.3.3 - 2025-01-17
 ### Added
 * Users in air-gapped environments that cannot access the official Redpanda Helm Chart repository (`https://charts.redpanda.com/`)
