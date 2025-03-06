@@ -30,7 +30,6 @@
               (import ./ci/overlay.nix { pkgs = pkgs; })
             ];
           };
-          nodePkgs = (import ./ci/backport.nix { pkgs = pkgs; nodejs = pkgs."nodejs_23"; });
         in
         {
           formatter = pkgs.nixpkgs-fmt;
@@ -45,8 +44,8 @@
             # If the version of the installed binary is important make sure to
             # update TestToolVersions.
             packages = [
-              nodePkgs."backport-9.6.6"
               pkgs.applyconfiguration-gen
+              pkgs.backport
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
               pkgs.chart-testing
@@ -73,7 +72,6 @@
               pkgs.kubernetes-helm
               pkgs.kustomize
               pkgs.kuttl
-              pkgs.node2nix
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
