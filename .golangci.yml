@@ -7,6 +7,7 @@ linters:
   - gci
   - gocritic
   - gofumpt
+  - gomodguard
   - gosec
   - gosimple
   - govet
@@ -29,6 +30,15 @@ linters-settings:
     skip-generated: true
     no-inline-comments: false
     no-prefix-comments: false
+
+  gomodguard:
+    blocked:
+      modules:
+        - "github.com/redpanda-data/redpanda-operator/charts/redpanda":
+            reason: "The redpanda chart must be imported from a versioned module"
+            recommendations:
+              - github.com/redpanda-data/redpanda-operator/charts/redpanda/v5
+
 
   gosec:
     excludes:
