@@ -145,6 +145,7 @@ tasks:
     - ./ci/backport-packages.json
     cmds:
     - node2nix -i ./ci/backport-packages.json -18 -e ci/node-env.nix -o ci/node-packages.nix -c ci/backport.nix
+    - nix fmt
 
   build:
     cmds:
