@@ -32,7 +32,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -128,13 +128,14 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 func TestHelmValuesCompat(t *testing.T) {
 	cfg := rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
-			reflect.TypeFor[*resource.Quantity](): Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
-			reflect.TypeFor[metav1.Time]():        Time.AsAny(),
-			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
-			reflect.TypeFor[*metav1.FieldsV1]():   rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[corev1.Probe]():       Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
+			reflect.TypeFor[intstr.IntOrString]():        IntOrString.AsAny(),
+			reflect.TypeFor[*resource.Quantity]():        Quantity.AsAny(),
+			reflect.TypeFor[metav1.Duration]():           Duration.AsAny(),
+			reflect.TypeFor[metav1.Time]():               Time.AsAny(),
+			reflect.TypeFor[any]():                       rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeFor[*metav1.FieldsV1]():          rapid.Just[any](nil), // Return nil for K8s accounting fields.
+			reflect.TypeFor[corev1.Probe]():              Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
+			reflect.TypeFor[*redpanda.PartialSidecars](): rapid.Just[any](nil), // Intentionally not included in the operator as the operator handles this itself.
 		},
 		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{
 			reflect.TypeFor[redpanda.PartialValues](): {

@@ -28,7 +28,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/redpanda v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.21
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
@@ -301,7 +301,7 @@ replace (
 
 	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
 	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.
-	github.com/redpanda-data/redpanda-operator/charts/redpanda => github.com/redpanda-data/redpanda-operator/charts/redpanda v0.0.0-20250207141022-1388ec6c6b63
+	// github.com/redpanda-data/redpanda-operator/charts/redpanda => ../charts/redpanda
 
 	// NB: Due to our older version of sigs.k8s.io/controller-runtime. We have
 	// to pin to otel/sdk and cel-go to 1.28.0 and 0.17.8, respectively.
