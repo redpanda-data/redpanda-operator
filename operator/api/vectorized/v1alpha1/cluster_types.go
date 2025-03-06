@@ -170,6 +170,12 @@ type ClusterSpec struct {
 	// By default if Replicas is 3 or more and redpanda.default_topic_partitions is not set
 	// default webhook is setting redpanda.default_topic_partitions to 3.
 	AdditionalConfiguration map[string]string `json:"additionalConfiguration,omitempty"`
+	// Cluster configuration values may also be held here. A `keyName` entry in this
+	// attribute will override corresponding `redpanda.keyname` entries in AdditionalConfiguration;
+	// this is to permit the migration of those settings to this attribute.
+	// The configuration may contain references to values extracted from k8s ConfigMaps or Secrets;
+	// furthermore, we support the fetching of provider-specific secrets directly.
+	ClusterConfiguration ClusterConfiguration `json:"clusterConfiguration"`
 	// DNSTrailingDotDisabled gives ability to turn off the fully-qualified
 	// DNS name.
 	// http://www.dns-sd.org/trailingdotsindomainnames.html
@@ -194,6 +200,45 @@ type ClusterSpec struct {
 	// that join the cluster, but are steered independently (especially replica
 	// count).
 	NodePools []NodePoolSpec `json:"nodePools,omitempty"`
+}
+
+// ClusterConfiguration holds values (or references to values) that should be used
+// to configure the cluster. Where the cluster schema defines a non-string type for a
+// given key, the corresponding values here should be string-encoded (according to yaml
+// rules)
+// TODO: this type should be lifted to a shared module rather than duplicated in the `redpanda` CRD definition.
+type ClusterConfiguration struct {
+	Values map[string]ClusterConfigValue `json:"values,omitempty"`
+}
+
+type YamlRepresentation string
+
+// ClusterConfigValue represents a value of arbitrary type T. Walues are string-encoded according to
+// YAML rules in order to preserve numerical fidelity.
+// Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+// which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+// throughout. The octet sequence of a Representation will be inserted into a bootstrap template
+// verbatim.
+// TODO: this type should be lifted to a shared module rather than duplicated in the `redpanda` CRD definition.
+type ClusterConfigValue struct {
+	// If the value is directly known, its yaml representation can be embedded here.
+	Representation *YamlRepresentation `json:"repr,omitempty"`
+	// If the value is supplied by an k8s object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a value encoded according to YAML rules; the string can then be embedded verbatim into
+	// the bootstrap file.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// Note: during the construction of a bootstrap template file, references to config objects above will be
+	// rewritten to an EnvVarRef instead, and that variable added to the container environment via the usual k8s
+	// envFrom mechanism. A preferred environment variable name may be specified here.
+	EnvVarRef *string `json:"envVar,omitEmpty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
+	// TODO: This decision needs finalising and documenting.
+	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:
