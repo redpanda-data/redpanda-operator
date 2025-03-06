@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -337,7 +338,7 @@ func registerAdvertisedKafkaAPI(
 		{
 			Address: c.hostName + "." + c.svcFQDN,
 			Port:    kafkaAPIPort,
-			Name:    "kafka",
+			Name:    resources.InternalListenerName,
 		},
 	}
 
@@ -355,7 +356,7 @@ func registerAdvertisedKafkaAPI(
 		cfg.Redpanda.AdvertisedKafkaAPI = append(cfg.Redpanda.AdvertisedKafkaAPI, config.NamedSocketAddress{
 			Address: fmt.Sprintf("%s.%s", ep, c.subdomain),
 			Port:    c.hostPort,
-			Name:    "kafka-external",
+			Name:    resources.DefaultExternalKafkaListenerName,
 		})
 		return nil
 	}
@@ -368,7 +369,7 @@ func registerAdvertisedKafkaAPI(
 	cfg.Redpanda.AdvertisedKafkaAPI = append(cfg.Redpanda.AdvertisedKafkaAPI, config.NamedSocketAddress{
 		Address: networking.GetPreferredAddress(node, c.externalConnectivityAddressType),
 		Port:    c.hostPort,
-		Name:    "kafka-external",
+		Name:    resources.DefaultExternalKafkaListenerName,
 	})
 
 	return nil
@@ -381,7 +382,7 @@ func registerAdvertisedPandaproxyAPI(
 		{
 			Address: c.hostName + "." + c.svcFQDN,
 			Port:    proxyAPIPort,
-			Name:    "proxy",
+			Name:    resources.InternalProxyListenerName,
 		},
 	}
 
@@ -400,7 +401,7 @@ func registerAdvertisedPandaproxyAPI(
 		cfg.Pandaproxy.AdvertisedPandaproxyAPI = append(cfg.Pandaproxy.AdvertisedPandaproxyAPI, config.NamedSocketAddress{
 			Address: fmt.Sprintf("%s.%s", ep, c.subdomain),
 			Port:    c.proxyHostPort,
-			Name:    "proxy-external",
+			Name:    resources.DefaultExternalProxyListenerName,
 		})
 		return nil
 	}
@@ -413,7 +414,7 @@ func registerAdvertisedPandaproxyAPI(
 	cfg.Pandaproxy.AdvertisedPandaproxyAPI = append(cfg.Pandaproxy.AdvertisedPandaproxyAPI, config.NamedSocketAddress{
 		Address: getExternalIP(node),
 		Port:    c.proxyHostPort,
-		Name:    "proxy-external",
+		Name:    resources.DefaultExternalProxyListenerName,
 	})
 
 	return nil
@@ -585,6 +586,17 @@ func hostIndex(hostName string) (brokerID, error) {
 	return brokerID(i), err
 }
 
+type allListenersTemplateSpec struct {
+	KafkaListeners           []config.NamedAuthNSocketAddress `json:"redpanda.kafka_api,omitempty" yaml:"redpanda.kafka_api,omitempty"`
+	KafkaAdvertisedListeners []config.NamedSocketAddress      `json:"redpanda.advertised_kafka_api,omitempty" yaml:"redpanda.advertised_kafka_api,omitempty"`
+	KafkaTLS                 []config.ServerTLS               `json:"redpanda.kafka_api_tls,omitempty" yaml:"redpanda.kafka_api_tls,omitempty"`
+	ProxyListeners           []config.NamedAuthNSocketAddress `json:"pandaproxy.pandaproxy_api,omitempty" yaml:"pandaproxy.pandaproxy_api,omitempty"`
+	ProxyAdvertisedListeners []config.NamedSocketAddress      `json:"pandaproxy.advertised_pandaproxy_api,omitempty" yaml:"pandaproxy.advertised_pandaproxy_api,omitempty"`
+	ProxyTLS                 []config.ServerTLS               `json:"pandaproxy.pandaproxy_api_tls,omitempty" yaml:"pandaproxy.pandaproxy_api_tls,omitempty"`
+	SchemaRegistryListeners  []config.NamedAuthNSocketAddress `json:"schema_registry.schema_registry_api,omitempty" yaml:"schema_registry.schema_registry_api,omitempty"`
+	SchemaRegistryTLS        []config.ServerTLS               `json:"schema_registry.schema_registry_api_tls,omitempty" yaml:"schema_registry.schema_registry_api_tls,omitempty"`
+}
+
 // setAdditionalListeners sets the additional listeners in the input Redpanda config.
 // sample additional listeners config string:
 // {"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0','port': 'port': {{39282 | add .Index}}}]","redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com', 'port': {{30092 | add .Index}}}]","redpanda.kafka_api":"[{'name': 'private-link-kakfa', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}}]"}
@@ -593,27 +605,52 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 		return nil
 	}
 
-	additionalListeners := map[string]string{}
-	err := json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
+	additionalListenersCfg, err := utils.Compute(additionalListenersCfg, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
 	if err != nil {
 		return err
 	}
 
-	additionalListenerCfgNames := []string{"redpanda.kafka_api", "redpanda.advertised_kafka_api", "pandaproxy.pandaproxy_api", "pandaproxy.advertised_pandaproxy_api"}
+	structuredDecode := false
+	additionalListeners := map[string]string{}
+	structuredAdditionalListeners := &allListenersTemplateSpec{}
+	err = json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
+	if err != nil {
+		err = json.Unmarshal([]byte(additionalListenersCfg), &structuredAdditionalListeners)
+		if err != nil {
+			return err
+		}
+		structuredDecode = true
+	}
+
 	nodeConfig := config.ProdDefault()
-	for _, k := range additionalListenerCfgNames {
-		if v, found := additionalListeners[k]; found {
-			res, err := utils.Compute(v, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
-			if err != nil {
-				return err
-			}
-			err = config.Set(nodeConfig, k, res)
-			if err != nil {
-				return err
+	if structuredDecode {
+		nodeConfig.Redpanda.KafkaAPI = structuredAdditionalListeners.KafkaListeners
+		nodeConfig.Redpanda.AdvertisedKafkaAPI = structuredAdditionalListeners.KafkaAdvertisedListeners
+		nodeConfig.Redpanda.KafkaAPITLS = structuredAdditionalListeners.KafkaTLS
+		nodeConfig.Pandaproxy.PandaproxyAPI = structuredAdditionalListeners.ProxyListeners
+		nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI = structuredAdditionalListeners.ProxyAdvertisedListeners
+		nodeConfig.Pandaproxy.PandaproxyAPITLS = structuredAdditionalListeners.ProxyTLS
+		nodeConfig.SchemaRegistry.SchemaRegistryAPI = structuredAdditionalListeners.SchemaRegistryListeners
+		nodeConfig.SchemaRegistry.SchemaRegistryAPITLS = structuredAdditionalListeners.SchemaRegistryTLS
+	} else {
+		nodeConfig.Redpanda.KafkaAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.Redpanda.AdvertisedKafkaAPI = []config.NamedSocketAddress{}
+		nodeConfig.Redpanda.KafkaAPITLS = []config.ServerTLS{}
+		nodeConfig.Pandaproxy.PandaproxyAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI = []config.NamedSocketAddress{}
+		nodeConfig.Pandaproxy.PandaproxyAPITLS = []config.ServerTLS{}
+		nodeConfig.SchemaRegistry.SchemaRegistryAPI = []config.NamedAuthNSocketAddress{}
+		nodeConfig.SchemaRegistry.SchemaRegistryAPITLS = []config.ServerTLS{}
+
+		for _, k := range resources.AdditionalListenerCfgNames {
+			if v, found := additionalListeners[k]; found {
+				err = config.Set(nodeConfig, k, v)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
-
 	// Merge additional listeners to the input config
 	if len(nodeConfig.Redpanda.KafkaAPI) > 0 {
 		setAuthnAdditionalListeners(resources.ExternalListenerName, &cfg.Redpanda.KafkaAPI, nodeConfig.Redpanda.KafkaAPI)
@@ -621,7 +658,7 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 
 	if len(nodeConfig.Redpanda.AdvertisedKafkaAPI) > 0 {
 		setAdditionalAdvertisedListeners(resources.ExternalListenerName, &cfg.Redpanda.AdvertisedKafkaAPI, &cfg.Redpanda.KafkaAPITLS,
-			nodeConfig.Redpanda.AdvertisedKafkaAPI)
+			nodeConfig.Redpanda.AdvertisedKafkaAPI, nodeConfig.Redpanda.KafkaAPITLS)
 	}
 
 	if nodeConfig.Pandaproxy == nil {
@@ -640,10 +677,31 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 		}
 
 		setAdditionalAdvertisedListeners(resources.PandaproxyPortExternalName, &cfg.Pandaproxy.AdvertisedPandaproxyAPI, &cfg.Pandaproxy.PandaproxyAPITLS,
-			nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI)
+			nodeConfig.Pandaproxy.AdvertisedPandaproxyAPI, nodeConfig.Pandaproxy.PandaproxyAPITLS)
+	}
+	if len(nodeConfig.SchemaRegistry.SchemaRegistryAPI) > 0 {
+		setAuthnAdditionalListeners(resources.DefaultExternalSchemaRegistryListenerName, &cfg.SchemaRegistry.SchemaRegistryAPI, nodeConfig.SchemaRegistry.SchemaRegistryAPI)
+		setTLSConfigForAdditionalListeners(resources.DefaultExternalSchemaRegistryListenerName, listenerNames(nodeConfig.SchemaRegistry.SchemaRegistryAPI),
+			&cfg.SchemaRegistry.SchemaRegistryAPITLS, nodeConfig.SchemaRegistry.SchemaRegistryAPITLS)
 	}
 
 	return nil
+}
+
+func listenerNames(listeners []config.NamedAuthNSocketAddress) []string {
+	names := make([]string, len(listeners))
+	for i, l := range listeners {
+		names[i] = l.Name
+	}
+	return names
+}
+
+func advertisedListenerNames(listeners []config.NamedSocketAddress) []string {
+	names := make([]string, len(listeners))
+	for i, l := range listeners {
+		names[i] = l.Name
+	}
+	return names
 }
 
 // setAuthnAdditionalListeners populates the authentication config in the addtiional listeners with the config from the external listener,
@@ -658,7 +716,7 @@ func setAuthnAdditionalListeners(externalListenerName string, listeners *[]confi
 		}
 	}
 	if externalListenerCfg == nil {
-		*listeners = append(*listeners, additionalListeners...)
+		*listeners = unique(append(*listeners, additionalListeners...), func(l config.NamedAuthNSocketAddress) string { return l.Name })
 		return
 	}
 	// Use the authn methold of the default external listener if authn method is not set in additional listener.
@@ -668,20 +726,23 @@ func setAuthnAdditionalListeners(externalListenerName string, listeners *[]confi
 			cfg.AuthN = externalListenerCfg.AuthN
 		}
 	}
-	*listeners = append(*listeners, additionalListeners...)
+	*listeners = unique(append(*listeners, additionalListeners...), func(l config.NamedAuthNSocketAddress) string { return l.Name })
 }
 
 // setAdditionalAdvertisedListeners populates the TLS config and address in the addtiional listeners with the config from the external listener,
 // and append the additional listeners to the input advertised listeners and TLS configs.
-func setAdditionalAdvertisedListeners(externalListenerName string, advListeners *[]config.NamedSocketAddress, tlsCfgs *[]config.ServerTLS, additionalAdvListeners []config.NamedSocketAddress) {
+func setAdditionalAdvertisedListeners(externalListenerName string, advListeners *[]config.NamedSocketAddress, tlsCfgs *[]config.ServerTLS, additionalAdvListeners []config.NamedSocketAddress, additionalTLSCfgs []config.ServerTLS) {
 	var externalAPICfg *config.NamedSocketAddress
-	for i := 0; i < len(*advListeners); i++ {
-		cfg := &(*advListeners)[i]
-		if cfg.Name == externalListenerName {
-			externalAPICfg = cfg
-			break
+	i := slices.IndexFunc(*advListeners, func(l config.NamedSocketAddress) bool { return l.Name == externalListenerName })
+	if i != -1 {
+		externalAPICfg = &(*advListeners)[i]
+	} else {
+		i = slices.IndexFunc(*advListeners, func(l config.NamedSocketAddress) bool { return !strings.Contains(l.Address, "svc.cluster.local") })
+		if i != -1 {
+			externalAPICfg = &(*advListeners)[i]
 		}
 	}
+
 	if externalAPICfg != nil {
 		// Use the address of the default external listener if address is not set in additional listener.
 		for i := 0; i < len(additionalAdvListeners); i++ {
@@ -692,21 +753,54 @@ func setAdditionalAdvertisedListeners(externalListenerName string, advListeners 
 		}
 	}
 
-	*advListeners = append(*advListeners, additionalAdvListeners...)
+	*advListeners = unique(append(*advListeners, additionalAdvListeners...), func(l config.NamedSocketAddress) string { return l.Name })
+	setTLSConfigForAdditionalListeners(externalListenerName, advertisedListenerNames(additionalAdvListeners), tlsCfgs, additionalTLSCfgs)
+}
 
-	// Assume that the advertised panda proxies use the same TLS configuration as the default external one.
+func setTLSConfigForAdditionalListeners(defaultExternalListenerName string, listenerNames []string, tlsCfgs *[]config.ServerTLS, additionalTLSCfgs []config.ServerTLS) {
 	var serverTLSCfg *config.ServerTLS
+	// Find TLS config for the default listener.
 	for i := 0; i < len(*tlsCfgs); i++ {
 		tlsCfg := &(*tlsCfgs)[i]
-		if tlsCfg.Name == externalListenerName {
+		if tlsCfg.Name == defaultExternalListenerName {
 			serverTLSCfg = tlsCfg
 			break
 		}
 	}
-	if serverTLSCfg != nil {
-		for i := 0; i < len(additionalAdvListeners); i++ {
+	if serverTLSCfg == nil {
+		if len(*tlsCfgs) == 0 {
+			return
+		}
+		// Use the first TLS config if the default listener TLS config is not set.
+		serverTLSCfg = &(*tlsCfgs)[0]
+	}
+
+	for i := 0; i < len(listenerNames); i++ {
+		m := slices.IndexFunc(additionalTLSCfgs, func(t config.ServerTLS) bool { return t.Name == listenerNames[i] })
+		if m != -1 {
+			cfg := additionalTLSCfgs[m]
+			cfg.Enabled = true
+			if cfg.CertFile == "" {
+				cfg.CertFile = serverTLSCfg.CertFile
+			}
+			if cfg.KeyFile == "" {
+				cfg.KeyFile = serverTLSCfg.KeyFile
+			}
+			if cfg.RequireClientAuth {
+				if cfg.TruststoreFile == "" {
+					cfg.TruststoreFile = serverTLSCfg.TruststoreFile
+				}
+			} else if cfg.TruststoreFile != "" {
+				cfg.RequireClientAuth = true
+			}
+			if cfg.Other == nil {
+				cfg.Other = serverTLSCfg.Other
+			}
+			*tlsCfgs = append(*tlsCfgs, cfg)
+		} else {
+			// additionalTLSCfgs does not have a config for the listener, use the default listener TLS config.
 			*tlsCfgs = append(*tlsCfgs, config.ServerTLS{
-				Name:              additionalAdvListeners[i].Name,
+				Name:              listenerNames[i],
 				Enabled:           serverTLSCfg.Enabled,
 				CertFile:          serverTLSCfg.CertFile,
 				KeyFile:           serverTLSCfg.KeyFile,
@@ -716,4 +810,19 @@ func setAdditionalAdvertisedListeners(externalListenerName string, advListeners 
 			})
 		}
 	}
+	*tlsCfgs = unique(*tlsCfgs, func(t config.ServerTLS) string { return t.Name })
+}
+
+func unique[T any](slice []T, getKey func(T) string) []T {
+	seen := make(map[string]bool)
+	result := []T{}
+
+	for _, val := range slice {
+		key := getKey(val)
+		if _, ok := seen[key]; !ok {
+			seen[key] = true
+			result = append(result, val)
+		}
+	}
+	return result
 }

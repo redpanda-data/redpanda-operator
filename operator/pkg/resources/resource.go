@@ -34,18 +34,14 @@ const (
 	AdminPortName = "admin"
 	// AdminPortExternalName is name of external admin port
 	AdminPortExternalName = "admin-external"
-	// InternalListenerName is name of internal listener
-	InternalListenerName = "kafka"
-	// ExternalListenerName is name of external listener
-	ExternalListenerName = "kafka-external"
 	// ExternalListenerBootstrapName is the name of external bootstrap service
 	ExternalListenerBootstrapName = "kafka-external-bootstrap"
 	// PandaproxyPortInternalName is the name of the pandaproxy internal port
-	PandaproxyPortInternalName = "proxy"
-	// PandaproxyPortExternalName is the name of the pandaproxy external port
-	PandaproxyPortExternalName = "proxy-external"
-	// SchemaRegistryPortName is the name of the schema registry port internal and external
-	SchemaRegistryPortName = "schema-registry"
+	PandaproxyPortInternalName = InternalProxyListenerName
+	// PandaproxyPortExternalName is the default name of the pandaproxy external port
+	PandaproxyPortExternalName = DefaultExternalProxyListenerName
+	// SchemaRegistryPortName is the default name of the schema registry port internal and external
+	SchemaRegistryPortName = DefaultExternalSchemaRegistryListenerName
 
 	scramPasswordLength = 16
 
