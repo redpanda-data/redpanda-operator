@@ -45,6 +45,7 @@
             # update TestToolVersions.
             packages = [
               pkgs.applyconfiguration-gen
+              pkgs.backport
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
               pkgs.chart-testing
