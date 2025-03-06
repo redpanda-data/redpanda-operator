@@ -1,0 +1,9 @@
+{
+  "repoOwner": "redpanda-data",
+  "repoName": "redpanda-operator",
+  "targetBranchChoices": ["release/v2.3.x"],
+  "targetPRLabels": ["backport"],
+  "branchLabelMapping": {
+    "^v(\\d+).(\\d+).\\d+$": "release/v$1.$2.x"
+  }
+}

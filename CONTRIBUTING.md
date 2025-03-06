@@ -31,6 +31,16 @@ It is recommend to use [direnv](https://direnv.net/) to automatically enter the
 development shell when `cd`'ing into the repository. The [.envrc](./.envrc) is
 already configured.
 
+## Backporting
+
+We are currently experimenting with workflows for backporting leveraging the
+[backport CLI](https://github.com/sorenlouv/backport). To do a manual backport, once a PR
+has merged, ensure that you have a Github personal access token in
+`~/.backport/config.json` as documented [here](https://github.com/sorenlouv/backport/blob/v9.6.6/docs/config-file-options.md#global-config-backportconfigjson),
+and then run `backport --pr ###` with the PR number.
+
+We will eventually try and set up an automated Github action for backports based on PR labels.
+
 ## CHANGELOG Management
 
 Our CHANGELOG.mds are managed with [Changie](https://github.com/miniscruff/changie).
