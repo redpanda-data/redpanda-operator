@@ -1014,6 +1014,7 @@ func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool,
 		s.NoError(err)
 
 		obj.SetManagedFields(nil)
+		obj.SetResourceVersion("")
 		obj.GetObjectKind().SetGroupVersionKind(gvk)
 
 		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
