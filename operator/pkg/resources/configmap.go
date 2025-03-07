@@ -241,16 +241,16 @@ func (r *ConfigMapResource) CreateConfiguration(
 		AuthN:   internalAuthN,
 	})
 
-	externalListener := r.pandaCluster.ExternalListener()
-	if externalListener != nil {
+	externalListeners := r.pandaCluster.AllKafkaAPIExternalListeners()
+	for _, externalListener := range externalListeners {
 		externalAuthN := &externalListener.AuthenticationMethod
 		if *externalAuthN == "" {
 			externalAuthN = nil
 		}
 		cr.KafkaAPI = append(cr.KafkaAPI, config.NamedAuthNSocketAddress{
 			Address: "0.0.0.0",
-			Port:    calculateExternalPort(internalListener.Port, r.pandaCluster.ExternalListener().Port),
-			Name:    ExternalListenerName,
+			Port:    calculateExternalPort(internalListener.Port, externalListener.Port),
+			Name:    externalListener.Name,
 			AuthN:   externalAuthN,
 		})
 	}
@@ -278,13 +278,13 @@ func (r *ConfigMapResource) CreateConfiguration(
 	for i := range kl {
 		tls := config.ServerTLS{
 			Name:              kl[i].Name,
-			KeyFile:           fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.NodeCertMountDir, corev1.TLSPrivateKeyKey), // tls.key
-			CertFile:          fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.NodeCertMountDir, corev1.TLSCertKey),       // tls.crt
+			KeyFile:           tlsKeyPath(mountPoints.KafkaAPI.NodeCertMountDir),  // tls.key
+			CertFile:          tlsCertPath(mountPoints.KafkaAPI.NodeCertMountDir), // tls.crt
 			Enabled:           true,
 			RequireClientAuth: kl[i].TLS.RequireClientAuth,
 		}
 		if kl[i].TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
+			tls.TruststoreFile = tlsCAPath(mountPoints.KafkaAPI.ClientCAMountDir)
 		}
 		cr.KafkaAPITLS = append(cr.KafkaAPITLS, tls)
 	}
@@ -298,13 +298,13 @@ func (r *ConfigMapResource) CreateConfiguration(
 		}
 		adminTLS := config.ServerTLS{
 			Name:              name,
-			KeyFile:           fmt.Sprintf("%s/%s", mountPoints.AdminAPI.NodeCertMountDir, corev1.TLSPrivateKeyKey),
-			CertFile:          fmt.Sprintf("%s/%s", mountPoints.AdminAPI.NodeCertMountDir, corev1.TLSCertKey),
+			KeyFile:           tlsKeyPath(mountPoints.AdminAPI.NodeCertMountDir),
+			CertFile:          tlsCertPath(mountPoints.AdminAPI.NodeCertMountDir),
 			Enabled:           true,
 			RequireClientAuth: adminAPITLSListener.TLS.RequireClientAuth,
 		}
 		if adminAPITLSListener.TLS.RequireClientAuth {
-			adminTLS.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
+			adminTLS.TruststoreFile = tlsCAPath(mountPoints.AdminAPI.ClientCAMountDir)
 		}
 		cr.AdminAPITLS = append(cr.AdminAPITLS, adminTLS)
 	}
@@ -352,19 +352,18 @@ func (r *ConfigMapResource) CreateConfiguration(
 		return nil, fmt.Errorf("preparing proxy client: %w", err)
 	}
 
-	if sr := r.pandaCluster.Spec.Configuration.SchemaRegistry; sr != nil {
+	for _, sr := range r.pandaCluster.AllSchemaRegistryListeners() {
 		var authN *string
 		if sr.AuthenticationMethod != "" {
 			authN = &sr.AuthenticationMethod
 		}
-		cfg.NodeConfiguration.SchemaRegistry.SchemaRegistryAPI = []config.NamedAuthNSocketAddress{
-			{
+		cfg.NodeConfiguration.SchemaRegistry.SchemaRegistryAPI = append(cfg.NodeConfiguration.SchemaRegistry.SchemaRegistryAPI,
+			config.NamedAuthNSocketAddress{
 				Address: "0.0.0.0",
 				Port:    sr.Port,
-				Name:    SchemaRegistryPortName,
+				Name:    sr.Name,
 				AuthN:   authN,
-			},
-		}
+			})
 	}
 	r.prepareSchemaRegistryTLS(cfg.NodeConfiguration, mountPoints)
 	err = r.prepareSchemaRegistryClient(ctx, cfg, mountPoints)
@@ -483,17 +482,16 @@ func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.RedpandaYaml) {
 		},
 	}
 
-	var externalAuthN *string
-	external := r.pandaCluster.PandaproxyAPIExternal()
-	if external != nil {
+	for _, external := range r.pandaCluster.AllPandaproxyAPIExternalListeners() {
+		var externalAuthN *string
 		if external.AuthenticationMethod != "" {
 			externalAuthN = &external.AuthenticationMethod
 		}
 		cfgRpk.Pandaproxy.PandaproxyAPI = append(cfgRpk.Pandaproxy.PandaproxyAPI,
 			config.NamedAuthNSocketAddress{
 				Address: "0.0.0.0",
-				Port:    calculateExternalPort(internal.Port, r.pandaCluster.PandaproxyAPIExternal().Port),
-				Name:    PandaproxyPortExternalName,
+				Port:    calculateExternalPort(internal.Port, external.Port),
+				Name:    external.Name,
 				AuthN:   externalAuthN,
 			})
 	}
@@ -605,46 +603,45 @@ func (r *ConfigMapResource) prepareSchemaRegistryClient(
 func (r *ConfigMapResource) preparePandaproxyTLS(
 	cfgRpk *config.RedpandaYaml, mountPoints *resourcetypes.TLSMountPoints,
 ) {
-	tlsListener := r.pandaCluster.PandaproxyAPITLS()
-	if tlsListener != nil {
-		// Only one TLS listener is supported (restricted by the webhook).
-		// Determine the listener name based on being internal or external.
+	cfgRpk.Pandaproxy.PandaproxyAPITLS = []config.ServerTLS{}
+	for _, tlsListener := range r.pandaCluster.AllPandaproxyAPITLS() {
 		name := PandaproxyPortInternalName
 		if tlsListener.External.Enabled {
-			name = PandaproxyPortExternalName
+			name = tlsListener.Name
 		}
 		tls := config.ServerTLS{
 			Name:              name,
-			KeyFile:           fmt.Sprintf("%s/%s", mountPoints.PandaProxyAPI.NodeCertMountDir, corev1.TLSPrivateKeyKey), // tls.key
-			CertFile:          fmt.Sprintf("%s/%s", mountPoints.PandaProxyAPI.NodeCertMountDir, corev1.TLSCertKey),       // tls.crt
+			KeyFile:           tlsKeyPath(mountPoints.PandaProxyAPI.NodeCertMountDir),  // tls.key
+			CertFile:          tlsCertPath(mountPoints.PandaProxyAPI.NodeCertMountDir), // tls.crt
 			Enabled:           true,
 			RequireClientAuth: tlsListener.TLS.RequireClientAuth,
 		}
 		if tlsListener.TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.PandaProxyAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
+			tls.TruststoreFile = tlsCAPath(mountPoints.PandaProxyAPI.ClientCAMountDir)
 		}
-		cfgRpk.Pandaproxy.PandaproxyAPITLS = []config.ServerTLS{tls}
+		cfgRpk.Pandaproxy.PandaproxyAPITLS = append(cfgRpk.Pandaproxy.PandaproxyAPITLS, tls)
 	}
 }
 
 func (r *ConfigMapResource) prepareSchemaRegistryTLS(
 	cfgRpk *config.RedpandaYaml, mountPoints *resourcetypes.TLSMountPoints,
 ) {
-	if r.pandaCluster.Spec.Configuration.SchemaRegistry != nil &&
-		r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS != nil {
-		name := SchemaRegistryPortName
-
+	cfgRpk.SchemaRegistry.SchemaRegistryAPITLS = []config.ServerTLS{}
+	for _, sr := range r.pandaCluster.AllSchemaRegistryListeners() {
+		if sr.TLS == nil {
+			continue
+		}
 		tls := config.ServerTLS{
-			Name:              name,
-			KeyFile:           fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.NodeCertMountDir, corev1.TLSPrivateKeyKey), // tls.key
-			CertFile:          fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.NodeCertMountDir, corev1.TLSCertKey),       // tls.crt
+			Name:              sr.Name,
+			KeyFile:           tlsKeyPath(mountPoints.SchemaRegistryAPI.NodeCertMountDir),  // tls.key
+			CertFile:          tlsCertPath(mountPoints.SchemaRegistryAPI.NodeCertMountDir), // tls.crt
 			Enabled:           true,
-			RequireClientAuth: r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth,
+			RequireClientAuth: sr.TLS.RequireClientAuth,
 		}
-		if r.pandaCluster.Spec.Configuration.SchemaRegistry.TLS.RequireClientAuth {
-			tls.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, cmmetav1.TLSCAKey)
+		if sr.TLS.RequireClientAuth {
+			tls.TruststoreFile = tlsCAPath(mountPoints.SchemaRegistryAPI.ClientCAMountDir)
 		}
-		cfgRpk.SchemaRegistry.SchemaRegistryAPITLS = []config.ServerTLS{tls}
+		cfgRpk.SchemaRegistry.SchemaRegistryAPITLS = append(cfgRpk.SchemaRegistry.SchemaRegistryAPITLS, tls)
 	}
 }
 
@@ -854,4 +851,16 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 	}
 
 	return nil
+}
+
+func tlsKeyPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, corev1.TLSPrivateKeyKey)
+}
+
+func tlsCertPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, corev1.TLSCertKey)
+}
+
+func tlsCAPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, cmmetav1.TLSCAKey)
 }

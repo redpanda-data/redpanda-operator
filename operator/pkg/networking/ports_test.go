@@ -43,40 +43,56 @@ func TestRedpandaPorts(t *testing.T) {
 					Name: resources.InternalListenerName,
 					Port: 123,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.ExternalListenerName,
-					Port: 124,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.ExternalListenerName,
+							Port: 124,
+						},
+						ExternalPortIsGenerated: true,
+					},
 				},
-				ExternalPortIsGenerated: true,
 			},
 			AdminAPI: networking.PortsDefinition{
 				Internal: &resources.NamedServicePort{
 					Name: resources.AdminPortName,
 					Port: 345,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.AdminPortExternalName,
-					Port: 346,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.AdminPortExternalName,
+							Port: 346,
+						},
+						ExternalPortIsGenerated: true,
+					},
 				},
-				ExternalPortIsGenerated: true,
 			},
 			PandaProxy: networking.PortsDefinition{
 				Internal: &resources.NamedServicePort{
 					Name: resources.PandaproxyPortInternalName,
 					Port: 333,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.PandaproxyPortExternalName,
-					Port: 334,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.PandaproxyPortExternalName,
+							Port: 334,
+						},
+						ExternalPortIsGenerated: true,
+					},
 				},
-				ExternalPortIsGenerated: true,
 			},
 			SchemaRegistry: networking.PortsDefinition{
-				External: &resources.NamedServicePort{
-					Name: resources.SchemaRegistryPortName,
-					Port: 444,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.SchemaRegistryPortName,
+							Port: 444,
+						},
+						ExternalPortIsGenerated: true,
+					},
 				},
-				ExternalPortIsGenerated: true,
 			},
 		}},
 		{"internal only", &vectorizedv1alpha1.Cluster{
@@ -134,9 +150,13 @@ func TestRedpandaPorts(t *testing.T) {
 					Name: resources.InternalListenerName,
 					Port: 123,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.ExternalListenerName,
-					Port: 30001,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.ExternalListenerName,
+							Port: 30001,
+						},
+					},
 				},
 			},
 			AdminAPI: networking.PortsDefinition{
@@ -144,9 +164,13 @@ func TestRedpandaPorts(t *testing.T) {
 					Name: resources.AdminPortName,
 					Port: 234,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.AdminPortExternalName,
-					Port: 30002,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.AdminPortExternalName,
+							Port: 30002,
+						},
+					},
 				},
 			},
 			PandaProxy: networking.PortsDefinition{
@@ -154,15 +178,23 @@ func TestRedpandaPorts(t *testing.T) {
 					Name: resources.PandaproxyPortInternalName,
 					Port: 345,
 				},
-				External: &resources.NamedServicePort{
-					Name: resources.PandaproxyPortExternalName,
-					Port: 30003,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.PandaproxyPortExternalName,
+							Port: 30003,
+						},
+					},
 				},
 			},
 			SchemaRegistry: networking.PortsDefinition{
-				External: &resources.NamedServicePort{
-					Name: resources.SchemaRegistryPortName,
-					Port: 30004,
+				External: []networking.ExternalPortDefinition{
+					{
+						Port: &resources.NamedServicePort{
+							Name: resources.SchemaRegistryPortName,
+							Port: 30004,
+						},
+					},
 				},
 			},
 		}},
@@ -193,15 +225,197 @@ func TestRedpandaPorts(t *testing.T) {
 						Name: resources.InternalListenerName,
 						Port: 123,
 					},
-					External: &resources.NamedServicePort{
-						Name: resources.ExternalListenerName,
-						Port: 124,
+					External: []networking.ExternalPortDefinition{
+						{
+							Port: &resources.NamedServicePort{
+								Name: resources.ExternalListenerName,
+								Port: 124,
+							},
+							ExternalPortIsGenerated: true,
+							ExternalBootstrap: &resources.NamedServicePort{
+								Name:       resources.ExternalListenerBootstrapName,
+								Port:       1234,
+								TargetPort: 123 + 1,
+							},
+						},
 					},
-					ExternalPortIsGenerated: true,
-					ExternalBootstrap: &resources.NamedServicePort{
-						Name:       resources.ExternalListenerBootstrapName,
-						Port:       1234,
-						TargetPort: 123 + 1,
+				},
+			},
+		},
+		{
+			"multiple kafka external listerners",
+			&vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+							{
+								Port: 123,
+							},
+							{
+								Port: 1231,
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled: true,
+								},
+							},
+							{
+								Name: "kafka-1",
+								Port: 12345,
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled:        true,
+									NoPortExposure: true,
+								},
+							},
+							{
+								Name: "kafka-2",
+								Port: 1232,
+								External: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			&networking.RedpandaPorts{
+				KafkaAPI: networking.PortsDefinition{
+					Internal: &resources.NamedServicePort{
+						Name: resources.InternalListenerName,
+						Port: 123,
+					},
+					External: []networking.ExternalPortDefinition{
+						{
+							Port: &resources.NamedServicePort{
+								Name: resources.ExternalListenerName,
+								Port: 1231,
+							},
+						},
+						{
+							Port: &resources.NamedServicePort{
+								Name: "kafka-2",
+								Port: 1232,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			"multiple proxy external listerners",
+			&vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						PandaproxyAPI: []vectorizedv1alpha1.PandaproxyAPI{
+							{
+								Port: 123,
+							},
+							{
+								Port: 1231,
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled: true,
+									},
+								},
+							},
+							{
+								Name: "proxy-1",
+								Port: 12345,
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:        true,
+										NoPortExposure: true,
+									},
+								},
+							},
+							{
+								Name: "proxy-2",
+								Port: 1232,
+								External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			&networking.RedpandaPorts{
+				PandaProxy: networking.PortsDefinition{
+					Internal: &resources.NamedServicePort{
+						Name: resources.PandaproxyPortInternalName,
+						Port: 123,
+					},
+					External: []networking.ExternalPortDefinition{
+						{
+							Port: &resources.NamedServicePort{
+								Name: resources.PandaproxyPortExternalName,
+								Port: 1231,
+							},
+						},
+						{
+							Port: &resources.NamedServicePort{
+								Name: "proxy-2",
+								Port: 1232,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			"multiple schema registry listerners",
+			&vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{
+							Port: 123,
+							External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
+								ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+									Enabled: true,
+								},
+							},
+						},
+						AdditionalSchemaRegistry: []vectorizedv1alpha1.SchemaRegistryAPI{
+							{
+								Name: "sr-1",
+								Port: 1234,
+								External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled:        true,
+										NoPortExposure: true,
+									},
+								},
+							},
+							{
+								Name: "sr-2",
+								Port: 321,
+								External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
+									ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{
+										Enabled: true,
+									},
+									StaticNodePort: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			&networking.RedpandaPorts{
+				SchemaRegistry: networking.PortsDefinition{
+					External: []networking.ExternalPortDefinition{
+						{
+							Port: &resources.NamedServicePort{
+								Name: resources.SchemaRegistryPortName,
+								Port: 123,
+							},
+							ExternalPortIsGenerated: true,
+						},
+						{
+							Port: &resources.NamedServicePort{
+								Name: "sr-2",
+								Port: 321,
+							},
+						},
 					},
 				},
 			},
