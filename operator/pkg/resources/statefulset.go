@@ -723,11 +723,18 @@ func (r *StatefulSetResource) obj(
 	}
 
 	if featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      "configmap-dir",
-			MountPath: path.Join(configDestinationDir, bootstrapConfigFile),
-			SubPath:   bootstrapConfigFile,
-		})
+		// Bootstrap configuration is now templated; we don't need to mount the original here
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
+			corev1.EnvVar{
+				Name:  "BOOTSTRAP_TEMPLATE",
+				Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
+			},
+			corev1.EnvVar{
+				Name:  "BOOTSTRAP_DESTINATION",
+				Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
+			},
+		)
+		// TODO: if the bootstrap template needs additional env vars, inject them here
 	}
 
 	setVolumes(ss, r.pandaCluster, r.nodePool.Storage, r.nodePool.CloudCacheStorage)
