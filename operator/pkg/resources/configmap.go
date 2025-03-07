@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"sigs.k8s.io/yaml"
-
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
@@ -393,7 +391,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigValue, len(cfg.ClusterConfiguration))
 	for k, v := range cfg.ClusterConfiguration {
 		// These values are all "concrete" - that is, they're not looked up anywhere.
-		buf, err := yaml.Marshal(v)
+		buf, err := json.Marshal(v)
 		if err != nil {
 			return nil, fmt.Errorf("cannot marshal concrete cluster configuration value: %w", err)
 		}

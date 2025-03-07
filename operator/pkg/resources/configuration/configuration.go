@@ -16,11 +16,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
@@ -38,7 +37,7 @@ var knownNodeProperties map[string]bool
 type GlobalConfiguration struct {
 	NodeConfiguration      *config.RedpandaYaml
 	ClusterConfiguration   map[string]interface{}
-	BootstrapConfiguration map[string]v1alpha1.ClusterConfigValue
+	BootstrapConfiguration map[string]vectorizedv1alpha1.ClusterConfigValue
 	Mode                   GlobalConfigurationMode
 }
 

@@ -230,7 +230,7 @@ type ClusterConfigValue struct {
 	// Note: during the construction of a bootstrap template file, references to config objects above will be
 	// rewritten to an EnvVarRef instead, and that variable added to the container environment via the usual k8s
 	// envFrom mechanism. A preferred environment variable name may be specified here.
-	EnvVarRef *string `json:"envVar,omitEmpty"`
+	EnvVarRef *string `json:"envVar,omitempty"`
 	// If the value is supplied by an external source, coordinates are embedded here.
 	// Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
 	// TODO: This decision needs finalising and documenting.
