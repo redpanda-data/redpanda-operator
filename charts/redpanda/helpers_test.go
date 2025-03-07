@@ -19,7 +19,7 @@ import (
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/pkg/rapidutil"
 )
 
