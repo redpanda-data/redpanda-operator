@@ -59,6 +59,8 @@ const (
 	svcFQDNEnvVar                                        = "SERVICE_FQDN"
 	additionalListenersLegacyEnvVar                      = "ADDITIONAL_LISTENERS"
 	additionalListenersJSONEnvVar                        = "ADDITIONAL_LISTENERS_JSON"
+	bootstrapDestinationEnvVar                           = "BOOTSTRAP_DESTINATION"
+	bootstrapTemplateEnvVar                              = "BOOTSTRAP_TEMPLATE"
 )
 
 type brokerID int
@@ -83,6 +85,8 @@ type configuratorConfig struct {
 	additionalListenersLegacy                      string
 	additionalListenersJSON                        string
 	hostIndexOffset                                int
+	bootstrapDestination                           string
+	bootstrapTemplate                              string
 }
 
 func (c *configuratorConfig) String() string {
@@ -218,6 +222,14 @@ func run(cmd *cobra.Command, args []string) {
 
 	if err := os.WriteFile(c.configDestination, cfgBytes, 0o600); err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to write the destination configuration file: %w", err))
+	}
+
+	if c.bootstrapTemplate != "" && c.bootstrapDestination != "" {
+		// Perform the bootstrap templating
+		err := templateBootstrapYaml(c.bootstrapTemplate, c.bootstrapDestination)
+		if err != nil {
+			log.Fatalf("%s", fmt.Errorf("unable to template the .bootstrap.yaml file: %w", err))
+		}
 	}
 
 	log.Printf("Configuration saved to: %s", c.configDestination)
@@ -580,6 +592,18 @@ func checkEnvVars() (configuratorConfig, error) {
 	c.additionalListenersJSON, exist = os.LookupEnv(additionalListenersJSONEnvVar)
 	if exist {
 		log.Printf("additional listeners configured with the JSON format: %v", c.additionalListenersJSON)
+	}
+
+	// Handling the templating of the bootstrap file is optional
+	bootstrapTemplate, exist := os.LookupEnv(bootstrapTemplateEnvVar)
+	if exist && bootstrapTemplate != "" {
+		bootstrapDestination, exist := os.LookupEnv(bootstrapDestinationEnvVar)
+		if !exist || bootstrapDestination == "" {
+			result = errors.Join(result, fmt.Errorf("%s specified without corresponding %s", bootstrapTemplateEnvVar, bootstrapDestinationEnvVar))
+		} else {
+			c.bootstrapTemplate = bootstrapTemplate
+			c.bootstrapDestination = bootstrapDestination
+		}
 	}
 
 	return c, result
