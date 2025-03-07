@@ -1,0 +1,7 @@
+labels:
+  "backport":
+    color: "ededed"
+  "no-changelog":
+    color: "8f1402"
+  "v2.3.9":
+    color: "ededed"
