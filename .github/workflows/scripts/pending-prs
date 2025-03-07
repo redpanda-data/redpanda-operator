@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+export BROWSER=echo
+current_directory=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
+format="$1"
+repo="$2"
+branches_file="$current_directory/../../branches.yml"
+
+readarray activeBranches < <(yq e -o=j -I=0 '.active[]' "$branches_file")
+
+get_url() {
+    local repo=$1
+    local branch=$2
+    gh search prs --repo=$repo --state=open --base $branch -w | awk '{print substr($0, 1, length($0)-12)}' 2> /dev/null
+}
+
+terminal_bold() {
+  local text=$1
+  echo "\033[1m$text\033[22m"
+}
+
+markdown_bold() {
+  local text=$1
+  echo "*$text*"
+}
+
+terminal_url() {
+  local url=$1
+  local text=$2
+  echo "\033]8;;$url\033\\\\$text\033]8;;\033\\\\"
+}
+
+markdown_url() {
+  local url=$1
+  local text=$2
+  echo "<$url|$text>"
+}
+
+format_header() {
+    local branch=$1
+    local url=$2
+    local format=$3
+    case $format in
+        terminal)
+            text=$(echo "PRs open for $(terminal_url $url $branch):")
+            echo "$(terminal_bold "$text")"
+            ;;
+        *)
+            text=$(echo "PRs open for $(markdown_url $url $branch):")
+            echo "$(markdown_bold "$text")"
+            ;;
+    esac  
+}
+
+get_and_format_prs() {
+    local repo=$1
+    local branch=$2
+    local format=$3
+    case $format in
+        terminal)
+            gh search prs --repo=$repo --state=open --json url,number,title,updatedAt --template '{{range .}}{{(printf "- %s | Last Updated: %s\\n" (hyperlink .url (printf "#%v: %q" .number .title)) (timeago .updatedAt))}}{{end}}' --base $branch | cat
+            ;;
+        *)
+            gh search prs --repo=$repo --state=open --json url,number,title,updatedAt --template '{{range .}}{{(printf "• <%s|#%v>: %q | *Last Updated: %s*\\n" .url .number .title (timeago .updatedAt))}}{{end}}' --base $branch | cat
+            ;;
+    esac
+}
+
+echo_terminal() {
+    local text=$1
+    echo -e "$text"
+}
+
+echo_json() {
+    local text=$1
+    echo "$text" | jq -Rc '{type: "mrkdwn", text: .}' | awk '{gsub(/\\\\n/, "\\n"); print}'
+}
+
+message=""
+for activeBranch in "${activeBranches[@]}"; do
+    branch=$(echo "$activeBranch" | yq -r)
+    url=$(get_url "$repo" "$branch")
+    header="$(format_header "$branch" "$url" "$format")"
+    prs="$(get_and_format_prs "$repo" "$branch" "$format")"
+    if [ -n "$prs" ]; then
+        message+="$header\n$prs\n"
+    fi
+done
+
+if [ -n "$message" ]; then
+    # chomp off the last two newlines
+    message="${message::-4}"
+
+    case $format in
+        terminal|testing)
+            echo_terminal "$message"
+            ;;
+        *)
+            echo_json "$message"
+            ;;
+    esac
+fi

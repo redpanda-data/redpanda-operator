@@ -179,3 +179,9 @@ tasks:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
         CLI_ARGS: '{{.CLI_ARGS}} -run "^TestAcceptance" -timeout 35m -tags acceptance'
+
+  pending-prs:
+    desc: "Get all pending PRs for watched branches"
+    silent: true
+    cmds:
+      - ./.github/workflows/scripts/pending-prs terminal redpanda-data/redpanda-operator
