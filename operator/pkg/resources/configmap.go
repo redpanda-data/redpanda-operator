@@ -185,6 +185,7 @@ func (r *ConfigMapResource) obj(ctx context.Context) (k8sclient.Object, error) {
 		return nil, fmt.Errorf("creating configuration: %w", err)
 	}
 
+	// TODO: the serialised template needs to turn k8s object references into env vars
 	cfgSerialized, err := conf.Serialize()
 	if err != nil {
 		return nil, fmt.Errorf("serializing: %w", err)
