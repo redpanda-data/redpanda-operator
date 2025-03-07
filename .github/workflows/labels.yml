@@ -5,16 +5,19 @@ on:
     branches:
       - main
     paths:
-      - .github/labels.json
+      - .github/labels.yml
   workflow_dispatch:
 
 concurrency: manage-labels
 
 jobs:
   manage-labels:
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: lannonbr/issue-label-manager-action@3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: oliversalzburg/action-label-manager@v0.0.9
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}

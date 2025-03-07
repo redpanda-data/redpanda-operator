@@ -1,10 +1,11 @@
 {
   "fork": false,
-  "repoOwner": "redpanda-data",
-  "repoName": "redpanda-operator",
-  "targetBranchChoices": ["release/v2.3.x"],
+  "repoOwner": "andrewstucki",
+  "repoName": "actions-testing",
+  "autoMerge": true,
+  "targetBranchChoices": ["v1.0.x"],
   "targetPRLabels": ["backport"],
   "branchLabelMapping": {
-    "^v(\\d+).(\\d+).\\d+$": "release/v$1.$2.x"
+    "^v(\\d+).(\\d+).\\d+$": "v$1.$2.x"
   }
 }

@@ -13,6 +13,7 @@ jobs:
       - name: Backport Action
         uses: sorenlouv/backport-github-action@v9.5.1
         with:
+          # TODO: exchange this token with a PAT of a user like our build bot
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Info log

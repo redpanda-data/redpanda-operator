@@ -8,7 +8,7 @@ on:
 
 jobs:
   changed_files:
-    if: !contains(github.event.pull_request.labels.*.name, 'no-changelog')
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
     runs-on: ubuntu-latest
     name: Check for changelog entry
     steps:
