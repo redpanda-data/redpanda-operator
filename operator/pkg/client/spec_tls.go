@@ -19,7 +19,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/client"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
