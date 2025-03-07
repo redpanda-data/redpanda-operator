@@ -1,4 +1,6 @@
 {
+  "fork": false,
+  "autoMerge": true,
   "repoOwner": "redpanda-data",
   "repoName": "redpanda-operator",
   "targetBranchChoices": ["release/v2.3.x"],
