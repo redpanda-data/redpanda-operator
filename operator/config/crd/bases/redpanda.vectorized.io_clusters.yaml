@@ -174,95 +174,89 @@ spec:
                 - enabled
                 type: object
               clusterConfiguration:
+                additionalProperties:
+                  description: |-
+                    ClusterConfigValue represents a value of arbitrary type T. Values are string-encoded according to
+                    YAML rules in order to preserve numerical fidelity.
+                    Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+                    which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+                    throughout. The octet sequence of a Representation will be inserted into a bootstrap template
+                    verbatim.
+                  properties:
+                    configMapKeyRef:
+                      description: |-
+                        If the value is supplied by an k8s object reference, coordinates are embedded here.
+                        For target values, the string value fetched from the source will be treated as
+                        a value encoded according to YAML rules; the string can then be embedded verbatim into
+                        the bootstrap file.
+                      properties:
+                        key:
+                          description: The key to select.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the ConfigMap or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    externalSecretRef:
+                      description: |-
+                        If the value is supplied by an external source, coordinates are embedded here.
+                        Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
+                      type: string
+                    repr:
+                      description: |-
+                        If the value is directly known, its yaml representation can be embedded here.
+                        Use the string representation of a yaml-serialised value in order to preserve accuracy.
+                        Example:
+                        The string "foo" should be the five octets "\"foo\""
+                        A true value should be the four octets "true".
+                        The number -123456 should be a seven-octet sequence, "-123456".
+                      type: string
+                    secretKeyRef:
+                      description: |-
+                        Should the value be contained in a k8s secret rather than configmap, we can refer
+                        to it here.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
                 description: |-
                   Cluster configuration values may also be held here. A `keyName` entry in this
-                  attribute will override corresponding `redpanda.keyname` entries in AdditionalConfiguration;
+                  attribute will override corresponding `redpanda.keyName` entries in AdditionalConfiguration;
                   this is to permit the migration of those settings to this attribute.
                   The configuration may contain references to values extracted from k8s ConfigMaps or Secrets;
                   furthermore, we support the fetching of provider-specific secrets directly.
-                properties:
-                  values:
-                    additionalProperties:
-                      description: |-
-                        ClusterConfigValue represents a value of arbitrary type T. Walues are string-encoded according to
-                        YAML rules in order to preserve numerical fidelity.
-                        Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
-                        which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
-                        throughout. The octet sequence of a Representation will be inserted into a bootstrap template
-                        verbatim.
-                      properties:
-                        configMapKeyRef:
-                          description: |-
-                            If the value is supplied by an k8s object reference, coordinates are embedded here.
-                            For target values, the string value fetched from the source will be treated as
-                            a value encoded according to YAML rules; the string can then be embedded verbatim into
-                            the bootstrap file.
-                          properties:
-                            key:
-                              description: The key to select.
-                              type: string
-                            name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                            optional:
-                              description: Specify whether the ConfigMap or its key
-                                must be defined
-                              type: boolean
-                          required:
-                          - key
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        envVar:
-                          description: |-
-                            Note: during the construction of a bootstrap template file, references to config objects above will be
-                            rewritten to an EnvVarRef instead, and that variable added to the container environment via the usual k8s
-                            envFrom mechanism. A preferred environment variable name may be specified here.
-                          type: string
-                        externalSecretRef:
-                          description: |-
-                            If the value is supplied by an external source, coordinates are embedded here.
-                            Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
-                          type: string
-                        repr:
-                          description: If the value is directly known, its yaml representation
-                            can be embedded here.
-                          type: string
-                        secretKeyRef:
-                          description: |-
-                            Should the value be contained in a k8s secret rather than configmap, we can refer
-                            to it here.
-                          properties:
-                            key:
-                              description: The key of the secret to select from.  Must
-                                be a valid secret key.
-                              type: string
-                            name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                            optional:
-                              description: Specify whether the Secret or its key must
-                                be defined
-                              type: boolean
-                          required:
-                          - key
-                          type: object
-                          x-kubernetes-map-type: atomic
-                      required:
-                      - envVar
-                      type: object
-                    type: object
                 type: object
               configuration:
                 description: Configuration represent redpanda specific configuration
@@ -1864,8 +1858,6 @@ spec:
               version:
                 description: Version is the Redpanda container tag
                 type: string
-            required:
-            - clusterConfiguration
             type: object
           status:
             description: ClusterStatus defines the observed state of Cluster

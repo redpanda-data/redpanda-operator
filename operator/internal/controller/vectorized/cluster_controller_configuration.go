@@ -63,14 +63,19 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return errorWithContext(err, "error while creating the configuration")
 	}
 
-	lastAppliedConfiguration, err := r.getOrInitLastAppliedConfiguration(ctx, configMapResource, config)
-	if err != nil {
-		return errorWithContext(err, "could not load the last applied configuration")
-	}
-
 	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
 		return errorWithContext(err, "error creating the admin API client")
+	}
+
+	schema, _, _, err := r.retrieveClusterState(ctx, redpandaCluster, adminAPI)
+	if err != nil {
+		return err
+	}
+
+	lastAppliedConfiguration, err := r.getOrInitLastAppliedConfiguration(ctx, configMapResource, config, redpandaCluster.Namespace, schema)
+	if err != nil {
+		return errorWithContext(err, "could not load the last applied configuration")
 	}
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated
@@ -84,11 +89,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 			RequeueAfter: resources.RequeueDuration,
 			Msg:          "centralized configuration feature not active",
 		}
-	}
-
-	schema, _, _, err := r.retrieveClusterState(ctx, redpandaCluster, adminAPI)
-	if err != nil {
-		return err
 	}
 
 	patchSuccess, err := r.applyPatchIfNeeded(ctx, redpandaCluster, adminAPI, config, schema, log)
@@ -119,7 +119,11 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Now we can mark the new lastAppliedConfiguration for next update
-	if err = configMapResource.SetLastAppliedConfigurationInCluster(ctx, config.ClusterConfiguration); err != nil {
+	properties, err := config.ConcreteConfiguration(ctx, r.Client, redpandaCluster.Namespace, schema)
+	if err != nil {
+		return errorWithContext(err, "could not concretize configuration to store last applied configuration in the cluster")
+	}
+	if err = configMapResource.SetLastAppliedConfigurationInCluster(ctx, properties); err != nil {
 		return errorWithContext(err, "could not store last applied configuration in the cluster")
 	}
 
@@ -149,6 +153,8 @@ func (r *ClusterReconciler) getOrInitLastAppliedConfiguration(
 	ctx context.Context,
 	configMapResource *resources.ConfigMapResource,
 	config *configuration.GlobalConfiguration,
+	namespace string,
+	schema rpadmin.ConfigSchema,
 ) (map[string]interface{}, error) {
 	lastApplied, cmPresent, err := configMapResource.GetLastAppliedConfigurationFromCluster(ctx)
 	if err != nil {
@@ -158,7 +164,11 @@ func (r *ClusterReconciler) getOrInitLastAppliedConfiguration(
 		return lastApplied, nil
 	}
 
-	if err := configMapResource.SetLastAppliedConfigurationInCluster(ctx, config.ClusterConfiguration); err != nil {
+	concreteCfg, err := config.ConcreteConfiguration(ctx, r.Client, namespace, schema)
+	if err != nil {
+		return nil, err
+	}
+	if err := configMapResource.SetLastAppliedConfigurationInCluster(ctx, concreteCfg); err != nil {
 		return nil, err
 	}
 	return config.ClusterConfiguration, nil
@@ -179,10 +189,9 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	// Because we're going to perform a declarative application, invalid values will either
 	// be overwritten (if they're supplied in the cfg), or removed (if they're not).
 	// No additional handling is needed.
-	properties := map[string]any{}
-	for k, v := range cfg.ClusterConfiguration {
-		metadata := schema[k]
-		properties[k] = configuration.ParseConfigValueBeforeUpsert(log, v, &metadata)
+	properties, err := cfg.ConcreteConfiguration(ctx, r, redpandaCluster.Namespace, schema)
+	if err != nil {
+		return false, err
 	}
 
 	// Unconditionally apply the update
@@ -283,7 +292,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	lastAppliedConfiguration map[string]interface{},
 	statefulSetResource *resources.StatefulSetResource,
 ) (hash string, changed bool, err error) {
-	hash, err = config.GetCentralizedConfigurationHash(schema)
+	hash, err = config.GetCentralizedConfigurationHash(ctx, r.Client, schema, redpandaCluster.Namespace)
 	if err != nil {
 		return "", false, newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)(err, "could not compute hash of the new configuration")
 	}
@@ -296,9 +305,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	if oldHash == "" {
 		// Annotation not yet set on the statefulset (e.g. first time we change config).
 		// We check a diff against last applied configuration to avoid triggering a restart when not needed.
-		prevConfig := *config
-		prevConfig.ClusterConfiguration = lastAppliedConfiguration
-		oldHash, err = prevConfig.GetCentralizedConfigurationHash(schema)
+		oldHash, err = config.GetCentralizedConcreteConfigurationHash(lastAppliedConfiguration, schema)
 		if err != nil {
 			return "", false, err
 		}
