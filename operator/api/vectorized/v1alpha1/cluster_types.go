@@ -171,7 +171,7 @@ type ClusterSpec struct {
 	// this is to permit the migration of those settings to this attribute.
 	// The configuration may contain references to values extracted from k8s ConfigMaps or Secrets;
 	// furthermore, we support the fetching of provider-specific secrets directly.
-	ClusterConfiguration ClusterConfiguration `json:"clusterConfiguration"`
+	ClusterConfiguration ClusterConfiguration `json:"clusterConfiguration,omitempty"`
 	// DNSTrailingDotDisabled gives ability to turn off the fully-qualified
 	// DNS name.
 	// http://www.dns-sd.org/trailingdotsindomainnames.html

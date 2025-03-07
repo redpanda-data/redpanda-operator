@@ -16,6 +16,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 
@@ -34,9 +36,10 @@ var knownNodeProperties map[string]bool
 
 // GlobalConfiguration is a configuration object that holds both node/local configuration and global configuration.
 type GlobalConfiguration struct {
-	NodeConfiguration    *config.RedpandaYaml
-	ClusterConfiguration map[string]interface{}
-	Mode                 GlobalConfigurationMode
+	NodeConfiguration      *config.RedpandaYaml
+	ClusterConfiguration   map[string]interface{}
+	BootstrapConfiguration map[string]v1alpha1.ClusterConfigValue
+	Mode                   GlobalConfigurationMode
 }
 
 // For constructs a GlobalConfiguration for the given version of the cluster (considering feature gates).
