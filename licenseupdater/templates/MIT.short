@@ -1,2 +1,2 @@
-Copyright (c) Redpanda Data, Inc.
+Copyright (c) {{.Organization}}
 SPDX-License-Identifier: MIT

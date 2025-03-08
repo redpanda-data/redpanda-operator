@@ -23,6 +23,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const defaultOrganization = "Redpanda Data, Inc."
+
 type staticFile struct {
 	Name      string    `yaml:"name"`
 	License   string    `yaml:"license"`
@@ -186,6 +188,7 @@ func (m *match) doMatch(path string) bool {
 
 type config struct {
 	Path             string        `yaml:"path"`
+	Organization     string        `yaml:"organization"`
 	TopLevelLicense  string        `yaml:"top_level_license"`
 	LicenseDirectory string        `yaml:"license_directory"`
 	Licenses         []string      `yaml:"licenses"`
@@ -207,6 +210,13 @@ func loadConfig(path string) (*config, error) {
 
 	if err := c.initializeAndValidate(); err != nil {
 		return nil, err
+	}
+
+	// we just jam the initialization of the template org here
+	// since this is always called
+	licenseTemplateData.Organization = c.Organization
+	if licenseTemplateData.Organization == "" {
+		licenseTemplateData.Organization = defaultOrganization
 	}
 
 	return c, nil

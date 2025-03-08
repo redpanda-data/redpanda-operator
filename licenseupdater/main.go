@@ -23,7 +23,8 @@ import (
 )
 
 type templateData struct {
-	Year int
+	Organization string
+	Year         int
 }
 
 var (
