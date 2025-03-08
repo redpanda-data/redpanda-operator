@@ -21,7 +21,8 @@ func TestMain(t *testing.T) {
 		differ: diffChecker(),
 	}
 	licenseTemplateData = &templateData{
-		Year: 9999, // pin the year to make sure our tests don't randomly start failing at a year switch
+		Organization: defaultOrganization,
+		Year:         9999, // pin the year to make sure our tests don't randomly start failing at a year switch
 	}
 
 	config := &config{

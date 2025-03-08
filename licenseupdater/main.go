@@ -23,7 +23,8 @@ import (
 )
 
 type templateData struct {
-	Year int
+	Organization string
+	Year         int
 }
 
 var (
@@ -36,7 +37,8 @@ var (
 	licenseTemplates            = map[string]*template.Template{}
 
 	licenseTemplateData = &templateData{
-		Year: time.Now().Year(),
+		Organization: defaultOrganization,
+		Year:         time.Now().Year(),
 	}
 
 	writer *fsWriter
