@@ -214,9 +214,8 @@ func loadConfig(path string) (*config, error) {
 
 	// we just jam the initialization of the template org here
 	// since this is always called
-	licenseTemplateData.Organization = c.Organization
-	if licenseTemplateData.Organization == "" {
-		licenseTemplateData.Organization = defaultOrganization
+	if c.Organization != "" {
+		licenseTemplateData.Organization = c.Organization
 	}
 
 	return c, nil
