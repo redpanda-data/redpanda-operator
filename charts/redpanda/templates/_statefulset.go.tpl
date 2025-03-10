@@ -385,7 +385,7 @@
 {{- $container := (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda" "image" (printf `%s:%s` $values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) "env" (get (fromJson (include "redpanda.bootstrapEnvVars" (dict "a" (list $dot (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))))) "r") "lifecycle" (mustMergeOverwrite (dict) (dict "postStart" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "post-start" ((div $values.statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "bash" "-x" "/var/lifecycle/postStart.sh"))))) "r"))))) "preStop" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "pre-stop" ((div $values.statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "bash" "-x" "/var/lifecycle/preStop.sh"))))) "r"))))))) "startupProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/sh` `-c` (join "\n" (list `set -e` (printf `RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")` (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $dot)))) "r")) `echo $RESULT` `echo $RESULT | grep ready` ``))))))) (dict "failureThreshold" (120 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int))) "livenessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/sh` `-c` (printf `curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready"` (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $dot)))) "r"))))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (10 | int) "periodSeconds" (10 | int))) "command" (list `rpk` `redpanda` `start` (printf `--advertise-rpc-addr=%s:%d` $internalAdvertiseAddress ($values.listeners.rpc.port | int))) "volumeMounts" (get (fromJson (include "redpanda.StatefulSetVolumeMounts" (dict "a" (list $dot)))) "r") "resources" (get (fromJson (include "redpanda.RedpandaResources.GetResourceRequirements" (dict "a" (list $values.resources)))) "r"))) -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "admin" "containerPort" ($values.listeners.admin.port | int)))))) -}}
 {{- range $externalName, $external := $values.listeners.admin.external -}}
-{{- if (get (fromJson (include "redpanda.AdminExternal.IsEnabled" (dict "a" (list $external)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r") -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" (printf "admin-%.8s" (lower $externalName)) "containerPort" ($external.port | int)))))) -}}
 {{- end -}}
 {{- end -}}
@@ -394,7 +394,7 @@
 {{- end -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "http" "containerPort" ($values.listeners.http.port | int)))))) -}}
 {{- range $externalName, $external := $values.listeners.http.external -}}
-{{- if (get (fromJson (include "redpanda.HTTPExternal.IsEnabled" (dict "a" (list $external)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r") -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" (printf "http-%.8s" (lower $externalName)) "containerPort" ($external.port | int)))))) -}}
 {{- end -}}
 {{- end -}}
@@ -403,7 +403,7 @@
 {{- end -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "kafka" "containerPort" ($values.listeners.kafka.port | int)))))) -}}
 {{- range $externalName, $external := $values.listeners.kafka.external -}}
-{{- if (get (fromJson (include "redpanda.KafkaExternal.IsEnabled" (dict "a" (list $external)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r") -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" (printf "kafka-%.8s" (lower $externalName)) "containerPort" ($external.port | int)))))) -}}
 {{- end -}}
 {{- end -}}
@@ -413,7 +413,7 @@
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "rpc" "containerPort" ($values.listeners.rpc.port | int)))))) -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "schemaregistry" "containerPort" ($values.listeners.schemaRegistry.port | int)))))) -}}
 {{- range $externalName, $external := $values.listeners.schemaRegistry.external -}}
-{{- if (get (fromJson (include "redpanda.SchemaRegistryExternal.IsEnabled" (dict "a" (list $external)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r") -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" (printf "schema-%.8s" (lower $externalName)) "containerPort" ($external.port | int)))))) -}}
 {{- end -}}
 {{- end -}}

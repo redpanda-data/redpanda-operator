@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Removed
+body: The unrespected`kafkaEndpoint` listener parameter has been removed from `values.yaml`
+time: 2025-04-14T11:08:55.846041-04:00

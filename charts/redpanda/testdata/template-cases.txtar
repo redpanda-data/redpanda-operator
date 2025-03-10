@@ -1044,7 +1044,6 @@ listeners:
   http:
     enabled: true
     port: 8082
-    kafkaEndpoint: default
     tls:
       enabled: true
       cert: default
@@ -1079,7 +1078,6 @@ listeners:
   schemaRegistry:
     enabled: true
     port: 8081
-    kafkaEndpoint: default
     tls:
       enabled: true
       cert: default
