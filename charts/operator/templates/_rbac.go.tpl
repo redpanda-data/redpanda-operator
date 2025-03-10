@@ -1,6 +1,6 @@
 {{- /* Generated from "rbac.go" */ -}}
 
-{{- define "operator.ClusterRole" -}}
+{{- define "operator.ClusterRoles" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}

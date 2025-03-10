@@ -17,7 +17,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
 
-func ClusterRole(dot *helmette.Dot) []rbacv1.ClusterRole {
+func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {

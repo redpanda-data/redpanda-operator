@@ -193,7 +193,7 @@ func TestGoModLint(t *testing.T) {
 		// generator. The invocation `gen schema` uses reflection on Charts'
 		// Value types that need to be up to date. (Generation could be moved
 		// into their respective charts to resolve this).
-		modPrefix + "gen": {modPrefix + "charts/redpanda", modPrefix + "charts/operator"},
+		modPrefix + "gen": {modPrefix + "charts/redpanda/v5", modPrefix + "charts/operator"},
 	}
 
 	// This could also be done with go work sync but go.work causes many other
