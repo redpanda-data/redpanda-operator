@@ -219,7 +219,7 @@ func (g *Generator) partializeStruct(t *types.Struct) *types.Struct {
 		// after parsing?
 		// Or just implement our own type printer.
 		tags[i] = EnsureOmitEmpty(t.Tag(i))
-		fields[i] = types.NewVar(0, g.pkg.Types, field.Name(), partialized)
+		fields[i] = types.NewField(0, g.pkg.Types, field.Name(), partialized, field.Embedded())
 	}
 
 	return types.NewStruct(fields, tags)
