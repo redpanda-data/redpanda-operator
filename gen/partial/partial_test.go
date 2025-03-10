@@ -55,6 +55,7 @@ type ExampleStruct struct {
 	C2 *struct{}
 
 	// Structs
+	NestedStruct
 	D1 NestedStruct
 	D2 *NestedStruct
 
