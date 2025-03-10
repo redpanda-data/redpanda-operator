@@ -34,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
 var c client.Client
@@ -98,6 +99,9 @@ func TestEnsure_StatefulSet(t *testing.T) {
 			ImagePullPolicy:       "Always",
 		},
 		func(ctx context.Context) (string, error) { return hash, nil },
+		func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
+			return &configuration.GlobalConfiguration{}, nil
+		},
 		adminutils.NewNodePoolInternalAdminAPI,
 		nil,
 		time.Second,

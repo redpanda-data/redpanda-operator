@@ -14,13 +14,15 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // SerializedGlobalConfigurationContainer wraps the serialized version of redpanda.yaml and .bootstrap.yaml
 type SerializedGlobalConfigurationContainer struct {
-	RedpandaFile      []byte
-	BootstrapFile     []byte
-	BootstrapTemplate []byte
+	RedpandaFile        []byte
+	BootstrapFile       []byte
+	BootstrapTemplate   []byte
+	TemplateEnvironment []corev1.EnvVar
 }
 
 // Serialize returns the serialized version of the given configuration
@@ -45,11 +47,16 @@ func (c *GlobalConfiguration) Serialize() (
 	}
 
 	if len(c.BootstrapConfiguration) > 0 {
-		bootstrapTemplate, err := json.Marshal(c.BootstrapConfiguration)
+		readyForTemplate, env, err := ExpandForBootstrap(c.BootstrapConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("could not pre-expand cluster bootstrap template: %w", err)
+		}
+		bootstrapTemplate, err := json.Marshal(readyForTemplate)
 		if err != nil {
 			return nil, fmt.Errorf("could not serialize cluster bootstrap template: %w", err)
 		}
 		res.BootstrapTemplate = bootstrapTemplate
+		res.TemplateEnvironment = env
 	}
 	return &res, nil
 }
