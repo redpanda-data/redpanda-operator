@@ -1,0 +1,29 @@
+{{- /* Generated from "embedding.go" */ -}}
+
+{{- define "typing.embedding" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (or (eq (toJson $values.June) "null") (eq (toJson $values.Jack) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $ashe := (mustMergeOverwrite (dict "IsLongHaired" false "name" "" ) (mustMergeOverwrite (dict "name" "" ) (dict "name" "Ashe" )) (dict )) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack) ))) "r"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "typing.Pet.Greet" -}}
+{{- $p := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "Hello, %s!" $p.name)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+

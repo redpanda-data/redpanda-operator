@@ -143,6 +143,10 @@ var testSpecs = map[string]TestSpec{
 			{"t": float64(1)},
 			{"t": true},
 			{"t": "a string"},
+			{
+				"Jack": map[string]any{"name": "Jack", "Breed": "Mutt"},
+				"June": map[string]any{"name": "June", "IsLongHaired": true},
+			},
 		},
 	},
 }
