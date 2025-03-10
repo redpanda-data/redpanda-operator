@@ -7,20 +7,19 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:ignore=true
+// +gotohelm:filename=_chart.go.tpl
 package operator
 
 import (
-	_ "embed"
+	"embed"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -29,56 +28,61 @@ var (
 	// objects produced by the redpanda chart.
 	Scheme = runtime.NewScheme()
 
+	//go:embed Chart.lock
 	//go:embed Chart.yaml
-	chartYAML []byte
-
+	//go:embed templates/*
+	//go:embed values.schema.json
 	//go:embed values.yaml
-	defaultValuesYAML []byte
+	ChartFiles embed.FS
 
-	chartMeta helmette.Chart
+	// Chart is the go version of the redpanda helm chart.
+	Chart = gotohelm.MustLoad(ChartFiles, render)
 )
 
+// +gotohelm:ignore=true
 func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
-
-	// NB: We can't directly unmarshal into a helmette.Chart as adding json
-	// tags to it breaks gotohelm.
-	var chart map[string]any
-	must(yaml.Unmarshal(chartYAML, &chart))
-
-	chartMeta = helmette.Chart{
-		Name:       chart["name"].(string),
-		Version:    chart["version"].(string),
-		AppVersion: chart["appVersion"].(string),
-	}
 }
 
-// ChartMeta returns a parsed version of redpanda's Chart.yaml.
-func ChartMeta() helmette.Chart {
-	return chartMeta
-}
-
-func Dot(release helmette.Release, values PartialValues, kubeConfig kube.Config) (*helmette.Dot, error) {
-	valuesYaml, err := yaml.Marshal(values)
-	if err != nil {
-		return nil, err
+func render(dot *helmette.Dot) []kube.Object {
+	manifests := []kube.Object{
+		Issuer(dot),
+		Certificate(dot),
+		ConfigMap(dot),
+		MetricsService(dot),
+		WebhookService(dot),
+		MutatingWebhookConfiguration(dot),
+		ValidatingWebhookConfiguration(dot),
+		ServiceAccount(dot),
+		ServiceMonitor(dot),
+		Deployment(dot),
 	}
 
-	merged, err := helm.MergeYAMLValues(defaultValuesYAML, valuesYaml)
-	if err != nil {
-		return nil, err
+	for _, role := range Roles(dot) {
+		manifests = append(manifests, &role)
 	}
 
-	return &helmette.Dot{
-		Values:     merged,
-		Chart:      ChartMeta(),
-		Release:    release,
-		KubeConfig: kubeConfig,
-	}, nil
+	for _, cr := range ClusterRoles(dot) {
+		manifests = append(manifests, &cr)
+	}
+
+	for _, rb := range RoleBindings(dot) {
+		manifests = append(manifests, &rb)
+	}
+
+	for _, crb := range ClusterRoleBindings(dot) {
+		manifests = append(manifests, &crb)
+	}
+
+	// NB: This slice may contain nil interfaces!
+	// Filtering happens elsewhere, don't call this function directly if you
+	// can avoid it.
+	return manifests
 }
 
+// +gotohelm:ignore=true
 func must(err error) {
 	if err != nil {
 		panic(err)
