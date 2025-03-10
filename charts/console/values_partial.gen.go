@@ -100,9 +100,7 @@ type PartialAutoScaling struct {
 }
 
 type PartialConsole struct {
-	Config       map[string]any   "json:\"config,omitempty\""
-	Roles        []map[string]any "json:\"roles,omitempty\""
-	RoleBindings []map[string]any "json:\"roleBindings,omitempty\""
+	Config map[string]any "json:\"config,omitempty\""
 }
 
 type PartialInitContainers struct {
