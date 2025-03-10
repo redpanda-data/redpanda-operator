@@ -506,8 +506,13 @@ func kafkaClient(dot *helmette.Dot) map[string]any {
 func configureListeners(redpanda map[string]any, dot *helmette.Dot) {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	redpanda["admin"] = values.Listeners.Admin.Listeners()
-	redpanda["kafka_api"] = values.Listeners.Kafka.Listeners(&values.Auth)
+	var defaultKafkaAuth *KafkaAuthenticationMethod
+	if values.Auth.SASL.Enabled {
+		defaultKafkaAuth = ptr.To(SASLKafkaAuthenticationMethod)
+	}
+
+	redpanda["admin"] = values.Listeners.Admin.Listeners(nil /* No auth on admin API */)
+	redpanda["kafka_api"] = values.Listeners.Kafka.Listeners(defaultKafkaAuth)
 	redpanda["rpc_server"] = rpcListeners(dot)
 
 	// Backwards compatibility layer, if any of the *_tls keys are an empty
@@ -534,7 +539,12 @@ func pandaProxyListener(dot *helmette.Dot) map[string]any {
 
 	pandaProxy := map[string]any{}
 
-	pandaProxy["pandaproxy_api"] = values.Listeners.HTTP.Listeners(values.Auth.IsSASLEnabled())
+	var pandaProxyAuth *HTTPAuthenticationMethod
+	if values.Auth.IsSASLEnabled() {
+		pandaProxyAuth = ptr.To(BasicHTTPAuthenticationMethod)
+	}
+
+	pandaProxy["pandaproxy_api"] = values.Listeners.HTTP.Listeners(pandaProxyAuth)
 	pandaProxy["pandaproxy_api_tls"] = nil
 	if tls := values.Listeners.HTTP.ListenersTLS(&values.TLS); len(tls) > 0 {
 		pandaProxy["pandaproxy_api_tls"] = tls
@@ -546,8 +556,7 @@ func schemaRegistry(dot *helmette.Dot) map[string]any {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	schemaReg := map[string]any{}
-
-	schemaReg["schema_registry_api"] = values.Listeners.SchemaRegistry.Listeners(values.Auth.IsSASLEnabled())
+	schemaReg["schema_registry_api"] = values.Listeners.SchemaRegistry.Listeners(nil /* No auth on admin API */)
 	schemaReg["schema_registry_api_tls"] = nil
 	if tls := values.Listeners.SchemaRegistry.ListenersTLS(&values.TLS); len(tls) > 0 {
 		schemaReg["schema_registry_api_tls"] = tls
@@ -603,14 +612,6 @@ func createInternalListenerTLSCfg(tls *TLS, internal InternalTLS) map[string]any
 		"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, internal.Cert),
 		"require_client_auth": internal.RequireClientAuth,
 		"truststore_file":     internal.TrustStoreFilePath(tls),
-	}
-}
-
-func createInternalListenerCfg(port int32) map[string]any {
-	return map[string]any{
-		"name":    "internal",
-		"address": "0.0.0.0",
-		"port":    port,
 	}
 }
 

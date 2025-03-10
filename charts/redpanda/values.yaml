@@ -853,7 +853,6 @@ listeners:
   schemaRegistry:
     enabled: true
     port: 8081
-    kafkaEndpoint: default
     # default is "http_basic"
     authenticationMethod:
     tls:
@@ -877,7 +876,6 @@ listeners:
   http:
     enabled: true
     port: 8082
-    kafkaEndpoint: default
     # default is "http_basic"
     authenticationMethod:
     tls:

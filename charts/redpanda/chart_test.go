@@ -750,7 +750,7 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 		External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 		ClusterDomain: ptr.To("cluster.local"),
 		Listeners: &redpanda.PartialListeners{
-			Admin: &redpanda.PartialAdminListeners{
+			Admin: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialAdminExternal]{
 				//	"default": redpanda.PartialAdminExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -758,7 +758,7 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 					RequireClientAuth: ptr.To(true),
 				},
 			},
-			HTTP: &redpanda.PartialHTTPListeners{
+			HTTP: &redpanda.PartialListenerConfig[redpanda.HTTPAuthenticationMethod]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialHTTPExternal]{
 				//	"default": redpanda.PartialHTTPExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -766,7 +766,7 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 					RequireClientAuth: ptr.To(true),
 				},
 			},
-			Kafka: &redpanda.PartialKafkaListeners{
+			Kafka: &redpanda.PartialListenerConfig[redpanda.KafkaAuthenticationMethod]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialKafkaExternal]{
 				//	"default": redpanda.PartialKafkaExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -774,7 +774,7 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 					RequireClientAuth: ptr.To(true),
 				},
 			},
-			SchemaRegistry: &redpanda.PartialSchemaRegistryListeners{
+			SchemaRegistry: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialSchemaRegistryExternal]{
 				//	"default": redpanda.PartialSchemaRegistryExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -833,7 +833,7 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 			},
 		},
 		Listeners: &redpanda.PartialListeners{
-			Admin: &redpanda.PartialAdminListeners{
+			Admin: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialAdminExternal]{
 				//	"default": redpanda.PartialAdminExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -842,7 +842,7 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 					Cert:              ptr.To("provided"),
 				},
 			},
-			HTTP: &redpanda.PartialHTTPListeners{
+			HTTP: &redpanda.PartialListenerConfig[redpanda.HTTPAuthenticationMethod]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialHTTPExternal]{
 				//	"default": redpanda.PartialHTTPExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -851,7 +851,7 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 					Cert:              ptr.To("provided"),
 				},
 			},
-			Kafka: &redpanda.PartialKafkaListeners{
+			Kafka: &redpanda.PartialListenerConfig[redpanda.KafkaAuthenticationMethod]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialKafkaExternal]{
 				//	"default": redpanda.PartialKafkaExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},
@@ -860,7 +860,7 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 					Cert:              ptr.To("provided"),
 				},
 			},
-			SchemaRegistry: &redpanda.PartialSchemaRegistryListeners{
+			SchemaRegistry: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				//External: redpanda.PartialExternalListeners[redpanda.PartialSchemaRegistryExternal]{
 				//	"default": redpanda.PartialSchemaRegistryExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
 				//},

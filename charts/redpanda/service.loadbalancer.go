@@ -15,7 +15,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -84,65 +83,10 @@ func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
 		// in helm. TODO setup a linter that barks about this? Also a helper
 		// for getting the sorted keys of a map?
 		var ports []corev1.ServicePort
-		for name, listener := range helmette.SortedMap(values.Listeners.Admin.External) {
-			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
-				continue
-			}
-
-			fallbackPorts := append(listener.AdvertisedPorts, values.Listeners.Admin.Port)
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       fmt.Sprintf("admin-%s", name),
-				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(listener.Port),
-				Port:       ptr.Deref(listener.NodePort, fallbackPorts[0]),
-			})
-		}
-
-		for name, listener := range helmette.SortedMap(values.Listeners.Kafka.External) {
-			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
-				continue
-			}
-
-			fallbackPorts := append(listener.AdvertisedPorts, listener.Port)
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       fmt.Sprintf("kafka-%s", name),
-				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(listener.Port),
-				Port:       ptr.Deref(listener.NodePort, fallbackPorts[0]),
-			})
-		}
-
-		for name, listener := range helmette.SortedMap(values.Listeners.HTTP.External) {
-			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
-				continue
-			}
-
-			fallbackPorts := append(listener.AdvertisedPorts, listener.Port)
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       fmt.Sprintf("http-%s", name),
-				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(listener.Port),
-				Port:       ptr.Deref(listener.NodePort, fallbackPorts[0]),
-			})
-		}
-
-		for name, listener := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
-			if !ptr.Deref(listener.Enabled, values.External.Enabled) {
-				continue
-			}
-
-			fallbackPorts := append(listener.AdvertisedPorts, listener.Port)
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       fmt.Sprintf("schema-%s", name),
-				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(listener.Port),
-				Port:       ptr.Deref(listener.NodePort, fallbackPorts[0]),
-			})
-		}
+		ports = append(ports, values.Listeners.Admin.ServicePorts("admin", &values.External)...)
+		ports = append(ports, values.Listeners.Kafka.ServicePorts("kafka", &values.External)...)
+		ports = append(ports, values.Listeners.HTTP.ServicePorts("http", &values.External)...)
+		ports = append(ports, values.Listeners.SchemaRegistry.ServicePorts("schema", &values.External)...)
 
 		svc := &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
