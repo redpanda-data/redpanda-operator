@@ -123,9 +123,7 @@ type AutoScaling struct {
 // YAML and then run through tpl which gives no indication of what they are
 // aside from YAML marshal-able.
 type Console struct {
-	Config       map[string]any   `json:"config"`
-	Roles        []map[string]any `json:"roles,omitempty"`
-	RoleBindings []map[string]any `json:"roleBindings,omitempty"`
+	Config map[string]any `json:"config"`
 }
 
 type InitContainers struct {
