@@ -366,7 +366,7 @@ Listener settings.  Override global settings configured above for individual lis
 **Default:**
 
 ```
-{"admin":{"external":{"default":{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}},"http":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"kafkaEndpoint":"default","port":8082,"tls":{"cert":"default","requireClientAuth":false}},"kafka":{"authenticationMethod":null,"external":{"default":{"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}},"rpc":{"port":33145,"tls":{"cert":"default","requireClientAuth":false}},"schemaRegistry":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"kafkaEndpoint":"default","port":8081,"tls":{"cert":"default","requireClientAuth":false}}}
+{"admin":{"external":{"default":{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}},"http":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}},"kafka":{"authenticationMethod":null,"external":{"default":{"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}},"rpc":{"port":33145,"tls":{"cert":"default","requireClientAuth":false}},"schemaRegistry":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}}
 ```
 
 ### [listeners.admin](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin)
@@ -440,7 +440,7 @@ HTTP API listeners (aka PandaProxy).
 **Default:**
 
 ```
-{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"kafkaEndpoint":"default","port":8082,"tls":{"cert":"default","requireClientAuth":false}}
+{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}}
 ```
 
 ### [listeners.kafka](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.kafka)
@@ -488,7 +488,7 @@ Schema registry listeners.
 **Default:**
 
 ```
-{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"kafkaEndpoint":"default","port":8081,"tls":{"cert":"default","requireClientAuth":false}}
+{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}
 ```
 
 ### [logging](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=logging)

@@ -7680,6 +7680,19 @@
             "appProtocol": {
               "type": "string"
             },
+            "authenticationMethod": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "enabled": {
+              "type": "boolean"
+            },
             "external": {
               "minProperties": 1,
               "patternProperties": {
@@ -7692,6 +7705,16 @@
                       "minItems": 1,
                       "type": "array"
                     },
+                    "authenticationMethod": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "enabled": {
                       "type": "boolean"
                     },
@@ -7700,6 +7723,9 @@
                     },
                     "port": {
                       "type": "integer"
+                    },
+                    "prefixTemplate": {
+                      "type": "string"
                     },
                     "tls": {
                       "properties": {
@@ -7824,6 +7850,9 @@
         },
         "http": {
           "properties": {
+            "appProtocol": {
+              "type": "string"
+            },
             "authenticationMethod": {
               "oneOf": [
                 {
@@ -7937,10 +7966,6 @@
               },
               "type": "object"
             },
-            "kafkaEndpoint": {
-              "pattern": "^[A-Za-z_-][A-Za-z0-9_-]*$",
-              "type": "string"
-            },
             "port": {
               "type": "integer"
             },
@@ -7999,22 +8024,23 @@
             }
           },
           "required": [
-            "enabled",
-            "tls",
-            "kafkaEndpoint",
-            "port"
+            "port",
+            "tls"
           ],
           "type": "object"
         },
         "kafka": {
           "properties": {
+            "appProtocol": {
+              "type": "string"
+            },
             "authenticationMethod": {
               "oneOf": [
                 {
                   "enum": [
                     "sasl",
-                    "none",
-                    "mtls_identity"
+                    "mtls_identity",
+                    "none"
                   ],
                   "type": "string"
                 },
@@ -8022,6 +8048,9 @@
                   "type": "null"
                 }
               ]
+            },
+            "enabled": {
+              "type": "boolean"
             },
             "external": {
               "minProperties": 1,
@@ -8040,8 +8069,8 @@
                         {
                           "enum": [
                             "sasl",
-                            "none",
-                            "mtls_identity"
+                            "mtls_identity",
+                            "none"
                           ],
                           "type": "string"
                         },
@@ -8178,8 +8207,8 @@
             }
           },
           "required": [
-            "tls",
-            "port"
+            "port",
+            "tls"
           ],
           "type": "object"
         },
@@ -8250,13 +8279,12 @@
         },
         "schemaRegistry": {
           "properties": {
+            "appProtocol": {
+              "type": "string"
+            },
             "authenticationMethod": {
               "oneOf": [
                 {
-                  "enum": [
-                    "none",
-                    "http_basic"
-                  ],
                   "type": "string"
                 },
                 {
@@ -8282,10 +8310,6 @@
                     "authenticationMethod": {
                       "oneOf": [
                         {
-                          "enum": [
-                            "none",
-                            "http_basic"
-                          ],
                           "type": "string"
                         },
                         {
@@ -8301,6 +8325,9 @@
                     },
                     "port": {
                       "type": "integer"
+                    },
+                    "prefixTemplate": {
+                      "type": "string"
                     },
                     "tls": {
                       "properties": {
@@ -8352,14 +8379,13 @@
                       "type": "object"
                     }
                   },
+                  "required": [
+                    "port"
+                  ],
                   "type": "object"
                 }
               },
               "type": "object"
-            },
-            "kafkaEndpoint": {
-              "pattern": "^[A-Za-z_-][A-Za-z0-9_-]*$",
-              "type": "string"
             },
             "port": {
               "type": "integer"
@@ -8419,8 +8445,6 @@
             }
           },
           "required": [
-            "enabled",
-            "kafkaEndpoint",
             "port",
             "tls"
           ],

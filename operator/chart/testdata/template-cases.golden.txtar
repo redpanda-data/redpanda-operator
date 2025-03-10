@@ -1070,7 +1070,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -1163,7 +1162,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -2381,7 +2379,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -2474,7 +2471,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -3637,7 +3633,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -3730,7 +3725,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -4959,7 +4953,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -5052,7 +5045,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -6246,7 +6238,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -6339,7 +6330,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -7529,7 +7519,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -7622,7 +7611,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -8872,7 +8860,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -8965,7 +8952,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -10185,7 +10171,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -10278,7 +10263,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -10616,7 +10600,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -10709,7 +10692,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -11970,7 +11952,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -12063,7 +12044,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -13274,7 +13254,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -13367,7 +13346,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -14619,7 +14597,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -14712,7 +14689,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -15937,7 +15913,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -16030,7 +16005,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -17242,7 +17216,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -17335,7 +17308,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -18548,7 +18520,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -18641,7 +18612,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -19058,7 +19028,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -19151,7 +19120,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -20084,7 +20052,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -20177,7 +20144,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -20632,7 +20598,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -20725,7 +20690,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -22067,7 +22031,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -22160,7 +22123,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -23439,7 +23401,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -23532,7 +23493,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -24805,7 +24765,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -24898,7 +24857,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -26268,7 +26226,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -26361,7 +26318,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -27567,7 +27523,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -27660,7 +27615,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -29128,7 +29082,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -29221,7 +29174,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -30653,7 +30605,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -30746,7 +30697,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -32118,7 +32068,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -32211,7 +32160,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -32863,7 +32811,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -32956,7 +32903,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -34453,7 +34399,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -34546,7 +34491,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -35827,7 +35771,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -35920,7 +35863,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -36465,7 +36407,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -36558,7 +36499,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -37941,7 +37881,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -38034,7 +37973,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -38733,7 +38671,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -38826,7 +38763,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -40386,7 +40322,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -40479,7 +40414,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -41051,7 +40985,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -41144,7 +41077,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -42451,7 +42383,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -42544,7 +42475,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -43213,7 +43143,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -43306,7 +43235,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -43956,7 +43884,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -44049,7 +43976,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -44836,7 +44762,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -44929,7 +44854,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -45626,7 +45550,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -45719,7 +45642,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -47200,7 +47122,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -47293,7 +47214,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -47913,7 +47833,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -48006,7 +47925,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -48586,7 +48504,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -48679,7 +48596,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -50113,7 +50029,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -50206,7 +50121,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -51835,7 +51749,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -51928,7 +51841,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -52624,7 +52536,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -52717,7 +52628,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -54193,7 +54103,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -54286,7 +54195,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -55021,7 +54929,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -55114,7 +55021,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -55804,7 +55710,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -55897,7 +55802,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -57375,7 +57279,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -57468,7 +57371,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -58798,7 +58700,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -58891,7 +58792,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -60418,7 +60318,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -60511,7 +60410,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -113349,7 +113247,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -113442,7 +113339,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -114611,7 +114507,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -114704,7 +114599,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -115856,7 +115750,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -115949,7 +115842,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -117101,7 +116993,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -117194,7 +117085,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -119219,7 +119109,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""
@@ -119312,7 +119201,6 @@ spec:
                   authenticationMethod: none
                   enabled: true
                   external: {}
-                  kafkaEndpoint: kafka-default
                   port: 8082
                   tls:
                     cert: ""

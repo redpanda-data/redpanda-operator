@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: '`authentication_method` is no longer set on `http_api` as redpanda itself does not support authentication on the http API.'
+time: 2025-04-14T11:11:29.214567-04:00

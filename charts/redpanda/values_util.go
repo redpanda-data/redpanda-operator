@@ -17,6 +17,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	SASLKafkaAuthenticationMethod         KafkaAuthenticationMethod = "sasl"
+	MTLSIdentityKafkaAuthenticationMethod KafkaAuthenticationMethod = "mtls_identity"
+	NoneKafkaAuthenticationMethod         KafkaAuthenticationMethod = "none"
+
+	BasicHTTPAuthenticationMethod HTTPAuthenticationMethod = "http_basic"
+	NoneHTTPAuthenticationMethod  HTTPAuthenticationMethod = "none"
+)
+
 // ResourceQuantity is an extension of [resource.Quantity] that implements
 // JSONSchemaer. It's specifically for typing a key in [TieredStorageConfig].
 type ResourceQuantity resource.Quantity
@@ -36,27 +45,22 @@ func (IssuerRefKind) JSONSchemaExtend(schema *jsonschema.Schema) {
 	schema.Enum = append(schema.Enum, "ClusterIssuer", "Issuer")
 }
 
-type ExternalListeners[T any] map[string]T
+type NoAuth string
 
-func (ExternalListeners[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
-	schema.PatternProperties = map[string]*jsonschema.Schema{
-		`^[A-Za-z_][A-Za-z0-9_]*$`: schema.AdditionalProperties,
-	}
-	minProps := uint64(1)
-	schema.MinProperties = &minProps
-	schema.AdditionalProperties = nil
+func (NoAuth) JSONSchemaExtend(s *jsonschema.Schema) {
+	s.Enum = []any{} // No valid options.
 }
 
 type HTTPAuthenticationMethod string
 
 func (HTTPAuthenticationMethod) JSONSchemaExtend(s *jsonschema.Schema) {
-	s.Enum = append(s.Enum, "none", "http_basic")
+	s.Enum = append(s.Enum, NoneHTTPAuthenticationMethod, BasicHTTPAuthenticationMethod)
 }
 
 type KafkaAuthenticationMethod string
 
 func (KafkaAuthenticationMethod) JSONSchemaExtend(s *jsonschema.Schema) {
-	s.Enum = append(s.Enum, "sasl", "none", "mtls_identity")
+	s.Enum = append(s.Enum, SASLKafkaAuthenticationMethod, MTLSIdentityKafkaAuthenticationMethod, NoneKafkaAuthenticationMethod)
 }
 
 func deprecate(schema *jsonschema.Schema, keys ...string) {
