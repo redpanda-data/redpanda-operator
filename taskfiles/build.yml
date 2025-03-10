@@ -80,7 +80,7 @@ tasks:
   gotohelm:
     cmds:
       - task: go:build
-        vars: { DIR: gotohelm }
+        vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
 
   licenseupdater:
     cmds:
@@ -93,10 +93,11 @@ tasks:
     label: "go:build:{{ .DIR }}"
     var:
       DIR: ""
+      PACKAGE: '{{default .TARGET "."}}'
     requires:
       vars: [DIR]
     cmds:
-    - go build -C {{ .DIR }} -o ../.build/{{ .DIR }} .
+    - go build -C {{ .DIR }} -o ../.build/{{ .DIR }} {{ .PACKAGE }}
     status:
     # NB: Task's globbing is finicky and tracking all possible go files is
     # prone to error. Instead, rely on go build's caching. Cache status must be
