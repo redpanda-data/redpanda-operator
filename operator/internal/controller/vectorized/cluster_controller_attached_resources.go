@@ -422,6 +422,7 @@ func (a *attachedResources) statefulSet() error {
 			a.getServiceAccountName(),
 			a.reconciler.configuratorSettings,
 			cm.GetNodeConfigHash,
+			cm.CreateConfiguration,
 			a.reconciler.AdminAPIClientFactory,
 			a.reconciler.Dialer,
 			a.reconciler.DecommissionWaitInterval,
