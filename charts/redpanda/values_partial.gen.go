@@ -287,10 +287,10 @@ type PartialTuning struct {
 }
 
 type PartialListeners struct {
-	Admin          *PartialAdminListeners          "json:\"admin,omitempty\" jsonschema:\"required\""
-	HTTP           *PartialHTTPListeners           "json:\"http,omitempty\" jsonschema:\"required\""
-	Kafka          *PartialKafkaListeners          "json:\"kafka,omitempty\" jsonschema:\"required\""
-	SchemaRegistry *PartialSchemaRegistryListeners "json:\"schemaRegistry,omitempty\" jsonschema:\"required\""
+	Admin          *PartialListenerConfig[NoAuth]                    "json:\"admin,omitempty\" jsonschema:\"required\""
+	HTTP           *PartialListenerConfig[HTTPAuthenticationMethod]  "json:\"http,omitempty\" jsonschema:\"required\""
+	Kafka          *PartialListenerConfig[KafkaAuthenticationMethod] "json:\"kafka,omitempty\" jsonschema:\"required\""
+	SchemaRegistry *PartialListenerConfig[NoAuth]                    "json:\"schemaRegistry,omitempty\" jsonschema:\"required\""
 	RPC            *struct {
 		Port *int32              "json:\"port,omitempty\" jsonschema:\"required\""
 		TLS  *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
@@ -391,38 +391,6 @@ type PartialSidecars struct {
 	} "json:\"controllers,omitempty\""
 }
 
-type PartialAdminListeners struct {
-	External    PartialExternalListeners[PartialAdminExternal] "json:\"external,omitempty\""
-	Port        *int32                                         "json:\"port,omitempty\" jsonschema:\"required\""
-	AppProtocol *string                                        "json:\"appProtocol,omitempty\""
-	TLS         *PartialInternalTLS                            "json:\"tls,omitempty\" jsonschema:\"required\""
-}
-
-type PartialHTTPListeners struct {
-	Enabled              *bool                                         "json:\"enabled,omitempty\" jsonschema:\"required\""
-	External             PartialExternalListeners[PartialHTTPExternal] "json:\"external,omitempty\""
-	AuthenticationMethod *HTTPAuthenticationMethod                     "json:\"authenticationMethod,omitempty\""
-	TLS                  *PartialInternalTLS                           "json:\"tls,omitempty\" jsonschema:\"required\""
-	KafkaEndpoint        *string                                       "json:\"kafkaEndpoint,omitempty\" jsonschema:\"required,pattern=^[A-Za-z_-][A-Za-z0-9_-]*$\""
-	Port                 *int32                                        "json:\"port,omitempty\" jsonschema:\"required\""
-}
-
-type PartialKafkaListeners struct {
-	AuthenticationMethod *KafkaAuthenticationMethod                     "json:\"authenticationMethod,omitempty\""
-	External             PartialExternalListeners[PartialKafkaExternal] "json:\"external,omitempty\""
-	TLS                  *PartialInternalTLS                            "json:\"tls,omitempty\" jsonschema:\"required\""
-	Port                 *int32                                         "json:\"port,omitempty\" jsonschema:\"required\""
-}
-
-type PartialSchemaRegistryListeners struct {
-	Enabled              *bool                                                   "json:\"enabled,omitempty\" jsonschema:\"required\""
-	External             PartialExternalListeners[PartialSchemaRegistryExternal] "json:\"external,omitempty\""
-	AuthenticationMethod *HTTPAuthenticationMethod                               "json:\"authenticationMethod,omitempty\""
-	KafkaEndpoint        *string                                                 "json:\"kafkaEndpoint,omitempty\" jsonschema:\"required,pattern=^[A-Za-z_-][A-Za-z0-9_-]*$\""
-	Port                 *int32                                                  "json:\"port,omitempty\" jsonschema:\"required\""
-	TLS                  *PartialInternalTLS                                     "json:\"tls,omitempty\" jsonschema:\"required\""
-}
-
 type PartialClusterConfig map[string]any
 
 type PartialClusterConfiguration map[string]PartialClusterConfigValue
@@ -437,6 +405,15 @@ type PartialSASLAuth struct {
 	SecretRef     *string               "json:\"secretRef,omitempty\""
 	Users         []PartialSASLUser     "json:\"users,omitempty\""
 	BootstrapUser *PartialBootstrapUser "json:\"bootstrapUser,omitempty\""
+}
+
+type PartialListenerConfig[T ~string] struct {
+	Enabled              *bool                                 "json:\"enabled,omitempty\""
+	External             map[string]PartialExternalListener[T] "json:\"external,omitempty\""
+	Port                 *int32                                "json:\"port,omitempty\" jsonschema:\"required\""
+	TLS                  *PartialInternalTLS                   "json:\"tls,omitempty\" jsonschema:\"required\""
+	AppProtocol          *string                               "json:\"appProtocol,omitempty\""
+	AuthenticationMethod *T                                    "json:\"authenticationMethod,omitempty\""
 }
 
 type PartialInternalTLS struct {
@@ -502,49 +479,20 @@ type PartialBootstrapUser struct {
 	Mechanism    *string                   "json:\"mechanism,omitempty\" jsonschema:\"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$\""
 }
 
-type PartialExternalListeners[T any] map[string]T
-
-type PartialAdminExternal struct {
-	Enabled         *bool               "json:\"enabled,omitempty\""
-	AdvertisedPorts []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port            *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort        *int32              "json:\"nodePort,omitempty\""
-	TLS             *PartialExternalTLS "json:\"tls,omitempty\""
-}
-
-type PartialHTTPExternal struct {
-	Enabled              *bool                     "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32                   "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32                    "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort             *int32                    "json:\"nodePort,omitempty\""
-	AuthenticationMethod *HTTPAuthenticationMethod "json:\"authenticationMethod,omitempty\""
-	PrefixTemplate       *string                   "json:\"prefixTemplate,omitempty\""
-	TLS                  *PartialExternalTLS       "json:\"tls,omitempty\" jsonschema:\"required\""
-}
-
-type PartialKafkaExternal struct {
-	Enabled              *bool                      "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32                    "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32                     "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort             *int32                     "json:\"nodePort,omitempty\""
-	AuthenticationMethod *KafkaAuthenticationMethod "json:\"authenticationMethod,omitempty\""
-	PrefixTemplate       *string                    "json:\"prefixTemplate,omitempty\""
-	TLS                  *PartialExternalTLS        "json:\"tls,omitempty\""
-}
-
-type PartialSchemaRegistryExternal struct {
-	Enabled              *bool                     "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32                   "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32                    "json:\"port,omitempty\""
-	NodePort             *int32                    "json:\"nodePort,omitempty\""
-	AuthenticationMethod *HTTPAuthenticationMethod "json:\"authenticationMethod,omitempty\""
-	TLS                  *PartialExternalTLS       "json:\"tls,omitempty\""
-}
-
 type PartialSASLUser struct {
 	Name      *string "json:\"name,omitempty\""
 	Password  *string "json:\"password,omitempty\""
 	Mechanism *string "json:\"mechanism,omitempty\" jsonschema:\"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$\""
+}
+
+type PartialExternalListener[T ~string] struct {
+	Enabled              *bool               "json:\"enabled,omitempty\""
+	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
+	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+	NodePort             *int32              "json:\"nodePort,omitempty\""
+	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
+	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
+	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
 }
 
 type PartialTrustStore struct {

@@ -21,6 +21,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
@@ -954,10 +955,10 @@ func (s *Sidecars) AdditionalSidecarControllersEnabled() bool {
 }
 
 type Listeners struct {
-	Admin          AdminListeners          `json:"admin" jsonschema:"required"`
-	HTTP           HTTPListeners           `json:"http" jsonschema:"required"`
-	Kafka          KafkaListeners          `json:"kafka" jsonschema:"required"`
-	SchemaRegistry SchemaRegistryListeners `json:"schemaRegistry" jsonschema:"required"`
+	Admin          ListenerConfig[NoAuth]                    `json:"admin" jsonschema:"required"`
+	HTTP           ListenerConfig[HTTPAuthenticationMethod]  `json:"http" jsonschema:"required"`
+	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka" jsonschema:"required"`
+	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry" jsonschema:"required"`
 	RPC            struct {
 		Port int32       `json:"port" jsonschema:"required"`
 		TLS  InternalTLS `json:"tls" jsonschema:"required"`
@@ -1325,7 +1326,7 @@ func (b *BootstrapUser) GetMechanism() string {
 	if b.Mechanism == "" {
 		return "SCRAM-SHA-256"
 	}
-	return b.Mechanism
+	return string(b.Mechanism)
 }
 
 func (b *BootstrapUser) SecretKeySelector(fullname string) *corev1.SecretKeySelector {
@@ -1497,11 +1498,148 @@ func (t *ExternalTLS) IsEnabled(i *InternalTLS, tls *TLS) bool {
 	return t.GetCertName(i) != "" && ptr.Deref(t.Enabled, i.IsEnabled(tls))
 }
 
-type AdminListeners struct {
-	External    ExternalListeners[AdminExternal] `json:"external"`
-	Port        int32                            `json:"port" jsonschema:"required"`
-	AppProtocol *string                          `json:"appProtocol,omitempty"`
-	TLS         InternalTLS                      `json:"tls" jsonschema:"required"`
+type ListenerConfig[T ~string] struct {
+	Enabled  bool                           `json:"enabled"`
+	External map[string]ExternalListener[T] `json:"external"`
+	Port     int32                          `json:"port" jsonschema:"required"`
+	TLS      InternalTLS                    `json:"tls" jsonschema:"required"`
+
+	AppProtocol          *string `json:"appProtocol,omitempty"`
+	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
+}
+
+// +gotohelm:ignore=true
+func (ListenerConfig[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
+	makeNullable(schema, "authenticationMethod")
+
+	external, _ := schema.Properties.Get("external")
+
+	external.MinProperties = ptr.To[uint64](1)
+	external.PatternProperties, external.AdditionalProperties = map[string]*jsonschema.Schema{
+		`^[A-Za-z_][A-Za-z0-9_]*$`: external.AdditionalProperties,
+	}, nil
+}
+
+func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalConfig) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for name, listener := range helmette.SortedMap(l.External) {
+		if !ptr.Deref(listener.Enabled, external.Enabled) {
+			continue
+		}
+
+		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
+
+		ports = append(ports, corev1.ServicePort{
+			Name:        fmt.Sprintf("%s-%s", namePrefix, name),
+			Protocol:    corev1.ProtocolTCP,
+			AppProtocol: l.AppProtocol,
+			TargetPort:  intstr.FromInt32(listener.Port),
+			Port:        ptr.Deref(listener.NodePort, fallbackPorts[0]),
+		})
+	}
+	return ports
+}
+
+func (l *ListenerConfig[T]) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
+	t := connectors.TLS{Enabled: l.TLS.IsEnabled(tls)}
+	if !t.Enabled {
+		return t
+	}
+
+	t.CA = struct {
+		SecretRef           string `json:"secretRef"`
+		SecretNameOverwrite string `json:"secretNameOverwrite"`
+	}{SecretRef: fmt.Sprintf("%s-default-cert", fullName)}
+
+	return t
+}
+
+// TrustStores returns a slice of all configured and enabled [TrustStore]s on
+// both internal and external listeners.
+func (l *ListenerConfig[T]) TrustStores(tls *TLS) []*TrustStore {
+	tss := []*TrustStore{}
+
+	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
+		tss = append(tss, l.TLS.TrustStore)
+	}
+
+	for _, key := range helmette.SortedKeys(l.External) {
+		lis := l.External[key]
+		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
+			continue
+		}
+		tss = append(tss, lis.TLS.TrustStore)
+
+	}
+
+	return tss
+}
+
+// Listeners returns a slice of maps suitable for use as the value of
+// `<listener>_api` in a redpanda.yml file.
+func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
+	internal := map[string]any{
+		"name":    "internal",
+		"address": "0.0.0.0",
+		"port":    l.Port,
+	}
+
+	defaultAuth := ptr.Deref(auth, "")
+
+	if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
+		internal["authentication_method"] = am
+	}
+
+	listeners := []map[string]any{
+		internal,
+	}
+
+	for k, l := range helmette.SortedMap(l.External) {
+		if !l.IsEnabled() {
+			continue
+		}
+
+		listener := map[string]any{
+			"name":    k,
+			"port":    l.Port,
+			"address": "0.0.0.0",
+		}
+
+		if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
+			listener["authentication_method"] = am
+		}
+
+		listeners = append(listeners, listener)
+	}
+
+	return listeners
+}
+
+func (l *ListenerConfig[T]) ListenersTLS(tls *TLS) []map[string]any {
+	pp := []map[string]any{}
+
+	internal := createInternalListenerTLSCfg(tls, l.TLS)
+	if len(internal) > 0 {
+		pp = append(pp, internal)
+	}
+
+	for k, lis := range helmette.SortedMap(l.External) {
+		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
+			continue
+		}
+
+		certName := lis.TLS.GetCertName(&l.TLS)
+
+		pp = append(pp, map[string]any{
+			"name":                k,
+			"enabled":             true,
+			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
+			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
+			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
+			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
+		})
+	}
+	return pp
 }
 
 // ConsoleTLS is a struct that represents TLS configuration used
@@ -1518,7 +1656,7 @@ type ConsoleTLS struct {
 	InsecureSkipTLSVerify bool   `json:"insecureSkipTlsVerify"`
 }
 
-func (l *AdminListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
+func (l *ListenerConfig[T]) ConsoleTLS(tls *TLS) ConsoleTLS {
 	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
 	if !t.Enabled {
 		return t
@@ -1547,535 +1685,25 @@ func (l *AdminListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
 	return t
 }
 
-func (l *AdminListeners) Listeners() []map[string]any {
-	admin := []map[string]any{
-		createInternalListenerCfg(l.Port),
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() {
-			continue
-		}
-
-		admin = append(admin, map[string]any{
-			"name":    k,
-			"port":    lis.Port,
-			"address": "0.0.0.0",
-		})
-	}
-	return admin
-}
-
-func (l *AdminListeners) ListenersTLS(tls *TLS) []map[string]any {
-	admin := []map[string]any{}
-
-	internal := createInternalListenerTLSCfg(tls, l.TLS)
-	if len(internal) > 0 {
-		admin = append(admin, internal)
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
-			continue
-		}
-
-		certName := lis.TLS.GetCertName(&l.TLS)
-
-		admin = append(admin, map[string]any{
-			"name":                k,
-			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
-			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
-		})
-	}
-	return admin
-}
-
-// TrustStores returns a slice of all configured and enabled [TrustStore]s on
-// both internal and external listeners.
-func (l *AdminListeners) TrustStores(tls *TLS) []*TrustStore {
-	tss := []*TrustStore{}
-
-	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
-		tss = append(tss, l.TLS.TrustStore)
-	}
-
-	for _, key := range helmette.SortedKeys(l.External) {
-		lis := l.External[key]
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
-			continue
-		}
-		tss = append(tss, lis.TLS.TrustStore)
-
-	}
-
-	return tss
-}
-
-type AdminExternal struct {
-	// Enabled indicates if this listener is enabled. If not specified,
-	// defaults to the value of [ExternalConfig.Enabled].
-	Enabled         *bool        `json:"enabled"`
-	AdvertisedPorts []int32      `json:"advertisedPorts" jsonschema:"minItems=1"`
-	Port            int32        `json:"port" jsonschema:"required"`
-	NodePort        *int32       `json:"nodePort"`
-	TLS             *ExternalTLS `json:"tls"`
-}
-
-func (l *AdminExternal) IsEnabled() bool {
-	return ptr.Deref(l.Enabled, true) && l.Port > 0
-}
-
-type HTTPListeners struct {
-	Enabled              bool                            `json:"enabled" jsonschema:"required"`
-	External             ExternalListeners[HTTPExternal] `json:"external"`
-	AuthenticationMethod *HTTPAuthenticationMethod       `json:"authenticationMethod"`
-	TLS                  InternalTLS                     `json:"tls" jsonschema:"required"`
-	KafkaEndpoint        string                          `json:"kafkaEndpoint" jsonschema:"required,pattern=^[A-Za-z_-][A-Za-z0-9_-]*$"`
-	Port                 int32                           `json:"port" jsonschema:"required"`
-}
-
-// +gotohelm:ignore=true
-func (HTTPListeners) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-}
-
-func (l *HTTPListeners) Listeners(saslEnabled bool) []map[string]any {
-	internal := createInternalListenerCfg(l.Port)
-
-	if saslEnabled {
-		internal["authentication_method"] = "http_basic"
-	}
-
-	if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-		internal["authentication_method"] = am
-	}
-
-	result := []map[string]any{
-		internal,
-	}
-
-	for k, l := range helmette.SortedMap(l.External) {
-		if !l.IsEnabled() {
-			continue
-		}
-
-		listener := map[string]any{
-			"name":    k,
-			"port":    l.Port,
-			"address": "0.0.0.0",
-		}
-
-		if saslEnabled {
-			listener["authentication_method"] = "http_basic"
-		}
-
-		if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-			listener["authentication_method"] = am
-		}
-
-		result = append(result, listener)
-	}
-
-	return result
-}
-
-func (l *HTTPListeners) ListenersTLS(tls *TLS) []map[string]any {
-	pp := []map[string]any{}
-
-	internal := createInternalListenerTLSCfg(tls, l.TLS)
-	if len(internal) > 0 {
-		pp = append(pp, internal)
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
-			continue
-		}
-
-		certName := lis.TLS.GetCertName(&l.TLS)
-
-		pp = append(pp, map[string]any{
-			"name":                k,
-			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
-			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
-		})
-	}
-	return pp
-}
-
-// TrustStores returns a slice of all configured and enabled [TrustStore]s on
-// both internal and external listeners.
-func (l *HTTPListeners) TrustStores(tls *TLS) []*TrustStore {
-	var tss []*TrustStore
-
-	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
-		tss = append(tss, l.TLS.TrustStore)
-	}
-
-	for _, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
-			continue
-		}
-		tss = append(tss, lis.TLS.TrustStore)
-
-	}
-
-	return tss
-}
-
-type HTTPExternal struct {
-	// Enabled indicates if this listener is enabled. If not specified,
-	// defaults to the value of [ExternalConfig.Enabled].
-	Enabled              *bool                     `json:"enabled"`
-	AdvertisedPorts      []int32                   `json:"advertisedPorts" jsonschema:"minItems=1"`
-	Port                 int32                     `json:"port" jsonschema:"required"`
-	NodePort             *int32                    `json:"nodePort"`
-	AuthenticationMethod *HTTPAuthenticationMethod `json:"authenticationMethod"`
-	PrefixTemplate       *string                   `json:"prefixTemplate"`
-	TLS                  *ExternalTLS              `json:"tls" jsonschema:"required"`
-}
-
-func (l *HTTPExternal) IsEnabled() bool {
-	return ptr.Deref(l.Enabled, true) && l.Port > 0
-}
-
-// +gotohelm:ignore=true
-func (HTTPExternal) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-	// TODO document me. Legacy matching needs to be removed in a minor bump.
-	tls, _ := schema.Properties.Get("tls")
-	tls.Required = []string{}
-	schema.Required = []string{"port"}
-}
-
-type KafkaListeners struct {
-	AuthenticationMethod *KafkaAuthenticationMethod       `json:"authenticationMethod"`
-	External             ExternalListeners[KafkaExternal] `json:"external"`
-	TLS                  InternalTLS                      `json:"tls" jsonschema:"required"`
-	Port                 int32                            `json:"port" jsonschema:"required"`
-}
-
-// +gotohelm:ignore=true
-func (KafkaListeners) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-}
-
-// Listeners returns a slice of maps suitable for use as the value of
-// `kafka_api` in a redpanda.yml file.
-func (l *KafkaListeners) Listeners(auth *Auth) []map[string]any {
-	internal := createInternalListenerCfg(l.Port)
-
-	if auth.IsSASLEnabled() {
-		internal["authentication_method"] = "sasl"
-	}
-
-	if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-		internal["authentication_method"] = am
-	}
-
-	kafka := []map[string]any{
-		internal,
-	}
-
-	for k, l := range helmette.SortedMap(l.External) {
-		if !l.IsEnabled() {
-			continue
-		}
-
-		listener := map[string]any{
-			"name":    k,
-			"port":    l.Port,
-			"address": "0.0.0.0",
-		}
-
-		if auth.IsSASLEnabled() {
-			listener["authentication_method"] = "sasl"
-		}
-
-		if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-			listener["authentication_method"] = am
-		}
-
-		kafka = append(kafka, listener)
-	}
-
-	return kafka
-}
-
-// ListenersTLS returns a slice of maps suitable for use as the value of
-// `kafka_api_tls` in a redpanda.yml file.
-func (l *KafkaListeners) ListenersTLS(tls *TLS) []map[string]any {
-	kafka := []map[string]any{}
-
-	internal := createInternalListenerTLSCfg(tls, l.TLS)
-	if len(internal) > 0 {
-		kafka = append(kafka, internal)
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
-			continue
-		}
-
-		certName := lis.TLS.GetCertName(&l.TLS)
-
-		kafka = append(kafka, map[string]any{
-			"name":                k,
-			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
-			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
-		})
-	}
-	return kafka
-}
-
-// TrustStores returns a slice of all configured and enabled [TrustStore]s on
-// both internal and external listeners.
-func (l *KafkaListeners) TrustStores(tls *TLS) []*TrustStore {
-	var tss []*TrustStore
-
-	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
-		tss = append(tss, l.TLS.TrustStore)
-	}
-
-	for _, key := range helmette.SortedKeys(l.External) {
-		lis := l.External[key]
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
-			continue
-		}
-		tss = append(tss, lis.TLS.TrustStore)
-
-	}
-
-	return tss
-}
-
-func (l *KafkaListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
-	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
-	if !t.Enabled {
-		return t
-	}
-
-	kafkaPathPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, l.TLS.Cert)
-
-	// Strange but technically correct, if CAEnabled is false, we can't safely
-	// assume that a ca.crt file will exist. So we fallback to using the
-	// server's certificate itself.
-	// Other options would be: failing or falling back to the container's
-	// default truststore.
-	if tls.Certs.MustGet(l.TLS.Cert).CAEnabled {
-		t.CaFilepath = fmt.Sprintf("%s/ca.crt", kafkaPathPrefix)
-	} else {
-		t.CaFilepath = fmt.Sprintf("%s/tls.crt", kafkaPathPrefix)
-	}
-
-	if !l.TLS.RequireClientAuth {
-		return t
-	}
-
-	t.CertFilepath = fmt.Sprintf("%s/tls.crt", kafkaPathPrefix)
-	t.KeyFilepath = fmt.Sprintf("%s/tls.key", kafkaPathPrefix)
-
-	return t
-}
-
-func (l *KafkaListeners) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
-	t := connectors.TLS{Enabled: l.TLS.IsEnabled(tls)}
-	if !t.Enabled {
-		return t
-	}
-
-	t.CA = struct {
-		SecretRef           string `json:"secretRef"`
-		SecretNameOverwrite string `json:"secretNameOverwrite"`
-	}{SecretRef: fmt.Sprintf("%s-default-cert", fullName)}
-
-	return t
-}
-
-type KafkaExternal struct {
-	// Enabled indicates if this listener is enabled. If not specified,
-	// defaults to the value of [ExternalConfig.Enabled].
+type ExternalListener[T ~string] struct {
 	Enabled         *bool   `json:"enabled"`
 	AdvertisedPorts []int32 `json:"advertisedPorts" jsonschema:"minItems=1"`
 	Port            int32   `json:"port" jsonschema:"required"`
 	// TODO CHECK NODE PORT USAGE
-	NodePort             *int32                     `json:"nodePort"`
-	AuthenticationMethod *KafkaAuthenticationMethod `json:"authenticationMethod"`
-	PrefixTemplate       *string                    `json:"prefixTemplate"`
-	TLS                  *ExternalTLS               `json:"tls"`
+	NodePort *int32       `json:"nodePort"`
+	TLS      *ExternalTLS `json:"tls"`
+
+	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
+	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
 }
 
-func (l *KafkaExternal) IsEnabled() bool {
+// +gotohelm:ignore=true
+func (ExternalListener[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
+	makeNullable(schema, "authenticationMethod")
+}
+
+func (l *ExternalListener[T]) IsEnabled() bool {
 	return ptr.Deref(l.Enabled, true) && l.Port > 0
-}
-
-// +gotohelm:ignore=true
-func (KafkaExternal) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-}
-
-type SchemaRegistryListeners struct {
-	// Enabled indicates if this listener is enabled. If not specified,
-	// defaults to the value of [ExternalConfig.Enabled].
-	Enabled              bool                                      `json:"enabled" jsonschema:"required"`
-	External             ExternalListeners[SchemaRegistryExternal] `json:"external"`
-	AuthenticationMethod *HTTPAuthenticationMethod                 `json:"authenticationMethod"`
-	KafkaEndpoint        string                                    `json:"kafkaEndpoint" jsonschema:"required,pattern=^[A-Za-z_-][A-Za-z0-9_-]*$"`
-	Port                 int32                                     `json:"port" jsonschema:"required"`
-	TLS                  InternalTLS                               `json:"tls" jsonschema:"required"`
-}
-
-// +gotohelm:ignore=true
-func (SchemaRegistryListeners) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-}
-
-func (l *SchemaRegistryListeners) Listeners(saslEnabled bool) []map[string]any {
-	internal := createInternalListenerCfg(l.Port)
-
-	if saslEnabled {
-		internal["authentication_method"] = "http_basic"
-	}
-
-	if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-		internal["authentication_method"] = am
-	}
-
-	result := []map[string]any{
-		internal,
-	}
-
-	for k, l := range helmette.SortedMap(l.External) {
-		if !l.IsEnabled() {
-			continue
-		}
-
-		listener := map[string]any{
-			"name":    k,
-			"port":    l.Port,
-			"address": "0.0.0.0",
-		}
-
-		if saslEnabled {
-			listener["authentication_method"] = "http_basic"
-		}
-
-		if am := ptr.Deref(l.AuthenticationMethod, ""); am != "" {
-			listener["authentication_method"] = am
-		}
-
-		result = append(result, listener)
-	}
-
-	return result
-}
-
-func (l *SchemaRegistryListeners) ListenersTLS(tls *TLS) []map[string]any {
-	listeners := []map[string]any{}
-
-	internal := createInternalListenerTLSCfg(tls, l.TLS)
-	if len(internal) > 0 {
-		listeners = append(listeners, internal)
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
-			continue
-		}
-
-		certName := lis.TLS.GetCertName(&l.TLS)
-
-		listeners = append(listeners, map[string]any{
-			"name":                k,
-			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
-			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
-		})
-	}
-	return listeners
-}
-
-// TrustStores returns a slice of all configured and enabled [TrustStore]s on
-// both internal and external listeners.
-func (l *SchemaRegistryListeners) TrustStores(tls *TLS) []*TrustStore {
-	var tss []*TrustStore
-
-	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
-		tss = append(tss, l.TLS.TrustStore)
-	}
-
-	for _, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
-			continue
-		}
-		tss = append(tss, lis.TLS.TrustStore)
-
-	}
-
-	return tss
-}
-
-func (l *SchemaRegistryListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
-	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
-	if !t.Enabled {
-		return t
-	}
-
-	schemaRegistryPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, l.TLS.Cert)
-
-	// Strange but technically correct, if CAEnabled is false, we can't safely
-	// assume that a ca.crt file will exist. So we fallback to using the
-	// server's certificate itself.
-	// Other options would be: failing or falling back to the container's
-	// default truststore.
-	if tls.Certs.MustGet(l.TLS.Cert).CAEnabled {
-		t.CaFilepath = fmt.Sprintf("%s/ca.crt", schemaRegistryPrefix)
-	} else {
-		t.CaFilepath = fmt.Sprintf("%s/tls.crt", schemaRegistryPrefix)
-	}
-
-	if !l.TLS.RequireClientAuth {
-		return t
-	}
-
-	t.CertFilepath = fmt.Sprintf("%s/tls.crt", schemaRegistryPrefix)
-	t.KeyFilepath = fmt.Sprintf("%s/tls.key", schemaRegistryPrefix)
-
-	return t
-}
-
-type SchemaRegistryExternal struct {
-	// Enabled indicates if this listener is enabled. If not specified,
-	// defaults to the value of [ExternalConfig.Enabled].
-	Enabled              *bool                     `json:"enabled"`
-	AdvertisedPorts      []int32                   `json:"advertisedPorts" jsonschema:"minItems=1"`
-	Port                 int32                     `json:"port"`
-	NodePort             *int32                    `json:"nodePort"`
-	AuthenticationMethod *HTTPAuthenticationMethod `json:"authenticationMethod"`
-	TLS                  *ExternalTLS              `json:"tls"`
-}
-
-func (l *SchemaRegistryExternal) IsEnabled() bool {
-	return ptr.Deref(l.Enabled, true) && l.Port > 0
-}
-
-// +gotohelm:ignore=true
-func (SchemaRegistryExternal) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
-	// TODO this as well
-	tls, _ := schema.Properties.Get("tls")
-	tls.Required = []string{}
 }
 
 type TunableConfig map[string]any
