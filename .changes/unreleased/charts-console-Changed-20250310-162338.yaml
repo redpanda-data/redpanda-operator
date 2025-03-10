@@ -1,0 +1,4 @@
+project: charts/console
+kind: Changed
+body: Prepare console and redpanda charts for Console v3 configuration changes.
+time: 2025-03-10T16:23:38.744481-03:00
