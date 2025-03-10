@@ -69,7 +69,7 @@ func TestHelmKustomizeEquivalence(t *testing.T) {
 
 	kustomization, err := os.ReadFile("testdata/kustomization.yaml")
 	require.NoError(t, err)
-	require.Containsf(t, string(kustomization), ChartMeta().AppVersion, "kustomization.yaml should reference the current appVersion: %s", chartMeta.AppVersion)
+	require.Containsf(t, string(kustomization), Chart.Metadata().AppVersion, "kustomization.yaml should reference the current appVersion: %s", Chart.Metadata().AppVersion)
 
 	values := PartialValues{FullnameOverride: ptr.To("redpanda"), RBAC: &PartialRBAC{CreateAdditionalControllerCRs: ptr.To(true)}}
 

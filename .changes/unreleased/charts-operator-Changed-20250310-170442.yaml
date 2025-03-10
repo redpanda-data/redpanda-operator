@@ -1,0 +1,4 @@
+project: charts/operator
+kind: Changed
+body: Moved all template rendering into `entry-point.yaml` to match the redpanda and console charts.
+time: 2025-03-10T17:04:42.270572-04:00

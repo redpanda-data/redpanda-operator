@@ -40,8 +40,8 @@ func Certificate(dot *helmette.Dot) *certmanagerv1.Certificate {
 		},
 		Spec: certmanagerv1.CertificateSpec{
 			DNSNames: []string{
-				fmt.Sprintf("%s-webhook-service.%s.svc", RedpandaOperatorName(dot), dot.Release.Namespace),
-				fmt.Sprintf("%s-webhook-service.%s.svc.%s", RedpandaOperatorName(dot), dot.Release.Namespace, values.ClusterDomain),
+				fmt.Sprintf("%s-webhook-service.%s.svc", Name(dot), dot.Release.Namespace),
+				fmt.Sprintf("%s-webhook-service.%s.svc.%s", Name(dot), dot.Release.Namespace, values.ClusterDomain),
 			},
 			IssuerRef: cmmetav1.ObjectReference{
 				Kind: "Issuer",
