@@ -51,46 +51,10 @@
 {{- end -}}
 {{- $_ := (set $podSelector "statefulset.kubernetes.io/pod-name" $podname) -}}
 {{- $ports := (coalesce nil) -}}
-{{- range $name, $listener := $values.listeners.admin.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $values.external.enabled)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $fallbackPorts := (concat (default (list) $listener.advertisedPorts) (list ($values.listeners.admin.port | int))) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "admin-%s" $name) "protocol" "TCP" "targetPort" ($listener.port | int) "port" ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.nodePort (index $fallbackPorts (0 | int)))))) "r") | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $name, $listener := $values.listeners.kafka.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $values.external.enabled)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $fallbackPorts := (concat (default (list) $listener.advertisedPorts) (list ($listener.port | int))) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "kafka-%s" $name) "protocol" "TCP" "targetPort" ($listener.port | int) "port" ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.nodePort (index $fallbackPorts (0 | int)))))) "r") | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $name, $listener := $values.listeners.http.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $values.external.enabled)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $fallbackPorts := (concat (default (list) $listener.advertisedPorts) (list ($listener.port | int))) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "http-%s" $name) "protocol" "TCP" "targetPort" ($listener.port | int) "port" ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.nodePort (index $fallbackPorts (0 | int)))))) "r") | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $name, $listener := $values.listeners.schemaRegistry.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $values.external.enabled)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $fallbackPorts := (concat (default (list) $listener.advertisedPorts) (list ($listener.port | int))) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "schema-%s" $name) "protocol" "TCP" "targetPort" ($listener.port | int) "port" ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.nodePort (index $fallbackPorts (0 | int)))))) "r") | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $values.listeners.admin "admin" $values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $values.listeners.kafka "kafka" $values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $values.listeners.http "http" $values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $values.listeners.schemaRegistry "schema" $values.external)))) "r"))) -}}
 {{- $svc := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "lb-%s" $podname) "namespace" $dot.Release.Namespace "labels" $labels "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "loadBalancerSourceRanges" $values.external.sourceRanges "ports" $ports "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" "LoadBalancer")))) -}}
 {{- $services = (concat (default (list) $services) (list $svc)) -}}
 {{- end -}}

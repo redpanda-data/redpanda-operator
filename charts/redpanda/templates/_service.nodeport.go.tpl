@@ -17,7 +17,7 @@
 {{- end -}}
 {{- $ports := (coalesce nil) -}}
 {{- range $name, $listener := $values.listeners.admin.external -}}
-{{- if (not (get (fromJson (include "redpanda.AdminExternal.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -30,7 +30,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $values.listeners.kafka.external -}}
-{{- if (not (get (fromJson (include "redpanda.KafkaExternal.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -43,7 +43,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $values.listeners.http.external -}}
-{{- if (not (get (fromJson (include "redpanda.HTTPExternal.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -56,7 +56,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $values.listeners.schemaRegistry.external -}}
-{{- if (not (get (fromJson (include "redpanda.SchemaRegistryExternal.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}

@@ -58,13 +58,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 		{
 			Name: "all unique secrets",
 			Listeners: Listeners{
-				Admin: AdminListeners{
+				Admin: ListenerConfig[NoAuth]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 					},
-					External: ExternalListeners[AdminExternal]{
-						"admin-1": AdminExternal{
+					External: map[string]ExternalListener[NoAuth]{
+						"admin-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -73,13 +73,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				Kafka: KafkaListeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-3", "KEY-3")},
 					},
-					External: ExternalListeners[KafkaExternal]{
-						"kafka-1": KafkaExternal{
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"kafka-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -88,13 +88,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				HTTP: HTTPListeners{
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-5", "KEY-5")},
 					},
-					External: ExternalListeners[HTTPExternal]{
-						"http-1": HTTPExternal{
+					External: map[string]ExternalListener[HTTPAuthenticationMethod]{
+						"http-1": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -153,13 +153,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 		{
 			Name: "all unique configmaps",
 			Listeners: Listeners{
-				Admin: AdminListeners{
+				Admin: ListenerConfig[NoAuth]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 					},
-					External: ExternalListeners[AdminExternal]{
-						"admin-1": AdminExternal{
+					External: map[string]ExternalListener[NoAuth]{
+						"admin-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -168,13 +168,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				Kafka: KafkaListeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-3", "KEY-3")},
 					},
-					External: ExternalListeners[KafkaExternal]{
-						"kafka-1": KafkaExternal{
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"kafka-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -183,13 +183,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				HTTP: HTTPListeners{
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-5", "KEY-5")},
 					},
-					External: ExternalListeners[HTTPExternal]{
-						"http-1": HTTPExternal{
+					External: map[string]ExternalListener[HTTPAuthenticationMethod]{
+						"http-1": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -248,13 +248,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 		{
 			Name: "all duplicate secrets",
 			Listeners: Listeners{
-				Admin: AdminListeners{
+				Admin: ListenerConfig[NoAuth]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 					},
-					External: ExternalListeners[AdminExternal]{
-						"admin-1": AdminExternal{
+					External: map[string]ExternalListener[NoAuth]{
+						"admin-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -263,13 +263,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				Kafka: KafkaListeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 					},
-					External: ExternalListeners[KafkaExternal]{
-						"kafka-1": KafkaExternal{
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"kafka-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -278,13 +278,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				HTTP: HTTPListeners{
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 					},
-					External: ExternalListeners[HTTPExternal]{
-						"http-1": HTTPExternal{
+					External: map[string]ExternalListener[HTTPAuthenticationMethod]{
+						"http-1": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -313,13 +313,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 		{
 			Name: "all duplicate configmaps",
 			Listeners: Listeners{
-				Admin: AdminListeners{
+				Admin: ListenerConfig[NoAuth]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 					},
-					External: ExternalListeners[AdminExternal]{
-						"admin-1": AdminExternal{
+					External: map[string]ExternalListener[NoAuth]{
+						"admin-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -328,13 +328,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				Kafka: KafkaListeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 					},
-					External: ExternalListeners[KafkaExternal]{
-						"kafka-1": KafkaExternal{
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"kafka-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -343,13 +343,13 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				HTTP: HTTPListeners{
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 					},
-					External: ExternalListeners[HTTPExternal]{
-						"http-1": HTTPExternal{
+					External: map[string]ExternalListener[HTTPAuthenticationMethod]{
+						"http-1": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -378,34 +378,34 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 		{
 			Name: "mixture",
 			Listeners: Listeners{
-				Admin: AdminListeners{
+				Admin: ListenerConfig[NoAuth]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 					},
-					External: ExternalListeners[AdminExternal]{
-						"admin-1": AdminExternal{
+					External: map[string]ExternalListener[NoAuth]{
+						"admin-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
 								TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-1")},
 							},
 						},
-						"admin-2": AdminExternal{
+						"admin-2": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
 								TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-2")},
 							},
 						},
-						"admin-3": AdminExternal{
+						"admin-3": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("disabled"),
 								TrustStore: &TrustStore{ConfigMapKeyRef: cmKeyRef("CM-1", "KEY-3")},
 							},
 						},
-						"admin-4": AdminExternal{
+						"admin-4": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -414,34 +414,34 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				Kafka: KafkaListeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 					},
-					External: ExternalListeners[KafkaExternal]{
-						"kafka-1": KafkaExternal{
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"kafka-1": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
 								TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 							},
 						},
-						"kafka-2": KafkaExternal{
+						"kafka-2": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
 								TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-2")},
 							},
 						},
-						"kafka-3": KafkaExternal{
+						"kafka-3": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("disabled"),
 								TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-3")},
 							},
 						},
-						"kafka-4": KafkaExternal{
+						"kafka-4": {
 							Port: 9999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
@@ -450,20 +450,20 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 						},
 					},
 				},
-				HTTP: HTTPListeners{
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
 					TLS: InternalTLS{
 						Cert:       "enabled",
 						TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-2", "KEY-2")},
 					},
-					External: ExternalListeners[HTTPExternal]{
-						"http-1": HTTPExternal{
+					External: map[string]ExternalListener[HTTPAuthenticationMethod]{
+						"http-1": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),
 								TrustStore: &TrustStore{SecretKeyRef: sKeyRef("SECRET-1", "KEY-1")},
 							},
 						},
-						"http-2": HTTPExternal{
+						"http-2": {
 							Port: 999,
 							TLS: &ExternalTLS{
 								Cert:       ptr.To("enabled"),

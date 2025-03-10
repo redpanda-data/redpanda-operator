@@ -167,7 +167,7 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $externalKafkaListenerName := (get (fromJson (include "redpanda.getFirstExternalKafkaListener" (dict "a" (list $dot)))) "r") -}}
-{{- $listener := (ternary (index $values.listeners.kafka.external $externalKafkaListenerName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "prefixTemplate" (coalesce nil) "tls" (coalesce nil)) (hasKey $values.listeners.kafka.external $externalKafkaListenerName)) -}}
+{{- $listener := (ternary (index $values.listeners.kafka.external $externalKafkaListenerName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $values.listeners.kafka.external $externalKafkaListenerName)) -}}
 {{- $port := (($values.listeners.kafka.port | int) | int) -}}
 {{- if (gt (($listener.port | int) | int) ((1 | int) | int)) -}}
 {{- $port = (($listener.port | int) | int) -}}
@@ -219,7 +219,7 @@
 {{- $keys := (keys $values.listeners.schemaRegistry.external) -}}
 {{- $_ := (sortAlpha $keys) -}}
 {{- $externalSchemaListenerName := (first $keys) -}}
-{{- $listener := (ternary (index $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "authenticationMethod" (coalesce nil) "tls" (coalesce nil)) (hasKey $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r"))) -}}
+{{- $listener := (ternary (index $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r"))) -}}
 {{- $port := (($values.listeners.schemaRegistry.port | int) | int) -}}
 {{- if (gt (($listener.port | int) | int) (1 | int)) -}}
 {{- $port = (($listener.port | int) | int) -}}
@@ -434,16 +434,20 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $_ := (set $redpanda "admin" (get (fromJson (include "redpanda.AdminListeners.Listeners" (dict "a" (list $values.listeners.admin)))) "r")) -}}
-{{- $_ := (set $redpanda "kafka_api" (get (fromJson (include "redpanda.KafkaListeners.Listeners" (dict "a" (list $values.listeners.kafka $values.auth)))) "r")) -}}
+{{- $defaultKafkaAuth := (coalesce nil) -}}
+{{- if $values.auth.sasl.enabled -}}
+{{- $defaultKafkaAuth = "sasl" -}}
+{{- end -}}
+{{- $_ := (set $redpanda "admin" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $values.listeners.admin (coalesce nil))))) "r")) -}}
+{{- $_ := (set $redpanda "kafka_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $values.listeners.kafka $defaultKafkaAuth)))) "r")) -}}
 {{- $_ := (set $redpanda "rpc_server" (get (fromJson (include "redpanda.rpcListeners" (dict "a" (list $dot)))) "r")) -}}
 {{- $_ := (set $redpanda "admin_api_tls" (coalesce nil)) -}}
-{{- $tls_9 := (get (fromJson (include "redpanda.AdminListeners.ListenersTLS" (dict "a" (list $values.listeners.admin $values.tls)))) "r") -}}
+{{- $tls_9 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $values.listeners.admin $values.tls)))) "r") -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_9)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $redpanda "admin_api_tls" $tls_9) -}}
 {{- end -}}
 {{- $_ := (set $redpanda "kafka_api_tls" (coalesce nil)) -}}
-{{- $tls_10 := (get (fromJson (include "redpanda.KafkaListeners.ListenersTLS" (dict "a" (list $values.listeners.kafka $values.tls)))) "r") -}}
+{{- $tls_10 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $values.listeners.kafka $values.tls)))) "r") -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_10)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $redpanda "kafka_api_tls" $tls_10) -}}
 {{- end -}}
@@ -460,9 +464,13 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $pandaProxy := (dict) -}}
-{{- $_ := (set $pandaProxy "pandaproxy_api" (get (fromJson (include "redpanda.HTTPListeners.Listeners" (dict "a" (list $values.listeners.http (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth)))) "r"))))) "r")) -}}
+{{- $pandaProxyAuth := (coalesce nil) -}}
+{{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth)))) "r") -}}
+{{- $pandaProxyAuth = "http_basic" -}}
+{{- end -}}
+{{- $_ := (set $pandaProxy "pandaproxy_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $values.listeners.http $pandaProxyAuth)))) "r")) -}}
 {{- $_ := (set $pandaProxy "pandaproxy_api_tls" (coalesce nil)) -}}
-{{- $tls_12 := (get (fromJson (include "redpanda.HTTPListeners.ListenersTLS" (dict "a" (list $values.listeners.http $values.tls)))) "r") -}}
+{{- $tls_12 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $values.listeners.http $values.tls)))) "r") -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_12)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $pandaProxy "pandaproxy_api_tls" $tls_12) -}}
 {{- end -}}
@@ -478,9 +486,9 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $schemaReg := (dict) -}}
-{{- $_ := (set $schemaReg "schema_registry_api" (get (fromJson (include "redpanda.SchemaRegistryListeners.Listeners" (dict "a" (list $values.listeners.schemaRegistry (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth)))) "r"))))) "r")) -}}
+{{- $_ := (set $schemaReg "schema_registry_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $values.listeners.schemaRegistry (coalesce nil))))) "r")) -}}
 {{- $_ := (set $schemaReg "schema_registry_api_tls" (coalesce nil)) -}}
-{{- $tls_13 := (get (fromJson (include "redpanda.SchemaRegistryListeners.ListenersTLS" (dict "a" (list $values.listeners.schemaRegistry $values.tls)))) "r") -}}
+{{- $tls_13 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $values.listeners.schemaRegistry $values.tls)))) "r") -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_13)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $schemaReg "schema_registry_api_tls" $tls_13) -}}
 {{- end -}}
@@ -538,16 +546,6 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.createInternalListenerCfg" -}}
-{{- $port := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (dict "name" "internal" "address" "0.0.0.0" "port" $port)) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "redpanda.RedpandaAdditionalStartFlags" -}}
 {{- $values := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -565,17 +563,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_657_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_14 := (index $_657_value_14_ok_15 0) -}}
-{{- $ok_15 := (index $_657_value_14_ok_15 1) -}}
+{{- $_658_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_14 := (index $_658_value_14_ok_15 0) -}}
+{{- $ok_15 := (index $_658_value_14_ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_14) false (hasKey $enabledOptions $value_14)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_664_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_16 := (index $_664_value_16_ok_17 0) -}}
-{{- $ok_17 := (index $_664_value_16_ok_17 1) -}}
+{{- $_665_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_16 := (index $_665_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_665_value_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
