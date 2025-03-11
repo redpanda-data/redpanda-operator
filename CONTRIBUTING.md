@@ -51,6 +51,14 @@ Whenever a user facing change is made, a change log entry should be added via `c
 The `changie merge` command will regenerate all CHANGELOG.mds and should be run upon every commit.
 (This is automatically handled by `task generate`).
 
+### CHANGELOG GHA Check
+
+As it's easy to accidentally forget to add changelog entries, a [GitHub Action](.github/workflows/changelog.yml)
+checks that PRs contain a diff to the `.changes/unreleased` directory.
+
+If a PR does not contain any user facing changes, the check can be disabled by
+applying the "no-changelog" label.
+
 ## Releasing
 
 To release any project in this repository:
