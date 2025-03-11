@@ -12,9 +12,15 @@ package resources
 import (
 	"context"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,18 +33,18 @@ const (
 )
 
 type ClusterStatus struct {
-	ObservedGeneration int64
-	Replicas           int
-	OutOfDateReplicas  int
-	UpToDateReplicas   int
-	DefunctReplicas    int
-	HealthyReplicas    int
-	RunningReplicas    int
+	Replicas          int
+	OutOfDateReplicas int
+	UpToDateReplicas  int
+	DefunctReplicas   int
+	HealthyReplicas   int
+	RunningReplicas   int
+	Quiescent         bool
 }
 
 type ResourceManager[T any, U Cluster[T]] interface {
 	SetClusterStatus(cluster U, status ClusterStatus) bool
-	NodePools(ctx context.Context, cluster U) ([]appsv1.StatefulSet, error)
+	NodePools(ctx context.Context, cluster U) ([]*appsv1.StatefulSet, error)
 	OwnedResources(ctx context.Context, cluster U) ([]client.Object, error)
 	OwnedResourceTypes(cluster U) []client.Object
 	OwnerLabels(cluster U) map[string]string
@@ -80,13 +86,15 @@ func WithNamespaceLabel(label string) func(*ownershipInfo) {
 }
 
 type V2ResourceManager struct {
-	client    client.Client
-	ownership *ownershipInfo
+	kubeConfig clientcmdapi.Config
+	client     client.Client
+	ownership  *ownershipInfo
 }
 
 func NewV2ResourceManager(mgr ctrl.Manager, options ...Option) *V2ResourceManager {
 	manager := &V2ResourceManager{
-		client: mgr.GetClient(),
+		kubeConfig: kube.RestToConfig(mgr.GetConfig()),
+		client:     mgr.GetClient(),
 		ownership: &ownershipInfo{
 			fieldOwner:     defaultFieldOwner,
 			operatorLabel:  defaultOperatorLabel,
@@ -102,16 +110,55 @@ func NewV2ResourceManager(mgr ctrl.Manager, options ...Option) *V2ResourceManage
 	return manager
 }
 
-func (m *V2ResourceManager) NodePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]appsv1.StatefulSet, error) {
-	return nil, nil
+func (m *V2ResourceManager) NodePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
+	objects, err := m.render(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	resources := []*appsv1.StatefulSet{}
+
+	// filter out non-statefulsets
+	for _, object := range objects {
+		if object.GetObjectKind().GroupVersionKind().Kind == "StatefulSet" {
+			resources = append(resources, object.(*appsv1.StatefulSet))
+		}
+	}
+
+	return resources, nil
 }
 
 func (m *V2ResourceManager) OwnedResources(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
-	return nil, nil
+	objects, err := m.render(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	resources := []client.Object{}
+
+	// filter out the statefulsets
+	for _, object := range objects {
+		if object.GetObjectKind().GroupVersionKind().Kind != "StatefulSet" {
+			resources = append(resources, object)
+		}
+	}
+
+	return resources, nil
 }
 
-func (m *V2ResourceManager) OwnedResourceTypes(cluster *redpandav1alpha2.Redpanda) []client.Object {
-	return nil
+func (m *V2ResourceManager) render(cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
+	values := cluster.Spec.ClusterSpec.DeepCopy()
+
+	return redpanda.Chart.Render(&m.kubeConfig, helmette.Release{
+		Namespace: cluster.Namespace,
+		Name:      cluster.GetHelmReleaseName(),
+		Service:   "Helm",
+		IsUpgrade: true,
+	}, values)
+}
+
+func (m *V2ResourceManager) OwnedResourceTypes(_ *redpandav1alpha2.Redpanda) []client.Object {
+	return redpanda.Types()
 }
 
 func (m *V2ResourceManager) OwnerLabels(cluster *redpandav1alpha2.Redpanda) map[string]string {
@@ -148,5 +195,20 @@ func (m *V2ResourceManager) GetOwner(object client.Object) (bool, types.Namespac
 
 func (m *V2ResourceManager) SetClusterStatus(cluster *redpandav1alpha2.Redpanda, status ClusterStatus) bool {
 	// TODO
-	return true
+	condition := metav1.Condition{
+		Type:               "Quiesced",
+		Status:             metav1.ConditionFalse,
+		Reason:             "Quiesced",
+		ObservedGeneration: cluster.GetGeneration(),
+	}
+	if status.Quiescent {
+		condition.Status = metav1.ConditionTrue
+	}
+	cluster.Status.ObservedGeneration = cluster.Generation
+
+	return apimeta.SetStatusCondition(&cluster.Status.Conditions, condition)
+}
+
+func (m *V2ResourceManager) GetFieldOwner() client.FieldOwner {
+	return m.ownership.fieldOwner
 }

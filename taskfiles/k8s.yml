@@ -26,6 +26,7 @@ tasks:
       # controller-gen won't output to multiple directories and we need a copy
       # of resources for tests, so cp it is.
       - cp ./config/rbac/v2-manager-role/*.yaml ./internal/controller/redpanda/
+      - cp ./config/rbac/v2-manager-role/*.yaml ./internal/controller/
       - |
         controller-gen \
           paths='./internal/decommissioning/...' \

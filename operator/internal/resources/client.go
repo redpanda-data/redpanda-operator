@@ -41,7 +41,9 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 }
 
 type ResourceClient[T any, U Cluster[T]] interface {
+	ListResources(ctx context.Context, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error)
 	ListOwnedResources(ctx context.Context, owner U, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error)
+	PatchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error
 	SyncAll(ctx context.Context, cluster U) error
 	DeleteAll(ctx context.Context, cluster U) (bool, error)
 	WatchResources(builder *builder.Builder, cluster U) error
@@ -143,6 +145,10 @@ func (c *resourceClient[T, U]) listMatchingResources(ctx context.Context, object
 	return c.listResources(ctx, object, append([]client.ListOption{client.MatchingLabels(labels)}, opts...)...)
 }
 
+func (r *resourceClient[T, U]) ListResources(ctx context.Context, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error) {
+	return r.listResources(ctx, resourceType, opts...)
+}
+
 func (r *resourceClient[T, U]) ListOwnedResources(ctx context.Context, owner U, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error) {
 	return r.listMatchingResources(ctx, resourceType, r.manager.OwnerLabels(owner), opts...)
 }
@@ -159,7 +165,7 @@ func (r *resourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner 
 	return resources, nil
 }
 
-func (c *resourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
+func (c *resourceClient[T, U]) PatchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
 	if err := c.normalize(object, owner, extraLabels...); err != nil {
 		return err
 	}
@@ -220,7 +226,7 @@ func (r *resourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	errs := []error{}
 
 	for _, resource := range toSync {
-		if err := r.patchOwnedResource(ctx, owner, resource); err != nil {
+		if err := r.PatchOwnedResource(ctx, owner, resource); err != nil {
 			errs = append(errs, err)
 		}
 		delete(toDelete, client.ObjectKeyFromObject(resource))

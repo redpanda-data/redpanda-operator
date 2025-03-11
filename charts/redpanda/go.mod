@@ -1,4 +1,4 @@
-module github.com/redpanda-data/redpanda-operator/charts/redpanda/v5
+module github.com/redpanda-data/redpanda-operator/charts/redpanda
 
 go 1.23.2
 
