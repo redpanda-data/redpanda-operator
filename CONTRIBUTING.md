@@ -68,3 +68,30 @@ To release any project in this repository:
 5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
     - If the operator is being released, also tag the same commit as `v<version>`.
 6. Push the tag(s).
+
+## Nightly build
+
+The step for nightly build is defined in Buildkite 
+[pipeline.yaml definition](https://github.com/redpanda-data/redpanda-operator/blob/main/.buildkite/pipeline.yml#L43-L74).
+
+### Scheduled builds
+
+Buildkite has configured periodic jobs that build and pushes operator container with operator
+helm chart to https://hub.docker.com/r/redpandadata/redpanda-operator-nightly container repository.
+The branches that have configured scheduled build can be found in 
+[Branches section in README.md](https://github.com/redpanda-data/redpanda-operator/blob/main/README.md#branches).
+
+### Manual nightly build
+
+In Buildkite anyone with the access to redpanda-operator project can trigger build using 
+"New" button upper right corner.
+
+![new button](./.github/buildkite-new-button.png) 
+
+As the pop up show up please set specific branch with the `NIGHTLY_RELEASE=true`
+environment variable see the following picture 
+
+![buildkite pop up](./.github/buildkite-create-pipeline-pop-up.png)
+
+This will build operator container image and operator helm chart. Those artifacts will be pushed to
+https://hub.docker.com/r/redpandadata/redpanda-operator-nightly.
