@@ -23,6 +23,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
@@ -179,10 +180,9 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	// Because we're going to perform a declarative application, invalid values will either
 	// be overwritten (if they're supplied in the cfg), or removed (if they're not).
 	// No additional handling is needed.
-	properties := map[string]any{}
-	for k, v := range cfg.ClusterConfiguration {
-		metadata := schema[k]
-		properties[k] = configuration.ParseConfigValueBeforeUpsert(log, v, &metadata)
+	properties, err := clusterconfiguration.ExpandForConfiguration(ctx, r, redpandaCluster.Namespace, cfg.BootstrapConfiguration, schema)
+	if err != nil {
+		return false, err
 	}
 
 	// Unconditionally apply the update

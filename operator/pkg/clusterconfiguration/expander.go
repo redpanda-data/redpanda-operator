@@ -4,13 +4,17 @@
 package clusterconfiguration
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
@@ -90,8 +94,105 @@ func ExpandForBootstrap(cfg vectorizedv1alpha1.ClusterConfiguration) (map[string
 // The schema is used to interpret any external representations.
 // TODO: this should operate like ExpandEnv, with additional secret resolution.
 // We'll probably want a Reader or something similar to pull out k8s values.
-func ExpandForConfiguration(cfg vectorizedv1alpha1.ClusterConfiguration, schema rpadmin.ConfigSchema) (map[string]any, error) {
-	return nil, fmt.Errorf("unimplemented")
+func ExpandForConfiguration(
+	ctx context.Context,
+	reader client.Reader,
+	namespace string,
+	cfg vectorizedv1alpha1.ClusterConfiguration,
+	schema rpadmin.ConfigSchema,
+) (map[string]any, error) {
+	properties := make(map[string]any, len(cfg))
+	for k, v := range cfg {
+		metadata := schema[k]
+		switch {
+		case v.Representation != nil:
+			value, err := ParseRepresentation(string(*(v.Representation)), &metadata)
+			if err != nil {
+				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			}
+			properties[k] = value
+		case v.ConfigMapKeyRef != nil:
+			var cm corev1.ConfigMap
+			err := reader.Get(ctx, client.ObjectKey{
+				Namespace: namespace,
+				Name:      v.ConfigMapKeyRef.Name,
+			}, &cm)
+			if err != nil {
+				return nil, fmt.Errorf("configuration entry %q cannot read ConfigMap %q/%q: %w", k, namespace, v.ConfigMapKeyRef.Name, err)
+			}
+			repr, ok := cm.Data[v.ConfigMapKeyRef.Key]
+			if !ok {
+				return nil, fmt.Errorf("configuration entry %q: ConfigMap %q/%q has no key %q: %w", k, namespace, v.ConfigMapKeyRef.Name, v.ConfigMapKeyRef.Key, err)
+			}
+			value, err := ParseRepresentation(repr, &metadata)
+			if err != nil {
+				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			}
+			properties[k] = value
+		case v.SecretKeyRef != nil:
+			var sec corev1.Secret
+			err := reader.Get(ctx, client.ObjectKey{
+				Namespace: namespace,
+				Name:      v.SecretKeyRef.Name,
+			}, &sec)
+			if err != nil {
+				return nil, fmt.Errorf("configuration entry %q cannot read Secret %q/%q: %w", k, namespace, v.SecretKeyRef.Name, err)
+			}
+			repr, ok := sec.Data[v.SecretKeyRef.Key]
+			if !ok {
+				return nil, fmt.Errorf("configuration entry %q: ConfigMap %q/%q has no key %q: %w", k, namespace, v.SecretKeyRef.Name, v.SecretKeyRef.Key, err)
+			}
+			value, err := ParseRepresentation(string(repr), &metadata)
+			if err != nil {
+				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			}
+			properties[k] = value
+		case v.ExternalSecretRef != nil:
+			return nil, fmt.Errorf("unimplemented: ExternalSecretRef for configuration entry %q", k)
+		default:
+			return nil, fmt.Errorf("unrecognised configuration entry for key %q", k)
+		}
+		return nil, fmt.Errorf("unimplemented")
+	}
+	return properties, nil
+}
+
+func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) (any, error) {
+	if metadata.Nullable && repr == "null" {
+		return nil, nil
+	}
+	switch metadata.Type {
+	case "string":
+		var s string
+		err := yaml.Unmarshal([]byte(repr), &s)
+		return s, err
+	case "number":
+		return strconv.ParseFloat(repr, 64)
+	case "integer":
+		return strconv.ParseInt(repr, 10, 64)
+	case "array":
+		return convertStringToStringArray(repr)
+	default:
+		return nil, fmt.Errorf("unrecognised configuration type: %s", metadata.Type)
+	}
+}
+
+// convertStringToStringArray duplicates the v1 string->[string] processing
+func convertStringToStringArray(value string) ([]string, error) {
+	a := make([]string, 0)
+	err := yaml.Unmarshal([]byte(value), &a)
+
+	if len(a) == 1 {
+		// it is possible this was not comma separated, so let's make it so and retry unmarshalling
+		b := make([]string, 0)
+		errB := yaml.Unmarshal([]byte(strings.ReplaceAll(value, " ", ",")), &b)
+		if errB == nil && len(b) > len(a) {
+			sort.Strings(b)
+			return b, errB
+		}
+	}
+	sort.Strings(a)
+	return a, err
 }
 
 // ExpandValueForTemplate is intended to run in an initContainer. All values are either representations
