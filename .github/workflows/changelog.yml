@@ -30,4 +30,8 @@ jobs:
       - name: Fail
         if: steps.changed-changelog-files.outputs.any_changed != 'true'
         run: |
-          echo "No changelog entry detected." && exit 1
+          echo <<EOF
+          No changelog entry detected.
+          If this PR has user facing changes, ensure that a change log entry as been added via changie. See CONTRIBUTING.md for details.
+          If this PR does not have user facing changes, label the PR with "no-changelog" through GitHub's UI.
+          EOF && exit 1
