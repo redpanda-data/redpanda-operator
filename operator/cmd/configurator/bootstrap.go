@@ -6,14 +6,13 @@ import (
 	"os"
 	"strings"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 // Template out the bootstrap file
 // This takes an input template, resolves any remaining external references, then writes out the resulting bootstrap file
 func templateBootstrapYaml(inFile, outFile string) error {
-	var template map[string]vectorizedv1alpha1.ClusterConfigValue
+	var template map[string]clusterconfiguration.ClusterConfigTemplateValue
 	buf, err := os.ReadFile(inFile)
 	if err != nil {
 		return fmt.Errorf("cannot load bootstrap template file: %w", err)
@@ -25,7 +24,7 @@ func templateBootstrapYaml(inFile, outFile string) error {
 	var config []string
 	for k, v := range template {
 		// Work out what the value should be and add it to the output.
-		repr, err := configuration.ExpandValueForTemplate(v)
+		repr, err := clusterconfiguration.ExpandValueForTemplate(v)
 		if err != nil {
 			return fmt.Errorf("cannot resolve value %s: %w", k, err)
 		}

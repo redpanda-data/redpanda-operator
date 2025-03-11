@@ -38,6 +38,7 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
@@ -742,7 +743,7 @@ func (r *StatefulSetResource) obj(
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
 		}
-		_, templateEnv, err := configuration.ExpandForBootstrap(conf.BootstrapConfiguration)
+		_, templateEnv, err := clusterconfiguration.ExpandForBootstrap(conf.BootstrapConfiguration)
 		if err != nil {
 			return nil, fmt.Errorf("cannot extract environment variables from bootstrap template: %w", err)
 		}

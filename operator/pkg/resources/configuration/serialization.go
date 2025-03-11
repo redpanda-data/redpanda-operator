@@ -15,6 +15,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 // SerializedGlobalConfigurationContainer wraps the serialized version of redpanda.yaml and .bootstrap.yaml
@@ -47,7 +49,7 @@ func (c *GlobalConfiguration) Serialize() (
 	}
 
 	if len(c.BootstrapConfiguration) > 0 {
-		readyForTemplate, env, err := ExpandForBootstrap(c.BootstrapConfiguration)
+		readyForTemplate, env, err := clusterconfiguration.ExpandForBootstrap(c.BootstrapConfiguration)
 		if err != nil {
 			return nil, fmt.Errorf("could not pre-expand cluster bootstrap template: %w", err)
 		}

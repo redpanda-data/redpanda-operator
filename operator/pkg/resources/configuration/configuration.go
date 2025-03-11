@@ -37,7 +37,7 @@ var knownNodeProperties map[string]bool
 type GlobalConfiguration struct {
 	NodeConfiguration      *config.RedpandaYaml
 	ClusterConfiguration   map[string]interface{}
-	BootstrapConfiguration map[string]vectorizedv1alpha1.ClusterConfigValue
+	BootstrapConfiguration map[string]vectorizedv1alpha1.ClusterConfigCRDValue
 	Mode                   GlobalConfigurationMode
 }
 
