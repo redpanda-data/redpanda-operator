@@ -39,7 +39,7 @@ type ClusterStatus struct {
 	DefunctReplicas   int
 	HealthyReplicas   int
 	RunningReplicas   int
-	Quiescent         bool
+	Quiesced          bool
 }
 
 type ResourceManager[T any, U Cluster[T]] interface {
@@ -201,7 +201,7 @@ func (m *V2ResourceManager) SetClusterStatus(cluster *redpandav1alpha2.Redpanda,
 		Reason:             "Quiesced",
 		ObservedGeneration: cluster.GetGeneration(),
 	}
-	if status.Quiescent {
+	if status.Quiesced {
 		condition.Status = metav1.ConditionTrue
 	}
 	cluster.Status.ObservedGeneration = cluster.Generation

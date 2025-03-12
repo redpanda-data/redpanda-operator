@@ -993,9 +993,11 @@ func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: StatefulSetPodLabelsSelector(dot),
 			},
-			ServiceName:         ServiceName(dot),
-			Replicas:            ptr.To(values.Statefulset.Replicas),
-			UpdateStrategy:      helmette.UnmarshalInto[appsv1.StatefulSetUpdateStrategy](values.Statefulset.UpdateStrategy),
+			ServiceName: ServiceName(dot),
+			Replicas:    ptr.To(values.Statefulset.Replicas),
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.OnDeleteStatefulSetStrategyType,
+			},
 			PodManagementPolicy: "Parallel",
 			Template: StrategicMergePatch(values.Statefulset.PodTemplate, corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

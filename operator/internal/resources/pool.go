@@ -11,6 +11,7 @@ package resources
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,12 +21,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func sortSetByName(sets []*appsv1.StatefulSet) []*appsv1.StatefulSet {
-	slices.SortStableFunc(sets, func(a, b *appsv1.StatefulSet) int {
+const generationLabel = "cluster.redpanda.com/generation"
+
+func sortByName[T client.Object](objs []T) []T {
+	slices.SortStableFunc(objs, func(a, b T) int {
 		return strings.Compare(client.ObjectKeyFromObject(a).String(), client.ObjectKeyFromObject(b).String())
 	})
 
-	return sets
+	return objs
 }
 
 type pool struct {
@@ -45,14 +48,16 @@ func newPool(set *appsv1.StatefulSet, pods ...client.Object) *pool {
 }
 
 type PoolManager struct {
-	existingPools map[types.NamespacedName]*pool
-	desiredPools  map[types.NamespacedName]*pool
+	latestGeneration int64
+	existingPools    map[types.NamespacedName]*pool
+	desiredPools     map[types.NamespacedName]*pool
 }
 
-func NewPoolManager() *PoolManager {
+func NewPoolManager(generation int64) *PoolManager {
 	return &PoolManager{
-		existingPools: make(map[types.NamespacedName]*pool),
-		desiredPools:  make(map[types.NamespacedName]*pool),
+		latestGeneration: generation,
+		existingPools:    make(map[types.NamespacedName]*pool),
+		desiredPools:     make(map[types.NamespacedName]*pool),
 	}
 }
 
@@ -62,7 +67,7 @@ func (p *PoolManager) AddExisting(set *appsv1.StatefulSet, pods ...client.Object
 
 func (p *PoolManager) AddDesired(sets ...*appsv1.StatefulSet) {
 	for _, set := range sets {
-		p.desiredPools[client.ObjectKeyFromObject(set)] = newPool(set)
+		p.desiredPools[client.ObjectKeyFromObject(set)] = newPool(set, nil)
 	}
 }
 
@@ -81,8 +86,9 @@ func (p *PoolManager) CheckScale() ScaleReadiness {
 	}
 
 	for _, pool := range p.existingPools {
-		if ptr.Deref(pool.set.Spec.Replicas, 0) != pool.set.Status.UpdatedReplicas {
-			// we're in the middle of a scaling operation
+		replicas := ptr.Deref(pool.set.Spec.Replicas, 0)
+		if replicas != pool.set.Status.Replicas || int(replicas) != len(pool.pods) {
+			// we're potentially in the middle of a scaling operation
 			return ScaleNotReady
 		}
 	}
@@ -95,17 +101,24 @@ func (p *PoolManager) CheckScale() ScaleReadiness {
 func (p *PoolManager) ToCreate() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
+	generation := strconv.FormatInt(p.latestGeneration, 10)
+
 	for nn := range p.desiredPools {
 		if _, ok := p.existingPools[nn]; !ok {
-			sets = append(sets, p.desiredPools[nn].set)
+			set := p.desiredPools[nn].set.DeepCopy()
+			set.Labels[generationLabel] = generation
+
+			sets = append(sets, set)
 		}
 	}
 
-	return sortSetByName(sets)
+	return sortByName(sets)
 }
 
 func (p *PoolManager) ToScaleUp() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
+
+	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; ok {
@@ -115,28 +128,36 @@ func (p *PoolManager) ToScaleUp() []*appsv1.StatefulSet {
 			if existingReplicas < desiredReplicas {
 				// we use the desired set spec here
 				set := desired.set.DeepCopy()
-
+				set.Labels[generationLabel] = generation
 				set.Spec.Replicas = ptr.To(existingReplicas + 1)
 				sets = append(sets, set)
 			}
 		}
 	}
 
-	return sortSetByName(sets)
+	return sortByName(sets)
 }
 
-func (p *PoolManager) Desired() []*appsv1.StatefulSet {
+func (p *PoolManager) RequiresUpdate() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
-	for _, desired := range p.desiredPools {
-		sets = append(sets, desired.set.DeepCopy())
+	generation := strconv.FormatInt(p.latestGeneration, 10)
+
+	for nn, existing := range p.existingPools {
+		if desired, ok := p.desiredPools[nn]; ok && existing.set.Labels[generationLabel] != generation {
+			set := desired.set.DeepCopy()
+			set.Labels[generationLabel] = generation
+			sets = append(sets, set)
+		}
 	}
 
-	return sortSetByName(sets)
+	return sortByName(sets)
 }
 
 func (p *PoolManager) ToScaleDown() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
+
+	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
@@ -145,6 +166,7 @@ func (p *PoolManager) ToScaleDown() []*appsv1.StatefulSet {
 
 			if existing.set.Status.Replicas != 0 {
 				set := existing.set.DeepCopy()
+				set.Labels[generationLabel] = generation
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, set)
@@ -156,6 +178,7 @@ func (p *PoolManager) ToScaleDown() []*appsv1.StatefulSet {
 			if existingReplicas > desiredReplicas {
 				// we use the desired set spec here
 				set := desired.set.DeepCopy()
+				set.Labels[generationLabel] = generation
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, set)
@@ -163,7 +186,7 @@ func (p *PoolManager) ToScaleDown() []*appsv1.StatefulSet {
 		}
 	}
 
-	return sortSetByName(sets)
+	return sortByName(sets)
 }
 
 func (p *PoolManager) ToDelete() []*appsv1.StatefulSet {
@@ -171,9 +194,24 @@ func (p *PoolManager) ToDelete() []*appsv1.StatefulSet {
 
 	for nn := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
-			sets = append(sets, p.existingPools[nn].set)
+			sets = append(sets, p.existingPools[nn].set.DeepCopy())
 		}
 	}
 
-	return sortSetByName(sets)
+	return sortByName(sets)
+}
+
+func (p *PoolManager) PodsToRoll() []*corev1.Pod {
+	pods := []*corev1.Pod{}
+
+	for _, existing := range p.existingPools {
+		set := existing.set
+		for _, pod := range existing.pods {
+			if pod.Labels[appsv1.StatefulSetRevisionLabel] != set.Status.CurrentRevision {
+				pods = append(pods, pod.DeepCopy())
+			}
+		}
+	}
+
+	return pods
 }

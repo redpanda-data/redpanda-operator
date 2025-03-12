@@ -60,7 +60,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	pools := resources.NewPoolManager()
+	pools := resources.NewPoolManager(cluster.GetGeneration())
 
 	for _, set := range sets {
 		statefulSet := set.(*appsv1.StatefulSet)
@@ -206,17 +206,34 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 		}
 
-		// now patch any sets that might have changed without affecting the cluster size
+		// now make sure all of the patch any sets that might have changed without affecting the cluster size
 		// here we can just wholesale patch everything
-		for _, set := range pools.Desired() {
+		updates := pools.RequiresUpdate()
+		for _, set := range updates {
 			if _, err := patchStatefulSet(set, "scaling down statefulset"); err != nil {
 				return syncStatus(err)
 			}
 		}
+
+		if len(updates) != 0 {
+			return syncStatus(requeueErr)
+		}
+
+		// finally, we make sure we roll every pod that is not in-sync with its statefulset
+		for _, pod := range pools.PodsToRoll() {
+			if err := r.Client.Delete(ctx, pod); err != nil {
+				logger.Error(err, "deleting pod")
+				return syncStatus(err)
+			}
+			// requeue since we just rolled a pod
+			// and we want for the system to stabilize
+			return syncStatus(requeueErr)
+		}
 	}
 
-	// set the quiescent status
-	status.Quiescent = true
+	// if we got here, then all of the loops above were no-ops
+	// and so we can mark the status as quiesced.
+	status.Quiesced = true
 
 	return syncStatus(nil)
 }
