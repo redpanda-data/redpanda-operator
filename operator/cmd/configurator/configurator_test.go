@@ -43,7 +43,8 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 	httpBasic := "http_basic"
 	tests := []struct {
 		name                            string
-		addtionalListenersCfg           string
+		addtionalListenersCfgLegacy     string
+		addtionalListenersCfgJSON       string
 		hostIndex                       int
 		hostIP                          string
 		nodeCfg                         config.RedpandaYaml
@@ -58,20 +59,20 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		expectedError                   bool
 	}{
 		{
-			name:                  "invalid listener configuration",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{'invalid format'`,
-			hostIndex:             1,
-			hostIP:                "192.168.0.1",
+			name:                        "invalid listener configuration",
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{'invalid format'`,
+			hostIndex:                   1,
+			hostIP:                      "192.168.0.1",
 			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{},
 			},
 			expectedError: true,
 		},
 		{
-			name:                  "no additional listener with empty string",
-			addtionalListenersCfg: "",
-			hostIndex:             1,
-			hostIP:                "192.168.0.1",
+			name:                        "no additional listener with empty string",
+			addtionalListenersCfgLegacy: "",
+			hostIndex:                   1,
+			hostIP:                      "192.168.0.1",
 			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					KafkaAPI: []config.NamedAuthNSocketAddress{{
@@ -92,10 +93,10 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 			},
 		},
 		{
-			name:                  "no additional listener {}",
-			addtionalListenersCfg: "{}",
-			hostIndex:             1,
-			hostIP:                "192.168.0.1",
+			name:                        "no additional listener {}",
+			addtionalListenersCfgLegacy: "{}",
+			hostIndex:                   1,
+			hostIP:                      "192.168.0.1",
 			nodeCfg: config.RedpandaYaml{
 				Redpanda: config.RedpandaNodeConfig{
 					AdvertisedKafkaAPI: []config.NamedSocketAddress{{
@@ -115,7 +116,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "additional kafka listener",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",` +
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30092 | add .Index}}}]",` +
 				`"redpanda.kafka_api":"[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{30092 | add .Index}}, 'authentication_method': 'sasl'}]"}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
@@ -140,7 +141,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "additional listeners using the address from the external listerners",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'port': {{39002 | add .Index}}}]",` +
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{'name': 'private-link-kafka', 'port': {{39002 | add .Index}}}]",` +
 				`"redpanda.kafka_api":"[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{39002 | add .Index}}}]",` +
 				`"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'port': {{32082 | add .Index}}}]",` +
 				`"pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0', 'port': {{32082 | add .Index}}}]"}`,
@@ -229,7 +230,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "additional kafka and proxy listeners with mTLS",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{\"name\": \"private-link-kafka\", 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39002 | add .Index}}}]",` +
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{\"name\": \"private-link-kafka\", 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39002 | add .Index}}}]",` +
 				`"redpanda.kafka_api":"[{'name': 'private-link-kafka', 'address': '0.0.0.0', 'port': {{39002 | add .Index}}, 'authentication_method': 'sasl'}]",` +
 				`"pandaproxy.advertised_pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{30282 | add .Index}}}]",` +
 				`"pandaproxy.pandaproxy_api":"[{'name': 'private-link-proxy', 'address': '0.0.0.0', 'port': {{30282 | add .Index}}, 'authentication_method': 'sasl'}]"}`,
@@ -352,7 +353,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "additional schema registry listeners with mTLS in structured JSON",
-			addtionalListenersCfg: `{"schema_registry.schema_registry_api":[{"name": "schema-registry-mtls", "address": "0.0.0.0", "port": 30083, "authentication_method":"http_basic"},{"name":"schema-registry","address":"should be ingored because of dup to the one in nodeCfg"}],` +
+			addtionalListenersCfgJSON: `{"schema_registry.schema_registry_api":[{"name": "schema-registry-mtls", "address": "0.0.0.0", "port": 30083, "authentication_method":"http_basic"},{"name":"schema-registry","address":"should be ingored because of dup to the one in nodeCfg"}],` +
 				`"schema_registry.schema_registry_api_tls":[{"name": "schema-registry-mtls", "truststore_file":"/etc/tls/certs/schema-registry/ca.crt"}]}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
@@ -405,7 +406,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "additional schema registry listeners with mTLS",
-			addtionalListenersCfg: `{"schema_registry.schema_registry_api":"[{'name': 'schema-registry-mtls', 'address': '0.0.0.0', 'port': 30083, 'authentication_method':'http_basic'},{'name':'schema-registry','address':'should be ingored because of dup to the one in nodeCfg'}]",` +
+			addtionalListenersCfgLegacy: `{"schema_registry.schema_registry_api":"[{'name': 'schema-registry-mtls', 'address': '0.0.0.0', 'port': 30083, 'authentication_method':'http_basic'},{'name':'schema-registry','address':'should be ingored because of dup to the one in nodeCfg'}]",` +
 				`"schema_registry.schema_registry_api_tls":"[{'name': 'schema-registry-mtls', 'truststore_file':'/etc/tls/certs/schema-registry/ca.crt'}]"}`,
 			hostIndex: 1,
 			hostIP:    "192.168.0.1",
@@ -458,7 +459,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "kafka with SASL + mTLS",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{\"name\": \"mtls-kafka\", 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39002 | add .Index}}}]",` +
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{\"name\": \"mtls-kafka\", 'address': '{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com', 'port': {{39002 | add .Index}}}]",` +
 				`"redpanda.kafka_api":"[{'name': 'mtls-kafka','address':'0.0.0.0','port': {{39002 | add .Index}},'authentication_method':'mtls_identity'},{'name':'kafka-external','address':'ignored due to dup in nodeCfg'}]", ` +
 				`"redpanda.kafka_api_tls":"[{'name': 'mtls-kafka', 'require_client_auth': true, 'truststore_file':'/etc/tls/certs/kafka-api/ca.crt'}]"}`,
 			hostIndex: 1,
@@ -553,7 +554,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "kafka with mTLS + SASL and structured JSON",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":[{"name": "sasl-kafka", "port": {{39002 | add .Index}}},{"name":"mtls-kafka","port":{{39002 | add .Index}},"address":"ignored due to dup in nodeCfg"}],` +
+			addtionalListenersCfgJSON: `{"redpanda.advertised_kafka_api":[{"name": "sasl-kafka", "port": {{39002 | add .Index}}},{"name":"mtls-kafka","port":{{39002 | add .Index}},"address":"ignored due to dup in nodeCfg"}],` +
 				`"redpanda.kafka_api":[{"name": "sasl-kafka","address": "0.0.0.0","port": {{39002 | add .Index}},"authentication_method":"sasl"}],` +
 				`"redpanda.kafka_api_tls":[{"name": "sasl-kafka", "require_client_auth": false},{"name":"mtls-kafka","cert_file":"ignored due to dup in nodeCfg"}]}`,
 			hostIndex: 1,
@@ -652,7 +653,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 		},
 		{
 			name: "kafka with mTLS + SASL",
-			addtionalListenersCfg: `{"redpanda.advertised_kafka_api":"[{\"name\": \"sasl-kafka\", 'port': {{39002 | add .Index}}},{'name':'mtls-kafka','port':{{39002 | add .Index}},'address':'ignored due to dup in nodeCfg'}]",` +
+			addtionalListenersCfgLegacy: `{"redpanda.advertised_kafka_api":"[{\"name\": \"sasl-kafka\", 'port': {{39002 | add .Index}}},{'name':'mtls-kafka','port':{{39002 | add .Index}},'address':'ignored due to dup in nodeCfg'}]",` +
 				`"redpanda.kafka_api":"[{'name': 'sasl-kafka','address': '0.0.0.0','port': {{39002 | add .Index}},'authentication_method':'sasl'}]",` +
 				`"redpanda.kafka_api_tls":"[{'name': 'sasl-kafka', 'require_client_auth': false},{'name':'mtls-kafka','cert_file':'ignored due to dup in nodeCfg'}]"}`,
 			hostIndex: 1,
@@ -752,7 +753,7 @@ func TestAdditionalListeners(t *testing.T) { //nolint
 	}
 	for i := 0; i < len(tests); i++ {
 		tt := &tests[i]
-		err := setAdditionalListeners(tt.addtionalListenersCfg, tt.hostIP, tt.hostIndex, &tt.nodeCfg, 0)
+		err := setAdditionalListeners(tt.addtionalListenersCfgLegacy, tt.addtionalListenersCfgJSON, tt.hostIP, tt.hostIndex, &tt.nodeCfg, 0)
 		if tt.expectedError {
 			assert.Error(t, err)
 		} else {
