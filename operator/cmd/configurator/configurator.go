@@ -57,7 +57,8 @@ const (
 	validateMountedVolumeEnvVar                          = "VALIDATE_MOUNTED_VOLUME"
 	redpandaRPCPortEnvVar                                = "REDPANDA_RPC_PORT"
 	svcFQDNEnvVar                                        = "SERVICE_FQDN"
-	additionalListenersEnvVar                            = "ADDITIONAL_LISTENERS"
+	additionalListenersLegacyEnvVar                      = "ADDITIONAL_LISTENERS"
+	additionalListenersJSONEnvVar                        = "ADDITIONAL_LISTENERS_JSON"
 )
 
 type brokerID int
@@ -79,7 +80,8 @@ type configuratorConfig struct {
 	redpandaRPCPort                                int
 	subdomain                                      string
 	svcFQDN                                        string
-	additionalListeners                            string
+	additionalListenersLegacy                      string
+	additionalListenersJSON                        string
 	hostIndexOffset                                int
 }
 
@@ -98,7 +100,8 @@ func (c *configuratorConfig) String() string {
 		"proxyHostPort: %d\n"+
 		"rackAwareness: %t\n"+
 		"validateMountedVolume: %t\n"+
-		"additionalListeners: %s\n"+
+		"additionalListenersLegacy: %s\n"+
+		"additionalListenersJSON: %s\n"+
 		"hostIndexOffset: %d\n",
 		c.hostName,
 		c.svcFQDN,
@@ -113,7 +116,8 @@ func (c *configuratorConfig) String() string {
 		c.proxyHostPort,
 		c.rackAwareness,
 		c.validateMountedVolume,
-		c.additionalListeners,
+		c.additionalListenersLegacy,
+		c.additionalListenersJSON,
 		c.hostIndexOffset)
 }
 
@@ -203,7 +207,7 @@ func run(cmd *cobra.Command, args []string) {
 		populateRack(cfg, zone, zoneID)
 	}
 
-	if err = setAdditionalListeners(c.additionalListeners, c.hostIP, int(hostIndex), cfg, c.hostIndexOffset); err != nil {
+	if err = setAdditionalListeners(c.additionalListenersLegacy, c.additionalListenersJSON, c.hostIP, int(hostIndex), cfg, c.hostIndexOffset); err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to set additional listeners: %w", err))
 	}
 
@@ -568,9 +572,14 @@ func checkEnvVars() (configuratorConfig, error) {
 		}
 	}
 
-	c.additionalListeners, exist = os.LookupEnv(additionalListenersEnvVar)
+	c.additionalListenersLegacy, exist = os.LookupEnv(additionalListenersLegacyEnvVar)
 	if exist {
-		log.Printf("additional listeners configured: %v", c.additionalListeners)
+		log.Printf("additional listeners configured with the legacy format: %v", c.additionalListenersLegacy)
+	}
+
+	c.additionalListenersJSON, exist = os.LookupEnv(additionalListenersJSONEnvVar)
+	if exist {
+		log.Printf("additional listeners configured with the JSON format: %v", c.additionalListenersJSON)
 	}
 
 	return c, result
@@ -598,15 +607,22 @@ type allListenersTemplateSpec struct {
 }
 
 // setAdditionalListeners sets the additional listeners in the input Redpanda config.
-// It can take two types of configuration inputs, a structured JSON and a string.
-// It tries to first decode the input as a string (see example below).
-// If fails, it will try to decode it as a structured JSON.
+// It can take two types of configuration inputs, a structured JSON and a string in the legacy format.
+// It tries to first decode the structured JSON input if set
+// If not set, it will try to decode the legacy input.
 // sample listeners config string:
-//   - structured: {"pandaproxy.advertised_pandaproxy_api":[{"name":"private-link-proxy","address:"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com","port":{{39282 | add .Index}}}],"pandaproxy.pandaproxy_api":[{"name":"private-link-proxy","address":"0.0.0.0","port":"port":{{39282 | add .Index}}}]}
-//   - string:     {"pandaproxy.advertised_pandaproxy_api":"[{'name':'private-link-proxy','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port':{{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name':'private-link-proxy','address':'0.0.0.0','port':'port':{{39282 | add .Index}}}]"}
-func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int, cfg *config.RedpandaYaml, hostIndexOffset int) error {
-	if additionalListenersCfg == "" || additionalListenersCfg == "{}" {
+//   - structured JSON: {"pandaproxy.advertised_pandaproxy_api":[{"name":"private-link-proxy","address:"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com","port":{{39282 | add .Index}}}],"pandaproxy.pandaproxy_api":[{"name":"private-link-proxy","address":"0.0.0.0","port":"port":{{39282 | add .Index}}}]}
+//   - legacy format:   {"pandaproxy.advertised_pandaproxy_api":"[{'name':'private-link-proxy','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port':{{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name':'private-link-proxy','address':'0.0.0.0','port':'port':{{39282 | add .Index}}}]"}
+func setAdditionalListeners(additionalListenersCfgLegacy, additionalListenersCfgJSON, hostIP string, hostIndex int, cfg *config.RedpandaYaml, hostIndexOffset int) error {
+	if (additionalListenersCfgLegacy == "" || additionalListenersCfgLegacy == "{}") && (additionalListenersCfgJSON == "" || additionalListenersCfgJSON == "{}") {
 		return nil
+	}
+
+	structuredDecode := true
+	additionalListenersCfg := additionalListenersCfgJSON
+	if additionalListenersCfg == "" {
+		additionalListenersCfg = additionalListenersCfgLegacy
+		structuredDecode = false
 	}
 
 	additionalListenersCfg, err := utils.Compute(additionalListenersCfg, utils.NewEndpointTemplateData(hostIndex, hostIP, hostIndexOffset), false)
@@ -614,20 +630,13 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 		return err
 	}
 
-	structuredDecode := false
-	additionalListeners := map[string]string{}
-	structuredAdditionalListeners := &allListenersTemplateSpec{}
-	err = json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
-	if err != nil {
+	nodeConfig := config.ProdDefault()
+	if structuredDecode {
+		structuredAdditionalListeners := &allListenersTemplateSpec{}
 		err = json.Unmarshal([]byte(additionalListenersCfg), &structuredAdditionalListeners)
 		if err != nil {
 			return err
 		}
-		structuredDecode = true
-	}
-
-	nodeConfig := config.ProdDefault()
-	if structuredDecode {
 		nodeConfig.Redpanda.KafkaAPI = structuredAdditionalListeners.KafkaListeners
 		nodeConfig.Redpanda.AdvertisedKafkaAPI = structuredAdditionalListeners.KafkaAdvertisedListeners
 		nodeConfig.Redpanda.KafkaAPITLS = structuredAdditionalListeners.KafkaTLS
@@ -637,6 +646,11 @@ func setAdditionalListeners(additionalListenersCfg, hostIP string, hostIndex int
 		nodeConfig.SchemaRegistry.SchemaRegistryAPI = structuredAdditionalListeners.SchemaRegistryListeners
 		nodeConfig.SchemaRegistry.SchemaRegistryAPITLS = structuredAdditionalListeners.SchemaRegistryTLS
 	} else {
+		additionalListeners := map[string]string{}
+		err = json.Unmarshal([]byte(additionalListenersCfg), &additionalListeners)
+		if err != nil {
+			return err
+		}
 		nodeConfig.Redpanda.KafkaAPI = []config.NamedAuthNSocketAddress{}
 		nodeConfig.Redpanda.AdvertisedKafkaAPI = []config.NamedSocketAddress{}
 		nodeConfig.Redpanda.KafkaAPITLS = []config.ServerTLS{}

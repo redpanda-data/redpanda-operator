@@ -1065,8 +1065,14 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 		r.logger.Error(err, "failed to concat additional listeners")
 		return nil
 	}
+	envVar := "ADDITIONAL_LISTENERS_JSON"
+	if listeners.IsEmpty() {
+		// If no additional listeners are set in the spec APIs, we use the legacy env var
+		// for backward compatibility since jsonStr is in legacy format with single quotes.
+		envVar = "ADDITIONAL_LISTENERS"
+	}
 	return []corev1.EnvVar{{
-		Name:  "ADDITIONAL_LISTENERS",
+		Name:  envVar,
 		Value: jsonStr,
 	}}
 }
