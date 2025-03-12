@@ -136,6 +136,13 @@ func (a *allListenersTemplateSpec) Encode() (string, error) {
 	return regexRemoveQuotes.ReplaceAllString(string(s), ""), nil
 }
 
+// IsEmpty returns true if the allListenersTemplateSpec is empty.
+func (a *allListenersTemplateSpec) IsEmpty() bool {
+	return len(a.KafkaListeners) == 0 && len(a.KafkaAdvertisedListeners) == 0 && len(a.KafkaTLSSpec) == 0 &&
+		len(a.ProxyListeners) == 0 && len(a.ProxyAdvertisedListeners) == 0 && len(a.ProxyTLSSpec) == 0 &&
+		len(a.SchemaRegistryListeners) == 0 && len(a.SchemaRegistryTLSSpec) == 0
+}
+
 // Append adds the listener configs in the given spec1 to the current spec.
 //
 //	input = [{'name':'mtls-kafka','port':{{9094 | add .Index | add .HostIndexOffset}}}]
@@ -144,10 +151,7 @@ func (a *allListenersTemplateSpec) Encode() (string, error) {
 func (a *allListenersTemplateSpec) Append(spec1 map[string]string) (string, error) {
 	inputSpec := &allListenersTemplateSpec{}
 	var err error
-	if len(a.KafkaListeners) == 0 && len(a.KafkaAdvertisedListeners) == 0 && len(a.KafkaTLSSpec) == 0 &&
-		len(a.ProxyListeners) == 0 && len(a.ProxyAdvertisedListeners) == 0 && len(a.ProxyTLSSpec) == 0 &&
-		len(a.SchemaRegistryListeners) == 0 && len(a.SchemaRegistryTLSSpec) == 0 {
-
+	if a.IsEmpty() {
 		result, err := json.Marshal(spec1)
 		return string(result), err
 	}
