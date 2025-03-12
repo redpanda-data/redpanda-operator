@@ -192,8 +192,8 @@ func TestGoHelmEquivalence(t *testing.T) {
 			Enabled: ptr.To(false),
 		},
 		Secret: &PartialSecretConfig{
-			Login: &PartialLoginSecrets{
-				JWTSecret: ptr.To("SECRET"),
+			Authentication: &PartialAuthenticationSecrets{
+				JWTSigningKey: ptr.To("SECRET"),
 			},
 		},
 		Ingress: &PartialIngressConfig{

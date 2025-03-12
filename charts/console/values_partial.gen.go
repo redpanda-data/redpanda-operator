@@ -51,7 +51,7 @@ type PartialValues struct {
 	InitContainers               *PartialInitContainers            "json:\"initContainers,omitempty\""
 	SecretMounts                 []PartialSecretMount              "json:\"secretMounts,omitempty\""
 	Secret                       *PartialSecretConfig              "json:\"secret,omitempty\""
-	Enterprise                   *PartialEnterprise                "json:\"enterprise,omitempty\""
+	LicenseSecretRef             *PartialSecretKeyRef              "json:\"licenseSecretRef,omitempty\""
 	LivenessProbe                *corev1.Probe                     "json:\"livenessProbe,omitempty\""
 	ReadinessProbe               *corev1.Probe                     "json:\"readinessProbe,omitempty\""
 	ConfigMap                    *PartialCreatable                 "json:\"configmap,omitempty\""
@@ -108,15 +108,18 @@ type PartialInitContainers struct {
 }
 
 type PartialSecretConfig struct {
-	Create     *bool                     "json:\"create,omitempty\""
-	Kafka      *PartialKafkaSecrets      "json:\"kafka,omitempty\""
-	Login      *PartialLoginSecrets      "json:\"login,omitempty\""
-	Enterprise *PartialEnterpriseSecrets "json:\"enterprise,omitempty\""
-	Redpanda   *PartialRedpandaSecrets   "json:\"redpanda,omitempty\""
+	Create         *bool                         "json:\"create,omitempty\""
+	Kafka          *PartialKafkaSecrets          "json:\"kafka,omitempty\""
+	Authentication *PartialAuthenticationSecrets "json:\"authentication,omitempty\""
+	License        *string                       "json:\"license,omitempty\""
+	Redpanda       *PartialRedpandaSecrets       "json:\"redpanda,omitempty\""
+	Serde          *PartialSerdeSecrets          "json:\"serde,omitempty\""
+	SchemaRegistry *PartialSchemaRegistrySecrets "json:\"schemaRegistry,omitempty\""
 }
 
-type PartialEnterprise struct {
-	LicenseSecretRef *PartialSecretKeyRef "json:\"licenseSecretRef,omitempty\""
+type PartialSecretKeyRef struct {
+	Name *string "json:\"name,omitempty\""
+	Key  *string "json:\"key,omitempty\""
 }
 
 type PartialCreatable struct {
@@ -142,58 +145,37 @@ type PartialSecretMount struct {
 }
 
 type PartialKafkaSecrets struct {
-	SASLPassword                 *string "json:\"saslPassword,omitempty\""
-	AWSMSKIAMSecretKey           *string "json:\"awsMskIamSecretKey,omitempty\""
-	TLSCA                        *string "json:\"tlsCa,omitempty\""
-	TLSCert                      *string "json:\"tlsCert,omitempty\""
-	TLSKey                       *string "json:\"tlsKey,omitempty\""
-	TLSPassphrase                *string "json:\"tlsPassphrase,omitempty\""
-	SchemaRegistryPassword       *string "json:\"schemaRegistryPassword,omitempty\""
-	SchemaRegistryTLSCA          *string "json:\"schemaRegistryTlsCa,omitempty\""
-	SchemaRegistryTLSCert        *string "json:\"schemaRegistryTlsCert,omitempty\""
-	SchemaRegistryTLSKey         *string "json:\"schemaRegistryTlsKey,omitempty\""
-	ProtobufGitBasicAuthPassword *string "json:\"protobufGitBasicAuthPassword,omitempty\""
+	SASLPassword       *string "json:\"saslPassword,omitempty\""
+	AWSMSKIAMSecretKey *string "json:\"awsMskIamSecretKey,omitempty\""
+	TLSCA              *string "json:\"tlsCa,omitempty\""
+	TLSCert            *string "json:\"tlsCert,omitempty\""
+	TLSKey             *string "json:\"tlsKey,omitempty\""
+	TLSPassphrase      *string "json:\"tlsPassphrase,omitempty\""
 }
 
-type PartialLoginSecrets struct {
-	JWTSecret *string                    "json:\"jwtSecret,omitempty\""
-	Google    *PartialGoogleLoginSecrets "json:\"google,omitempty\""
-	Github    *PartialGithubLoginSecrets "json:\"github,omitempty\""
-	Okta      *PartialOktaLoginSecrets   "json:\"okta,omitempty\""
-	OIDC      *PartialOIDCLoginSecrets   "json:\"oidc,omitempty\""
-}
-
-type PartialEnterpriseSecrets struct {
-	License *string "json:\"license,omitempty\""
+type PartialAuthenticationSecrets struct {
+	JWTSigningKey *string                  "json:\"jwtSigningKey,omitempty\""
+	OIDC          *PartialOIDCLoginSecrets "json:\"oidc,omitempty\""
 }
 
 type PartialRedpandaSecrets struct {
 	AdminAPI *PartialRedpandaAdminAPISecrets "json:\"adminApi,omitempty\""
 }
 
-type PartialSecretKeyRef struct {
-	Name *string "json:\"name,omitempty\""
-	Key  *string "json:\"key,omitempty\""
+type PartialSerdeSecrets struct {
+	ProtobufGitBasicAuthPassword *string "json:\"protobufGitBasicAuthPassword,omitempty\""
+}
+
+type PartialSchemaRegistrySecrets struct {
+	Password *string "json:\"password,omitempty\""
+	TLSCA    *string "json:\"tlsCa,omitempty\""
+	TLSCert  *string "json:\"tlsCert,omitempty\""
+	TLSKey   *string "json:\"tlsKey,omitempty\""
 }
 
 type PartialIngressHost struct {
 	Host  *string              "json:\"host,omitempty\""
 	Paths []PartialIngressPath "json:\"paths,omitempty\""
-}
-
-type PartialGoogleLoginSecrets struct {
-	ClientSecret         *string "json:\"clientSecret,omitempty\""
-	GroupsServiceAccount *string "json:\"groupsServiceAccount,omitempty\""
-}
-
-type PartialGithubLoginSecrets struct {
-	ClientSecret        *string "json:\"clientSecret,omitempty\""
-	PersonalAccessToken *string "json:\"personalAccessToken,omitempty\""
-}
-
-type PartialOktaLoginSecrets struct {
-	ClientSecret      *string "json:\"clientSecret,omitempty\""
-	DirectoryAPIToken *string "json:\"directoryApiToken,omitempty\""
 }
 
 type PartialOIDCLoginSecrets struct {

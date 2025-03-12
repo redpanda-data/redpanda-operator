@@ -204,15 +204,15 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 	if !values.Secret.Create {
 		vars := values.ExtraEnv
 
-		if !helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		if !helmette.Empty(values.LicenseSecretRef.Name) {
 			vars = append(values.ExtraEnv, corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: values.Enterprise.LicenseSecretRef.Name,
+							Name: values.LicenseSecretRef.Name,
 						},
-						Key: helmette.Default("enterprise-license", values.Enterprise.LicenseSecretRef.Key),
+						Key: helmette.Default("enterprise-license", values.LicenseSecretRef.Key),
 					},
 				},
 			})
@@ -237,9 +237,9 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Kafka.ProtobufGitBasicAuthPassword,
+			Value: values.Secret.Serde.ProtobufGitBasicAuthPassword,
 			EnvVar: corev1.EnvVar{
-				Name: "KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD",
+				Name: "SERDE_PROTOBUF_GIT_BASICAUTH_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -286,30 +286,30 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Kafka.SchemaRegistryTLSCA,
+			Value: values.Secret.SchemaRegistry.TLSCA,
 			EnvVar: corev1.EnvVar{
-				Name:  "KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH",
+				Name:  "SCHEMAREGISTRY_TLS_CAFILEPATH",
 				Value: "/etc/console/secrets/kafka-schemaregistry-tls-ca",
 			},
 		},
 		{
-			Value: values.Secret.Kafka.SchemaRegistryTLSCert,
+			Value: values.Secret.SchemaRegistry.TLSCert,
 			EnvVar: corev1.EnvVar{
-				Name:  "KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH",
+				Name:  "SCHEMAREGISTRY_TLS_CERTFILEPATH",
 				Value: "/etc/console/secrets/kafka-schemaregistry-tls-cert",
 			},
 		},
 		{
-			Value: values.Secret.Kafka.SchemaRegistryTLSKey,
+			Value: values.Secret.SchemaRegistry.TLSKey,
 			EnvVar: corev1.EnvVar{
-				Name:  "KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH",
+				Name:  "SCHEMAREGISTRY_TLS_KEYFILEPATH",
 				Value: "/etc/console/secrets/kafka-schemaregistry-tls-key",
 			},
 		},
 		{
-			Value: values.Secret.Kafka.SchemaRegistryPassword,
+			Value: values.Secret.SchemaRegistry.Password,
 			EnvVar: corev1.EnvVar{
-				Name: "KAFKA_SCHEMAREGISTRY_PASSWORD",
+				Name: "SCHEMAREGISTRY_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -321,9 +321,9 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: true,
+			Value: values.Secret.Authentication.JWTSigningKey,
 			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_JWTSECRET",
+				Name: "AUTHENTICATION_JWTSIGNINGKEY",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -335,99 +335,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Login.Google.ClientSecret,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_GOOGLE_CLIENTSECRET",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-google-oauth-client-secret",
-					},
-				},
-			},
-		},
-
-		{
-			Value: values.Secret.Login.Google.GroupsServiceAccount,
-			EnvVar: corev1.EnvVar{
-				Name:  "LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH",
-				Value: "/etc/console/secrets/login-google-groups-service-account.json",
-			},
-		},
-		{
-			Value: values.Secret.Login.Github.ClientSecret,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_GITHUB_CLIENTSECRET",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-github-oauth-client-secret",
-					},
-				},
-			},
-		},
-		{
-			Value: values.Secret.Login.Github.PersonalAccessToken,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-github-personal-access-token",
-					},
-				},
-			},
-		},
-		{
-			Value: values.Secret.Login.Okta.ClientSecret,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_OKTA_CLIENTSECRET",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-okta-client-secret",
-					},
-				},
-			},
-		},
-		{
-			Value: values.Secret.Login.Okta.DirectoryAPIToken,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_OKTA_DIRECTORY_APITOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-okta-directory-api-token",
-					},
-				},
-			},
-		},
-		{
-			Value: values.Secret.Login.OIDC.ClientSecret,
-			EnvVar: corev1.EnvVar{
-				Name: "LOGIN_OIDC_CLIENTSECRET",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
-						},
-						Key: "login-oidc-client-secret",
-					},
-				},
-			},
-		},
-		{
-			Value: values.Secret.Enterprise.License,
+			Value: values.Secret.License,
 			EnvVar: corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{
