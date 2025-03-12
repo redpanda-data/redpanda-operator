@@ -92,14 +92,12 @@ func (s *ClusterControllerSuite) SetupSuite() {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
-		resourceManager := resources.NewV2ResourceManager(mgr)
-		resourceClient := resources.NewResourceClient(mgr, resourceManager)
+		resourceClient := resources.NewResourceClient(mgr, resources.V2ResourceManagers)
 
 		if err := (&controller.ClusterReconciler[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda]{
-			Client:          mgr.GetClient(),
-			ResourceManager: resourceManager,
-			ResourceClient:  resourceClient,
-			ClientFactory:   s.clientFactory,
+			Client:         mgr.GetClient(),
+			ResourceClient: resourceClient,
+			ClientFactory:  s.clientFactory,
 		}).SetupWithManager(mgr); err != nil {
 			return err
 		}

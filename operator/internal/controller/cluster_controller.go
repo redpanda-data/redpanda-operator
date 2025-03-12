@@ -40,9 +40,8 @@ var requeueTimeout = 10 * time.Second
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler[T any, U resources.Cluster[T]] struct {
 	client.Client
-	ResourceManager resources.ResourceManager[T, U]
-	ResourceClient  resources.ResourceClient[T, U]
-	ClientFactory   internalclient.ClientFactory
+	ResourceClient *resources.ResourceClient[T, U]
+	ClientFactory  internalclient.ClientFactory
 }
 
 func ignoreConflict(err error) (ctrl.Result, error) {
@@ -64,7 +63,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
-	pools, err := r.fetchPools(ctx, cluster)
+	pools, err := r.ResourceClient.FetchExistingAndDesiredPools(ctx, cluster)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return ctrl.Result{}, err
@@ -151,7 +150,7 @@ func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U,
 	for _, set := range pools.ToCreate() {
 		logger.V(traceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+		if err := r.ResourceClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return nil, false, fmt.Errorf("creating statefulset: %w", err)
 		}
 	}
@@ -160,7 +159,7 @@ func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U,
 	for _, set := range pools.ToScaleUp() {
 		logger.V(traceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+		if err := r.ResourceClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
 		}
 	}
@@ -169,7 +168,7 @@ func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U,
 	// here we can just wholesale patch everything
 	for _, set := range pools.RequiresUpdate() {
 		logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+		if err := r.ResourceClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return nil, false, fmt.Errorf("updating statefulset: %w", err)
 		}
 	}
@@ -254,31 +253,9 @@ func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U,
 	return admin, false, nil
 }
 
-func (r *ClusterReconciler[T, U]) reconcileClusterConfiguration(ctx context.Context, cluster U, admin *rpadmin.AdminAPI) error {
+func (r *ClusterReconciler[T, U]) reconcileClusterConfiguration(_ context.Context, _ U, _ *rpadmin.AdminAPI) error {
 	// TODO
 	return nil
-}
-
-func (r *ClusterReconciler[T, U]) fetchPools(ctx context.Context, cluster U) (*resources.PoolTracker, error) {
-	pools := resources.NewPoolTracker(cluster.GetGeneration())
-
-	existingPools, err := r.ResourceClient.FetchExistingPools(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("fetching existing pools: %w", err)
-	}
-
-	if err := pools.AddExisting(existingPools...); err != nil {
-		return nil, fmt.Errorf("adding existing pools: %w", err)
-	}
-
-	desired, err := r.ResourceManager.NodePools(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("constructing desired pools: %w", err)
-	}
-
-	pools.AddDesired(desired...)
-
-	return pools, nil
 }
 
 func (r *ClusterReconciler[T, U]) fetchClusterHealth(ctx context.Context, cluster U) (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
@@ -320,7 +297,7 @@ func (r *ClusterReconciler[T, U]) scaleDown(ctx context.Context, admin *rpadmin.
 	logger.V(traceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
-	if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set.StatefulSet); err != nil {
+	if err := r.ResourceClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
 		return false, fmt.Errorf("scaling down statefulset: %w", err)
 	}
 	// we only do a statefulset at a time, waiting for them to
@@ -358,7 +335,7 @@ func (r *ClusterReconciler[T, U]) decommissionBroker(ctx context.Context, admin 
 }
 
 func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
-	if r.ResourceManager.SetClusterStatus(cluster, status) {
+	if r.ResourceClient.SetClusterStatus(cluster, status) {
 		syncErr := r.Client.Status().Update(ctx, cluster)
 		err = errors.Join(syncErr, err)
 	}
@@ -368,7 +345,7 @@ func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, sta
 
 func (r *ClusterReconciler[T, U]) requeue(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	var err error
-	if r.ResourceManager.SetClusterStatus(cluster, status) {
+	if r.ResourceClient.SetClusterStatus(cluster, status) {
 		err = r.Client.Status().Update(ctx, cluster)
 	}
 

@@ -32,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
+
 type Cluster[T any] interface {
 	client.Object
 	*T
@@ -42,22 +44,16 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 	return U(&t)
 }
 
-type ResourceClient[T any, U Cluster[T]] interface {
-	ListResources(ctx context.Context, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error)
-	ListOwnedResources(ctx context.Context, owner U, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error)
-	PatchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error
-	SyncAll(ctx context.Context, cluster U) error
-	DeleteAll(ctx context.Context, cluster U) (bool, error)
-	WatchResources(builder *builder.Builder, cluster U) error
-	FetchExistingPools(ctx context.Context, cluster U) ([]*Pool, error)
-}
-
-func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resources ResourceManager[T, U]) ResourceClient[T, U] {
-	return &resourceClient[T, U]{
-		client:  mgr.GetClient(),
-		scheme:  mgr.GetScheme(),
-		mapper:  mgr.GetRESTMapper(),
-		manager: resources,
+func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
+	return &ResourceClient[T, U]{
+		client:                 mgr.GetClient(),
+		scheme:                 mgr.GetScheme(),
+		mapper:                 mgr.GetRESTMapper(),
+		ownershipResolver:      ownershipResolver,
+		statusUpdater:          statusUpdater,
+		nodePoolRenderer:       nodePoolRenderer,
+		simpleResourceRenderer: simpleResourceRenderer,
 	}
 }
 
@@ -104,14 +100,17 @@ func getResourceScope(mapper meta.RESTMapper, scheme *runtime.Scheme, object cli
 	return mapping.Scope, nil
 }
 
-type resourceClient[T any, U Cluster[T]] struct {
-	client  client.Client
-	scheme  *runtime.Scheme
-	mapper  meta.RESTMapper
-	manager ResourceManager[T, U]
+type ResourceClient[T any, U Cluster[T]] struct {
+	client                 client.Client
+	scheme                 *runtime.Scheme
+	mapper                 meta.RESTMapper
+	ownershipResolver      OwnershipResolver[T, U]
+	statusUpdater          ClusterStatusUpdater[T, U]
+	nodePoolRenderer       NodePoolRenderer[T, U]
+	simpleResourceRenderer SimpleResourceRenderer[T, U]
 }
 
-func (c *resourceClient[T, U]) listResources(ctx context.Context, object client.Object, opts ...client.ListOption) ([]client.Object, error) {
+func (c *ResourceClient[T, U]) listResources(ctx context.Context, object client.Object, opts ...client.ListOption) ([]client.Object, error) {
 	kind, err := getGroupVersionKind(c.client.Scheme(), object)
 	if err != nil {
 		return nil, err
@@ -144,38 +143,37 @@ func (c *resourceClient[T, U]) listResources(ctx context.Context, object client.
 	return sortCreation(converted), nil
 }
 
-func (c *resourceClient[T, U]) listMatchingResources(ctx context.Context, object client.Object, labels map[string]string, opts ...client.ListOption) ([]client.Object, error) {
-	return c.listResources(ctx, object, append([]client.ListOption{client.MatchingLabels(labels)}, opts...)...)
-}
-
-func (r *resourceClient[T, U]) ListResources(ctx context.Context, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error) {
-	return r.listResources(ctx, resourceType, opts...)
-}
-
-func (r *resourceClient[T, U]) ListOwnedResources(ctx context.Context, owner U, resourceType client.Object, opts ...client.ListOption) ([]client.Object, error) {
-	return r.listMatchingResources(ctx, resourceType, r.manager.OwnerLabels(owner), opts...)
-}
-
-func (r *resourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner U) ([]client.Object, error) {
+func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner U, includeNodePools bool) ([]client.Object, error) {
 	resources := []client.Object{}
-	for _, resourceType := range r.manager.OwnedResourceTypes(owner) {
-		matching, err := r.listMatchingResources(ctx, resourceType, r.manager.OwnerLabels(owner))
+	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
+		matching, err := r.listResources(ctx, resourceType, client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(owner)))
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, matching...)
+		filtered := []client.Object{}
+		for i := range matching {
+			// special case the node pools
+			if includeNodePools || !r.nodePoolRenderer.IsNodePool(matching[i]) {
+				filtered = append(filtered, matching[i])
+			}
+		}
+		resources = append(resources, filtered...)
 	}
 	return resources, nil
 }
 
-func (c *resourceClient[T, U]) PatchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
+func (c *ResourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
 	if err := c.normalize(object, owner, extraLabels...); err != nil {
 		return err
 	}
-	return c.client.Patch(ctx, object, client.Apply, c.manager.GetFieldOwner(), client.ForceOwnership)
+	return c.client.Patch(ctx, object, client.Apply, defaultFieldOwner, client.ForceOwnership)
 }
 
-func (n *resourceClient[T, U]) normalize(object client.Object, owner U, extraLabels ...map[string]string) error {
+func (c *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *appsv1.StatefulSet) error {
+	return c.patchOwnedResource(ctx, owner, set)
+}
+
+func (n *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLabels ...map[string]string) error {
 	kind, err := getGroupVersionKind(n.scheme, object)
 	if err != nil {
 		return err
@@ -192,7 +190,7 @@ func (n *resourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 		labels = map[string]string{}
 	}
 
-	for name, value := range n.manager.OwnerLabels(owner) {
+	for name, value := range n.ownershipResolver.GetOwnerLabels(owner) {
 		labels[name] = value
 	}
 	for _, extra := range extraLabels {
@@ -210,8 +208,13 @@ func (n *resourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 	return nil
 }
 
-func (r *resourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
-	resources, err := r.listAllOwnedResources(ctx, owner)
+func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status ClusterStatus) bool {
+	return r.statusUpdater.Update(cluster, status)
+}
+
+func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
+	// we don't sync node pools here
+	resources, err := r.listAllOwnedResources(ctx, owner, false)
 	if err != nil {
 		return err
 	}
@@ -220,7 +223,7 @@ func (r *resourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 		toDelete[client.ObjectKeyFromObject(resource)] = resource
 	}
 
-	toSync, err := r.manager.OwnedResources(ctx, owner)
+	toSync, err := r.simpleResourceRenderer.Render(ctx, owner)
 	if err != nil {
 		return err
 	}
@@ -229,7 +232,7 @@ func (r *resourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	errs := []error{}
 
 	for _, resource := range toSync {
-		if err := r.PatchOwnedResource(ctx, owner, resource); err != nil {
+		if err := r.patchOwnedResource(ctx, owner, resource); err != nil {
 			errs = append(errs, err)
 		}
 		delete(toDelete, client.ObjectKeyFromObject(resource))
@@ -246,8 +249,9 @@ func (r *resourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	return errors.Join(errs...)
 }
 
-func (r *resourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
-	resources, err := r.listAllOwnedResources(ctx, owner)
+func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
+	// since this is a widespread deletion, we can delete even stateful sets
+	resources, err := r.listAllOwnedResources(ctx, owner, true)
 	if err != nil {
 		return false, err
 	}
@@ -296,8 +300,8 @@ func (e *Pool) ControllerRevisionNames() []string {
 	return revisionNames
 }
 
-func (r *resourceClient[T, U]) FetchExistingPools(ctx context.Context, cluster U) ([]*Pool, error) {
-	sets, err := r.ListOwnedResources(ctx, cluster, &appsv1.StatefulSet{})
+func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U) ([]*Pool, error) {
+	sets, err := r.listResources(ctx, &appsv1.StatefulSet{}, client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
 	if err != nil {
 		return nil, fmt.Errorf("listing StatefulSets: %w", err)
 	}
@@ -311,7 +315,7 @@ func (r *resourceClient[T, U]) FetchExistingPools(ctx context.Context, cluster U
 			return nil, fmt.Errorf("constructing label selector: %w", err)
 		}
 
-		revisions, err := r.ListResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
+		revisions, err := r.listResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
@@ -326,7 +330,7 @@ func (r *resourceClient[T, U]) FetchExistingPools(ctx context.Context, cluster U
 
 		}
 
-		pods, err := r.ListResources(ctx, &corev1.Pod{}, client.MatchingLabelsSelector{
+		pods, err := r.listResources(ctx, &corev1.Pod{}, client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
@@ -348,8 +352,33 @@ func (r *resourceClient[T, U]) FetchExistingPools(ctx context.Context, cluster U
 	return existing, nil
 }
 
-func (r *resourceClient[T, U]) WatchResources(builder *builder.Builder, cluster U) error {
-	for _, resourceType := range r.manager.OwnedResourceTypes(cluster) {
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U) (*PoolTracker, error) {
+	pools := NewPoolTracker(cluster.GetGeneration())
+
+	existingPools, err := r.fetchExistingPools(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("fetching existing pools: %w", err)
+	}
+
+	if err := pools.AddExisting(existingPools...); err != nil {
+		return nil, fmt.Errorf("adding existing pools: %w", err)
+	}
+
+	desired, err := r.nodePoolRenderer.Render(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("constructing desired pools: %w", err)
+	}
+
+	pools.AddDesired(desired...)
+
+	return pools, nil
+}
+
+func (r *ResourceClient[T, U]) WatchResources(builder *builder.Builder, cluster U) error {
+	// set an Owns on node pool statefulsets
+	builder = builder.Owns(&appsv1.StatefulSet{})
+
+	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
 		if err != nil {
 			return err
@@ -364,9 +393,9 @@ func (r *resourceClient[T, U]) WatchResources(builder *builder.Builder, cluster 
 		// since resources are cluster-scoped we need to call a Watch on them with some
 		// custom mappings
 		builder = builder.Watches(resourceType, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			if owned, owner := r.manager.GetOwner(o); owned {
+			if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
 				return []reconcile.Request{{
-					NamespacedName: owner,
+					NamespacedName: *owner,
 				}}
 			}
 			return nil
