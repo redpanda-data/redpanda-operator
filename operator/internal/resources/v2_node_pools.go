@@ -49,9 +49,9 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alph
 
 	resources := []*appsv1.StatefulSet{}
 
-	// filter out non-statefulsets
+	// filter out non-nodepools
 	for _, object := range rendered {
-		if object.GetObjectKind().GroupVersionKind().Kind == "StatefulSet" {
+		if isNodePool(object) {
 			resources = append(resources, object.(*appsv1.StatefulSet))
 		}
 	}
@@ -59,11 +59,15 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alph
 	return resources, nil
 }
 
-func (m *V2NodePoolRenderer) IsNodePool(object client.Object) bool {
+func isNodePool(object client.Object) bool {
 	if labels := object.GetLabels(); labels != nil {
-		if _, ok := labels[defaultNodepoolLabel]; ok {
+		if label, ok := labels["chart.redpanda.com/component"]; ok && label == "nodepool" {
 			return true
 		}
 	}
 	return false
+}
+
+func (m *V2NodePoolRenderer) IsNodePool(object client.Object) bool {
+	return isNodePool(object)
 }

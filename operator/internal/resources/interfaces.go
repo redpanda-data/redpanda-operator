@@ -12,7 +12,6 @@ package resources
 import (
 	"context"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,7 +22,6 @@ const (
 	defaultOwnerLabel     = "cluster.redpanda.com/owner"
 	defaultOperatorLabel  = "cluster.redpanda.com/operator"
 	defaultNamespaceLabel = "cluster.redpanda.com/namespace"
-	defaultNodepoolLabel  = "cluster.redpanda.com/nodepool"
 )
 
 type ClusterStatus struct {
@@ -57,12 +55,3 @@ type ClusterStatusUpdater[T any, U Cluster[T]] interface {
 }
 
 type ResourceManagerFactory[T any, U Cluster[T]] func(mgr ctrl.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])
-
-func V2ResourceManagers(mgr ctrl.Manager) (
-	OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	ClusterStatusUpdater[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-) {
-	return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr), NewV2SimpleResourceRenderer(mgr)
-}

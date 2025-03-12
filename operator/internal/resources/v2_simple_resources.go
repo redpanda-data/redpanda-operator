@@ -50,7 +50,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpanda
 
 	// filter out the statefulsets
 	for _, object := range rendered {
-		if object.GetObjectKind().GroupVersionKind().Kind != "StatefulSet" {
+		if !isNodePool(object) {
 			resources = append(resources, object)
 		}
 	}

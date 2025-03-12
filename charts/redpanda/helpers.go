@@ -83,6 +83,27 @@ func FullLabels(dot *helmette.Dot) map[string]string {
 	return helmette.Merge(labels, defaults)
 }
 
+// full helm labels + common labels + node pool labels
+func NodePoolLabels(dot *helmette.Dot) map[string]string {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	labels := map[string]string{}
+	if values.CommonLabels != nil {
+		labels = values.CommonLabels
+	}
+
+	defaults := map[string]string{
+		"helm.sh/chart":                ChartLabel(dot),
+		"app.kubernetes.io/name":       Name(dot),
+		"app.kubernetes.io/instance":   dot.Release.Name,
+		"app.kubernetes.io/managed-by": dot.Release.Service,
+		"app.kubernetes.io/component":  Name(dot),
+		"chart.redpanda.com/component": "node-pool",
+	}
+
+	return helmette.Merge(labels, defaults)
+}
+
 // Create the name of the service account to use
 func ServiceAccountName(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)

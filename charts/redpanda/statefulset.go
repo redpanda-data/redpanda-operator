@@ -987,7 +987,7 @@ func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      Fullname(dot),
 			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Labels:    NodePoolLabels(dot),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{

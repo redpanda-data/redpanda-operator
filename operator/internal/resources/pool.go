@@ -10,11 +10,8 @@
 package resources
 
 import (
-	"fmt"
-	"slices"
 	"sort"
 	"strconv"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,69 +20,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const generationLabel = "cluster.redpanda.com/generation"
-
-func sortByName[T client.Object](objs []T) []T {
-	slices.SortStableFunc(objs, func(a, b T) int {
-		return strings.Compare(client.ObjectKeyFromObject(a).String(), client.ObjectKeyFromObject(b).String())
-	})
-
-	return objs
-}
-
-func extractOrdinal(name string) (int, error) {
-	resourceTokens := strings.Split(name, "-")
-	if len(resourceTokens) < 2 {
-		return 0, fmt.Errorf("invalid resource name for ordinal fetching: %s", name)
-	}
-
-	// grab the last item after the "-"" which should be the ordinal and parse it
-	ordinal, err := strconv.Atoi(resourceTokens[len(resourceTokens)-1])
-	if err != nil {
-		return 0, fmt.Errorf("parsing resource name %q: %w", name, err)
-	}
-
-	return ordinal, nil
-}
-
 type podsWithOrdinals struct {
 	ordinal int
 	pod     *corev1.Pod
-}
-
-func sortRevisions(controllerRevisions []*appsv1.ControllerRevision) []*appsv1.ControllerRevision {
-	// from https://github.com/kubernetes/kubernetes/blob/dd25c6a6cb4ea0be1e304de35de45adeef78b264/pkg/controller/history/controller_history.go#L158
-	sort.SliceStable(controllerRevisions, func(i, j int) bool {
-		if controllerRevisions[i].Revision == controllerRevisions[j].Revision {
-			if controllerRevisions[j].CreationTimestamp.Equal(&controllerRevisions[i].CreationTimestamp) {
-				return controllerRevisions[i].Name < controllerRevisions[j].Name
-			}
-			return controllerRevisions[j].CreationTimestamp.After(controllerRevisions[i].CreationTimestamp.Time)
-		}
-		return controllerRevisions[i].Revision < controllerRevisions[j].Revision
-	})
-
-	return controllerRevisions
-}
-
-func sortPodsByOrdinal(pods ...*corev1.Pod) ([]*podsWithOrdinals, error) {
-	withOrdinals := []*podsWithOrdinals{}
-	for _, pod := range pods {
-		ordinal, err := extractOrdinal(pod.GetName())
-		if err != nil {
-			return nil, err
-		}
-		withOrdinals = append(withOrdinals, &podsWithOrdinals{
-			ordinal: ordinal,
-			pod:     pod.DeepCopy(),
-		})
-	}
-
-	sort.SliceStable(withOrdinals, func(i, j int) bool {
-		return withOrdinals[i].ordinal < withOrdinals[j].ordinal
-	})
-
-	return withOrdinals, nil
 }
 
 type poolWithOrdinals struct {
@@ -94,12 +31,9 @@ type poolWithOrdinals struct {
 	revisions []*appsv1.ControllerRevision
 }
 
-func newPoolWithOrdinals(pool *Pool, pods ...*podsWithOrdinals) *poolWithOrdinals {
-	return &poolWithOrdinals{
-		set:       pool.StatefulSet,
-		revisions: sortRevisions(pool.Revisions),
-		pods:      pods,
-	}
+type ScaleDownSet struct {
+	LastPod     *corev1.Pod
+	StatefulSet *appsv1.StatefulSet
 }
 
 type PoolTracker struct {
@@ -132,22 +66,15 @@ func (p *PoolTracker) DesiredStatefulSets() []string {
 	return sets
 }
 
-func (p *PoolTracker) AddExisting(pools ...*Pool) error {
+func (p *PoolTracker) AddExisting(pools ...*poolWithOrdinals) {
 	for i := range pools {
-		withOrdinals, err := sortPodsByOrdinal(pools[i].Pods...)
-		if err != nil {
-			return err
-		}
-
-		p.existingPools[client.ObjectKeyFromObject(pools[i].StatefulSet)] = newPoolWithOrdinals(pools[i], withOrdinals...)
+		p.existingPools[client.ObjectKeyFromObject(pools[i].set)] = pools[i]
 	}
-
-	return nil
 }
 
 func (p *PoolTracker) AddDesired(sets ...*appsv1.StatefulSet) {
 	for _, set := range sets {
-		p.desiredPools[client.ObjectKeyFromObject(set)] = newPoolWithOrdinals(&Pool{StatefulSet: set})
+		p.desiredPools[client.ObjectKeyFromObject(set)] = &poolWithOrdinals{set: set.DeepCopy()}
 	}
 }
 
@@ -229,11 +156,6 @@ func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
 	}
 
 	return sortByName(sets)
-}
-
-type ScaleDownSet struct {
-	LastPod     *corev1.Pod
-	StatefulSet *appsv1.StatefulSet
 }
 
 func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
