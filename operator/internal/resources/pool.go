@@ -153,7 +153,6 @@ type ScaleReadiness int
 const (
 	ScaleReady ScaleReadiness = iota
 	ScaleNotReady
-	ScaleNeedsClusterCheck
 )
 
 func (p *PoolManager) CheckScale() ScaleReadiness {
@@ -170,9 +169,7 @@ func (p *PoolManager) CheckScale() ScaleReadiness {
 		}
 	}
 
-	// at this point all of our sets are stable, but we need to check the cluster
-	// health to see whether or not we can do a scale operation
-	return ScaleNeedsClusterCheck
+	return ScaleReady
 }
 
 func (p *PoolManager) ToCreate() []*appsv1.StatefulSet {
@@ -197,10 +194,10 @@ func (p *PoolManager) ToScaleUp() []*appsv1.StatefulSet {
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
-	for nn := range p.existingPools {
-		if _, ok := p.desiredPools[nn]; ok {
-			existing, desired := p.existingPools[nn], p.desiredPools[nn]
-			existingReplicas, desiredReplicas := existing.set.Status.Replicas, desired.set.Status.Replicas
+	for nn, existing := range p.existingPools {
+		if desired, ok := p.desiredPools[nn]; ok {
+			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
+			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 
 			if existingReplicas < desiredReplicas {
 				// we use the desired set spec here
@@ -222,9 +219,16 @@ func (p *PoolManager) RequiresUpdate() []*appsv1.StatefulSet {
 
 	for nn, existing := range p.existingPools {
 		if desired, ok := p.desiredPools[nn]; ok && existing.set.Labels[generationLabel] != generation {
-			set := desired.set.DeepCopy()
-			set.Labels[generationLabel] = generation
-			sets = append(sets, set)
+			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
+			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
+
+			// we only return sets in which we already have matched replicas
+			// since the scale operations handle patching the other statefulsets
+			if existingReplicas == desiredReplicas {
+				set := desired.set.DeepCopy()
+				set.Labels[generationLabel] = generation
+				sets = append(sets, set)
+			}
 		}
 	}
 

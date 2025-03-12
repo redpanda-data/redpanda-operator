@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -132,6 +133,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		result, err := ignoreConflict(err)
 		if requeue {
 			result.Requeue = true
+			result.RequeueAfter = 10 * time.Second
 		}
 
 		return result, err
@@ -180,68 +182,50 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		return syncStatus(err)
 	}
 
-	var (
-		fetched bool
-		admin   *rpadmin.AdminAPI
-		health  rpadmin.ClusterHealthOverview
-	)
-	fetchClusterHealth := func() (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
-		if fetched {
-			return admin, health, nil
-		}
-		adminClient, err := r.ClientFactory.RedpandaAdminClient(ctx, cluster)
-		if err != nil {
-			return nil, health, err
-		}
-		clusterHealth, err := adminClient.GetHealthOverview(ctx)
-		if err != nil {
-			return nil, health, err
-		}
-
-		admin = adminClient
-		health = clusterHealth
-		fetched = true
-
-		return admin, health, nil
-	}
-
 	switch pools.CheckScale() {
 	case resources.ScaleNotReady:
 		logger.V(traceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so wait
 		return syncStatus(requeueErr)
-	case resources.ScaleNeedsClusterCheck:
-		logger.V(traceLevel).Info("checking cluster stability")
-
-		_, health, err := fetchClusterHealth()
-		if err != nil {
-			logger.Error(err, "fetching cluster health")
-			return syncStatus(err)
-		}
-		if !health.IsHealthy {
-			// TODO: is this the right check?
-			// do we also need a check for decommissioning
-			// nodes?
-			logger.V(traceLevel).Info("cluster not currently healthy")
-			return syncStatus(requeueErr)
-		}
-
-		fallthrough
 	case resources.ScaleReady:
 		logger.V(traceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
 
 		brokerMap := map[string]int{}
 
-		patchStatefulSet := func(set *appsv1.StatefulSet, onError string) (ctrl.Result, error) {
-			logger.V(traceLevel).Info("patching StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-
-			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				logger.Error(err, onError)
-				return syncStatus(err)
+		var admin *rpadmin.AdminAPI
+		var health rpadmin.ClusterHealthOverview
+		fetchClusterHealth := func() (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
+			var err error
+			admin, err = r.ClientFactory.RedpandaAdminClient(ctx, cluster)
+			if err != nil {
+				return nil, health, err
 			}
-			// we only do a statefulset at a time, waiting for them to
-			// become stable first
-			return syncStatus(requeueErr)
+			health, err = admin.GetHealthOverview(ctx)
+			if err != nil {
+				return nil, health, err
+			}
+
+			return admin, health, nil
+		}
+
+		checkHealthToRoll := func(pod *corev1.Pod) (bool, bool) {
+			_, ok := brokerMap[pod.GetName()]
+			if !ok {
+				// we don't actually have this broker in the cluster
+				// anymore, which means it's always safe to delete
+				// the pod and continue with the next operations
+				return true, true
+			}
+
+			// TODO: don't just check overall cluster health, but use
+			// scoped API endpoints for rolling a broker
+			if health.IsHealthy {
+				// roll and halt execution
+				return true, false
+			}
+
+			// don't roll, but continue
+			return false, true
 		}
 
 		scaleDown := func(set *resources.ScaleDownSet) (ctrl.Result, error) {
@@ -282,22 +266,46 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			logger.V(traceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 			// now patch the statefulset to remove the pod
-			return patchStatefulSet(set.StatefulSet, "scaling down statefulset")
+			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set.StatefulSet); err != nil {
+				logger.Error(err, "scaling down statefulset")
+				return syncStatus(err)
+			}
+			// we only do a statefulset at a time, waiting for them to
+			// become stable first
+			return syncStatus(requeueErr)
 		}
 
 		// first create any pools that don't currently exists
 		for _, set := range pools.ToCreate() {
 			logger.V(traceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-			return patchStatefulSet(set, "creating node pool statefulset")
+
+			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+				logger.Error(err, "creating node pool statefulset")
+				return syncStatus(err)
+			}
 		}
 
 		// next scale up any under-provisioned pools and patch them to use the new spec
 		for _, set := range pools.ToScaleUp() {
 			logger.V(traceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-			return patchStatefulSet(set, "scaling up statefulset")
+
+			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+				logger.Error(err, "creating node pool statefulset")
+				return syncStatus(err)
+			}
 		}
 
-		admin, health, err := fetchClusterHealth()
+		// now make sure all of the patch any sets that might have changed without affecting the cluster size
+		// here we can just wholesale patch everything
+		for _, set := range pools.RequiresUpdate() {
+			logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+				logger.Error(err, "updating statefulset")
+				return syncStatus(err)
+			}
+		}
+
+		admin, health, err = fetchClusterHealth()
 		if err != nil {
 			logger.Error(err, "fetching cluster health")
 			return syncStatus(err)
@@ -330,30 +338,32 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 		}
 
-		// now make sure all of the patch any sets that might have changed without affecting the cluster size
-		// here we can just wholesale patch everything
-		updates := pools.RequiresUpdate()
-		for _, set := range updates {
-			logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-			if _, err := patchStatefulSet(set, "updating statefulset"); err != nil {
-				return syncStatus(err)
-			}
-		}
-
-		if len(updates) != 0 {
-			return syncStatus(requeueErr)
-		}
-
 		// finally, we make sure we roll every pod that is not in-sync with its statefulset
-		for _, pod := range pools.PodsToRoll() {
-			logger.V(traceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+		rollSet := pools.PodsToRoll()
+		rolled := false
+		for _, pod := range rollSet {
+			shouldRoll, continueExecution := checkHealthToRoll(pod)
+			if shouldRoll {
+				rolled = true
+				logger.V(traceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
-			if err := r.Client.Delete(ctx, pod); err != nil {
-				logger.Error(err, "deleting pod")
-				return syncStatus(err)
+				if err := r.Client.Delete(ctx, pod); err != nil {
+					logger.Error(err, "deleting pod")
+					return syncStatus(err)
+				}
 			}
-			// requeue since we just rolled a pod
-			// and we want for the system to stabilize
+
+			if !continueExecution {
+				// requeue since we just rolled a pod
+				// and we want for the system to stabilize
+				return syncStatus(requeueErr)
+			}
+		}
+
+		if !rolled && len(rollSet) > 0 {
+			// here we're in a state where we can't currently roll any
+			// pods but we need to, therefore we just reschedule rather
+			// than marking the cluster as quiesced.
 			return syncStatus(requeueErr)
 		}
 	}
