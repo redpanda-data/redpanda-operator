@@ -15,16 +15,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// V2ClusterStatusUpdater represents a status updater for v2 clusters.
 type V2ClusterStatusUpdater struct{}
 
 var _ ClusterStatusUpdater[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2ClusterStatusUpdater)(nil)
 
+// NewV2ClusterStatusUpdater returns a V2ClusterStatusUpdater.
 func NewV2ClusterStatusUpdater() *V2ClusterStatusUpdater {
 	return &V2ClusterStatusUpdater{}
 }
 
+// Update updates the given Redpanda v2 cluster with the given cluster status.
 func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.Redpanda, status ClusterStatus) bool {
-	// TODO
+	// TODO: proper implementation of our status syncing code
 	condition := metav1.Condition{
 		Type:               "Quiesced",
 		Status:             metav1.ConditionFalse,

@@ -75,7 +75,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 	if cluster.GetDeletionTimestamp() != nil {
 		// clean up all dependant resources
 		if deleted, err := r.ResourceClient.DeleteAll(ctx, cluster); deleted || err != nil {
-			return r.syncStatus(ctx, err, status, cluster)
+			return r.syncStatusErr(ctx, err, status, cluster)
 		}
 
 		if controllerutil.RemoveFinalizer(cluster, clusterFinalizer) {
@@ -104,22 +104,22 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 	// prior to us scaling up our node pools
 	if err := r.reconcileResources(ctx, cluster); err != nil {
 		logger.Error(err, "error reconciling resources")
-		return r.syncStatus(ctx, err, status, cluster)
+		return r.syncStatusErr(ctx, err, status, cluster)
 	}
 
 	// next we sync up all of our pools themselves
 	admin, requeue, err := r.reconcilePools(ctx, cluster, pools)
 	if err != nil {
 		logger.Error(err, "error reconciling pools")
-		return r.syncStatus(ctx, err, status, cluster)
+		return r.syncStatusErr(ctx, err, status, cluster)
 	}
 	if requeue {
-		return r.requeue(ctx, status, cluster)
+		return r.syncStatusAndRequeue(ctx, status, cluster)
 	}
 
 	// finally we synchronize any cluster configuration needed
 	if err := r.reconcileClusterConfiguration(ctx, cluster, admin); err != nil {
-		return r.syncStatus(ctx, err, status, cluster)
+		return r.syncStatusErr(ctx, err, status, cluster)
 	}
 
 	logger.V(traceLevel).Info("cluster quiesced")
@@ -128,7 +128,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 	// and so we can mark the status as quiesced.
 	status.Quiesced = true
 
-	return r.syncStatus(ctx, nil, status, cluster)
+	return r.syncStatus(ctx, status, cluster)
 }
 
 func (r *ClusterReconciler[T, U]) reconcileResources(ctx context.Context, cluster U) error {
@@ -334,7 +334,11 @@ func (r *ClusterReconciler[T, U]) decommissionBroker(ctx context.Context, admin 
 	return false, nil
 }
 
-func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
+func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
+	return r.syncStatusErr(ctx, nil, status, cluster)
+}
+
+func (r *ClusterReconciler[T, U]) syncStatusErr(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	if r.ResourceClient.SetClusterStatus(cluster, status) {
 		syncErr := r.Client.Status().Update(ctx, cluster)
 		err = errors.Join(syncErr, err)
@@ -343,7 +347,7 @@ func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, sta
 	return ignoreConflict(err)
 }
 
-func (r *ClusterReconciler[T, U]) requeue(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
+func (r *ClusterReconciler[T, U]) syncStatusAndRequeue(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	var err error
 	if r.ResourceClient.SetClusterStatus(cluster, status) {
 		err = r.Client.Status().Update(ctx, cluster)

@@ -21,18 +21,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type V2SimpleResourceRenderer struct {
 	kubeConfig clientcmdapi.Config
 }
 
 var _ SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2SimpleResourceRenderer)(nil)
 
+// NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
 func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
 		kubeConfig: kube.RestToConfig(mgr.GetConfig()),
 	}
 }
 
+// Render returns a list of simple resources for the given Redpanda v2 cluster. It does this by
+// delegating to our particular resource rendering pipeline and filtering out anything that
+// should be considered a node pool.
 func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
 	values := cluster.Spec.ClusterSpec.DeepCopy()
 
@@ -58,6 +63,8 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpanda
 	return resources, nil
 }
 
+// WatchedResourceTypes returns the list of all the resources that the cluster
+// controller needs to watch.
 func (m *V2SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return redpanda.Types()
 }

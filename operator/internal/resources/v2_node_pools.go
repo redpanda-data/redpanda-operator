@@ -22,18 +22,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// V2NodePoolRenderer represents a node pool renderer for v2 clusters.
 type V2NodePoolRenderer struct {
 	kubeConfig clientcmdapi.Config
 }
 
 var _ NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2NodePoolRenderer)(nil)
 
+// NewV2NodePoolRenderer returns a V2NodePoolRenderer.
 func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
 	return &V2NodePoolRenderer{
 		kubeConfig: kube.RestToConfig(mgr.GetConfig()),
 	}
 }
 
+// Render returns a list of StatefulSets for the given Redpanda v2 cluster. It does this by
+// delegating to our particular resource rendering pipeline and filtering out anything that
+// isn't a node pool.
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
 	values := cluster.Spec.ClusterSpec.DeepCopy()
 
@@ -59,15 +64,19 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alph
 	return resources, nil
 }
 
+// isNodePool returns whether or not the object passed to it should be considered a node pool.
+// This concrete implementation just looks for a label on a rendered object that says it's a
+// node pool.
 func isNodePool(object client.Object) bool {
 	if labels := object.GetLabels(); labels != nil {
-		if label, ok := labels["chart.redpanda.com/component"]; ok && label == "nodepool" {
+		if label, ok := labels["chart.redpanda.com/component"]; ok && label == "node-pool" {
 			return true
 		}
 	}
 	return false
 }
 
+// IsNodePool returns whether or not the object passed to it should be considered a node pool.
 func (m *V2NodePoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
 }

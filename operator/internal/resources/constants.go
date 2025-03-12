@@ -12,6 +12,9 @@ package resources
 import "sigs.k8s.io/controller-runtime/pkg/client"
 
 const (
-	defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
-	generationLabel   = "cluster.redpanda.com/generation"
+	defaultFieldOwner     = client.FieldOwner("cluster.redpanda.com/operator")
+	defaultNamespaceLabel = "cluster.redpanda.com/namespace"
+	defaultOperatorLabel  = "cluster.redpanda.com/operator"
+	defaultOwnerLabel     = "cluster.redpanda.com/owner"
+	generationLabel       = "cluster.redpanda.com/generation"
 )

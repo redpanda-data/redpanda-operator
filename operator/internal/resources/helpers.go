@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// getGroupVersionKind gets a GVK for an object based on all
+// GVKs registerd with a runtime scheme.
 func getGroupVersionKind(scheme *runtime.Scheme, object client.Object) (*schema.GroupVersionKind, error) {
 	kinds, _, err := scheme.ObjectKinds(object)
 	if err != nil {
@@ -42,6 +44,7 @@ func getGroupVersionKind(scheme *runtime.Scheme, object client.Object) (*schema.
 	}, nil
 }
 
+// sortCreation sorts a list of objects by their creation timestamp
 func sortCreation[T client.Object](objects []T) []T {
 	sort.SliceStable(objects, func(i, j int) bool {
 		a, b := objects[i], objects[j]
@@ -54,6 +57,8 @@ func sortCreation[T client.Object](objects []T) []T {
 	return objects
 }
 
+// getResourceScope can be used to determine whether an object is namespace-scoped or cluster-scoped
+// (and hence whether or not object ownership can be set on it)
 func getResourceScope(mapper meta.RESTMapper, scheme *runtime.Scheme, object client.Object) (meta.RESTScope, error) {
 	gvk, err := getGroupVersionKind(scheme, object)
 	if err != nil {
@@ -68,6 +73,7 @@ func getResourceScope(mapper meta.RESTMapper, scheme *runtime.Scheme, object cli
 	return mapping.Scope, nil
 }
 
+// sortRevisions sorts a statefulset's controlerRevisions by revision number
 func sortRevisions(controllerRevisions []*appsv1.ControllerRevision) []*appsv1.ControllerRevision {
 	// from https://github.com/kubernetes/kubernetes/blob/dd25c6a6cb4ea0be1e304de35de45adeef78b264/pkg/controller/history/controller_history.go#L158
 	sort.SliceStable(controllerRevisions, func(i, j int) bool {
@@ -83,6 +89,8 @@ func sortRevisions(controllerRevisions []*appsv1.ControllerRevision) []*appsv1.C
 	return controllerRevisions
 }
 
+// sortPodsByOrdinal sorts a list of pods by their ordinals, wrapping them
+// in a helper container to easily fetch the ordinal subsequently.
 func sortPodsByOrdinal(pods ...*corev1.Pod) ([]*podsWithOrdinals, error) {
 	withOrdinals := []*podsWithOrdinals{}
 	for _, pod := range pods {
@@ -103,6 +111,8 @@ func sortPodsByOrdinal(pods ...*corev1.Pod) ([]*podsWithOrdinals, error) {
 	return withOrdinals, nil
 }
 
+// sortByName sorts a generic list of client.Objects by the combination
+// of their namespace/name.
 func sortByName[T client.Object](objs []T) []T {
 	slices.SortStableFunc(objs, func(a, b T) int {
 		return strings.Compare(client.ObjectKeyFromObject(a).String(), client.ObjectKeyFromObject(b).String())
@@ -111,6 +121,8 @@ func sortByName[T client.Object](objs []T) []T {
 	return objs
 }
 
+// extractOrdinal extracts an ordinal from the pod name by parsing the last
+// value after a "-" in the pod name
 func extractOrdinal(name string) (int, error) {
 	resourceTokens := strings.Split(name, "-")
 	if len(resourceTokens) < 2 {

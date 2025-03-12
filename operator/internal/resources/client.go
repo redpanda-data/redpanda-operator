@@ -29,16 +29,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// Cluster is a generic interface for a pointer to a Kubernetes object
+// that represents a cluster.
 type Cluster[T any] interface {
 	client.Object
 	*T
 }
 
+// NewClusterObject creates a new instance of a typed cluster object.
 func NewClusterObject[T any, U Cluster[T]]() U {
 	var t T
 	return U(&t)
 }
 
+// NewResourceClient creates a new instance of a ResourceClient for managing resources.
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
 	return &ResourceClient[T, U]{
@@ -52,6 +56,8 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 	}
 }
 
+// ResourceClient is a client used to manage dependent resources,
+// both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
 	client                 client.Client
 	scheme                 *runtime.Scheme
@@ -62,14 +68,18 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	simpleResourceRenderer SimpleResourceRenderer[T, U]
 }
 
+// PatchNodePoolSet updates a StatefulSet for a specific node pool.
 func (c *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *appsv1.StatefulSet) error {
 	return c.patchOwnedResource(ctx, owner, set)
 }
 
+// SetClusterStatus sets the status of the given cluster.
 func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status ClusterStatus) bool {
 	return r.statusUpdater.Update(cluster, status)
 }
 
+// SyncAll synchronizes the simple resources associated with the given cluster,
+// cleaning up any resources that should no longer exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	// we don't sync node pools here
 	resources, err := r.listAllOwnedResources(ctx, owner, false)
@@ -107,6 +117,8 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	return errors.Join(errs...)
 }
 
+// FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
+// a tracker that can be used for determining necessary operations on the pools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 
@@ -120,12 +132,13 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 		return nil, fmt.Errorf("constructing desired pools: %w", err)
 	}
 
-	pools.AddExisting(existingPools...)
-	pools.AddDesired(desired...)
+	pools.addExisting(existingPools...)
+	pools.addDesired(desired...)
 
 	return pools, nil
 }
 
+// WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
 func (r *ResourceClient[T, U]) WatchResources(builder *builder.Builder, cluster U) error {
 	// set an Owns on node pool statefulsets
 	builder = builder.Owns(&appsv1.StatefulSet{})
@@ -158,6 +171,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder *builder.Builder, cluster 
 	return nil
 }
 
+// DeleteAll deletes all resources owned by the given cluster, including node pools.
 func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
 	// since this is a widespread deletion, we can delete even stateful sets
 	resources, err := r.listAllOwnedResources(ctx, owner, true)
@@ -183,6 +197,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 	return len(alive) > 0, errors.Join(errs...)
 }
 
+// listResources lists resources of a specific type and object, returning them as an array.
 func (c *ResourceClient[T, U]) listResources(ctx context.Context, object client.Object, opts ...client.ListOption) ([]client.Object, error) {
 	kind, err := getGroupVersionKind(c.client.Scheme(), object)
 	if err != nil {
@@ -216,6 +231,7 @@ func (c *ResourceClient[T, U]) listResources(ctx context.Context, object client.
 	return sortCreation(converted), nil
 }
 
+// listAllOwnedResources lists all resources owned by a given cluster, optionally including node pools.
 func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner U, includeNodePools bool) ([]client.Object, error) {
 	resources := []client.Object{}
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
@@ -235,6 +251,7 @@ func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner 
 	return resources, nil
 }
 
+// patchOwnedResource applies a patch to a resource owned by the cluster.
 func (c *ResourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
 	if err := c.normalize(object, owner, extraLabels...); err != nil {
 		return err
@@ -242,6 +259,7 @@ func (c *ResourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, 
 	return c.client.Patch(ctx, object, client.Apply, defaultFieldOwner, client.ForceOwnership)
 }
 
+// normalize normalizes an object by setting its labels and owner references.
 func (n *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLabels ...map[string]string) error {
 	kind, err := getGroupVersionKind(n.scheme, object)
 	if err != nil {
@@ -278,6 +296,7 @@ func (n *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 	return nil
 }
 
+// fetchExistingPools fetches the existing pools (StatefulSets) for a given cluster.
 func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U) ([]*poolWithOrdinals, error) {
 	sets, err := r.listResources(ctx, &appsv1.StatefulSet{}, client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
 	if err != nil {

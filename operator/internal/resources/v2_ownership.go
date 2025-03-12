@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// V2OwnershipResolver represents an ownership resolver for v2 clusters.
 type V2OwnershipResolver struct {
 	operatorLabel  string
 	ownerLabel     string
@@ -23,6 +24,7 @@ type V2OwnershipResolver struct {
 
 var _ OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2OwnershipResolver)(nil)
 
+// NewV2OwnershipResolver returns a V2OwnershipResolver.
 func NewV2OwnershipResolver() *V2OwnershipResolver {
 	return &V2OwnershipResolver{
 		operatorLabel:  defaultOperatorLabel,
@@ -30,8 +32,12 @@ func NewV2OwnershipResolver() *V2OwnershipResolver {
 		namespaceLabel: defaultNamespaceLabel,
 	}
 }
+
+// GetOwnerLabels returns the labels for any all resources associated with a
+// v2 cluster.
 func (m *V2OwnershipResolver) GetOwnerLabels(cluster *redpandav1alpha2.Redpanda) map[string]string {
-	// TODO: handle some backwards compatibility stuff
+	// TODO: this should probably handle some backwards compatibility stuff
+	// for v2 clusters that don't yet have these labels on their resources.
 	return map[string]string{
 		m.namespaceLabel: cluster.GetNamespace(),
 		m.ownerLabel:     cluster.GetName(),
@@ -39,21 +45,27 @@ func (m *V2OwnershipResolver) GetOwnerLabels(cluster *redpandav1alpha2.Redpanda)
 	}
 }
 
+// ownerFromLabels returns the v2 cluster based on a resource's labels.
 func (m *V2OwnershipResolver) ownerFromLabels(labels map[string]string) types.NamespacedName {
-	// TODO: handle some backwards compatibility stuff
+	// TODO: this should probably handle some backwards compatibility stuff
+	// for v2 clusters that don't yet have these labels on their resources.
 	return types.NamespacedName{
 		Namespace: labels[m.namespaceLabel],
 		Name:      labels[m.ownerLabel],
 	}
 }
 
+// ownedByV2 indicates that this resource is owned by a v2 cluster
 func (m *V2OwnershipResolver) ownedByV2(labels map[string]string) bool {
-	// TODO: handle some backwards compatibility stuff
+	// TODO: this should probably handle some backwards compatibility stuff
+	// for v2 clusters that don't yet have these labels on their resources.
 	return labels[m.operatorLabel] == "v2"
 }
 
+// OwnerForObject maps an object to the v2 cluster that owns it.
 func (m *V2OwnershipResolver) OwnerForObject(object client.Object) *types.NamespacedName {
-	// TODO: handle some backwards compatibility stuff
+	// TODO: this should probably handle some backwards compatibility stuff
+	// for v2 clusters that don't yet have these labels on their resources.
 	if labels := object.GetLabels(); labels != nil && m.ownedByV2(labels) {
 		nn := m.ownerFromLabels(labels)
 		if nn.Namespace != "" && nn.Name != "" {
