@@ -1060,6 +1060,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 	tests := []struct {
 		name             string
 		pandaCluster     *vectorizedv1alpha1.Cluster
+		expectJSONEnv    bool
 		expectedEnvValue string
 	}{
 		{
@@ -1167,6 +1168,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectJSONEnv: true,
 			expectedEnvValue: fmt.Sprintf(`{"%s":%s}`,
 				"redpanda.advertised_kafka_api", `[{"name":"kafka-mtls","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":30093}]`,
 			),
@@ -1220,6 +1222,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectJSONEnv: true,
 			expectedEnvValue: fmt.Sprintf(`{"%s":%s}`,
 				"redpanda.advertised_kafka_api", `[{"name":"kafka-mtls","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":30093},{"name":"kafka-private-link","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":{{32092 | add .Index}}}]`,
 			),
@@ -1276,6 +1279,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectJSONEnv: true,
 			expectedEnvValue: fmt.Sprintf(`{"%s":%s}`,
 				"pandaproxy.advertised_pandaproxy_api", `[{"name":"proxy-mtls","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":30083}]`,
 			),
@@ -1333,6 +1337,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectJSONEnv: true,
 			expectedEnvValue: fmt.Sprintf(`{"%s":%s}`,
 				"pandaproxy.advertised_pandaproxy_api", `[{"name":"proxy-mtls","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":30083},{"name":"proxy-private-link","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":{{35082 | add .Index}}}]`,
 			),
@@ -1391,6 +1396,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 					},
 				},
 			},
+			expectJSONEnv: true,
 			expectedEnvValue: fmt.Sprintf(`{"%s":%s,"%s":%s,"%s":%s,"%s":%s}`,
 				"redpanda.kafka_api", `[{"name":"pl-kafka","address":"0.0.0.0","port":{{30092 | add .Index}}}]`,
 				"redpanda.advertised_kafka_api", `[{"name":"kafka-mtls","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.cud4cpei9bnpqoirqvk0.byoc.ign.cloud.redpanda.com","port":30093},{"name":"pl-kafka","address":"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 7 }}.redpanda.com","port":{{30092 | add .Index}}}]`,
@@ -1413,7 +1419,11 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 			if tt.expectedEnvValue == "" {
 				assert.Nil(t, envs)
 			} else {
-				assert.Equal(t, "ADDITIONAL_LISTENERS", envs[0].Name)
+				envName := "ADDITIONAL_LISTENERS"
+				if tt.expectJSONEnv {
+					envName = "ADDITIONAL_LISTENERS_JSON"
+				}
+				assert.Equal(t, envName, envs[0].Name)
 				assert.Equal(t, tt.expectedEnvValue, envs[0].Value)
 			}
 		})
