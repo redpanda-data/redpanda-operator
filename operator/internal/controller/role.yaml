@@ -17,6 +17,13 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps

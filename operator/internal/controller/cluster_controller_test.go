@@ -59,8 +59,17 @@ type ClusterControllerSuite struct {
 
 var _ suite.SetupAllSuite = (*ClusterControllerSuite)(nil)
 
-func (s *ClusterControllerSuite) TestReconciliation() {
+func (s *ClusterControllerSuite) TestBasicScaleUpAndDownReconciliation() {
 	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(5)
+
+	s.applyAndWait(rp)
+
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+
+	s.applyAndWait(rp)
+
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(4)
 
 	s.applyAndWait(rp)
 
