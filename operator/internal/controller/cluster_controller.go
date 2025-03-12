@@ -17,7 +17,6 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,185 +137,118 @@ func (r *ClusterReconciler[T, U]) reconcileResources(ctx context.Context, cluste
 }
 
 func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U, pools *resources.PoolTracker) (*rpadmin.AdminAPI, bool, error) {
-	var err error
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcilePools", *cluster))
 
-	var admin *rpadmin.AdminAPI
-	var health rpadmin.ClusterHealthOverview
-	fetchClusterHealth := func() (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
-		var err error
-		admin, err = r.ClientFactory.RedpandaAdminClient(ctx, cluster)
-		if err != nil {
-			return nil, health, err
-		}
-		health, err = admin.GetHealthOverview(ctx)
-		if err != nil {
-			return nil, health, err
-		}
-
-		return admin, health, nil
-	}
-
-	switch pools.CheckScale() {
-	case resources.ScaleNotReady:
+	if !pools.CheckScale() {
 		logger.V(traceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return nil, true, nil
-	case resources.ScaleReady:
-		logger.V(traceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
+	}
 
-		brokerMap := map[string]int{}
+	logger.V(traceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
 
-		checkHealthToRoll := func(pod *corev1.Pod) (bool, bool) {
-			_, ok := brokerMap[pod.GetName()]
-			if !ok {
-				// we don't actually have this broker in the cluster
-				// anymore, which means it's always safe to delete
-				// the pod and continue with the next operations
-				return true, true
-			}
+	// first create any pools that don't currently exists
+	for _, set := range pools.ToCreate() {
+		logger.V(traceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
+		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("creating statefulset: %w", err)
+		}
+	}
+
+	// next scale up any under-provisioned pools and patch them to use the new spec
+	for _, set := range pools.ToScaleUp() {
+		logger.V(traceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+
+		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
+		}
+	}
+
+	// now make sure all of the patch any sets that might have changed without affecting the cluster size
+	// here we can just wholesale patch everything
+	for _, set := range pools.RequiresUpdate() {
+		logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("updating statefulset: %w", err)
+		}
+	}
+
+	admin, health, err := r.fetchClusterHealth(ctx, cluster)
+	if err != nil {
+		return nil, false, fmt.Errorf("fetching cluster health: %w", err)
+	}
+
+	brokerMap := map[string]int{}
+	for _, brokerID := range health.AllNodes {
+		broker, err := admin.Broker(ctx, brokerID)
+		if err != nil {
+			return nil, false, fmt.Errorf("fetching broker: %w", err)
+		}
+
+		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
+		brokerMap[brokerTokens[0]] = brokerID
+	}
+
+	// next scale down any over-provisioned pools, patching them to use the new spec
+	// and decommissioning any nodes as needed
+	for _, set := range pools.ToScaleDown() {
+		requeue, err := r.scaleDown(ctx, admin, cluster, set, brokerMap)
+		return nil, requeue, err
+	}
+
+	// at this point any set that needs to be deleted should have 0 replicas
+	// so we can attempt to delete them all in one pass
+	for _, set := range pools.ToDelete() {
+		logger.V(traceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		if err := r.Client.Delete(ctx, set); err != nil {
+			return nil, false, fmt.Errorf("deleting statefulset: %w", err)
+		}
+	}
+
+	// finally, we make sure we roll every pod that is not in-sync with its statefulset
+	rollSet := pools.PodsToRoll()
+	rolled := false
+	for _, pod := range rollSet {
+		shouldRoll, continueExecution := false, false
+
+		if _, ok := brokerMap[pod.GetName()]; !ok {
+			// we don't actually have this broker in the cluster
+			// anymore, which means it's always safe to delete
+			// the pod and continue with the next operations
+			shouldRoll, continueExecution = true, true
+		} else if health.IsHealthy {
 			// TODO: don't just check overall cluster health, but use
 			// scoped API endpoints for rolling a broker
-			if health.IsHealthy {
-				// roll and halt execution
-				return true, false
-			}
 
-			// don't roll, but continue
-			return false, true
+			// roll and halt execution
+			shouldRoll, continueExecution = true, false
+		} else {
+			// see if we can at least roll the next pods
+			shouldRoll, continueExecution = false, true
 		}
 
-		scaleDown := func(set *resources.ScaleDownSet) (bool, error) {
-			logger.V(traceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+		if shouldRoll {
+			rolled = true
+			logger.V(traceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
-			brokerID, ok := brokerMap[set.LastPod.GetName()]
-			if ok {
-				// decommission if we have a brokerID, if not
-				// then the node has already been fully removed from
-				// the cluster and we can go ahead and delete the pod
-				// through patching the statefulset
-
-				logger.V(traceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
-
-				decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
-				if err != nil {
-					if strings.Contains(err.Error(), "is not decommissioning") {
-						logger.V(traceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
-
-						if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
-							return false, fmt.Errorf("decommissioning broker: %w", err)
-						}
-
-						return true, nil
-					} else {
-						return false, fmt.Errorf("fetching decommission status: %w", err)
-					}
-				}
-				if !decommissionStatus.Finished {
-					logger.V(traceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
-
-					// just requeue since we're still decommissioning
-					return true, nil
-				}
-			}
-
-			logger.V(traceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
-
-			// now patch the statefulset to remove the pod
-			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set.StatefulSet); err != nil {
-				return false, fmt.Errorf("scaling down statefulset: %w", err)
-			}
-			// we only do a statefulset at a time, waiting for them to
-			// become stable first
-			return true, nil
-		}
-
-		// first create any pools that don't currently exists
-		for _, set := range pools.ToCreate() {
-			logger.V(traceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-
-			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				return nil, false, fmt.Errorf("creating statefulset: %w", err)
+			if err := r.Client.Delete(ctx, pod); err != nil {
+				return nil, false, fmt.Errorf("deleting pod: %w", err)
 			}
 		}
 
-		// next scale up any under-provisioned pools and patch them to use the new spec
-		for _, set := range pools.ToScaleUp() {
-			logger.V(traceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-
-			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
-			}
-		}
-
-		// now make sure all of the patch any sets that might have changed without affecting the cluster size
-		// here we can just wholesale patch everything
-		for _, set := range pools.RequiresUpdate() {
-			logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				return nil, false, fmt.Errorf("updating statefulset: %w", err)
-			}
-		}
-
-		admin, health, err = fetchClusterHealth()
-		if err != nil {
-			return nil, false, fmt.Errorf("fetching cluster health: %w", err)
-		}
-
-		for _, brokerID := range health.AllNodes {
-			broker, err := admin.Broker(ctx, brokerID)
-			if err != nil {
-				return nil, false, fmt.Errorf("fetching broker: %w", err)
-			}
-
-			brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
-			brokerMap[brokerTokens[0]] = brokerID
-		}
-
-		// next scale down any over-provisioned pools, patching them to use the new spec
-		// and decommissioning any nodes as needed
-		for _, set := range pools.ToScaleDown() {
-			requeue, err := scaleDown(set)
-			return nil, requeue, err
-		}
-
-		// at this point any set that needs to be deleted should have 0 replicas
-		// so we can attempt to delete them all in one pass
-		for _, set := range pools.ToDelete() {
-			logger.V(traceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-			if err := r.Client.Delete(ctx, set); err != nil {
-				return nil, false, fmt.Errorf("deleting statefulset: %w", err)
-			}
-		}
-
-		// finally, we make sure we roll every pod that is not in-sync with its statefulset
-		rollSet := pools.PodsToRoll()
-		rolled := false
-		for _, pod := range rollSet {
-			shouldRoll, continueExecution := checkHealthToRoll(pod)
-			if shouldRoll {
-				rolled = true
-				logger.V(traceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
-
-				if err := r.Client.Delete(ctx, pod); err != nil {
-					return nil, false, fmt.Errorf("deleting pod: %w", err)
-				}
-			}
-
-			if !continueExecution {
-				// requeue since we just rolled a pod
-				// and we want for the system to stabilize
-				return nil, true, nil
-			}
-		}
-
-		if !rolled && len(rollSet) > 0 {
-			// here we're in a state where we can't currently roll any
-			// pods but we need to, therefore we just reschedule rather
-			// than marking the cluster as quiesced.
+		if !continueExecution {
+			// requeue since we just rolled a pod
+			// and we want for the system to stabilize
 			return nil, true, nil
 		}
+	}
+
+	if !rolled && len(rollSet) > 0 {
+		// here we're in a state where we can't currently roll any
+		// pods but we need to, therefore we just reschedule rather
+		// than marking the cluster as quiesced.
+		return nil, true, nil
 	}
 
 	return admin, false, nil
@@ -347,6 +279,82 @@ func (r *ClusterReconciler[T, U]) fetchPools(ctx context.Context, cluster U) (*r
 	pools.AddDesired(desired...)
 
 	return pools, nil
+}
+
+func (r *ClusterReconciler[T, U]) fetchClusterHealth(ctx context.Context, cluster U) (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
+	var health rpadmin.ClusterHealthOverview
+
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, cluster)
+	if err != nil {
+		return nil, health, err
+	}
+	health, err = admin.GetHealthOverview(ctx)
+	if err != nil {
+		return nil, health, err
+	}
+
+	return admin, health, nil
+}
+
+func (r *ClusterReconciler[T, U]) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster U, set *resources.ScaleDownSet, brokerMap map[string]int) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
+	logger.V(traceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	brokerID, ok := brokerMap[set.LastPod.GetName()]
+	if ok {
+		// decommission if we have a brokerID, if not
+		// then the node has already been fully removed from
+		// the cluster and we can go ahead and delete the pod
+		// through patching the statefulset
+
+		requeue, err := r.decommissionBroker(ctx, admin, cluster, set, brokerID)
+		if err != nil {
+			return false, err
+		}
+
+		if requeue {
+			return true, nil
+		}
+	}
+
+	logger.V(traceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	// now patch the statefulset to remove the pod
+	if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set.StatefulSet); err != nil {
+		return false, fmt.Errorf("scaling down statefulset: %w", err)
+	}
+	// we only do a statefulset at a time, waiting for them to
+	// become stable first
+	return true, nil
+}
+
+func (r *ClusterReconciler[T, U]) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster U, set *resources.ScaleDownSet, brokerID int) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].decommissionBroker", *cluster))
+	logger.V(traceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
+	if err != nil {
+		if strings.Contains(err.Error(), "is not decommissioning") {
+			logger.V(traceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
+				return false, fmt.Errorf("decommissioning broker: %w", err)
+			}
+
+			return true, nil
+		} else {
+			return false, fmt.Errorf("fetching decommission status: %w", err)
+		}
+	}
+	if !decommissionStatus.Finished {
+		logger.V(traceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+		// just requeue since we're still decommissioning
+		return true, nil
+	}
+
+	// we're finished
+	return false, nil
 }
 
 func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {

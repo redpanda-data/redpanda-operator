@@ -151,28 +151,21 @@ func (p *PoolTracker) AddDesired(sets ...*appsv1.StatefulSet) {
 	}
 }
 
-type ScaleReadiness int
-
-const (
-	ScaleReady ScaleReadiness = iota
-	ScaleNotReady
-)
-
-func (p *PoolTracker) CheckScale() ScaleReadiness {
+func (p *PoolTracker) CheckScale() bool {
 	// if we have no existing pools
 	if len(p.existingPools) == 0 {
-		return ScaleReady
+		return true
 	}
 
 	for _, pool := range p.existingPools {
 		replicas := ptr.Deref(pool.set.Spec.Replicas, 0)
 		if replicas != pool.set.Status.Replicas || int(replicas) != len(pool.pods) {
 			// we're potentially in the middle of a scaling operation
-			return ScaleNotReady
+			return false
 		}
 	}
 
-	return ScaleReady
+	return true
 }
 
 func (p *PoolTracker) ToCreate() []*appsv1.StatefulSet {
