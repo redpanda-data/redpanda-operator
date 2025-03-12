@@ -16,6 +16,8 @@ import (
 	"reflect"
 	"sort"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +49,7 @@ type ResourceClient[T any, U Cluster[T]] interface {
 	SyncAll(ctx context.Context, cluster U) error
 	DeleteAll(ctx context.Context, cluster U) (bool, error)
 	WatchResources(builder *builder.Builder, cluster U) error
+	FetchExistingPools(ctx context.Context, cluster U) ([]*Pool, error)
 }
 
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resources ResourceManager[T, U]) ResourceClient[T, U] {
@@ -265,6 +268,84 @@ func (r *resourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 	}
 
 	return len(alive) > 0, errors.Join(errs...)
+}
+
+type Pool struct {
+	StatefulSet *appsv1.StatefulSet
+	Pods        []*corev1.Pod
+	Revisions   []*appsv1.ControllerRevision
+}
+
+func (e *Pool) Name() string {
+	return client.ObjectKeyFromObject(e.StatefulSet).String()
+}
+
+func (e *Pool) PodNames() []string {
+	podNames := []string{}
+	for _, pod := range e.Pods {
+		podNames = append(podNames, client.ObjectKeyFromObject(pod).String())
+	}
+	return podNames
+}
+
+func (e *Pool) ControllerRevisionNames() []string {
+	revisionNames := []string{}
+	for _, revision := range e.Revisions {
+		revisionNames = append(revisionNames, client.ObjectKeyFromObject(revision).String())
+	}
+	return revisionNames
+}
+
+func (r *resourceClient[T, U]) FetchExistingPools(ctx context.Context, cluster U) ([]*Pool, error) {
+	sets, err := r.ListOwnedResources(ctx, cluster, &appsv1.StatefulSet{})
+	if err != nil {
+		return nil, fmt.Errorf("listing StatefulSets: %w", err)
+	}
+
+	existing := []*Pool{}
+	for _, set := range sets {
+		statefulSet := set.(*appsv1.StatefulSet)
+
+		selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
+		if err != nil {
+			return nil, fmt.Errorf("constructing label selector: %w", err)
+		}
+
+		revisions, err := r.ListResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
+			Selector: selector,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("listing ControllerRevisions: %w", err)
+		}
+		ownedRevisions := []*appsv1.ControllerRevision{}
+		for i := range revisions {
+			ref := metav1.GetControllerOfNoCopy(revisions[i])
+			if ref == nil || ref.UID == set.GetUID() {
+				ownedRevisions = append(ownedRevisions, revisions[i].(*appsv1.ControllerRevision))
+			}
+
+		}
+
+		pods, err := r.ListResources(ctx, &corev1.Pod{}, client.MatchingLabelsSelector{
+			Selector: selector,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("listing Pods: %w", err)
+		}
+
+		ownedPods := []*corev1.Pod{}
+		for i := range pods {
+			ownedPods = append(ownedPods, pods[i].(*corev1.Pod))
+		}
+
+		existing = append(existing, &Pool{
+			StatefulSet: statefulSet,
+			Revisions:   ownedRevisions,
+			Pods:        ownedPods,
+		})
+	}
+
+	return existing, nil
 }
 
 func (r *resourceClient[T, U]) WatchResources(builder *builder.Builder, cluster U) error {

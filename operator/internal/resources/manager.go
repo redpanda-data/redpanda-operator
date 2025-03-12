@@ -34,9 +34,10 @@ const (
 
 type ClusterStatus struct {
 	Replicas          int
+	DesiredReplicas   int
 	OutOfDateReplicas int
 	UpToDateReplicas  int
-	DefunctReplicas   int
+	CondemnedReplicas int
 	HealthyReplicas   int
 	RunningReplicas   int
 	Quiesced          bool

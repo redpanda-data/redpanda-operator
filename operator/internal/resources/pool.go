@@ -68,7 +68,7 @@ func sortRevisions(controllerRevisions []*appsv1.ControllerRevision) []*appsv1.C
 	return controllerRevisions
 }
 
-func sortPodsByOrdinal(pods ...client.Object) ([]*podsWithOrdinals, error) {
+func sortPodsByOrdinal(pods ...*corev1.Pod) ([]*podsWithOrdinals, error) {
 	withOrdinals := []*podsWithOrdinals{}
 	for _, pod := range pods {
 		ordinal, err := extractOrdinal(pod.GetName())
@@ -77,7 +77,7 @@ func sortPodsByOrdinal(pods ...client.Object) ([]*podsWithOrdinals, error) {
 		}
 		withOrdinals = append(withOrdinals, &podsWithOrdinals{
 			ordinal: ordinal,
-			pod:     pod.(*corev1.Pod).DeepCopy(),
+			pod:     pod.DeepCopy(),
 		})
 	}
 
@@ -88,35 +88,35 @@ func sortPodsByOrdinal(pods ...client.Object) ([]*podsWithOrdinals, error) {
 	return withOrdinals, nil
 }
 
-type pool struct {
+type poolWithOrdinals struct {
 	pods      []*podsWithOrdinals
 	set       *appsv1.StatefulSet
 	revisions []*appsv1.ControllerRevision
 }
 
-func newPool(set *appsv1.StatefulSet, revisions []*appsv1.ControllerRevision, pods ...*podsWithOrdinals) *pool {
-	return &pool{
-		set:       set,
+func newPoolWithOrdinals(pool *Pool, pods ...*podsWithOrdinals) *poolWithOrdinals {
+	return &poolWithOrdinals{
+		set:       pool.StatefulSet,
+		revisions: sortRevisions(pool.Revisions),
 		pods:      pods,
-		revisions: revisions,
 	}
 }
 
-type PoolManager struct {
+type PoolTracker struct {
 	latestGeneration int64
-	existingPools    map[types.NamespacedName]*pool
-	desiredPools     map[types.NamespacedName]*pool
+	existingPools    map[types.NamespacedName]*poolWithOrdinals
+	desiredPools     map[types.NamespacedName]*poolWithOrdinals
 }
 
-func NewPoolManager(generation int64) *PoolManager {
-	return &PoolManager{
+func NewPoolTracker(generation int64) *PoolTracker {
+	return &PoolTracker{
 		latestGeneration: generation,
-		existingPools:    make(map[types.NamespacedName]*pool),
-		desiredPools:     make(map[types.NamespacedName]*pool),
+		existingPools:    make(map[types.NamespacedName]*poolWithOrdinals),
+		desiredPools:     make(map[types.NamespacedName]*poolWithOrdinals),
 	}
 }
 
-func (p *PoolManager) ExistingStatefulSets() []string {
+func (p *PoolTracker) ExistingStatefulSets() []string {
 	sets := []string{}
 	for nn := range p.existingPools {
 		sets = append(sets, nn.String())
@@ -124,7 +124,7 @@ func (p *PoolManager) ExistingStatefulSets() []string {
 	return sets
 }
 
-func (p *PoolManager) DesiredStatefulSets() []string {
+func (p *PoolTracker) DesiredStatefulSets() []string {
 	sets := []string{}
 	for nn := range p.desiredPools {
 		sets = append(sets, nn.String())
@@ -132,19 +132,22 @@ func (p *PoolManager) DesiredStatefulSets() []string {
 	return sets
 }
 
-func (p *PoolManager) AddExisting(set *appsv1.StatefulSet, revisions []*appsv1.ControllerRevision, pods ...client.Object) error {
-	withOrdinals, err := sortPodsByOrdinal(pods...)
-	if err != nil {
-		return err
+func (p *PoolTracker) AddExisting(pools ...*Pool) error {
+	for i := range pools {
+		withOrdinals, err := sortPodsByOrdinal(pools[i].Pods...)
+		if err != nil {
+			return err
+		}
+
+		p.existingPools[client.ObjectKeyFromObject(pools[i].StatefulSet)] = newPoolWithOrdinals(pools[i], withOrdinals...)
 	}
 
-	p.existingPools[client.ObjectKeyFromObject(set)] = newPool(set, sortRevisions(revisions), withOrdinals...)
 	return nil
 }
 
-func (p *PoolManager) AddDesired(sets ...*appsv1.StatefulSet) {
+func (p *PoolTracker) AddDesired(sets ...*appsv1.StatefulSet) {
 	for _, set := range sets {
-		p.desiredPools[client.ObjectKeyFromObject(set)] = newPool(set, []*appsv1.ControllerRevision{})
+		p.desiredPools[client.ObjectKeyFromObject(set)] = newPoolWithOrdinals(&Pool{StatefulSet: set})
 	}
 }
 
@@ -155,7 +158,7 @@ const (
 	ScaleNotReady
 )
 
-func (p *PoolManager) CheckScale() ScaleReadiness {
+func (p *PoolTracker) CheckScale() ScaleReadiness {
 	// if we have no existing pools
 	if len(p.existingPools) == 0 {
 		return ScaleReady
@@ -172,7 +175,7 @@ func (p *PoolManager) CheckScale() ScaleReadiness {
 	return ScaleReady
 }
 
-func (p *PoolManager) ToCreate() []*appsv1.StatefulSet {
+func (p *PoolTracker) ToCreate() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
@@ -189,7 +192,7 @@ func (p *PoolManager) ToCreate() []*appsv1.StatefulSet {
 	return sortByName(sets)
 }
 
-func (p *PoolManager) ToScaleUp() []*appsv1.StatefulSet {
+func (p *PoolTracker) ToScaleUp() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
@@ -212,7 +215,7 @@ func (p *PoolManager) ToScaleUp() []*appsv1.StatefulSet {
 	return sortByName(sets)
 }
 
-func (p *PoolManager) RequiresUpdate() []*appsv1.StatefulSet {
+func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
@@ -240,7 +243,7 @@ type ScaleDownSet struct {
 	StatefulSet *appsv1.StatefulSet
 }
 
-func (p *PoolManager) ToScaleDown() []*ScaleDownSet {
+func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 	sets := []*ScaleDownSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
@@ -248,9 +251,9 @@ func (p *PoolManager) ToScaleDown() []*ScaleDownSet {
 	for nn := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
 			existing := p.existingPools[nn]
-			existingReplicas := existing.set.Status.Replicas
+			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 
-			if existing.set.Status.Replicas != 0 {
+			if existingReplicas != 0 && len(existing.pods) != 0 {
 				set := existing.set.DeepCopy()
 				set.Labels[generationLabel] = generation
 				lastPod := existing.pods[len(existing.pods)-1]
@@ -287,7 +290,7 @@ func (p *PoolManager) ToScaleDown() []*ScaleDownSet {
 	return sets
 }
 
-func (p *PoolManager) ToDelete() []*appsv1.StatefulSet {
+func (p *PoolTracker) ToDelete() []*appsv1.StatefulSet {
 	sets := []*appsv1.StatefulSet{}
 
 	for nn := range p.existingPools {
@@ -299,7 +302,7 @@ func (p *PoolManager) ToDelete() []*appsv1.StatefulSet {
 	return sortByName(sets)
 }
 
-func (p *PoolManager) PodsToRoll() []*corev1.Pod {
+func (p *PoolTracker) PodsToRoll() []*corev1.Pod {
 	pods := []*corev1.Pod{}
 
 	for _, existing := range p.existingPools {

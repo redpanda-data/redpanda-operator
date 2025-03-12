@@ -19,7 +19,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -31,14 +30,13 @@ import (
 )
 
 const (
-	traceLevel = 2
-	debugLevel = 1
-	infoLevel  = 0
+	traceLevel       = 2
+	debugLevel       = 1
+	infoLevel        = 0
+	clusterFinalizer = "cluster.redpanda.com/finalizer"
 )
 
-const clusterFinalizer = "cluster.redpanda.com/finalizer"
-
-var requeueErr = errors.New("requeue")
+var requeueTimeout = 10 * time.Second
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler[T any, U resources.Cluster[T]] struct {
@@ -63,93 +61,30 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	sets, err := r.ResourceClient.ListOwnedResources(ctx, cluster, &appsv1.StatefulSet{})
+	// grab our existing and desired pool resources
+	// so that we can immediately calculate cluster status
+	// from and sync in any subsequent operation that
+	// early returns
+	pools, err := r.fetchPools(ctx, cluster)
 	if err != nil {
-		logger.Error(err, "fetching cluster pods")
+		logger.Error(err, "fetching pools")
 		return ctrl.Result{}, err
 	}
 
-	pools := resources.NewPoolManager(cluster.GetGeneration())
-
-	for _, set := range sets {
-		statefulSet := set.(*appsv1.StatefulSet)
-
-		selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
-		if err != nil {
-			logger.Error(err, "constructing label selector")
-			return ctrl.Result{}, err
-		}
-
-		revisions, err := r.ResourceClient.ListResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
-			Selector: selector,
-		})
-		if err != nil {
-			logger.Error(err, "listing revisions")
-			return ctrl.Result{}, err
-		}
-		ownedRevisions := []*appsv1.ControllerRevision{}
-		for i := range revisions {
-			ref := metav1.GetControllerOfNoCopy(revisions[i])
-			if ref == nil || ref.UID == set.GetUID() {
-				ownedRevisions = append(ownedRevisions, revisions[i].(*appsv1.ControllerRevision))
-			}
-
-		}
-
-		pods, err := r.ResourceClient.ListResources(ctx, &corev1.Pod{}, client.MatchingLabelsSelector{
-			Selector: selector,
-		})
-		if err != nil {
-			logger.Error(err, "listing pods")
-			return ctrl.Result{}, err
-		}
-
-		podNames := []string{}
-		for _, pod := range pods {
-			podNames = append(podNames, client.ObjectKeyFromObject(pod).String())
-		}
-		logger.V(traceLevel).Info("adding existing pool", "StatefulSet", client.ObjectKeyFromObject(statefulSet).String(), "Pods", podNames)
-
-		if err := pools.AddExisting(statefulSet, ownedRevisions, pods...); err != nil {
-			logger.Error(err, "adding existing pool")
-			return ctrl.Result{}, err
-		}
-	}
-
 	status := resources.ClusterStatus{}
-
-	syncStatus := func(err error) (ctrl.Result, error) {
-		var requeue bool
-		if errors.Is(err, requeueErr) {
-			err = nil
-			requeue = true
-		}
-
-		if r.ResourceManager.SetClusterStatus(cluster, status) {
-			syncErr := r.Client.Status().Update(ctx, cluster)
-			err = errors.Join(syncErr, err)
-		}
-
-		result, err := ignoreConflict(err)
-		if requeue {
-			result.Requeue = true
-			result.RequeueAfter = 10 * time.Second
-		}
-
-		return result, err
-	}
 
 	// we are being deleted, clean up everything
 	if cluster.GetDeletionTimestamp() != nil {
 		// clean up all dependant resources
 		if deleted, err := r.ResourceClient.DeleteAll(ctx, cluster); deleted || err != nil {
-			return syncStatus(err)
+			return r.syncStatus(ctx, err, status, cluster)
 		}
 
 		if controllerutil.RemoveFinalizer(cluster, clusterFinalizer) {
 			if err := r.Client.Update(ctx, cluster); err != nil {
 				logger.Error(err, "updating cluster finalizer")
-				// no need to update the status at this point
+				// no need to update the status at this point since the
+				// previous update failed
 				return ignoreConflict(err)
 			}
 		}
@@ -167,46 +102,70 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	desired, err := r.ResourceManager.NodePools(ctx, cluster)
-	if err != nil {
-		logger.Error(err, "constructing cluster resources")
-		return syncStatus(err)
-	}
-
-	pools.AddDesired(desired...)
-
 	// we sync all our non pool resources first so that they're in-place
 	// prior to us scaling up our node pools
-	if err := r.ResourceClient.SyncAll(ctx, cluster); err != nil {
-		logger.Error(err, "error synchronizing resources")
-		return syncStatus(err)
+	if err := r.reconcileResources(ctx, cluster); err != nil {
+		logger.Error(err, "error reconciling resources")
+		return r.syncStatus(ctx, err, status, cluster)
+	}
+
+	// next we sync up all of our pools themselves
+	admin, requeue, err := r.reconcilePools(ctx, cluster, pools)
+	if err != nil {
+		logger.Error(err, "error reconciling pools")
+		return r.syncStatus(ctx, err, status, cluster)
+	}
+	if requeue {
+		return r.requeue(ctx, status, cluster)
+	}
+
+	// finally we synchronize any cluster configuration needed
+	if err := r.reconcileClusterConfiguration(ctx, cluster, admin); err != nil {
+		return r.syncStatus(ctx, err, status, cluster)
+	}
+
+	logger.V(traceLevel).Info("cluster quiesced")
+
+	// if we got here, then all of the loops above were no-ops
+	// and so we can mark the status as quiesced.
+	status.Quiesced = true
+
+	return r.syncStatus(ctx, nil, status, cluster)
+}
+
+func (r *ClusterReconciler[T, U]) reconcileResources(ctx context.Context, cluster U) error {
+	return r.ResourceClient.SyncAll(ctx, cluster)
+}
+
+func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U, pools *resources.PoolTracker) (*rpadmin.AdminAPI, bool, error) {
+	var err error
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcilePools", *cluster))
+
+	var admin *rpadmin.AdminAPI
+	var health rpadmin.ClusterHealthOverview
+	fetchClusterHealth := func() (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
+		var err error
+		admin, err = r.ClientFactory.RedpandaAdminClient(ctx, cluster)
+		if err != nil {
+			return nil, health, err
+		}
+		health, err = admin.GetHealthOverview(ctx)
+		if err != nil {
+			return nil, health, err
+		}
+
+		return admin, health, nil
 	}
 
 	switch pools.CheckScale() {
 	case resources.ScaleNotReady:
 		logger.V(traceLevel).Info("scale operation currently underway")
-		// we're not yet ready to scale, so wait
-		return syncStatus(requeueErr)
+		// we're not yet ready to scale, so just requeue
+		return nil, true, nil
 	case resources.ScaleReady:
 		logger.V(traceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
 
 		brokerMap := map[string]int{}
-
-		var admin *rpadmin.AdminAPI
-		var health rpadmin.ClusterHealthOverview
-		fetchClusterHealth := func() (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
-			var err error
-			admin, err = r.ClientFactory.RedpandaAdminClient(ctx, cluster)
-			if err != nil {
-				return nil, health, err
-			}
-			health, err = admin.GetHealthOverview(ctx)
-			if err != nil {
-				return nil, health, err
-			}
-
-			return admin, health, nil
-		}
 
 		checkHealthToRoll := func(pod *corev1.Pod) (bool, bool) {
 			_, ok := brokerMap[pod.GetName()]
@@ -228,7 +187,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			return false, true
 		}
 
-		scaleDown := func(set *resources.ScaleDownSet) (ctrl.Result, error) {
+		scaleDown := func(set *resources.ScaleDownSet) (bool, error) {
 			logger.V(traceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 			brokerID, ok := brokerMap[set.LastPod.GetName()]
@@ -240,26 +199,25 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 
 				logger.V(traceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
-				status, err := admin.DecommissionBrokerStatus(ctx, brokerID)
+				decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 				if err != nil {
 					if strings.Contains(err.Error(), "is not decommissioning") {
 						logger.V(traceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 						if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
-							logger.Error(err, "decommissioning broker")
-							return syncStatus(err)
+							return false, fmt.Errorf("decommissioning broker: %w", err)
 						}
-						return syncStatus(requeueErr)
+
+						return true, nil
 					} else {
-						logger.Error(err, "fetching decommission status")
-						return syncStatus(err)
+						return false, fmt.Errorf("fetching decommission status: %w", err)
 					}
 				}
-				if !status.Finished {
+				if !decommissionStatus.Finished {
 					logger.V(traceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 					// just requeue since we're still decommissioning
-					return syncStatus(requeueErr)
+					return true, nil
 				}
 			}
 
@@ -267,12 +225,11 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 
 			// now patch the statefulset to remove the pod
 			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set.StatefulSet); err != nil {
-				logger.Error(err, "scaling down statefulset")
-				return syncStatus(err)
+				return false, fmt.Errorf("scaling down statefulset: %w", err)
 			}
 			// we only do a statefulset at a time, waiting for them to
 			// become stable first
-			return syncStatus(requeueErr)
+			return true, nil
 		}
 
 		// first create any pools that don't currently exists
@@ -280,8 +237,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			logger.V(traceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				logger.Error(err, "creating node pool statefulset")
-				return syncStatus(err)
+				return nil, false, fmt.Errorf("creating statefulset: %w", err)
 			}
 		}
 
@@ -290,8 +246,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			logger.V(traceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				logger.Error(err, "creating node pool statefulset")
-				return syncStatus(err)
+				return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
 			}
 		}
 
@@ -300,22 +255,19 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		for _, set := range pools.RequiresUpdate() {
 			logger.V(traceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 			if err := r.ResourceClient.PatchOwnedResource(ctx, cluster, set); err != nil {
-				logger.Error(err, "updating statefulset")
-				return syncStatus(err)
+				return nil, false, fmt.Errorf("updating statefulset: %w", err)
 			}
 		}
 
 		admin, health, err = fetchClusterHealth()
 		if err != nil {
-			logger.Error(err, "fetching cluster health")
-			return syncStatus(err)
+			return nil, false, fmt.Errorf("fetching cluster health: %w", err)
 		}
 
 		for _, brokerID := range health.AllNodes {
 			broker, err := admin.Broker(ctx, brokerID)
 			if err != nil {
-				logger.Error(err, "fetching broker")
-				return syncStatus(err)
+				return nil, false, fmt.Errorf("fetching broker: %w", err)
 			}
 
 			brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
@@ -325,7 +277,8 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		// next scale down any over-provisioned pools, patching them to use the new spec
 		// and decommissioning any nodes as needed
 		for _, set := range pools.ToScaleDown() {
-			return scaleDown(set)
+			requeue, err := scaleDown(set)
+			return nil, requeue, err
 		}
 
 		// at this point any set that needs to be deleted should have 0 replicas
@@ -333,8 +286,7 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 		for _, set := range pools.ToDelete() {
 			logger.V(traceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 			if err := r.Client.Delete(ctx, set); err != nil {
-				logger.Error(err, "deleting statefulset")
-				return syncStatus(err)
+				return nil, false, fmt.Errorf("deleting statefulset: %w", err)
 			}
 		}
 
@@ -348,15 +300,14 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 				logger.V(traceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
 				if err := r.Client.Delete(ctx, pod); err != nil {
-					logger.Error(err, "deleting pod")
-					return syncStatus(err)
+					return nil, false, fmt.Errorf("deleting pod: %w", err)
 				}
 			}
 
 			if !continueExecution {
 				// requeue since we just rolled a pod
 				// and we want for the system to stabilize
-				return syncStatus(requeueErr)
+				return nil, true, nil
 			}
 		}
 
@@ -364,17 +315,60 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 			// here we're in a state where we can't currently roll any
 			// pods but we need to, therefore we just reschedule rather
 			// than marking the cluster as quiesced.
-			return syncStatus(requeueErr)
+			return nil, true, nil
 		}
 	}
 
-	logger.V(traceLevel).Info("cluster quiesced")
+	return admin, false, nil
+}
 
-	// if we got here, then all of the loops above were no-ops
-	// and so we can mark the status as quiesced.
-	status.Quiesced = true
+func (r *ClusterReconciler[T, U]) reconcileClusterConfiguration(ctx context.Context, cluster U, admin *rpadmin.AdminAPI) error {
+	// TODO
+	return nil
+}
 
-	return syncStatus(nil)
+func (r *ClusterReconciler[T, U]) fetchPools(ctx context.Context, cluster U) (*resources.PoolTracker, error) {
+	pools := resources.NewPoolTracker(cluster.GetGeneration())
+
+	existingPools, err := r.ResourceClient.FetchExistingPools(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("fetching existing pools: %w", err)
+	}
+
+	if err := pools.AddExisting(existingPools...); err != nil {
+		return nil, fmt.Errorf("adding existing pools: %w", err)
+	}
+
+	desired, err := r.ResourceManager.NodePools(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("constructing desired pools: %w", err)
+	}
+
+	pools.AddDesired(desired...)
+
+	return pools, nil
+}
+
+func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
+	if r.ResourceManager.SetClusterStatus(cluster, status) {
+		syncErr := r.Client.Status().Update(ctx, cluster)
+		err = errors.Join(syncErr, err)
+	}
+
+	return ignoreConflict(err)
+}
+
+func (r *ClusterReconciler[T, U]) requeue(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
+	var err error
+	if r.ResourceManager.SetClusterStatus(cluster, status) {
+		err = r.Client.Status().Update(ctx, cluster)
+	}
+
+	result, err := ignoreConflict(err)
+	result.Requeue = true
+	result.RequeueAfter = requeueTimeout
+
+	return result, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
