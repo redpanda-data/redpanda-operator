@@ -228,6 +228,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 ) (*configuration.GlobalConfiguration, error) {
 	cfg := configuration.For(r.pandaCluster.Spec.Version)
 	cfg.NodeConfiguration = config.ProdDefault()
+	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue, len(cfg.ClusterConfiguration))
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
 	c := r.pandaCluster.Spec.Configuration
@@ -387,8 +388,10 @@ func (r *ConfigMapResource) CreateConfiguration(
 	// TODO: clean this up - this probably means throwing away much of this (perhaps in favour of the v2 bootstrap creation?)
 	// Prepare the bootstrap template. This includes concrete values set here, plus any additional templatable
 	// values supplied in the ClusterConfiguration.
-	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue, len(cfg.ClusterConfiguration))
 	for k, v := range cfg.ClusterConfiguration {
+		if _, found := cfg.BootstrapConfiguration[k]; found {
+			continue
+		}
 		// These values are all "concrete" - that is, they're not looked up anywhere.
 		// We use JSON marshalling as opposed to YAML here - it has fewer options available, but is
 		// compatible for use in either a YAML or JSON target document.
@@ -820,6 +823,7 @@ func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
 		// Save an empty map instead of "null"
 		cfg = make(map[string]interface{})
 	}
+	// TODO: external reference versions here
 	ser, err := json.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("could not marhsal configuration: %w", err)

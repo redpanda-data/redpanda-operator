@@ -105,11 +105,12 @@ func (c *GlobalConfiguration) GetCentralizedConfigurationHash(
 	clone := *c
 
 	// Ignore cluster properties that don't require restart
-	clone.ClusterConfiguration = make(map[string]interface{})
-	for k, v := range c.ClusterConfiguration {
+	clone.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue)
+	// TODO: this should really do reference expansion here
+	for k, v := range c.BootstrapConfiguration {
 		// Unknown properties should be ignored as they might be user errors
 		if meta, ok := schema[k]; ok && meta.NeedsRestart {
-			clone.ClusterConfiguration[k] = v
+			clone.BootstrapConfiguration[k] = *(v.DeepCopy())
 		}
 	}
 	serialized, err := clone.Serialize()
@@ -117,7 +118,7 @@ func (c *GlobalConfiguration) GetCentralizedConfigurationHash(
 		return "", err
 	}
 	// We keep using md5 for having the same format as node hash
-	md5Hash := md5.Sum(serialized.BootstrapFile) //nolint:gosec // this is not encrypting secure info
+	md5Hash := md5.Sum(serialized.BootstrapTemplate) //nolint:gosec // this is not encrypting secure info
 	return fmt.Sprintf("%x", md5Hash), nil
 }
 
