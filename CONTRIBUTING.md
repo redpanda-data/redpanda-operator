@@ -31,6 +31,21 @@ It is recommend to use [direnv](https://direnv.net/) to automatically enter the
 development shell when `cd`'ing into the repository. The [.envrc](./.envrc) is
 already configured.
 
+### Alternative developer setup
+
+Given Kubernetes cluster to speed up developer lifecycle one could use `task build:image` to
+build `localhost/redpanda-operator:dev` container. Then retag operator container as follows
+```bash
+docker tag localhost/redpanda-operator:dev YOUR_PUBLIC_CONTAINER_REGISTRY/YOUR_CONTAINER_REPO:NEW_UNIQUE_TAG
+docker push YOUR_PUBLIC_CONTAINER_REGISTRY/YOUR_CONTAINER_REPO:NEW_UNIQUE_TAG
+```
+Your Kubernetes cluster needs to be configured with you container registry in order to be able
+to pull your fresh container (the easiest would be publicly accessible container registry).
+Last step would be to perform the following command
+```bash
+kubectl set image deployment/OPERATOR_DEPLOYMENT_NAME manager=YOUR_CONTAINER_REGISTRY:YOUR_CONTAINER_TAG 
+```
+
 ## Backporting
 
 We are currently experimenting with workflows for backporting leveraging the
