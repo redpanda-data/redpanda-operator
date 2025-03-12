@@ -83,6 +83,7 @@ To release any project in this repository:
 5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
     - If the operator is being released, also tag the same commit as `v<version>`.
 6. Push the tag(s).
+7. Create a Github [Release](https://github.com/redpanda-data/redpanda-operator/releases) on the redpanda-operator repo based on the entires in CHANGELOG.md associated with the Operator release tag. 
 
 ## Nightly build
 
