@@ -31,6 +31,21 @@ It is recommend to use [direnv](https://direnv.net/) to automatically enter the
 development shell when `cd`'ing into the repository. The [.envrc](./.envrc) is
 already configured.
 
+### Alternative developer setup
+
+Given Kubernetes cluster to speed up developer lifecycle one could use `task build:image` to
+build `localhost/redpanda-operator:dev` container. Then retag operator container as follows
+```bash
+docker tag localhost/redpanda-operator:dev YOUR_PUBLIC_CONTAINER_REGISTRY/YOUR_CONTAINER_REPO:NEW_UNIQUE_TAG
+docker push YOUR_PUBLIC_CONTAINER_REGISTRY/YOUR_CONTAINER_REPO:NEW_UNIQUE_TAG
+```
+Your Kubernetes cluster needs to be configured with you container registry in order to be able
+to pull your fresh container (the easiest would be publicly accessible container registry).
+Last step would be to perform the following command
+```bash
+kubectl set image deployment/OPERATOR_DEPLOYMENT_NAME manager=YOUR_CONTAINER_REGISTRY:YOUR_CONTAINER_TAG 
+```
+
 ## Backporting
 
 We are currently experimenting with workflows for backporting leveraging the
@@ -69,3 +84,30 @@ To release any project in this repository:
     - If the operator is being released, also tag the same commit as `v<version>`.
 6. Push the tag(s).
 7. Create a Github [Release](https://github.com/redpanda-data/redpanda-operator/releases) on the redpanda-operator repo based on the entires in CHANGELOG.md associated with the Operator release tag. 
+
+## Nightly build
+
+The step for nightly build is defined in Buildkite 
+[pipeline.yaml definition](https://github.com/redpanda-data/redpanda-operator/blob/main/.buildkite/pipeline.yml#L43-L74).
+
+### Scheduled builds
+
+Buildkite has configured periodic jobs that build and pushes operator container with operator
+helm chart to https://hub.docker.com/r/redpandadata/redpanda-operator-nightly container repository.
+The branches that have configured scheduled build can be found in 
+[Branches section in README.md](https://github.com/redpanda-data/redpanda-operator/blob/main/README.md#branches).
+
+### Manual nightly build
+
+In Buildkite anyone with the access to redpanda-operator project can trigger build using 
+"New" button upper right corner.
+
+![new button](./.github/buildkite-new-button.png) 
+
+As the pop up show up please set specific branch with the `NIGHTLY_RELEASE=true`
+environment variable see the following picture 
+
+![buildkite pop up](./.github/buildkite-create-pipeline-pop-up.png)
+
+This will build operator container image and operator helm chart. Those artifacts will be pushed to
+https://hub.docker.com/r/redpandadata/redpanda-operator-nightly.
