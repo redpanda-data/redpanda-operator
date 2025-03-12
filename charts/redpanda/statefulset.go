@@ -1053,6 +1053,9 @@ func statefulSetChecksumAnnotation(dot *helmette.Dot) string {
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
+	// TODO[as]: this doesn't work at all due to a bunch of the config file
+	// being dependent on broker addresses -- doing this hash still causes
+	// all of the pods to roll on simple replica count changes
 	dependencies = append(dependencies, RedpandaConfigFile(dot, false))
 	if values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(values.External.Domain, ""))
