@@ -35,6 +35,10 @@ const (
 	clusterFinalizer = "cluster.redpanda.com/finalizer"
 )
 
+// rqeueueTimeout is the time that the reconciler will
+// wait before requeueing a cluster to be reconciled when
+// we've explicitly aborted a reconciliation loop early
+// due to an in-progress oepration
 var requeueTimeout = 10 * time.Second
 
 // ClusterReconciler reconciles a Cluster object
@@ -44,6 +48,11 @@ type ClusterReconciler[T any, U resources.Cluster[T]] struct {
 	ClientFactory  internalclient.ClientFactory
 }
 
+// ignoreConflict ignores errors that happen due to optimistic locking
+// checks. This is safe because it means that the client-side cache
+// hasn't yet received the update of the resource from the server, and
+// once it does reconciliation will be retriggered. To be safe, we
+// also explicitly trigger a requeue.
 func ignoreConflict(err error) (ctrl.Result, error) {
 	if k8sapierrors.IsConflict(err) {
 		return ctrl.Result{Requeue: true}, nil
@@ -51,6 +60,7 @@ func ignoreConflict(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
+// Reconcile reconciles the given cluster object.
 func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cluster := resources.NewClusterObject[T, U]()
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T]", *cluster))
@@ -131,10 +141,16 @@ func (r *ClusterReconciler[T, U]) Reconcile(ctx context.Context, req ctrl.Reques
 	return r.syncStatus(ctx, status, cluster)
 }
 
+// reconcileResources reconciles all simple resources for a cluster by delegating
+// to the client synchronization code.
 func (r *ClusterReconciler[T, U]) reconcileResources(ctx context.Context, cluster U) error {
 	return r.ResourceClient.SyncAll(ctx, cluster)
 }
 
+// reconcilePools is the meat of the controller. It handles creation and scale up/scale down
+// of the given cluster pools. All scale up and update routines can happen concurrently, but
+// every scale down happens a single broker at a time, ending reconciliation early and requeueing
+// the cluster if a decommissioning operation/scale down is currently in progress.
 func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U, pools *resources.PoolTracker) (*rpadmin.AdminAPI, bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcilePools", *cluster))
 
@@ -253,11 +269,13 @@ func (r *ClusterReconciler[T, U]) reconcilePools(ctx context.Context, cluster U,
 	return admin, false, nil
 }
 
+// reconcileClusterConfiguration syncs all of the cluster configuration to a Redpanda cluster.
 func (r *ClusterReconciler[T, U]) reconcileClusterConfiguration(_ context.Context, _ U, _ *rpadmin.AdminAPI) error {
 	// TODO
 	return nil
 }
 
+// fetchClusterHealth gets the current health of a Redpanda cluster.
 func (r *ClusterReconciler[T, U]) fetchClusterHealth(ctx context.Context, cluster U) (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
 	var health rpadmin.ClusterHealthOverview
 
@@ -273,6 +291,9 @@ func (r *ClusterReconciler[T, U]) fetchClusterHealth(ctx context.Context, cluste
 	return admin, health, nil
 }
 
+// scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
+// decommissioning the broker with the last pod ordinal and then patching the statefulset with
+// a single less replica.
 func (r *ClusterReconciler[T, U]) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster U, set *resources.ScaleDownSet, brokerMap map[string]int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
 	logger.V(traceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
@@ -305,6 +326,7 @@ func (r *ClusterReconciler[T, U]) scaleDown(ctx context.Context, admin *rpadmin.
 	return true, nil
 }
 
+// decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *ClusterReconciler[T, U]) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster U, set *resources.ScaleDownSet, brokerID int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].decommissionBroker", *cluster))
 	logger.V(traceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
@@ -334,10 +356,14 @@ func (r *ClusterReconciler[T, U]) decommissionBroker(ctx context.Context, admin 
 	return false, nil
 }
 
+// syncStatus updates the status of the Redpanda cluster at the end of reconciliation when
+// no more reconciliation should occur.
 func (r *ClusterReconciler[T, U]) syncStatus(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	return r.syncStatusErr(ctx, nil, status, cluster)
 }
 
+// syncStatus updates the status of the Redpanda cluster when an error has occurred in the
+// reconciliation process and the current loop should be aborted but retried.
 func (r *ClusterReconciler[T, U]) syncStatusErr(ctx context.Context, err error, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	if r.ResourceClient.SetClusterStatus(cluster, status) {
 		syncErr := r.Client.Status().Update(ctx, cluster)
@@ -347,6 +373,9 @@ func (r *ClusterReconciler[T, U]) syncStatusErr(ctx context.Context, err error, 
 	return ignoreConflict(err)
 }
 
+// syncStatusAndRequeue updates the status of the Redpanda cluster when no error has occurred in the
+// reconciliation process, but we need to early exit and requeue due to a transient operation
+// that is currently taking place.
 func (r *ClusterReconciler[T, U]) syncStatusAndRequeue(ctx context.Context, status resources.ClusterStatus, cluster U) (ctrl.Result, error) {
 	var err error
 	if r.ResourceClient.SetClusterStatus(cluster, status) {
