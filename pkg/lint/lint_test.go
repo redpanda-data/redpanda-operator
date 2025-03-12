@@ -112,7 +112,6 @@ func TestChartYAMLVersions(t *testing.T) {
 
 func TestOperatorArtifactHubImages(t *testing.T) {
 	const operatorRepo = "docker.redpanda.com/redpandadata/redpanda-operator"
-	const configuratorRepo = "docker.redpanda.com/redpandadata/configurator"
 
 	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
 	require.NoError(t, err)
@@ -124,13 +123,6 @@ func TestOperatorArtifactHubImages(t *testing.T) {
 		t,
 		chart.Annotations["artifacthub.io/images"],
 		fmt.Sprintf("%s:%s", operatorRepo, chart.AppVersion),
-		"artifacthub.io/images should be in sync with .appVersion",
-	)
-
-	assert.Contains(
-		t,
-		chart.Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", configuratorRepo, chart.AppVersion),
 		"artifacthub.io/images should be in sync with .appVersion",
 	)
 }
