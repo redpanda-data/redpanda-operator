@@ -14,6 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
 func V2ResourceManagers(mgr ctrl.Manager) (
 	OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
 	ClusterStatusUpdater[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
