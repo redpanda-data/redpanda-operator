@@ -75,16 +75,6 @@ Settings for the `Config.yaml` (required). For a reference of configuration sett
 
 **Default:** `true`
 
-### [enterprise](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=enterprise)
-
-Settings for license key, as an alternative to secret.enterprise when a license secret is available
-
-**Default:**
-
-```
-{"licenseSecretRef":{"key":"","name":""}}
-```
-
 ### [extraContainers](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=extraContainers)
 
 Add additional containers, such as for oauth2-proxy.
@@ -195,6 +185,12 @@ Additional set of init containers
 
 **Default:** `""`
 
+### [licenseSecretRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=licenseSecretRef)
+
+Settings for license key, as an alternative to secret.enterprise when a license secret is available
+
+**Default:** `{"key":"","name":""}`
+
 ### [livenessProbe](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=livenessProbe)
 
 Settings for liveness and readiness probes. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes).
@@ -274,7 +270,7 @@ Create a new Kubernetes Secret for all sensitive configuration inputs. Each prov
 **Default:**
 
 ```
-{"create":true,"enterprise":{},"kafka":{},"login":{"github":{},"google":{},"jwtSecret":"","oidc":{},"okta":{}},"redpanda":{"adminApi":{}}}
+{"authentication":{"jwtSigningKey":"","oidc":{}},"create":true,"kafka":{},"license":"","redpanda":{"adminApi":{}},"schemaRegistry":{},"serde":{}}
 ```
 
 ### [secret.kafka](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=secret.kafka)
