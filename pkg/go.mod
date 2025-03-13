@@ -7,6 +7,7 @@ replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-c
 require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/go-logr/logr v1.4.2
+	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/gonvenience/ytbx v1.4.4
 	github.com/homeport/dyff v1.7.1
 	github.com/invopop/jsonschema v0.12.0
