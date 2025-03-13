@@ -228,7 +228,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 ) (*configuration.GlobalConfiguration, error) {
 	cfg := configuration.For(r.pandaCluster.Spec.Version)
 	cfg.NodeConfiguration = config.ProdDefault()
-	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue, len(cfg.ClusterConfiguration))
+	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue)
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
 	c := r.pandaCluster.Spec.Configuration
