@@ -193,6 +193,6 @@ type Creatable struct {
 type Image struct {
 	Registry   string            `json:"registry"`
 	Repository string            `json:"repository"`
-	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
 	Tag        *string           `json:"tag"`
 }

@@ -64,7 +64,7 @@ type PartialValues struct {
 type PartialImage struct {
 	Registry   *string            "json:\"registry,omitempty\""
 	Repository *string            "json:\"repository,omitempty\""
-	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\""
+	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
 	Tag        *string            "json:\"tag,omitempty\""
 }
 
