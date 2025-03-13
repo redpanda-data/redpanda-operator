@@ -11,8 +11,10 @@ package console
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"os/exec"
 	"regexp"
@@ -30,6 +32,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/helm-charts/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -250,4 +253,50 @@ func TestAppVersion(t *testing.T) {
 	actual := Chart.Metadata().Version
 
 	require.Equalf(t, expected, actual, "Chart.yaml's version should be %q; got %q\nDid you forget to update Chart.yaml before minting a release?\nMake sure to bump appVersion as well!", expected, actual)
+}
+
+func TestIntegrationChart(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
+	// log := zaptest.NewLogger(t)
+
+	consoleChart := "."
+
+	h := helmtest.Setup(t)
+
+	t.Run("basic render test", func(t *testing.T) {
+		ctx := testutil.Context(t)
+
+		env := h.Namespaced(t)
+
+		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
+		require.NoError(t, err)
+
+		partial := PartialValues{}
+
+		chartReleaseName := fmt.Sprintf("chart-%d", r.Int64())
+		consoleRelease := env.Install(ctx, consoleChart, helm.InstallOptions{
+			Values:    partial,
+			Name:      chartReleaseName,
+			Namespace: env.Namespace(),
+		})
+
+		dot := &helmette.Dot{
+			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
+			Release: helmette.Release{Name: consoleRelease.Name, Namespace: consoleRelease.Namespace},
+			Chart: helmette.Chart{
+				Name: "redpanda",
+			},
+		}
+
+		// cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		// if cleanup != nil {
+		// 	t.Cleanup(cleanup)
+		// }
+		// require.NoError(t, err)
+
+		// assert.NoErrorf(t, kafkaListenerTest(ctx, rpk), "Kafka listener sub test failed")
+		// assert.NoErrorf(t, adminListenerTest(ctx, rpk), "Admin listener sub test failed")
+		// assert.NoErrorf(t, superuserTest(ctx, rpk, "superuser", "kubernetes-controller"), "Superuser sub test failed")
+	})
 }
