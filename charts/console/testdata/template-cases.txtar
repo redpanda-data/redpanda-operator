@@ -10,7 +10,7 @@ config:
       - roleName: admin
         users:
           - loginType: OIDC
-            name: "admin@mycompany.com"
+            name: "104753799096233778779" # Subject claim
       - roleName: viewer
         users:
           - loginType: basic
