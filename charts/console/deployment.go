@@ -245,7 +245,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
-						Key: "kafka-protobuf-git-basicauth-password",
+						Key: "serde-protobuf-git-basicauth-password",
 					},
 				},
 			},
@@ -289,21 +289,21 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			Value: values.Secret.SchemaRegistry.TLSCA,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_CAFILEPATH",
-				Value: "/etc/console/secrets/kafka-schemaregistry-tls-ca",
+				Value: "/etc/console/secrets/schemaregistry-tls-ca",
 			},
 		},
 		{
 			Value: values.Secret.SchemaRegistry.TLSCert,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_CERTFILEPATH",
-				Value: "/etc/console/secrets/kafka-schemaregistry-tls-cert",
+				Value: "/etc/console/secrets/schemaregistry-tls-cert",
 			},
 		},
 		{
 			Value: values.Secret.SchemaRegistry.TLSKey,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_KEYFILEPATH",
-				Value: "/etc/console/secrets/kafka-schemaregistry-tls-key",
+				Value: "/etc/console/secrets/schemaregistry-tls-key",
 			},
 		},
 		{
@@ -315,7 +315,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
-						Key: "kafka-schema-registry-password",
+						Key: "schema-registry-password",
 					},
 				},
 			},
@@ -329,7 +329,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
-						Key: "login-jwt-secret",
+						Key: "authentication-jwt-secret",
 					},
 				},
 			},
@@ -343,7 +343,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
-						Key: "enterprise-license",
+						Key: "license",
 					},
 				},
 			},
