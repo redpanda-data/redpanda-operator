@@ -1,4 +1,12 @@
 project: charts/console
 kind: Changed
-body: Prepare console and redpanda charts for Console v3 configuration changes.
+body: |-
+    Prepare Console charts for Console v3 configuration changes.
+    Redpanda Console now supports unified authentication and authorization between Console and Redpanda, including user impersonation. This means you can authenticate to Redpanda using the same credentials you use for Redpanda Console.
+    `config` is now a generic top level property.
+    `roles` and `roleBindings` have been removed.
+    Secrets for schema registry have their dedicated stanza.
+    Secrets for `login` configuration has been removed and replaced with `authentication` stanza, which supports configuring OIDC.
+    Secret for `protobufGitBasicAuthPassword` has been moved to a separate `serde` stanza.
+    `license` and `licenseSecretRef` have been moved to be top level properties.
 time: 2025-03-10T16:23:38.744481-03:00
