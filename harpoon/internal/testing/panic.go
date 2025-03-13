@@ -93,27 +93,27 @@ func WrapWithPanicHandler[U any](needsLog bool, exitBehavior ExitBehavior, fn U)
 					default:
 					}
 				}
-			}
-			// We need to construct results here because if we rescue from a panic
-			// but wind up returning nothing, then go freaks out saying we returned
-			// the wrong number of return values from a function constructed with
-			// reflection.
-			//
-			// Generally we can just construct an array of zero-values by type, but
-			// we special-case having to return context.Context since you can't initialize
-			// it directly, instead just passing back any unomdified context we found
-			// as a first argument to the function handed to us.
-			returnSize := fnValue.Type().NumOut()
-			results = make([]reflect.Value, returnSize)
-			for i := 0; i < returnSize; i++ {
-				outType := fnValue.Type().Out(i)
-				if len(args) > 0 && i == 0 && reflect.TypeFor[context.Context]() == outType {
-					if ctx, ok := args[0].Interface().(context.Context); ok {
-						results[i] = reflect.ValueOf(ctx)
-						continue
+				// We need to construct results here because if we rescue from a panic
+				// but wind up returning nothing, then go freaks out saying we returned
+				// the wrong number of return values from a function constructed with
+				// reflection.
+				//
+				// Generally we can just construct an array of zero-values by type, but
+				// we special-case having to return context.Context since you can't initialize
+				// it directly, instead just passing back any unomdified context we found
+				// as a first argument to the function handed to us.
+				returnSize := fnValue.Type().NumOut()
+				results = make([]reflect.Value, returnSize)
+				for i := 0; i < returnSize; i++ {
+					outType := fnValue.Type().Out(i)
+					if len(args) > 0 && i == 0 && reflect.TypeFor[context.Context]() == outType {
+						if ctx, ok := args[0].Interface().(context.Context); ok {
+							results[i] = reflect.ValueOf(ctx)
+							continue
+						}
 					}
+					results[i] = reflect.New(outType).Elem()
 				}
-				results[i] = reflect.New(outType).Elem()
 			}
 		}()
 		results = fnValue.Call(args)
