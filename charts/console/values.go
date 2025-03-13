@@ -49,7 +49,7 @@ type Values struct {
 	Affinity                     corev1.Affinity                   `json:"affinity"`
 	TopologySpreadConstraints    []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints"`
 	PriorityClassName            string                            `json:"priorityClassName"`
-	Console                      Console                           `json:"console"`
+	Config                       map[string]any                    `json:"config"`
 	ExtraEnv                     []corev1.EnvVar                   `json:"extraEnv"`
 	ExtraEnvFrom                 []corev1.EnvFromSource            `json:"extraEnvFrom"`
 	ExtraVolumes                 []corev1.Volume                   `json:"extraVolumes"`
@@ -113,13 +113,6 @@ type AutoScaling struct {
 	MaxReplicas                       int32  `json:"maxReplicas"`
 	TargetCPUUtilizationPercentage    *int32 `json:"targetCPUUtilizationPercentage"`
 	TargetMemoryUtilizationPercentage *int32 `json:"targetMemoryUtilizationPercentage,omitempty"`
-}
-
-// TODO the typing of these values are unclear. All of them get marshalled to
-// YAML and then run through tpl which gives no indication of what they are
-// aside from YAML marshal-able.
-type Console struct {
-	Config map[string]any `json:"config"`
 }
 
 type InitContainers struct {

@@ -138,11 +138,10 @@ topologySpreadConstraints: []
 # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass).
 priorityClassName: ""
 
-console:
-  # -- Settings for the `Config.yaml` (required).
-  # For a reference of configuration settings,
-  # see the [Redpanda Console documentation](https://docs.redpanda.com/docs/reference/console/config/).
-  config: {}
+# -- Settings for the `Config.yaml` (required).
+# For a reference of configuration settings,
+# see the [Redpanda Console documentation](https://docs.redpanda.com/docs/reference/console/config/).
+config: {}
 
 # -- Additional environment variables for the Redpanda Console Deployment.
 extraEnv: []

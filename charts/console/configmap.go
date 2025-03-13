@@ -27,7 +27,7 @@ func ConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 	}
 
 	data := map[string]string{
-		"config.yaml": fmt.Sprintf("# from .Values.console.config\n%s\n", helmette.Tpl(dot, helmette.ToYaml(values.Console.Config), dot)),
+		"config.yaml": fmt.Sprintf("# from .Values.console.config\n%s\n", helmette.Tpl(dot, helmette.ToYaml(values.Config), dot)),
 	}
 
 	return &corev1.ConfigMap{

@@ -221,6 +221,11 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 				"enabled": values.Auth.IsSASLEnabled(),
 			},
 			"tls": values.Listeners.Kafka.ConsoleTLS(&values.TLS),
+			"schemaRegistry": map[string]any{
+				"enabled": values.Listeners.SchemaRegistry.Enabled,
+				"urls":    schemaURLs,
+				"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
+			},
 		},
 		"redpanda": map[string]any{
 			"adminApi": map[string]any{
@@ -230,11 +235,6 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 				},
 				"tls": values.Listeners.Admin.ConsoleTLS(&values.TLS),
 			},
-		},
-		"schemaRegistry": map[string]any{
-			"enabled": values.Listeners.SchemaRegistry.Enabled,
-			"urls":    schemaURLs,
-			"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
 		},
 	}
 
@@ -260,7 +260,7 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 
 		// Due to console not having json go tags the Connect, ConnectCluster and ConnectClusterTLS
 		// are handwritten in the map[string]any form.
-		c["kafkaConnect"] = map[string]any{
+		c["connect"] = map[string]any{
 			"enabled": ptr.Deref(values.Connectors.Enabled, false),
 			"clusters": []map[string]any{
 				{

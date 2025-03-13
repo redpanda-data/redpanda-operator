@@ -30,29 +30,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -135,7 +129,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -282,29 +276,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -387,7 +375,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -528,29 +516,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -633,7 +615,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -776,29 +758,23 @@ metadata:
   name: hvGoJL
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -891,7 +867,7 @@ spec:
         env:
         - name: Z2BpO
           value: 0ggF3ha7D
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -1010,29 +986,23 @@ metadata:
   name: T50cZi
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -1132,7 +1102,7 @@ spec:
             configMapKeyRef:
               key: spAKa
               name: U0EYAAe0
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -1277,29 +1247,23 @@ metadata:
   name: xZty
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -1385,7 +1349,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -1529,29 +1493,23 @@ metadata:
   name: 8nE
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: Fb
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: SrYY84t
   kafka-sasl-password: xCc3TeVY
-  kafka-schema-registry-password: ovCqxwz9Bf
-  kafka-schemaregistry-tls-ca: JL
-  kafka-schemaregistry-tls-cert: cS
-  kafka-schemaregistry-tls-key: UMwYx4F
   kafka-tls-ca: HFpsnPdw
   kafka-tls-cert: hseIt
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -1672,29 +1630,23 @@ metadata:
   name: console-YMl
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -1791,7 +1743,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -1912,29 +1864,23 @@ metadata:
   name: pN
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: R4Zj
-  login-github-personal-access-token: N85av
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: enei1WIcV
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -1999,25 +1945,10 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: pN
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: pN
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: pN
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: pN
         envFrom: []
         image: 7iw15D/RnJFs0:OQDirE
@@ -2140,29 +2071,23 @@ metadata:
   name: rzd
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: G
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: 1tq
   kafka-sasl-password: K8kPgIp6
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: Zr
-  kafka-schemaregistry-tls-cert: KN
-  kafka-schemaregistry-tls-key: t
   kafka-tls-ca: CQ
   kafka-tls-cert: 6xZ8
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -2256,11 +2181,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: rzd
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: rzd
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -2270,13 +2190,7 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -2384,29 +2298,23 @@ metadata:
   name: "y"
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: gp
-  login-google-oauth-client-secret: Ln0
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: 3A593BjCuu
-  login-okta-directory-api-token: mSSz8MZ
+  license: ""
   redpanda-admin-api-password: t
   redpanda-admin-api-tls-ca: QD1x71f
   redpanda-admin-api-tls-cert: 744Ysvi
   redpanda-admin-api-tls-key: 56VaHh
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -2415,10 +2323,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - "": null
-      5w1YcAu: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -2486,7 +2390,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: fd0b4768cdf8d73efbd8e98938257edeaf4abe3f4412394569991d427fb1637a
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -2503,27 +2407,10 @@ spec:
           value: Wu
         - name: 9zVp
           value: g
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: "y"
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: "y"
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: "y"
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
               name: "y"
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -2874,29 +2761,23 @@ metadata:
   name: l1Bnpx
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -2965,7 +2846,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -3196,12 +3077,7 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env:
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: 6Y
-              name: juyv
+        env: []
         envFrom: []
         image: 4A/0YeLdES:1a4iH
         imagePullPolicy: ""
@@ -3424,29 +3300,23 @@ metadata:
   name: hbe
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -3616,7 +3486,7 @@ spec:
               key: E9514U
               name: g3Rbzs
               optional: false
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -3773,29 +3643,23 @@ metadata:
   name: tmn2Kt
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -3884,7 +3748,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -4142,29 +4006,23 @@ metadata:
   name: RttlJN
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -4247,7 +4105,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -4447,29 +4305,23 @@ metadata:
   name: htymHJ
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -4478,9 +4330,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -4581,29 +4430,23 @@ metadata:
   name: 9RweMGWqBs
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -4776,7 +4619,7 @@ spec:
             secretKeyRef:
               key: MlF
               name: h
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -5000,29 +4843,23 @@ metadata:
   name: 6maz
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -5031,10 +4868,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - Q0kslM: null
-    - null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -5099,7 +4932,7 @@ spec:
     metadata:
       annotations:
         JYLUc483y: gTnWiG
-        checksum/config: fc5948eab336c7e0cb34fc89697db65f963dd787dc3cbe9ea1d9218f823710cc
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -5211,7 +5044,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -5410,29 +5243,23 @@ metadata:
   name: 9XG3SZW
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: jw6tY22
-  login-github-personal-access-token: JvG1jx
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: MalR2
-  login-okta-client-secret: mDILgPMjOS9
-  login-okta-directory-api-token: M2ywAiP
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -5441,13 +5268,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  roles.yaml: |-
-    roles:
-    - JlwOk: null
-      QUzHpm: null
-      ch3WnNF: null
-    - {}
-    - null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -5512,7 +5332,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f0f5f5192858351740f4623b1c262c0939143727438a7992d0c09ca34da8b2d9
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         LBQpbD: AHB4hNVL
@@ -5550,35 +5370,10 @@ spec:
             secretKeyRef:
               key: IY9s0
               optional: false
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: 9XG3SZW
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: 9XG3SZW
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: 9XG3SZW
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: 9XG3SZW
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: 9XG3SZW
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: 9XG3SZW
         envFrom:
         - prefix: oK16T1
@@ -5962,29 +5757,23 @@ metadata:
   name: ExFU3
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: IsvQ9
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: 8GlUc
   kafka-sasl-password: Vb
-  kafka-schema-registry-password: UJ7Zl
-  kafka-schemaregistry-tls-ca: T1Q
-  kafka-schemaregistry-tls-cert: 17r
-  kafka-schemaregistry-tls-key: O44
   kafka-tls-ca: n8k9
   kafka-tls-cert: aK
   kafka-tls-key: ""
-  login-github-oauth-client-secret: t6z0n
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: fpuCEFLL
-  login-google-oauth-client-secret: h
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: t
-  login-okta-client-secret: 3CcKl
-  login-okta-directory-api-token: AZt8H77
+  license: ""
   redpanda-admin-api-password: NUkb3zIpwAR
   redpanda-admin-api-tls-ca: t
   redpanda-admin-api-tls-cert: zttTAvj
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -6125,11 +5914,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: ExFU3
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: ExFU3
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -6139,48 +5923,10 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: ExFU3
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: ExFU3
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: ExFU3
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: ExFU3
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: ExFU3
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: ExFU3
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: ExFU3
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -6393,29 +6139,23 @@ metadata:
   name: NZ7h9
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -6527,7 +6267,7 @@ spec:
               containerName: Hbt
               divisor: "0"
               resource: mo7F
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -6662,29 +6402,23 @@ metadata:
   name: Om7
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: XhRg8T
-  login-github-personal-access-token: oB8xbs
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: saEi
-  login-okta-directory-api-token: tq8L
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -6899,30 +6633,10 @@ spec:
               containerName: W4w8tB1wu
               divisor: "0"
               resource: 45v3
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: Om7
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: Om7
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: Om7
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: Om7
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
               name: Om7
         envFrom: []
         image: VPCZungXC/0x6:PXKnRw
@@ -7186,29 +6900,23 @@ metadata:
   name: PhRk
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -7353,29 +7061,23 @@ metadata:
   name: GVjeLRc
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ZEdvyAX0
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: E2ub5aWJ
   kafka-sasl-password: thmWx08VPT
-  kafka-schema-registry-password: s
-  kafka-schemaregistry-tls-ca: B5
-  kafka-schemaregistry-tls-cert: O8i22Z0
-  kafka-schemaregistry-tls-key: QmO97F4SbZ
   kafka-tls-ca: "8"
   kafka-tls-cert: uD9
   kafka-tls-key: ""
-  login-github-oauth-client-secret: v
-  login-github-personal-access-token: bml
-  login-google-groups-service-account.json: xpj5gdST
-  login-google-oauth-client-secret: 2yQsAebMJI
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ZxFQUk
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: kaN
   redpanda-admin-api-tls-ca: 7uUgZI
   redpanda-admin-api-tls-cert: "7"
   redpanda-admin-api-tls-key: r8D6l
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -7583,11 +7285,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: GVjeLRc
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: GVjeLRc
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -7597,43 +7294,10 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: GVjeLRc
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: GVjeLRc
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: GVjeLRc
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: GVjeLRc
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: GVjeLRc
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: GVjeLRc
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -8026,29 +7690,23 @@ metadata:
   name: fXCb
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -8169,7 +7827,7 @@ spec:
             secretKeyRef:
               key: IVpj63Atqu
               name: K0e7Y
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -8430,14 +8088,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - E: null
-      MW6yTq: null
-      cVEzroaFp: null
-    - IN19Kdnr: null
-      Se: null
-    - null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -8651,12 +8301,7 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env:
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: 3UhYW
-              name: Ooxn6uesqBg8
+        env: []
         envFrom:
         - configMapRef:
             name: Es
@@ -9536,29 +9181,23 @@ metadata:
   name: odFI2M4
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: aM
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: pcNJ4lPh
   kafka-sasl-password: OT9m4
-  kafka-schema-registry-password: 4VybIhiIU
-  kafka-schemaregistry-tls-ca: FVWvaL5HS3DE
-  kafka-schemaregistry-tls-cert: UqZl
-  kafka-schemaregistry-tls-key: ch
   kafka-tls-ca: 0h0Ac6CS
   kafka-tls-cert: pNm4uHVMn
   kafka-tls-key: ""
-  login-github-oauth-client-secret: 5XbGmlDmls
-  login-github-personal-access-token: y0PF13
-  login-google-groups-service-account.json: w3
-  login-google-oauth-client-secret: lEvrgxa
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: VfRrL3
-  login-okta-client-secret: 1Gm
-  login-okta-directory-api-token: hgmY7AyguR
+  license: ""
   redpanda-admin-api-password: WvzP1D53
   redpanda-admin-api-tls-ca: dxtnG
   redpanda-admin-api-tls-cert: Rs3rHA8Qdb
   redpanda-admin-api-tls-key: 7hsD
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -9727,11 +9366,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: odFI2M4
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: odFI2M4
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -9741,53 +9375,10 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: odFI2M4
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: odFI2M4
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: odFI2M4
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: odFI2M4
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: odFI2M4
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: odFI2M4
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: odFI2M4
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: odFI2M4
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -9954,29 +9545,23 @@ metadata:
   name: HK
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -9985,10 +9570,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  roles.yaml: |-
-    roles:
-    - null
-    - null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -10062,7 +9643,7 @@ spec:
     metadata:
       annotations:
         IVy: ho3qpcI
-        checksum/config: f1eb84260adfcbd13f58fa9ea35352f85292a4b8397688a06cc5a419d18f065b
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -10244,7 +9825,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -10584,29 +10165,23 @@ metadata:
   name: G9
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: DtIy
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: 9xCf7
   kafka-sasl-password: 8F
-  kafka-schema-registry-password: krNk2
-  kafka-schemaregistry-tls-ca: 5I73C
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: "34"
   kafka-tls-ca: DaT
   kafka-tls-cert: LaU0jwOpGv
   kafka-tls-key: ""
-  login-github-oauth-client-secret: BoOjni
-  login-github-personal-access-token: uUxZ
-  login-google-groups-service-account.json: NulwlJ
-  login-google-oauth-client-secret: oeL6p7fcL
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: yRSh2
-  login-okta-client-secret: xKLBJ9ZAR
-  login-okta-directory-api-token: HTZWfHt
+  license: ""
   redpanda-admin-api-password: 5DQTqKD
   redpanda-admin-api-tls-ca: m5pg
   redpanda-admin-api-tls-cert: yfP
   redpanda-admin-api-tls-key: gzG
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -10709,13 +10284,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - {}
-    - {}
-  roles.yaml: |-
-    roles:
-    - {}
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -10887,21 +10455,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - K8wnWSD: null
-      bwYE7: null
-      y4j: null
-    - GvFfKdgL: null
-      enU8G4: null
-      wvnJcOn: null
-    - td7: null
-  roles.yaml: |-
-    roles:
-    - YQBucbbDX2R: null
-    - 2UuDKjR: null
-      IV0Yus9: null
-      ci20SljQkhw: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -10975,7 +10528,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b62d7887cac1eaba6468e9a1d3f37f2fee28e4761b1a5925b91c95efa2078001
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         So: waKMMvnY
@@ -11190,12 +10743,7 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env:
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: bujGpO7D0C
-              name: V
+        env: []
         envFrom:
         - configMapRef:
             name: nJXDn
@@ -11701,16 +11249,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - 7x: null
-      Ia1K2tdRuYi: null
-      j6c9: null
-  roles.yaml: |-
-    roles:
-    - {}
-    - 6Vndf: null
-      f: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -11781,7 +11319,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 887106c9a3366f0d993eef71283c94649cd72ed12b0fdb2072c19ce223da31c6
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         1bb6: ""
@@ -12027,11 +11565,6 @@ spec:
               key: vPbHh
               name: oBAn1EoZmPzN
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: 9y6KmPZ
-              name: QM
         envFrom:
         - configMapRef:
             name: lo
@@ -12777,20 +12310,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - zktoFv: null
-    - BnTf: null
-      N30: null
-      O: null
-    - "5": null
-      up6oELWDxO: null
-  roles.yaml: |-
-    roles:
-    - 3vFSt6CV6h: null
-    - zwoEunAfS: null
-    - "": null
-      Kz: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -12890,11 +12409,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  roles.yaml: |-
-    roles:
-    - CSJ: null
-    - 0hM2tbS5: null
-      ZhG3M: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -12968,7 +12482,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 35a0e64cf6fc03a6207bf6a2ed1e328a24eefadd8c99178337466f43bb2b75c9
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         Klzm: we
@@ -13364,11 +12878,6 @@ spec:
               key: "n"
               name: RQLa2rQL7Y
               optional: false
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: xLO4B2BCZUJ
-              name: BQR2Y
         envFrom: []
         image: XB9ke7yB/EwU0pzhz:SmZAnO7
         imagePullPolicy: 垿儣Ƈ#WMƻ
@@ -13985,29 +13494,23 @@ metadata:
   name: AumW
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: EfQbyB
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: B
   kafka-sasl-password: w
-  kafka-schema-registry-password: qiltVq
-  kafka-schemaregistry-tls-ca: kyT4j
-  kafka-schemaregistry-tls-cert: Tu4varJ
-  kafka-schemaregistry-tls-key: bmT
   kafka-tls-ca: UyskLmDZ
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: hPt
-  login-github-personal-access-token: vRbRqD0
-  login-google-groups-service-account.json: lcc9
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: A9RDbO6GzTtHYG
-  login-okta-client-secret: HktzleLAg
-  login-okta-directory-api-token: qX
+  license: ""
   redpanda-admin-api-password: 5imX8ztdqjU
   redpanda-admin-api-tls-ca: opQQ
   redpanda-admin-api-tls-cert: PGcfJC3zH
   redpanda-admin-api-tls-key: IhqyTvQn4T
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -14409,11 +13912,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: AumW
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: AumW
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -14421,48 +13919,10 @@ spec:
               name: AumW
         - name: KAFKA_TLS_CAFILEPATH
           value: /etc/console/secrets/kafka-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: AumW
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: AumW
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: AumW
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: AumW
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: AumW
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: AumW
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: AumW
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -14984,18 +14444,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - 2m: null
-      VNrY1fwY: null
-      eaGm2c: null
-    - Ng0sM: null
-      Txhv6: null
-      e2uo: null
-  roles.yaml: |-
-    roles:
-    - Dd: null
-      H0QLXtA: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -15159,14 +14607,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - zn: null
-    - WCQKaiaj: null
-      py: null
-  roles.yaml: |-
-    roles:
-    - {}
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -15255,11 +14695,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - 6O4d: null
-      EY: null
-      oPTMvYGp: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -15734,11 +15169,6 @@ spec:
               key: hmvX
               name: 18Z
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: a7Ph
-              name: zsHNWVcS9
         envFrom:
         - configMapRef:
             name: DR3hdrvZIv
@@ -16492,29 +15922,23 @@ metadata:
   name: Wq
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: 4uTKbvRNSh
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: tfc
   kafka-sasl-password: NAMo
-  kafka-schema-registry-password: 5LUUey
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: i
   kafka-tls-ca: Fydyp8
   kafka-tls-cert: R4y
   kafka-tls-key: ""
-  login-github-oauth-client-secret: Y0
-  login-github-personal-access-token: xyn
-  login-google-groups-service-account.json: zFJbYJ
-  login-google-oauth-client-secret: CsVVc6
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: dsx
-  login-okta-client-secret: wr9eIA
-  login-okta-directory-api-token: Dy
+  license: ""
   redpanda-admin-api-password: O7kPq
   redpanda-admin-api-tls-ca: 7ORz
   redpanda-admin-api-tls-cert: IT
   redpanda-admin-api-tls-key: KR25cT
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -16523,13 +15947,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - EQY9390E: null
-      WXyS: null
-  roles.yaml: |-
-    roles:
-    - {}
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -16601,7 +16018,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 7d19f67e477783614baf6f5e8e10e9217d80c5df35edf4e89e44e2944cca90dd
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -16780,11 +16197,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: Wq
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: Wq
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -16794,49 +16206,10 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: Wq
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: Wq
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: Wq
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: Wq
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: Wq
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: Wq
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: Wq
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: Wq
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -17231,20 +16604,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - 9t: null
-      r6: null
-    - 4sTYMmg: null
-      EcUWAEWYG: null
-      MqbJlJCx2: null
-    - "": null
-      Fv: null
-      aaQShLuVz7p: null
-  roles.yaml: |-
-    roles:
-    - {}
-    - {}
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -17318,7 +16677,7 @@ spec:
     metadata:
       annotations:
         JkW1: feghYA7
-        checksum/config: d72030c40b9fe1f474fe5f9c6741b57723340ea83b7a96ff5d5a2ea24808a76c
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
         okSVM8H: 7Pau
         yYrmYn: uT
       creationTimestamp: null
@@ -17596,11 +16955,6 @@ spec:
               key: CFh
               name: 8zez51Q
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: 2rIA
-              name: W5lOBwOJ6Ps
         envFrom: []
         image: l0qIdHu/5OO0wF5p:i
         imagePullPolicy: ź,Î斎殉媰Fƅ
@@ -18395,22 +17749,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - UiHg9: null
-    - "": null
-      mAYLjAybA: null
-  roles.yaml: |-
-    roles:
-    - 0NpG04j: null
-      UxtPt: null
-      l5dMdK: null
-    - J9: null
-      MzWfEl: null
-      yNu: null
-    - "": null
-      Pv: null
-      tGJIDyXG: null
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -18482,7 +17820,7 @@ spec:
     metadata:
       annotations:
         N0F: vSjZxkjW
-        checksum/config: 644c7e54ac6361486cd9d986c3c6a638de57a485fbb29702c6d81c09e01ebfdd
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
       creationTimestamp: null
       labels:
         K1uahi: UMygEU2O2
@@ -18686,11 +18024,6 @@ spec:
               key: DDcgdcu
               name: oD38
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: x8ik3q
-              name: K7c7oe
         envFrom:
         - configMapRef:
             name: 2ECaB
@@ -19171,29 +18504,23 @@ metadata:
   name: 9gCm5xz
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: naFpMBw
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: nKEzr
-  kafka-schema-registry-password: xU
-  kafka-schemaregistry-tls-ca: pc
-  kafka-schemaregistry-tls-cert: fF1z9FE
-  kafka-schemaregistry-tls-key: tx
   kafka-tls-ca: bhhbwypQ
   kafka-tls-cert: Dw1477
   kafka-tls-key: ""
-  login-github-oauth-client-secret: 1UD4N
-  login-github-personal-access-token: LmFkP6BgmLQ
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: m
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: cXdjG
-  login-okta-client-secret: eF90RohF
-  login-okta-directory-api-token: 1zXLSJEQ
+  license: ""
   redpanda-admin-api-password: rr4c4
   redpanda-admin-api-tls-ca: Eonnpq
   redpanda-admin-api-tls-cert: aPCNgYI
   redpanda-admin-api-tls-key: vlrLQ9I9
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -19348,29 +18675,23 @@ metadata:
   name: fB6TF
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: BKbdr
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: Xs8UvJPyL
   kafka-sasl-password: xW3EDKA
-  kafka-schema-registry-password: Vewx
-  kafka-schemaregistry-tls-ca: te
-  kafka-schemaregistry-tls-cert: JxH
-  kafka-schemaregistry-tls-key: jhxioPhQ
   kafka-tls-ca: eP
   kafka-tls-cert: H9
   kafka-tls-key: ""
-  login-github-oauth-client-secret: Q
-  login-github-personal-access-token: akEcq
-  login-google-groups-service-account.json: pJ8NQ
-  login-google-oauth-client-secret: vj6
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: 8SCyi
-  login-okta-client-secret: Yd
-  login-okta-directory-api-token: q1rSa
+  license: ""
   redpanda-admin-api-password: mON
   redpanda-admin-api-tls-ca: rNzsp
   redpanda-admin-api-tls-cert: UStA
   redpanda-admin-api-tls-key: 3E
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -19821,11 +19142,6 @@ spec:
             secretKeyRef:
               key: i3lK
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: nj
-              name: rl
         envFrom: []
         image: zUsK/lQjo:p
         imagePullPolicy: ȕ蚧竔/´苅oC
@@ -20187,13 +19503,6 @@ data:
   config.yaml: |
     # from .Values.console.config
     {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - FZ5NQS6: null
-    - 0ToI: null
-      RTwav: null
-      mWwdgyM: null
-    - {}
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -20269,7 +19578,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b7a53f702c00ff1bbfa0a0c1c44e35a6a607f41f99e8c6bc408a2e4768f8816c
+        checksum/config: f2ddaf38e076ace697bf986c2a7269cc97400e6e8b65d31c9b613ccbdf4b13bb
         eG: vxInc0
         g: BI6yk
         xCtSP: rQ
@@ -20612,11 +19921,6 @@ spec:
               key: s43
               name: LpaQ
               optional: true
-        - name: LICENSE
-          valueFrom:
-            secretKeyRef:
-              key: enterprise-license
-              name: 3VGefRh
         envFrom: []
         image: VHbf77MFq/9Gz:Tg
         imagePullPolicy: Ƀşb?師Ğ`3H觉趟糯襖
@@ -21143,29 +20447,23 @@ metadata:
   name: 0BIfuN
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: SBJl
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: INqD5
   kafka-sasl-password: 78E
-  kafka-schema-registry-password: YMuFCG7qR
-  kafka-schemaregistry-tls-ca: 1y5yRb6O2b
-  kafka-schemaregistry-tls-cert: NuhkhpMV7b
-  kafka-schemaregistry-tls-key: 9zcrFj
   kafka-tls-ca: 0PF
   kafka-tls-cert: wArD
   kafka-tls-key: ""
-  login-github-oauth-client-secret: jdPGF7
-  login-github-personal-access-token: y6xqv
-  login-google-groups-service-account.json: xi1j27Lipj8
-  login-google-oauth-client-secret: m6FeI
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: zbsTootC
-  login-okta-client-secret: rHSfT
-  login-okta-directory-api-token: rOXaN
+  license: ""
   redpanda-admin-api-password: 8c
   redpanda-admin-api-tls-ca: CJbHIM
   redpanda-admin-api-tls-cert: uO
   redpanda-admin-api-tls-key: uhB0L
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -21457,11 +20755,6 @@ spec:
             secretKeyRef:
               key: kafka-sasl-password
               name: 0BIfuN
-        - name: KAFKA_PROTOBUF_GIT_BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-protobuf-git-basicauth-password
-              name: 0BIfuN
         - name: KAFKA_SASL_AWSMSKIAM_SECRETKEY
           valueFrom:
             secretKeyRef:
@@ -21471,53 +20764,10 @@ spec:
           value: /etc/console/secrets/kafka-tls-ca
         - name: KAFKA_TLS_CERTFILEPATH
           value: /etc/console/secrets/kafka-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CAFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-ca
-        - name: KAFKA_SCHEMAREGISTRY_TLS_CERTFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-cert
-        - name: KAFKA_SCHEMAREGISTRY_TLS_KEYFILEPATH
-          value: /etc/console/secrets/kafka-schemaregistry-tls-key
-        - name: KAFKA_SCHEMAREGISTRY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: kafka-schema-registry-password
-              name: 0BIfuN
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
-              name: 0BIfuN
-        - name: LOGIN_GOOGLE_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-google-oauth-client-secret
-              name: 0BIfuN
-        - name: LOGIN_GOOGLE_DIRECTORY_SERVICEACCOUNTFILEPATH
-          value: /etc/console/secrets/login-google-groups-service-account.json
-        - name: LOGIN_GITHUB_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-github-oauth-client-secret
-              name: 0BIfuN
-        - name: LOGIN_GITHUB_DIRECTORY_PERSONALACCESSTOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-github-personal-access-token
-              name: 0BIfuN
-        - name: LOGIN_OKTA_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-client-secret
-              name: 0BIfuN
-        - name: LOGIN_OKTA_DIRECTORY_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              key: login-okta-directory-api-token
-              name: 0BIfuN
-        - name: LOGIN_OIDC_CLIENTSECRET
-          valueFrom:
-            secretKeyRef:
-              key: login-oidc-client-secret
               name: 0BIfuN
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -22103,29 +21353,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -22209,7 +21453,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -22322,29 +21566,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -22428,7 +21666,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -22541,29 +21779,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -22571,12 +21803,9 @@ apiVersion: v1
 data:
   config.yaml: |
     # from .Values.console.config
-    login:
-      enabled: true
+    authentication:
       oidc:
         clientId: XYZ
-        displayName: my-corp-provider
-        domain: my-test-domain.com
         enabled: true
         issuerTls:
           caFilepath: /oidc-tls/ca.crt
@@ -22585,7 +21814,6 @@ data:
           insecureSkipTlsVerify: false
           keyFilepath: /oidc-tls/tls.key
         issuerUrl: my-oidc-issuer.com
-        userIdentifyingClaimKey: corpo-name
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -22647,7 +21875,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f5fef22d8917de5a033cbf75219af79810c9a70b3b5c8dc2ce82088206f25855
+        checksum/config: bf82aa1e3b8b715f3d0dc0de4a9adc7e373070ac1571a0e600ade23058600d37
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -22660,7 +21888,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -22781,29 +22009,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -22811,16 +22033,16 @@ apiVersion: v1
 data:
   config.yaml: |
     # from .Values.console.config
-    {}
-  role-bindings.yaml: |-
-    roleBindings:
-    - metadata:
-        name: Redpanda POC
-      roleName: admin
-      subjects:
-      - kind: user
-        name: e2euser
-        provider: Plain
+    authorization:
+      roleBindings:
+      - roleName: admin
+        users:
+        - loginType: OIDC
+          name: admin@mycompany.com
+      - roleName: viewer
+        users:
+        - loginType: basic
+          name: user@mycompany.com
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -22882,7 +22104,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 90b40e5edea598c51182d61f6660c5eeefbc2b5fb777481efc29e5c1ef76cf42
+        checksum/config: 10ab35c464d6ad9f5da8e6aa59a871474bf3bbe69ec6457b6d7bcfd8ef82f0e7
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -22895,7 +22117,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -23475,29 +22697,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -23580,7 +22796,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -23693,29 +22909,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -23798,7 +23008,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -23911,29 +23121,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -24016,7 +23220,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -24138,29 +23342,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -24243,7 +23441,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -24389,29 +23587,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -24494,7 +23686,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -24607,29 +23799,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -24712,7 +23898,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -25061,29 +24247,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -25166,7 +24346,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -25299,29 +24479,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -25404,7 +24578,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret
@@ -25517,29 +24691,23 @@ metadata:
   name: console
   namespace: test-namespace
 stringData:
-  enterprise-license: ""
-  kafka-protobuf-git-basicauth-password: ""
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
   kafka-sasl-aws-msk-iam-secret-key: ""
   kafka-sasl-password: ""
-  kafka-schema-registry-password: ""
-  kafka-schemaregistry-tls-ca: ""
-  kafka-schemaregistry-tls-cert: ""
-  kafka-schemaregistry-tls-key: ""
   kafka-tls-ca: ""
   kafka-tls-cert: ""
   kafka-tls-key: ""
-  login-github-oauth-client-secret: ""
-  login-github-personal-access-token: ""
-  login-google-groups-service-account.json: ""
-  login-google-oauth-client-secret: ""
-  login-jwt-secret: SECRETKEY
-  login-oidc-client-secret: ""
-  login-okta-client-secret: ""
-  login-okta-directory-api-token: ""
+  license: ""
   redpanda-admin-api-password: ""
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
 type: Opaque
 ---
 # Source: console/templates/entry-point.yaml
@@ -25624,7 +24792,7 @@ spec:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
         env:
-        - name: LOGIN_JWTSECRET
+        - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
               key: login-jwt-secret

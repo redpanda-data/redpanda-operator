@@ -59,8 +59,8 @@ func Secret(dot *helmette.Dot) *corev1.Secret {
 			"schemaregistry-tls-key":   ptr.Deref(values.Secret.SchemaRegistry.TLSKey, ""),
 
 			// Authentication
-			"auth-jwt-signingkey":     jwtSigningKey,
-			"auth-oidc-client-secret": ptr.Deref(values.Secret.Authentication.OIDC.ClientSecret, ""),
+			"authentication-jwt-signingkey":     jwtSigningKey,
+			"authentication-oidc-client-secret": ptr.Deref(values.Secret.Authentication.OIDC.ClientSecret, ""),
 
 			// License
 			"license": values.Secret.License,
