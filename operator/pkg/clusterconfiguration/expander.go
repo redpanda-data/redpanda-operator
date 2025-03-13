@@ -163,14 +163,15 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 	switch metadata.Type {
 	case "string":
 		var s string
+		// YAML unmarshalling to "be liberal in what we accept" here.
 		err := yaml.Unmarshal([]byte(repr), &s)
 		return s, err
 	case "number":
-		return strconv.ParseFloat(repr, 64)
+		return strconv.ParseFloat(strings.Trim(repr, "\n"), 64)
 	case "integer":
-		return strconv.ParseInt(repr, 10, 64)
+		return strconv.ParseInt(strings.Trim(repr, "\n"), 10, 64)
 	case "boolean":
-		return strconv.ParseBool(repr)
+		return strconv.ParseBool(strings.Trim(repr, "\n"))
 	case "array":
 		return convertStringToStringArray(repr)
 	default:
