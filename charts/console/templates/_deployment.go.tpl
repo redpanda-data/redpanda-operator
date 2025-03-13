@@ -9,7 +9,7 @@
 {{- if (ne (toJson $values.service.targetPort) "null") -}}
 {{- $listenPort = $values.service.targetPort -}}
 {{- end -}}
-{{- $configListenPort := (dig "server" "listenPort" (coalesce nil) $values.console.config) -}}
+{{- $configListenPort := (dig "server" "listenPort" (coalesce nil) $values.config) -}}
 {{- $_37_asInt_1_ok_2 := (get (fromJson (include "_shims.asintegral" (dict "a" (list $configListenPort) ))) "r") -}}
 {{- $asInt_1 := ((index $_37_asInt_1_ok_2 0) | int) -}}
 {{- $ok_2 := (index $_37_asInt_1_ok_2 1) -}}

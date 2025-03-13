@@ -61,15 +61,15 @@ Automount API credentials for the Service Account into the pod. Console does not
 
 **Default:** `{}`
 
-### [configmap.create](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=configmap.create)
-
-**Default:** `true`
-
-### [console.config](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=console.config)
+### [config](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=config)
 
 Settings for the `Config.yaml` (required). For a reference of configuration settings, see the [Redpanda Console documentation](https://docs.redpanda.com/docs/reference/console/config/).
 
 **Default:** `{}`
+
+### [configmap.create](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=configmap.create)
+
+**Default:** `true`
 
 ### [deployment.create](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=deployment.create)
 

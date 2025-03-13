@@ -33,7 +33,7 @@ func ContainerPort(dot *helmette.Dot) int32 {
 		listenPort = *values.Service.TargetPort
 	}
 
-	configListenPort := helmette.Dig(values.Console.Config, nil, "server", "listenPort")
+	configListenPort := helmette.Dig(values.Config, nil, "server", "listenPort")
 	if asInt, ok := helmette.AsIntegral[int](configListenPort); ok {
 		return int32(asInt)
 	}

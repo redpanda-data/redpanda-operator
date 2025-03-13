@@ -42,7 +42,7 @@ type PartialValues struct {
 	Affinity                     *corev1.Affinity                  "json:\"affinity,omitempty\""
 	TopologySpreadConstraints    []corev1.TopologySpreadConstraint "json:\"topologySpreadConstraints,omitempty\""
 	PriorityClassName            *string                           "json:\"priorityClassName,omitempty\""
-	Console                      *PartialConsole                   "json:\"console,omitempty\""
+	Config                       map[string]any                    "json:\"config,omitempty\""
 	ExtraEnv                     []corev1.EnvVar                   "json:\"extraEnv,omitempty\""
 	ExtraEnvFrom                 []corev1.EnvFromSource            "json:\"extraEnvFrom,omitempty\""
 	ExtraVolumes                 []corev1.Volume                   "json:\"extraVolumes,omitempty\""
@@ -97,10 +97,6 @@ type PartialAutoScaling struct {
 	MaxReplicas                       *int32 "json:\"maxReplicas,omitempty\""
 	TargetCPUUtilizationPercentage    *int32 "json:\"targetCPUUtilizationPercentage,omitempty\""
 	TargetMemoryUtilizationPercentage *int32 "json:\"targetMemoryUtilizationPercentage,omitempty\""
-}
-
-type PartialConsole struct {
-	Config map[string]any "json:\"config,omitempty\""
 }
 
 type PartialInitContainers struct {
