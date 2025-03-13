@@ -152,7 +152,6 @@ func ExpandForConfiguration(
 		default:
 			return nil, fmt.Errorf("unrecognised configuration entry for key %q", k)
 		}
-		return nil, fmt.Errorf("unimplemented")
 	}
 	return properties, nil
 }
@@ -170,6 +169,8 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 		return strconv.ParseFloat(repr, 64)
 	case "integer":
 		return strconv.ParseInt(repr, 10, 64)
+	case "boolean":
+		return strconv.ParseBool(repr)
 	case "array":
 		return convertStringToStringArray(repr)
 	default:
