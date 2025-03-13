@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -25,7 +25,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -77,7 +77,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -102,7 +102,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -135,7 +135,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -197,7 +197,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -232,7 +232,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -257,7 +257,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -271,7 +271,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -308,7 +308,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -323,7 +323,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -348,7 +348,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -381,7 +381,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -443,7 +443,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -472,7 +472,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -497,7 +497,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -511,7 +511,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -548,7 +548,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -563,7 +563,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -588,7 +588,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -621,7 +621,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -683,7 +683,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -712,7 +712,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -738,7 +738,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: HRoLg
   namespace: test-namespace
@@ -753,7 +753,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: hvGoJL
   namespace: test-namespace
@@ -791,7 +791,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: hvGoJL
   namespace: test-namespace
@@ -807,7 +807,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: hvGoJL
   namespace: test-namespace
@@ -834,7 +834,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: hvGoJL
   namespace: test-namespace
@@ -873,7 +873,7 @@ spec:
               key: login-jwt-secret
               name: hvGoJL
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1028486626
@@ -942,7 +942,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -967,7 +967,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: T50cZi
   namespace: test-namespace
@@ -981,7 +981,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: T50cZi
   namespace: test-namespace
@@ -1018,7 +1018,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: T50cZi
   namespace: test-namespace
@@ -1033,7 +1033,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: T50cZi
   namespace: test-namespace
@@ -1058,7 +1058,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: T50cZi
   namespace: test-namespace
@@ -1108,7 +1108,7 @@ spec:
               key: login-jwt-secret
               name: T50cZi
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1203,7 +1203,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -1228,7 +1228,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: R1Yar8
   namespace: test-namespace
@@ -1242,7 +1242,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: xZty
   namespace: test-namespace
@@ -1279,7 +1279,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: xZty
   namespace: test-namespace
@@ -1294,7 +1294,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: xZty
   namespace: test-namespace
@@ -1319,7 +1319,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: xZty
   namespace: test-namespace
@@ -1359,7 +1359,7 @@ spec:
           secretRef:
             name: ha
         - prefix: i2E2Jvnc
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1446,7 +1446,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -1474,7 +1474,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 8nE
   namespace: test-namespace
@@ -1488,7 +1488,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 8nE
   namespace: test-namespace
@@ -1522,7 +1522,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 8nE
   namespace: test-namespace
@@ -1547,7 +1547,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 8nE
   namespace: test-namespace
@@ -1584,7 +1584,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -1610,7 +1610,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console-YMl
   namespace: test-namespace
@@ -1625,7 +1625,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console-YMl
   namespace: test-namespace
@@ -1663,7 +1663,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console-YMl
   namespace: test-namespace
@@ -1679,7 +1679,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console-YMl
   namespace: test-namespace
@@ -1705,7 +1705,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console-YMl
   namespace: test-namespace
@@ -1749,7 +1749,7 @@ spec:
               key: login-jwt-secret
               name: console-YMl
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1820,7 +1820,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -1845,7 +1845,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: pN
   namespace: test-namespace
@@ -1859,7 +1859,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: pN
   namespace: test-namespace
@@ -1893,7 +1893,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: pN
   namespace: test-namespace
@@ -1918,7 +1918,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: pN
   namespace: test-namespace
@@ -2024,7 +2024,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -2052,7 +2052,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: nd7TSb2mNTS
   namespace: test-namespace
@@ -2066,7 +2066,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: rzd
   namespace: test-namespace
@@ -2103,7 +2103,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: rzd
   namespace: test-namespace
@@ -2118,7 +2118,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: rzd
   namespace: test-namespace
@@ -2143,7 +2143,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: rzd
   namespace: test-namespace
@@ -2275,7 +2275,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2291,7 +2291,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2330,7 +2330,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2347,7 +2347,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2374,7 +2374,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2431,7 +2431,7 @@ spec:
         - configMapRef:
             name: 4xZZ
           prefix: Djbp99U
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1105213631
@@ -2509,7 +2509,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
     helm.sh/chart: console-0.7.31
@@ -2536,7 +2536,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: YcV5zP8
   namespace: test-namespace
@@ -2554,7 +2554,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GbgHqD
   namespace: test-namespace
@@ -2569,7 +2569,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GbgHqD
   namespace: test-namespace
@@ -2595,7 +2595,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GbgHqD
   namespace: test-namespace
@@ -2627,7 +2627,7 @@ spec:
         command: null
         env: []
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1421249778
@@ -2717,7 +2717,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -2742,7 +2742,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: l1Bnpx
   namespace: test-namespace
@@ -2756,7 +2756,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: l1Bnpx
   namespace: test-namespace
@@ -2791,7 +2791,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: l1Bnpx
   namespace: test-namespace
@@ -2816,7 +2816,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: l1Bnpx
   namespace: test-namespace
@@ -2852,7 +2852,7 @@ spec:
               key: login-jwt-secret
               name: l1Bnpx
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: -1420734522
@@ -2950,7 +2950,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -2979,7 +2979,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: kIzbDF
   namespace: test-namespace
@@ -2994,7 +2994,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: ivK
   namespace: test-namespace
@@ -3019,7 +3019,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: ivK
   namespace: test-namespace
@@ -3252,7 +3252,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -3278,7 +3278,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   name: hbe
@@ -3294,7 +3294,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   name: hbe
@@ -3333,7 +3333,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   name: hbe
@@ -3353,7 +3353,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   name: hbe
@@ -3381,7 +3381,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   name: hbe
@@ -3598,7 +3598,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     v7E: 1g6JB
   annotations:
@@ -3624,7 +3624,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tmn2Kt
   namespace: test-namespace
@@ -3638,7 +3638,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tmn2Kt
   namespace: test-namespace
@@ -3675,7 +3675,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tmn2Kt
   namespace: test-namespace
@@ -3690,7 +3690,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tmn2Kt
   namespace: test-namespace
@@ -3716,7 +3716,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tmn2Kt
   namespace: test-namespace
@@ -3755,7 +3755,7 @@ spec:
               name: tmn2Kt
         envFrom:
         - prefix: RyT9JuZ
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 666524470
@@ -3962,7 +3962,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -3987,7 +3987,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: RttlJN
   namespace: test-namespace
@@ -4001,7 +4001,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: RttlJN
   namespace: test-namespace
@@ -4038,7 +4038,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: RttlJN
   namespace: test-namespace
@@ -4053,7 +4053,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: RttlJN
   namespace: test-namespace
@@ -4078,7 +4078,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: RttlJN
   namespace: test-namespace
@@ -4111,7 +4111,7 @@ spec:
               key: login-jwt-secret
               name: RttlJN
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -4261,7 +4261,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -4286,7 +4286,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: h6eHrUr
   namespace: test-namespace
@@ -4300,7 +4300,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: htymHJ
   namespace: test-namespace
@@ -4337,7 +4337,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: htymHJ
   namespace: test-namespace
@@ -4352,7 +4352,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: htymHJ
   namespace: test-namespace
@@ -4377,7 +4377,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -4408,7 +4408,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: zmr
   namespace: test-namespace
@@ -4425,7 +4425,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9RweMGWqBs
   namespace: test-namespace
@@ -4465,7 +4465,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9RweMGWqBs
   namespace: test-namespace
@@ -4483,7 +4483,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9RweMGWqBs
   namespace: test-namespace
@@ -4513,7 +4513,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9RweMGWqBs
   namespace: test-namespace
@@ -4760,7 +4760,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9RweMGWqBs
   namespace: test-namespace
@@ -4799,7 +4799,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -4824,7 +4824,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: DdF7ALq
   namespace: test-namespace
@@ -4838,7 +4838,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 6maz
   namespace: test-namespace
@@ -4875,7 +4875,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 6maz
   namespace: test-namespace
@@ -4890,7 +4890,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 6maz
   namespace: test-namespace
@@ -4915,7 +4915,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 6maz
   namespace: test-namespace
@@ -5199,7 +5199,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -5224,7 +5224,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9XG3SZW
   namespace: test-namespace
@@ -5238,7 +5238,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9XG3SZW
   namespace: test-namespace
@@ -5275,7 +5275,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9XG3SZW
   namespace: test-namespace
@@ -5290,7 +5290,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9XG3SZW
   namespace: test-namespace
@@ -5318,7 +5318,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9XG3SZW
   namespace: test-namespace
@@ -5738,7 +5738,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: uAvlOXf
   namespace: test-namespace
@@ -5752,7 +5752,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: ExFU3
   namespace: test-namespace
@@ -5786,7 +5786,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: ExFU3
   namespace: test-namespace
@@ -5812,7 +5812,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: ExFU3
   namespace: test-namespace
@@ -6093,7 +6093,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -6120,7 +6120,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: NZ7h9
   namespace: test-namespace
@@ -6134,7 +6134,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: NZ7h9
   namespace: test-namespace
@@ -6171,7 +6171,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: NZ7h9
   namespace: test-namespace
@@ -6186,7 +6186,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: NZ7h9
   namespace: test-namespace
@@ -6213,7 +6213,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: NZ7h9
   namespace: test-namespace
@@ -6355,7 +6355,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -6383,7 +6383,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: HMpc
   namespace: test-namespace
@@ -6397,7 +6397,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Om7
   namespace: test-namespace
@@ -6434,7 +6434,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Om7
   namespace: test-namespace
@@ -6449,7 +6449,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Om7
   namespace: test-namespace
@@ -6477,7 +6477,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Om7
   namespace: test-namespace
@@ -6848,7 +6848,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -6879,7 +6879,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: tW
   namespace: test-namespace
@@ -6895,7 +6895,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: PhRk
   namespace: test-namespace
@@ -6934,7 +6934,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: PhRk
   namespace: test-namespace
@@ -6954,7 +6954,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: PhRk
   namespace: test-namespace
@@ -6980,7 +6980,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: PhRk
   namespace: test-namespace
@@ -7017,7 +7017,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -7042,7 +7042,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GVjeLRc
   namespace: test-namespace
@@ -7056,7 +7056,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GVjeLRc
   namespace: test-namespace
@@ -7093,7 +7093,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GVjeLRc
   namespace: test-namespace
@@ -7108,7 +7108,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GVjeLRc
   namespace: test-namespace
@@ -7134,7 +7134,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: GVjeLRc
   namespace: test-namespace
@@ -7642,7 +7642,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -7671,7 +7671,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Pga
   namespace: test-namespace
@@ -7685,7 +7685,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: fXCb
   namespace: test-namespace
@@ -7722,7 +7722,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: fXCb
   namespace: test-namespace
@@ -7747,7 +7747,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: fXCb
   namespace: test-namespace
@@ -7833,7 +7833,7 @@ spec:
               key: login-jwt-secret
               name: fXCb
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 2110243128
@@ -8023,7 +8023,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: fXCb
   namespace: test-namespace
@@ -8052,7 +8052,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -8077,7 +8077,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Wpq
   namespace: test-namespace
@@ -8095,7 +8095,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Wpq
   namespace: test-namespace
@@ -8110,7 +8110,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Wpq
   namespace: test-namespace
@@ -8135,7 +8135,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -8162,7 +8162,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: H5TDAALUdD
   namespace: test-namespace
@@ -8177,7 +8177,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Uo
   namespace: test-namespace
@@ -8204,7 +8204,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Uo
   namespace: test-namespace
@@ -8716,7 +8716,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -8749,7 +8749,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     kuKPk7: ""
   name: Utu8ZHG2
@@ -8766,7 +8766,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     kuKPk7: ""
   name: qhaD
@@ -8793,7 +8793,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     kuKPk7: ""
   name: qhaD
@@ -8887,7 +8887,7 @@ spec:
         command: null
         env: []
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1372450161
@@ -9001,7 +9001,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     kuKPk7: ""
   name: qhaD
@@ -9066,7 +9066,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 55C9f3
   namespace: test-namespace
@@ -9086,7 +9086,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 61hunk
   namespace: test-namespace
@@ -9115,7 +9115,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 61hunk
   namespace: test-namespace
@@ -9150,7 +9150,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -9176,7 +9176,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: odFI2M4
   namespace: test-namespace
@@ -9214,7 +9214,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: odFI2M4
   namespace: test-namespace
@@ -9230,7 +9230,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: odFI2M4
   namespace: test-namespace
@@ -9257,7 +9257,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: odFI2M4
   namespace: test-namespace
@@ -9512,7 +9512,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -9539,7 +9539,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     xi7L: ibI45
   name: HK
@@ -9578,7 +9578,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     xi7L: ibI45
   name: HK
@@ -9596,7 +9596,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     xi7L: ibI45
   name: HK
@@ -9626,7 +9626,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     xi7L: ibI45
   name: HK
@@ -10133,7 +10133,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     xi7L: ibI45
   annotations:
@@ -10158,7 +10158,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
@@ -10195,7 +10195,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
@@ -10222,7 +10222,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
@@ -10260,7 +10260,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
@@ -10291,7 +10291,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
@@ -10308,7 +10308,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
@@ -10334,7 +10334,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
@@ -10374,7 +10374,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
@@ -10429,7 +10429,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
@@ -10464,7 +10464,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   name: llK4G
@@ -10482,7 +10482,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   name: llK4G
@@ -10511,7 +10511,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   name: llK4G
@@ -11146,7 +11146,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   name: llK4G
@@ -11186,7 +11186,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   name: llK4G
@@ -11228,7 +11228,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     e3Cx: MIAO
     helm.sh/chart: console-0.7.31
   annotations:
@@ -11256,7 +11256,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     gZ85uw3T: e
     helm.sh/chart: console-0.7.31
     qO: F4dqLo67vKYZ
@@ -11274,7 +11274,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     gZ85uw3T: e
     helm.sh/chart: console-0.7.31
     qO: F4dqLo67vKYZ
@@ -11301,7 +11301,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     gZ85uw3T: e
     helm.sh/chart: console-0.7.31
     qO: F4dqLo67vKYZ
@@ -12298,7 +12298,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     blGSa: Hnim0SflkfpF
     helm.sh/chart: console-0.7.31
   name: QxrM
@@ -12318,7 +12318,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     blGSa: Hnim0SflkfpF
     helm.sh/chart: console-0.7.31
   name: l
@@ -12337,7 +12337,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     blGSa: Hnim0SflkfpF
     helm.sh/chart: console-0.7.31
   name: l
@@ -12364,7 +12364,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     blGSa: Hnim0SflkfpF
     helm.sh/chart: console-0.7.31
   annotations:
@@ -12398,7 +12398,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: HMyYp
   namespace: test-namespace
@@ -12419,7 +12419,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Bv0I
   namespace: test-namespace
@@ -12438,7 +12438,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Bv0I
   namespace: test-namespace
@@ -12466,7 +12466,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Bv0I
   namespace: test-namespace
@@ -13385,7 +13385,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Bv0I
   namespace: test-namespace
@@ -13460,7 +13460,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -13489,7 +13489,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: AumW
   namespace: test-namespace
@@ -13526,7 +13526,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: AumW
   namespace: test-namespace
@@ -13557,7 +13557,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: AumW
   namespace: test-namespace
@@ -14432,7 +14432,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     uEVMkDkYRvnn: zvptNai
   name: ItYso
@@ -14453,7 +14453,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
@@ -14471,7 +14471,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
@@ -14500,7 +14500,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
@@ -14566,7 +14566,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     uEVMkDkYRvnn: zvptNai
   annotations:
@@ -14596,7 +14596,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: fP77cJ3T
   namespace: test-namespace
@@ -14614,7 +14614,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: j1dUk8TGy8Np
   namespace: test-namespace
@@ -14629,7 +14629,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: j1dUk8TGy8Np
   namespace: test-namespace
@@ -14654,7 +14654,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -14684,7 +14684,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 8s2qVhKEW
   namespace: test-namespace
@@ -14702,7 +14702,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: bbshm
   namespace: test-namespace
@@ -14720,7 +14720,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: bbshm
   namespace: test-namespace
@@ -14745,7 +14745,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: bbshm
   namespace: test-namespace
@@ -14784,7 +14784,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: KchYZFsbB3
   namespace: test-namespace
@@ -14801,7 +14801,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: KchYZFsbB3
   namespace: test-namespace
@@ -14828,7 +14828,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: KchYZFsbB3
   namespace: test-namespace
@@ -15867,7 +15867,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -15900,7 +15900,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: 0Z71mJNQUx
@@ -15916,7 +15916,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -15955,7 +15955,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -15973,7 +15973,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -16001,7 +16001,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -16538,7 +16538,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -16577,7 +16577,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     cxAL7zvwvb: tmEjSXwTK6
     helm.sh/chart: console-0.7.31
   name: Wq
@@ -16613,7 +16613,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: eHZ
   namespace: test-namespace
@@ -16630,7 +16630,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: eHZ
   namespace: test-namespace
@@ -16660,7 +16660,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: eHZ
   namespace: test-namespace
@@ -17589,7 +17589,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: eHZ
   namespace: test-namespace
@@ -17626,7 +17626,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -17651,7 +17651,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: Gma
   namespace: test-namespace
@@ -17666,7 +17666,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: y0pa6pm83
   namespace: test-namespace
@@ -17694,7 +17694,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: y0pa6pm83
   namespace: test-namespace
@@ -17738,7 +17738,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: W9k
   namespace: test-namespace
@@ -17757,7 +17757,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: resP
   namespace: test-namespace
@@ -17774,7 +17774,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: resP
   namespace: test-namespace
@@ -17803,7 +17803,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: resP
   namespace: test-namespace
@@ -18456,7 +18456,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -18484,7 +18484,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: nX5G
   namespace: test-namespace
@@ -18499,7 +18499,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9gCm5xz
   namespace: test-namespace
@@ -18534,7 +18534,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9gCm5xz
   namespace: test-namespace
@@ -18559,7 +18559,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9gCm5xz
   namespace: test-namespace
@@ -18595,7 +18595,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 9gCm5xz
   namespace: test-namespace
@@ -18642,7 +18642,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -18669,7 +18669,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     rHtDM6k: ZY6Kw
   name: fB6TF
@@ -18706,7 +18706,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     rHtDM6k: ZY6Kw
   name: fB6TF
@@ -18736,7 +18736,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     rHtDM6k: ZY6Kw
   name: fB6TF
@@ -18779,7 +18779,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: DSw7
   namespace: test-namespace
@@ -18797,7 +18797,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: YUi5JpG
   namespace: test-namespace
@@ -18824,7 +18824,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: YUi5JpG
   namespace: test-namespace
@@ -19452,7 +19452,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: YUi5JpG
   namespace: test-namespace
@@ -19492,7 +19492,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: sKa
   namespace: test-namespace
@@ -19513,7 +19513,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 3um
   namespace: test-namespace
@@ -19533,7 +19533,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 3um
   namespace: test-namespace
@@ -19562,7 +19562,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 3um
   namespace: test-namespace
@@ -20382,7 +20382,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: 3um
   namespace: test-namespace
@@ -20424,7 +20424,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   name: z12W
@@ -20441,7 +20441,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   name: 0BIfuN
@@ -20481,7 +20481,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   name: 0BIfuN
@@ -20510,7 +20510,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   name: 0BIfuN
@@ -21268,7 +21268,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   name: 0BIfuN
@@ -21306,7 +21306,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
     ztm: qegfb80
   annotations:
@@ -21334,7 +21334,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21348,7 +21348,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21386,7 +21386,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21401,7 +21401,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21426,7 +21426,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21459,7 +21459,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21522,7 +21522,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -21547,7 +21547,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21561,7 +21561,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21599,7 +21599,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21614,7 +21614,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21639,7 +21639,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21672,7 +21672,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21735,7 +21735,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -21760,7 +21760,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21774,7 +21774,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21821,7 +21821,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21836,7 +21836,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21861,7 +21861,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -21896,7 +21896,7 @@ spec:
         envFrom:
         - secretRef:
             name: my-client-secret-oidc
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21965,7 +21965,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -21990,7 +21990,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22004,7 +22004,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22038,7 +22038,7 @@ data:
       - roleName: admin
         users:
         - loginType: OIDC
-          name: admin@mycompany.com
+          name: "104753799096233778779"
       - roleName: viewer
         users:
         - loginType: basic
@@ -22050,7 +22050,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22065,7 +22065,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22090,7 +22090,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22104,7 +22104,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 10ab35c464d6ad9f5da8e6aa59a871474bf3bbe69ec6457b6d7bcfd8ef82f0e7
+        checksum/config: bc58dc5e670b8b92cac41c203b351a7f852555f7656766de9d120e22fa7d5690
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: console
@@ -22123,7 +22123,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22186,7 +22186,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -22678,7 +22678,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22692,7 +22692,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22729,7 +22729,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22744,7 +22744,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22769,7 +22769,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22865,7 +22865,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -22890,7 +22890,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22904,7 +22904,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22941,7 +22941,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22956,7 +22956,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -22981,7 +22981,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23014,7 +23014,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23077,7 +23077,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -23102,7 +23102,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23116,7 +23116,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23153,7 +23153,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23168,7 +23168,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23193,7 +23193,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23226,7 +23226,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23298,7 +23298,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -23323,7 +23323,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23337,7 +23337,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23374,7 +23374,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23389,7 +23389,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23414,7 +23414,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23447,7 +23447,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23511,7 +23511,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23543,7 +23543,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -23568,7 +23568,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23582,7 +23582,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23619,7 +23619,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23634,7 +23634,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23659,7 +23659,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23692,7 +23692,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: redpandadata/console:v2.8.0
+        image: redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23755,7 +23755,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -23780,7 +23780,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23794,7 +23794,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23831,7 +23831,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23846,7 +23846,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23871,7 +23871,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -23904,7 +23904,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23987,7 +23987,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -24228,7 +24228,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24242,7 +24242,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24279,7 +24279,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24294,7 +24294,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24319,7 +24319,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24352,7 +24352,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -24435,7 +24435,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -24460,7 +24460,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24474,7 +24474,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24511,7 +24511,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24526,7 +24526,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24551,7 +24551,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24584,7 +24584,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -24647,7 +24647,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
@@ -24672,7 +24672,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24686,7 +24686,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24723,7 +24723,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24739,7 +24739,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24765,7 +24765,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   name: console
   namespace: test-namespace
@@ -24798,7 +24798,7 @@ spec:
               key: login-jwt-secret
               name: console
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v2.8.0
+        image: docker.redpanda.com/redpandadata/console:v3.0.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -24861,7 +24861,7 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v2.8.0
+    app.kubernetes.io/version: v3.0.0
     helm.sh/chart: console-0.7.31
   annotations:
     "helm.sh/hook": test
