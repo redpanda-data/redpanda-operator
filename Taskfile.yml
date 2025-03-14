@@ -41,6 +41,9 @@ vars:
   OPERATOR_CHART_VERSION:
     # NB: OPERATOR_CHART_VERSION is currently only used for the operator chart's nightly releases.
     sh: git describe --dirty --tags --match 'charts/operator/v*' --always | sed 's#^charts/operator/##'
+  CONSOLE_CHART_VERSION:
+    # NB: CONSOLE_CHART_VERSION is currently only used for the console chart's nightly releases.
+    sh: git describe --dirty --tags --match 'charts/console/v*' --always | sed 's#^charts/console/##'
 
 includes:
   build: taskfiles/build.yml
