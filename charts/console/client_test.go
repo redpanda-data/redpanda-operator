@@ -7,24 +7,25 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package console_test
+package console
 
 import (
 	"context"
-	"encoding/json"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
-	"emperror.dev/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/portforward"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 )
 
 type Client struct {
@@ -39,142 +40,148 @@ type portForwardClient struct {
 	schema      string
 }
 
-func (c *Client) getStsPod(ctx context.Context, ordinal int) (*corev1.Pod, error) {
-	return kube.Get[corev1.Pod](ctx, c.Ctl, kube.ObjectKey{
-		Name:      fmt.Sprintf("%s-%d", c.Release.Name, ordinal),
-		Namespace: c.Release.Namespace,
-	})
-}
-
-func (c *Client) GetClusterHealth(ctx context.Context) (map[string]any, error) {
-	pod, err := c.getStsPod(ctx, 0)
+func (c *Client) getConsolePod(ctx context.Context) (*corev1.Pod, error) {
+	deploys, err := kube.List[appsv1.DeploymentList](ctx, c.Ctl,
+		k8sclient.InNamespace(c.Release.Namespace),
+	)
 	if err != nil {
 		return nil, err
 	}
 
+	for _, deploy := range deploys.Items {
+		fmt.Println(deploy.Name)
+	}
+
+	deployment, err := kube.Get[appsv1.Deployment](ctx, c.Ctl, kube.ObjectKey{
+		Name:      c.Release.Name + "-console",
+		Namespace: c.Release.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := kube.List[corev1.PodList](ctx, c.Ctl,
+		k8sclient.InNamespace(deployment.Namespace),
+		k8sclient.MatchingLabels(deployment.Spec.Selector.MatchLabels))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pods.Items) == 0 {
+		return nil, errors.New("no pods found")
+	}
+
+	return &pods.Items[0], nil
+}
+
+// ExposeConsole will only Console service
+func (c *Client) ExposeConsole(ctx context.Context, dot *helmette.Dot, out, errOut io.Writer) (func(), error) {
+	pod, err := c.getConsolePod(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	availablePorts, cleanup, err := c.Ctl.PortForward(ctx, pod, out, errOut)
+	if err != nil {
+		return cleanup, err
+	}
+
+	values := helmette.Unwrap[Values](dot.Values)
+
+	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.Release.Name, "default", "cert")
+
+	secretName := defaultSecretName
+	if len(values.Ingress.TLS) > 0 {
+		secretName = values.Ingress.TLS[0].SecretName
+	}
+
+	httpConsoleClient, err := c.createClient(ctx,
+		int(availablePorts[0].Local),
+		false,
+		secretName)
+	if err != nil {
+		return cleanup, err
+	}
+
+	c.consoleClient = httpConsoleClient
+
+	return cleanup, err
+}
+
+func (c *Client) GetDebugVars(ctx context.Context) (string, error) {
 	client := c.consoleClient
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://127.0.0.1:%d/v1/cluster/health_overview", client.schema, client.exposedPort), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://127.0.0.1:%d/debug/vars", client.schema, client.exposedPort), nil)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return "", err
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return "", err
 	}
 
 	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return "", err
 	}
 
 	if res.StatusCode > 299 {
-		return nil, errors.New("response above 299 HTTP code")
+		return "", errors.New("response above 299 HTTP code")
 	}
 
-	var clusterHealth map[string]any
-	if err = json.Unmarshal(body, &clusterHealth); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return clusterHealth, nil
+	return string(body), nil
 }
 
-// ExposeConsole will only Console service
-func (c *Client) ExposeConsole(ctx context.Context, dot *helmette.Dot, out, errOut io.Writer) (func(), error) {
-	pod, err := c.getStsPod(ctx, 0)
-	if err != nil {
-		return nil, errors.WithStack(err)
+func (c *Client) createClient(ctx context.Context, port int, tlsEnabled bool, tlsK8SSecretName string) (*portForwardClient, error) {
+	if port == 0 {
+		return nil, errors.New("admin internal listener port not found")
 	}
 
-	availablePorts, cleanup, err := c.Ctl.PortForward(ctx, pod, out, errOut)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	values := helmette.Unwrap[console.Values](dot.Values)
-
-	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.Release.Name, "default", "cert")
-
-	secretName := defaultSecretName
-	if len(values.Ingress.TLS) >  {
-		secretName = values.Ingress.TLS[0].SecretName
-	}
-	
-	adminClient, err := c.createClient(ctx,
-		getInternalPort(rpYaml.Redpanda.AdminAPI, availablePorts),
-		isTLSEnabled(rpYaml.Redpanda.AdminAPITLS),
-		isMutualTLSEnabled(rpYaml.Redpanda.AdminAPITLS),
-		secretName)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	c.adminClients[pod.Name] = adminClient
-
-	secretName = defaultSecretName
-	cert = values.TLS.Certs[values.Listeners.SchemaRegistry.TLS.Cert]
-	if ref := cert.ClientSecretRef; ref != nil {
-		secretName = ref.Name
-	}
-
-	schemaClient, err := c.createClient(ctx,
-		getInternalPort(rpYaml.SchemaRegistry.SchemaRegistryAPI, availablePorts),
-		isTLSEnabled(rpYaml.SchemaRegistry.SchemaRegistryAPITLS),
-		isMutualTLSEnabled(rpYaml.SchemaRegistry.SchemaRegistryAPITLS),
-		secretName)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	c.schemaClients[pod.Name] = schemaClient
-
-	secretName = defaultSecretName
-	cert = values.TLS.Certs[values.Listeners.HTTP.TLS.Cert]
-	if ref := cert.ClientSecretRef; ref != nil {
-		secretName = ref.Name
-	}
-
-	proxyClient, err := c.createClient(ctx,
-		getInternalPort(rpYaml.Pandaproxy.PandaproxyAPI, availablePorts),
-		isTLSEnabled(rpYaml.Pandaproxy.PandaproxyAPITLS),
-		isMutualTLSEnabled(rpYaml.Pandaproxy.PandaproxyAPITLS),
-		secretName)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	c.proxyClients[pod.Name] = proxyClient
-
-	return cleanup, err
-}
-
-func getInternalPort(addresses any, availablePorts []portforward.ForwardedPort) int {
-	var adminListenerPort int
-	switch v := addresses.(type) {
-	case []config.NamedSocketAddress:
-		for _, a := range v {
-			if a.Name != "internal" {
-				continue
-			}
-			adminListenerPort = a.Port
+	schema := "http"
+	var rootCAs *x509.CertPool
+	var certs []tls.Certificate
+	if tlsEnabled {
+		schema = "https"
+		s, err := kube.Get[corev1.Secret](ctx, c.Ctl, kube.ObjectKey{
+			Name:      tlsK8SSecretName,
+			Namespace: c.Release.Namespace,
+		})
+		if err != nil {
+			return nil, err
 		}
-	case []config.NamedAuthNSocketAddress:
-		for _, a := range v {
-			if a.Name != "internal" {
-				continue
-			}
-			adminListenerPort = a.Port
+
+		rootCAs = x509.NewCertPool()
+		ok := rootCAs.AppendCertsFromPEM(s.Data["ca.crt"])
+		if !ok {
+			return nil, errors.New("failed to parse CA certificate")
 		}
 	}
 
-	for _, p := range availablePorts {
-		if int(p.Remote) == adminListenerPort {
-			return int(p.Local)
-		}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Certificates: certs,
+			RootCAs:      rootCAs,
+			// Available subject alternative names are defined in certs.go
+			ServerName: fmt.Sprintf("%s.%s", c.Release.Name, c.Release.Namespace),
+		},
+		TLSHandshakeTimeout:   10 * time.Second,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		ForceAttemptHTTP2:     true,
 	}
 
-	return 0
+	httpClient := http.Client{
+		Transport: transport,
+	}
+
+	pfc := &portForwardClient{
+		httpClient,
+		port,
+		schema,
+	}
+
+	return pfc, nil
 }

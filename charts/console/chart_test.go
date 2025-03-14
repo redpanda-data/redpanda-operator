@@ -26,15 +26,18 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zapio"
+	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/helm-charts/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -258,13 +261,15 @@ func TestAppVersion(t *testing.T) {
 func TestIntegrationChart(t *testing.T) {
 	testutil.SkipIfNotIntegration(t)
 
-	// log := zaptest.NewLogger(t)
+	log := zaptest.NewLogger(t)
+	w := &zapio.Writer{Log: log, Level: zapcore.InfoLevel}
+	wErr := &zapio.Writer{Log: log, Level: zapcore.ErrorLevel}
 
 	consoleChart := "."
 
 	h := helmtest.Setup(t)
 
-	t.Run("basic render test", func(t *testing.T) {
+	t.Run("basic test", func(t *testing.T) {
 		ctx := testutil.Context(t)
 
 		env := h.Namespaced(t)
@@ -272,7 +277,17 @@ func TestIntegrationChart(t *testing.T) {
 		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
 		require.NoError(t, err)
 
-		partial := PartialValues{}
+		partial := PartialValues{
+			Image: &PartialImage{
+				Repository: ptr.To("redpandadata/console-unstable"),
+				Tag:        ptr.To("master-2bb3af4"),
+			},
+			Config: map[string]any{
+				"kafka": map[string]any{
+					"brokers": []string{"redpanda-0.redpanda.default.svc.cluster.local:9092"},
+				},
+			},
+		}
 
 		chartReleaseName := fmt.Sprintf("chart-%d", r.Int64())
 		consoleRelease := env.Install(ctx, consoleChart, helm.InstallOptions{
@@ -281,22 +296,25 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
+		client := Client{Ctl: env.Ctl(), Release: &consoleRelease}
+
 		dot := &helmette.Dot{
 			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
 			Release: helmette.Release{Name: consoleRelease.Name, Namespace: consoleRelease.Namespace},
 			Chart: helmette.Chart{
-				Name: "redpanda",
+				Name: "console",
 			},
 		}
 
-		// cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
-		// if cleanup != nil {
-		// 	t.Cleanup(cleanup)
-		// }
-		// require.NoError(t, err)
+		cleanup, err := client.ExposeConsole(ctx, dot, w, wErr)
+		if cleanup != nil {
+			t.Cleanup(cleanup)
+		}
+		require.NoError(t, err)
 
-		// assert.NoErrorf(t, kafkaListenerTest(ctx, rpk), "Kafka listener sub test failed")
-		// assert.NoErrorf(t, adminListenerTest(ctx, rpk), "Admin listener sub test failed")
-		// assert.NoErrorf(t, superuserTest(ctx, rpk, "superuser", "kubernetes-controller"), "Superuser sub test failed")
+		body, err := client.GetDebugVars(ctx)
+
+		assert.NoError(t, err, "Failed to get debug vars")
+		assert.Contains(t, body, "--config.filepath=/etc/console/configs/config.yaml")
 	})
 }
