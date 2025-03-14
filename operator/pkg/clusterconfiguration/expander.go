@@ -175,7 +175,13 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 	case "array":
 		return convertStringToStringArray(repr)
 	default:
-		return nil, fmt.Errorf("unrecognised configuration type: %s", metadata.Type)
+		// TODO: It's unclear whether we should let this ride, or report an error.
+		// By letting it pass, we will ultimately report an Unknown value on the condition.
+		var s string
+		err := yaml.Unmarshal([]byte(repr), &s)
+		return s, err
+		// Strict alternative:
+		// return nil, fmt.Errorf("unrecognised configuration type: %s", metadata.Type)
 	}
 }
 
