@@ -50,8 +50,9 @@ const (
 
 	saslMechanism = "SCRAM-SHA-256"
 
-	configKey           = "redpanda.yaml"
-	bootstrapConfigFile = ".bootstrap.yaml"
+	configKey             = "redpanda.yaml"
+	bootstrapConfigFile   = ".bootstrap.yaml"
+	bootstrapTemplateFile = ".bootstrap.json.in"
 )
 
 var (
@@ -182,6 +183,7 @@ func (r *ConfigMapResource) obj(ctx context.Context) (k8sclient.Object, error) {
 		return nil, fmt.Errorf("creating configuration: %w", err)
 	}
 
+	// TODO: the serialised template needs to turn k8s object references into env vars
 	cfgSerialized, err := conf.Serialize()
 	if err != nil {
 		return nil, fmt.Errorf("serializing: %w", err)
@@ -206,6 +208,9 @@ func (r *ConfigMapResource) obj(ctx context.Context) (k8sclient.Object, error) {
 	if cfgSerialized.BootstrapFile != nil {
 		cm.Data[bootstrapConfigFile] = string(cfgSerialized.BootstrapFile)
 	}
+	if cfgSerialized.BootstrapTemplate != nil {
+		cm.Data[bootstrapTemplateFile] = string(cfgSerialized.BootstrapTemplate)
+	}
 
 	err = controllerutil.SetControllerReference(r.pandaCluster, cm, r.scheme)
 	if err != nil {
@@ -223,6 +228,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 ) (*configuration.GlobalConfiguration, error) {
 	cfg := configuration.For(r.pandaCluster.Spec.Version)
 	cfg.NodeConfiguration = config.ProdDefault()
+	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue)
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
 	c := r.pandaCluster.Spec.Configuration
@@ -377,6 +383,15 @@ func (r *ConfigMapResource) CreateConfiguration(
 
 	if err := cfg.SetAdditionalFlatProperties(r.pandaCluster.Spec.AdditionalConfiguration); err != nil {
 		return nil, fmt.Errorf("adding additional flat properties: %w", err)
+	}
+
+	if err := cfg.FinalizeToTemplate(); err != nil {
+		return nil, err
+	}
+
+	// Fold in any last overriding attributes. Prefer the new ClusterConfiguration attribute.
+	for k, v := range r.pandaCluster.Spec.ClusterConfiguration {
+		cfg.BootstrapConfiguration[k] = *(v.DeepCopy())
 	}
 
 	return cfg, nil
@@ -794,6 +809,7 @@ func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
 		// Save an empty map instead of "null"
 		cfg = make(map[string]interface{})
 	}
+	// TODO: external reference versions here
 	ser, err := json.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("could not marhsal configuration: %w", err)

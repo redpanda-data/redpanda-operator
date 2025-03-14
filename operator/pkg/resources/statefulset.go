@@ -38,7 +38,9 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
@@ -108,7 +110,10 @@ type StatefulSetResource struct {
 	// annotation to ensure the pods get restarted when configuration changes
 	// this has to be retrieved lazily to achieve the correct order of resources
 	// being applied
-	nodeConfigMapHashGetter  func(context.Context) (string, error)
+	nodeConfigMapHashGetter func(context.Context) (string, error)
+	// The configuration we've installed. It's injected so that we can extract any additional
+	// environment variables the configuration requires to expand the bootstrap template.
+	configurationGetter      func(ctx context.Context) (*configuration.GlobalConfiguration, error)
 	adminAPIClientFactory    adminutils.NodePoolAdminAPIClientFactory
 	decommissionWaitInterval time.Duration
 	logger                   logr.Logger
@@ -138,6 +143,7 @@ func NewStatefulSet(
 	serviceAccountName string,
 	configuratorSettings ConfiguratorSettings,
 	nodeConfigMapHashGetter func(context.Context) (string, error),
+	configurationGetter func(context.Context) (*configuration.GlobalConfiguration, error),
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
 	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
@@ -159,6 +165,7 @@ func NewStatefulSet(
 		serviceAccountName:       serviceAccountName,
 		configuratorSettings:     configuratorSettings,
 		nodeConfigMapHashGetter:  nodeConfigMapHashGetter,
+		configurationGetter:      configurationGetter,
 		adminAPIClientFactory:    adminAPIClientFactory,
 		dialer:                   dialer,
 		decommissionWaitInterval: decommissionWaitInterval,
@@ -720,11 +727,27 @@ func (r *StatefulSetResource) obj(
 	}
 
 	if featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      "configmap-dir",
-			MountPath: path.Join(configDestinationDir, bootstrapConfigFile),
-			SubPath:   bootstrapConfigFile,
-		})
+		// Bootstrap configuration is now templated; we don't need to mount the original here
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
+			corev1.EnvVar{
+				Name:  "BOOTSTRAP_TEMPLATE",
+				Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
+			},
+			corev1.EnvVar{
+				Name:  "BOOTSTRAP_DESTINATION",
+				Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
+			},
+		)
+		// If the bootstrap template needs additional env vars, inject them here
+		conf, err := r.configurationGetter(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
+		}
+		_, templateEnv, err := clusterconfiguration.ExpandForBootstrap(conf.BootstrapConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("cannot extract environment variables from bootstrap template: %w", err)
+		}
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, templateEnv...)
 	}
 
 	setVolumes(ss, r.pandaCluster, r.nodePool.Storage, r.nodePool.CloudCacheStorage)
