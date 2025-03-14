@@ -239,9 +239,9 @@ secret:
 
 # -- Settings for license key, as an alternative to secret.enterprise when
 # a license secret is available
-licenseSecretRef:
-  name: ""
-  key: ""
+# licenseSecretRef:
+#   name: my-secret
+#   key: key-where-license-is-stored
 
 # -- Settings for liveness and readiness probes.
 # For details,

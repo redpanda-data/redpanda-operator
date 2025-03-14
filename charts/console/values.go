@@ -58,7 +58,7 @@ type Values struct {
 	InitContainers               InitContainers                    `json:"initContainers"`
 	SecretMounts                 []SecretMount                     `json:"secretMounts"`
 	Secret                       SecretConfig                      `json:"secret"`
-	LicenseSecretRef             SecretKeyRef                      `json:"licenseSecretRef"`
+	LicenseSecretRef             *corev1.SecretKeySelector         `json:"licenseSecretRef,omitempty"`
 	LivenessProbe                corev1.Probe                      `json:"livenessProbe"`
 	ReadinessProbe               corev1.Probe                      `json:"readinessProbe"`
 	ConfigMap                    Creatable                         `json:"configmap"`
@@ -193,6 +193,6 @@ type Creatable struct {
 type Image struct {
 	Registry   string            `json:"registry"`
 	Repository string            `json:"repository"`
-	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 	Tag        *string           `json:"tag"`
 }

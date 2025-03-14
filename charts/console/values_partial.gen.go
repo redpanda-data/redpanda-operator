@@ -51,7 +51,7 @@ type PartialValues struct {
 	InitContainers               *PartialInitContainers            "json:\"initContainers,omitempty\""
 	SecretMounts                 []PartialSecretMount              "json:\"secretMounts,omitempty\""
 	Secret                       *PartialSecretConfig              "json:\"secret,omitempty\""
-	LicenseSecretRef             *PartialSecretKeyRef              "json:\"licenseSecretRef,omitempty\""
+	LicenseSecretRef             *corev1.SecretKeySelector         "json:\"licenseSecretRef,omitempty\""
 	LivenessProbe                *corev1.Probe                     "json:\"livenessProbe,omitempty\""
 	ReadinessProbe               *corev1.Probe                     "json:\"readinessProbe,omitempty\""
 	ConfigMap                    *PartialCreatable                 "json:\"configmap,omitempty\""
@@ -64,7 +64,7 @@ type PartialValues struct {
 type PartialImage struct {
 	Registry   *string            "json:\"registry,omitempty\""
 	Repository *string            "json:\"repository,omitempty\""
-	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
+	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\""
 	Tag        *string            "json:\"tag,omitempty\""
 }
 
@@ -111,11 +111,6 @@ type PartialSecretConfig struct {
 	Redpanda       *PartialRedpandaSecrets       "json:\"redpanda,omitempty\""
 	Serde          *PartialSerdeSecrets          "json:\"serde,omitempty\""
 	SchemaRegistry *PartialSchemaRegistrySecrets "json:\"schemaRegistry,omitempty\""
-}
-
-type PartialSecretKeyRef struct {
-	Name *string "json:\"name,omitempty\""
-	Key  *string "json:\"key,omitempty\""
 }
 
 type PartialCreatable struct {

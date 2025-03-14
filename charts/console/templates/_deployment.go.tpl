@@ -87,7 +87,7 @@
 {{- $values := $dot.Values.AsMap -}}
 {{- if (not $values.secret.create) -}}
 {{- $vars := $values.extraEnv -}}
-{{- if (not (empty $values.licenseSecretRef.name)) -}}
+{{- if (and (ne (toJson $values.licenseSecretRef) "null") (not (empty $values.licenseSecretRef.name))) -}}
 {{- $vars = (concat (default (list ) $values.extraEnv) (list (mustMergeOverwrite (dict "name" "" ) (dict "name" "LICENSE" "valueFrom" (mustMergeOverwrite (dict ) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "" ) (mustMergeOverwrite (dict ) (dict "name" $values.licenseSecretRef.name )) (dict "key" (default "enterprise-license" $values.licenseSecretRef.key) )) )) )))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}

@@ -204,7 +204,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 	if !values.Secret.Create {
 		vars := values.ExtraEnv
 
-		if !helmette.Empty(values.LicenseSecretRef.Name) {
+		if values.LicenseSecretRef != nil && !helmette.Empty(values.LicenseSecretRef.Name) {
 			vars = append(values.ExtraEnv, corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{
