@@ -119,7 +119,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting a change")
-			testAdminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -177,7 +177,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an initial change")
-			testAdminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -194,8 +194,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting two new properties")
-			testAdminAPI.RegisterPropertySchema("p1", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
-			testAdminAPI.RegisterPropertySchema("p2", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema("p1", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			testAdminAPI.RegisterPropertySchema("p2", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
@@ -301,7 +301,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(initialConfigMapHash).NotTo(BeEmpty())
 
 			By("Accepting a change that would require restart")
-			testAdminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true})
+			testAdminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -325,7 +325,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
 
 			By("Accepting another change that would not require restart")
-			testAdminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
 			const propValue2 = "the-value2"
@@ -405,7 +405,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
 
 			By("Accepting a change to the properties")
-			testAdminAPI.RegisterPropertySchema("prop", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema("prop", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			const propValue = "the-value"
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
@@ -586,7 +586,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an invalid property")
-			testAdminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid"}) // triggers mock validation
+			testAdminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid", Type: "string"}) // triggers mock validation
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
@@ -729,8 +729,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				externalChangeUnmanagedPropValue = "external-unmanaged-value"
 			)
 
-			testAdminAPI.RegisterPropertySchema(managedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
-			testAdminAPI.RegisterPropertySchema(unmanagedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+			testAdminAPI.RegisterPropertySchema(managedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			testAdminAPI.RegisterPropertySchema(unmanagedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			testAdminAPI.SetProperty(unmanagedProp, unmanagedPropValue)
 
 			By("Allowing creation of a new cluster")
