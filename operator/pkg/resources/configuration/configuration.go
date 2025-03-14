@@ -13,12 +13,14 @@ package configuration
 import (
 	"context"
 	"crypto/md5" //nolint:gosec // this is not encrypting secure info
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -113,8 +115,41 @@ func (c *GlobalConfiguration) ConcreteConfiguration(ctx context.Context, reader 
 	if err != nil {
 		return nil, err
 	}
+
 	c.concreteValues = concreteCfg
 	return c.concreteValues, nil
+}
+
+// FinalizeToTemplate takes any accumulated values and marshals them into a format
+// that can be utilised by the bootstrap templating machinery.
+// This is only called once, near the end of the construction of a GlobalConfiguration,
+// but we expose the function for the use by a handful of unit tests.
+// (We currently preserve the ClusterConfiguration attribute solely to support
+// the accumulation of array values, which is used to manage some attributes
+// during the assembly of a configuration; without this we'd need to repeatedly
+// round-trip into and out of a serialised form.)
+// TODO: refactor this.
+func (c *GlobalConfiguration) FinalizeToTemplate() error {
+	if c.BootstrapConfiguration == nil {
+		c.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigCRDValue)
+	}
+	for k, v := range c.ClusterConfiguration {
+		if _, found := c.BootstrapConfiguration[k]; found {
+			continue
+		}
+		// These values are all "concrete" - that is, they're not looked up anywhere.
+		// We use JSON marshalling as opposed to YAML here - it has fewer options available, but is
+		// compatible for use in either a YAML or JSON target document.
+		buf, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("cannot marshal concrete cluster configuration value: %w", err)
+		}
+		// These values are all stringified, so that they can be written into the template file.
+		c.BootstrapConfiguration[k] = vectorizedv1alpha1.ClusterConfigCRDValue{
+			Representation: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
+		}
+	}
+	return nil
 }
 
 // GetCentralizedConfigurationHash computes a hash of the centralized configuration considering only the

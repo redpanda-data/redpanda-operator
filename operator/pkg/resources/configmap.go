@@ -385,25 +385,11 @@ func (r *ConfigMapResource) CreateConfiguration(
 		return nil, fmt.Errorf("adding additional flat properties: %w", err)
 	}
 
-	// TODO: clean this up - this probably means throwing away much of this (perhaps in favour of the v2 bootstrap creation?)
-	// Prepare the bootstrap template. This includes concrete values set here, plus any additional templatable
-	// values supplied in the ClusterConfiguration.
-	for k, v := range cfg.ClusterConfiguration {
-		if _, found := cfg.BootstrapConfiguration[k]; found {
-			continue
-		}
-		// These values are all "concrete" - that is, they're not looked up anywhere.
-		// We use JSON marshalling as opposed to YAML here - it has fewer options available, but is
-		// compatible for use in either a YAML or JSON target document.
-		buf, err := json.Marshal(v)
-		if err != nil {
-			return nil, fmt.Errorf("cannot marshal concrete cluster configuration value: %w", err)
-		}
-		// These values are all stringified, so that they can be written into the template file.
-		cfg.BootstrapConfiguration[k] = vectorizedv1alpha1.ClusterConfigCRDValue{
-			Representation: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
-		}
+	if err := cfg.FinalizeToTemplate(); err != nil {
+		return nil, err
 	}
+
+	// Fold in any last overriding attributes. Prefer the new ClusterConfiguration attribute.
 	for k, v := range r.pandaCluster.Spec.ClusterConfiguration {
 		cfg.BootstrapConfiguration[k] = *(v.DeepCopy())
 	}
