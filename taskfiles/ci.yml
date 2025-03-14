@@ -145,7 +145,40 @@ tasks:
           - linux/arm64
           CLI_ARGS: "--push"
       # Package and push Operator helm chart to Dockerhub
-      - task: :k8s:package-and-publish-operator-chart
+      - task: publish:nightly:helm:chart
+        vars: {REPO: redpanda-operator-nightly, CHART: operator, VERSION: "{{ .OPERATOR_CHART_VERSION }}"}
+      - task: publish:nightly:helm:chart
+        vars: {REPO: console-unstable, CHART: console, VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
+
+  publish:nightly:helm:chart:
+    desc: "Packages and pushes a helm chart to redpandadata's dockerhub account as an OCI artifact"
+    label: "publish:helm:chart:{{ .CHART }}"
+    requires:
+      vars: [CHART, VERSION, REPO]
+    vars:
+      TMP_PATH:
+        sh: mktemp --directory --tmpdir "helm-package-XXXXXXXXXX"
+    cmds:
+      - defer: 'rm -r {{.TMP_PATH}}'
+      # NB: cp -r/-R is dependent on the implementation (macOS vs Linux).
+      # cp -R src/. dest/ <- Same behavior, copy contents of src to dest.
+      # cp -r src/ dest <- Different. macOS == copy contents, linux == copy src folder into dest.
+      - cp -R charts/{{ .CHART }}/. {{.TMP_PATH}}
+      #  `helm push`, to an OCI repo, uses `name` and `version` from Chart.yaml
+      #  to determine where to push the chart to.
+      #  i.e. `helm push chart.tgz oci://registry-1.docker.io/<org>` -> <org>/<chart.name>:<chart.version>
+      # name is set with `yq`
+      # version is set with `helm package`
+      - yq -i '.name = "{{ .REPO }}"' {{.TMP_PATH}}/Chart.yaml
+      # dockerhub has a limitation where oci artifacts may not share tags with images [1].
+      # We suffix versions with `-helm-chart` to work around this.
+      # [1]: https://forums.docker.com/t/tag-overlap-in-oci-artifacts/131453
+      - helm package {{.TMP_PATH}} --version "{{ .VERSION }}-helm-chart" --destination {{.BUILD_ROOT}} --dependency-update
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - defer: 'helm registry logout registry-1.docker.io'
+      # For usage of operator artifact please go to specific reference like the one below
+      # https://hub.docker.com/layers/redpandadata/redpanda-operator-nightly/v0.0.0-20250104git4a5a076-helm-chart/images/sha256-ffaea8752b6bd00a26589a168830a87d498106e470f11af0f08267bc13fbd078
+      - helm push '{{.BUILD_ROOT}}/{{ .REPO }}-{{.VERSION}}-helm-chart.tgz' oci://registry-1.docker.io/redpandadata
 
   set-aio-max:
     internal: true
