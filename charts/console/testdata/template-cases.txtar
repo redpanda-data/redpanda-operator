@@ -2,51 +2,19 @@ Manually crafted test cases for TestTemplate
 -- default-values --
 # Intentionally left blank. (test of default values)
 
--- console-with-roles --
-# console.roles specified
-console:
-  roles:
-  - name: my-role
-    permissions:
-    - resource: 1234
-      includes:
-      - "*"
-      excludes:
-      - "*"
-      allowedActions: ["*"]
-
 -- console-with-role-bindings --
 # console.roleBindings specified
-console:
-  roleBindings:
-  - roleName: admin
-    metadata:
-      name: Redpanda POC
-    subjects:
-      - kind: user
-        provider: Plain
-        name: "e2euser"
-
--- console-with-roles-and-bindings --
-# console.roles and console.roleBindings both specified
-console:
-  roles:
-  - name: my-role
-    permissions:
-    - resource: 1234
-      includes:
-      - "*"
-      excludes:
-      - "*"
-      allowedActions: ["*"]
-  roleBindings:
-  - roleName: admin
-    metadata:
-      name: Redpanda POC
-    subjects:
-      - kind: user
-        provider: Plain
-        name: "e2euser"
+config:
+  authorization:
+    roleBindings:
+      - roleName: admin
+        users:
+          - loginType: OIDC
+            name: "104753799096233778779" # Subject claim
+      - roleName: viewer
+        users:
+          - loginType: basic
+            name: "user@mycompany.com"
 
 -- autoscaling-nulls --
 # Autoscaling w/ explicit nulls
@@ -108,18 +76,16 @@ image:
   tag: my-custom-tag
 
 -- console-config-listen-port --
-console:
-  config:
-    server:
-      listenPort: 3333
+config:
+  server:
+    listenPort: 3333
 
 -- console-config-listen-and-target-port --
 service:
   targetPort: 4444
-console:
-  config:
-    server:
-      listenPort: 3333
+config:
+  server:
+    listenPort: 3333
 
 -- extra-init-containers --
 # NB: Many of the generated tests have an invalid value for extraInitContainers
@@ -151,23 +117,18 @@ extraVolumeMounts:
     mountPath: /oidc-tls
     readOnly: true
 
-console:
-  config:
-    login:
+config:
+  authentication:
+    oidc:
       enabled: true
-      oidc:
+      clientId: XYZ
+      issuerUrl: my-oidc-issuer.com
+      issuerTls:
         enabled: true
-        clientId: XYZ
-        domain: my-test-domain.com
-        issuerUrl: my-oidc-issuer.com
-        displayName: my-corp-provider
-        userIdentifyingClaimKey: corpo-name
-        issuerTls:
-          enabled: true
-          caFilepath: /oidc-tls/ca.crt
-          certFilepath: /oidc-tls/tls.crt
-          keyFilepath: /oidc-tls/tls.key
-          insecureSkipTlsVerify: false
+        caFilepath: /oidc-tls/ca.crt
+        certFilepath: /oidc-tls/tls.crt
+        keyFilepath: /oidc-tls/tls.key
+        insecureSkipTlsVerify: false
 
 -- service-account-automount-token-in-deployment-resource --
 automountServiceAccountToken: false

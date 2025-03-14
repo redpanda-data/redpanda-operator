@@ -80,9 +80,9 @@ func TestTemplate(t *testing.T) {
 				Namespace: "test-namespace",
 				Values:    values,
 				Set: []string{
-					// jwtSecret defaults to a random string. Can't have that
+					// jwtSigningKey defaults to a random string. Can't have that
 					// in snapshot testing so set it to a static value.
-					"secret.login.jwtSecret=SECRETKEY",
+					"secret.authentication.jwtSigningKey=SECRETKEY",
 				},
 			})
 			require.NoError(t, err)
@@ -192,8 +192,8 @@ func TestGoHelmEquivalence(t *testing.T) {
 			Enabled: ptr.To(false),
 		},
 		Secret: &PartialSecretConfig{
-			Login: &PartialLoginSecrets{
-				JWTSecret: ptr.To("SECRET"),
+			Authentication: &PartialAuthenticationSecrets{
+				JWTSigningKey: ptr.To("SECRET"),
 			},
 		},
 		Ingress: &PartialIngressConfig{

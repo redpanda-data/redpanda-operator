@@ -25,9 +25,9 @@ func Secret(dot *helmette.Dot) *corev1.Secret {
 		return nil
 	}
 
-	jwtSecret := values.Secret.Login.JWTSecret
-	if jwtSecret == "" {
-		jwtSecret = helmette.RandAlphaNum(32)
+	jwtSigningKey := values.Secret.Authentication.JWTSigningKey
+	if jwtSigningKey == "" {
+		jwtSigningKey = helmette.RandAlphaNum(32)
 	}
 
 	return &corev1.Secret{
@@ -46,35 +46,33 @@ func Secret(dot *helmette.Dot) *corev1.Secret {
 			// For this reason we can't use `with` to change the scope.
 
 			// Kafka
-			"kafka-sasl-password":                   ptr.Deref(values.Secret.Kafka.SASLPassword, ""),
-			"kafka-protobuf-git-basicauth-password": ptr.Deref(values.Secret.Kafka.ProtobufGitBasicAuthPassword, ""),
-			"kafka-sasl-aws-msk-iam-secret-key":     ptr.Deref(values.Secret.Kafka.AWSMSKIAMSecretKey, ""),
-			"kafka-tls-ca":                          ptr.Deref(values.Secret.Kafka.TLSCA, ""),
-			"kafka-tls-cert":                        ptr.Deref(values.Secret.Kafka.TLSCert, ""),
-			"kafka-tls-key":                         ptr.Deref(values.Secret.Kafka.TLSKey, ""),
-			"kafka-schema-registry-password":        ptr.Deref(values.Secret.Kafka.SchemaRegistryPassword, ""),
-			"kafka-schemaregistry-tls-ca":           ptr.Deref(values.Secret.Kafka.SchemaRegistryTLSCA, ""),
-			"kafka-schemaregistry-tls-cert":         ptr.Deref(values.Secret.Kafka.SchemaRegistryTLSCert, ""),
-			"kafka-schemaregistry-tls-key":          ptr.Deref(values.Secret.Kafka.SchemaRegistryTLSKey, ""),
+			"kafka-sasl-password":               ptr.Deref(values.Secret.Kafka.SASLPassword, ""),
+			"kafka-sasl-aws-msk-iam-secret-key": ptr.Deref(values.Secret.Kafka.AWSMSKIAMSecretKey, ""),
+			"kafka-tls-ca":                      ptr.Deref(values.Secret.Kafka.TLSCA, ""),
+			"kafka-tls-cert":                    ptr.Deref(values.Secret.Kafka.TLSCert, ""),
+			"kafka-tls-key":                     ptr.Deref(values.Secret.Kafka.TLSKey, ""),
 
-			// Login
-			"login-jwt-secret":                         jwtSecret,
-			"login-google-oauth-client-secret":         ptr.Deref(values.Secret.Login.Google.ClientSecret, ""),
-			"login-google-groups-service-account.json": ptr.Deref(values.Secret.Login.Google.GroupsServiceAccount, ""),
-			"login-github-oauth-client-secret":         ptr.Deref(values.Secret.Login.Github.ClientSecret, ""),
-			"login-github-personal-access-token":       ptr.Deref(values.Secret.Login.Github.PersonalAccessToken, ""),
-			"login-okta-client-secret":                 ptr.Deref(values.Secret.Login.Okta.ClientSecret, ""),
-			"login-okta-directory-api-token":           ptr.Deref(values.Secret.Login.Okta.DirectoryAPIToken, ""),
-			"login-oidc-client-secret":                 ptr.Deref(values.Secret.Login.OIDC.ClientSecret, ""),
+			// schema registry
+			"schema-registry-password": ptr.Deref(values.Secret.SchemaRegistry.Password, ""),
+			"schemaregistry-tls-ca":    ptr.Deref(values.Secret.SchemaRegistry.TLSCA, ""),
+			"schemaregistry-tls-cert":  ptr.Deref(values.Secret.SchemaRegistry.TLSCert, ""),
+			"schemaregistry-tls-key":   ptr.Deref(values.Secret.SchemaRegistry.TLSKey, ""),
 
-			// Enterprise
-			"enterprise-license": ptr.Deref(values.Secret.Enterprise.License, ""),
+			// Authentication
+			"authentication-jwt-signingkey":     jwtSigningKey,
+			"authentication-oidc-client-secret": ptr.Deref(values.Secret.Authentication.OIDC.ClientSecret, ""),
+
+			// License
+			"license": values.Secret.License,
 
 			// Redpanda
 			"redpanda-admin-api-password": ptr.Deref(values.Secret.Redpanda.AdminAPI.Password, ""),
 			"redpanda-admin-api-tls-ca":   ptr.Deref(values.Secret.Redpanda.AdminAPI.TLSCA, ""),
 			"redpanda-admin-api-tls-cert": ptr.Deref(values.Secret.Redpanda.AdminAPI.TLSCert, ""),
 			"redpanda-admin-api-tls-key":  ptr.Deref(values.Secret.Redpanda.AdminAPI.TLSKey, ""),
+
+			// Serde
+			"serde-protobuf-git-basicauth-password": ptr.Deref(values.Secret.Serde.ProtobufGitBasicAuthPassword, ""),
 		},
 	}
 }

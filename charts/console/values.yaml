@@ -138,13 +138,10 @@ topologySpreadConstraints: []
 # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass).
 priorityClassName: ""
 
-console:
-  # -- Settings for the `Config.yaml` (required).
-  # For a reference of configuration settings,
-  # see the [Redpanda Console documentation](https://docs.redpanda.com/docs/reference/console/config/).
-  config: {}
-  # roles:
-  # roleBindings:
+# -- Settings for the `Config.yaml` (required).
+# For a reference of configuration settings,
+# see the [Redpanda Console documentation](https://docs.redpanda.com/docs/reference/console/config/).
+config: {}
 
 # -- Additional environment variables for the Redpanda Console Deployment.
 extraEnv: []
@@ -154,7 +151,7 @@ extraEnv: []
 # -- Additional environment variables for Redpanda Console mapped from Secret or ConfigMap.
 extraEnvFrom: []
 # - secretRef:
-#     name: kowl-config-secret
+#     name: console-config-secret
 
 # -- Add additional volumes, such as for TLS keys.
 extraVolumes: []
@@ -213,30 +210,25 @@ secret:
     # tlsCert:
     # tlsKey:
     # tlsPassphrase:
-    # schemaRegistryPassword:
-    # schemaRegistryTlsCa:
-    # schemaRegistryTlsCert:
-    # schemaRegistryTlsKey:
-    # protobufGitBasicAuthPassword
+   
+  schemaRegistry: {}
+    # password:
+    # tlsCa:
+    # tlsCert:
+    # tlsKey:
+
   # Enterprise version secrets
   # - SSO secrets (Enterprise version).
-  login:
+  authentication:
     # Configurable JWT value
-    jwtSecret: ""
-    google: {}
-      # clientSecret:
-      # groupsServiceAccount:
-    github: {}
-      # clientSecret:
-      # personalAccessToken:
-    okta: {}
-      # clientSecret:
-      # directoryApiToken:
+    jwtSigningKey: ""
     oidc: {}
       # clientSecret:
 
-  enterprise: {}
-    # license:
+  serde: {}
+    # protobufGitBasicAuthPassword
+
+  license: ""
 
   redpanda:
     adminApi: {}
@@ -247,10 +239,9 @@ secret:
 
 # -- Settings for license key, as an alternative to secret.enterprise when
 # a license secret is available
-enterprise:
-  licenseSecretRef:
-    name: ""
-    key: ""
+# licenseSecretRef:
+#   name: my-secret
+#   key: key-where-license-is-stored
 
 # -- Settings for liveness and readiness probes.
 # For details,

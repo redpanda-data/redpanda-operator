@@ -49,7 +49,7 @@ type Values struct {
 	Affinity                     corev1.Affinity                   `json:"affinity"`
 	TopologySpreadConstraints    []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints"`
 	PriorityClassName            string                            `json:"priorityClassName"`
-	Console                      Console                           `json:"console"`
+	Config                       map[string]any                    `json:"config"`
 	ExtraEnv                     []corev1.EnvVar                   `json:"extraEnv"`
 	ExtraEnvFrom                 []corev1.EnvFromSource            `json:"extraEnvFrom"`
 	ExtraVolumes                 []corev1.Volume                   `json:"extraVolumes"`
@@ -58,7 +58,7 @@ type Values struct {
 	InitContainers               InitContainers                    `json:"initContainers"`
 	SecretMounts                 []SecretMount                     `json:"secretMounts"`
 	Secret                       SecretConfig                      `json:"secret"`
-	Enterprise                   Enterprise                        `json:"enterprise"`
+	LicenseSecretRef             *corev1.SecretKeySelector         `json:"licenseSecretRef,omitempty"`
 	LivenessProbe                corev1.Probe                      `json:"livenessProbe"`
 	ReadinessProbe               corev1.Probe                      `json:"readinessProbe"`
 	ConfigMap                    Creatable                         `json:"configmap"`
@@ -72,10 +72,6 @@ type DeploymentConfig struct {
 	Create    bool     `json:"create"`
 	Command   []string `json:"command,omitempty"`
 	ExtraArgs []string `json:"extraArgs,omitempty"`
-}
-
-type Enterprise struct {
-	LicenseSecretRef SecretKeyRef `json:"licenseSecretRef"`
 }
 
 type ServiceAccountConfig struct {
@@ -119,25 +115,18 @@ type AutoScaling struct {
 	TargetMemoryUtilizationPercentage *int32 `json:"targetMemoryUtilizationPercentage,omitempty"`
 }
 
-// TODO the typing of these values are unclear. All of them get marshalled to
-// YAML and then run through tpl which gives no indication of what they are
-// aside from YAML marshal-able.
-type Console struct {
-	Config       map[string]any   `json:"config"`
-	Roles        []map[string]any `json:"roles,omitempty"`
-	RoleBindings []map[string]any `json:"roleBindings,omitempty"`
-}
-
 type InitContainers struct {
 	ExtraInitContainers *string `json:"extraInitContainers"` // XXX Templated YAML
 }
 
 type SecretConfig struct {
-	Create     bool              `json:"create"`
-	Kafka      KafkaSecrets      `json:"kafka"`
-	Login      LoginSecrets      `json:"login"`
-	Enterprise EnterpriseSecrets `json:"enterprise"`
-	Redpanda   RedpandaSecrets   `json:"redpanda"`
+	Create         bool                  `json:"create"`
+	Kafka          KafkaSecrets          `json:"kafka"`
+	Authentication AuthenticationSecrets `json:"authentication"`
+	License        string                `json:"license"`
+	Redpanda       RedpandaSecrets       `json:"redpanda"`
+	Serde          SerdeSecrets          `json:"serde"`
+	SchemaRegistry SchemaRegistrySecrets `json:"schemaRegistry"`
 }
 
 type SecretMount struct {
@@ -149,52 +138,36 @@ type SecretMount struct {
 }
 
 type KafkaSecrets struct {
-	SASLPassword                 *string `json:"saslPassword,omitempty"`
-	AWSMSKIAMSecretKey           *string `json:"awsMskIamSecretKey,omitempty"`
-	TLSCA                        *string `json:"tlsCa,omitempty"`
-	TLSCert                      *string `json:"tlsCert,omitempty"`
-	TLSKey                       *string `json:"tlsKey,omitempty"`
-	TLSPassphrase                *string `json:"tlsPassphrase,omitempty"`
-	SchemaRegistryPassword       *string `json:"schemaRegistryPassword,omitempty"`
-	SchemaRegistryTLSCA          *string `json:"schemaRegistryTlsCa,omitempty"`
-	SchemaRegistryTLSCert        *string `json:"schemaRegistryTlsCert,omitempty"`
-	SchemaRegistryTLSKey         *string `json:"schemaRegistryTlsKey,omitempty"`
-	ProtobufGitBasicAuthPassword *string `json:"protobufGitBasicAuthPassword,omitempty"`
+	SASLPassword       *string `json:"saslPassword,omitempty"`
+	AWSMSKIAMSecretKey *string `json:"awsMskIamSecretKey,omitempty"`
+	TLSCA              *string `json:"tlsCa,omitempty"`
+	TLSCert            *string `json:"tlsCert,omitempty"`
+	TLSKey             *string `json:"tlsKey,omitempty"`
+	TLSPassphrase      *string `json:"tlsPassphrase,omitempty"`
 }
 
-type LoginSecrets struct {
-	JWTSecret string             `json:"jwtSecret"`
-	Google    GoogleLoginSecrets `json:"google"`
-	Github    GithubLoginSecrets `json:"github"`
-	Okta      OktaLoginSecrets   `json:"okta"`
-	OIDC      OIDCLoginSecrets   `json:"oidc"`
+type SchemaRegistrySecrets struct {
+	Password *string `json:"password,omitempty"`
+	TLSCA    *string `json:"tlsCa,omitempty"`
+	TLSCert  *string `json:"tlsCert,omitempty"`
+	TLSKey   *string `json:"tlsKey,omitempty"`
 }
 
-type GoogleLoginSecrets struct {
-	ClientSecret         *string `json:"clientSecret,omitempty"`
-	GroupsServiceAccount *string `json:"groupsServiceAccount,omitempty"`
-}
-
-type GithubLoginSecrets struct {
-	ClientSecret        *string `json:"clientSecret,omitempty"`
-	PersonalAccessToken *string `json:"personalAccessToken,omitempty"`
-}
-
-type OktaLoginSecrets struct {
-	ClientSecret      *string `json:"clientSecret,omitempty"`
-	DirectoryAPIToken *string `json:"directoryApiToken,omitempty"`
+type AuthenticationSecrets struct {
+	JWTSigningKey string           `json:"jwtSigningKey"`
+	OIDC          OIDCLoginSecrets `json:"oidc"`
 }
 
 type OIDCLoginSecrets struct {
 	ClientSecret *string `json:"clientSecret,omitempty"`
 }
 
-type EnterpriseSecrets struct {
-	License *string `json:"license,omitempty"`
-}
-
 type RedpandaSecrets struct {
 	AdminAPI RedpandaAdminAPISecrets `json:"adminApi"`
+}
+
+type SerdeSecrets struct {
+	ProtobufGitBasicAuthPassword *string `json:"protobufGitBasicAuthPassword,omitempty"`
 }
 
 type RedpandaAdminAPISecrets struct {
