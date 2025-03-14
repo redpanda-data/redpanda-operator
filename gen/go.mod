@@ -7,6 +7,7 @@ replace (
 	// want it to always operate on the current chart version.
 	github.com/redpanda-data/redpanda-operator/charts/operator => ../charts/operator
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/charts/console => ../charts/console
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
 
