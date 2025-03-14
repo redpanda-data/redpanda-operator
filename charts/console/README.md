@@ -185,12 +185,6 @@ Additional set of init containers
 
 **Default:** `""`
 
-### [licenseSecretRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=licenseSecretRef)
-
-Settings for license key, as an alternative to secret.enterprise when a license secret is available
-
-**Default:** `{"key":"","name":""}`
-
 ### [livenessProbe](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=livenessProbe)
 
 Settings for liveness and readiness probes. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes).
