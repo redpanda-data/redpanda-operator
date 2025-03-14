@@ -18,7 +18,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250311204816-82ff3a154387
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.21.0
@@ -77,6 +77,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -123,7 +124,6 @@ require (
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/hashstructure v1.1.0 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
