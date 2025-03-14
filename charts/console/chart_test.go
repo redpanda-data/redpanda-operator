@@ -32,6 +32,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -250,4 +251,50 @@ func TestAppVersion(t *testing.T) {
 	actual := Chart.Metadata().Version
 
 	require.Equalf(t, expected, actual, "Chart.yaml's version should be %q; got %q\nDid you forget to update Chart.yaml before minting a release?\nMake sure to bump appVersion as well!", expected, actual)
+}
+
+func TestIntegrationChart(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
+	consoleChart := "."
+
+	h := helmtest.Setup(t)
+
+	t.Run("basic test", func(t *testing.T) {
+		ctx := testutil.Context(t)
+
+		env := h.Namespaced(t)
+
+		partial := PartialValues{
+			Image: &PartialImage{
+				Repository: ptr.To("redpandadata/console-unstable"),
+				Tag:        ptr.To("master-2bb3af4"),
+			},
+			Config: map[string]any{
+				"kafka": map[string]any{
+					"brokers": []string{"some-broker-address:9092"}, // Console and this test does not care whether we have a real broker
+				},
+			},
+		}
+
+		consoleRelease := env.Install(ctx, consoleChart, helm.InstallOptions{
+			Values:       partial,
+			Namespace:    env.Namespace(),
+			GenerateName: true,
+		})
+
+		dot, err := Chart.Dot(nil, helmette.Release{
+			Name:      consoleRelease.Name,
+			Namespace: consoleRelease.Namespace,
+		}, partial)
+		require.NoError(t, err)
+
+		client, err := NewClient(ctx, env.Ctl(), dot)
+		assert.NoError(t, err, "Failed to create console client")
+
+		body, err := client.GetDebugVars(ctx)
+
+		assert.NoError(t, err, "Failed to get debug vars")
+		assert.Contains(t, body, "--config.filepath=/etc/console/configs/config.yaml")
+	})
 }
