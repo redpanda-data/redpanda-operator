@@ -2782,7 +2782,14 @@
           "type": "object"
         },
         "className": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "enabled": {
           "type": "boolean"
@@ -3545,7 +3552,14 @@
           "type": "integer"
         },
         "targetPort": {
-          "type": "integer"
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "type": {
           "type": "string"

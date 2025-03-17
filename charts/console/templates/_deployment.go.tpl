@@ -5,14 +5,11 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $listenPort := ((8080 | int) | int) -}}
-{{- if (ne (toJson $values.service.targetPort) "null") -}}
-{{- $listenPort = $values.service.targetPort -}}
-{{- end -}}
+{{- $listenPort := (((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.service.targetPort (8080 | int)) ))) "r") | int) | int) -}}
 {{- $configListenPort := (dig "server" "listenPort" (coalesce nil) $values.config) -}}
-{{- $_37_asInt_1_ok_2 := (get (fromJson (include "_shims.asintegral" (dict "a" (list $configListenPort) ))) "r") -}}
-{{- $asInt_1 := ((index $_37_asInt_1_ok_2 0) | int) -}}
-{{- $ok_2 := (index $_37_asInt_1_ok_2 1) -}}
+{{- $_34_asInt_1_ok_2 := (get (fromJson (include "_shims.asintegral" (dict "a" (list $configListenPort) ))) "r") -}}
+{{- $asInt_1 := ((index $_34_asInt_1_ok_2 0) | int) -}}
+{{- $ok_2 := (index $_34_asInt_1_ok_2 1) -}}
 {{- if $ok_2 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" ($asInt_1 | int)) | toJson -}}

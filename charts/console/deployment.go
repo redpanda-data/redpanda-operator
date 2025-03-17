@@ -28,10 +28,7 @@ import (
 func ContainerPort(dot *helmette.Dot) int32 {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	listenPort := int32(8080)
-	if values.Service.TargetPort != nil {
-		listenPort = *values.Service.TargetPort
-	}
+	listenPort := int32(ptr.Deref(values.Service.TargetPort, 8080))
 
 	configListenPort := helmette.Dig(values.Config, nil, "server", "listenPort")
 	if asInt, ok := helmette.AsIntegral[int](configListenPort); ok {

@@ -28,7 +28,7 @@ func Service(dot *helmette.Dot) *corev1.Service {
 	}
 
 	if values.Service.TargetPort != nil {
-		port.TargetPort = intstr.FromInt32(*values.Service.TargetPort)
+		port.TargetPort = intstr.FromInt32(int32(*values.Service.TargetPort))
 	}
 
 	if helmette.Contains("NodePort", string(values.Service.Type)) && values.Service.NodePort != nil {

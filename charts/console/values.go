@@ -13,6 +13,7 @@ package console
 import (
 	_ "embed"
 
+	"github.com/invopop/jsonschema"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -85,16 +86,36 @@ type ServiceConfig struct {
 	Type        corev1.ServiceType `json:"type"`
 	Port        int32              `json:"port"`
 	NodePort    *int32             `json:"nodePort,omitempty"`
-	TargetPort  *int32             `json:"targetPort"`
+	TargetPort  *TargetPort        `json:"targetPort"`
 	Annotations map[string]string  `json:"annotations"`
+}
+
+type TargetPort int32
+
+func (TargetPort) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.OneOf = []*jsonschema.Schema{
+		{Type: "integer"},
+		{Type: "null"},
+	}
+	schema.Type = ""
 }
 
 type IngressConfig struct {
 	Enabled     bool                      `json:"enabled"`
-	ClassName   *string                   `json:"className"`
+	ClassName   *ClassName                `json:"className"`
 	Annotations map[string]string         `json:"annotations"`
 	Hosts       []IngressHost             `json:"hosts"`
 	TLS         []networkingv1.IngressTLS `json:"tls"`
+}
+
+type ClassName string
+
+func (ClassName) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.OneOf = []*jsonschema.Schema{
+		{Type: "string"},
+		{Type: "null"},
+	}
+	schema.Type = ""
 }
 
 type IngressHost struct {

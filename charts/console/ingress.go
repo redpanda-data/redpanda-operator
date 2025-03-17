@@ -13,6 +13,7 @@ package console
 import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 )
@@ -64,6 +65,8 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 		})
 	}
 
+	className := string(ptr.Deref(values.Ingress.ClassName, ""))
+
 	return &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Ingress",
@@ -76,7 +79,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 			Annotations: values.Ingress.Annotations,
 		},
 		Spec: networkingv1.IngressSpec{
-			IngressClassName: values.Ingress.ClassName,
+			IngressClassName: &className,
 			TLS:              tls,
 			Rules:            rules,
 		},

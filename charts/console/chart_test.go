@@ -138,6 +138,13 @@ func TestGenerateCases(t *testing.T) {
 		func(_ *any, c fuzz.Continue) {},
 		func(_ *[]corev1.ResourceClaim, c fuzz.Continue) {},
 		func(_ *[]metav1.ManagedFieldsEntry, c fuzz.Continue) {},
+		func(s *corev1.PodFSGroupChangePolicy, c fuzz.Continue) {
+			types := []corev1.PodFSGroupChangePolicy{
+				corev1.FSGroupChangeOnRootMismatch,
+				corev1.FSGroupChangeAlways,
+			}
+			*s = types[c.Intn(len(types))]
+		},
 	)
 
 	schema, err := jsonschema.CompileString("", string(ValuesSchemaJSON))

@@ -79,13 +79,13 @@ type PartialServiceConfig struct {
 	Type        *corev1.ServiceType "json:\"type,omitempty\""
 	Port        *int32              "json:\"port,omitempty\""
 	NodePort    *int32              "json:\"nodePort,omitempty\""
-	TargetPort  *int32              "json:\"targetPort,omitempty\""
+	TargetPort  *TargetPort         "json:\"targetPort,omitempty\""
 	Annotations map[string]string   "json:\"annotations,omitempty\""
 }
 
 type PartialIngressConfig struct {
 	Enabled     *bool                     "json:\"enabled,omitempty\""
-	ClassName   *string                   "json:\"className,omitempty\""
+	ClassName   *ClassName                "json:\"className,omitempty\""
 	Annotations map[string]string         "json:\"annotations,omitempty\""
 	Hosts       []PartialIngressHost      "json:\"hosts,omitempty\""
 	TLS         []networkingv1.IngressTLS "json:\"tls,omitempty\""
