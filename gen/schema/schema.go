@@ -12,8 +12,11 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -22,12 +25,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/charts/operator"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 var schemas = map[string]any{
+	"console":  &console.Values{},
 	"redpanda": &redpanda.Values{},
 	"operator": &operator.Values{},
 }
@@ -104,14 +109,10 @@ func run(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	if len(args) != 1 {
-		fmt.Printf("Wrong number of arguments %d, require 2\nusage: %s <redpanda|operator>\n", len(args), args[0])
-		os.Exit(1)
-	}
-
-	val, exist := schemas[args[0]]
-	if !exist {
-		fmt.Printf("schema %s does not exist\nusage: %s <redpanda|operator>\n", args[0], cmd.CalledAs())
+	val, exists := schemas[append(args, "")[0]]
+	if !exists {
+		acceptable := strings.Join(slices.Collect(maps.Keys(schemas)), "|")
+		fmt.Printf("schema %q does not exist\nusage: %s <%s>\n", args[0], cmd.CalledAs(), acceptable)
 		os.Exit(1)
 	}
 

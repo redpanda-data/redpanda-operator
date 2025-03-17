@@ -149,10 +149,6 @@ Pull secrets may be used to provide credentials to image repositories See https:
 
 **Default:** `{}`
 
-### [ingress.className](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=ingress.className)
-
-**Default:** `nil`
-
 ### [ingress.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=ingress.enabled)
 
 **Default:** `false`
@@ -216,6 +212,10 @@ Override `console.name` template.
 ### [podSecurityContext.fsGroup](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=podSecurityContext.fsGroup)
 
 **Default:** `99`
+
+### [podSecurityContext.fsGroupChangePolicy](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=podSecurityContext.fsGroupChangePolicy)
+
+**Default:** `"Always"`
 
 ### [podSecurityContext.runAsUser](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=podSecurityContext.runAsUser)
 
@@ -285,17 +285,13 @@ SecretMounts is an abstraction to make a Secret available in the container's fil
 
 ### [service.annotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.annotations)
 
+Override the value in `console.config.server.listenPort` if not `nil` targetPort:
+
 **Default:** `{}`
 
 ### [service.port](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.port)
 
 **Default:** `8080`
-
-### [service.targetPort](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.targetPort)
-
-Override the value in `console.config.server.listenPort` if not `nil`
-
-**Default:** `nil`
 
 ### [service.type](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.type)
 

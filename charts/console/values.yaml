@@ -72,6 +72,7 @@ podLabels: {}
 podSecurityContext:
   runAsUser: 99
   fsGroup: 99
+  fsGroupChangePolicy: 'Always'
 
 securityContext:
   runAsNonRoot: true
@@ -87,12 +88,12 @@ service:
   port: 8080
   # nodePort: 30001
   # -- Override the value in `console.config.server.listenPort` if not `nil`
-  targetPort:
+  # targetPort:
   annotations: {}
 
 ingress:
   enabled: false
-  className:
+  # className:
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
