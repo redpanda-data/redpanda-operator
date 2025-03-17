@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Bump Redpanda Console chart dependency to v3.0.0 version.
+time: 2025-03-14T17:14:46.51302-04:00
