@@ -433,8 +433,8 @@ github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe
 github.com/quasilyte/go-ruleguard/dsl v0.3.22/go.mod h1:KeCP03KrjuSO0H1kTuZQCWlQPulDV6YMIXmpQss17rU=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756 h1:Ej60mXTkl+Gg3EV4QiKYtmW0rJ1BHyVGoFwJ4DwjvGc=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756/go.mod h1:c9U+W6CCLWHWk9jBEzzUM7Q7ya4ot57FghxtaVdMrNQ=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab h1:aa1fDNQ2IqVM7Y45RgoJUABwfvVa4pgVIAu51tD7nOo=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50 h1:rmgno9TNZCX2c81zJGrv2CZjiPURWevNeQ7Lo8fVszk=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50/go.mod h1:b/GBKIBr3nLE+LAtb8P4b2KrOwL3SGXAF4l65UcF71c=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=

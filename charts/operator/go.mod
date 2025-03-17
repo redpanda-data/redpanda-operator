@@ -7,7 +7,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab
+	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0

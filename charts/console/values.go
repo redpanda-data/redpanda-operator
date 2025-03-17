@@ -27,6 +27,7 @@ var (
 )
 
 type Values struct {
+	Globals                      map[string]any                    `json:"global,omitempty"`
 	ReplicaCount                 int32                             `json:"replicaCount"`
 	Image                        Image                             `json:"image"`
 	ImagePullSecrets             []corev1.LocalObjectReference     `json:"imagePullSecrets"`
