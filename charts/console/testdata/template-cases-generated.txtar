@@ -406,7 +406,7 @@ nodeSelector:
   CAy: 19kW
   R2z: OpcDywz9x
 podSecurityContext:
-  fsGroupChangePolicy: 驸Ǩiµ慷泱世
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 6873387834465682841
   runAsUser: 7937848737866681002
   sysctls:
@@ -474,7 +474,7 @@ podAnnotations:
   BTlN: z8t
   a: Pqjhw
 podSecurityContext:
-  fsGroupChangePolicy: ǶȚ/廻
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 3241750191956122115
   runAsNonRoot: false
   runAsUser: 2693812519144067821
@@ -563,7 +563,7 @@ nodeSelector:
   OBRBvRK: hMXDLGN5
   ky: sv
 podSecurityContext:
-  fsGroupChangePolicy: 灆Zeɪ霅ǭɒ<ǖ韆
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -2394155475284911371
   runAsNonRoot: true
   supplementalGroups:
@@ -957,7 +957,7 @@ podLabels:
   D2V: V80aQ
 podSecurityContext:
   fsGroup: 4103142176308445041
-  fsGroupChangePolicy: Ő6­撱悤ÅC`碸
+  fsGroupChangePolicy: OnRootMismatch
   runAsUser: 9170579519391070953
   sysctls:
   - name: 4OKA
@@ -1455,7 +1455,7 @@ nameOverride: Vi2vH
 podAnnotations:
   Tt: CHbO7BF
 podSecurityContext:
-  fsGroupChangePolicy: A%Âȁµ郞星懐,t语Ā詘ĲÊ铮Q
+  fsGroupChangePolicy: OnRootMismatch
   runAsUser: -4832235381641550418
 priorityClassName: rcxHoi
 replicaCount: 424
@@ -1607,7 +1607,7 @@ podLabels:
   TGDbR: 4egH
   Xr8XMOk: 1DAii
 podSecurityContext:
-  fsGroupChangePolicy: ¶鮬眴帘ʥb豚DIĂ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 4190388773600423895
   supplementalGroups:
   - 6652209348598506050
@@ -1882,7 +1882,7 @@ podAnnotations:
   JYLUc483y: gTnWiG
 podSecurityContext:
   fsGroup: -1425599568169885252
-  fsGroupChangePolicy: ƶ Ÿ恢
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -8737472966684836915
   supplementalGroups:
   - 809809813702093180
@@ -3178,7 +3178,7 @@ nodeSelector:
   ZwJFpsi2: "Y"
 podSecurityContext:
   fsGroup: -9078742865265088035
-  fsGroupChangePolicy: t愡ʉŭ橶悛²PǑ釨
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 4451064009213947927
   sysctls:
   - name: xMEA3
@@ -3895,7 +3895,7 @@ podLabels:
   J0ZGVwo: wg5WM
 podSecurityContext:
   fsGroup: -2253428343229559950
-  fsGroupChangePolicy: 疽6,´5賒鹐鬼/6MǗ辥樟犖籷nǴ6
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 1871122229780304117
   runAsNonRoot: false
   runAsUser: 6557994647940633801
@@ -4744,7 +4744,7 @@ podAnnotations:
   bHXzf: nOiRsvEXH
 podSecurityContext:
   fsGroup: -6946946538076897241
-  fsGroupChangePolicy: 呆ɔȂwĳà
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 3944693697856007637
   runAsNonRoot: true
   runAsUser: -732766343758518304
@@ -4951,7 +4951,7 @@ podAnnotations:
   j: xR98FRh
 podSecurityContext:
   fsGroup: -2594082004410587315
-  fsGroupChangePolicy: 'ċV1鯍E '
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -880388195249084168
   runAsNonRoot: false
   runAsUser: -9051010573896129766
@@ -5550,7 +5550,7 @@ podLabels:
   yG: T
 podSecurityContext:
   fsGroup: -9123846953160880032
-  fsGroupChangePolicy: UƻA竘锵]湞ȊM
+  fsGroupChangePolicy: OnRootMismatch
   runAsNonRoot: false
   runAsUser: 2594597056592417187
   sysctls:
@@ -7034,7 +7034,7 @@ podAnnotations:
   Rhc2a: ZX
 podSecurityContext:
   fsGroup: 1840749988150518169
-  fsGroupChangePolicy: '`Ďw迾ƞ'
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 7579405740471103986
   runAsNonRoot: true
   runAsUser: 3966629163143165916
@@ -7622,7 +7622,7 @@ podLabels:
   e1: s0B
 podSecurityContext:
   fsGroup: -6352604564338413284
-  fsGroupChangePolicy: ¥ɬ屛ɀ裕量7ȅǇI/煿I庮\LÌ0
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -629752081807497066
   runAsNonRoot: false
   runAsUser: -7150506011583335552
@@ -8362,7 +8362,7 @@ podLabels:
   ip1RGEzt4t6: "1"
 podSecurityContext:
   fsGroup: 7101468120327600630
-  fsGroupChangePolicy: ȴ鳁ƨ殳h`熡ƍʊ0ŀ擳琗图.AƱX滋
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 4262945102741076844
   runAsNonRoot: false
   runAsUser: -9214274730002703336
@@ -9346,7 +9346,7 @@ podLabels:
   T: Q
 podSecurityContext:
   fsGroup: -4412504815274791692
-  fsGroupChangePolicy: Ȯƭhjb糯妔ȂǑʜ胴}轣
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 3860793197532219812
   runAsNonRoot: true
   runAsUser: -1963293898483195295
@@ -10219,7 +10219,7 @@ podLabels:
   m: 7ZN2EUk
 podSecurityContext:
   fsGroup: -7666633334671080248
-  fsGroupChangePolicy: 鼡紻FOr滪Yƅʍdɇ鰄ª
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 2654474685138053802
   runAsNonRoot: false
   runAsUser: 4513541302021681850
@@ -11208,7 +11208,7 @@ podLabels:
   s: vw1lrq
 podSecurityContext:
   fsGroup: -8750452531563962174
-  fsGroupChangePolicy: RȗɻÎ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 3754171381447903160
   runAsNonRoot: false
   runAsUser: 2565919490422334632
@@ -12161,7 +12161,7 @@ podLabels:
   jP3: iNkD
 podSecurityContext:
   fsGroup: 8205502301244812774
-  fsGroupChangePolicy: ""
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -8440674019915815616
   runAsNonRoot: true
   runAsUser: 4432310384984167581
@@ -13140,7 +13140,7 @@ podLabels:
   MyocWENxGGa: TrRadg
 podSecurityContext:
   fsGroup: 5618615494228351604
-  fsGroupChangePolicy: ʩrXù济延唇ė袡 ʊ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -3861060047548570674
   runAsNonRoot: false
   runAsUser: 3602747950735365650
@@ -13735,7 +13735,7 @@ podLabels:
   u: Vai7
 podSecurityContext:
   fsGroup: -4268923634359973318
-  fsGroupChangePolicy: 椶'ɏ4Ŝʘþf¸ǚļţRď0
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -5513988494785819878
   runAsNonRoot: true
   runAsUser: 3348050323720255791
@@ -14308,7 +14308,7 @@ podAnnotations:
   vAJU: z
 podSecurityContext:
   fsGroup: -1210907643611065698
-  fsGroupChangePolicy: IJ鄔ȫ荪癓椥%k矜椒ʊ0宻lƑɜIɇ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -4059110951032458810
   runAsNonRoot: false
   runAsUser: -6169453912741831517
@@ -15440,7 +15440,7 @@ nodeSelector:
   y63G: wNiNvOMv
 podSecurityContext:
   fsGroup: 2302511509023017096
-  fsGroupChangePolicy: 闦ñ禢`J鉤
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -2347956389924856743
   runAsNonRoot: true
   runAsUser: 1720952380350228641
@@ -15975,7 +15975,7 @@ nodeSelector:
   tBg: i2GTQt2
 podSecurityContext:
   fsGroup: -5892617745784950910
-  fsGroupChangePolicy: PȬ:抱
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -8920229121329683019
   runAsNonRoot: true
   runAsUser: -8872812935195907482
@@ -17007,7 +17007,7 @@ podLabels:
   sWR: MV07t
 podSecurityContext:
   fsGroup: 3426922926776119440
-  fsGroupChangePolicy: 橣
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 8316915980597683441
   runAsNonRoot: false
   runAsUser: 6270039107728700969
@@ -17691,7 +17691,7 @@ podLabels:
   o5jSmwn: "1"
 podSecurityContext:
   fsGroup: -2194962218839547968
-  fsGroupChangePolicy: Ƃ搵Ņů羁nʇ雵Ri摿TǛø!ʣa饪詹
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -8349123147211058668
   runAsNonRoot: false
   runAsUser: -7634316416044162316
@@ -18456,7 +18456,7 @@ podLabels:
   ecdKkB: "1"
 podSecurityContext:
   fsGroup: -3027126285888130862
-  fsGroupChangePolicy: 袺芥ŵ罋o郘渢e堫柝ǆ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -3172565869747057973
   runAsNonRoot: true
   runAsUser: 5739747577453985710
@@ -19059,7 +19059,7 @@ podLabels:
   jAyDz: vW2
 podSecurityContext:
   fsGroup: 8841428564051369991
-  fsGroupChangePolicy: '''諢憭捽鉚ƾ邓鈽6M_s'
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 5877981406957979012
   runAsNonRoot: false
   runAsUser: -2714811370596686768
@@ -19601,7 +19601,7 @@ podLabels:
   luPi3E6: iCt
 podSecurityContext:
   fsGroup: -137977092678744094
-  fsGroupChangePolicy: ʅ翄ąIJU÷[Ɉ<Ǧ兰巒鄂
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 2453672470118860
   runAsNonRoot: false
   runAsUser: -2867620198524252040
@@ -20325,7 +20325,7 @@ podLabels:
   6dZAs: xJPaLHKS1Y2
 podSecurityContext:
   fsGroup: -6567182940167159103
-  fsGroupChangePolicy: 6iɰ堂:齐ǪÈ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -1787219330993537800
   runAsNonRoot: true
   runAsUser: -5627543087390804845
@@ -21217,7 +21217,7 @@ podLabels:
   ZEXh: zufy
 podSecurityContext:
   fsGroup: -3794452885502571644
-  fsGroupChangePolicy: 欲飹Rɦ薕µL<Ĕ
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: -3171560656159467191
   runAsNonRoot: true
   runAsUser: -4412205905842408558
@@ -21983,7 +21983,7 @@ podLabels:
   g1c: XEOMg
 podSecurityContext:
   fsGroup: 6449559755791185949
-  fsGroupChangePolicy: 慩梱ʂcƎƱ\火ɘ²ɉ_
+  fsGroupChangePolicy: OnRootMismatch
   runAsGroup: 841256803887707704
   runAsNonRoot: true
   runAsUser: -2824253868920734938

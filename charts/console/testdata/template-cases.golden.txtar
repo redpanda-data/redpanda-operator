@@ -176,6 +176,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -422,6 +423,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -662,6 +664,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -916,6 +919,7 @@ spec:
       priorityClassName: vQhDS
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: HRoLg
       tolerations: []
@@ -1168,6 +1172,7 @@ spec:
       priorityClassName: NyOpfr
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: T50cZi
       tolerations:
@@ -1412,6 +1417,7 @@ spec:
       priorityClassName: TeCy
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: R1Yar8
       tolerations:
@@ -1793,6 +1799,7 @@ spec:
       priorityClassName: JT0MK
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console-YMl
       tolerations: []
@@ -2002,6 +2009,7 @@ spec:
       priorityClassName: KnLhcy2cw
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: pN
       tolerations: []
@@ -2251,6 +2259,7 @@ spec:
       priorityClassName: 1x11c0q
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: nd7TSb2mNTS
       tolerations: []
@@ -2477,7 +2486,7 @@ spec:
       priorityClassName: rs
       securityContext:
         fsGroup: 99
-        fsGroupChangePolicy: 驸Ǩiµ慷泱世
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 6873387834465682000
         runAsUser: 7937848737866681000
         sysctls:
@@ -2668,7 +2677,7 @@ spec:
       priorityClassName: 0fXQqWA96
       securityContext:
         fsGroup: 99
-        fsGroupChangePolicy: ǶȚ/廻
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 3241750191956122000
         runAsNonRoot: false
         runAsUser: 2693812519144067600
@@ -2905,7 +2914,7 @@ spec:
       priorityClassName: p0ShP6Yru
       securityContext:
         fsGroup: 99
-        fsGroupChangePolicy: 灆Zeɪ霅ǭɒ<ǖ韆
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -2394155475284911600
         runAsNonRoot: true
         runAsUser: 99
@@ -3233,6 +3242,7 @@ spec:
       priorityClassName: x0ISc2
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: kIzbDF
       tolerations: []
@@ -3565,7 +3575,7 @@ spec:
       priorityClassName: sJXoA3V
       securityContext:
         fsGroup: 4103142176308445000
-        fsGroupChangePolicy: Ő6­撱悤ÅC`碸
+        fsGroupChangePolicy: OnRootMismatch
         runAsUser: 9170579519391071000
         sysctls:
         - name: 4OKA
@@ -3940,6 +3950,7 @@ spec:
       priorityClassName: vMcB
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: tmn2Kt
       tolerations: []
@@ -4231,6 +4242,7 @@ spec:
       priorityClassName: BDUfm1wSRDI
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: RttlJN
       tolerations:
@@ -4680,7 +4692,7 @@ spec:
       priorityClassName: "68"
       securityContext:
         fsGroup: 99
-        fsGroupChangePolicy: ¶鮬眴帘ʥb豚DIĂ
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 4190388773600424000
         runAsUser: 99
         supplementalGroups:
@@ -5143,7 +5155,7 @@ spec:
       priorityClassName: XtKq
       securityContext:
         fsGroup: -1425599568169885200
-        fsGroupChangePolicy: ƶ Ÿ恢
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -8737472966684837000
         runAsUser: 99
         supplementalGroups:
@@ -5685,6 +5697,7 @@ spec:
       priorityClassName: qcIlT
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: 9XG3SZW
       tolerations:
@@ -6051,6 +6064,7 @@ spec:
       priorityClassName: 6jxv
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: uAvlOXf
       tolerations:
@@ -6325,6 +6339,7 @@ spec:
       priorityClassName: FERw
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: NZ7h9
       tolerations:
@@ -6798,6 +6813,7 @@ spec:
       priorityClassName: nIBhqM
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: HMpc
       tolerations: []
@@ -7617,6 +7633,7 @@ spec:
       priorityClassName: tAfrctQhZnbu
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: GVjeLRc
       tolerations: []
@@ -7977,7 +7994,7 @@ spec:
       priorityClassName: S2v
       securityContext:
         fsGroup: -2253428343229560000
-        fsGroupChangePolicy: 疽6,´5賒鹐鬼/6MǗ辥樟犖籷nǴ6
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 1871122229780304100
         runAsNonRoot: false
         runAsUser: 6557994647940634000
@@ -8679,7 +8696,7 @@ spec:
       priorityClassName: 0bGHQk7gL
       securityContext:
         fsGroup: -6946946538076897000
-        fsGroupChangePolicy: 呆ɔȂwĳà
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 3944693697856007700
         runAsNonRoot: true
         runAsUser: -732766343758518300
@@ -8953,7 +8970,7 @@ spec:
       priorityClassName: JnI8
       securityContext:
         fsGroup: -2594082004410587000
-        fsGroupChangePolicy: 'ċV1鯍E '
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -880388195249084200
         runAsNonRoot: false
         runAsUser: -9051010573896130000
@@ -9469,7 +9486,7 @@ spec:
       priorityClassName: u8cTjKLB
       securityContext:
         fsGroup: -9123846953160880000
-        fsGroupChangePolicy: UƻA竘锵]湞ȊM
+        fsGroupChangePolicy: OnRootMismatch
         runAsNonRoot: false
         runAsUser: 2594597056592417300
         sysctls:
@@ -10098,6 +10115,7 @@ spec:
       priorityClassName: sLkcwZ
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsGroup: -9040107238323409000
         runAsNonRoot: false
         runAsUser: 99
@@ -11114,7 +11132,7 @@ spec:
       priorityClassName: WeB9y8
       securityContext:
         fsGroup: 7101468120327600000
-        fsGroupChangePolicy: ȴ鳁ƨ殳h`熡ƍʊ0ŀ擳琗图.AƱX滋
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 4262945102741077000
         runAsNonRoot: false
         runAsUser: -9214274730002703000
@@ -12197,7 +12215,7 @@ spec:
       priorityClassName: uHKqx
       securityContext:
         fsGroup: -4412504815274792000
-        fsGroupChangePolicy: Ȯƭhjb糯妔ȂǑʜ胴}轣
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 3860793197532220000
         runAsNonRoot: true
         runAsUser: -1963293898483195400
@@ -13309,7 +13327,7 @@ spec:
       priorityClassName: F
       securityContext:
         fsGroup: -8750452531563962000
-        fsGroupChangePolicy: RȗɻÎ
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 3754171381447903000
         runAsNonRoot: false
         runAsUser: 2565919490422334500
@@ -14392,7 +14410,7 @@ spec:
       priorityClassName: gPB
       securityContext:
         fsGroup: 8205502301244812000
-        fsGroupChangePolicy: ""
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -8440674019915816000
         runAsNonRoot: true
         runAsUser: 4432310384984167400
@@ -15806,7 +15824,7 @@ spec:
       priorityClassName: 3A
       securityContext:
         fsGroup: 2302511509023017200
-        fsGroupChangePolicy: 闦ñ禢`J鉤
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -2347956389924857000
         runAsNonRoot: true
         runAsUser: 1720952380350228700
@@ -16451,7 +16469,7 @@ spec:
       priorityClassName: tQe
       securityContext:
         fsGroup: -5892617745784951000
-        fsGroupChangePolicy: PȬ:抱
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -8920229121329683000
         runAsNonRoot: true
         runAsUser: -8872812935195907000
@@ -17544,7 +17562,7 @@ spec:
       priorityClassName: 6ZbHC
       securityContext:
         fsGroup: 3426922926776119300
-        fsGroupChangePolicy: 橣
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 8316915980597683000
         runAsNonRoot: false
         runAsUser: 6270039107728701000
@@ -18413,7 +18431,7 @@ spec:
       priorityClassName: 8KMLup9vb
       securityContext:
         fsGroup: -3027126285888131000
-        fsGroupChangePolicy: 袺芥ŵ罋o郘渢e堫柝ǆ
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -3172565869747058000
         runAsNonRoot: true
         runAsUser: 5739747577453986000
@@ -19420,7 +19438,7 @@ spec:
       priorityClassName: 0P6RnoBeb5
       securityContext:
         fsGroup: -6567182940167159000
-        fsGroupChangePolicy: 6iɰ堂:齐ǪÈ
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -1787219330993537800
         runAsNonRoot: true
         runAsUser: -5627543087390805000
@@ -20342,7 +20360,7 @@ spec:
       priorityClassName: l4Mowg
       securityContext:
         fsGroup: -3794452885502571500
-        fsGroupChangePolicy: 欲飹Rɦ薕µL<Ĕ
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: -3171560656159467000
         runAsNonRoot: true
         runAsUser: -4412205905842408400
@@ -21199,7 +21217,7 @@ spec:
       priorityClassName: JhGfjGXQ
       securityContext:
         fsGroup: 6449559755791186000
-        fsGroupChangePolicy: 慩梱ʂcƎƱ\火ɘ²ɉ_
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 841256803887707600
         runAsNonRoot: true
         runAsUser: -2824253868920734700
@@ -21500,6 +21518,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -21713,6 +21732,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -21940,6 +21960,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -22164,6 +22185,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -22843,6 +22865,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -23055,6 +23078,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -23276,6 +23300,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -23488,6 +23513,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -23733,6 +23759,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -23947,6 +23974,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -24395,6 +24423,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -24625,6 +24654,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []
@@ -24839,6 +24869,7 @@ spec:
       priorityClassName: ""
       securityContext:
         fsGroup: 99
+        fsGroupChangePolicy: Always
         runAsUser: 99
       serviceAccountName: console
       tolerations: []

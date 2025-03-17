@@ -16,6 +16,8 @@ tasks:
     cmds:
     - task: genpartial
       vars: { CHART: console }
+    - task: genschema
+      vars: { CHART: console }
     - task: gotohelm
       vars: { CHART: console }
 

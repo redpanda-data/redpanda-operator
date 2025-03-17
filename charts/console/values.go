@@ -85,13 +85,13 @@ type ServiceConfig struct {
 	Type        corev1.ServiceType `json:"type"`
 	Port        int32              `json:"port"`
 	NodePort    *int32             `json:"nodePort,omitempty"`
-	TargetPort  *int32             `json:"targetPort"`
+	TargetPort  *int32             `json:"targetPort,omitempty"`
 	Annotations map[string]string  `json:"annotations"`
 }
 
 type IngressConfig struct {
 	Enabled     bool                      `json:"enabled"`
-	ClassName   *string                   `json:"className"`
+	ClassName   *string                   `json:"className,omitempty"`
 	Annotations map[string]string         `json:"annotations"`
 	Hosts       []IngressHost             `json:"hosts"`
 	TLS         []networkingv1.IngressTLS `json:"tls"`
