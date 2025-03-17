@@ -21,7 +21,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-const DefaultSASLMechanism = "SCRAM-SHA-512"
+const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
 func Secrets(dot *helmette.Dot) []*corev1.Secret {
 	var secrets []*corev1.Secret
@@ -180,10 +180,7 @@ func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
 
 		// Working around lack of support for += or strings.Join at the moment
 		for _, user := range values.Auth.SASL.Users {
-			mechanism := defaultMechanism
-			if !helmette.Empty(user.Mechanism) {
-				mechanism = user.Mechanism
-			}
+			mechanism := ptr.Deref(user.Mechanism, defaultMechanism)
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)

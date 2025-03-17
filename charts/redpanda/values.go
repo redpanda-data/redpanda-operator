@@ -67,6 +67,10 @@ type MebiBytes = int64
 // the Values struct as well to ensure that nothing can ever get out of sync.
 
 type Values struct {
+	// Global is an untyped map of values that are "global" to this chart and
+	// all its sub-charts.
+	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
+	Global           map[string]any                `json:"global,omitempty"`
 	NameOverride     string                        `json:"nameOverride"`
 	FullnameOverride string                        `json:"fullnameOverride"`
 	ClusterDomain    string                        `json:"clusterDomain"`
@@ -127,9 +131,9 @@ type SecurityContext struct {
 }
 
 type Image struct {
-	Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda"`
-	Tag        ImageTag `json:"tag" jsonschema:"default=Chart.appVersion"`
-	PullPolicy string   `json:"pullPolicy" jsonschema:"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
+	Repository string            `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda"`
+	Tag        ImageTag          `json:"tag" jsonschema:"default=Chart.appVersion"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"required"`
 }
 
 // +gotohelm:ignore=true
@@ -846,12 +850,10 @@ type Statefulset struct {
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 		} `json:"setDataDirOwnership"`
 		SetTieredStorageCacheDirOwnership struct {
-			// Enabled           bool           `json:"enabled"`
 			Resources         map[string]any `json:"resources"`
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 		} `json:"setTieredStorageCacheDirOwnership"`
 		Tuning struct {
-			// Enabled           bool           `json:"enabled"`
 			Resources         map[string]any `json:"resources"`
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 		} `json:"tuning"`
@@ -1159,7 +1161,7 @@ type BootstrapUser struct {
 	Name         *string                   `json:"name"`
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
 	Password     *string                   `json:"password"`
-	Mechanism    string                    `json:"mechanism" jsonschema:"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$"`
+	Mechanism    SASLMechanism             `json:"mechanism"`
 }
 
 func (b *BootstrapUser) BootstrapEnvironment(fullname string) []corev1.EnvVar {
@@ -1187,11 +1189,11 @@ func (b *BootstrapUser) RpkEnvironment(fullname string) []corev1.EnvVar {
 		Value: b.Username(),
 	}, {
 		Name:  "RPK_SASL_MECHANISM",
-		Value: b.GetMechanism(),
+		Value: string(b.GetMechanism()),
 	}}
 }
 
-func (b *BootstrapUser) GetMechanism() string {
+func (b *BootstrapUser) GetMechanism() SASLMechanism {
 	if b.Mechanism == "" {
 		return "SCRAM-SHA-256"
 	}
@@ -1212,14 +1214,14 @@ func (b *BootstrapUser) SecretKeySelector(fullname string) *corev1.SecretKeySele
 }
 
 type SASLUser struct {
-	Name      string `json:"name"`
-	Password  string `json:"password"`
-	Mechanism string `json:"mechanism" jsonschema:"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$"`
+	Name      string         `json:"name"`
+	Password  string         `json:"password"`
+	Mechanism *SASLMechanism `json:"mechanism"`
 }
 
 type SASLAuth struct {
 	Enabled       bool          `json:"enabled" jsonschema:"required"`
-	Mechanism     string        `json:"mechanism"`
+	Mechanism     SASLMechanism `json:"mechanism"`
 	SecretRef     string        `json:"secretRef"`
 	Users         []SASLUser    `json:"users"`
 	BootstrapUser BootstrapUser `json:"bootstrapUser"`

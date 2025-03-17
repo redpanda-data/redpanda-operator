@@ -72,7 +72,7 @@ func connectorsChartIntegration(dot *helmette.Dot) []kube.Object {
 			"bash",
 			"-c",
 			"set -e; IFS=':' read -r CONNECT_SASL_USERNAME CONNECT_SASL_PASSWORD CONNECT_SASL_MECHANISM < <(grep \"\" $(find /mnt/users/* -print));" +
-				fmt.Sprintf(" CONNECT_SASL_MECHANISM=${CONNECT_SASL_MECHANISM:-%s};", SASLMechanism(dot)) +
+				fmt.Sprintf(" CONNECT_SASL_MECHANISM=${CONNECT_SASL_MECHANISM:-%s};", GetSASLMechanism(dot)) +
 				" export CONNECT_SASL_USERNAME CONNECT_SASL_PASSWORD CONNECT_SASL_MECHANISM;" +
 				" [[ $CONNECT_SASL_MECHANISM == \"SCRAM-SHA-256\" ]] && CONNECT_SASL_MECHANISM=scram-sha-256;" +
 				" [[ $CONNECT_SASL_MECHANISM == \"SCRAM-SHA-512\" ]] && CONNECT_SASL_MECHANISM=scram-sha-512;" +

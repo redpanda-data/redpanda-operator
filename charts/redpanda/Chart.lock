@@ -1,9 +1,9 @@
 dependencies:
-- name: console
-  repository: https://charts.redpanda.com
-  version: 0.7.31
+- name: console-unstable
+  repository: oci://registry-1.docker.io/redpandadata
+  version: v0.0-k8s0-be94e29d-helm-chart
 - name: connectors
   repository: https://charts.redpanda.com
   version: 0.1.14
-digest: sha256:9143ac9f8f57865b40644d32e79aa0acc4187b0b71f2ec465a129ed2a689c540
-generated: "2024-12-18T17:12:03.703005+01:00"
+digest: sha256:2ddf852bd1e3874465ea3a7f64b939293d45594d38a8e5eadb2f973d1f17030f
+generated: "2025-03-25T16:55:09.625881-04:00"

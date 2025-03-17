@@ -170,10 +170,10 @@ func Notes(dot *helmette.Dot) []string {
 // These are all tested in `tests/test-kafka-sasl-status.yaml`
 
 func RpkACLUserCreate(dot *helmette.Dot) string {
-	return fmt.Sprintf(`rpk acl user create myuser --new-password changeme --mechanism %s`, SASLMechanism(dot))
+	return fmt.Sprintf(`rpk acl user create myuser --new-password changeme --mechanism %s`, GetSASLMechanism(dot))
 }
 
-func SASLMechanism(dot *helmette.Dot) string {
+func GetSASLMechanism(dot *helmette.Dot) SASLMechanism {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if values.Auth.SASL != nil {

@@ -62,10 +62,7 @@
 {{- $defaultMechanism = $values.auth.sasl.mechanism -}}
 {{- end -}}
 {{- range $_, $user := $values.auth.sasl.users -}}
-{{- $mechanism := $defaultMechanism -}}
-{{- if (not (empty $user.mechanism)) -}}
-{{- $mechanism = $user.mechanism -}}
-{{- end -}}
+{{- $mechanism := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $user.mechanism $defaultMechanism) ))) "r") -}}
 {{- $usersTxt = (concat (default (list ) $usersTxt) (list (printf "%s:%s:%s" $user.name $user.password $mechanism))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -97,9 +94,9 @@
 {{- break -}}
 {{- end -}}
 {{- $secretName := (printf "%s-bootstrap-user" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot) ))) "r")) -}}
-{{- $_209_existing_4_ok_5 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $dot.Release.Namespace $secretName) ))) "r") -}}
-{{- $existing_4 := (index $_209_existing_4_ok_5 0) -}}
-{{- $ok_5 := (index $_209_existing_4_ok_5 1) -}}
+{{- $_206_existing_4_ok_5 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $dot.Release.Namespace $secretName) ))) "r") -}}
+{{- $existing_4 := (index $_206_existing_4_ok_5 0) -}}
+{{- $ok_5 := (index $_206_existing_4_ok_5 1) -}}
 {{- if $ok_5 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $existing_4) | toJson -}}
