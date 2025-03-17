@@ -20,6 +20,7 @@ import (
 )
 
 type PartialValues struct {
+	Globals                      map[string]any                    "json:\"global,omitempty\""
 	ReplicaCount                 *int32                            "json:\"replicaCount,omitempty\""
 	Image                        *PartialImage                     "json:\"image,omitempty\""
 	ImagePullSecrets             []corev1.LocalObjectReference     "json:\"imagePullSecrets,omitempty\""

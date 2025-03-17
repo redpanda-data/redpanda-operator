@@ -20,8 +20,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
@@ -31,6 +31,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zapio"
 	"go.uber.org/zap/zaptest"
+	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,18 +63,52 @@ func TestChartLock(t *testing.T) {
 	var lock helm.ChartLock
 	require.NoError(t, yaml.Unmarshal(chartLockBytes, &lock))
 
+	data, err := os.ReadFile("./go.mod")
+	require.NoError(t, err)
+
+	goMod, err := modfile.Parse("go.mod", data, func(path, version string) (string, error) {
+		return version, nil
+	})
+	require.NoError(t, err)
+
+	getRevision := func(req *modfile.Require) string {
+		if module.IsPseudoVersion(req.Mod.Version) {
+			rev, err := module.PseudoVersionRev(req.Mod.Version)
+			require.NoError(t, err)
+
+			// Go's pseudo versions are longer than those output by git
+			// describe, which is used for helm versions. Truncate to git
+			// describes length to make matching easier.
+			return rev[:8]
+		}
+		return req.Mod.Version
+	}
+
+	consoleModule := goMod.Require[slices.IndexFunc(goMod.Require, func(req *modfile.Require) bool {
+		return req.Mod.Path == "github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	})]
+
 	for _, dep := range lock.Dependencies {
-		var goVersion string
-		switch dep.Name {
-		case "console":
-			goVersion = console.Chart.Metadata().Version
-		case "connectors":
-			goVersion = connectors.Chart.Metadata().Version
-		default:
-			t.Errorf("unexpected dependency: %q", dep.Name)
+		// If present, we'll use alias which let's us easily use nightly builds
+		// from console-unstable.
+		name := dep.Name
+		if dep.Alias != "" {
+			name = dep.Alias
 		}
 
-		require.Equal(t, goVersion, dep.Version, "Chart.lock dependency of %q is out of sync with the go version")
+		switch name {
+		case "console", "console-unstable":
+			require.Contains(t, dep.Version, getRevision(consoleModule), `Chart.lock and go.mod MUST specify the same version of the console chart.
+If you updated go.mod, update Chart.yaml, and visa versa.
+`)
+
+		case "connectors":
+			goVersion := connectors.Chart.Metadata().Version
+			require.Equal(t, goVersion, dep.Version, "Chart.lock dependency of %q is out of sync with the go version", dep.Name)
+
+		default:
+			t.Errorf("unexpected dependency: %q", name)
+		}
 	}
 }
 
@@ -216,7 +252,7 @@ func TestIntegrationChart(t *testing.T) {
 					Users: []redpanda.PartialSASLUser{{
 						Name:      ptr.To("superuser"),
 						Password:  ptr.To("superpassword"),
-						Mechanism: ptr.To("SCRAM-SHA-512"),
+						Mechanism: ptr.To[redpanda.SASLMechanism]("SCRAM-SHA-512"),
 					}},
 				},
 			},
@@ -1002,18 +1038,6 @@ func TestGoHelmEquivalence(t *testing.T) {
 			helmObjs, err := kube.DecodeYAML(rendered, redpanda.Scheme)
 			require.NoError(t, err)
 
-			slices.SortStableFunc(helmObjs, func(a, b kube.Object) int {
-				aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
-				bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
-				return strings.Compare(aStr, bStr)
-			})
-
-			slices.SortStableFunc(goObjs, func(a, b kube.Object) int {
-				aStr := fmt.Sprintf("%s/%s/%s", a.GetObjectKind().GroupVersionKind().String(), a.GetNamespace(), a.GetName())
-				bStr := fmt.Sprintf("%s/%s/%s", b.GetObjectKind().GroupVersionKind().String(), b.GetNamespace(), b.GetName())
-				return strings.Compare(aStr, bStr)
-			})
-
 			for _, obj := range append(helmObjs, goObjs...) {
 				switch obj := obj.(type) {
 				case *appsv1.StatefulSet:
@@ -1025,13 +1049,32 @@ func TestGoHelmEquivalence(t *testing.T) {
 				}
 			}
 
-			assert.Equal(t, len(helmObjs), len(goObjs))
+			// This could be two sorts followed by an assert.Equal or
+			// assert.EqualElements but either of those give subpar error
+			// messages when dealing with the volume of helm charts. To
+			// generate a more digestible error message, we "bucket" objects by
+			// type and then name.
 
-			// Iterate and compare instead of a single comparison for better error
-			// messages. Some divergences will fail an Equal check on slices but not
-			// report which element(s) aren't equal.
-			for i := range helmObjs {
-				assert.Equal(t, helmObjs[i], goObjs[i])
+			helmObjsMap := map[reflect.Type]map[string]kube.Object{}
+			for _, obj := range helmObjs {
+				t := reflect.TypeOf(obj)
+				if _, ok := helmObjsMap[t]; !ok {
+					helmObjsMap[t] = map[string]kube.Object{}
+				}
+				helmObjsMap[t][obj.GetName()] = obj
+			}
+
+			goObjsMap := map[reflect.Type]map[string]kube.Object{}
+			for _, obj := range goObjs {
+				t := reflect.TypeOf(obj)
+				if _, ok := goObjsMap[t]; !ok {
+					goObjsMap[t] = map[string]kube.Object{}
+				}
+				goObjsMap[t][obj.GetName()] = obj
+			}
+
+			for typ := range helmObjsMap {
+				assert.Equal(t, helmObjsMap[typ], goObjsMap[typ], "expected = helm\nactual = go")
 			}
 		})
 	}
