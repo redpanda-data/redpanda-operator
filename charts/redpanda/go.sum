@@ -436,10 +436,10 @@ github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756 h1:Ej60mXTkl+Gg3EV4QiKYtmW0rJ1BHyVGoFwJ4DwjvGc=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756/go.mod h1:c9U+W6CCLWHWk9jBEzzUM7Q7ya4ot57FghxtaVdMrNQ=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756 h1:5t2kJdC2lL/s2JIp3q0bCXxaYjTUo4f6rx3/5r5q9No=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756/go.mod h1:rM1G0g5+l5GykYQId/2C09Gfo5IUMIznW7uUjuzicP4=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab h1:aa1fDNQ2IqVM7Y45RgoJUABwfvVa4pgVIAu51tD7nOo=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250321204757-be94e29d32a7 h1:CCmFZLsc8oZBQ3w3dnN9dSJs72fMtrE7CUBmWOHvMcs=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250321204757-be94e29d32a7/go.mod h1:rM1G0g5+l5GykYQId/2C09Gfo5IUMIznW7uUjuzicP4=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50 h1:rmgno9TNZCX2c81zJGrv2CZjiPURWevNeQ7Lo8fVszk=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50/go.mod h1:b/GBKIBr3nLE+LAtb8P4b2KrOwL3SGXAF4l65UcF71c=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=

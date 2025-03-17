@@ -65,6 +65,12 @@ func (KafkaAuthenticationMethod) JSONSchemaExtend(s *jsonschema.Schema) {
 	s.Enum = append(s.Enum, "sasl", "none", "mtls_identity")
 }
 
+type SASLMechanism string
+
+func (SASLMechanism) JSONSchemaExtend(s *jsonschema.Schema) {
+	s.Enum = append(s.Enum, "SCRAM-SHA-256", "SCRAM-SHA-512")
+}
+
 func deprecate(schema *jsonschema.Schema, keys ...string) {
 	for _, key := range keys {
 		prop, ok := schema.Properties.Get(key)

@@ -58,17 +58,41 @@ func run(cmd *cobra.Command, args []string) {
 		ExpandedStruct: true,
 		DoNotReference: true,
 
-		// For backwards compatibility, don't "close" our objects. There are
-		// many fields that are not currently represented. Setting this to
-		// false, the default and recommended value, will break many existing
-		// installs. TestTemplate will catch many of these breakages.
-		AllowAdditionalProperties: true,
+		// Explicitly deny any keys that aren't accept by the chart. This
+		// prevents indent issues, typos, and usage of values from an older
+		// release.
+		AllowAdditionalProperties: false,
 
 		// jsonschema, by default, will rely on omitempty flags to determine if
 		// a value is required or not. This has too much of an impact on how
 		// the underlying JSON is shaped and marshalled/unmarshalled. Instead,
 		// rely on explicitly set required tags.
 		RequiredFromJSONSchemaTags: true,
+
+		AdditionalFields: func(t reflect.Type) []reflect.StructField {
+			// HACK: Helm's `global` field is injected into values and
+			// therefore checked against the schema. As console's going through
+			// a major upgrade and connectors integration is slated to be
+			// dropped, it's difficult to properly get the "Global" field set on them.
+			// Instead, we'll look for all Values and PartialValues types and
+			// inject the Global field from redpanda.
+			// This can be removed once all charts  and dependencies thereof
+			// have been updated.
+			if !strings.HasPrefix(t.PkgPath(), "github.com/redpanda-data/redpanda-operator") {
+				return nil
+			}
+
+			if !(t.Name() == "Values" || t.Name() == "PartialValues") {
+				return nil
+			}
+
+			global, ok := reflect.TypeFor[redpanda.Values]().FieldByName("Global")
+			if !ok {
+				panic("Couldn't find field Global on redpanda.Values")
+			}
+
+			return []reflect.StructField{global}
+		},
 
 		// Builtin Kubernetes types can generate a JSON schema but it's a built
 		// difficult to do so as all the information is stored in kubebuilder
@@ -89,6 +113,15 @@ func run(cmd *cobra.Command, args []string) {
 					Enum: []any{
 						corev1.FSGroupChangeOnRootMismatch,
 						corev1.FSGroupChangeAlways,
+					},
+				}
+			case corev1.PullPolicy:
+				return &jsonschema.Schema{
+					Type: "string",
+					Enum: []any{
+						corev1.PullAlways,
+						corev1.PullIfNotPresent,
+						corev1.PullNever,
 					},
 				}
 			case monitoringv1.Duration:
