@@ -37,13 +37,13 @@ vars:
   # `--always` is a fallback to print out the commit if no tag is found.
   # `sed` is used to trim off the qualifying parts of the tag so we just get the "version".
   OPERATOR_VERSION:
-    sh: git describe --dirty --tags --match 'v*' --match 'operator/v*' | sed 's#^operator/##'
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh operator'
   OPERATOR_CHART_VERSION:
     # NB: OPERATOR_CHART_VERSION is currently only used for the operator chart's nightly releases.
-    sh: git describe --dirty --tags --match 'charts/operator/v*' --always | sed 's#^charts/operator/##'
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/operator'
   CONSOLE_CHART_VERSION:
     # NB: CONSOLE_CHART_VERSION is currently only used for the console chart's nightly releases.
-    sh: git describe --dirty --tags --match 'charts/console/v*' --always | sed 's#^charts/console/##'
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/console -e'
 
 includes:
   build: taskfiles/build.yml
