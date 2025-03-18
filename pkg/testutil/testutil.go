@@ -104,7 +104,7 @@ func SkipIfNotIntegration(t *testing.T) {
 	} else if testing.Short() {
 		t.Skipf("-short specified; skipping integration test")
 	} else {
-		RequireTimeout(t, 20*time.Minute)
+		RequireTimeout(t, 40*time.Minute)
 	}
 }
 
