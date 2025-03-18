@@ -78,12 +78,15 @@ applying the "no-changelog" label.
 
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
+    - If minting a pre-release, specify `-k` to keep the unreleased changes in place for the official release.
 2. Run `task test:unit` and `task lint`, they will report additional required actions, if any.
 4. Commit the resultant diff with the commit message `<project>: cut release <version>` and rebase it into master via a Pull Request.
 5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
-    - If the operator is being released, also tag the same commit as `v<version>`.
-6. Push the tag(s).
-7. Create a Github [Release](https://github.com/redpanda-data/redpanda-operator/releases) on the redpanda-operator repo based on the entires in CHANGELOG.md associated with the Operator release tag. 
+6. Push the tags.
+7. Create a [Release on GitHub](https://github.com/redpanda-data/redpanda-operator/releases)
+    - Associate it with the tag pushed in the previous step.
+    - Paste the contents of `.changes/<project>/<version>.md`, excluding the header, into the release notes field.
+    - Use the header of `./changes/<project>/<version>.md` as the release name. e.g. `<project>: v42.8+k8s1`
 
 ## Nightly build
 

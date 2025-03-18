@@ -3,7 +3,10 @@ unreleasedDir: unreleased
 headerPath: header.tpl.md
 changelogPath: CHANGELOG.md
 versionExt: md
-versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+# This nasty regex reformats "internal versions" to "external versions" the
+# same way that ./ci/scripts/version.sh does.
+# v$MAJOR.$MINOR.$PATCH-$PREREL+$METADATA -> v$MAJOR.$MINOR-k8s$PATCH-$PREREL+$METADATA
+versionFormat: '## {{regexReplaceAll "^(v\\d+\\.\\d+)\\.(\\d+.*)$" .Version "${1}-k8s${2}"}} - {{.Time.Format "2006-01-02"}}'
 kindFormat: '### {{.Kind}}'
 changeFormat: '* {{.Body}}'
 body:
