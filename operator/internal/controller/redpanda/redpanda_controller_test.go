@@ -739,6 +739,17 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 		s.compareSnapshot(flipped, flippedBack, isStable)
 
 		s.deleteAndWait(rp)
+
+		// HelmRelease and HelmChart are checked explicitly here, but any test that would left behind mentioned resource
+		// will prevent from namespace deletion. In other words if test suite can not delete namespace, then with high
+		// probability resource with finalizer prevents from namespace deletion.
+		var hr v2beta2.HelmRelease
+		err := s.client.Get(s.ctx, types.NamespacedName{Name: rp.GetHelmReleaseName(), Namespace: rp.Namespace}, &hr)
+		s.True(apierrors.IsNotFound(err))
+
+		var hc sourcecontrollerv1beta2.HelmChart
+		err = s.client.Get(s.ctx, types.NamespacedName{Name: rp.Namespace + "-" + rp.Name, Namespace: rp.Namespace}, &hc)
+		s.True(apierrors.IsNotFound(err))
 	}
 }
 
@@ -830,15 +841,6 @@ Starting helm repository that serves %q as the development version of the redpan
 
 		for _, rp := range redpandas.Items {
 			s.deleteAndWait(&rp)
-		}
-
-		// For some reason, it seems that HelmCharts can get abandoned. Clean
-		// them up to prevent hanging the NS deletion.
-		var helmCharts sourcecontrollerv1beta2.HelmChartList
-		s.NoError(s.env.Client().List(s.ctx, &helmCharts))
-
-		for _, chart := range helmCharts.Items {
-			s.deleteAndWait(&chart)
 		}
 	})
 }
@@ -956,7 +958,7 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 					},
 				},
 				RBAC: &redpandav1alpha2.RBAC{
-					Enabled: ptr.To(true),
+					Enabled: ptr.To(false),
 				},
 			},
 		},

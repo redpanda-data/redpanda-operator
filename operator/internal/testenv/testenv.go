@@ -248,6 +248,7 @@ func (e *Env) shutdown() {
 
 		c := e.client()
 
+		// Namespace deletion proves that there is no resources left after test that has finalizers on them
 		assert.NoError(e.t, c.Delete(ctx, e.namespace, client.PropagationPolicy(metav1.DeletePropagationForeground)))
 
 		// Poll until the namespace is fully deleted.
