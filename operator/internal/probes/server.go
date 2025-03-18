@@ -11,10 +11,10 @@ package probes
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )

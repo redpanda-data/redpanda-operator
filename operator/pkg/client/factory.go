@@ -11,8 +11,8 @@ package client
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
