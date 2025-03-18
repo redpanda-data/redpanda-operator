@@ -11,11 +11,11 @@ package vectorized
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	corev1 "k8s.io/api/core/v1"

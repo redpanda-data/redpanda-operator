@@ -10,13 +10,13 @@
 package testutils
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
@@ -53,13 +53,13 @@ func (e *RedpandaTestEnv) StartRedpandaTestEnv(withWebhook bool) (*rest.Config, 
 func configRelpath() (string, error) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", fmt.Errorf("unable to lookup path of calling function: %w", errors.ErrUnsupported)
+		return "", errors.Newf("unable to lookup path of calling function")
 	}
 	p := path.Dir(file)
 	testutilsDepth := strings.Count(p, "/") - testutilsRelDepth
 	_, file, _, ok = runtime.Caller(2)
 	if !ok {
-		return "", fmt.Errorf("unable to lookup path of calling function: %w", errors.ErrUnsupported)
+		return "", errors.Newf("unable to lookup path of calling function")
 	}
 	p = path.Dir(file)
 	c := strings.Count(p, "/")

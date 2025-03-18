@@ -3,11 +3,11 @@ linters:
   disable-all: true
 
   enable:
+  - depguard
   - errcheck
   - gci
   - gocritic
   - gofumpt
-  - gomodguard
   - gosec
   - gosimple
   - govet
@@ -20,6 +20,23 @@ linters:
   - unused
 
 linters-settings:
+  depguard:
+    rules:
+      # cockroachdb errors is the most complete error library. It automatically
+      # adds stack traces and has a very pleasant %v formatting.
+      errors:
+        deny:
+        - pkg: "^errors$"
+          desc: 'use "github.com/cockroachdb/errors"'
+        - pkg: "^github.com/pkg/errors"
+          desc: 'use "github.com/cockroachdb/errors"'
+      chart-versions:
+        deny:
+        - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
+          desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"'
+        - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
+          desc: 'import specific charts, the overarching charts module is now deprecated'
+
   gci:
     sections:
     - standard
@@ -30,15 +47,6 @@ linters-settings:
     skip-generated: true
     no-inline-comments: false
     no-prefix-comments: false
-
-  gomodguard:
-    blocked:
-      modules:
-        - "github.com/redpanda-data/redpanda-operator/charts/redpanda":
-            reason: "The redpanda chart must be imported from a versioned module"
-            recommendations:
-              - github.com/redpanda-data/redpanda-operator/charts/redpanda/v5
-
 
   gosec:
     excludes:
@@ -98,4 +106,5 @@ issues:
     # We're not aiming to be secure in our tests.
     - linters:
       - gosec
+      - wrapcheck
       path: '(.+)_test\.go'

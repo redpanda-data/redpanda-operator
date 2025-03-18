@@ -11,13 +11,13 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 

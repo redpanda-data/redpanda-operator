@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -29,6 +28,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkadminapi "github.com/redpanda-data/redpanda/src/go/rpk/pkg/adminapi"

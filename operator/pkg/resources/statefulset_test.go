@@ -11,13 +11,13 @@ package resources_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"slices"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
