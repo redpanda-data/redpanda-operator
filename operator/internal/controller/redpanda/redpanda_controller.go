@@ -54,7 +54,8 @@ import (
 )
 
 const (
-	FinalizerKey = "operator.redpanda.com/finalizer"
+	FinalizerKey     = "operator.redpanda.com/finalizer"
+	FluxFinalizerKey = "finalizers.fluxcd.io"
 
 	NotManaged = "false"
 
@@ -134,6 +135,10 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
+
+// sidecar resources
+// The leases is used by controller-runtime in sidecar. Operator main reconciliation needs to have leases permissions in order to create role that have the same permissions.
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
@@ -861,12 +866,45 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *re
 }
 
 func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	if err := r.deleteHelmChart(ctx, rp); err != nil {
+		return err
+	}
+
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
 		if err := r.Client.Update(ctx, rp); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *RedpandaReconciler) deleteHelmChart(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	// When HelmRelease is suspended it will not delete child resource HelmChart. In this function there is attempt
+	// to delete HelmChart custom resource.
+	// Reference:
+	// https://github.com/fluxcd/helm-controller/blob/2d335f2aa0e2e0df2a631ebf19394aed07c556f3/internal/reconcile/helmchart_template.go#L163-L166
+	// https://github.com/fluxcd/helm-controller/blob/2d335f2aa0e2e0df2a631ebf19394aed07c556f3/internal/controller/helmrelease_controller.go#L375-L388
+	namespacedName := client.ObjectKey{Namespace: rp.Namespace, Name: rp.Namespace + "-" + rp.Name}
+	var chart sourcev1.HelmChart
+	err := r.Client.Get(ctx, namespacedName, &chart)
+	if err != nil && !apierrors.IsNotFound(err) {
+		// Return error to retry until we succeed.
+		return fmt.Errorf("failed to get flux HelmChart '%s': %w", namespacedName.Name, err)
+	} else if err == nil {
+		if controllerutil.ContainsFinalizer(&chart, FluxFinalizerKey) {
+			controllerutil.RemoveFinalizer(&chart, FluxFinalizerKey)
+			if err := r.Client.Update(ctx, &chart); err != nil {
+				return fmt.Errorf("failed to update flux HelmChart '%s': %w", namespacedName.Name, err)
+			}
+		}
+
+		// Delete the HelmChart.
+		if err = r.Client.Delete(ctx, &chart); err != nil {
+			return fmt.Errorf("failed to delete flux HelmChart '%s': %w", namespacedName.Name, err)
+		}
+	}
+
 	return nil
 }
 
