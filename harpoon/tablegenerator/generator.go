@@ -12,12 +12,12 @@ package tablegenerator
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/cucumber/godog"
 	"github.com/olekukonko/tablewriter"
 

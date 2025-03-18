@@ -12,11 +12,11 @@ package redpanda
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"

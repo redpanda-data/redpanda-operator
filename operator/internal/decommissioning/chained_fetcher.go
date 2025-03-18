@@ -11,8 +11,9 @@ package decommissioning
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 // ChainedFetcher delegates fetching behavior to a list of sub fetchers

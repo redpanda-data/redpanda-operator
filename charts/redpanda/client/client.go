@@ -14,7 +14,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
@@ -90,7 +90,12 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc) (*rpadmin.AdminAPI, 
 
 	hosts := redpanda.ServerList(values.Statefulset.Replicas, prefix, name, domain, values.Listeners.Admin.Port)
 
-	return rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer)
+	client, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
 }
 
 // SchemaRegistryClient creates a client to talk to a Redpanda cluster admin API based on its helm
@@ -150,7 +155,12 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 
 	// finally, override any calculated client opts with whatever was
 	// passed in
-	return sr.NewClient(append(copts, opts...)...)
+	client, err := sr.NewClient(append(copts, opts...)...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
 }
 
 // KafkaClient creates a client to talk to a Redpanda cluster based on its helm
@@ -189,7 +199,12 @@ func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*k
 		opts = append(opts, saslOpt(username, password, mechanism))
 	}
 
-	return kgo.NewClient(opts...)
+	client, err := kgo.NewClient(opts...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
 }
 
 func authFromDot(dot *helmette.Dot) (username string, password string, mechanism string, err error) {

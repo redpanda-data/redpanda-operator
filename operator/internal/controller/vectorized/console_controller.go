@@ -11,10 +11,10 @@ package vectorized
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/distribution/reference"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"

@@ -14,7 +14,6 @@ package run
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/fluxcd/pkg/runtime/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
