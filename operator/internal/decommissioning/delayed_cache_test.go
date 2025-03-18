@@ -10,11 +10,11 @@
 package decommissioning_test
 
 import (
-	"errors"
 	"slices"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"

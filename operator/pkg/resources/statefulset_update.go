@@ -12,7 +12,6 @@ package resources
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -23,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cisco-open/k8s-objectmatcher/patch"
+	"github.com/cockroachdb/errors"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/expfmt"

@@ -11,8 +11,8 @@ package schemas
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/twmb/franz-go/pkg/sr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"

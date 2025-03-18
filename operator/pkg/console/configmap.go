@@ -11,11 +11,11 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 
 	"github.com/cloudhut/common/rest"
+	"github.com/cockroachdb/errors"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"

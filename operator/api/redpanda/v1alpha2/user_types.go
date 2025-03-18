@@ -11,9 +11,9 @@ package v1alpha2
 
 import (
 	"context"
-	"errors"
 	"slices"
 
+	"github.com/cockroachdb/errors"
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -11,11 +11,11 @@ package certmanager_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
