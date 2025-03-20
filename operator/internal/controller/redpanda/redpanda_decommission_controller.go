@@ -315,13 +315,6 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
 
-	// This helps avoid decommissioning nodes that are starting up where, say, a node has been removed
-	// and you need to move it and start a new one
-	if availableReplicas != 0 {
-		log.Info("have not reached steady state yet, requeue here")
-		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
-	}
-
 	valuesMap, err := getHelmValues(ctx, r, log, releaseName, namespace, r.OperatorMode)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("could not retrieve values, probably not a valid managed helm release: %w", err)
