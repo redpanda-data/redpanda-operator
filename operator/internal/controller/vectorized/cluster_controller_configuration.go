@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -40,52 +41,52 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	pki *certmanager.PkiReconciler,
 	fqdn string,
 	l logr.Logger,
-) error {
+) (time.Duration, error) {
 	log := l.WithName("reconcileConfiguration")
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
 	if !featuregates.CentralizedConfiguration(redpandaCluster.Spec.Version) {
 		log.Info("Cluster is not using centralized configuration, skipping...")
-		return nil
+		return 0, nil
 	}
 
 	if added, err := r.ensureConditionPresent(ctx, redpandaCluster, log); err != nil || added {
 		// If condition is added or error returned, we wait for another reconcile loop
-		return err
+		return 0, err
 	}
 
-	if redpandaCluster.Status.GetConditionStatus(vectorizedv1alpha1.ClusterConfiguredConditionType) == corev1.ConditionTrue {
-		log.Info("Cluster configuration is synchronized")
-		return nil
+	if delay := r.ratelimitCondition(redpandaCluster, vectorizedv1alpha1.ClusterConfiguredConditionType); delay > 0 {
+		log.Info("Waiting to reassert cluster configuration")
+		return delay, nil
 	}
 
 	config, err := configMapResource.CreateConfiguration(ctx)
 	if err != nil {
-		return errorWithContext(err, "error while creating the configuration")
+		return 0, errorWithContext(err, "error while creating the configuration")
 	}
 
 	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
-		return errorWithContext(err, "error creating the admin API client")
+		return 0, errorWithContext(err, "error creating the admin API client")
 	}
 
 	schema, _, _, err := r.retrieveClusterState(ctx, redpandaCluster, adminAPI)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	lastAppliedConfiguration, err := r.getOrInitLastAppliedConfiguration(ctx, configMapResource, config, redpandaCluster.Namespace, schema)
 	if err != nil {
-		return errorWithContext(err, "could not load the last applied configuration")
+		return 0, errorWithContext(err, "could not load the last applied configuration")
 	}
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated
 	// and the API returns the same error (400) that is returned in case of malformed input, which causes a stop of the reconciliation
 	var centralConfigActive bool
 	if centralConfigActive, err = adminutils.IsFeatureActive(ctx, adminAPI, adminutils.CentralConfigFeatureName); err != nil {
-		return errorWithContext(err, "could not determine if central config is active in the cluster")
+		return 0, errorWithContext(err, "could not determine if central config is active in the cluster")
 	} else if !centralConfigActive {
 		log.Info("Waiting for the centralized configuration feature to be active in the cluster")
-		return &resources.RequeueAfterError{
+		return 0, &resources.RequeueAfterError{
 			RequeueAfter: resources.RequeueDuration,
 			Msg:          "centralized configuration feature not active",
 		}
@@ -94,7 +95,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	patchSuccess, err := r.applyPatchIfNeeded(ctx, redpandaCluster, adminAPI, config, schema, log)
 	if err != nil || !patchSuccess {
 		// patchSuccess=false indicates an error set on the condition that should not be propagated (but we terminate reconciliation anyway)
-		return err
+		return 0, err
 	}
 
 	// TODO a failure and restart here (after successful patch, before setting the last applied configuration) may lead to inconsistency if the user
@@ -108,12 +109,12 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		}
 		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
 		if err != nil {
-			return err
+			return 0, err
 		} else if hashChanged {
 			// Definitely needs restart
 			log.Info("Centralized configuration hash has changed")
 			if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
-				return errorWithContext(err, "could not update config hash on statefulset")
+				return 0, errorWithContext(err, "could not update config hash on statefulset")
 			}
 		}
 	}
@@ -121,27 +122,42 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	// Now we can mark the new lastAppliedConfiguration for next update
 	properties, err := config.ConcreteConfiguration(ctx, r.Client, r.CloudSecretsExpander, redpandaCluster.Namespace, schema)
 	if err != nil {
-		return errorWithContext(err, "could not concretize configuration to store last applied configuration in the cluster")
+		return 0, errorWithContext(err, "could not concretize configuration to store last applied configuration in the cluster")
 	}
 	if err = configMapResource.SetLastAppliedConfigurationInCluster(ctx, properties); err != nil {
-		return errorWithContext(err, "could not store last applied configuration in the cluster")
+		return 0, errorWithContext(err, "could not store last applied configuration in the cluster")
 	}
 
 	// Synchronized status with cluster, including triggering a restart if needed
 	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, adminAPI, log)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// If condition is not met, we need to reschedule, waiting for the cluster to heal.
 	if conditionData.Status != corev1.ConditionTrue {
-		return &resources.RequeueAfterError{
+		return 0, &resources.RequeueAfterError{
 			RequeueAfter: resources.RequeueDuration,
 			Msg:          fmt.Sprintf("cluster configuration is not in sync (%s): %s", conditionData.Reason, conditionData.Message),
 		}
 	}
 
-	return nil
+	return 0, nil
+}
+
+// ratelimitCondition ensures that the reassertion of cluster configuration is done
+// once every minute or so, but no more rapidly than that.
+// (This is modelled on the v2 operator - we should look to merge these utilities.)
+// Rather than boolean blindness, if we should rate-limit then this will return a
+// non-zero minimum wait duration.
+func (r *ClusterReconciler) ratelimitCondition(rp *vectorizedv1alpha1.Cluster, conditionType vectorizedv1alpha1.ClusterConditionType) time.Duration {
+	cond := rp.Status.GetCondition(conditionType)
+	if cond == nil {
+		return 0
+	}
+	recheckAfter := time.Minute - time.Since(cond.LastTransitionTime.Time)
+
+	return max(0, recheckAfter)
 }
 
 // getOrInitLastAppliedConfiguration gets the last applied configuration to the cluster or creates it when missing.
@@ -409,8 +425,9 @@ func mapStatusToCondition(
 	if condition == nil {
 		// Everything is ok
 		condition = &vectorizedv1alpha1.ClusterCondition{
-			Type:   vectorizedv1alpha1.ClusterConfiguredConditionType,
-			Status: corev1.ConditionTrue,
+			Type:    vectorizedv1alpha1.ClusterConfiguredConditionType,
+			Status:  corev1.ConditionTrue,
+			Message: fmt.Sprintf("Cluster configuration reasserted at %s", time.Now().UTC().Format(time.DateTime)),
 		}
 	}
 	return *condition

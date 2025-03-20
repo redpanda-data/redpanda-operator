@@ -279,7 +279,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	err = r.reconcileConfiguration(
+	delay, err := r.reconcileConfiguration(
 		ctx,
 		&vectorizedCluster,
 		cm,
@@ -331,7 +331,13 @@ func (r *ClusterReconciler) Reconcile(
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
-	return ctrl.Result{}, nil
+	// Finally: re-enqueue for another pass
+	if delay == 0 {
+		delay = time.Minute
+	}
+	return ctrl.Result{
+		RequeueAfter: delay,
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
