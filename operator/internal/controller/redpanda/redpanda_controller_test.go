@@ -731,7 +731,7 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 		flipped := s.snapshotCluster(filter)
 		s.compareSnapshot(fresh, flipped, isStable)
 
-		s.T().Logf("toggling useFlux: %t -> %t", useFlux, !useFlux)
+		s.T().Logf("toggling useFlux: %t -> %t", !useFlux, useFlux)
 		rp.Spec.ChartRef.UseFlux = ptr.To(useFlux)
 		s.applyAndWait(rp)
 
@@ -743,12 +743,18 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 		// HelmRelease and HelmChart are checked explicitly here, but any test that would left behind mentioned resource
 		// will prevent from namespace deletion. In other words if test suite can not delete namespace, then with high
 		// probability resource with finalizer prevents from namespace deletion.
-		var hr v2beta2.HelmRelease
-		err := s.client.Get(s.ctx, types.NamespacedName{Name: rp.GetHelmReleaseName(), Namespace: rp.Namespace}, &hr)
-		s.True(apierrors.IsNotFound(err))
+
+		// In the flux base deployment the HelmRelease will be deleted after Redpanda is fully removed from
+		// Kubernetes API server. The ownerReference tight together Redpanda with HelmRelease, but there is
+		// delay between HelmRelease and Redpadna custom resource deletion.
+		s.EventuallyWithT(func(t *assert.CollectT) {
+			var hr v2beta2.HelmRelease
+			err := s.client.Get(s.ctx, types.NamespacedName{Name: rp.GetHelmReleaseName(), Namespace: rp.Namespace}, &hr)
+			assert.True(t, apierrors.IsNotFound(err))
+		}, time.Minute, time.Second, "HelmRelease not GC'd")
 
 		var hc sourcecontrollerv1beta2.HelmChart
-		err = s.client.Get(s.ctx, types.NamespacedName{Name: rp.Namespace + "-" + rp.Name, Namespace: rp.Namespace}, &hc)
+		err := s.client.Get(s.ctx, types.NamespacedName{Name: rp.Namespace + "-" + rp.Name, Namespace: rp.Namespace}, &hc)
 		s.True(apierrors.IsNotFound(err))
 	}
 }
@@ -958,7 +964,7 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 					},
 				},
 				RBAC: &redpandav1alpha2.RBAC{
-					Enabled: ptr.To(false),
+					Enabled: ptr.To(true),
 				},
 			},
 		},
