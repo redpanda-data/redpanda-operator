@@ -1,9 +1,9 @@
 ---
 # This workflow triggers the action in redpanda-data/docs that
-# publishes the CRD specifications to the Redpanda documentation.
+# publishes the CRD and Helm chart specifications to the Redpanda documentation.
 # https://github.com/redpanda-data/docs/blob/main/.github/workflows/generate-crd.yml
 
-name: Trigger CRD docs
+name: Trigger Kubernetes reference docs
 on:
   release:
     types: [published]
@@ -26,6 +26,6 @@ jobs:
       - name: Trigger generate-crd-docs event
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.ACTIONS_BOT_TOKEN }}
+          token: ${{ env.ACTIONS_BOT_TOKEN }}
           repository: redpanda-data/docs
           event-type: generate-crd-docs
