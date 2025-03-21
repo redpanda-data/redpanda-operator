@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 // Console's HTTP server Port.
