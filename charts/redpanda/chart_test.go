@@ -216,7 +216,7 @@ func TestIntegrationChart(t *testing.T) {
 					Users: []redpanda.PartialSASLUser{{
 						Name:      ptr.To("superuser"),
 						Password:  ptr.To("superpassword"),
-						Mechanism: ptr.To("SCRAM-SHA-512"),
+						Mechanism: ptr.To[redpanda.SASLMechanism]("SCRAM-SHA-512"),
 					}},
 				},
 			},

@@ -24,6 +24,7 @@ import (
 )
 
 type PartialValues struct {
+	Global           map[string]any                "json:\"global,omitempty\""
 	NameOverride     *string                       "json:\"nameOverride,omitempty\""
 	FullnameOverride *string                       "json:\"fullnameOverride,omitempty\""
 	ClusterDomain    *string                       "json:\"clusterDomain,omitempty\""
@@ -62,9 +63,9 @@ type PartialValues struct {
 }
 
 type PartialImage struct {
-	Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda\""
-	Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"default=Chart.appVersion\""
-	PullPolicy *string   "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
+	Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda\""
+	Tag        *ImageTag          "json:\"tag,omitempty\" jsonschema:\"default=Chart.appVersion\""
+	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required\""
 }
 
 type PartialAuditLogging struct {
@@ -435,7 +436,7 @@ type PartialTunableConfig map[string]any
 
 type PartialSASLAuth struct {
 	Enabled       *bool                 "json:\"enabled,omitempty\" jsonschema:\"required\""
-	Mechanism     *string               "json:\"mechanism,omitempty\""
+	Mechanism     *SASLMechanism        "json:\"mechanism,omitempty\""
 	SecretRef     *string               "json:\"secretRef,omitempty\""
 	Users         []PartialSASLUser     "json:\"users,omitempty\""
 	BootstrapUser *PartialBootstrapUser "json:\"bootstrapUser,omitempty\""
@@ -493,7 +494,7 @@ type PartialBootstrapUser struct {
 	Name         *string                   "json:\"name,omitempty\""
 	SecretKeyRef *corev1.SecretKeySelector "json:\"secretKeyRef,omitempty\""
 	Password     *string                   "json:\"password,omitempty\""
-	Mechanism    *string                   "json:\"mechanism,omitempty\" jsonschema:\"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$\""
+	Mechanism    *SASLMechanism            "json:\"mechanism,omitempty\""
 }
 
 type PartialExternalListeners[T any] map[string]T
@@ -536,9 +537,9 @@ type PartialSchemaRegistryExternal struct {
 }
 
 type PartialSASLUser struct {
-	Name      *string "json:\"name,omitempty\""
-	Password  *string "json:\"password,omitempty\""
-	Mechanism *string "json:\"mechanism,omitempty\" jsonschema:\"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$\""
+	Name      *string        "json:\"name,omitempty\""
+	Password  *string        "json:\"password,omitempty\""
+	Mechanism *SASLMechanism "json:\"mechanism,omitempty\""
 }
 
 type PartialTrustStore struct {

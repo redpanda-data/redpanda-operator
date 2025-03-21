@@ -61,7 +61,6 @@ statefulset:
         - name: test-extra-volume
           mountPath: /fake/lifecycle
     setTieredStorageCacheDirOwnership:
-      enabled: true
       resources:
         requests:
           memory: "20Mi"

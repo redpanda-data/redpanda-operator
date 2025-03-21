@@ -250,7 +250,7 @@ Redpanda Console settings. For a reference of configuration settings, see the [R
 **Default:**
 
 ```
-{"config":{},"configmap":{"create":false},"deployment":{"create":false},"enabled":true,"secret":{"create":false}}
+{"configmap":{"create":false},"console":{"config":{}},"deployment":{"create":false},"enabled":true,"secret":{"create":false}}
 ```
 
 ### [enterprise](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=enterprise)

@@ -25,6 +25,7 @@ import (
 var DefaultValuesYAML []byte
 
 type Values struct {
+	Globals          map[string]any                `json:"global,omitempty"`
 	NameOverride     string                        `json:"nameOverride"`
 	FullnameOverride string                        `json:"fullnameOverride"`
 	CommonLabels     map[string]string             `json:"commonLabels"`

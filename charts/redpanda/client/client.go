@@ -220,7 +220,7 @@ func authFromDot(dot *helmette.Dot) (username string, password string, mechanism
 			selector := values.Auth.SASL.BootstrapUser.SecretKeySelector(redpanda.Fullname(dot))
 			mechanism := values.Auth.SASL.BootstrapUser.GetMechanism()
 			if data, found := user.Data[selector.Key]; found {
-				return values.Auth.SASL.BootstrapUser.Username(), string(data), mechanism, nil
+				return values.Auth.SASL.BootstrapUser.Username(), string(data), string(mechanism), nil
 			}
 		}
 	}
@@ -370,7 +370,7 @@ func firstUser(data []byte) (user string, password string, mechanism string) {
 
 		switch len(tokens) {
 		case 2:
-			return tokens[0], tokens[1], redpanda.DefaultSASLMechanism
+			return tokens[0], tokens[1], string(redpanda.DefaultSASLMechanism)
 
 		case 3:
 			if !slices.Contains(supportedSASLMechanisms, tokens[2]) {
