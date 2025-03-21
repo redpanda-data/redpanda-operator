@@ -69,17 +69,18 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	configuratorSettings      resources.ConfiguratorSettings
-	clusterDomain             string
-	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
-	DecommissionWaitInterval  time.Duration
-	MetricsTimeout            time.Duration
-	RestrictToRedpandaVersion string
-	GhostDecommissioning      bool
-	AutoDeletePVCs            bool
-	Dialer                    redpanda.DialContextFunc
+	Log                            logr.Logger
+	configuratorSettings           resources.ConfiguratorSettings
+	clusterDomain                  string
+	Scheme                         *runtime.Scheme
+	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
+	DecommissionWaitInterval       time.Duration
+	MetricsTimeout                 time.Duration
+	RestrictToRedpandaVersion      string
+	GhostDecommissioning           bool
+	AutoDeletePVCs                 bool
+	ConfigurationReassertionPeriod time.Duration
+	Dialer                         redpanda.DialContextFunc
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -329,7 +330,7 @@ func (r *ClusterReconciler) Reconcile(
 
 	// Finally: re-enqueue for another pass
 	if delay == 0 {
-		delay = time.Minute
+		delay = r.configurationReassertionPeriod()
 	}
 	return ctrl.Result{
 		RequeueAfter: delay,
