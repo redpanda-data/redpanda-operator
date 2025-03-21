@@ -172,13 +172,19 @@ func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
 			StringData: map[string]string{},
 		}
 		usersTxt := []string{}
+
+		defaultMechanism := DefaultSASLMechanism
+		if values.Auth.SASL.Mechanism != "" {
+			defaultMechanism = values.Auth.SASL.Mechanism
+		}
+
 		// Working around lack of support for += or strings.Join at the moment
 		for _, user := range values.Auth.SASL.Users {
-			if helmette.Empty(user.Mechanism) {
-				usersTxt = append(usersTxt, fmt.Sprintf("%s:%s", user.Name, user.Password))
-			} else {
-				usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, user.Mechanism))
+			mechanism := defaultMechanism
+			if !helmette.Empty(user.Mechanism) {
+				mechanism = user.Mechanism
 			}
+			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)
 		return secret
