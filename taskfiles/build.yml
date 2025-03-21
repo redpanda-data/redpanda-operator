@@ -108,4 +108,4 @@ tasks:
     # Negating the output of grep effectively indicates if go thinks a rebuild
     # is required. Command must be encased in "s as the negation operator (!)
     # is otherwise consumed during YAML parsing.
-    - "! go build -C {{ .DIR }} -n -o ../.build/{{ .DIR }} 2>&1 | grep 'mv $WORK'"
+    - "! go build -C {{ .DIR }} -n -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep 'mv $WORK'"
