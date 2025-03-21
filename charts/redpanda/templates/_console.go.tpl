@@ -16,11 +16,11 @@
 {{- $license_1 := (get (fromJson (include "redpanda.GetLicenseLiteral" (dict "a" (list $dot) ))) "r") -}}
 {{- if (and (ne $license_1 "") (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.console.secret.create false) ))) "r"))) -}}
 {{- $_ := (set $consoleValue.secret "create" true) -}}
-{{- $_ := (set $consoleValue.secret "enterprise" (mustMergeOverwrite (dict ) (dict "license" $license_1 ))) -}}
+{{- $_ := (set $consoleValue.secret "license" $license_1) -}}
 {{- end -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.console.configmap.create false) ))) "r")) -}}
 {{- $_ := (set $consoleValue.configmap "create" true) -}}
-{{- $_ := (set $consoleValue.console "config" (get (fromJson (include "redpanda.ConsoleConfig" (dict "a" (list $dot) ))) "r")) -}}
+{{- $_ := (set $consoleValue "config" (get (fromJson (include "redpanda.ConsoleConfig" (dict "a" (list $dot) ))) "r")) -}}
 {{- end -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.console.deployment.create false) ))) "r")) -}}
 {{- $_ := (set $consoleValue.deployment "create" true) -}}
@@ -30,7 +30,7 @@
 {{- end -}}
 {{- $secret_2 := (get (fromJson (include "redpanda.GetLicenseSecretReference" (dict "a" (list $dot) ))) "r") -}}
 {{- if (ne (toJson $secret_2) "null") -}}
-{{- $_ := (set $consoleValue "enterprise" (mustMergeOverwrite (dict "licenseSecretRef" (dict "name" "" "key" "" ) ) (dict "licenseSecretRef" (mustMergeOverwrite (dict "name" "" "key" "" ) (dict "name" $secret_2.name "key" $secret_2.key )) ))) -}}
+{{- $_ := (set $consoleValue "licenseSecretRef" (mustMergeOverwrite (dict "key" "" ) (mustMergeOverwrite (dict ) (dict "name" $secret_2.name )) (dict "key" $secret_2.key ))) -}}
 {{- end -}}
 {{- $_ := (set $consoleValue "extraVolumes" (get (fromJson (include "redpanda.consoleTLSVolumes" (dict "a" (list $dot) ))) "r")) -}}
 {{- $_ := (set $consoleValue "extraVolumeMounts" (get (fromJson (include "redpanda.consoleTLSVolumesMounts" (dict "a" (list $dot) ))) "r")) -}}
@@ -139,7 +139,7 @@
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $values.listeners.admin.tls $values.tls) ))) "r") -}}
 {{- $schema = "https" -}}
 {{- end -}}
-{{- $c := (dict "kafka" (dict "brokers" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $dot ($values.statefulset.replicas | int) ($values.listeners.kafka.port | int)) ))) "r") "sasl" (dict "enabled" (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth) ))) "r") ) "tls" (get (fromJson (include "redpanda.KafkaListeners.ConsoleTLS" (dict "a" (list $values.listeners.kafka $values.tls) ))) "r") "schemaRegistry" (dict "enabled" $values.listeners.schemaRegistry.enabled "urls" $schemaURLs "tls" (get (fromJson (include "redpanda.SchemaRegistryListeners.ConsoleTLS" (dict "a" (list $values.listeners.schemaRegistry $values.tls) ))) "r") ) ) "redpanda" (dict "adminApi" (dict "enabled" true "urls" (list (printf "%s://%s:%d" $schema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $dot) ))) "r") ($values.listeners.admin.port | int))) "tls" (get (fromJson (include "redpanda.AdminListeners.ConsoleTLS" (dict "a" (list $values.listeners.admin $values.tls) ))) "r") ) ) ) -}}
+{{- $c := (dict "kafka" (dict "brokers" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $dot ($values.statefulset.replicas | int) ($values.listeners.kafka.port | int)) ))) "r") "sasl" (dict "enabled" (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $values.auth) ))) "r") ) "tls" (get (fromJson (include "redpanda.KafkaListeners.ConsoleTLS" (dict "a" (list $values.listeners.kafka $values.tls) ))) "r") ) "redpanda" (dict "adminApi" (dict "enabled" true "urls" (list (printf "%s://%s:%d" $schema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $dot) ))) "r") ($values.listeners.admin.port | int))) "tls" (get (fromJson (include "redpanda.AdminListeners.ConsoleTLS" (dict "a" (list $values.listeners.admin $values.tls) ))) "r") ) ) "schemaRegistry" (dict "enabled" $values.listeners.schemaRegistry.enabled "urls" $schemaURLs "tls" (get (fromJson (include "redpanda.SchemaRegistryListeners.ConsoleTLS" (dict "a" (list $values.listeners.schemaRegistry $values.tls) ))) "r") ) ) -}}
 {{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.connectors.enabled false) ))) "r") -}}
 {{- $port := (dig "connectors" "connectors" "restPort" (8083 | int) $dot.Values.AsMap) -}}
 {{- $_249_p_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list $port) ))) "r") -}}
@@ -152,13 +152,13 @@
 {{- end -}}
 {{- $connectorsDot := (index $dot.Subcharts "connectors") -}}
 {{- $connectorsURL := (printf "http://%s.%s.svc.%s:%d" (get (fromJson (include "connectors.Fullname" (dict "a" (list $connectorsDot) ))) "r") $dot.Release.Namespace (trimSuffix "." $values.clusterDomain) $p) -}}
-{{- $_ := (set $c "connect" (dict "enabled" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.connectors.enabled false) ))) "r") "clusters" (list (dict "name" "connectors" "url" $connectorsURL "tls" (dict "enabled" false "caFilepath" "" "certFilepath" "" "keyFilepath" "" "insecureSkipTlsVerify" false ) "username" "" "password" "" "token" "" )) "connectTimeout" (0 | int) "readTimeout" (0 | int) "requestTimeout" (0 | int) )) -}}
+{{- $_ := (set $c "kafkaConnect" (dict "enabled" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.connectors.enabled false) ))) "r") "clusters" (list (dict "name" "connectors" "url" $connectorsURL "tls" (dict "enabled" false "caFilepath" "" "certFilepath" "" "keyFilepath" "" "insecureSkipTlsVerify" false ) "username" "" "password" "" "token" "" )) "connectTimeout" (0 | int) "readTimeout" (0 | int) "requestTimeout" (0 | int) )) -}}
 {{- end -}}
-{{- if (eq (toJson $values.console.console) "null") -}}
-{{- $_ := (set $values.console "console" (mustMergeOverwrite (dict ) (dict "config" (dict ) ))) -}}
+{{- if (eq (toJson $values.console.config) "null") -}}
+{{- $_ := (set $values.console "config" (dict )) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (merge (dict ) $values.console.console.config $c)) | toJson -}}
+{{- (dict "r" (merge (dict ) $values.console.config $c)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

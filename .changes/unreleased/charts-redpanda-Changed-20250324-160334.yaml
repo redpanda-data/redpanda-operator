@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Update Console depedency to latest version with breaking change. Please visit Console change-log.
+time: 2025-03-24T16:03:34.492901+01:00

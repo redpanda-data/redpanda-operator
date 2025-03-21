@@ -18,7 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
