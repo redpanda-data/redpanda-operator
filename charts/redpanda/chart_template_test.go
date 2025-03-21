@@ -127,7 +127,7 @@ func TestTemplate(t *testing.T) {
 					"tests.enabled=false",
 					// jwtSecret defaults to a random string. Can't have that
 					// in snapshot testing so set it to a static value.
-					"console.secret.login.jwtSecret=SECRETKEY",
+					"console.secret.authentication.jwtSigningKey=SECRETKEY",
 					// the bootstrap user password has the same issues as jwtSecret
 					"auth.sasl.bootstrapUser.password=changeme",
 				},

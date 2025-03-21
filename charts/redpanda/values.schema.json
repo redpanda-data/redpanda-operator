@@ -4278,44 +4278,13 @@
           },
           "type": "object"
         },
+        "config": {
+          "type": "object"
+        },
         "configmap": {
           "properties": {
             "create": {
               "type": "boolean"
-            }
-          },
-          "type": "object"
-        },
-        "console": {
-          "properties": {
-            "config": {
-              "type": "object"
-            },
-            "roleBindings": {
-              "oneOf": [
-                {
-                  "items": {
-                    "type": "object"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "roles": {
-              "oneOf": [
-                {
-                  "items": {
-                    "type": "object"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
             }
           },
           "type": "object"
@@ -4356,22 +4325,6 @@
         },
         "enabled": {
           "type": "boolean"
-        },
-        "enterprise": {
-          "properties": {
-            "licenseSecretRef": {
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
         },
         "extraContainers": {
           "oneOf": [
@@ -6590,6 +6543,20 @@
           },
           "type": "object"
         },
+        "licenseSecretRef": {
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "optional": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
         "livenessProbe": {
           "properties": {
             "exec": {
@@ -7014,38 +6981,31 @@
         },
         "secret": {
           "properties": {
-            "create": {
-              "type": "boolean"
-            },
-            "enterprise": {
+            "authentication": {
               "properties": {
-                "license": {
+                "jwtSigningKey": {
                   "type": "string"
+                },
+                "oidc": {
+                  "properties": {
+                    "clientSecret": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"
+            },
+            "create": {
+              "type": "boolean"
             },
             "kafka": {
               "properties": {
                 "awsMskIamSecretKey": {
                   "type": "string"
                 },
-                "protobufGitBasicAuthPassword": {
-                  "type": "string"
-                },
                 "saslPassword": {
-                  "type": "string"
-                },
-                "schemaRegistryPassword": {
-                  "type": "string"
-                },
-                "schemaRegistryTlsCa": {
-                  "type": "string"
-                },
-                "schemaRegistryTlsCert": {
-                  "type": "string"
-                },
-                "schemaRegistryTlsKey": {
                   "type": "string"
                 },
                 "tlsCa": {
@@ -7063,54 +7023,8 @@
               },
               "type": "object"
             },
-            "login": {
-              "properties": {
-                "github": {
-                  "properties": {
-                    "clientSecret": {
-                      "type": "string"
-                    },
-                    "personalAccessToken": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                },
-                "google": {
-                  "properties": {
-                    "clientSecret": {
-                      "type": "string"
-                    },
-                    "groupsServiceAccount": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                },
-                "jwtSecret": {
-                  "type": "string"
-                },
-                "oidc": {
-                  "properties": {
-                    "clientSecret": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                },
-                "okta": {
-                  "properties": {
-                    "clientSecret": {
-                      "type": "string"
-                    },
-                    "directoryApiToken": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              },
-              "type": "object"
+            "license": {
+              "type": "string"
             },
             "redpanda": {
               "properties": {
@@ -7130,6 +7044,31 @@
                     }
                   },
                   "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "schemaRegistry": {
+              "properties": {
+                "password": {
+                  "type": "string"
+                },
+                "tlsCa": {
+                  "type": "string"
+                },
+                "tlsCert": {
+                  "type": "string"
+                },
+                "tlsKey": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "serde": {
+              "properties": {
+                "protobufGitBasicAuthPassword": {
+                  "type": "string"
                 }
               },
               "type": "object"
