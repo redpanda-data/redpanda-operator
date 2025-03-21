@@ -146,6 +146,14 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	}
 
 	s.deleteAndWait(rp)
+
+	var clusterRoles rbacv1.ClusterRoleList
+	assert.NoError(s.T(), s.client.List(s.ctx, &clusterRoles, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}))
+	assert.Len(s.T(), clusterRoles.Items, 0)
+
+	var clusterRoleBindings rbacv1.ClusterRoleBindingList
+	assert.NoError(s.T(), s.client.List(s.ctx, &clusterRoleBindings, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}))
+	assert.Len(s.T(), clusterRoleBindings.Items, 0)
 }
 
 func (s *RedpandaControllerSuite) TestTPLValues() {
