@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Prevent broker nodes from restarting when solely the cluster replica amount changes
+time: 2025-03-21T16:42:12.965785-04:00
