@@ -170,6 +170,12 @@ type ClusterSpec struct {
 	// By default if Replicas is 3 or more and redpanda.default_topic_partitions is not set
 	// default webhook is setting redpanda.default_topic_partitions to 3.
 	AdditionalConfiguration map[string]string `json:"additionalConfiguration,omitempty"`
+	// Cluster configuration values may also be held here. A `keyName` entry in this
+	// attribute will override corresponding `redpanda.keyName` entries in AdditionalConfiguration;
+	// this is to permit the migration of those settings to this attribute.
+	// The configuration may contain references to values extracted from k8s ConfigMaps or Secrets;
+	// furthermore, we support the fetching of provider-specific secrets directly.
+	ClusterConfiguration ClusterConfiguration `json:"clusterConfiguration,omitempty"`
 	// DNSTrailingDotDisabled gives ability to turn off the fully-qualified
 	// DNS name.
 	// http://www.dns-sd.org/trailingdotsindomainnames.html
@@ -194,6 +200,53 @@ type ClusterSpec struct {
 	// that join the cluster, but are steered independently (especially replica
 	// count).
 	NodePools []NodePoolSpec `json:"nodePools,omitempty"`
+}
+
+// ClusterConfiguration holds values (or references to values) that should be used
+// to configure the cluster. Where the cluster schema defines a non-string type for a
+// given key, the corresponding values here should be string-encoded (according to yaml
+// rules)
+type ClusterConfiguration map[string]ClusterConfigValue
+
+// YAMLRepresentation holds a serialised form of a concrete value. We need this for
+// a couple of reasons: firstly, "stringifying" numbers avoids loss of accuracy and
+// rendering issues where intermediate values are represented as f64 values by
+// external tooling. Secondly, the initial configuration of a bootstrap file has
+// no running cluster - and therefore no online schema - available. Instead we use
+// representations that can be inserted verbatim into a YAML document.
+// Ideally, these will be JSON-encoded into a single line representation. They are
+// decoded using YAML deserialisation (which has a little more flexibility around
+// the representation of unambiguous string values).
+type YAMLRepresentation string
+
+// ClusterConfigValue represents a value of arbitrary type T. Values are string-encoded according to
+// YAML rules in order to preserve numerical fidelity.
+// Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+// which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+// throughout. The octet sequence of a Representation will be inserted into a bootstrap template
+// verbatim.
+// TODO: this type should be lifted to a shared module rather than duplicated in the `redpanda` CRD definition.
+// TODO: add CEL validation here.
+type ClusterConfigValue struct {
+	// If the value is directly known, its yaml representation can be embedded here.
+	// Use the string representation of a yaml-serialised value in order to preserve accuracy.
+	// Example:
+	// The string "foo" should be the five octets "\"foo\""
+	// A true value should be the four octets "true".
+	// The number -123456 should be a seven-octet sequence, "-123456".
+	Repr *YAMLRepresentation `json:"repr,omitempty"`
+	// If the value is supplied by an k8s object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a value encoded according to YAML rules; the string can then be embedded verbatim into
+	// the bootstrap file.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
+	// TODO: This decision needs finalising and documenting.
+	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:

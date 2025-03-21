@@ -10,6 +10,7 @@
 package configuration_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -30,17 +31,26 @@ func TestConfigMode(t *testing.T) {
 func TestRedpandaProperties(t *testing.T) {
 	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
-	assert.Equal(t, "b", config.ClusterConfiguration["a"])
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "b", concreteCfg["a"])
 	assert.NotContains(t, config.NodeConfiguration.Redpanda.Other, "a")
 
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
-	assert.NotContains(t, config.ClusterConfiguration, "a")
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
+	assert.NotContains(t, concreteCfg, "a")
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
 
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
-	assert.Equal(t, "b", config.ClusterConfiguration["a"])
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "b", concreteCfg["a"])
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
 }
 
@@ -48,23 +58,32 @@ func TestFlatProperties(t *testing.T) {
 	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	err := config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
-	assert.Equal(t, "b", config.ClusterConfiguration["a"])
+	assert.Equal(t, "b", concreteCfg["a"])
 	assert.NotContains(t, config.NodeConfiguration.Redpanda.Other, "a")
 
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic, NodeConfiguration: rpkcfg.ProdDefault()}
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
-	assert.NotContains(t, config.ClusterConfiguration, "a")
+	assert.NotContains(t, concreteCfg, "a")
 
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed, NodeConfiguration: rpkcfg.ProdDefault()}
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
-	assert.Equal(t, "b", config.ClusterConfiguration["a"])
+	assert.Equal(t, "b", concreteCfg["a"])
 }
 
 func TestKnownNodeProperties(t *testing.T) {
@@ -74,10 +93,15 @@ func TestKnownNodeProperties(t *testing.T) {
 		"redpanda.rpc_server.port":               "8080",
 		"redpanda.cloud_storage_region":          "us-west-1",
 	}))
+
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
+
 	assert.Equal(t, "/tmp", config.NodeConfiguration.Redpanda.CloudStorageCacheDirectory)
 	assert.Equal(t, 8080, config.NodeConfiguration.Redpanda.RPCServer.Port)
-	assert.Len(t, config.ClusterConfiguration, 1)
-	assert.Equal(t, "us-west-1", config.ClusterConfiguration["cloud_storage_region"])
+	assert.Len(t, concreteCfg, 1)
+	assert.Equal(t, "us-west-1", concreteCfg["cloud_storage_region"])
 }
 
 func TestDeleteProperties(t *testing.T) {
@@ -100,8 +124,13 @@ func TestDeleteProperties(t *testing.T) {
 	config.SetAdditionalRedpandaProperty("a5", nilInterface)
 	var nilSlice []string
 	config.SetAdditionalRedpandaProperty("a6", nilSlice)
-	assert.Len(t, config.ClusterConfiguration, 1)
-	assert.Equal(t, "y", config.ClusterConfiguration["b"])
+
+	require.NoError(t, config.FinalizeToTemplate())
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	require.NoError(t, err)
+
+	assert.Len(t, concreteCfg, 1)
+	assert.Equal(t, "y", concreteCfg["b"])
 }
 
 func TestStringSliceProperties(t *testing.T) {
