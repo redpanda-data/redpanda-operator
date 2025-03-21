@@ -21,7 +21,7 @@ jobs:
       - uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: |
-            sdlc/prod/github/actions_bot_token
+            ,sdlc/prod/github/actions_bot_token
           parse-json-secrets: true
       - name: Trigger generate-crd-docs event
         uses: peter-evans/repository-dispatch@v2
