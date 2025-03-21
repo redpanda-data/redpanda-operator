@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 var (

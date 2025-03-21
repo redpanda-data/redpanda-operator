@@ -38,9 +38,9 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
-	"github.com/redpanda-data/redpanda-operator/charts/console"
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -960,8 +960,8 @@ func TestGoHelmEquivalence(t *testing.T) {
 					Enabled: ptr.To(true),
 				},
 				Secret: &console.PartialSecretConfig{
-					Login: &console.PartialLoginSecrets{
-						JWTSecret: ptr.To("JWT_PLACEHOLDER"),
+					Authentication: &console.PartialAuthenticationSecrets{
+						JWTSigningKey: ptr.To("JWT_PLACEHOLDER"),
 					},
 				},
 				Tests: &console.PartialEnableable{Enabled: ptr.To(false)},
