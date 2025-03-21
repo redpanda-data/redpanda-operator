@@ -95,11 +95,12 @@ func (r *PreStartStopScriptResource) update(
 	logger logr.Logger,
 ) error {
 	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedConfigurationAnnotationKey]; ok {
+	// TODO: what's this doing on here?
+	if val, ok := current.Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
 		if modified.Annotations == nil {
 			modified.Annotations = make(map[string]string)
 		}
-		modified.Annotations[LastAppliedConfigurationAnnotationKey] = val
+		modified.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = val
 	}
 
 	_, err := Update(ctx, current, modified, c, logger)

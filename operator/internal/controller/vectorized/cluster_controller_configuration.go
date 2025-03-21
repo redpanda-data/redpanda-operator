@@ -85,7 +85,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return 0, err
 	}
 
-	lastAppliedConfiguration, err := r.getOrInitLastAppliedConfiguration(ctx, configMapResource, config, redpandaCluster.Namespace, schema)
+	lastAppliedCriticalConfigurationHash, err := r.getOrInitLastAppliedCriticalConfiguration(ctx, configMapResource, config, redpandaCluster.Namespace, schema)
 	if err != nil {
 		return 0, errorWithContext(err, "could not load the last applied configuration")
 	}
@@ -118,7 +118,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		if statefulSetResource == nil {
 			continue
 		}
-		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedConfiguration, statefulSetResource)
+		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedCriticalConfigurationHash, statefulSetResource)
 		if err != nil {
 			return 0, err
 		} else if hashChanged {
@@ -130,12 +130,12 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		}
 	}
 
-	// Now we can mark the new lastAppliedConfiguration for next update
-	properties, err := config.ConcreteConfiguration(ctx, r.Client, r.CloudSecretsExpander, redpandaCluster.Namespace, schema)
+	// Now we can mark the new lastAppliedCriticalConfiguration for next update
+	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander ,schema, redpandaCluster.Namespace)
 	if err != nil {
-		return 0, errorWithContext(err, "could not concretize configuration to store last applied configuration in the cluster")
+		return 0, errorWithContext(err, "could not concretize critical configuration to store last applied configuration in the cluster")
 	}
-	if err = configMapResource.SetLastAppliedConfigurationInCluster(ctx, properties); err != nil {
+	if err = configMapResource.SetAnnotationForCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey, &hash); err != nil {
 		return 0, errorWithContext(err, "could not store last applied configuration in the cluster")
 	}
 
@@ -162,43 +162,52 @@ func (r *ClusterReconciler) reconcileConfiguration(
 // Rather than boolean blindness, if we should rate-limit then this will return a
 // non-zero minimum wait duration.
 func (r *ClusterReconciler) ratelimitCondition(rp *vectorizedv1alpha1.Cluster, conditionType vectorizedv1alpha1.ClusterConditionType) time.Duration {
+	upToDate := rp.Status.ObservedGeneration != 0 && rp.Status.ObservedGeneration == rp.Generation
+	if !upToDate {
+		return 0
+	}
+
 	cond := rp.Status.GetCondition(conditionType)
 	if cond == nil {
 		return 0
 	}
-	recheckAfter := r.configurationReassertionPeriod() - time.Since(cond.LastTransitionTime.Time)
+	if cond.Status != corev1.ConditionTrue {
+		return 0
+	}
 
+	recheckAfter := r.configurationReassertionPeriod() - time.Since(cond.LastTransitionTime.Time)
 	return max(0, recheckAfter)
 }
 
-// getOrInitLastAppliedConfiguration gets the last applied configuration to the cluster or creates it when missing.
+// getOrInitLastAppliedCriticalConfiguration gets the last applied critical configuration hash to the cluster or creates it when missing.
 //
-// This is needed because the controller will later use that annotation to determine which centralized properties are managed by the operator, since configuration
-// can be changed by other means in a cluster. A missing annotation indicates a cluster where centralized configuration has just been primed using the
-// contents of the .bootstrap.yaml file, so we freeze its current content (early in the reconciliation cycle) so that subsequent patches are computed correctly.
-func (r *ClusterReconciler) getOrInitLastAppliedConfiguration(
+// This is needed because the controller will later use that annotation to drive the restart of stateful sets.
+// A missing annotation indicates a cluster where centralized configuration has just been primed using the
+// contents of the .bootstrap.yaml file, so we freeze its current content (early in the reconciliation cycle) so that
+// subsequent patches are computed correctly.
+func (r *ClusterReconciler) getOrInitLastAppliedCriticalConfiguration(
 	ctx context.Context,
 	configMapResource *resources.ConfigMapResource,
 	config *configuration.GlobalConfiguration,
 	namespace string,
 	schema rpadmin.ConfigSchema,
-) (map[string]interface{}, error) {
-	lastApplied, cmPresent, err := configMapResource.GetLastAppliedConfigurationFromCluster(ctx)
+) (string, error) {
+	lastApplied, cmPresent, err := configMapResource.GetAnnotationFromCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if !cmPresent || lastApplied != nil {
-		return lastApplied, nil
+		return *lastApplied, nil
 	}
 
-	concreteCfg, err := config.ConcreteConfiguration(ctx, r.Client, r.CloudSecretsExpander, namespace, schema)
+	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, namespace)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if err := configMapResource.SetLastAppliedConfigurationInCluster(ctx, concreteCfg); err != nil {
-		return nil, err
+	if err := configMapResource.SetAnnotationForCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey, &hash); err != nil {
+		return "", err
 	}
-	return config.ClusterConfiguration, nil
+	return hash, nil
 }
 
 func (r *ClusterReconciler) applyPatchIfNeeded(
@@ -316,7 +325,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	config *configuration.GlobalConfiguration,
 	schema rpadmin.ConfigSchema,
-	lastAppliedConfiguration map[string]interface{},
+	lastAppliedHash string,
 	statefulSetResource *resources.StatefulSetResource,
 ) (hash string, changed bool, err error) {
 	hash, err = config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, redpandaCluster.Namespace)
@@ -332,10 +341,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	if oldHash == "" {
 		// Annotation not yet set on the statefulset (e.g. first time we change config).
 		// We check a diff against last applied configuration to avoid triggering a restart when not needed.
-		oldHash, err = config.GetCentralizedConcreteConfigurationHash(lastAppliedConfiguration, schema)
-		if err != nil {
-			return "", false, err
-		}
+		oldHash = lastAppliedHash
 	}
 
 	return hash, hash != oldHash, nil
