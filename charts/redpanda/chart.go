@@ -26,9 +26,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
-	"github.com/redpanda-data/redpanda-operator/charts/console"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/gotohelm"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 

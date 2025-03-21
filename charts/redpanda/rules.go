@@ -18,7 +18,7 @@ func gotohelm(m dsl.Matcher) {
 	m.Match(`for $k, $v := range $m`).
 		Where(
 			m["m"].Type.Underlying().Is(`map[$k]$v`) &&
-				m.File().Imports("github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"),
+				m.File().Imports("github.com/redpanda-data/redpanda-operator/gotohelm/helmette"),
 		).
 		Report("range over maps are non-deterministic").
 		Suggest(`for $k, $v := range helmette.SortedMap($m)`)

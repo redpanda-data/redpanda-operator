@@ -17,7 +17,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 

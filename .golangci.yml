@@ -34,6 +34,8 @@ linters-settings:
         deny:
         - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
           desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"'
+        - pkg: "^github.com/redpanda-data/redpanda-operator/charts/console$"
+          desc: 'use "github.com/redpanda-data/redpanda-operator/charts/console/v3"'
         - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
           desc: 'import specific charts, the overarching charts module is now deprecated'
 

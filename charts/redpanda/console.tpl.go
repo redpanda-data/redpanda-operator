@@ -17,8 +17,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
-	"github.com/redpanda-data/redpanda-operator/charts/console"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -39,13 +39,13 @@ func consoleChartIntegration(dot *helmette.Dot) []kube.Object {
 	// Pass the same Redpanda License to Console
 	if license := GetLicenseLiteral(dot); license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
 		consoleValue.Secret.Create = true
-		consoleValue.Secret.Enterprise = console.EnterpriseSecrets{License: ptr.To(license)}
+		consoleValue.Secret.License = license
 	}
 
 	// Create console configuration based on Redpanda helm chart values.
 	if !ptr.Deref(values.Console.ConfigMap.Create, false) {
 		consoleValue.ConfigMap.Create = true
-		consoleValue.Console.Config = ConsoleConfig(dot)
+		consoleValue.Config = ConsoleConfig(dot)
 	}
 
 	if !ptr.Deref(values.Console.Deployment.Create, false) {
@@ -72,11 +72,11 @@ func consoleChartIntegration(dot *helmette.Dot) []kube.Object {
 
 		// Create License reference for Console
 		if secret := GetLicenseSecretReference(dot); secret != nil {
-			consoleValue.Enterprise = console.Enterprise{
-				LicenseSecretRef: console.SecretKeyRef{
+			consoleValue.LicenseSecretRef = &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secret.Name,
-					Key:  secret.Key,
 				},
+				Key: secret.Key,
 			}
 		}
 
@@ -284,11 +284,9 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 		}
 	}
 
-	if values.Console.Console == nil {
-		values.Console.Console = &console.PartialConsole{
-			Config: map[string]any{},
-		}
+	if values.Console.Config == nil {
+		values.Console.Config = map[string]any{}
 	}
 
-	return helmette.Merge(values.Console.Console.Config, c)
+	return helmette.Merge(values.Console.Config, c)
 }
