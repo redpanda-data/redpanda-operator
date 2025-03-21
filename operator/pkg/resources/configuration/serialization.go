@@ -10,15 +10,21 @@
 package configuration
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 // SerializedGlobalConfigurationContainer wraps the serialized version of redpanda.yaml and .bootstrap.yaml
 type SerializedGlobalConfigurationContainer struct {
-	RedpandaFile  []byte
-	BootstrapFile []byte
+	RedpandaFile        []byte
+	BootstrapFile       []byte
+	BootstrapTemplate   []byte
+	TemplateEnvironment []corev1.EnvVar
 }
 
 // Serialize returns the serialized version of the given configuration
@@ -41,6 +47,19 @@ func (c *GlobalConfiguration) Serialize() (
 		}
 		res.BootstrapFile = clusterConfig
 	}
+
+	if len(c.BootstrapConfiguration) > 0 {
+		readyForTemplate, env, err := clusterconfiguration.ExpandForBootstrap(c.BootstrapConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("could not pre-expand cluster bootstrap template: %w", err)
+		}
+		bootstrapTemplate, err := json.Marshal(readyForTemplate)
+		if err != nil {
+			return nil, fmt.Errorf("could not serialize cluster bootstrap template: %w", err)
+		}
+		res.BootstrapTemplate = bootstrapTemplate
+		res.TemplateEnvironment = env
+	}
 	return &res, nil
 }
 
@@ -57,6 +76,11 @@ func (s *SerializedGlobalConfigurationContainer) Deserialize(
 	if s.BootstrapFile != nil {
 		if err := yaml.Unmarshal(s.BootstrapFile, &res.ClusterConfiguration); err != nil {
 			return nil, fmt.Errorf("could not deserialize cluster config: %w", err)
+		}
+	}
+	if s.BootstrapTemplate != nil {
+		if err := json.Unmarshal(s.BootstrapTemplate, &res.BootstrapConfiguration); err != nil {
+			return nil, fmt.Errorf("could not deserialize bootstrap template: %w", err)
 		}
 	}
 	res.Mode = mode // mode is not serialized
