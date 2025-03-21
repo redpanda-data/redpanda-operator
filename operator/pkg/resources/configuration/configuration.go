@@ -11,14 +11,20 @@
 package configuration
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec // this is not encrypting secure info
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
@@ -34,9 +40,12 @@ var knownNodeProperties map[string]bool
 
 // GlobalConfiguration is a configuration object that holds both node/local configuration and global configuration.
 type GlobalConfiguration struct {
-	NodeConfiguration    *config.RedpandaYaml
-	ClusterConfiguration map[string]interface{}
-	Mode                 GlobalConfigurationMode
+	NodeConfiguration      *config.RedpandaYaml
+	ClusterConfiguration   map[string]interface{}
+	BootstrapConfiguration map[string]vectorizedv1alpha1.ClusterConfigValue
+	Mode                   GlobalConfigurationMode
+	// The bootstrap will be expanded once in-process into this
+	concreteValues map[string]any
 }
 
 // For constructs a GlobalConfiguration for the given version of the cluster (considering feature gates).
@@ -95,16 +104,81 @@ func (c *GlobalConfiguration) SetAdditionalFlatProperties(
 	return c.Mode.SetAdditionalFlatProperties(c, props)
 }
 
+// ConcreteConfiguration uses the expander to completely bottom out all configuration values
+// into concrete ones, according to the supplied schema. This is performed once only,
+// with repeated calls using the cached computation.
+func (c *GlobalConfiguration) ConcreteConfiguration(ctx context.Context, reader client.Reader, namespace string, schema rpadmin.ConfigSchema) (map[string]any, error) {
+	if c.concreteValues != nil {
+		return c.concreteValues, nil
+	}
+	concreteCfg, err := clusterconfiguration.ExpandForConfiguration(ctx, reader, namespace, c.BootstrapConfiguration, schema)
+	if err != nil {
+		return nil, err
+	}
+
+	c.concreteValues = concreteCfg
+	return c.concreteValues, nil
+}
+
+// FinalizeToTemplate takes any accumulated values and marshals them into a format
+// that can be utilised by the bootstrap templating machinery.
+// This is only called once, near the end of the construction of a GlobalConfiguration,
+// but we expose the function for the use by a handful of unit tests.
+// (We currently preserve the ClusterConfiguration attribute solely to support
+// the accumulation of array values, which is used to manage some attributes
+// during the assembly of a configuration; without this we'd need to repeatedly
+// round-trip into and out of a serialised form.)
+// TODO: refactor this.
+func (c *GlobalConfiguration) FinalizeToTemplate() error {
+	if c.BootstrapConfiguration == nil {
+		c.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigValue)
+	}
+	for k, v := range c.ClusterConfiguration {
+		if _, found := c.BootstrapConfiguration[k]; found {
+			continue
+		}
+		// These values are all "concrete" - that is, they're not looked up anywhere.
+		// We use JSON marshalling as opposed to YAML here - it has fewer options available, but is
+		// compatible for use in either a YAML or JSON target document.
+		buf, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("cannot marshal concrete cluster configuration value: %w", err)
+		}
+		// These values are all stringified, so that they can be written into the template file.
+		c.BootstrapConfiguration[k] = vectorizedv1alpha1.ClusterConfigValue{
+			Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
+		}
+	}
+	return nil
+}
+
 // GetCentralizedConfigurationHash computes a hash of the centralized configuration considering only the
 // cluster properties that require a restart (this is why the schema is needed).
 func (c *GlobalConfiguration) GetCentralizedConfigurationHash(
+	ctx context.Context,
+	reader client.Reader,
+	schema rpadmin.ConfigSchema,
+	namespace string,
+) (string, error) {
+	concreteCfg, err := c.ConcreteConfiguration(ctx, reader, namespace, schema)
+	if err != nil {
+		return "", err
+	}
+
+	return c.GetCentralizedConcreteConfigurationHash(concreteCfg, schema)
+}
+
+// GetCentralizedConcreteConfigurationHash is a short-term helper to handle checking of cluster configuration.
+// It hashes only properties that require a restart.
+func (c *GlobalConfiguration) GetCentralizedConcreteConfigurationHash(
+	concreteCfg map[string]any,
 	schema rpadmin.ConfigSchema,
 ) (string, error) {
 	clone := *c
 
 	// Ignore cluster properties that don't require restart
-	clone.ClusterConfiguration = make(map[string]interface{})
-	for k, v := range c.ClusterConfiguration {
+	clone.ClusterConfiguration = make(map[string]any)
+	for k, v := range concreteCfg {
 		// Unknown properties should be ignored as they might be user errors
 		if meta, ok := schema[k]; ok && meta.NeedsRestart {
 			clone.ClusterConfiguration[k] = v

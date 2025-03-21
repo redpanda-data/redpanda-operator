@@ -16,6 +16,9 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
+	"k8s.io/utils/ptr"
+
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 // GlobalConfigurationMode changes the behavior of the global configuration when reading/writing properties.
@@ -117,10 +120,12 @@ func (r globalConfigurationModeCentralized) SetAdditionalFlatProperties(
 	for key, value := range props {
 		if nodeProp := isKnownNodeProperty(key); !nodeProp && strings.HasPrefix(key, redpandaPropertyPrefix) {
 			newKey := strings.TrimPrefix(key, redpandaPropertyPrefix)
-			if targetConfig.ClusterConfiguration == nil {
-				targetConfig.ClusterConfiguration = make(map[string]interface{})
+			if targetConfig.BootstrapConfiguration == nil {
+				targetConfig.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigValue)
 			}
-			targetConfig.ClusterConfiguration[newKey] = value
+			targetConfig.BootstrapConfiguration[newKey] = vectorizedv1alpha1.ClusterConfigValue{
+				Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(value)),
+			}
 		} else {
 			remaining[key] = value
 		}
