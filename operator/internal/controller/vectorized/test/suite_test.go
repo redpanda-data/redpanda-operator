@@ -243,10 +243,10 @@ var _ = BeforeEach(func() {
 	By("Cleaning the admin API")
 	testAdminAPI.Clear()
 	// Register some known properties for all tests
-	testAdminAPI.RegisterPropertySchema("auto_create_topics_enabled", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
-	testAdminAPI.RegisterPropertySchema("cloud_storage_segment_max_upload_interval_sec", rpadmin.ConfigPropertyMetadata{NeedsRestart: true})
-	testAdminAPI.RegisterPropertySchema("log_segment_size", rpadmin.ConfigPropertyMetadata{NeedsRestart: true})
-	testAdminAPI.RegisterPropertySchema("enable_rack_awareness", rpadmin.ConfigPropertyMetadata{NeedsRestart: false})
+	testAdminAPI.RegisterPropertySchema("auto_create_topics_enabled", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
+	testAdminAPI.RegisterPropertySchema("cloud_storage_segment_max_upload_interval_sec", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
+	testAdminAPI.RegisterPropertySchema("log_segment_size", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
+	testAdminAPI.RegisterPropertySchema("enable_rack_awareness", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
 
 	// By default we set the following properties and they'll be loaded by redpanda from the .bootstrap.yaml
 	// So we initialize the test admin API with those
