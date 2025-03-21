@@ -75,6 +75,7 @@ type ClusterReconciler struct {
 	clusterDomain             string
 	Scheme                    *runtime.Scheme
 	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
+	ConfigurationReassertionPeriod time.Duration
 	DecommissionWaitInterval  time.Duration
 	MetricsTimeout            time.Duration
 	RestrictToRedpandaVersion string
@@ -333,7 +334,7 @@ func (r *ClusterReconciler) Reconcile(
 
 	// Finally: re-enqueue for another pass
 	if delay == 0 {
-		delay = time.Minute
+		delay = r.configurationReassertionPeriod()
 	}
 	return ctrl.Result{
 		RequeueAfter: delay,

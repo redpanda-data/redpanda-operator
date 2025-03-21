@@ -30,6 +30,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
+const (
+	defaultConfigurationReassertionPeriod = time.Minute
+)
+
+func (r *ClusterReconciler) configurationReassertionPeriod() time.Duration {
+	if r.ConfigurationReassertionPeriod == 0 {
+		return defaultConfigurationReassertionPeriod
+	}
+	return r.ConfigurationReassertionPeriod
+}
+
 // reconcileConfiguration ensures that the cluster configuration is synchronized with expected data
 //
 //nolint:funlen // splitting makes it difficult to follow
@@ -155,7 +166,7 @@ func (r *ClusterReconciler) ratelimitCondition(rp *vectorizedv1alpha1.Cluster, c
 	if cond == nil {
 		return 0
 	}
-	recheckAfter := time.Minute - time.Since(cond.LastTransitionTime.Time)
+	recheckAfter := r.configurationReassertionPeriod() - time.Since(cond.LastTransitionTime.Time)
 
 	return max(0, recheckAfter)
 }
