@@ -14,7 +14,7 @@ jobs:
         id: generate-prs
         run: |
           ./.github/workflows/scripts/pending-prs slack redpanda-data/redpanda-operator > payload.json
-          echo "has-prs=$(cat payload.json | wc -l)" >> $GITHUB_OUTPUT
+          echo "has-prs=$(wc -l < payload.json | xargs)" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Post message to Slack channel
