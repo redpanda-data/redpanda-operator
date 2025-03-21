@@ -88,14 +88,14 @@ func BootstrapFile(dot *helmette.Dot) string {
 	return helmette.ToYaml(bootstrap)
 }
 
-func RedpandaConfigFile(dot *helmette.Dot, includeSeedServer bool) string {
+func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 	}
 
-	if includeSeedServer {
+	if includeNonHashableItems {
 		redpanda["seed_servers"] = values.Listeners.CreateSeedServers(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot))
 	}
 
@@ -104,17 +104,19 @@ func RedpandaConfigFile(dot *helmette.Dot, includeSeedServer bool) string {
 	configureListeners(redpanda, dot)
 
 	redpandaYaml := map[string]any{
-		"redpanda":               redpanda,
-		"schema_registry":        schemaRegistry(dot),
-		"schema_registry_client": kafkaClient(dot),
-		"pandaproxy":             pandaProxyListener(dot),
-		"pandaproxy_client":      kafkaClient(dot),
-		"rpk":                    rpkNodeConfig(dot),
-		"config_file":            "/etc/redpanda/redpanda.yaml",
+		"redpanda":        redpanda,
+		"schema_registry": schemaRegistry(dot),
+		"pandaproxy":      pandaProxyListener(dot),
+		"config_file":     "/etc/redpanda/redpanda.yaml",
 	}
 
-	if RedpandaAtLeast_23_3_0(dot) && values.AuditLogging.Enabled && values.Auth.IsSASLEnabled() {
-		redpandaYaml["audit_log_client"] = kafkaClient(dot)
+	if includeNonHashableItems {
+		redpandaYaml["rpk"] = rpkNodeConfig(dot)
+		redpandaYaml["pandaproxy_client"] = kafkaClient(dot)
+		redpandaYaml["schema_registry_client"] = kafkaClient(dot)
+		if RedpandaAtLeast_23_3_0(dot) && values.AuditLogging.Enabled && values.Auth.IsSASLEnabled() {
+			redpandaYaml["audit_log_client"] = kafkaClient(dot)
+		}
 	}
 
 	return helmette.ToYaml(redpandaYaml)
