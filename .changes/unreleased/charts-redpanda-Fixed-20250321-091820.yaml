@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Fixed an issue where not explicitly specifying a SASL auth mechanism when SASL is enabled caused Console to fail to start up.
+time: 2025-03-21T09:18:20.535475-04:00
