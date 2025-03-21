@@ -29,7 +29,7 @@ jobs:
       - name: install dependencies
         env:
           SCRIPT_DIR: ${{ github.workspace }}/.github/workflows/scripts
-        run: pip install -r ${SCRIPT_DIR}/requirements.txt
+        run: pip install -r "${SCRIPT_DIR}"/requirements.txt
       - name: install pandoc
         run: sudo apt-get update && sudo apt-get install -y pandoc
       - name: Add comment to JIRA Issue
@@ -40,4 +40,4 @@ jobs:
           ISSUE_URL: ${{ github.event.issue.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_COMMENT: ${{ github.event.comment.body }}
-        run: python ${SCRIPT_DIR}/jira_helper.py UPDATE_COMMENT --verbose -p K8S
+        run: python "${SCRIPT_DIR}"/jira_helper.py UPDATE_COMMENT --verbose -p K8S
