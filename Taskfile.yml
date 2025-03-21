@@ -57,6 +57,7 @@ tasks:
           var: MOD
         cmd: cd {{.ITEM}} && golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
+      - actionlint
 
   lint-fix:
     desc: "equivalent to task lint -- --fix"

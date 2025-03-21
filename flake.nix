@@ -44,6 +44,7 @@
             # If the version of the installed binary is important make sure to
             # update TestToolVersions.
             packages = [
+              pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               pkgs.applyconfiguration-gen
               pkgs.backport
               pkgs.buildkite-agent
@@ -75,7 +76,6 @@
               pkgs.openssl
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.yq-go
-              # pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               # pkgs.gotools
             ] ++ lib.optionals pkgs.stdenv.isLinux [
               pkgs.sysctl # Used to adjust ulimits on linux systems (Namely, CI).
