@@ -1,13 +1,12 @@
 ---
 # This workflow triggers the action in redpanda-data/docs that
 # publishes the CRD specifications to the Redpanda documentation.
+# https://github.com/redpanda-data/docs/blob/main/.github/workflows/generate-crd.yml
 
 name: Trigger CRD docs
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'operator/api/**'
+  release:
+    types: [published]
 jobs:
   dispatch:
     runs-on: ubuntu-latest
@@ -22,11 +21,11 @@ jobs:
       - uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: |
-            ,sdlc/prod/github/actions_bot_token
+            sdlc/prod/github/actions_bot_token
           parse-json-secrets: true
       - name: Trigger generate-crd-docs event
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ env.ACTIONS_BOT_TOKEN }}
+          token: ${{ secrets.ACTIONS_BOT_TOKEN }}
           repository: redpanda-data/docs
           event-type: generate-crd-docs
