@@ -69,17 +69,18 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	configuratorSettings      resources.ConfiguratorSettings
-	clusterDomain             string
-	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
-	DecommissionWaitInterval  time.Duration
-	MetricsTimeout            time.Duration
-	RestrictToRedpandaVersion string
-	GhostDecommissioning      bool
-	AutoDeletePVCs            bool
-	Dialer                    redpanda.DialContextFunc
+	Log                            logr.Logger
+	configuratorSettings           resources.ConfiguratorSettings
+	clusterDomain                  string
+	Scheme                         *runtime.Scheme
+	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
+	DecommissionWaitInterval       time.Duration
+	MetricsTimeout                 time.Duration
+	RestrictToRedpandaVersion      string
+	GhostDecommissioning           bool
+	AutoDeletePVCs                 bool
+	ConfigurationReassertionPeriod time.Duration
+	Dialer                         redpanda.DialContextFunc
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -275,7 +276,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	err = r.reconcileConfiguration(
+	delay, err := r.reconcileConfiguration(
 		ctx,
 		&vectorizedCluster,
 		cm,
@@ -327,7 +328,14 @@ func (r *ClusterReconciler) Reconcile(
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
-	return ctrl.Result{}, nil
+	// Finally: re-enqueue for another pass
+	if delay == 0 {
+		delay = r.configurationReassertionPeriod()
+	}
+	r.Log.Info("*** re-enqueuing after delay ***", "delay", delay)
+	return ctrl.Result{
+		RequeueAfter: delay,
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
