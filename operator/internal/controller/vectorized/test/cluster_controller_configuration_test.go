@@ -32,6 +32,7 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
@@ -64,7 +65,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 	Context("When managing a RedpandaCluster with centralized config", func() {
 		It("Can initialize a cluster with centralized configuration", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("central-initialize")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-initialize")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -86,7 +87,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(annotationGetter(key, &sts, configMapHashKey), timeout, interval).ShouldNot(BeEmpty())
 
 			By("Not patching the admin API for any reason")
-			Consistently(testAdminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
+			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -101,7 +102,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 		It("Should interact with the admin API when doing changes", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("central-changes")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-changes")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -119,7 +120,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting a change")
-			testAdminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -130,8 +131,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Sending the new property to the admin API")
-			Eventually(testAdminAPI.PropertyGetter("non-restarting"), timeout, interval).Should(Equal("the-val"))
-			Consistently(testAdminAPI.PatchesGetter(), timeoutShort, intervalShort).Should(HaveLen(1))
+			Eventually(adminAPI.PropertyGetter("non-restarting"), timeout, interval).Should(Equal("the-val"))
+			Consistently(adminAPI.PatchesGetter(), timeoutShort, intervalShort).Should(HaveLen(1))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -143,7 +144,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
 
 			By("Marking the last applied configuration in the configmap")
-			baseConfig, err := testAdminAPI.Config(context.Background(), true)
+			baseConfig, err := adminAPI.Config(context.Background(), true)
 
 			Expect(err).To(BeNil())
 			expectedAnnotation, err := json.Marshal(baseConfig)
@@ -162,7 +163,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 		It("Should remove properties from the admin API when needed", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("central-removal")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-removal")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -177,7 +178,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an initial change")
-			testAdminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -188,14 +189,14 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the field with the admin API")
-			Eventually(testAdminAPI.PropertyGetter("p0"), timeout, interval).Should(Equal("v0"))
+			Eventually(adminAPI.PropertyGetter("p0"), timeout, interval).Should(Equal("v0"))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting two new properties")
-			testAdminAPI.RegisterPropertySchema("p1", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
-			testAdminAPI.RegisterPropertySchema("p2", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("p1", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("p2", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
 			if cluster.Spec.AdditionalConfiguration == nil {
@@ -206,9 +207,9 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Adding two fields to the config at once")
-			Eventually(testAdminAPI.PropertyGetter("p1")).Should(Equal("v1"))
-			Eventually(testAdminAPI.PropertyGetter("p2")).Should(Equal("v2"))
-			patches := testAdminAPI.PatchesGetter()()
+			Eventually(adminAPI.PropertyGetter("p1")).Should(Equal("v1"))
+			Eventually(adminAPI.PropertyGetter("p2")).Should(Equal("v2"))
+			patches := adminAPI.PatchesGetter()()
 			Expect(patches).NotTo(BeEmpty())
 			Expect(patches[len(patches)-1]).To(Equal(configuration.CentralConfigurationPatch{
 				Upsert: map[string]interface{}{
@@ -232,8 +233,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Producing the right patch")
-			Eventually(testAdminAPI.PropertyGetter("p1")).Should(Equal("v1x"))
-			patches = testAdminAPI.PatchesGetter()()
+			Eventually(adminAPI.PropertyGetter("p1")).Should(Equal("v1x"))
+			patches = adminAPI.PatchesGetter()()
 			Expect(patches).NotTo(BeEmpty())
 			Expect(patches[len(patches)-1]).To(Equal(configuration.CentralConfigurationPatch{
 				Upsert: map[string]interface{}{
@@ -252,11 +253,11 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Adding configuration of array type")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
-			testAdminAPI.RegisterPropertySchema("kafka_nodelete_topics", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "array", Items: rpadmin.ConfigPropertyItems{Type: "string"}})
+			adminAPI.RegisterPropertySchema("kafka_nodelete_topics", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "array", Items: rpadmin.ConfigPropertyItems{Type: "string"}})
 			cluster.Spec.AdditionalConfiguration["redpanda.kafka_nodelete_topics"] = "[_internal_connectors_configs _internal_connectors_offsets _internal_connectors_status _audit __consumer_offsets _redpanda_e2e_probe _schemas]"
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
-			Eventually(testAdminAPI.PropertyGetter("kafka_nodelete_topics")).Should(Equal([]string{
+			Eventually(adminAPI.PropertyGetter("kafka_nodelete_topics")).Should(Equal([]string{
 				"__consumer_offsets",
 				"_audit",
 				"_internal_connectors_configs",
@@ -266,7 +267,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				"_schemas",
 			}))
 
-			patches = testAdminAPI.PatchesGetter()()
+			patches = adminAPI.PatchesGetter()()
 			Expect(patches).NotTo(BeEmpty())
 			expectedPatch := patches[len(patches)-1]
 			Expect(expectedPatch).NotTo(BeNil())
@@ -283,7 +284,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 		It("Should restart the cluster only when strictly required", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("central-restart")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-restart")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -301,7 +302,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(initialConfigMapHash).NotTo(BeEmpty())
 
 			By("Accepting a change that would require restart")
-			testAdminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "string"})
+			adminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest := cluster.DeepCopy()
@@ -313,7 +314,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the field with the admin API")
-			Eventually(testAdminAPI.PropertyGetter("prop-restart"), timeout, interval).Should(Equal(propValue))
+			Eventually(adminAPI.PropertyGetter("prop-restart"), timeout, interval).Should(Equal(propValue))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -325,7 +326,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
 
 			By("Accepting another change that would not require restart")
-			testAdminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
 			const propValue2 = "the-value2"
@@ -333,7 +334,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the new field with the admin API")
-			Eventually(testAdminAPI.PropertyGetter("prop-no-restart"), timeout, interval).Should(Equal(propValue2))
+			Eventually(adminAPI.PropertyGetter("prop-no-restart"), timeout, interval).Should(Equal(propValue2))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -343,7 +344,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCentralizedConfigHash))
 			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
 
-			numberOfPatches := len(testAdminAPI.PatchesGetter()())
+			numberOfPatches := len(adminAPI.PatchesGetter()())
 
 			By("Accepting a change in a node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -381,7 +382,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Not patching the admin API for node property changes")
-			Consistently(testAdminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(numberOfPatches))
+			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(numberOfPatches))
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -389,10 +390,9 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 
 		It("Should defer updating the centralized configuration when admin API is unavailable", func() {
-			testAdminAPI.SetUnavailable(true)
-
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("admin-unavailable")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("admin-unavailable")
+			adminAPI.SetUnavailable(true)
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -405,7 +405,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
 
 			By("Accepting a change to the properties")
-			testAdminAPI.RegisterPropertySchema("prop", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema("prop", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
 			const propValue = "the-value"
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
@@ -419,9 +419,9 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
 
 			By("Recovering when the API becomes available again")
-			testAdminAPI.SetUnavailable(false)
+			adminAPI.SetUnavailable(false)
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-			Expect(testAdminAPI.PropertyGetter("prop")()).To(Equal(propValue))
+			Expect(adminAPI.PropertyGetter("prop")()).To(Equal(propValue))
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -432,7 +432,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 	Context("When setting invalid configuration on the cluster - unknown properties", func() {
 		It("Should reflect any invalid status in the condition", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-check")
+			key, baseKey, redpandaCluster, namespace, _ := getInitialTestCluster("condition-check")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -482,11 +482,12 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 
 		It("Should report direct validation errors in the condition", func() {
-			// admin API will return 400 bad request on invalid configuration (default behavior)
-			testAdminAPI.SetDirectValidationEnabled(true)
-
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-validation")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("condition-validation")
+
+			// admin API will return 400 bad request on invalid configuration (default behavior)
+			adminAPI.SetDirectValidationEnabled(true)
+
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -529,15 +530,16 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 
 		It("Should report configuration errors present in the .bootstrap.yaml file", func() {
+			By("Allowing creation of a new cluster")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("condition-bootstrap-failure")
+
 			// Inject property before creating the cluster, simulating .bootstrap.yaml
 			const val = "nown"
-			_, err := testAdminAPI.PatchClusterConfig(context.Background(), map[string]interface{}{
+			_, err := adminAPI.PatchClusterConfig(context.Background(), map[string]interface{}{
 				"unk": val,
 			}, nil)
 			Expect(err).To(BeNil())
 
-			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-bootstrap-failure")
 			if redpandaCluster.Spec.AdditionalConfiguration == nil {
 				redpandaCluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
@@ -574,7 +576,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 	Context("When setting invalid configuration on the cluster - invalid properties", func() {
 		It("Should reflect any invalid status in the condition", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-check")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("condition-check")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -586,7 +588,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Accepting an invalid property")
-			testAdminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid", Type: "string"}) // triggers mock validation
+			adminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid", Type: "string"}) // triggers mock validation
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
 				if cluster.Spec.AdditionalConfiguration == nil {
 					cluster.Spec.AdditionalConfiguration = make(map[string]string)
@@ -625,11 +627,12 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 
 		It("Should report direct validation errors in the condition", func() {
-			// admin API will return 400 bad request on invalid configuration (default behavior)
-			testAdminAPI.SetDirectValidationEnabled(true)
-
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-validation")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("condition-validation")
+
+			// admin API will return 400 bad request on invalid configuration (default behavior)
+			adminAPI.SetDirectValidationEnabled(true)
+
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -672,15 +675,16 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		})
 
 		It("Should report configuration errors present in the .bootstrap.yaml file", func() {
+			By("Allowing creation of a new cluster")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("condition-bootstrap-failure")
+
 			// Inject property before creating the cluster, simulating .bootstrap.yaml
 			const val = "nown"
-			_, err := testAdminAPI.PatchClusterConfig(context.Background(), map[string]interface{}{
+			_, err := adminAPI.PatchClusterConfig(context.Background(), map[string]interface{}{
 				"unk": val,
 			}, nil)
 			Expect(err).To(BeNil())
 
-			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("condition-bootstrap-failure")
 			if redpandaCluster.Spec.AdditionalConfiguration == nil {
 				redpandaCluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
@@ -729,12 +733,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				externalChangeUnmanagedPropValue = "external-unmanaged-value"
 			)
 
-			testAdminAPI.RegisterPropertySchema(managedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
-			testAdminAPI.RegisterPropertySchema(unmanagedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
-			testAdminAPI.SetProperty(unmanagedProp, unmanagedPropValue)
-
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("central-drift-detector")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-drift-detector")
+
+			adminAPI.RegisterPropertySchema(managedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.RegisterPropertySchema(unmanagedProp, rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
+			adminAPI.SetProperty(unmanagedProp, unmanagedPropValue)
+
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -754,22 +759,22 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 
 			By("Having it reflected in the configuration")
-			Eventually(testAdminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
+			Eventually(adminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
 			// Unmanaged properties are removed by Declarative mode
-			Eventually(testAdminAPI.PropertyGetter(unmanagedProp), timeout, interval).Should(BeNil())
+			Eventually(adminAPI.PropertyGetter(unmanagedProp), timeout, interval).Should(BeNil())
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Having an external system change both properties")
-			testAdminAPI.SetProperty(managedProp, externalChangeManagedPropValue)
-			testAdminAPI.SetProperty(unmanagedProp, externalChangeUnmanagedPropValue)
+			adminAPI.SetProperty(managedProp, externalChangeManagedPropValue)
+			adminAPI.SetProperty(unmanagedProp, externalChangeUnmanagedPropValue)
 
 			By("Having the managed property restored to the original value")
-			Eventually(testAdminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
+			Eventually(adminAPI.PropertyGetter(managedProp), timeout, interval).Should(Equal(desiredManagedPropValue))
 
 			By("Removing the unmanaged property via Declarative mode")
-			Expect(testAdminAPI.PropertyGetter(unmanagedProp)()).Should(BeNil())
+			Expect(adminAPI.PropertyGetter(unmanagedProp)()).Should(BeNil())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -785,7 +790,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}
 
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace := getInitialTestCluster("test-additional-cmdline")
+			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("test-additional-cmdline")
 			redpandaCluster.Spec.Configuration.AdditionalCommandlineArguments = args
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
@@ -820,7 +825,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(annotationGetter(key, &sts, configMapHashKey), timeout, interval).ShouldNot(BeEmpty())
 
 			By("Not patching the admin API for any reason")
-			Consistently(testAdminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
+			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -841,6 +846,7 @@ func getInitialTestCluster(
 	baseKey types.NamespacedName,
 	cluster *vectorizedv1alpha1.Cluster,
 	namespace *corev1.Namespace,
+	api *admin.MockAdminAPI,
 ) {
 	ns := strings.Replace(namesgenerator.GetRandomName(0), "_", "-", 1)
 	key = types.NamespacedName{
@@ -889,5 +895,5 @@ func getInitialTestCluster(
 			Name: ns,
 		},
 	}
-	return key, baseKey, cluster, namespace
+	return key, baseKey, cluster, namespace, testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
 }
