@@ -341,8 +341,6 @@ github.com/mitchellh/go-wordwrap v1.0.1 h1:TLuKupo69TCn6TQSyGxwI1EblZZEsQ0vMlAFQ
 github.com/mitchellh/go-wordwrap v1.0.1/go.mod h1:R62XHJLzvMFRBbcrT7m7WgmE1eOyTSsCt+hzestvNj0=
 github.com/mitchellh/hashstructure v1.1.0 h1:P6P1hdjqAAknpY/M1CGipelZgp+4y9ja9kmUZPXP+H0=
 github.com/mitchellh/hashstructure v1.1.0/go.mod h1:xUDAozZz0Wmdiufv0uyhnHkUTN6/6d8ulp4AwfLKrmA=
-github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
-github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/moby/docker-image-spec v1.3.1 h1:jMKff3w6PgbfSa69GfNg+zN/XLhfXJGnEx3Nl2EsFP0=
@@ -435,12 +433,10 @@ github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe
 github.com/quasilyte/go-ruleguard/dsl v0.3.22/go.mod h1:KeCP03KrjuSO0H1kTuZQCWlQPulDV6YMIXmpQss17rU=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756 h1:Ej60mXTkl+Gg3EV4QiKYtmW0rJ1BHyVGoFwJ4DwjvGc=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756/go.mod h1:c9U+W6CCLWHWk9jBEzzUM7Q7ya4ot57FghxtaVdMrNQ=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86 h1:OIMgob/yXf+LmtfBd4D9URQs3ULGZmjnCLwbTb61kb0=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86/go.mod h1:uMzbKxddryc+t69uOI6U7yTaXAVqjEtZ6gGH3sszgIk=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321190920-a90fba65f928 h1:m277jqb/1VFEKcThyDUUQErt+9snYM3LstIB0GIHzMM=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321190920-a90fba65f928/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
-github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f h1:JY/VwWH44/wYDbfalLAQeqY5r1xeh1UXXX+d052T54M=
-github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f/go.mod h1:jstEIOVRim07DsGZbS3+ljpk+dziWMd0QFF2g4MPRJI=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab h1:aa1fDNQ2IqVM7Y45RgoJUABwfvVa4pgVIAu51tD7nOo=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
+github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50 h1:rmgno9TNZCX2c81zJGrv2CZjiPURWevNeQ7Lo8fVszk=
+github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50/go.mod h1:b/GBKIBr3nLE+LAtb8P4b2KrOwL3SGXAF4l65UcF71c=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8/go.mod h1:97qkjcMI3gDL+y+aY/w5o0xF2qGHFof6rCXIYjnTalM=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
