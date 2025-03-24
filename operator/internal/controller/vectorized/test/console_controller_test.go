@@ -71,7 +71,7 @@ var _ = Describe("Console controller", func() {
 	BeforeEach(func() {
 		ctx := context.Background()
 		if redpandaCluster == nil {
-			key, _, redpandaCluster, namespace = getInitialTestCluster(ClusterName)
+			key, _, redpandaCluster, namespace, _ = getInitialTestCluster(ClusterName)
 			ConsoleNamespace = key.Namespace
 		}
 		if err := k8sClient.Get(ctx, key, &vectorizedv1alpha1.Cluster{}); err != nil {
@@ -205,7 +205,7 @@ var _ = Describe("Console controller", func() {
 	Context("When deleting Console", func() {
 		It("Should delete console if cluster is not configured", func() {
 			ctx := context.Background()
-			brokenKey, _, brokenCluster, ns := getInitialTestCluster(ClusterName)
+			brokenKey, _, brokenCluster, ns, _ := getInitialTestCluster(ClusterName)
 			brokenCluster.Spec.Image = "nonexistentimage"
 			var replicas1 int32 = 1
 			brokenCluster.Spec.Replicas = &replicas1
