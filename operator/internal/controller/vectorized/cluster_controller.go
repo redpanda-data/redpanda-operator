@@ -336,7 +336,6 @@ func (r *ClusterReconciler) Reconcile(
 	if delay == 0 {
 		delay = r.configurationReassertionPeriod()
 	}
-	r.Log.Info("*** re-enqueuing after delay ***", "delay", delay)
 	return ctrl.Result{
 		RequeueAfter: delay,
 	}, nil
