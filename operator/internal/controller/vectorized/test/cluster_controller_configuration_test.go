@@ -12,7 +12,6 @@ package test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -118,6 +117,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the configuration")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			initialCriticalConfigHash := annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey)()
+			Expect(initialCriticalConfigHash).ToNot(BeEmpty())
 
 			By("Accepting a change")
 			adminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
@@ -143,14 +144,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Not setting the centralized configuration hash in the statefulset")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
 
-			By("Marking the last applied configuration in the configmap")
-			baseConfig, err := adminAPI.Config(context.Background(), true)
-
-			Expect(err).To(BeNil())
-			expectedAnnotation, err := json.Marshal(baseConfig)
-			Expect(err).To(BeNil())
-			Eventually(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeout, interval).Should(Equal(string(expectedAnnotation)))
-			Consistently(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(string(expectedAnnotation)))
+			By("Not changing the critical configuration hash on the configmap")
+			Consistently(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCriticalConfigHash))
 
 			By("Never restarting the cluster")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash))
