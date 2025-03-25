@@ -31,34 +31,36 @@ var (
 )
 
 type Values struct {
-	NameOverride       string                        `json:"nameOverride"`
-	FullnameOverride   string                        `json:"fullnameOverride"`
-	ReplicaCount       int32                         `json:"replicaCount"`
-	ClusterDomain      string                        `json:"clusterDomain"`
-	Image              Image                         `json:"image"`
-	KubeRBACProxy      KubeRBACProxyConfig           `json:"kubeRbacProxy"`
-	Config             Config                        `json:"config"`
-	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets"`
-	LogLevel           string                        `json:"logLevel"`
-	RBAC               RBAC                          `json:"rbac"`
-	Webhook            Webhook                       `json:"webhook"`
-	ServiceAccount     ServiceAccountConfig          `json:"serviceAccount"`
-	Resources          corev1.ResourceRequirements   `json:"resources"`
-	NodeSelector       map[string]string             `json:"nodeSelector"`
-	Tolerations        []corev1.Toleration           `json:"tolerations"`
-	Affinity           *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
-	Strategy           *appsv1.DeploymentStrategy    `json:"strategy,omitempty"`
-	Annotations        map[string]string             `json:"annotations,omitempty"`
-	PodAnnotations     map[string]string             `json:"podAnnotations"`
-	PodLabels          map[string]string             `json:"podLabels"`
-	AdditionalCmdFlags []string                      `json:"additionalCmdFlags"`
-	CommonLabels       map[string]string             `json:"commonLabels"`
-	Monitoring         MonitoringConfig              `json:"monitoring"`
-	WebhookSecretName  string                        `json:"webhookSecretName"`
-	PodTemplate        *PodTemplateSpec              `json:"podTemplate,omitempty"`
-	LivenessProbe      *corev1.Probe                 `json:"livenessProbe,omitempty"`
-	ReadinessProbe     *corev1.Probe                 `json:"readinessProbe,omitempty"`
-	Scope              OperatorScope                 `json:"scope" jsonschema:"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator."`
+	Global              map[string]any                `json:"global,omitempty"`
+	KubePrometheusStack any                           `json:"kube-prometheus-stack,omitempty"`
+	NameOverride        string                        `json:"nameOverride"`
+	FullnameOverride    string                        `json:"fullnameOverride"`
+	ReplicaCount        int32                         `json:"replicaCount"`
+	ClusterDomain       string                        `json:"clusterDomain"`
+	Image               Image                         `json:"image"`
+	KubeRBACProxy       KubeRBACProxyConfig           `json:"kubeRbacProxy"`
+	Config              Config                        `json:"config"`
+	ImagePullSecrets    []corev1.LocalObjectReference `json:"imagePullSecrets"`
+	LogLevel            string                        `json:"logLevel"`
+	RBAC                RBAC                          `json:"rbac"`
+	Webhook             Webhook                       `json:"webhook"`
+	ServiceAccount      ServiceAccountConfig          `json:"serviceAccount"`
+	Resources           corev1.ResourceRequirements   `json:"resources"`
+	NodeSelector        map[string]string             `json:"nodeSelector"`
+	Tolerations         []corev1.Toleration           `json:"tolerations"`
+	Affinity            *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
+	Strategy            appsv1.DeploymentStrategy     `json:"strategy,omitempty"`
+	Annotations         map[string]string             `json:"annotations,omitempty"`
+	PodAnnotations      map[string]string             `json:"podAnnotations"`
+	PodLabels           map[string]string             `json:"podLabels"`
+	AdditionalCmdFlags  []string                      `json:"additionalCmdFlags"`
+	CommonLabels        map[string]string             `json:"commonLabels"`
+	Monitoring          MonitoringConfig              `json:"monitoring"`
+	WebhookSecretName   string                        `json:"webhookSecretName"`
+	PodTemplate         *PodTemplateSpec              `json:"podTemplate,omitempty"`
+	LivenessProbe       *corev1.Probe                 `json:"livenessProbe,omitempty"`
+	ReadinessProbe      *corev1.Probe                 `json:"readinessProbe,omitempty"`
+	Scope               OperatorScope                 `json:"scope" jsonschema:"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator."`
 }
 
 type PodTemplateSpec struct {

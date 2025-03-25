@@ -10,15 +10,13 @@
 package operator
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
@@ -28,76 +26,222 @@ import (
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/kustomize/api/konfig"
-	"sigs.k8s.io/kustomize/kustomize/v5/commands/build"
-	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-func TestMain(m *testing.M) {
-	// Chart deps are kept within ./charts as a tgz archive, which is git
-	// ignored. Helm dep build will ensure that ./charts is in sync with
-	// Chart.lock, which is tracked by git.
-	// This is performed in TestMain as there may be many tests that run the
-	// redpanda helm chart.
-	out, err := exec.Command("helm", "repo", "add", "prometheus", "https://prometheus-community.github.io/helm-charts").CombinedOutput()
-	if err != nil {
-		log.Fatalf("failed to run helm repo add: %s", out)
-	}
-
-	out, err = exec.Command("helm", "dep", "build", ".").CombinedOutput()
-	if err != nil {
-		log.Fatalf("failed to run helm dep build: %s", out)
-	}
-
-	os.Exit(m.Run())
+type ChartYAML struct {
+	Version     string            `json:"version"`
+	AppVersion  string            `json:"appVersion"`
+	Annotations map[string]string `json:"annotations"`
 }
 
-func TestHelmKustomizeEquivalence(t *testing.T) {
-	ctx := testutil.Context(t)
-	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
+func TestVersionIsAppVersion(t *testing.T) {
+	require.Equal(t, Chart.Metadata().AppVersion, Chart.Metadata().Version, "The Operator and its chart are distributed as the same package. Any changes to appVersion should be made to version and visa vera.")
+}
+
+func TestArtifactHubImages(t *testing.T) {
+	const operatorRepo = "docker.redpanda.com/redpandadata/redpanda-operator"
+
+	chartBytes, err := os.ReadFile("Chart.yaml")
 	require.NoError(t, err)
 
-	kustomization, err := os.ReadFile("testdata/kustomization.yaml")
-	require.NoError(t, err)
-	require.Containsf(t, string(kustomization), Chart.Metadata().AppVersion, "kustomization.yaml should reference the current appVersion: %s", Chart.Metadata().AppVersion)
+	var chart ChartYAML
+	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
 
-	values := PartialValues{FullnameOverride: ptr.To("redpanda"), RBAC: &PartialRBAC{CreateAdditionalControllerCRs: ptr.To(true)}}
+	assert.Contains(
+		t,
+		chart.Annotations["artifacthub.io/images"],
+		fmt.Sprintf("%s:%s", operatorRepo, chart.AppVersion),
+		"artifacthub.io/images should be in sync with .appVersion",
+	)
+}
 
-	rendered, err := client.Template(ctx, ".", helm.TemplateOptions{
-		Name:      "redpanda",
-		Namespace: "",
-		Values:    values,
-	})
-	require.NoError(t, err)
+func TestRBACBindings(t *testing.T) {
+	testCases := []struct {
+		name   string
+		values PartialValues
+	}{
+		{
+			name:   "defaults",
+			values: PartialValues{},
+		},
+		{
+			name: "additional-controllers",
+			values: PartialValues{
+				RBAC: &PartialRBAC{
+					CreateAdditionalControllerCRs: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "rpk-debug-bundle",
+			values: PartialValues{
+				RBAC: &PartialRBAC{
+					CreateRPKBundleCRs: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "cluster-scope",
+			values: PartialValues{
+				Scope: ptr.To(Cluster),
+			},
+		},
+	}
 
-	fSys := filesys.MakeFsOnDisk()
-	buffy := new(bytes.Buffer)
-	cmd := build.NewCmdBuild(
-		fSys, build.MakeHelp(konfig.ProgramName, "build"), buffy)
-	require.NoError(t, cmd.RunE(cmd, []string{"testdata"}))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			chartObjs, err := Chart.Render(nil, helmette.Release{
+				Name: "operator",
+			}, tc.values)
+			require.NoError(t, err)
 
-	helmObjs, err := kube.DecodeYAML(rendered, Scheme)
-	require.NoError(t, err)
+			var roles []string
+			var clusterRoles []string
 
-	require.NoError(t, apiextensionsv1.AddToScheme(Scheme))
-	kustomizeObjs, err := kube.DecodeYAML(buffy.Bytes(), Scheme)
-	require.NoError(t, err)
+			var boundRoles []string
+			var boundClusterRoles []string
 
-	helmClusterRoleRules, helmRoleRules := ExtractRules(helmObjs)
-	kClusterRoleRules, kRoleRules := ExtractRules(kustomizeObjs)
+			for _, obj := range chartObjs {
+				switch obj := obj.(type) {
+				case *rbacv1.Role:
+					roles = append(roles, obj.Name)
 
-	assert.JSONEq(t, jsonStr(helmRoleRules), jsonStr(kRoleRules), "difference in Roles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
-	assert.JSONEq(t, jsonStr(helmClusterRoleRules), jsonStr(kClusterRoleRules), "difference in ClusterRoles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
+				case *rbacv1.ClusterRole:
+					clusterRoles = append(clusterRoles, obj.Name)
+
+				case *rbacv1.ClusterRoleBinding:
+					switch obj.RoleRef.Kind {
+					case "Role":
+						boundRoles = append(boundRoles, obj.RoleRef.Name)
+					case "ClusterRole":
+						boundClusterRoles = append(boundClusterRoles, obj.RoleRef.Name)
+					default:
+						t.Fatalf("unknown RoleRef.Kind: %q", obj.RoleRef.Kind)
+					}
+
+				case *rbacv1.RoleBinding:
+					switch obj.RoleRef.Kind {
+					case "Role":
+						boundRoles = append(boundRoles, obj.RoleRef.Name)
+					case "ClusterRole":
+						boundClusterRoles = append(boundClusterRoles, obj.RoleRef.Name)
+					default:
+						t.Fatalf("unknown RoleRef.Kind: %q", obj.RoleRef.Kind)
+					}
+				}
+			}
+
+			for _, bound := range boundRoles {
+				require.Contains(t, roles, bound, "found binding to non-existent Role")
+			}
+
+			for _, role := range roles {
+				require.Contains(t, boundRoles, role, "found Role %q with no binding", role)
+			}
+
+			for _, bound := range boundClusterRoles {
+				require.Contains(t, clusterRoles, bound, "found binding to non-existent ClusterRole")
+			}
+
+			for _, clusterRole := range clusterRoles {
+				// Special case, skip over the metrics-reader ClusterRole as it's intentionally unbound.
+				if strings.HasSuffix(clusterRole, "metrics-reader") {
+					continue
+				}
+				require.Contains(t, boundClusterRoles, clusterRole, "found ClusterRole %q with no binding", clusterRole)
+			}
+		})
+	}
+}
+
+func TestHelmControllerGenEquivalence(t *testing.T) {
+	testCases := []struct {
+		name   string
+		paths  []string
+		values PartialValues
+	}{
+		{
+			name: "defaults",
+			paths: []string{
+				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/v2-manager.yaml",
+			},
+			values: PartialValues{},
+		},
+		{
+			name: "additional-controllers",
+			paths: []string{
+				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/managed-decommission.yaml",
+				"../config/rbac/itemized/node-watcher.yaml",
+				"../config/rbac/itemized/old-decommission.yaml",
+				"../config/rbac/itemized/v2-manager.yaml",
+			},
+			values: PartialValues{
+				RBAC: &PartialRBAC{
+					CreateAdditionalControllerCRs: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "rpk-debug-bundle",
+			paths: []string{
+				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/rpk-debug-bundle.yaml",
+				"../config/rbac/itemized/v2-manager.yaml",
+			},
+			values: PartialValues{
+				RBAC: &PartialRBAC{
+					CreateRPKBundleCRs: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "cluster-scope",
+			paths: []string{
+				"../config/rbac/itemized/v1-manager.yaml",
+				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/pvcunbinder.yaml",
+			},
+			values: PartialValues{
+				Scope: ptr.To(Cluster),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var controllerGenObjs []kube.Object
+			for _, path := range tc.paths {
+				data, err := os.ReadFile(path)
+				require.NoError(t, err)
+
+				objs, err := kube.DecodeYAML(data, Scheme)
+				require.NoError(t, err)
+
+				controllerGenObjs = append(controllerGenObjs, objs...)
+			}
+
+			chartObjs, err := Chart.Render(nil, helmette.Release{}, tc.values)
+			require.NoError(t, err)
+
+			helmClusterRoleRules, helmRoleRules := ExtractRules(chartObjs)
+			kClusterRoleRules, kRoleRules := ExtractRules(controllerGenObjs)
+
+			assert.JSONEq(t, jsonStr(helmRoleRules), jsonStr(kRoleRules), "difference in Roles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
+			assert.JSONEq(t, jsonStr(helmClusterRoleRules), jsonStr(kClusterRoleRules), "difference in ClusterRoles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
+		})
+	}
 }
 
 func jsonStr(in any) string {
@@ -284,12 +428,6 @@ func TestGenerateCases(t *testing.T) {
 func makeSureTagIsNotEmptyString(values PartialValues, fuzzer *fuzz.Fuzzer) {
 	if values.Image != nil && values.Image.Tag != nil && len(*values.Image.Tag) == 0 {
 		t := values.Image.Tag
-		for len(*t) == 0 {
-			fuzzer.Fuzz(t)
-		}
-	}
-	if values.KubeRBACProxy != nil && values.KubeRBACProxy.Image != nil && values.KubeRBACProxy.Image.Tag != nil && len(*values.KubeRBACProxy.Image.Tag) == 0 {
-		t := values.KubeRBACProxy.Image.Tag
 		for len(*t) == 0 {
 			fuzzer.Fuzz(t)
 		}

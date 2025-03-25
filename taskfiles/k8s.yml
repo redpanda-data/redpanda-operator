@@ -160,7 +160,7 @@ tasks:
       # https://forums.docker.com/t/tag-overlap-in-oci-artifacts/131453
       # For usage of operator artifact please go to specific reference like the one below
       # https://hub.docker.com/layers/redpandadata/redpanda-operator-nightly/v0.0.0-20250104git4a5a076-helm-chart/images/sha256-ffaea8752b6bd00a26589a168830a87d498106e470f11af0f08267bc13fbd078
-      - helm package {{.TMP_PATH}} --version "{{.OPERATOR_CHART_VERSION}}-helm-chart" --destination {{.BUILD_ROOT}} --dependency-update
+      - helm package {{.TMP_PATH}} --version "{{.OPERATOR_VERSION}}-helm-chart" --destination {{.BUILD_ROOT}} --dependency-update
       - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
       - defer: 'helm registry logout registry-1.docker.io'
-      - helm push '{{.BUILD_ROOT}}/redpanda-operator-nightly-{{.OPERATOR_CHART_VERSION}}-helm-chart.tgz' oci://registry-1.docker.io/redpandadata
+      - helm push '{{.BUILD_ROOT}}/redpanda-operator-nightly-{{.OPERATOR_VERSION}}-helm-chart.tgz' oci://registry-1.docker.io/redpandadata
