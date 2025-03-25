@@ -891,7 +891,7 @@ func TestAppVersion(t *testing.T) {
 }
 
 func TestControllersTag(t *testing.T) {
-	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
+	chartBytes, err := os.ReadFile("../../operator/chart/Chart.yaml")
 	require.NoError(t, err)
 
 	valuesYAML, err := os.ReadFile("values.yaml")

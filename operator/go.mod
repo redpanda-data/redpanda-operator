@@ -18,6 +18,7 @@ require (
 	github.com/fluxcd/source-controller/shim v0.0.0-00010101000000-000000000000
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-logr/logr v1.4.2
+	github.com/google/gofuzz v1.2.0
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
 	github.com/moby/moby v24.0.7+incompatible
@@ -37,6 +38,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
@@ -52,6 +54,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/sync v0.12.0
+	golang.org/x/tools v0.29.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
@@ -247,7 +250,6 @@ require (
 	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20231202142526-55ffb0092afd // indirect
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
@@ -357,7 +359,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.7.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
@@ -428,7 +429,6 @@ require (
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.197.0 // indirect
 	google.golang.org/genproto v0.0.0-20241015192408-796eee8c2d53 // indirect
@@ -486,10 +486,6 @@ replace (
 	// k8s.io/apiserver/pkg/cel/library
 	github.com/google/cel-go => github.com/google/cel-go v0.17.8
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
-
-	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
-	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.
-	// github.com/redpanda-data/redpanda-operator/charts/redpanda => ../charts/redpanda
 
 	// NB: Due to old flux version which force us to use old version of sigs.k8s.io/controller-runtime. That's why
 	// otel/sdk is fixed to old 1.28.0 version. The newest version is v1.34.0

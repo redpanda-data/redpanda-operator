@@ -38,9 +38,6 @@ vars:
   # `sed` is used to trim off the qualifying parts of the tag so we just get the "version".
   OPERATOR_VERSION:
     sh: git describe --dirty --tags --match 'v*' --match 'operator/v*' | sed 's#^operator/##'
-  OPERATOR_CHART_VERSION:
-    # NB: OPERATOR_CHART_VERSION is currently only used for the operator chart's nightly releases.
-    sh: git describe --dirty --tags --match 'charts/operator/v*' --always | sed 's#^charts/operator/##'
 
 includes:
   build: taskfiles/build.yml

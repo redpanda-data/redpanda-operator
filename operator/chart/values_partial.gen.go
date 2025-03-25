@@ -19,6 +19,7 @@ import (
 )
 
 type PartialValues struct {
+	Global             map[string]any                "json:\"global,omitempty\""
 	NameOverride       *string                       "json:\"nameOverride,omitempty\""
 	FullnameOverride   *string                       "json:\"fullnameOverride,omitempty\""
 	ReplicaCount       *int32                        "json:\"replicaCount,omitempty\""

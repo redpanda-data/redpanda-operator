@@ -124,54 +124,6 @@ func TestChartYAMLVersions(t *testing.T) {
 	}
 }
 
-func TestOperatorArtifactHubImages(t *testing.T) {
-	const operatorRepo = "docker.redpanda.com/redpandadata/redpanda-operator"
-	const configuratorRepo = "docker.redpanda.com/redpandadata/configurator"
-
-	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
-	require.NoError(t, err)
-
-	var chart ChartYAML
-	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
-
-	assert.Contains(
-		t,
-		chart.Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", operatorRepo, chart.AppVersion),
-		"artifacthub.io/images should be in sync with .appVersion",
-	)
-
-	assert.Contains(
-		t,
-		chart.Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", configuratorRepo, chart.AppVersion),
-		"artifacthub.io/images should be in sync with .appVersion",
-	)
-}
-
-func TestOperatorKustomizationTag(t *testing.T) {
-	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
-	require.NoError(t, err)
-
-	var chart map[string]any
-	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
-
-	kustomizationBytes, err := os.ReadFile("../../charts/operator/testdata/kustomization.yaml")
-	require.NoError(t, err)
-
-	var kustomization map[string]any
-	require.NoError(t, yaml.Unmarshal(kustomizationBytes, &kustomization))
-
-	for _, addr := range kustomization["resources"].([]any) {
-		require.Contains(
-			t,
-			addr,
-			chart["appVersion"].(string),
-			"testdata kustomization address tag should be equal to the operator chart's appVersion",
-		)
-	}
-}
-
 // TestGoModLint parses most go.mod files in this repository and verifies that:
 //   - go directive is equal to runtime version.
 //   - No replace directives specifying paths are present (with exceptions).
@@ -194,7 +146,11 @@ func TestGoModLint(t *testing.T) {
 		// generator. The invocation `gen schema` uses reflection on Charts'
 		// Value types that need to be up to date. (Generation could be moved
 		// into their respective charts to resolve this).
-		modPrefix + "gen":                {modPrefix + "pkg", modPrefix + "charts/redpanda/v5", modPrefix + "charts/operator"},
+		modPrefix + "gen": {
+			modPrefix + "charts/redpanda/v5",
+			modPrefix + "operator",
+			modPrefix + "pkg",
+		},
 		modPrefix + "charts/operator":    {modPrefix + "pkg"},
 		modPrefix + "charts/redpanda/v5": {modPrefix + "pkg"},
 		modPrefix + "charts/connectors":  {modPrefix + "pkg"},

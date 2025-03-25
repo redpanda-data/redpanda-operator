@@ -95,7 +95,6 @@ rules:
   - apps
   resources:
   - deployments
-  - replicasets
   - statefulsets
   verbs:
   - create
@@ -235,7 +234,6 @@ rules:
   resources:
   - buckets
   - gitrepositories
-  - gitrepository
   - helmcharts
   - helmrepositories
   verbs:
@@ -249,19 +247,17 @@ rules:
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
-  - gitrepository/finalizers
+  - buckets/finalizers
+  - gitrepositories/finalizers
   - helmcharts/finalizers
   - helmrepositories/finalizers
   verbs:
-  - create
-  - delete
-  - get
-  - patch
   - update
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
-  - gitrepository/status
+  - buckets/status
+  - gitrepositories/status
   - helmcharts/status
   - helmrepositories/status
   verbs:
