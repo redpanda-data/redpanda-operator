@@ -34,7 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
@@ -151,10 +150,6 @@ func (r *ConfigMapResource) update(
 func (r *ConfigMapResource) markConfigurationConditionChanged(
 	ctx context.Context, current *corev1.ConfigMap, modified *corev1.ConfigMap,
 ) error {
-	if !featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		return nil
-	}
-
 	status := r.pandaCluster.Status.GetConditionStatus(vectorizedv1alpha1.ClusterConfiguredConditionType)
 	if status == corev1.ConditionFalse {
 		// Condition already indicates a change
@@ -343,10 +338,8 @@ func (r *ConfigMapResource) CreateConfiguration(
 
 	cfg.SetAdditionalRedpandaProperty("auto_create_topics_enabled", r.pandaCluster.Spec.Configuration.AutoCreateTopics)
 
-	if featuregates.ShadowIndex(r.pandaCluster.Spec.Version) {
-		intervalSec := 60 * 30 // 60s * 30 = 30 minutes
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_segment_max_upload_interval_sec", intervalSec)
-	}
+	intervalSec := 60 * 30 // 60s * 30 = 30 minutes
+	cfg.SetAdditionalRedpandaProperty("cloud_storage_segment_max_upload_interval_sec", intervalSec)
 
 	cfg.SetAdditionalRedpandaProperty("log_segment_size", logSegmentSize)
 
@@ -379,9 +372,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 		return nil, fmt.Errorf("preparing schemaRegistry client: %w", err)
 	}
 
-	if featuregates.RackAwareness(r.pandaCluster.Spec.Version) {
-		cfg.SetAdditionalRedpandaProperty("enable_rack_awareness", true)
-	}
+	cfg.SetAdditionalRedpandaProperty("enable_rack_awareness", true)
 
 	if err := cfg.SetAdditionalFlatProperties(r.pandaCluster.Spec.AdditionalConfiguration); err != nil {
 		return nil, fmt.Errorf("adding additional flat properties: %w", err)
@@ -464,19 +455,18 @@ func (r *ConfigMapResource) prepareCloudStorage(
 		cfg.SetAdditionalRedpandaProperty("cloud_storage_trust_file", trustfile)
 	}
 
-	if featuregates.ShadowIndex(r.pandaCluster.Spec.Version) {
-		cfg.NodeConfiguration.Redpanda.CloudStorageCacheDirectory = archivalCacheIndexDirectory
+	cfg.NodeConfiguration.Redpanda.CloudStorageCacheDirectory = archivalCacheIndexDirectory
 
-		// Only set cache_size (in bytes) if no percentage based cluster property is set.
-		// This avoids problems with multiple node pools: bytes-based is very different if disk size changes (move between different tiers in cloud, for example).
-		// Percentage based is kept stable mostly (even exactly the same most of the time, 15% typically), and will not cause immediate churn on the old nodePool if disk size is going down.
-		_, cloudStoragePercentageConfigured := r.pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
+	// Only set cache_size (in bytes) if no percentage based cluster property is set.
+	// This avoids problems with multiple node pools: bytes-based is very different if disk size changes (move between different tiers in cloud, for example).
+	// Percentage based is kept stable mostly (even exactly the same most of the time, 15% typically), and will not cause immediate churn on the old nodePool if disk size is going down.
+	_, cloudStoragePercentageConfigured := r.pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
 
-		if r.pandaCluster.Spec.CloudStorage.CacheStorage != nil && r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {
-			size := strconv.FormatInt(r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value(), 10)
-			cfg.SetAdditionalRedpandaProperty("cloud_storage_cache_size", size)
-		}
+	if r.pandaCluster.Spec.CloudStorage.CacheStorage != nil && r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {
+		size := strconv.FormatInt(r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value(), 10)
+		cfg.SetAdditionalRedpandaProperty("cloud_storage_cache_size", size)
 	}
+
 	return nil
 }
 
@@ -724,11 +714,7 @@ func (r *ConfigMapResource) GetNodeConfigHash(
 	if err != nil {
 		return "", err
 	}
-	if featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		return cfg.GetNodeConfigurationHash()
-	}
-	// Previous behavior for v21.x
-	return cfg.GetFullConfigurationHash()
+	return cfg.GetNodeConfigurationHash()
 }
 
 // globalConfigurationChanged verifies if the new global configuration
@@ -736,10 +722,6 @@ func (r *ConfigMapResource) GetNodeConfigHash(
 func (r *ConfigMapResource) globalConfigurationChanged(
 	current *corev1.ConfigMap, modified *corev1.ConfigMap,
 ) bool {
-	if !featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		return false
-	}
-
 	// TODO: this is a short-term change; it won't detect a change in any referenced secrets
 	oldConfigNode := current.Data[configKey]
 	oldConfigBootstrap := current.Data[bootstrapTemplateFile]

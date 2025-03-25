@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -26,7 +27,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
 // reconcileConfiguration ensures that the cluster configuration is synchronized with expected data
@@ -43,10 +43,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 ) error {
 	log := l.WithName("reconcileConfiguration")
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
-	if !featuregates.CentralizedConfiguration(redpandaCluster.Spec.Version) {
-		log.Info("Cluster is not using centralized configuration, skipping...")
-		return nil
-	}
 
 	if added, err := r.ensureConditionPresent(ctx, redpandaCluster, log); err != nil || added {
 		// If condition is added or error returned, we wait for another reconcile loop

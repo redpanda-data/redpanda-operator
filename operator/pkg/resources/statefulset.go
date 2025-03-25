@@ -41,7 +41,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -577,7 +576,7 @@ func (r *StatefulSetResource) obj(
 								},
 								{
 									Name:  "RACK_AWARENESS",
-									Value: strconv.FormatBool(featuregates.RackAwareness(r.pandaCluster.Spec.Version)),
+									Value: strconv.FormatBool(true),
 								},
 								{
 									Name:  "VALIDATE_MOUNTED_VOLUME",
@@ -719,48 +718,46 @@ func (r *StatefulSetResource) obj(
 	// Startup of a fresh cluster would let the first pod restart, until dynamic hooks are implemented. See: https://github.com/redpanda-data/redpanda/pull/4907
 	multiReplica := r.pandaCluster.CalculateCurrentReplicas() > 1
 
-	if featuregates.MaintenanceMode(r.pandaCluster.Spec.Version) && r.pandaCluster.IsUsingMaintenanceModeHooks() && multiReplica {
+	if r.pandaCluster.IsUsingMaintenanceModeHooks() && multiReplica {
 		ss.Spec.Template.Spec.Containers[0].Lifecycle = &corev1.Lifecycle{
 			PreStop:   r.getHook(preStopKey),
 			PostStart: r.getHook(postStartKey),
 		}
 	}
 
-	if featuregates.CentralizedConfiguration(r.pandaCluster.Spec.Version) {
-		okToPatch, err := r.canOverwriteBootstrapForAnyPreexistingResource(ctx, ss)
+	okToPatch, err := r.canOverwriteBootstrapForAnyPreexistingResource(ctx, ss)
+	if err != nil {
+		return nil, err
+	}
+	if okToPatch {
+		// Bootstrap configuration is now templated; we don't need to mount the original here
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
+			corev1.EnvVar{
+				Name:  bootstrapTemplateEnvVar,
+				Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
+			},
+			corev1.EnvVar{
+				Name:  bootstrapDestinationEnvVar,
+				Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
+			},
+		)
+		// If the bootstrap template needs additional env vars, inject them here
+		conf, err := r.configurationGetter(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
 		}
-		if okToPatch {
-			// Bootstrap configuration is now templated; we don't need to mount the original here
-			ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
-				corev1.EnvVar{
-					Name:  bootstrapTemplateEnvVar,
-					Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
-				},
-				corev1.EnvVar{
-					Name:  bootstrapDestinationEnvVar,
-					Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
-				},
-			)
-			// If the bootstrap template needs additional env vars, inject them here
-			conf, err := r.configurationGetter(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
-			}
-			_, templateEnv, err := clusterconfiguration.ExpandForBootstrap(conf.BootstrapConfiguration)
-			if err != nil {
-				return nil, fmt.Errorf("cannot extract environment variables from bootstrap template: %w", err)
-			}
-			ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, templateEnv...)
-		} else {
-			// Keep the old .bootstrap.yaml in place.
-			ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-				Name:      "configmap-dir",
-				MountPath: path.Join(configDestinationDir, bootstrapConfigFile),
-				SubPath:   bootstrapConfigFile,
-			})
+		_, templateEnv, err := clusterconfiguration.ExpandForBootstrap(conf.BootstrapConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("cannot extract environment variables from bootstrap template: %w", err)
 		}
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, templateEnv...)
+	} else {
+		// Keep the old .bootstrap.yaml in place.
+		ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      "configmap-dir",
+			MountPath: path.Join(configDestinationDir, bootstrapConfigFile),
+			SubPath:   bootstrapConfigFile,
+		})
 	}
 
 	setVolumes(ss, r.pandaCluster, r.nodePool.Storage, r.nodePool.CloudCacheStorage)
@@ -862,7 +859,7 @@ func setVolumes(ss *appsv1.StatefulSet, cluster *vectorizedv1alpha1.Cluster, dat
 		}
 	}
 
-	if cluster.Spec.CloudStorage.Enabled && featuregates.ShadowIndex(cluster.Spec.Version) {
+	if cluster.Spec.CloudStorage.Enabled {
 		pvcArchivalDir := preparePVCResource(ArchivalCacheIndexAnchorName, cluster.Namespace, cache, ss.Labels)
 		ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvcArchivalDir)
 		archivalVol := corev1.Volume{

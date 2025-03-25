@@ -25,7 +25,6 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -50,16 +49,9 @@ type GlobalConfiguration struct {
 }
 
 // For constructs a GlobalConfiguration for the given version of the cluster (considering feature gates).
-func For(version string) *GlobalConfiguration {
-	if featuregates.CentralizedConfiguration(version) {
-		return &GlobalConfiguration{
-			Mode:              DefaultCentralizedMode(),
-			NodeConfiguration: config.ProdDefault(),
-		}
-	}
-	// Use classic also when version is not present for some reason
+func For(_ string) *GlobalConfiguration {
 	return &GlobalConfiguration{
-		Mode:              GlobalConfigurationModeClassic,
+		Mode:              DefaultCentralizedMode(),
 		NodeConfiguration: config.ProdDefault(),
 	}
 }
