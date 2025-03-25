@@ -29,9 +29,10 @@ import (
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 // Cluster wide access to configmaps and secrets are required as long as we're
 // fetching values from helm.
-// +kubebuilder:rbac:groups=core,resources=configmaps;secrets,verbs=get;list;watch
 
 // RedpandaNodePVCReconciler watches node objects, and sets annotation to PVC to mark them for deletion
 type RedpandaNodePVCReconciler struct {

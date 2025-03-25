@@ -31,6 +31,7 @@ var (
 )
 
 type Values struct {
+	Global             map[string]any                `json:"global,omitempty"`
 	NameOverride       string                        `json:"nameOverride"`
 	FullnameOverride   string                        `json:"fullnameOverride"`
 	ReplicaCount       int32                         `json:"replicaCount"`
@@ -47,7 +48,7 @@ type Values struct {
 	NodeSelector       map[string]string             `json:"nodeSelector"`
 	Tolerations        []corev1.Toleration           `json:"tolerations"`
 	Affinity           *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
-	Strategy           *appsv1.DeploymentStrategy    `json:"strategy,omitempty"`
+	Strategy           appsv1.DeploymentStrategy     `json:"strategy,omitempty"`
 	Annotations        map[string]string             `json:"annotations,omitempty"`
 	PodAnnotations     map[string]string             `json:"podAnnotations"`
 	PodLabels          map[string]string             `json:"podLabels"`
