@@ -36,7 +36,6 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -167,11 +166,6 @@ func (r *StatefulSetResource) runUpdate(
 }
 
 func (r *StatefulSetResource) isClusterHealthy(ctx context.Context) error {
-	if !featuregates.ClusterHealth(r.pandaCluster.Status.Version) {
-		r.logger.V(logger.DebugLevel).Info("Cluster health endpoint is not available", "version", r.pandaCluster.Spec.Version)
-		return nil
-	}
-
 	adminAPIClient, err := r.getAdminAPIClient(ctx)
 	if err != nil {
 		return fmt.Errorf("creating admin API client: %w", err)
@@ -389,11 +383,8 @@ func (r *StatefulSetResource) updatePods(ctx context.Context, l logr.Logger, upd
 		}
 
 		params := url.Values{}
-		if featuregates.MetricsQueryParamName(r.pandaCluster.Spec.Version) {
-			params.Add("__name__", "cluster_partition_under_replicated_replicas*")
-		} else {
-			params.Add("name", "cluster_partition_under_replicated_replicas*")
-		}
+		params.Add("__name__", "cluster_partition_under_replicated_replicas*")
+
 		adminURL.RawQuery = params.Encode()
 
 		if err = r.evaluateUnderReplicatedPartitions(ctx, &adminURL); err != nil {
