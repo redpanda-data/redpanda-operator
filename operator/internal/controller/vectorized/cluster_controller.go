@@ -189,9 +189,9 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, nil
 	}
 
-	// Expect featuregate to be supported. Clusters <22.3.0 are unsupported.
-	if !featuregates.EmptySeedStartCluster(vectorizedCluster.Spec.Version) {
-		return ctrl.Result{}, fmt.Errorf("Redpanda version >=v22.3.0 is required to support FeatureGate EmptySeedStartCluster")
+	// Expect featuregate to be supported. Clusters <23.2.0 are unsupported.
+	if !featuregates.MinimumSupportedVersion(vectorizedCluster.Spec.Version) {
+		return ctrl.Result{}, fmt.Errorf("Redpanda version >=%s is required to support FeatureGate EmptySeedStartCluster", featuregates.V23_2.String())
 	}
 
 	ar.bootstrapService()
@@ -298,10 +298,8 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	if featuregates.CentralizedConfiguration(vectorizedCluster.Spec.Version) {
-		if cc := vectorizedCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType); cc == nil || cc.Status != corev1.ConditionTrue {
-			return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
-		}
+	if cc := vectorizedCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType); cc == nil || cc.Status != corev1.ConditionTrue {
+		return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
 	}
 
 	// The following should be at the last part as it requires AdminAPI to be running
