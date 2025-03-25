@@ -16,7 +16,6 @@ package redpanda
 import (
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -41,7 +40,6 @@ type PartialValues struct {
 	Enterprise       *PartialEnterprise            "json:\"enterprise,omitempty\""
 	RackAwareness    *PartialRackAwareness         "json:\"rackAwareness,omitempty\""
 	Console          *console.PartialValues        "json:\"console,omitempty\""
-	Connectors       *connectors.PartialValues     "json:\"connectors,omitempty\""
 	Auth             *PartialAuth                  "json:\"auth,omitempty\""
 	TLS              *PartialTLS                   "json:\"tls,omitempty\""
 	External         *PartialExternalConfig        "json:\"external,omitempty\""
