@@ -38,9 +38,6 @@ vars:
   # `sed` is used to trim off the qualifying parts of the tag so we just get the "version".
   OPERATOR_VERSION:
     sh: '{{.SRC_DIR}}/ci/scripts/version.sh operator'
-  OPERATOR_CHART_VERSION:
-    # NB: OPERATOR_CHART_VERSION is currently only used for the operator chart's nightly releases.
-    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/operator'
   CONSOLE_CHART_VERSION:
     # NB: CONSOLE_CHART_VERSION is currently only used for the console chart's nightly releases.
     sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/console -e'
