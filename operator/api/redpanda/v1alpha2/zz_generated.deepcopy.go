@@ -2648,6 +2648,11 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Config != nil {
+		in, out := &in.Config, &out.Config
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Strategy != nil {
 		in, out := &in.Strategy, &out.Strategy
 		*out = new(runtime.RawExtension)
@@ -2656,6 +2661,11 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	if in.Enterprise != nil {
 		in, out := &in.Enterprise, &out.Enterprise
 		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.LicenseSecretRef != nil {
+		in, out := &in.LicenseSecretRef, &out.LicenseSecretRef
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.AutomountServiceAccountToken != nil {

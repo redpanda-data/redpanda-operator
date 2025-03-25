@@ -53,7 +53,6 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type RedpandaController string
@@ -507,7 +506,7 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:    kube.RestToConfig(mgr.GetConfig()),
+			KubeConfig:    mgr.GetConfig(),
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),

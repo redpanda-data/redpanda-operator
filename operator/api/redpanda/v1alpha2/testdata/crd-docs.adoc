@@ -1891,7 +1891,10 @@ RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a pack
 
 
 
-RedpandaConsole configures the Redpanda Console subchart of the Redpanda Helm chart. Use these settings to configure the subchart. For more details on each setting, see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
+RedpandaConsole is the union of console.PartialValues (earlier or equal to
+v0.7.31 Console version) and consolev3.PartialValues (after v0.7.31 Console version).
+Use these settings to configure the subchart. For more details on each setting,
+see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
 
 
 
@@ -1937,10 +1940,16 @@ never used. Prefer ConfigMap (configmap). + |  |
 | *`configMap`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj[$$ConsoleCreateObj$$]__ | Specifies whether a ConfigMap should be created for Redpanda Console. + |  | 
 | *`secret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies whether a Secret should be created for Redpanda Console. + |  | 
 | *`deployment`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies whether a Deployment should be created for Redpanda Console. + |  | 
-| *`console`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures custom settings for Redpanda Console. + |  | 
+| *`console`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Deprecated: Use `config` instead +
+`console` is available in Console chart version earlier or equal to v0.7.31 + |  | 
+| *`config`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures custom settings for Redpanda Console. +
+`config` is available in Console chart version after v0.7.31 semver + |  | 
 | *`strategy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures console's Deployment's update strategy. + |  | 
-| *`enterprise`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Settings for license key, as an alternative to secret.enterprise when a +
-license secret is available + |  | 
+| *`enterprise`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Deprecated: Use `licenseSecretRef` instead. +
+`enterprise` is available in Console chart version earlier or equal to v0.7.31 + |  | 
+| *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | Defines a reference to Kubernetes Secret that points to a Redpanda Enterprise license. +
+Please consider use Enterprise in RedpandaClusterSpec type. +
+`licenseSecretRef` is available in Console chart version after v0.7.31 semver + |  | 
 | *`automountServiceAccountToken`* __boolean__ | Automount API credentials for the Service Account into the pod. + |  | 
 | *`readinessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe[$$ReadinessProbe$$]__ | Settings for console's Deployment's readiness probe. + |  | 
 | *`livenessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe[$$LivenessProbe$$]__ | Settings for console's Deployment's liveness probe. + |  | 
