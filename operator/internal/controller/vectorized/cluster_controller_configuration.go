@@ -27,7 +27,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
 const (
@@ -55,10 +54,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 ) (time.Duration, error) {
 	log := l.WithName("reconcileConfiguration")
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
-	if !featuregates.CentralizedConfiguration(redpandaCluster.Spec.Version) {
-		log.Info("Cluster is not using centralized configuration, skipping...")
-		return 0, nil
-	}
 
 	if added, err := r.ensureConditionPresent(ctx, redpandaCluster, log); err != nil || added {
 		// If condition is added or error returned, we wait for another reconcile loop
