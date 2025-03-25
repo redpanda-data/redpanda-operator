@@ -60,7 +60,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			t.Log("Installing Redpanda operator chart")
-			t.InstallLocalHelmChart(ctx, "../charts/operator", helm.InstallOptions{
+			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: t.IsolateNamespace(ctx),
 				Values: map[string]any{
@@ -75,7 +75,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 					},
 					"additionalCmdFlags": []string{"--additional-controllers=all", "--enable-helm-controllers=false", "--force-defluxed-mode"},
 				},
-			}, helm.Dependency{Name: "prometheus", Repository: "https://prometheus-community.github.io/helm-charts"})
+			})
 			t.Log("Successfully installed Redpanda operator chart")
 		}).
 		RegisterTag("cluster", 1, ClusterTag).

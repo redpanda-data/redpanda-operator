@@ -81,6 +81,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
   - cert-manager.io
   resources:
   - certificates
@@ -192,6 +204,7 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/finalizers
+  - consoles/finalizers
   verbs:
   - patch
   - update
@@ -203,12 +216,6 @@ rules:
   verbs:
   - get
   - patch
-  - update
-- apiGroups:
-  - redpanda.vectorized.io
-  resources:
-  - consoles/finalizers
-  verbs:
   - update
 - apiGroups:
   - scheduling.k8s.io
@@ -283,7 +290,6 @@ rules:
   - apps
   resources:
   - deployments
-  - replicasets
   - statefulsets
   verbs:
   - create
@@ -430,7 +436,6 @@ rules:
   resources:
   - buckets
   - gitrepositories
-  - gitrepository
   - helmcharts
   - helmrepositories
   verbs:
@@ -444,19 +449,17 @@ rules:
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
-  - gitrepository/finalizers
+  - buckets/finalizers
+  - gitrepositories/finalizers
   - helmcharts/finalizers
   - helmrepositories/finalizers
   verbs:
-  - create
-  - delete
-  - get
-  - patch
   - update
 - apiGroups:
   - source.toolkit.fluxcd.io
   resources:
-  - gitrepository/status
+  - buckets/status
+  - gitrepositories/status
   - helmcharts/status
   - helmrepositories/status
   verbs:
