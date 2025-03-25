@@ -6,8 +6,8 @@ replace (
 	// As gen schema generates a schema for a chart via reflect, we
 	// want it to always operate on the current chart version.
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
-	github.com/redpanda-data/redpanda-operator/charts/operator => ../charts/operator
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/operator => ../operator
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
 
@@ -18,9 +18,9 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756
-	github.com/redpanda-data/redpanda-operator/charts/operator v0.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.21.0
@@ -177,8 +177,8 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/grpc v1.66.2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
+	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.7.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
