@@ -25,11 +25,11 @@ tasks:
     desc: "Generate files for the operator Helm chart"
     cmds:
     - task: genpartial
-      vars: { CHART: operator }
+      vars: { CHART: operator, DIR: operator/chart }
     - task: genschema
-      vars: { CHART: operator }
+      vars: { CHART: operator, DIR: operator/chart }
     - task: gotohelm
-      vars: { CHART: operator }
+      vars: { CHART: operator, DIR: operator/chart }
 
   generate:redpanda:
     desc: "Generate files for the redpanda Helm chart"
@@ -60,60 +60,63 @@ tasks:
     run: when_changed
     label: "genpartial:{{ .CHART }}"
     desc: "Generate a 'partial' version of the Values struct"
-    dir: "charts/{{ .CHART }}"
     deps:
     - task: :build:gen
-    var:
-      CHART: ""
+    vars:
+      CHART: '{{ .CHART }}'
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+    dir: "{{ .DIR }}"
     requires:
       vars: [CHART]
     sources:
-    - ./charts/{{ .CHART }}/*.go
-    - ./charts/{{ .CHART }}/**/*.go
-    - exclude: ./charts/{{ .CHART }}/values_partial.gen.go
+    - ./*.go
+    - ./**/*.go
+    - exclude: ./values_partial.gen.go
     generates:
-    - ./charts/{{ .CHART }}/values_partial.gen.go
+    - ./values_partial.gen.go
     cmds:
-    - gen partial --header ../../licenses/boilerplate.go.txt --out ./values_partial.gen.go --struct Values .
+    - gen partial --header {{ .SRC_DIR }}/licenses/boilerplate.go.txt --out ./values_partial.gen.go --struct Values .
 
   genschema:
     internal: true
     run: when_changed
     label: "genschema:{{ .CHART }}"
     desc: "Generate the values JSON schema from the Values struct"
-    dir: charts
     deps:
     - task: :build:gen
-    var:
-      CHART: ""
+    vars:
+      CHART: '{{ .CHART }}'
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+    dir: '{{ .DIR }}'
     requires:
       vars: [CHART]
     sources:
-    - ./charts/{{ .CHART }}/*.go
+    - ./*.go
     generates:
-    - ./charts/{{ .CHART}}/values.schema.json
+    - ./values.schema.json
     cmds:
-    - gen schema {{ .CHART }} > ./{{ .CHART }}/values.schema.json
+    - gen schema {{ .CHART }} > ./values.schema.json
 
   gotohelm:
     internal: true
     run: when_changed
     label: "gotohelm:{{ .CHART }}"
     desc: "Generate helm templates from Go definitions"
-    dir: "charts/{{ .CHART }}"
     deps:
     - task: :build:gotohelm
-    var:
-      CHART: ""
-      DEPS: ""
+    vars:
+      CHART: '{{ .CHART }}'
+      DEPS: '{{ .DEPS }}'
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
     requires:
       vars: [CHART]
+    dir: "{{ .DIR }}"
     sources:
-    - ./charts/{{ .CHART }}/*.go
-    - ./charts/{{ .CHART }}/**/*.go
+    - ./*.go
+    - ./**/*.go
     generates:
-    - ./charts/{{ .CHART }}/templates/*
-    - ./charts/{{ .CHART }}/templates/**/*
+    - ./templates/*
+    - ./templates/**/*
     cmds:
     # Generate helm templates from Go definitions
     - gotohelm -write ./templates . {{ .DEPS }}

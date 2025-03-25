@@ -124,7 +124,8 @@ affinity: {}
 # -- Sets deployment strategy.
 # For details,
 # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
-# strategy: ""
+strategy:
+  type: "RollingUpdate"
 
 # Sets additional annotations for Pods.
 podAnnotations: {}
