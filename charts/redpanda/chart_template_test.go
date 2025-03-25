@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -24,11 +25,13 @@ import (
 	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/cockroachdb/errors"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
+	"helm.sh/helm/v3/pkg/chart"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/jsonpath"
@@ -44,6 +47,50 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	// Before breaking change in console helm chart is released
+	// test will change the console chart dependency to nightly helm chart
+	chartMetaBytes, err := fs.ReadFile(redpanda.ChartFiles, "Chart.yaml")
+	if err != nil {
+		log.Fatalf("failed to load Chart.yaml file from embed fs: %s", err)
+	}
+
+	var meta chart.Metadata
+	if err := yaml.Unmarshal(chartMetaBytes, &meta); err != nil {
+		log.Fatalf("unmarshal Chart.yaml file into chart Metadata: %s", err)
+	}
+
+	f, err := os.OpenFile("./Chart.yaml", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o775)
+	if err != nil {
+		log.Fatalf("failed to open Chart.yaml file: %s", err)
+	}
+
+	for id, d := range meta.Dependencies {
+		if d.Name == "console" {
+			meta.Dependencies[id] = &chart.Dependency{
+				Name:       "console-unstable",
+				Version:    "v0.0-k8s0-be94e29d-helm-chart",
+				Repository: "oci://registry-1.docker.io/redpandadata",
+				Condition:  "console.enabled",
+				Alias:      "console",
+			}
+		}
+	}
+
+	newChartMetaBytes, err := yaml.Marshal(meta)
+	if err != nil {
+		log.Fatalf("failed to marshal chart metadata: %s", err)
+	}
+
+	_, err = f.Write(newChartMetaBytes)
+	if err != nil {
+		log.Fatalf("failed to write new chart metadata content into file: %s", err)
+	}
+
+	err = f.Close()
+	if err != nil {
+		log.Fatalf("failed to close Chart.yaml file: %s", err)
+	}
+
 	// Chart deps are kept within ./charts as a tgz archive, which is git
 	// ignored. Helm dep build will ensure that ./charts is in sync with
 	// Chart.lock, which is tracked by git.
@@ -54,12 +101,46 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to run helm repo add: %s", out)
 	}
 
-	out, err = exec.Command("helm", "dep", "build", ".").CombinedOutput()
+	out, err = exec.Command("helm", "dep", "update", ".").CombinedOutput()
 	if err != nil {
 		log.Fatalf("failed to run helm dep build: %s", out)
 	}
 
-	os.Exit(m.Run())
+	exit := m.Run()
+
+	if err := restoreFileContentFromEmbedFS("Chart.lock"); err != nil {
+		log.Fatalf("failed to restore Chart.lock file content from embedFS: %s", err)
+	}
+
+	if err := restoreFileContentFromEmbedFS("Chart.yaml"); err != nil {
+		log.Fatalf("failed to restore Chart.yaml file content from embedFS: %s", err)
+	}
+
+	os.Exit(exit)
+}
+
+func restoreFileContentFromEmbedFS(fileName string) error {
+	fileBytes, err := fs.ReadFile(redpanda.ChartFiles, fileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load %s file from embed fs", fileName)
+	}
+
+	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o775)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open %s file", fileName)
+	}
+
+	_, err = f.Write(fileBytes)
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore content into %s file", fileName)
+	}
+
+	err = f.Close()
+	if err != nil {
+		return errors.Wrapf(err, "failed to close %s file", fileName)
+	}
+
+	return nil
 }
 
 // TestTemplateHelm310 is a smoke test that the redpanda helm chart (with
