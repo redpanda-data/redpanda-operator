@@ -23,7 +23,6 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -87,7 +86,6 @@ type Values struct {
 	Enterprise       Enterprise                    `json:"enterprise"`
 	RackAwareness    RackAwareness                 `json:"rackAwareness"`
 	Console          console.PartialValues         `json:"console,omitempty"`
-	Connectors       connectors.PartialValues      `json:"connectors"`
 	Auth             Auth                          `json:"auth"`
 	TLS              TLS                           `json:"tls"`
 	External         ExternalConfig                `json:"external"`
@@ -1751,20 +1749,6 @@ func (l *KafkaListeners) ConsoleTLS(tls *TLS) ConsoleTLS {
 
 	t.CertFilepath = fmt.Sprintf("%s/tls.crt", kafkaPathPrefix)
 	t.KeyFilepath = fmt.Sprintf("%s/tls.key", kafkaPathPrefix)
-
-	return t
-}
-
-func (l *KafkaListeners) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
-	t := connectors.TLS{Enabled: l.TLS.IsEnabled(tls)}
-	if !t.Enabled {
-		return t
-	}
-
-	t.CA = struct {
-		SecretRef           string `json:"secretRef"`
-		SecretNameOverwrite string `json:"secretNameOverwrite"`
-	}{SecretRef: fmt.Sprintf("%s-default-cert", fullName)}
 
 	return t
 }
