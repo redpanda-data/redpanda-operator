@@ -39,6 +39,7 @@ Any existing prometheus rules don't need to be adjusted.
 
 For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 
+* The V1 operator now requires a minimum Redpanda version of 23.2; all feature-gated behaviour that supported older versions is now enabled unconditionally.
 ### Fixed
 * Usage of `tpl` and `include` now function as expected when `useFlux: false` is set.
 
