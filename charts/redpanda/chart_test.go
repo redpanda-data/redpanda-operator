@@ -39,7 +39,6 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -89,25 +88,14 @@ func TestChartLock(t *testing.T) {
 	})]
 
 	for _, dep := range lock.Dependencies {
-		// If present, we'll use alias which let's us easily use nightly builds
-		// from console-unstable.
-		name := dep.Name
-		if dep.Alias != "" {
-			name = dep.Alias
-		}
-
-		switch name {
+		switch dep.Name {
 		case "console", "console-unstable":
 			require.Contains(t, dep.Version, getRevision(consoleModule), `Chart.lock and go.mod MUST specify the same version of the console chart.
 If you updated go.mod, update Chart.yaml, and visa versa.
 `)
 
-		case "connectors":
-			goVersion := connectors.Chart.Metadata().Version
-			require.Equal(t, goVersion, dep.Version, "Chart.lock dependency of %q is out of sync with the go version", dep.Name)
-
 		default:
-			t.Errorf("unexpected dependency: %q", name)
+			t.Errorf("unexpected dependency: %q", dep.Name)
 		}
 	}
 }
@@ -868,8 +856,6 @@ func TestLabels(t *testing.T) {
 			CommonLabels: labels,
 			// This guarantee does not currently extend to console.
 			Console: &console.PartialValues{Enabled: ptr.To(false)},
-			// Nor connectors.
-			Connectors: &connectors.PartialValues{Enabled: ptr.To(false)},
 		}
 
 		helmValues, err := redpanda.Chart.LoadValues(values)
@@ -1007,18 +993,6 @@ func TestGoHelmEquivalence(t *testing.T) {
 					AutomountServiceAccountToken: ptr.To(false),
 				},
 				AutomountServiceAccountToken: ptr.To(false),
-			}
-			values.Connectors = &connectors.PartialValues{
-				Enabled: ptr.To(true),
-				Test: &connectors.PartialCreatable{
-					Create: ptr.To(false),
-				},
-				Monitoring: &connectors.PartialMonitoringConfig{
-					Enabled: ptr.To(true),
-				},
-				ServiceAccount: &connectors.PartialServiceAccountConfig{
-					Create: ptr.To(true),
-				},
 			}
 
 			goObjs, err := redpanda.Chart.Render(nil, helmette.Release{

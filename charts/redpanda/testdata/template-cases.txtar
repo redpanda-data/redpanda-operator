@@ -362,21 +362,6 @@ statefulset:
 statefulset:
   replicas: 1
 
--- enable-connectors-sasl --
-# ASSERT-NO-ERROR
-# ASSERT-GOLDEN
-auth:
-  sasl:
-    enabled: true
-connectors:
-  enabled: true
-
--- enable-connectors --
-# ASSERT-NO-ERROR
-# ASSERT-GOLDEN
-connectors:
-  enabled: true
-
 -- disabled-service-account-automount-token-in-service-account-resource --
 # By default Admin API listeners has enabled TLS but this explicitly enable this
 # ASSERT-NO-ERROR
@@ -516,11 +501,6 @@ console:
   autoscaling:
     enabled: true
   ingress:
-    enabled: true
-
-connectors:
-  enabled: true
-  monitoring:
     enabled: true
 
 -- fix-tpl-generation --
@@ -723,8 +703,6 @@ config:
     topic_partitions_per_shard: "1066"
     transaction_coordinator_partitions: "6"
     use_fetch_scheduler_group: "true"
-connectors:
-  enabled: false
 console:
   enabled: false
 enterprise:
@@ -972,36 +950,6 @@ config:
     enable_leader_balancer: true
     partition_autobalancing_mode: continuous
     raft_heartbeat_interval_ms: 500
-connectors:
-  deployment:
-    extraEnv:
-    - name: CONNECT_PLUGIN_PATH
-      value: /opt/kafka/connect-plugins
-    podAntiAffinity:
-      custom:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchLabels:
-              app.kubernetes.io/component: redpanda-statefulset
-              app.kubernetes.io/instance: redpanda
-              app.kubernetes.io/name: redpanda
-          topologyKey: kubernetes.io/hostname
-    strategy:
-      type: Recreate
-  enabled: true
-  monitoring:
-    enabled: true
-  storage:
-    volume:
-    - name: plugins
-      persistentVolumeClaim:
-        claimName: plugins-redpanda-connectors-redpanda
-    volumeMounts:
-    - mountPath: /opt/kafka/connect-plugins
-      name: plugins
-      readOnly: false
-  test:
-    create: true
 console:
   affinity:
     podAntiAffinity:
