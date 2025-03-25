@@ -16,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -236,52 +235,6 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 			"urls":    schemaURLs,
 			"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
 		},
-	}
-
-	if ptr.Deref(values.Connectors.Enabled, false) {
-		// TODO Do not cal Dig with dot.Values as restPort that is defined in connectors helm chart is not
-		// available in this function.
-		// TODO Find a way to call `(include "connectors.serviceName" $connectorsValues)` template defined
-		// in connectors helm chart repo.
-
-		port := helmette.Dig(dot.Values.AsMap(), 8083, "connectors", "connectors", "restPort")
-		p, ok := helmette.AsIntegral[int](port)
-		if !ok {
-			return c
-		}
-
-		connectorsDot := dot.Subcharts["connectors"]
-
-		connectorsURL := fmt.Sprintf("http://%s.%s.svc.%s:%d",
-			connectors.Fullname(connectorsDot),
-			dot.Release.Namespace,
-			helmette.TrimSuffix(".", values.ClusterDomain),
-			p)
-
-		// Due to console not having json go tags the Connect, ConnectCluster and ConnectClusterTLS
-		// are handwritten in the map[string]any form.
-		c["kafkaConnect"] = map[string]any{
-			"enabled": ptr.Deref(values.Connectors.Enabled, false),
-			"clusters": []map[string]any{
-				{
-					"name": "connectors",
-					"url":  connectorsURL,
-					"tls": map[string]any{
-						"enabled":               false,
-						"caFilepath":            "",
-						"certFilepath":          "",
-						"keyFilepath":           "",
-						"insecureSkipTlsVerify": false,
-					},
-					"username": "",
-					"password": "",
-					"token":    "",
-				},
-			},
-			"connectTimeout": 0,
-			"readTimeout":    0,
-			"requestTimeout": 0,
-		}
 	}
 
 	if values.Console.Config == nil {

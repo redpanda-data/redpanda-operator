@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -45,7 +44,7 @@ var (
 	ChartFiles embed.FS
 
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart, connectors.Chart)
+	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that
@@ -146,8 +145,6 @@ func render(dot *helmette.Dot) []kube.Object {
 	}
 
 	manifests = append(manifests, consoleChartIntegration(dot)...)
-
-	manifests = append(manifests, connectorsChartIntegration(dot)...)
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you

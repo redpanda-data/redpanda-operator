@@ -407,14 +407,6 @@ func cleanForK8s(in string) string {
 	return strings.TrimSuffix(helmette.Trunc(63, in), "-")
 }
 
-func cleanForK8sWithSuffix(s, suffix string) string {
-	lengthToTruncate := (len(s) + len(suffix)) - 63
-	if lengthToTruncate > 0 {
-		s = helmette.Trunc(lengthToTruncate, s)
-	}
-	return fmt.Sprintf("%s-%s", s, suffix)
-}
-
 // coalesce returns the first non-nil pointer. This is distinct from helmette's
 // Coalesce which returns the first non-EMPTY pointer.
 // It accepts a slice as variadic methods are not currently supported in

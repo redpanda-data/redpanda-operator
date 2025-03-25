@@ -1,0 +1,9 @@
+project: charts/redpanda
+kind: Removed
+body: |-
+    Connectors sub-chart integration.
+
+      The connectors chart may still be deployed separately, though it is not
+      officially support. If possible, it is recommended to migrate to redpanda
+      connect.
+time: 2025-03-25T17:37:37.362029-04:00
