@@ -150,7 +150,7 @@ tasks:
           CLI_ARGS: "--push"
       # Package and push Operator helm chart to Dockerhub
       - task: publish:nightly:helm:chart
-        vars: {REPO: redpanda-operator-nightly, CHART: operator, VERSION: "{{ .OPERATOR_CHART_VERSION }}"}
+        vars: {REPO: redpanda-operator-nightly, CHART: operator, DIR: "operator/chart", VERSION: "{{ .OPERATOR_VERSION }}"}
       - task: publish:nightly:helm:chart
         vars: {REPO: console-unstable, CHART: console, VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
 
@@ -163,13 +163,14 @@ tasks:
     vars:
       TMP_PATH:
         sh: mktemp --directory --tmpdir "helm-package-XXXXXXXXXX"
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART) }}'
     cmds:
       - 'echo "~~~ :k8s: Building {{ .CHART }} Helm Chart version {{.VERSION}}"'
       - defer: 'rm -r {{.TMP_PATH}}'
       # NB: cp -r/-R is dependent on the implementation (macOS vs Linux).
       # cp -R src/. dest/ <- Same behavior, copy contents of src to dest.
       # cp -r src/ dest <- Different. macOS == copy contents, linux == copy src folder into dest.
-      - cp -R charts/{{ .CHART }}/. {{.TMP_PATH}}
+      - cp -R {{ .DIR }}/. {{.TMP_PATH}}
       #  `helm push`, to an OCI repo, uses `name` and `version` from Chart.yaml
       #  to determine where to push the chart to.
       #  i.e. `helm push chart.tgz oci://registry-1.docker.io/<org>` -> <org>/<chart.name>:<chart.version>

@@ -111,44 +111,35 @@ func TestChartYAMLVersions(t *testing.T) {
 	}
 }
 
-func TestOperatorArtifactHubImages(t *testing.T) {
-	const operatorRepo = "docker.redpanda.com/redpandadata/redpanda-operator"
-
-	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
-	require.NoError(t, err)
-
-	var chart ChartYAML
-	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
-
-	assert.Contains(
-		t,
-		chart.Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", operatorRepo, chart.AppVersion),
-		"artifacthub.io/images should be in sync with .appVersion",
-	)
+type BranchesYAML struct {
+	Active []string `json:"active"`
 }
 
-func TestOperatorKustomizationTag(t *testing.T) {
-	chartBytes, err := os.ReadFile("../../charts/operator/Chart.yaml")
+type BackportRC struct {
+	TargetBranchChoices []string `json:"targetBranchChoices"`
+}
+
+func TestBranches(t *testing.T) {
+	branches := unmarshalFileInto[BranchesYAML](t, "../../.github/branches.yml")
+	backportrc := unmarshalFileInto[BackportRC](t, "../../.backportrc.json")
+	readmeMD, err := os.ReadFile("../../README.md")
 	require.NoError(t, err)
 
-	var chart map[string]any
-	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
+	// NB: `main` is present in active branches but isn't a backport target.
+	assert.Equal(t, branches.Active[1:], backportrc.TargetBranchChoices, ".github/branches.yml's active field should equal targetBranchChoices of .backportrc.json")
 
-	kustomizationBytes, err := os.ReadFile("../../charts/operator/testdata/kustomization.yaml")
-	require.NoError(t, err)
-
-	var kustomization map[string]any
-	require.NoError(t, yaml.Unmarshal(kustomizationBytes, &kustomization))
-
-	for _, addr := range kustomization["resources"].([]any) {
-		require.Contains(
-			t,
-			addr,
-			chart["appVersion"].(string),
-			"testdata kustomization address tag should be equal to the operator chart's appVersion",
-		)
+	for _, branch := range branches.Active {
+		link := fmt.Sprintf("[`%s`](https://github.com/redpanda-data/redpanda-operator/tree/%s)", branch, branch)
+		assert.Contains(t, string(readmeMD), link, "Did you forget to add %q to README.md?", branch)
 	}
+}
+
+func unmarshalFileInto[T any](t *testing.T, name string) T {
+	var out T
+	bytes, err := os.ReadFile(name)
+	require.NoError(t, err)
+	require.NoError(t, yaml.Unmarshal(bytes, &out))
+	return out
 }
 
 // TestGoModLint parses most go.mod files in this repository and verifies that:
@@ -175,8 +166,8 @@ func TestGoModLint(t *testing.T) {
 		// into their respective charts to resolve this).
 		modPrefix + "gen": {
 			modPrefix + "charts/console/v3",
-			modPrefix + "charts/operator",
 			modPrefix + "charts/redpanda/v5",
+			modPrefix + "operator",
 		},
 	}
 

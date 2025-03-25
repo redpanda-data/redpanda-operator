@@ -89,6 +89,10 @@ func run(args []string, outFlag, headerFlag, structFlag string) {
 		_, _ = buf.Write(header)
 	}
 
+	if len(pkgs) == 0 {
+		panic(errors.Newf("failed to import package: %q from directory %q", args[0], cwd))
+	}
+
 	if err := GeneratePartial(pkgs[0], structFlag, &buf); err != nil {
 		panic(err)
 	}

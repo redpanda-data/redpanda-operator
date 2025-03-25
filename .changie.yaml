@@ -46,6 +46,3 @@ projects:
 - label: Connectors Helm Chart
   key: charts/connectors
   changelog: charts/connectors/CHANGELOG.md
-- label: Redpanda Operator Helm Chart
-  key: charts/operator
-  changelog: charts/operator/CHANGELOG.md

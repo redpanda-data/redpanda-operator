@@ -113,6 +113,12 @@ func (s *LabelSelectorValue) Type() string {
 	return "label selector"
 }
 
+// Metrics RBAC permissions
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create;
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create;
+
+// Leader election permissions
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
