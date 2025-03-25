@@ -165,7 +165,10 @@ type RackAwareness struct {
 	NodeAnnotation *string `json:"nodeAnnotation,omitempty"`
 }
 
-// RedpandaConsole configures the Redpanda Console subchart of the Redpanda Helm chart. Use these settings to configure the subchart. For more details on each setting, see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
+// RedpandaConsole is the union of console.PartialValues (earlier or equal to
+// v0.7.31 Console version) and consolev3.PartialValues (after v0.7.31 Console version).
+// Use these settings to configure the subchart. For more details on each setting,
+// see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
 type RedpandaConsole struct {
 	// Specifies whether the Redpanda Console subchart should be deployed.
 	Enabled *bool `json:"enabled,omitempty"`
@@ -256,16 +259,25 @@ type RedpandaConsole struct {
 	// Specifies whether a Deployment should be created for Redpanda Console.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Deployment *runtime.RawExtension `json:"deployment,omitempty"`
-	// Configures custom settings for Redpanda Console.
+	// Deprecated: Use `config` instead
+	// `console` is available in Console chart version earlier or equal to v0.7.31
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Console *runtime.RawExtension `json:"console,omitempty"`
+	// Configures custom settings for Redpanda Console.
+	// `config` is available in Console chart version after v0.7.31 semver
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *runtime.RawExtension `json:"config,omitempty"`
 	// Configures console's Deployment's update strategy.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Strategy *runtime.RawExtension `json:"strategy,omitempty"`
-	// Settings for license key, as an alternative to secret.enterprise when a
-	// license secret is available
+	// Deprecated: Use `licenseSecretRef` instead.
+	// `enterprise` is available in Console chart version earlier or equal to v0.7.31
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Enterprise *runtime.RawExtension `json:"enterprise,omitempty"`
+	// Defines a reference to Kubernetes Secret that points to a Redpanda Enterprise license.
+	// Please consider use Enterprise in RedpandaClusterSpec type.
+	// `licenseSecretRef` is available in Console chart version after v0.7.31 semver
+	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
 	// Automount API credentials for the Service Account into the pod.
 	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
 	// Settings for console's Deployment's readiness probe.

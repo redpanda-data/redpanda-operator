@@ -26,9 +26,10 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.21
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4
+	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/scalalang2/golang-fifo v1.0.2
@@ -124,6 +125,7 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

@@ -1420,6 +1420,12 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      config:
+                        description: |-
+                          Configures custom settings for Redpanda Console.
+                          `config` is available in Console chart version after v0.7.31 semver
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       configMap:
                         description: Specifies whether a ConfigMap should be created
                           for Redpanda Console.
@@ -1442,7 +1448,9 @@ spec:
                             type: boolean
                         type: object
                       console:
-                        description: Configures custom settings for Redpanda Console.
+                        description: |-
+                          Deprecated: Use `config` instead
+                          `console` is available in Console chart version earlier or equal to v0.7.31
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       deployment:
@@ -1456,8 +1464,8 @@ spec:
                         type: boolean
                       enterprise:
                         description: |-
-                          Settings for license key, as an alternative to secret.enterprise when a
-                          license secret is available
+                          Deprecated: Use `licenseSecretRef` instead.
+                          `enterprise` is available in Console chart version earlier or equal to v0.7.31
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraContainers:
@@ -1528,6 +1536,33 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      licenseSecretRef:
+                        description: |-
+                          Defines a reference to Kubernetes Secret that points to a Redpanda Enterprise license.
+                          Please consider use Enterprise in RedpandaClusterSpec type.
+                          `licenseSecretRef` is available in Console chart version after v0.7.31 semver
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                       livenessProbe:
                         description: Settings for console's Deployment's liveness
                           probe.
@@ -21645,6 +21680,12 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      config:
+                        description: |-
+                          Configures custom settings for Redpanda Console.
+                          `config` is available in Console chart version after v0.7.31 semver
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       configMap:
                         description: Specifies whether a ConfigMap should be created
                           for Redpanda Console.
@@ -21667,7 +21708,9 @@ spec:
                             type: boolean
                         type: object
                       console:
-                        description: Configures custom settings for Redpanda Console.
+                        description: |-
+                          Deprecated: Use `config` instead
+                          `console` is available in Console chart version earlier or equal to v0.7.31
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       deployment:
@@ -21681,8 +21724,8 @@ spec:
                         type: boolean
                       enterprise:
                         description: |-
-                          Settings for license key, as an alternative to secret.enterprise when a
-                          license secret is available
+                          Deprecated: Use `licenseSecretRef` instead.
+                          `enterprise` is available in Console chart version earlier or equal to v0.7.31
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       extraContainers:
@@ -21753,6 +21796,33 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      licenseSecretRef:
+                        description: |-
+                          Defines a reference to Kubernetes Secret that points to a Redpanda Enterprise license.
+                          Please consider use Enterprise in RedpandaClusterSpec type.
+                          `licenseSecretRef` is available in Console chart version after v0.7.31 semver
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                       livenessProbe:
                         description: Settings for console's Deployment's liveness
                           probe.

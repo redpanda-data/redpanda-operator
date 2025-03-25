@@ -30,6 +30,10 @@ linters-settings:
           desc: 'use "github.com/cockroachdb/errors"'
         - pkg: "^github.com/pkg/errors"
           desc: 'use "github.com/cockroachdb/errors"'
+      gotohelm:
+        deny:
+        - pkg: "github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
+          desc: 'use "github.com/redpanda-data/redpanda-operator/gotohelm"'
       chart-versions:
         deny:
         - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
