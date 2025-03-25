@@ -146,6 +146,7 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/finalizers
+  - consoles/finalizers
   verbs:
   - patch
   - update
@@ -157,12 +158,6 @@ rules:
   verbs:
   - get
   - patch
-  - update
-- apiGroups:
-  - redpanda.vectorized.io
-  resources:
-  - consoles/finalizers
-  verbs:
   - update
 - apiGroups:
   - scheduling.k8s.io
