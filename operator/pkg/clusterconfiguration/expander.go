@@ -11,12 +11,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 type (
@@ -97,6 +99,7 @@ func ExpandForBootstrap(cfg vectorizedv1alpha1.ClusterConfiguration) (map[string
 func ExpandForConfiguration(
 	ctx context.Context,
 	reader client.Reader,
+	cloudExpander *pkgsecrets.CloudExpander,
 	namespace string,
 	cfg vectorizedv1alpha1.ClusterConfiguration,
 	schema rpadmin.ConfigSchema,
@@ -148,7 +151,18 @@ func ExpandForConfiguration(
 			}
 			properties[k] = value
 		case v.ExternalSecretRef != nil:
-			return nil, fmt.Errorf("unimplemented: ExternalSecretRef for configuration entry %q", k)
+			if cloudExpander == nil {
+				return nil, errors.New(fmt.Sprintf("configuration entry %q: external secret provided but the expander was not configured", k))
+			}
+			expanded, err := cloudExpander.Expand(ctx, *v.ExternalSecretRef)
+			if err != nil {
+				return nil, fmt.Errorf("configuration entry %q: trouble expanding external secret reference: %w", k, err)
+			}
+			value, err := ParseRepresentation(expanded, &metadata)
+			if err != nil {
+				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			}
+			properties[k] = value
 		default:
 			return nil, fmt.Errorf("unrecognised configuration entry for key %q", k)
 		}

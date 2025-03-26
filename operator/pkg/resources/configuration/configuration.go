@@ -111,7 +111,7 @@ func (c *GlobalConfiguration) ConcreteConfiguration(ctx context.Context, reader 
 	if c.concreteValues != nil {
 		return c.concreteValues, nil
 	}
-	concreteCfg, err := clusterconfiguration.ExpandForConfiguration(ctx, reader, namespace, c.BootstrapConfiguration, schema)
+	concreteCfg, err := clusterconfiguration.ExpandForConfiguration(ctx, reader, cloudExpander, namespace, c.BootstrapConfiguration, schema)
 	if err != nil {
 		return nil, err
 	}
