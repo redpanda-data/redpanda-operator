@@ -24,3 +24,4 @@ dependencies:
     condition: enabled-dependency
     repository: "file://../dependency"
     version: 0.0.1
+    alias: dependency-alias

@@ -33,7 +33,7 @@ type GoChart struct {
 	metadata      chart.Metadata
 	defaultValues []byte
 	renderFunc    RenderFunc
-	dependencies  map[string]*GoChart
+	dependencies  []Dependency
 	fs            fs.FS
 }
 
@@ -47,7 +47,7 @@ func MustLoad(f fs.FS, render RenderFunc, dependencies ...*GoChart) *GoChart {
 }
 
 // Load hydrates a [GoChart] from helm YAML files and a top level [RenderFunc].
-func Load(f fs.FS, render RenderFunc, dependencies ...*GoChart) (*GoChart, error) {
+func Load(f fs.FS, render RenderFunc, subcharts ...*GoChart) (*GoChart, error) {
 	chartYAML, err := fs.ReadFile(f, "Chart.yaml")
 	if err != nil {
 		return nil, err
@@ -63,9 +63,56 @@ func Load(f fs.FS, render RenderFunc, dependencies ...*GoChart) (*GoChart, error
 		return nil, err
 	}
 
-	deps := map[string]*GoChart{}
-	for _, dep := range dependencies {
-		deps[dep.metadata.Name] = dep
+	deps := make([]Dependency, len(meta.Dependencies))
+
+	if len(meta.Dependencies) > 0 {
+		// Only load Chart.lock if there are Dependencies as it won't exist otherwise.
+		chartLockYAML, err := fs.ReadFile(f, "Chart.lock")
+		if err != nil {
+			return nil, err
+		}
+
+		var lock chart.Lock
+		if err := yaml.Unmarshal(chartLockYAML, &lock); err != nil {
+			return nil, err
+		}
+
+		if len(lock.Dependencies) != len(deps) {
+			return nil, errors.Newf("Chart.lock dependencies != Chart.yaml dependencies. Did you forget to run helm dep update?")
+		}
+
+		if len(subcharts) != len(deps) {
+			return nil, errors.Newf("Chart.yaml dependencies and provided subcharts don't match: %d != %d", len(subcharts), len(deps))
+		}
+
+		for i, chart := range subcharts {
+			dep := meta.Dependencies[i]
+
+			if chart.metadata.Name != dep.Name && chart.metadata.Name != dep.Alias {
+				return nil, errors.Newf("invalid subchart ordering. Expected dependency at index %d to have name %q or %q got: %q", i, dep.Name, dep.Alias, chart.metadata.Name)
+			}
+
+			// Helm is SUPER finicky about .Name and .Version of subcharts. If
+			// either is incorrect it'll return inane errors and have you
+			// questioning your sanity. Given that .Name and .Version otherwise
+			// controls how charts are published, it's quite possible that
+			// Chart.yaml is not in sync with dependencies.
+			// To prevent any issues down the line, shallow copy the chart
+			// (which also clones metadata) and set the version and name
+			// manually.
+			// This might bite us in the but most instances of gotohelm have
+			// tests to assert that helm and go behavior are equivalent which
+			// should save us most of the time.
+			chart := *chart
+			chart.metadata.Name = meta.Dependencies[i].Name
+			chart.metadata.Version = lock.Dependencies[i].Version
+
+			deps[i] = Dependency{
+				GoChart: &chart,
+				HelmDep: meta.Dependencies[i],
+				Lock:    lock.Dependencies[i],
+			}
+		}
 	}
 
 	return &GoChart{
@@ -142,7 +189,7 @@ func (c *GoChart) Write(dir string) error {
 	}
 
 	for _, dep := range c.dependencies {
-		if err := dep.Write(depDir); err != nil {
+		if err := dep.GoChart.Write(depDir); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -166,90 +213,65 @@ func (c *GoChart) LoadValues(values any) (helmette.Values, error) {
 	return merged, nil
 }
 
-func isDependencyEnabled(val helmette.Values, dep *chart.Dependency) (bool, error) {
-	// https://github.com/helm/helm/blob/145d12f82fc7a2e39a17713340825686b661e0a1/pkg/chartutil/dependencies.go#L48
-	if dep.Condition == "" {
-		return true, nil
-	}
-
-	enabled, err := val.PathValue(dep.Condition)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	asBool, ok := enabled.(bool)
-	if !ok {
-		return false, errors.Newf("evaluating subchart %q condition %q, expected %t; got: %t (%v)", dep.Name, dep.Condition, true, enabled, enabled)
-	}
-
-	return asBool, nil
-}
-
-func mergeRootValueWithDependency(rootValues helmette.Values, dependencyValues helmette.Values, dep *chart.Dependency) (helmette.Values, error) {
-	root, err := rootValues.YAML()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	dependency, err := helmette.Values{dep.Name: dependencyValues}.YAML()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	merged, err := helm.MergeYAMLValues([]byte(root), []byte(dependency))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return merged, nil
-}
-
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
 // taking into consideration the dependencies' condition.
 func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any) (*helmette.Dot, error) {
 	subcharts := map[string]*helmette.Dot{}
 
-	loaded, err := c.LoadValues(values)
+	parentValues, err := c.LoadValues(values)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	for _, dep := range c.metadata.Dependencies {
-		subchart, ok := c.dependencies[dep.Name]
-		if !ok {
-			return nil, errors.Newf("missing dependency %q", dep.Name)
-		}
+	// Respect/support for helm's special "global" stanza.
+	// NB: global's are injected to subcharts regardless of whether or not it's
+	// present in the parent. IT IS NOT injected in the parent.
+	globals, ok := parentValues["global"]
+	if !ok {
+		globals = struct{}{}
+	}
 
-		subvalues, err := loaded.Table(dep.Name)
+	// Helm's behavior here is mind boggling but it's most simply represented as:
+	// 1. Load `subchart`'s values with it's stanza from the parent's values
+	// 2. Inject subchart's loaded values back into it's stanza in the parent's values
+	// 3. Evaluate `enabled` on the now merged parent values
+	// 4. If 4 evaluated to false, restore the subchart stanza to it's original value.
+	for _, dep := range c.dependencies {
+		depValues, err := parentValues.Table(dep.Key())
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		// The global key is added by helm
-		subvalues["global"] = struct{}{}
-
-		// The LoadValues could be less compute intensive as Dot is recursive and LoadValues is not
-		subchartDot, err := subchart.Dot(cfg, release, subvalues)
+		// 1. Load up the subchart's values with our subchart's stanza from the
+		// parent as a base.
+		subchartDot, err := dep.GoChart.Dot(cfg, release, depValues)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		mergedWithDep, err := mergeRootValueWithDependency(loaded, subchartDot.Values, dep)
+		// Inject globals into the merged .Values of the subchart.
+		subchartDot.Values["global"] = globals
+
+		// If a dependency has an alias assigned to it, it's Chart.Name get's
+		// set to the value of the alias.
+		subchartDot.Chart.Name = dep.Key()
+
+		// 2. Inject the loaded values into parent's values.
+		parentValues[dep.Key()] = subchartDot.Values
+
+		// 3. Evaluate `enabled` on the merged values.
+		enabled, err := dep.Enabled(parentValues)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		enabled, err := isDependencyEnabled(mergedWithDep, dep)
-		if err != nil {
-			return nil, errors.WithStack(err)
+		// 4. If our dependency is enabled, register it in subcharts.
+		// Otherwise, revert the stanza back to its original value.
+		if enabled {
+			subcharts[dep.Key()] = subchartDot
+		} else {
+			parentValues[dep.Key()] = depValues
 		}
-		if !enabled {
-			// When chart does not match condition then global is removed
-			delete(subvalues, "global")
-			continue
-		}
-		loaded = mergedWithDep
-		subcharts[dep.Name] = subchartDot
 	}
 
 	templates, err := fs.Sub(c.fs, "templates")
@@ -261,7 +283,7 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		KubeConfig: cfg,
 		Release:    release,
 		Subcharts:  subcharts,
-		Values:     loaded,
+		Values:     parentValues,
 		Templates:  templates,
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
@@ -330,13 +352,15 @@ func (c *GoChart) render(dot *helmette.Dot) ([]kube.Object, error) {
 		return nil, err
 	}
 
-	for _, depDot := range dot.Subcharts {
-		subchart, ok := c.dependencies[depDot.Chart.Name]
+	// Loop over dependencies to preserve ordering
+	for _, dep := range c.dependencies {
+		// If a dep isn't present in Subcharts, that means it wasn't enabled.
+		depDot, ok := dot.Subcharts[dep.Key()]
 		if !ok {
-			return nil, errors.Newf("missing dependency %q", depDot.Chart.Name)
+			continue
 		}
 
-		subchartManifests, err := subchart.render(depDot)
+		subchartManifests, err := dep.GoChart.render(depDot)
 		if err != nil {
 			return nil, err
 		}
@@ -345,4 +369,36 @@ func (c *GoChart) render(dot *helmette.Dot) ([]kube.Object, error) {
 	}
 
 	return manifests, nil
+}
+
+type Dependency struct {
+	GoChart *GoChart
+	HelmDep *chart.Dependency
+	Lock    *chart.Dependency
+}
+
+func (d *Dependency) Key() string {
+	if d.HelmDep.Alias != "" {
+		return d.HelmDep.Alias
+	}
+	return d.HelmDep.Name
+}
+
+func (d *Dependency) Enabled(merged helmette.Values) (bool, error) {
+	// https://github.com/helm/helm/blob/145d12f82fc7a2e39a17713340825686b661e0a1/pkg/chartutil/dependencies.go#L48
+	if d.HelmDep.Condition == "" {
+		return true, nil
+	}
+
+	enabled, err := merged.PathValue(d.HelmDep.Condition)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	asBool, ok := enabled.(bool)
+	if !ok {
+		return false, errors.Newf("evaluating subchart %q condition %q, expected %t; got: %t (%v)", d.Key(), d.HelmDep.Condition, true, enabled, enabled)
+	}
+
+	return asBool, nil
 }

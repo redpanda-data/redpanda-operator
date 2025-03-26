@@ -17,7 +17,7 @@
 # that dependency helm chart values and resources will be rendered.
 enabled-dependency: true
 
-dependency:
+dependency-alias:
   # This key and value should be rendered by helm engine regardless of the
   # dependency condition
   change-me: enabled-dependency-change
