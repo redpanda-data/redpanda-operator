@@ -22,10 +22,9 @@ import (
 )
 
 func TestConfigMode(t *testing.T) {
-	config := configuration.For("v22.1.1-test")
+	// Older values aren't supported
+	config := configuration.For("v23.2.1-test")
 	assert.Equal(t, config.Mode, configuration.DefaultCentralizedMode())
-	config = configuration.For("v21.1.1-test")
-	assert.Equal(t, config.Mode, configuration.GlobalConfigurationModeClassic)
 }
 
 func TestRedpandaProperties(t *testing.T) {

@@ -838,9 +838,9 @@ var _ = Describe("RedPandaCluster controller", func() {
 	})
 
 	Context("Calling reconcile with restricted version", func() {
-		const allowedVersion = "v23.1.1"
+		const allowedVersion = "v23.2.1"
 		It("Should throw error due to restricted redpanda version", func() {
-			restrictedVersion := "v23.1.2"
+			restrictedVersion := "v23.2.2"
 			key, redpandaCluster := getVersionedRedpanda("restricted-redpanda-negative", restrictedVersion)
 			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).Build()
 			r := &vectorized.ClusterReconciler{
