@@ -54,8 +54,13 @@ var getTestCharts = sync.OnceValue(func() []*GoChart {
 		"./testdata/subchart/values-overwrite",
 		"./testdata/subchart/root",
 	} {
-		_, err := exec.Command("helm", "dep", "build", chartPath).CombinedOutput()
-		if err != nil {
+		// Update Chart.lock
+		if _, err := exec.Command("helm", "dep", "update", chartPath, "--skip-refresh").CombinedOutput(); err != nil {
+			panic(err)
+		}
+
+		// Update charts/
+		if _, err := exec.Command("helm", "dep", "build", chartPath, "--skip-refresh").CombinedOutput(); err != nil {
 			panic(err)
 		}
 	}
@@ -91,7 +96,7 @@ var getTestCharts = sync.OnceValue(func() []*GoChart {
 	valuesOverwrite := MustLoad(subFS("values-overwrite"), renderConfigMap, dep)
 	excludeDep := MustLoad(subFS("dependency-excluded-by-default"), renderConfigMap, dep)
 	includeDep := MustLoad(subFS("dependency-included-by-default"), renderConfigMap, dep)
-	root := MustLoad(subFS("root"), renderConfigMap, valuesOverwrite, excludeDep, includeDep)
+	root := MustLoad(subFS("root"), renderConfigMap, valuesOverwrite, includeDep, excludeDep)
 
 	return []*GoChart{
 		root,
@@ -119,13 +124,18 @@ func TestDependencyChainRender(t *testing.T) {
 
 	expected, err := helmCli.Template(context.Background(), "testdata/subchart/root", helm.TemplateOptions{
 		Name:      "subchart",
-		Namespace: "test",
+		Namespace: "test-namespace",
 		Values:    inputValues,
 		Version:   "0.0.1",
 	})
 	require.NoError(t, err)
 
-	actual, err := root.Render(nil, helmette.Release{}, inputValues)
+	actual, err := root.Render(nil, helmette.Release{
+		Name:      "subchart",
+		Namespace: "test-namespace",
+		IsInstall: true,
+		Service:   "Helm",
+	}, inputValues)
 	require.NoError(t, err)
 
 	actualByte := convertToString(actual)
@@ -135,6 +145,9 @@ func TestDependencyChainRender(t *testing.T) {
 
 	expectedDocuments, err := ytbx.LoadDocuments(expected)
 	require.NoError(t, err)
+
+	t.Logf("Actual:\n%s", actualByte)
+	t.Logf("Expected:\n%s", expected)
 
 	sorter := func(a, b *yamlv3.Node) int {
 		aNode, err := ytbx.Grab(a, "data.values")
@@ -245,9 +258,15 @@ func renderConfigMap(dot *helmette.Dot) []kube.Object {
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: dot.Chart.Name,
+				Name: fmt.Sprintf("%s-%s", dot.Chart.Name, dot.Release.Name),
 			},
 			Data: map[string]string{
+				// TODO: would be nice to verify that release and chart are
+				// equivalent but they're they only objects that aren't
+				// represented as map[string]any which causes marshaling to
+				// produce different results in helm and go.
+				// "release": MustMarshalYAML(dot.Release),
+				// "chart":   MustMarshalYAML(dot.Chart),
 				"values": MustMarshalYAML(dot.Values),
 			},
 		},

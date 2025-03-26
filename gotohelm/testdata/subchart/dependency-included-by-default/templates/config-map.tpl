@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: dependency-included-by-default
+  name: {{ .Chart.Name }}-{{ .Release.Name }}
 data:
   values: |
     {{- toYaml .Values | nindent 4 }}
