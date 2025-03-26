@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
@@ -80,6 +81,10 @@ func TestV2ResourceClient(t *testing.T) {
 	manager, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme: controller.V2Scheme,
 		Logger: logger,
+		Metrics: metricsserver.Options{
+			// disable metrics
+			BindAddress: "0",
+		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
 				DisableFor: append(redpandachart.Types(), &redpandav1alpha2.Redpanda{}, &corev1.Namespace{}),
@@ -106,6 +111,8 @@ func TestV2ResourceClient(t *testing.T) {
 
 	for _, file := range casesArchive.Files {
 		t.Run(file.Name, func(t *testing.T) {
+			t.Parallel()
+
 			cluster := &redpandav1alpha2.Redpanda{}
 			require.NoError(t, yaml.Unmarshal(file.Data, cluster))
 
