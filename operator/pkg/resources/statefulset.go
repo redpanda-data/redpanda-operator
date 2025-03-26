@@ -40,7 +40,6 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -105,14 +104,8 @@ type StatefulSetResource struct {
 	adminTLSConfigProvider resourcetypes.AdminTLSConfigProvider
 	serviceAccountName     string
 	configuratorSettings   ConfiguratorSettings
-	// hash of configmap containing configuration for redpanda (node config only), it's injected to
-	// annotation to ensure the pods get restarted when configuration changes
-	// this has to be retrieved lazily to achieve the correct order of resources
-	// being applied
-	nodeConfigMapHashGetter func(context.Context) (string, error)
-	// The configuration we've installed. It's injected so that we can extract any additional
-	// environment variables the configuration requires to expand the bootstrap template.
-	configurationGetter      func(ctx context.Context) (*configuration.GlobalConfiguration, error)
+	// The configuration object is pushed in in order to pull out hashes of configuration.
+	cfg                      *clusterconfiguration.CombinedCfg
 	adminAPIClientFactory    adminutils.NodePoolAdminAPIClientFactory
 	decommissionWaitInterval time.Duration
 	logger                   logr.Logger
@@ -141,8 +134,7 @@ func NewStatefulSet(
 	adminTLSConfigProvider resourcetypes.AdminTLSConfigProvider,
 	serviceAccountName string,
 	configuratorSettings ConfiguratorSettings,
-	nodeConfigMapHashGetter func(context.Context) (string, error),
-	configurationGetter func(context.Context) (*configuration.GlobalConfiguration, error),
+	cfg *clusterconfiguration.CombinedCfg,
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
 	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
@@ -163,8 +155,7 @@ func NewStatefulSet(
 		adminTLSConfigProvider:   adminTLSConfigProvider,
 		serviceAccountName:       serviceAccountName,
 		configuratorSettings:     configuratorSettings,
-		nodeConfigMapHashGetter:  nodeConfigMapHashGetter,
-		configurationGetter:      configurationGetter,
+		cfg:                      cfg,
 		adminAPIClientFactory:    adminAPIClientFactory,
 		dialer:                   dialer,
 		decommissionWaitInterval: decommissionWaitInterval,
@@ -333,7 +324,7 @@ func (r *StatefulSetResource) obj(
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	configMapHash, err := r.nodeConfigMapHashGetter(ctx)
+	configMapHash, err := r.cfg.GetNodeConfigHash(ctx, r)
 	if err != nil {
 		return nil, err
 	}

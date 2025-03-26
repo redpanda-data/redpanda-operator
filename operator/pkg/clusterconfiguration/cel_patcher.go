@@ -2,16 +2,12 @@ package clusterconfiguration
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/types"
-	"github.com/google/cel-go/common/types/ref"
-	"sigs.k8s.io/yaml"
 )
 
 // Template represents a templatable file.
@@ -32,58 +28,6 @@ type Fixup struct {
 }
 
 type CelFactory func(reflect.Value) (*cel.Env, error)
-
-func StdLibFactory(environ map[string]string) CelFactory {
-	return func(v reflect.Value) (*cel.Env, error) {
-		cel.StdLib()
-		return cel.NewEnv(
-			cel.Variable("it", cel.AnyType),
-			cel.Function("envString",
-				cel.Overload("envString_string", []*cel.Type{cel.StringType}, cel.StringType,
-					cel.UnaryBinding(func(arg1 ref.Val) ref.Val {
-						e, err := arg1.ConvertToNative(reflect.TypeFor[string]())
-						if err != nil {
-							return types.WrapErr(err)
-						}
-						v, ok := environ[e.(string)]
-						if !ok {
-							return types.WrapErr(fmt.Errorf("not found in environment: %q", e))
-						}
-						return types.String(v)
-					}),
-				),
-			),
-			// This is massively specific, but the bootstrap template uses values serialised as YAML.
-			// We want to manipulate the string array `superusers`, which is a list of strings.
-			// We'll be inserting values injected via `env` settings, pulled from secrets.
-			cel.Function("appendYamlStringArray",
-				cel.Overload("appendYamlStringArray_string_string", []*cel.Type{cel.StringType, cel.StringType}, cel.StringType,
-					cel.BinaryBinding(func(arg1 ref.Val, arg2 ref.Val) ref.Val {
-						arrayRepr, err := arg1.ConvertToNative(reflect.TypeFor[string]())
-						if err != nil {
-							return types.WrapErr(err)
-						}
-						addition, err := arg2.ConvertToNative(reflect.TypeFor[string]())
-						if err != nil {
-							return types.WrapErr(err)
-						}
-						var array []string
-						if err := yaml.Unmarshal([]byte(arrayRepr.(string)), &array); err != nil {
-							return types.WrapErr(fmt.Errorf("cannot unmarshal YAML string array: %w", err))
-						}
-						array = append(array, addition.(string))
-						// We use a stricter, one-line format to remarshal the result
-						buf, err := json.Marshal(array)
-						if err != nil {
-							return types.WrapErr(fmt.Errorf("cannot remarshal YAML string array: %w", err))
-						}
-						return types.String(buf)
-					}),
-				),
-			),
-		)
-	}
-}
 
 func (t *Template[T]) Fixup(engine func(reflect.Value) (*cel.Env, error)) error {
 	var errs []error

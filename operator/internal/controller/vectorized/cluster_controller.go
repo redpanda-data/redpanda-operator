@@ -222,14 +222,20 @@ func (r *ClusterReconciler) Reconcile(
 		secrets = append(secrets, ar.getSchemaRegistrySuperUserKey())
 	}
 
-	if err = ar.configMap(); err != nil {
+	// Construct a configuration
+	cfg, err := resources.CreateConfiguration(ctx, r, r.CloudSecretsExpander, &vectorizedCluster, ar.getHeadlessServiceFQDN(), ar.getProxySuperUserKey(), ar.getSchemaRegistrySuperUserKey(), pki.BrokerTLSConfigProvider())
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("creating configuration: %w", err)
+	}
+
+	if err = ar.configMap(cfg); err != nil {
 		return ctrl.Result{}, fmt.Errorf("creating configmap: %w", err)
 	}
-	cm, err := ar.getConfigMap()
+	cm, err := ar.getConfigMap(cfg)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if err = ar.statefulSet(); err != nil {
+	if err = ar.statefulSet(cfg); err != nil {
 		return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
 	}
 
