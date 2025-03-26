@@ -13,73 +13,28 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
-const (
-	baseSuffix                  = "base"
-	dataDirectory               = "/var/lib/redpanda/data"
-	archivalCacheIndexDirectory = "/var/lib/shadow-index-cache"
-
-	superusersConfigurationKey = "superusers"
-
-	oneMB          = 1024 * 1024
-	logSegmentSize = 512 * oneMB
-
-	saslMechanism = "SCRAM-SHA-256"
-
-	configKey                  = "redpanda.yaml"
-	bootstrapConfigFile        = ".bootstrap.yaml"
-	bootstrapTemplateEnvVar    = "BOOTSTRAP_TEMPLATE"
-	bootstrapDestinationEnvVar = "BOOTSTRAP_DESTINATION"
-	bootstrapTemplateFile      = ".bootstrap.json.in"
-)
-
-var (
-	errKeyDoesNotExistInSecretData        = errors.New("cannot find key in secret data")
-	errCloudStorageSecretKeyCannotBeEmpty = errors.New("cloud storage SecretKey string cannot be empty")
-
-	// LastAppliedCriticalConfigurationAnnotationKey is used to store the hash of the most-recently-applied configuration,
-	// selecting only those values which are marked in the schema as requiring a cluster restart.
-	LastAppliedCriticalConfigurationAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/last-applied-critical-configuration"
-)
-
-var _ Resource = &ConfigMapResource{}
-
-// ConfigMapResource contains definition and reconciliation logic for operator's ConfigMap.
-// The ConfigMap contains the configuration as well as init script.
-type ConfigMapResource struct {
-	k8sclient.Client
-	scheme       *runtime.Scheme
-	pandaCluster *vectorizedv1alpha1.Cluster
-
-	serviceFQDN            string
-	pandaproxySASLUser     types.NamespacedName
-	schemaRegistrySASLUser types.NamespacedName
-	tlsConfigProvider      resourcetypes.BrokerTLSConfigProvider
-	logger                 logr.Logger
-}
-
 // NewConfigMap creates ConfigMapResource
-func NewConfigMap(
+func CreateConfiguration(
+	ctx context.Context,
+	logger logr.Logger,
 	client k8sclient.Client,
 	pandaCluster *vectorizedv1alpha1.Cluster,
 	scheme *runtime.Scheme,
@@ -87,149 +42,16 @@ func NewConfigMap(
 	pandaproxySASLUser types.NamespacedName,
 	schemaRegistrySASLUser types.NamespacedName,
 	tlsConfigProvider resourcetypes.BrokerTLSConfigProvider,
-	logger logr.Logger,
-) *ConfigMapResource {
-	return &ConfigMapResource{
-		client,
-		scheme,
-		pandaCluster,
-		serviceFQDN,
-		pandaproxySASLUser,
-		schemaRegistrySASLUser,
-		tlsConfigProvider,
-		logger,
-	}
-}
+) (*configuration.nodeCfg, *configuration.clusterCfg, error) {
+	nodeCfg := configuration.NewNodeCfg()
+	clusterCfg := configuration.newClusterCfg()
 
-// Ensure will manage kubernetes v1.ConfigMap for redpanda.vectorized.io CR
-func (r *ConfigMapResource) Ensure(ctx context.Context) error {
-	obj, err := r.obj(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to construct object: %w", err)
-	}
-	created, err := CreateIfNotExists(ctx, r, obj, r.logger)
-	if err != nil || created {
-		return err
-	}
-	var cm corev1.ConfigMap
-	err = r.Get(ctx, r.Key(), &cm)
-	if err != nil {
-		return fmt.Errorf("error while fetching ConfigMap resource: %w", err)
-	}
-
-	return r.update(ctx, &cm, obj.(*corev1.ConfigMap), r.Client, r.logger)
-}
-
-func (r *ConfigMapResource) update(
-	ctx context.Context,
-	current *corev1.ConfigMap,
-	modified *corev1.ConfigMap,
-	c k8sclient.Client,
-	logger logr.Logger,
-) error {
-	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
-		if modified.Annotations == nil {
-			modified.Annotations = make(map[string]string)
-		}
-		modified.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = val
-	}
-
-	if err := r.markConfigurationConditionChanged(ctx, current, modified); err != nil {
-		return err
-	}
-
-	_, err := Update(ctx, current, modified, c, logger)
-	return err
-}
-
-// markConfigurationConditionChanged verifies and marks the cluster as needing synchronization (using the ClusterConfigured condition).
-// The condition is changed so that the configuration controller can later restore it back to normal after interacting with the cluster.
-func (r *ConfigMapResource) markConfigurationConditionChanged(
-	ctx context.Context, current *corev1.ConfigMap, modified *corev1.ConfigMap,
-) error {
-	status := r.pandaCluster.Status.GetConditionStatus(vectorizedv1alpha1.ClusterConfiguredConditionType)
-	if status == corev1.ConditionFalse {
-		// Condition already indicates a change
-		return nil
-	}
-
-	// If the condition is not present, or it does not currently indicate a change, we check it again
-	if !r.globalConfigurationChanged(current, modified) {
-		return nil
-	}
-
-	r.logger.Info("Detected configuration change in the cluster")
-
-	// We need to mark the cluster as changed to trigger the configuration workflow
-	r.pandaCluster.Status.SetCondition(
-		vectorizedv1alpha1.ClusterConfiguredConditionType,
-		corev1.ConditionFalse,
-		vectorizedv1alpha1.ClusterConfiguredReasonUpdating,
-		"Detected cluster configuration change that needs to be applied to the cluster",
-	)
-	return r.Status().Update(ctx, r.pandaCluster)
-}
-
-// obj returns resource managed client.Object
-func (r *ConfigMapResource) obj(ctx context.Context) (k8sclient.Object, error) {
-	conf, err := r.CreateConfiguration(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("creating configuration: %w", err)
-	}
-
-	// TODO: the serialised template needs to turn k8s object references into env vars
-	cfgSerialized, err := conf.Serialize()
-	if err != nil {
-		return nil, fmt.Errorf("serializing: %w", err)
-	}
-
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: r.Key().Namespace,
-			Name:      r.Key().Name,
-			Labels:    labels.ForCluster(r.pandaCluster),
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
-		Data: map[string]string{},
-	}
-
-	if cfgSerialized.RedpandaFile != nil {
-		cm.Data[configKey] = string(cfgSerialized.RedpandaFile)
-	}
-	if cfgSerialized.BootstrapFile != nil {
-		cm.Data[bootstrapConfigFile] = string(cfgSerialized.BootstrapFile)
-	}
-	if cfgSerialized.BootstrapTemplate != nil {
-		cm.Data[bootstrapTemplateFile] = string(cfgSerialized.BootstrapTemplate)
-	}
-
-	err = controllerutil.SetControllerReference(r.pandaCluster, cm, r.scheme)
-	if err != nil {
-		return nil, fmt.Errorf("setting controller reference: %w", err)
-	}
-
-	return cm, nil
-}
-
-// CreateConfiguration creates a global configuration for the current cluster
-//
-//nolint:funlen // let's keep the configuration in one function for now and refactor later
-func (r *ConfigMapResource) CreateConfiguration(
-	ctx context.Context,
-) (*configuration.GlobalConfiguration, error) {
-	cfg := configuration.For(r.pandaCluster.Spec.Version)
-	cfg.NodeConfiguration = config.ProdDefault()
-	cfg.BootstrapConfiguration = make(map[string]vectorizedv1alpha1.ClusterConfigValue)
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
-	c := r.pandaCluster.Spec.Configuration
-	cr := &cfg.NodeConfiguration.Redpanda
+	c := pandaCluster.Spec.Configuration
+	cr := &nodeCfg.Cfg.Redpanda
 
-	internalListener := r.pandaCluster.InternalListener()
+	internalListener := pandaCluster.InternalListener()
 	internalAuthN := &internalListener.AuthenticationMethod
 	if *internalAuthN == "" {
 		internalAuthN = nil
@@ -242,7 +64,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 		AuthN:   internalAuthN,
 	})
 
-	externalListeners := r.pandaCluster.KafkaAPIExternalListeners()
+	externalListeners := pandaCluster.KafkaAPIExternalListeners()
 	for _, externalListener := range externalListeners {
 		externalAuthN := &externalListener.AuthenticationMethod
 		if *externalAuthN == "" {
@@ -262,12 +84,12 @@ func (r *ConfigMapResource) CreateConfiguration(
 		Port:    clusterCRPortOrRPKDefault(c.RPCServer.Port, cr.RPCServer.Port),
 	}
 
-	cr.AdminAPI[0].Port = clusterCRPortOrRPKDefault(r.pandaCluster.AdminAPIInternal().Port, cr.AdminAPI[0].Port)
+	cr.AdminAPI[0].Port = clusterCRPortOrRPKDefault(pandaCluster.AdminAPIInternal().Port, cr.AdminAPI[0].Port)
 	cr.AdminAPI[0].Name = AdminPortName
-	if r.pandaCluster.AdminAPIExternal() != nil {
+	if pandaCluster.AdminAPIExternal() != nil {
 		externalAdminAPI := config.NamedSocketAddress{
 			Address: cr.AdminAPI[0].Address,
-			Port:    calculateExternalPort(cr.AdminAPI[0].Port, r.pandaCluster.AdminAPIExternal().Port),
+			Port:    calculateExternalPort(cr.AdminAPI[0].Port, pandaCluster.AdminAPIExternal().Port),
 			Name:    AdminPortExternalName,
 		}
 		cr.AdminAPI = append(cr.AdminAPI, externalAdminAPI)
@@ -275,7 +97,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 
 	cr.DeveloperMode = c.DeveloperMode
 	cr.Directory = dataDirectory
-	kl := r.pandaCluster.KafkaTLSListeners()
+	kl := pandaCluster.KafkaTLSListeners()
 	for i := range kl {
 		tls := config.ServerTLS{
 			Name:              kl[i].Name,
@@ -289,7 +111,7 @@ func (r *ConfigMapResource) CreateConfiguration(
 		}
 		cr.KafkaAPITLS = append(cr.KafkaAPITLS, tls)
 	}
-	adminAPITLSListener := r.pandaCluster.AdminAPITLS()
+	adminAPITLSListener := pandaCluster.AdminAPITLS()
 	if adminAPITLSListener != nil {
 		// Only one TLS listener is supported (restricted by the webhook).
 		// Determine the listener name based on being internal or external.
@@ -310,53 +132,65 @@ func (r *ConfigMapResource) CreateConfiguration(
 		cr.AdminAPITLS = append(cr.AdminAPITLS, adminTLS)
 	}
 
-	if r.pandaCluster.Spec.CloudStorage.Enabled {
-		if err := r.prepareCloudStorage(ctx, cfg); err != nil {
-			return nil, fmt.Errorf("preparing cloud storage: %w", err)
+	if pandaCluster.Spec.CloudStorage.Enabled {
+		if err := prepareCloudStorage(ctx, nodeCfg, clusterCfg, pandaCluster); err != nil {
+			return nil, nil, fmt.Errorf("preparing cloud storage: %w", err)
 		}
 	}
 
-	for _, user := range r.pandaCluster.Spec.Superusers {
-		if err := cfg.AppendToAdditionalRedpandaProperty(superusersConfigurationKey, user.Username); err != nil {
-			return nil, fmt.Errorf("appending superusers property: %w", err)
+	for _, user := range pandaCluster.Spec.Superusers {
+		if err := configuration.AppendValue(clusterCfg, superusersConfigurationKey, user.Username); err != nil {
+			return nil, nil, fmt.Errorf("appending superusers property: %w", err)
 		}
 	}
 
-	if r.pandaCluster.Spec.EnableSASL {
-		cfg.SetAdditionalRedpandaProperty("enable_sasl", true)
+	if pandaCluster.Spec.EnableSASL {
+		if err := configuration.SetValue(clusterCfg, "enable_sasl", true); err != nil {
+			return nil, nil, fmt.Errorf("setting enable_sasl: %w", err)
+		}
 	}
-	if r.pandaCluster.Spec.KafkaEnableAuthorization != nil && *r.pandaCluster.Spec.KafkaEnableAuthorization {
-		cfg.SetAdditionalRedpandaProperty("kafka_enable_authorization", true)
+	if pandaCluster.Spec.KafkaEnableAuthorization != nil && *pandaCluster.Spec.KafkaEnableAuthorization {
+		if err := configuration.SetValue(clusterCfg, "kafka_enable_authorization", true); err != nil {
+			return nil, nil, fmt.Errorf("setting kafka_enable_authorization: %w", err)
+		}
 	}
 
-	partitions := r.pandaCluster.Spec.Configuration.GroupTopicPartitions
+	partitions := pandaCluster.Spec.Configuration.GroupTopicPartitions
 	if partitions != 0 {
-		cfg.SetAdditionalRedpandaProperty("group_topic_partitions", partitions)
+		if err := configuration.SetValue(clusterCfg, "group_topic_partitions", partitions); err != nil {
+			return nil, nil, fmt.Errorf("setting group_topic_partitions: %w", err)
+		}
 	}
 
-	cfg.SetAdditionalRedpandaProperty("auto_create_topics_enabled", r.pandaCluster.Spec.Configuration.AutoCreateTopics)
+	if err := configuration.SetValue(clusterCfg, "auto_create_topics_enabled", pandaCluster.Spec.Configuration.AutoCreateTopics); err != nil {
+		return nil, nil, fmt.Errorf("setting auto_create_topics_enabled: %w", err)
+	}
 
 	intervalSec := 60 * 30 // 60s * 30 = 30 minutes
-	cfg.SetAdditionalRedpandaProperty("cloud_storage_segment_max_upload_interval_sec", intervalSec)
-
-	cfg.SetAdditionalRedpandaProperty("log_segment_size", logSegmentSize)
-
-	if err := r.PrepareSeedServerList(cr); err != nil {
-		return nil, fmt.Errorf("preparing seed server list: %w", err)
+	if err := configuration.SetValue(clusterCfg, "cloud_storage_segment_max_upload_interval_sec", intervalSec); err != nil {
+		return nil, nil, fmt.Errorf("setting cloud_storage_segment_max_upload_interval_sec: %w", err)
 	}
-	r.preparePandaproxy(cfg.NodeConfiguration)
-	r.preparePandaproxyTLS(cfg.NodeConfiguration, mountPoints)
-	err := r.preparePandaproxyClient(ctx, cfg, mountPoints)
+
+	if err := configuration.SetValue(clusterCfg, "log_segment_size", logSegmentSize); err != nil {
+		return nil, nil, fmt.Errorf("setting log_segment_size: %w", err)
+	}
+
+	if err := PrepareSeedServerList(cr); err != nil {
+		return nil, nil, fmt.Errorf("preparing seed server list: %w", err)
+	}
+	preparePandaproxy(nodeCfg.Cfg, pandaCluster)
+	preparePandaproxyTLS(nodeCfg, mountPoints)
+	err := preparePandaproxyClient(ctx, nodeCfg, clusterCfg, mountPoints)
 	if err != nil {
-		return nil, fmt.Errorf("preparing proxy client: %w", err)
+		return nil, nil, fmt.Errorf("preparing proxy client: %w", err)
 	}
 
-	for _, sr := range r.pandaCluster.SchemaRegistryListeners() {
+	for _, sr := range pandaCluster.SchemaRegistryListeners() {
 		var authN *string
 		if sr.AuthenticationMethod != "" {
 			authN = &sr.AuthenticationMethod
 		}
-		cfg.NodeConfiguration.SchemaRegistry.SchemaRegistryAPI = append(cfg.NodeConfiguration.SchemaRegistry.SchemaRegistryAPI,
+		nodeCfg.Cfg.SchemaRegistry.SchemaRegistryAPI = append(nodeCfg.Cfg.SchemaRegistry.SchemaRegistryAPI,
 			config.NamedAuthNSocketAddress{
 				Address: "0.0.0.0",
 				Port:    sr.Port,
@@ -364,100 +198,111 @@ func (r *ConfigMapResource) CreateConfiguration(
 				AuthN:   authN,
 			})
 	}
-	r.prepareSchemaRegistryTLS(cfg.NodeConfiguration, mountPoints)
-	err = r.prepareSchemaRegistryClient(ctx, cfg, mountPoints)
+	prepareSchemaRegistryTLS(nodeCfg, mountPoints)
+	err = prepareSchemaRegistryClient(ctx, nodeCfg, clusterCfg, mountPoints)
 	if err != nil {
-		return nil, fmt.Errorf("preparing schemaRegistry client: %w", err)
+		return nil, nil, fmt.Errorf("preparing schemaRegistry client: %w", err)
 	}
 
-	cfg.SetAdditionalRedpandaProperty("enable_rack_awareness", true)
-
-	if err := cfg.SetAdditionalFlatProperties(r.pandaCluster.Spec.AdditionalConfiguration); err != nil {
-		return nil, fmt.Errorf("adding additional flat properties: %w", err)
+	if err := configuration.SetValue(clusterCfg, "enable_rack_awareness", true); err != nil {
+		return nil, nil, fmt.Errorf("setting enable_rack_awareness: %w", err)
 	}
 
-	if err := cfg.FinalizeToTemplate(); err != nil {
-		return nil, err
+	// Set additional flat legacy properties
+	for k, v := range pandaCluster.Spec.AdditionalConfiguration {
+		if err := configuration.SetAdditionalFlatProperty(nodeCfg, clusterCfg, k, v); err != nil {
+			return nil, nil, fmt.Errorf("adding additional flat property %q: %w", k, err)
+		}
 	}
 
 	// Fold in any last overriding attributes. Prefer the new ClusterConfiguration attribute.
-	for k, v := range r.pandaCluster.Spec.ClusterConfiguration {
-		cfg.BootstrapConfiguration[k] = *(v.DeepCopy())
+	for k, v := range pandaCluster.Spec.ClusterConfiguration {
+		clusterCfg.Set(k, *(v.DeepCopy()))
 	}
 
-	return cfg, nil
+	return nodeCfg, clusterCfg, nil
 }
 
-func (r *ConfigMapResource) prepareCloudStorage(
-	ctx context.Context, cfg *configuration.GlobalConfiguration,
+// calculateExternalPort can calculate external port based on the internal port
+// for any listener
+func calculateExternalPort(internalPort, specifiedExternalPort int) int {
+	if internalPort < 0 || internalPort > 65535 {
+		return 0
+	}
+	if specifiedExternalPort != 0 {
+		return specifiedExternalPort
+	}
+	return internalPort + 1
+}
+
+func prepareCloudStorage(
+	ctx context.Context,
+	n *configuration.nodeCfg, c *configuration.clusterCfg, pandaCluster *vectorizedv1alpha1.Cluster,
 ) error {
-	if r.pandaCluster.Spec.CloudStorage.AccessKey != "" {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_access_key", r.pandaCluster.Spec.CloudStorage.AccessKey)
+	if pandaCluster.Spec.CloudStorage.AccessKey != "" {
+		_ = configuration.SetValue(c, "cloud_storage_access_key", pandaCluster.Spec.CloudStorage.AccessKey)
 	}
-	if r.pandaCluster.Spec.CloudStorage.SecretKeyRef.Name != "" {
-		secretName := types.NamespacedName{
-			Name:      r.pandaCluster.Spec.CloudStorage.SecretKeyRef.Name,
-			Namespace: r.pandaCluster.Spec.CloudStorage.SecretKeyRef.Namespace,
+	if pandaCluster.Spec.CloudStorage.SecretKeyRef.Name != "" {
+		if pandaCluster.Namespace != pandaCluster.Spec.CloudStorage.SecretKeyRef.Namespace {
+			return fmt.Errorf("Spec.CloudStorage.SecretKeyRef.Namespace must match %q", pandaCluster.Namespace)
 		}
-		// We need to retrieve the Secret containing the provided cloud storage secret key and extract the key itself.
-		secretKeyStr, err := r.getSecretValue(ctx, secretName, r.pandaCluster.Spec.CloudStorage.SecretKeyRef.Name)
-		if err != nil {
-			return fmt.Errorf("cannot retrieve cloud storage secret for data archival: %w", err)
-		}
-		if secretKeyStr == "" {
-			return fmt.Errorf("secret name %s, ns %s: %w", secretName.Name, secretName.Namespace, errCloudStorageSecretKeyCannotBeEmpty)
-		}
-
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_secret_key", secretKeyStr)
+		c.Set("cloud_storage_secret_key", vectorizedv1alpha1.ClusterConfigValue{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: pandaCluster.Spec.CloudStorage.SecretKeyRef.Name,
+				},
+				Key: pandaCluster.Spec.CloudStorage.SecretKeyRef.Name,
+			},
+		})
 	}
 
-	if r.pandaCluster.Spec.CloudStorage.CredentialsSource != "" {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_credentials_source", string(r.pandaCluster.Spec.CloudStorage.CredentialsSource))
+	if pandaCluster.Spec.CloudStorage.CredentialsSource != "" {
+		_ = configuration.SetValue(c, "cloud_storage_credentials_source", string(pandaCluster.Spec.CloudStorage.CredentialsSource))
 	}
 
-	cfg.SetAdditionalRedpandaProperty("cloud_storage_enabled", r.pandaCluster.Spec.CloudStorage.Enabled)
-	cfg.SetAdditionalRedpandaProperty("cloud_storage_region", r.pandaCluster.Spec.CloudStorage.Region)
-	cfg.SetAdditionalRedpandaProperty("cloud_storage_bucket", r.pandaCluster.Spec.CloudStorage.Bucket)
-	cfg.SetAdditionalRedpandaProperty("cloud_storage_disable_tls", r.pandaCluster.Spec.CloudStorage.DisableTLS)
+	_ = configuration.SetValue(c, "cloud_storage_enabled", pandaCluster.Spec.CloudStorage.Enabled)
+	_ = configuration.SetValue(c, "cloud_storage_region", pandaCluster.Spec.CloudStorage.Region)
+	_ = configuration.SetValue(c, "cloud_storage_bucket", pandaCluster.Spec.CloudStorage.Bucket)
+	_ = configuration.SetValue(c, "cloud_storage_disable_tls", pandaCluster.Spec.CloudStorage.DisableTLS)
 
-	interval := r.pandaCluster.Spec.CloudStorage.ReconcilicationIntervalMs
+	interval := pandaCluster.Spec.CloudStorage.ReconcilicationIntervalMs
 	if interval != 0 {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_reconciliation_interval_ms", interval)
+		_ = configuration.SetValue(c, "cloud_storage_reconciliation_interval_ms", interval)
 	}
-	maxCon := r.pandaCluster.Spec.CloudStorage.MaxConnections
+	maxCon := pandaCluster.Spec.CloudStorage.MaxConnections
 	if maxCon != 0 {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_max_connections", maxCon)
+		_ = configuration.SetValue(c, "cloud_storage_max_connections", maxCon)
 	}
-	apiEndpoint := r.pandaCluster.Spec.CloudStorage.APIEndpoint
+	apiEndpoint := pandaCluster.Spec.CloudStorage.APIEndpoint
 	if apiEndpoint != "" {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_api_endpoint", apiEndpoint)
+		_ = configuration.SetValue(c, "cloud_storage_api_endpoint", apiEndpoint)
 	}
-	endpointPort := r.pandaCluster.Spec.CloudStorage.APIEndpointPort
+	endpointPort := pandaCluster.Spec.CloudStorage.APIEndpointPort
 	if endpointPort != 0 {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_api_endpoint_port", endpointPort)
+		_ = configuration.SetValue(c, "cloud_storage_api_endpoint_port", endpointPort)
 	}
-	trustfile := r.pandaCluster.Spec.CloudStorage.Trustfile
+	trustfile := pandaCluster.Spec.CloudStorage.Trustfile
 	if trustfile != "" {
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_trust_file", trustfile)
+		_ = configuration.SetValue(c, "cloud_storage_trust_file", trustfile)
 	}
 
-	cfg.NodeConfiguration.Redpanda.CloudStorageCacheDirectory = archivalCacheIndexDirectory
+	n.Cfg.Redpanda.CloudStorageCacheDirectory = archivalCacheIndexDirectory
 
 	// Only set cache_size (in bytes) if no percentage based cluster property is set.
 	// This avoids problems with multiple node pools: bytes-based is very different if disk size changes (move between different tiers in cloud, for example).
 	// Percentage based is kept stable mostly (even exactly the same most of the time, 15% typically), and will not cause immediate churn on the old nodePool if disk size is going down.
-	_, cloudStoragePercentageConfigured := r.pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
+	_, cloudStoragePercentageConfigured := pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
 
-	if r.pandaCluster.Spec.CloudStorage.CacheStorage != nil && r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {
-		size := strconv.FormatInt(r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value(), 10)
-		cfg.SetAdditionalRedpandaProperty("cloud_storage_cache_size", size)
+	if pandaCluster.Spec.CloudStorage.CacheStorage != nil && pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {
+		//size := strconv.FormatInt(r.pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value(), 10)
+		_ = configuration.SetValue(c, "cloud_storage_cache_size", pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value())
 	}
 
-	return nil
+	return c.Error()
 }
 
-func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.RedpandaYaml) {
-	internal := r.pandaCluster.PandaproxyAPIInternal()
+func preparePandaproxy(cfgRpk *config.RedpandaYaml, pandaCluster *vectorizedv1alpha1.Cluster) {
+	internal := pandaCluster.PandaproxyAPIInternal()
 	if internal == nil {
 		return
 	}
@@ -475,7 +320,7 @@ func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.RedpandaYaml) {
 		},
 	}
 
-	for _, external := range r.pandaCluster.PandaproxyAPIExternalListeners() {
+	for _, external := range pandaCluster.PandaproxyAPIExternalListeners() {
 		var externalAuthN *string
 		if external.AuthenticationMethod != "" {
 			externalAuthN = &external.AuthenticationMethod
@@ -490,7 +335,7 @@ func (r *ConfigMapResource) preparePandaproxy(cfgRpk *config.RedpandaYaml) {
 	}
 }
 
-func (r *ConfigMapResource) preparePandaproxyClient(
+func preparePandaproxyClient(
 	ctx context.Context, cfg *configuration.GlobalConfiguration, mountPoints *resourcetypes.TLSMountPoints,
 ) error {
 	if internal := r.pandaCluster.PandaproxyAPIInternal(); internal == nil {
@@ -638,20 +483,12 @@ func (r *ConfigMapResource) prepareSchemaRegistryTLS(
 	}
 }
 
-func (r *ConfigMapResource) getSecretValue(
-	ctx context.Context, nsName types.NamespacedName, key string,
-) (string, error) {
-	var secret corev1.Secret
-	err := r.Get(ctx, nsName, &secret)
-	if err != nil {
-		return "", err
+func clusterCRPortOrRPKDefault(clusterPort, defaultPort int) int {
+	if clusterPort == 0 {
+		return defaultPort
 	}
 
-	if v, exists := secret.Data[key]; exists {
-		return string(v), nil
-	}
-
-	return "", fmt.Errorf("secret name %s, ns %s, data key %s: %w", nsName.Name, nsName.Namespace, key, errKeyDoesNotExistInSecretData)
+	return clusterPort
 }
 
 // Key returns namespace/name object that is used to identify object.
@@ -795,4 +632,16 @@ func (r *ConfigMapResource) PrepareSeedServerList(cr *config.RedpandaNodeConfig)
 	}
 
 	return nil
+}
+
+func tlsKeyPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, corev1.TLSPrivateKeyKey)
+}
+
+func tlsCertPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, corev1.TLSCertKey)
+}
+
+func tlsCAPath(dir string) string {
+	return fmt.Sprintf("%s/%s", dir, cmmetav1.TLSCAKey)
 }
