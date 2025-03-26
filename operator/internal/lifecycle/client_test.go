@@ -379,7 +379,7 @@ func TestClientWatchResources(t *testing.T) {
 			builder := NewMockBuilder(instances.manager)
 
 			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}))
-			require.Equal(t, "*resources.MockCluster", builder.Base())
+			require.Equal(t, "*lifecycle.MockCluster", builder.Base())
 			require.ElementsMatch(t, tt.ownedResources, builder.Owned())
 			require.ElementsMatch(t, tt.watchedResources, builder.Watched())
 		})
