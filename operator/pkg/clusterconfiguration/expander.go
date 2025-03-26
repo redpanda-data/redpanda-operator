@@ -221,7 +221,7 @@ func convertStringToStringArray(value string) ([]string, error) {
 // of concrete values, references to external secrets (which are expanded at this point), or references
 // to values in environment variables. The last should be injected into the environment of the container
 // by appropriate EnvVar entries.
-func ExpandValueForTemplate(v ClusterConfigTemplateValue) (vectorizedv1alpha1.YAMLRepresentation, error) {
+func ExpandValueForTemplate(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, v ClusterConfigTemplateValue) (vectorizedv1alpha1.YAMLRepresentation, error) {
 	switch {
 	case v.Representation != nil:
 		return *v.Representation, nil
@@ -231,8 +231,14 @@ func ExpandValueForTemplate(v ClusterConfigTemplateValue) (vectorizedv1alpha1.YA
 		}
 		return "", fmt.Errorf("referenced environment variable is unset: %s", *v.EnvVarRef)
 	case v.ExternalSecretRef != nil:
-		// TODO: grab the external secret, yaml-serialise it [optional, depending on where the responsibility for this lies], return it
-		return "", fmt.Errorf("don't know how to resolve external secret references")
+		if cloudExpander == nil {
+			return "", fmt.Errorf("configuration entry %q: external secret references are unsupported", *v.ExternalSecretRef)
+		}
+		expanded, err := cloudExpander.Expand(ctx, *v.ExternalSecretRef)
+		if err != nil {
+			return "", fmt.Errorf("configuration entry %q: trouble expanding external secret reference: %w", *v.ExternalSecretRef, err)
+		}
+		return vectorizedv1alpha1.YAMLRepresentation(expanded), nil
 	default:
 		return "", fmt.Errorf("unspecified template value")
 	}
