@@ -282,7 +282,8 @@ func (r *ResourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, 
 	return r.client.Patch(ctx, object, client.Apply, defaultFieldOwner, client.ForceOwnership)
 }
 
-// normalize normalizes an object by setting its labels and owner references.
+// normalize normalizes an object by setting its labels and owner references. Any labels passed in as `extraLabels`
+// will potentially override those set by the ownership resolver.
 func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLabels ...map[string]string) error {
 	kind, err := getGroupVersionKind(r.scheme, object)
 	if err != nil {
@@ -293,6 +294,9 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 		return err
 	}
 
+	// This needs to be set explicitly in order for SSA to function properly.
+	// If an initialized pointer to a concrete CR has not specified its GVK
+	// explicitly, SSA will fail.
 	object.GetObjectKind().SetGroupVersionKind(*kind)
 
 	labels := object.GetLabels()
@@ -339,6 +343,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			return nil, fmt.Errorf("constructing label selector: %w", err)
 		}
 
+		// based on https://github.com/kubernetes/kubernetes/blob/c90a4b16b6aa849ed362ee40997327db09e3a62d/pkg/controller/history/controller_history.go#L222
 		revisions, err := r.listResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
 			Selector: selector,
 		})
