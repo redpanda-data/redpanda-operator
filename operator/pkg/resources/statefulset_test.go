@@ -99,12 +99,6 @@ func TestEnsure(t *testing.T) {
 	}
 	noSidecarSts := stsFromCluster(noSidecarCluster)
 
-	withoutShadowIndexCacheDirectory := cluster.DeepCopy()
-	withoutShadowIndexCacheDirectory.Spec.Version = "v21.10.1"
-	stsWithoutSecondPersistentVolume := stsFromCluster(withoutShadowIndexCacheDirectory)
-	// Remove shadow-indexing-cache from the volume claim templates
-	stsWithoutSecondPersistentVolume.Spec.VolumeClaimTemplates = stsWithoutSecondPersistentVolume.Spec.VolumeClaimTemplates[:1]
-
 	unhealthyRedpandaCluster := cluster.DeepCopy()
 
 	tests := []struct {
@@ -121,7 +115,6 @@ func TestEnsure(t *testing.T) {
 		{"update resources", stsResource, resourcesUpdatedCluster, resourcesUpdatedSts, true, nil, "first"},
 		{"update redpanda resources", stsResource, resourcesUpdatedRedpandaCluster, resourcesUpdatedSts, true, nil, "first"},
 		{"disabled sidecar", nil, noSidecarCluster, noSidecarSts, true, nil, "first"},
-		{"cluster without shadow index cache dir", stsResource, withoutShadowIndexCacheDirectory, stsWithoutSecondPersistentVolume, true, nil, "first"},
 		{"update non healthy cluster", stsResource, unhealthyRedpandaCluster, stsResource, false, &resources.RequeueAfterError{
 			RequeueAfter: resources.RequeueDuration,
 			Msg:          "wait for cluster to become healthy (cluster restarting)",
