@@ -30,6 +30,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
+	github.com/redpanda-data/common-go/secrets v0.1.2
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
