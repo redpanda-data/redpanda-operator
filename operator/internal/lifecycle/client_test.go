@@ -22,22 +22,25 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
-var parentCtx = ctrl.SetupSignalHandler()
+var parentCtx = context.Background()
 
 func setupContext() (context.Context, context.CancelFunc) {
 	log.SetLogger(logr.Discard())
 
-	return context.WithTimeout(parentCtx, 2*time.Minute)
+	return context.WithTimeout(parentCtx, 1*time.Minute)
 }
 
 func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manager {
@@ -61,8 +64,10 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manag
 		}
 	})
 
-	require.NoError(t, scheme.AddToScheme(scheme.Scheme))
-	require.NoError(t, AddToScheme(scheme.Scheme))
+	runtimeScheme := runtime.NewScheme()
+	require.NoError(t, scheme.AddToScheme(runtimeScheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(runtimeScheme))
+	require.NoError(t, AddToScheme(runtimeScheme))
 
 	opts := []zap.Opts{
 		zap.UseDevMode(true), zap.Level(zapcore.DebugLevel),
@@ -75,8 +80,12 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manag
 	logger := zap.New(opts...)
 
 	manager, err := ctrl.NewManager(config, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: runtimeScheme,
 		Logger: logger,
+		Metrics: metricsserver.Options{
+			// disable metrics
+			BindAddress: "0",
+		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
 				DisableFor: append(append(tt.additionalObjects, &appsv1.StatefulSet{}), tt.resources...),
@@ -178,6 +187,8 @@ func (tt *clientTest) Run(ctx context.Context, t *testing.T, name string, fn fun
 	t.Helper()
 
 	t.Run(name, func(t *testing.T) {
+		t.Parallel()
+
 		i, cancel := tt.setupClient(ctx, t)
 		defer cancel()
 
@@ -230,9 +241,6 @@ func (tt *clientTest) Run(ctx context.Context, t *testing.T, name string, fn fun
 }
 
 func TestClientDeleteAll(t *testing.T) {
-	ctx, cancel := setupContext()
-	defer cancel()
-
 	for name, tt := range map[string]*clientTest{
 		"no-op": {},
 		"overlapping-resources": {
@@ -309,7 +317,10 @@ func TestClientDeleteAll(t *testing.T) {
 			},
 		},
 	} {
-		tt.Run(ctx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+		tt.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+			ctx, cancel := setupContext()
+			defer cancel()
+
 			for _, resource := range tt.InitialResources() {
 				require.NoError(t, instances.k8sClient.Create(ctx, resource))
 			}
@@ -341,9 +352,6 @@ func TestClientDeleteAll(t *testing.T) {
 }
 
 func TestClientWatchResources(t *testing.T) {
-	ctx, cancel := setupContext()
-	defer cancel()
-
 	for name, tt := range map[string]struct {
 		watchedResources []string
 		ownedResources   []string
@@ -375,7 +383,7 @@ func TestClientWatchResources(t *testing.T) {
 			},
 		},
 	} {
-		tt.testParams.Run(ctx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+		tt.testParams.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
 			builder := NewMockBuilder(instances.manager)
 
 			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}))
@@ -387,9 +395,6 @@ func TestClientWatchResources(t *testing.T) {
 }
 
 func TestClientSyncAll(t *testing.T) {
-	ctx, cancel := setupContext()
-	defer cancel()
-
 	for name, tt := range map[string]struct {
 		renderLoops [][]client.Object
 		testParams  clientTest
@@ -440,7 +445,10 @@ func TestClientSyncAll(t *testing.T) {
 			},
 		},
 	} {
-		tt.testParams.Run(ctx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+		tt.testParams.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+			ctx, cancel := setupContext()
+			defer cancel()
+
 			ensureSynced := func(resources []client.Object) {
 				objects, err := instances.resourceClient.listAllOwnedResources(ctx, cluster, false)
 				require.NoError(t, err)
@@ -475,9 +483,6 @@ func TestClientSyncAll(t *testing.T) {
 }
 
 func TestClientFetchExistingAndDesiredPools(t *testing.T) {
-	ctx, cancel := setupContext()
-	defer cancel()
-
 	for name, tt := range map[string]*clientTest{
 		"no-op": {},
 		"render-error": {
@@ -540,7 +545,10 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			},
 		},
 	} {
-		tt.Run(ctx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+		tt.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
+			ctx, cancel := setupContext()
+			defer cancel()
+
 			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster)
 			if tt.nodePoolsRenderError != nil {
 				require.Error(t, err)
