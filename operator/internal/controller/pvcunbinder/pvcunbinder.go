@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package decommissioning
+package pvcunbinder
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 
 var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
 
-// PVCUnbinder is a Kubernetes Reconciler that watches for Pods stuck in a
+// Controller is a Kubernetes Controller that watches for Pods stuck in a
 // Pending state due to volume affinities and attempts a remediation.
 //
 // It watches for Pod events rather than Node events because:
@@ -45,7 +45,7 @@ var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|
 //  3. Delete all PVCs from step 1. (PVCs are immutable after creation,
 //     deletion is the only option)
 //  4. Deleting the Pod to re-trigger PVC creation and rebinding.
-type PVCUnbinder struct {
+type Controller struct {
 	Client client.Client
 	// Timeout is the duration a Pod must be stuck in Pending before
 	// remediation is attempted.
@@ -66,7 +66,12 @@ func FilterPodOwner(ownerNamespace, ownerName string) func(ctx context.Context, 
 	}
 }
 
-func (r *PVCUnbinder) SetupWithManager(mgr ctrl.Manager) error {
+// +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;patch
+
+// +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch;delete
+// +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete;
+
+func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}, builder.WithPredicates(predicate.NewPredicateFuncs(pvcUnbinderPredicate))).Complete(r)
 }
 
@@ -78,7 +83,7 @@ func (r *PVCUnbinder) SetupWithManager(mgr ctrl.Manager) error {
 // ResourceVersions to inform us about changes from external actors, in which
 // case we'll re-queue.
 // TODO use an in memory timeout to prevent complete unbinding of Pods.
-func (r *PVCUnbinder) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx).WithName("PVCUnbinder")
 	ctx = log.IntoContext(ctx, logger)
 
@@ -211,7 +216,7 @@ func (r *PVCUnbinder) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Res
 	return ctrl.Result{}, nil
 }
 
-func (r *PVCUnbinder) ensureRetainPolicy(ctx context.Context, pv *corev1.PersistentVolume) error {
+func (r *Controller) ensureRetainPolicy(ctx context.Context, pv *corev1.PersistentVolume) error {
 	if pv.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimRetain {
 		return nil
 	}
@@ -226,7 +231,7 @@ func (r *PVCUnbinder) ensureRetainPolicy(ctx context.Context, pv *corev1.Persist
 	return nil
 }
 
-func (r *PVCUnbinder) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
+func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
 	if r.Selector != nil && !r.Selector.Matches(labels.Set(pod.Labels)) {
 		log.FromContext(ctx).Info("selector not satisfied; skipping", "name", pod.Name, "labels", pod.Labels, "selector", r.Selector.String())
 		return false, 0
@@ -313,4 +318,17 @@ func StsPVCs(pod *corev1.Pod) []client.ObjectKey {
 		})
 	}
 	return found
+}
+
+// TODO extract to wellknown labels package?
+const k8sInstanceLabelKey = "app.kubernetes.io/instance"
+
+func filterOwner(ownerNamespace, ownerName string) func(o client.Object) bool {
+	return func(o client.Object) bool {
+		labels := o.GetLabels()
+		if o.GetNamespace() == ownerNamespace && labels != nil && labels[k8sInstanceLabelKey] == ownerName {
+			return true
+		}
+		return false
+	}
 }
