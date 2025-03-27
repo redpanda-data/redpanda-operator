@@ -2,29 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: v2-manager-role
+  name: v2-manager
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - nodes
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - cluster.redpanda.com
   resources:
@@ -86,7 +65,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: v2-manager-role
+  name: v2-manager
   namespace: default
 rules:
 - apiGroups:
@@ -113,24 +92,6 @@ rules:
   - create
   - patch
 - apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -143,13 +104,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets/status
-  verbs:
-  - patch
-  - update
 - apiGroups:
   - autoscaling
   resources:

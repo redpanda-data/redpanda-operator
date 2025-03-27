@@ -17,7 +17,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 )
 
 func TestCategorizedDelayedCache(t *testing.T) {

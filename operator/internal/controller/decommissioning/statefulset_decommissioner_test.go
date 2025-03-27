@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -41,7 +41,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-//go:embed role.yaml
+//go:embed testdata/role.yaml
 var decommissionerRBAC []byte
 
 func TestIntegrationStatefulSetDecommissioner(t *testing.T) {
