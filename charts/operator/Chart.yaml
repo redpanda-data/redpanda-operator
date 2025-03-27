@@ -21,12 +21,6 @@ maintainers:
   - name: redpanda-data
     url: https://github.com/orgs/redpanda-data/people
 
-dependencies:
-- name: kube-prometheus-stack
-  condition: monitoring.deployPrometheusKubeStack
-  version: 51.2.0
-  repository: https://prometheus-community.github.io/helm-charts
-
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |
