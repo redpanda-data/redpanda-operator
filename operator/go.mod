@@ -13,6 +13,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-logr/logr v1.4.2
+	github.com/google/cel-go v0.18.2
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
 	github.com/moby/moby v24.0.7+incompatible
@@ -164,7 +165,6 @@ require (
 	github.com/gonvenience/wrap v1.2.0 // indirect
 	github.com/gonvenience/ytbx v1.4.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
-	github.com/google/cel-go v0.18.2 // indirect
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect

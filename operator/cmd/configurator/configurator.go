@@ -263,6 +263,12 @@ func run(
 		log.Fatalf("%s", fmt.Errorf("unable to set additional listeners: %w", err))
 	}
 
+	// Perform optional fixups if required
+	cfg, err = applyFixups(cfg, path.Join(c.configSourceDir, "redpanda.yaml.fixups"))
+	if err != nil {
+		log.Fatalf("%s", fmt.Errorf("unable to apply fixups to redpanda.yaml: %w", err))
+	}
+
 	cfgBytes, err := yaml.Marshal(cfg)
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to marshal the configuration: %w", err))
@@ -274,7 +280,7 @@ func run(
 
 	if c.bootstrapTemplate != "" && c.bootstrapDestination != "" {
 		// Perform the bootstrap templating
-		err := templateBootstrapYaml(ctx, cloudExpander, c.bootstrapTemplate, c.bootstrapDestination)
+		err := templateBootstrapYaml(ctx, cloudExpander, c.bootstrapTemplate, c.bootstrapDestination, path.Join(c.configSourceDir, "bootstrap.yaml.fixups"))
 		if err != nil {
 			log.Fatalf("%s", fmt.Errorf("unable to template the .bootstrap.yaml file: %w", err))
 		}
