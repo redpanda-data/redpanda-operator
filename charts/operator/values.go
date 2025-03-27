@@ -129,6 +129,5 @@ type ServiceAccountConfig struct {
 }
 
 type MonitoringConfig struct {
-	Enabled                   bool `json:"enabled"`
-	DeployPrometheusKubeStack bool `json:"deployPrometheusKubeStack"`
+	Enabled bool `json:"enabled"`
 }

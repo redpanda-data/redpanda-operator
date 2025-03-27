@@ -87,8 +87,7 @@ type PartialServiceAccountConfig struct {
 }
 
 type PartialMonitoringConfig struct {
-	Enabled                   *bool "json:\"enabled,omitempty\""
-	DeployPrometheusKubeStack *bool "json:\"deployPrometheusKubeStack,omitempty\""
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialPodTemplateSpec struct {
