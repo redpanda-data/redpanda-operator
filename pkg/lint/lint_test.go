@@ -150,6 +150,37 @@ func TestOperatorKustomizationTag(t *testing.T) {
 	}
 }
 
+type BranchesYAML struct {
+	Active []string `json:"active"`
+}
+
+type BackportRC struct {
+	TargetBranchChoices []string `json:"targetBranchChoices"`
+}
+
+func TestBranches(t *testing.T) {
+	branches := unmarshalFileInto[BranchesYAML](t, "../../.github/branches.yml")
+	backportrc := unmarshalFileInto[BackportRC](t, "../../.backportrc.json")
+	readmeMD, err := os.ReadFile("../../README.md")
+	require.NoError(t, err)
+
+	// NB: `main` is present in active branches but isn't a backport target.
+	assert.Equal(t, branches.Active[1:], backportrc.TargetBranchChoices, ".github/branches.yml's active field should equal targetBranchChoices of .backportrc.json")
+
+	for _, branch := range branches.Active {
+		link := fmt.Sprintf("[`%s`](https://github.com/redpanda-data/redpanda-operator/tree/%s)", branch, branch)
+		assert.Contains(t, string(readmeMD), link, "Did you forget to add %q to README.md?", branch)
+	}
+}
+
+func unmarshalFileInto[T any](t *testing.T, name string) T {
+	var out T
+	bytes, err := os.ReadFile(name)
+	require.NoError(t, err)
+	require.NoError(t, yaml.Unmarshal(bytes, &out))
+	return out
+}
+
 // TestGoModLint parses most go.mod files in this repository and verifies that:
 //   - go directive is equal to runtime version.
 //   - No replace directives specifying paths are present (with exceptions).
