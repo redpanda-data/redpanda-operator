@@ -1481,6 +1481,7 @@ tuning:
 # assertion prevents any rogue containers from the default podTemplate from
 # slipping in.
 # ASSERT-NO-ERROR
+# ASSERT-GOLDEN
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "sidecar"]]
 nameOverride: "not-redpanda"
 fullnameOverride: "also-not-redpanda"
