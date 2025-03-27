@@ -222,14 +222,15 @@ func (r *ClusterReconciler) Reconcile(
 		secrets = append(secrets, ar.getSchemaRegistrySuperUserKey())
 	}
 
-	if err = ar.configMap(); err != nil {
-		return ctrl.Result{}, fmt.Errorf("creating configmap: %w", err)
-	}
-	cm, err := ar.getConfigMap()
+	// Construct a configuration
+	cfg, err := resources.CreateConfiguration(ctx, r.Client, r.CloudSecretsExpander, &vectorizedCluster, ar.getHeadlessServiceFQDN(), ar.getProxySuperUserKey(), ar.getSchemaRegistrySuperUserKey(), pki.BrokerTLSConfigProvider())
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("creating configuration: %w", err)
 	}
-	if err = ar.statefulSet(); err != nil {
+
+	ar.configMap(cfg)
+	cm := ar.getConfigMap(cfg)
+	if err = ar.statefulSet(cfg); err != nil {
 		return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
 	}
 
@@ -261,7 +262,7 @@ func (r *ClusterReconciler) Reconcile(
 	if vectorizedCluster.Spec.Configuration.SchemaRegistry != nil {
 		schemaRegistryPort = vectorizedCluster.Spec.Configuration.SchemaRegistry.Port
 	}
-	stSets, err := ar.getStatefulSet()
+	stSets, err := ar.getStatefulSet(cfg)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -283,6 +284,7 @@ func (r *ClusterReconciler) Reconcile(
 	delay, err := r.reconcileConfiguration(
 		ctx,
 		&vectorizedCluster,
+		cfg,
 		cm,
 		stSets,
 		pki,

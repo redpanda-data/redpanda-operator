@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,7 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
@@ -70,6 +70,20 @@ func TestEnsure(t *testing.T) {
 	cfg, err := testEnv.StartRedpandaTestEnv(false)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
+
+	// We need one secret in place for all of these
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "archival",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"archival": []byte("XXX"),
+		},
+	}
+	require.NoError(t, c.Create(context.TODO(), &secret))
 
 	cluster := pandaCluster()
 	stsResource := stsFromCluster(cluster)
@@ -147,6 +161,16 @@ func TestEnsure(t *testing.T) {
 				return np.Name == tt.nodePoolName
 			})
 			assert.NotEqual(t, -1, npIndex, "could not find nodePool")
+			cfg, err := resources.CreateConfiguration(context.TODO(),
+				c,
+				nil,
+				tt.pandaCluster,
+				"cluster.local",
+				types.NamespacedName{},
+				types.NamespacedName{},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			sts := resources.NewStatefulSet(
 				c,
 				tt.pandaCluster,
@@ -162,10 +186,7 @@ func TestEnsure(t *testing.T) {
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
-				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-					return &configuration.GlobalConfiguration{}, nil
-				},
+				cfg,
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
@@ -224,7 +245,7 @@ func TestEnsure(t *testing.T) {
 			assert.Equal(t, expectedRedpandaResources, actualRedpandaResources)
 			assert.Equal(t, expectedInitResources, actualInitResources)
 			configMapHash := actual.Spec.Template.Annotations["redpanda.vectorized.io/configmap-hash"]
-			assert.Equal(t, hash, configMapHash)
+			assert.NotEmpty(t, configMapHash)
 
 			if *actual.Spec.Replicas != *tt.expectedObject.Spec.Replicas {
 				t.Errorf("%s: expecting replicas %d, got replicas %d", tt.name,
@@ -632,6 +653,16 @@ func TestCurrentVersion(t *testing.T) {
 				pod.Labels = labels.ForCluster(cluster).WithNodePool(cluster.Spec.NodePools[0].Name)
 				assert.NoError(t, c.Create(context.TODO(), &pod))
 			}
+			cfg, err := resources.CreateConfiguration(context.TODO(),
+				c,
+				nil,
+				cluster,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			sts := resources.NewStatefulSet(c, cluster, scheme.Scheme,
 				"cluster.local",
 				"servicename",
@@ -644,10 +675,7 @@ func TestCurrentVersion(t *testing.T) {
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
-				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-					return &configuration.GlobalConfiguration{}, nil
-				},
+				cfg,
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
@@ -907,7 +935,18 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.fields.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				nil,
+				nil,
+				nil,
+				time.Hour,
 				tt.fields.logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))}},
@@ -1032,7 +1071,18 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				nil,
+				nil,
+				nil,
+				time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
@@ -1409,7 +1459,18 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				nil,
+				nil,
+				nil,
+				time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},

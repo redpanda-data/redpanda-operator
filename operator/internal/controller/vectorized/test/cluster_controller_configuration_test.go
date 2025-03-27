@@ -32,6 +32,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
@@ -48,8 +49,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 		timeoutShort  = time.Millisecond * 100
 		intervalShort = time.Millisecond * 20
-
-		bootstrapConfigurationFile = ".bootstrap.yaml"
 
 		configMapHashKey                = "redpanda.vectorized.io/configmap-hash"
 		centralizedConfigurationHashKey = "redpanda.vectorized.io/centralized-configuration-hash"
@@ -72,8 +71,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			var cm corev1.ConfigMap
 			Eventually(resourceGetter(baseKey, &cm), timeout, interval).Should(Succeed())
 
-			By("Putting a .bootstrap.yaml in the configmap")
-			Expect(cm.Data[bootstrapConfigurationFile]).ToNot(BeEmpty())
+			By("Putting a redpanda.yaml template in the configmap")
+			Expect(cm.Data[clusterconfiguration.RedpandaYamlTemplateFile]).ToNot(BeEmpty())
+			Expect(cm.Data[clusterconfiguration.RedpandaYamlFixupFile]).ToNot(BeEmpty())
+
+			By("Putting a .bootstrap.yaml template in the configmap")
+			Expect(cm.Data[clusterconfiguration.BootstrapTemplateFile]).ToNot(BeEmpty())
+			Expect(cm.Data[clusterconfiguration.BootstrapFixupFile]).ToNot(BeEmpty())
 
 			By("Always adding the last-applied-critical-configuration annotation on the configmap")
 			Eventually(annotationGetter(baseKey, &cm, lastAppliedConfigurationHashKey), timeout, interval).ShouldNot(BeEmpty())

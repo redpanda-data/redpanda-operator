@@ -16,7 +16,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -30,6 +29,7 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
@@ -90,19 +90,26 @@ func TestEnsureConfigMap(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(context.TODO(), &secret))
-			cfgRes := resources.NewConfigMap(
+			cfg, err := resources.CreateConfiguration(context.TODO(),
 				c,
-				&testcases[i].cluster,
-				scheme.Scheme,
+				nil,
+				&tc.cluster,
 				"cluster.local",
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
+			cfgRes := resources.NewConfigMap(
+				c,
+				&testcases[i].cluster,
+				scheme.Scheme,
+				cfg,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
 
 			actual := &corev1.ConfigMap{}
-			err := c.Get(context.Background(), cfgRes.Key(), actual)
+			err = c.Get(context.Background(), cfgRes.Key(), actual)
 			require.NoError(t, err)
 			data := actual.Data["redpanda.yaml"]
 			if tc.expectedString != "" {
@@ -250,43 +257,50 @@ func TestMultiExternalListenersConfigMap(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(ctx, &secret))
-			cfgRes := resources.NewConfigMap(
+			cfg, err := resources.CreateConfiguration(context.TODO(),
 				c,
-				&testcases[i].cluster,
-				controller.UnifiedScheme,
+				nil,
+				&tc.cluster,
 				"cluster.local",
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
+			cfgRes := resources.NewConfigMap(
+				c,
+				&testcases[i].cluster,
+				controller.UnifiedScheme,
+				cfg,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(ctx))
 
 			actual := &corev1.ConfigMap{}
-			err := c.Get(context.Background(), cfgRes.Key(), actual)
+			err = c.Get(context.Background(), cfgRes.Key(), actual)
 			require.NoError(t, err)
 
 			data := actual.Data["redpanda.yaml"]
-			cfg := config.ProdDefault()
-			err = yaml.Unmarshal([]byte(data), cfg)
+			redpandaYaml := config.ProdDefault()
+			err = yaml.Unmarshal([]byte(data), redpandaYaml)
 			require.NoError(t, err)
 
 			if len(tc.expectedKafka) > 0 {
-				require.ElementsMatch(t, tc.expectedKafka, cfg.Redpanda.KafkaAPI)
+				require.ElementsMatch(t, tc.expectedKafka, redpandaYaml.Redpanda.KafkaAPI)
 			}
 			if len(tc.expectedPandaproxy) > 0 {
-				require.ElementsMatch(t, tc.expectedPandaproxy, cfg.Pandaproxy.PandaproxyAPI)
+				require.ElementsMatch(t, tc.expectedPandaproxy, redpandaYaml.Pandaproxy.PandaproxyAPI)
 			}
 			if len(tc.expectedSchemaRegistry) > 0 {
-				require.ElementsMatch(t, tc.expectedSchemaRegistry, cfg.SchemaRegistry.SchemaRegistryAPI)
+				require.ElementsMatch(t, tc.expectedSchemaRegistry, redpandaYaml.SchemaRegistry.SchemaRegistryAPI)
 			}
 			if len(tc.expectedKafkaTLS) > 0 {
-				require.ElementsMatch(t, tc.expectedKafkaTLS, cfg.Redpanda.KafkaAPITLS)
+				require.ElementsMatch(t, tc.expectedKafkaTLS, redpandaYaml.Redpanda.KafkaAPITLS)
 			}
 			if len(tc.expectedPandaproxyTLS) > 0 {
-				require.ElementsMatch(t, tc.expectedPandaproxyTLS, cfg.Pandaproxy.PandaproxyAPITLS)
+				require.ElementsMatch(t, tc.expectedPandaproxyTLS, redpandaYaml.Pandaproxy.PandaproxyAPITLS)
 			}
 			if len(tc.expectedSchemaRegistryTLS) > 0 {
-				require.ElementsMatch(t, tc.expectedSchemaRegistryTLS, cfg.SchemaRegistry.SchemaRegistryAPITLS)
+				require.ElementsMatch(t, tc.expectedSchemaRegistryTLS, redpandaYaml.SchemaRegistry.SchemaRegistryAPITLS)
 			}
 		})
 	}
@@ -299,12 +313,14 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 		name                    string
 		additionalConfiguration map[string]string
 		expectedStrings         []string
+		expectedClusterConfig   map[string]string // the template values prior to CEL patching
+		expectedOperatorConfig  map[string]any    // the evaluated config values expected in the operator
 		expectedHash            string
 	}{
 		{
 			name:                    "Primitive object in additional configuration",
 			additionalConfiguration: map[string]string{"redpanda.transactional_id_expiration_ms": "25920000000", "rpk.overprovisioned": "true"},
-			expectedStrings:         []string{"transactional_id_expiration_ms: 25920000000"},
+			expectedClusterConfig:   map[string]string{"transactional_id_expiration_ms": "25920000000"},
 			expectedHash:            "78b397cdd7924ba28cea07b55e0c8444",
 		},
 		{
@@ -315,15 +331,26 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
         - address: 0.0.0.0
           port: 8081
           name: external`},
-			expectedHash: "a5d7af0c3bafb1488e1d147da992cf11",
+			expectedClusterConfig: map[string]string{
+				"auto_create_topics_enabled":                    "false",
+				"cloud_storage_cache_size":                      "10737418240",
+				"cloud_storage_disable_tls":                     "false",
+				"cloud_storage_enabled":                         "true",
+				"cloud_storage_segment_max_upload_interval_sec": "1800",
+				"enable_rack_awareness":                         "true",
+				"log_segment_size":                              "536870912",
+			},
+			expectedOperatorConfig: map[string]any{"cloud_storage_secret_key": "XXX"},
+			expectedHash:           "a5d7af0c3bafb1488e1d147da992cf11",
 		},
 		{
 			name: "shadow index cache directory",
 			expectedStrings: []string{
 				`cloud_storage_cache_directory: /var/lib/shadow-index-cache`,
-				`cloud_storage_cache_size: "10737418240"`,
+				//`cloud_storage_cache_size: "10737418240"`,
 			},
-			expectedHash: "3b8a2186bb99ebb9b3db10452cdfd45a",
+			expectedClusterConfig: map[string]string{"cloud_storage_cache_size": "10737418240"},
+			expectedHash:          "3b8a2186bb99ebb9b3db10452cdfd45a",
 		},
 	}
 	for _, tc := range testcases {
@@ -341,23 +368,35 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(context.TODO(), &secret))
-			cfgRes := resources.NewConfigMap(
+			cfg, err := resources.CreateConfiguration(context.TODO(),
 				c,
+				nil,
 				panda,
-				scheme.Scheme,
 				"cluster.local",
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
+			cfgRes := resources.NewConfigMap(
+				c,
+				panda,
+				scheme.Scheme,
+				cfg,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
 
 			actual := &corev1.ConfigMap{}
-			err := c.Get(context.Background(), cfgRes.Key(), actual)
+			err = c.Get(context.Background(), cfgRes.Key(), actual)
 			require.NoError(t, err)
-			data := actual.Data["redpanda.yaml"]
+			data := actual.Data[clusterconfiguration.RedpandaYamlTemplateFile]
 			for _, es := range tc.expectedStrings {
 				require.True(t, strings.Contains(data, es), fmt.Sprintf("expecting %s but got %v", es, data))
+			}
+			var confTmpl map[string]string
+			require.NoError(t, yaml.Unmarshal([]byte(actual.Data[clusterconfiguration.BootstrapTemplateFile]), &confTmpl))
+			for k, er := range tc.expectedClusterConfig {
+				require.True(t, confTmpl[k] == er, fmt.Sprintf("expecting bootstrap template entry %q to have %q but got %q", k, er, confTmpl[k]))
 			}
 
 			fileName := strings.ReplaceAll("./testdata/"+tc.name+".golden", " ", "_")
@@ -368,15 +407,20 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 			golden, err := os.ReadFile(fileName)
 			require.NoError(t, err)
 			require.Equal(t, string(golden), data)
-			hash, err := cfgRes.GetNodeConfigHash(context.TODO())
+			hash, err := cfg.GetNodeConfigHash(context.TODO())
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedHash, hash)
+			// Check the concrete values expected in the final result
+			conf, err := cfg.ReifyClusterConfiguration(context.TODO(), nil)
+			for k, v := range tc.expectedOperatorConfig {
+				require.True(t, conf[k] == v, fmt.Sprintf("expecting concrete configuration %q to be %v, not %v", k, v, conf[k]))
+			}
+			require.NoError(t, err)
 		})
 	}
 }
 
 func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test table is long
-	logger := logr.Discard()
 	tests := []struct {
 		name        string
 		clusterName string
@@ -483,9 +527,15 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				},
 			}
 
-			r := resources.NewConfigMap(c, p, nil, tt.clusterFQDN, types.NamespacedName{Namespace: "namespace", Name: "internal"}, types.NamespacedName{Namespace: "namespace", Name: "external"}, TestBrokerTLSConfigProvider{}, logger)
-
-			cfg, err := r.CreateConfiguration(context.Background())
+			cfg, err := resources.CreateConfiguration(context.TODO(),
+				c,
+				nil,
+				p,
+				tt.clusterFQDN,
+				types.NamespacedName{Namespace: "namespace", Name: "internal"},
+				types.NamespacedName{Namespace: "namespace", Name: "external"},
+				TestBrokerTLSConfigProvider{},
+			)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -493,10 +543,13 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.wantArgs.SeedServers, cfg.NodeConfiguration.Redpanda.SeedServers)
+			redpandaYaml, err := cfg.ReifyNodeConfiguration(context.Background())
+			require.NoError(t, err)
+
+			require.Equal(t, tt.wantArgs.SeedServers, redpandaYaml.Redpanda.SeedServers)
 			// Assert that the PandaproxyClient and SchemaRegistryClient configurations remain stable regardless of changes to replicas.
-			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, cfg.NodeConfiguration.PandaproxyClient.Brokers)
-			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, cfg.NodeConfiguration.SchemaRegistryClient.Brokers)
+			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, redpandaYaml.PandaproxyClient.Brokers)
+			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, redpandaYaml.SchemaRegistryClient.Brokers)
 		})
 	}
 }
@@ -524,29 +577,36 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 		},
 	}
 	require.NoError(t, c.Create(context.TODO(), &secret))
+	cfg, err := resources.CreateConfiguration(context.TODO(),
+		c,
+		nil,
+		panda,
+		"cluster.local",
+		types.NamespacedName{Namespace: "namespace", Name: "internal"},
+		types.NamespacedName{Namespace: "namespace", Name: "external"},
+		TestBrokerTLSConfigProvider{},
+	)
+	require.NoError(t, err)
 	cfgRes := resources.NewConfigMap(
 		c,
 		panda,
 		scheme.Scheme,
-		"cluster.local",
-		types.NamespacedName{Name: "test", Namespace: "test"},
-		types.NamespacedName{Name: "test", Namespace: "test"},
-		TestBrokerTLSConfigProvider{},
+		cfg,
 		ctrl.Log.WithName("test"))
 	require.NoError(t, cfgRes.Ensure(context.TODO()))
 
 	actual := &corev1.ConfigMap{}
-	err := c.Get(context.Background(), cfgRes.Key(), actual)
+	err = c.Get(context.Background(), cfgRes.Key(), actual)
 	require.NoError(t, err)
 	data := actual.Data["redpanda.yaml"]
-	cfg := config.ProdDefault()
-	require.NoError(t, yaml.Unmarshal([]byte(data), cfg))
-	require.Equal(t, "/etc/tls/certs/ca/tls.key", cfg.PandaproxyClient.BrokerTLS.KeyFile)
-	require.Equal(t, "/etc/tls/certs/ca/tls.crt", cfg.PandaproxyClient.BrokerTLS.CertFile)
-	require.Equal(t, "/etc/tls/certs/ca.crt", cfg.PandaproxyClient.BrokerTLS.TruststoreFile)
-	require.Equal(t, "/etc/tls/certs/ca/tls.key", cfg.SchemaRegistryClient.BrokerTLS.KeyFile)
-	require.Equal(t, "/etc/tls/certs/ca/tls.crt", cfg.SchemaRegistryClient.BrokerTLS.CertFile)
-	require.Equal(t, "/etc/tls/certs/ca.crt", cfg.SchemaRegistryClient.BrokerTLS.TruststoreFile)
+	redpandaYaml := config.ProdDefault()
+	require.NoError(t, yaml.Unmarshal([]byte(data), redpandaYaml))
+	require.Equal(t, "/etc/tls/certs/ca/tls.key", redpandaYaml.PandaproxyClient.BrokerTLS.KeyFile)
+	require.Equal(t, "/etc/tls/certs/ca/tls.crt", redpandaYaml.PandaproxyClient.BrokerTLS.CertFile)
+	require.Equal(t, "/etc/tls/certs/ca.crt", redpandaYaml.PandaproxyClient.BrokerTLS.TruststoreFile)
+	require.Equal(t, "/etc/tls/certs/ca/tls.key", redpandaYaml.SchemaRegistryClient.BrokerTLS.KeyFile)
+	require.Equal(t, "/etc/tls/certs/ca/tls.crt", redpandaYaml.SchemaRegistryClient.BrokerTLS.CertFile)
+	require.Equal(t, "/etc/tls/certs/ca.crt", redpandaYaml.SchemaRegistryClient.BrokerTLS.TruststoreFile)
 }
 
 type TestBrokerTLSConfigProvider struct{}

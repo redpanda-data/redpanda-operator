@@ -14,10 +14,10 @@ import (
 	"crypto/tls"
 	"log"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,17 +29,16 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
 var c client.Client
-
-const hash = "hash"
 
 func TestMain(m *testing.M) {
 	var err error
@@ -67,6 +66,19 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "archival",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"archival": []byte("XXX"),
+		},
+	}
+	if err := c.Create(context.TODO(), &secret); err != nil {
+		log.Fatal(err)
+	}
+
 	exitCode := m.Run()
 	err = testEnv.Stop()
 	if err != nil {
@@ -83,6 +95,16 @@ func TestEnsure_StatefulSet(t *testing.T) {
 	err := c.Create(context.Background(), cluster)
 	require.NoError(t, err)
 
+	cfg, err := res.CreateConfiguration(context.TODO(),
+		c,
+		nil,
+		cluster,
+		"cluster.local",
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		TestBrokerTLSConfigProvider{},
+	)
+	require.NoError(t, err)
 	sts := res.NewStatefulSet(
 		c,
 		cluster,
@@ -98,10 +120,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 			ConfiguratorTag:       "latest",
 			ImagePullPolicy:       "Always",
 		},
-		func(ctx context.Context) (string, error) { return hash, nil },
-		func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-			return &configuration.GlobalConfiguration{}, nil
-		},
+		cfg,
 		adminutils.NewNodePoolInternalAdminAPI,
 		nil,
 		time.Second,
@@ -136,66 +155,71 @@ func TestEnsure_ConfigMap(t *testing.T) {
 	cluster.Name = "ensure-integration-cm-cluster"
 	assert.NoError(t, c.Create(context.Background(), cluster))
 
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "archival",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"archival": []byte("XXX"),
-		},
+	mustCfgAndCm := func() *res.ConfigMapResource {
+		// CombinedCfg is immutable once it's been templated,
+		// so we have to create new values here.
+		cfg, err := res.CreateConfiguration(context.TODO(),
+			c,
+			nil,
+			cluster,
+			"cluster.local",
+			types.NamespacedName{Name: "test", Namespace: "test"},
+			types.NamespacedName{Name: "test", Namespace: "test"},
+			TestBrokerTLSConfigProvider{},
+		)
+		require.NoError(t, err)
+		cm := res.NewConfigMap(
+			c,
+			cluster,
+			scheme.Scheme,
+			cfg,
+			ctrl.Log.WithName("test"))
+
+		err = cm.Ensure(context.Background())
+		assert.NoError(t, err)
+
+		return cm
 	}
-	assert.NoError(t, c.Create(context.Background(), &secret))
 
-	cm := res.NewConfigMap(
-		c,
-		cluster,
-		scheme.Scheme,
-		"cluster.local",
-		types.NamespacedName{},
-		types.NamespacedName{},
-		TestBrokerTLSConfigProvider{},
-		ctrl.Log.WithName("test"))
-
-	err := cm.Ensure(context.Background())
-	assert.NoError(t, err)
-
+	cm := mustCfgAndCm()
 	actual := &corev1.ConfigMap{}
-	err = c.Get(context.Background(), cm.Key(), actual)
+	err := c.Get(context.Background(), cm.Key(), actual)
 	assert.NoError(t, err)
 	originalResourceVersion := actual.ResourceVersion
 
-	data := actual.Data["redpanda.yaml"]
-	if !strings.Contains(data, "auto_create_topics_enabled: false") {
+	data := mustUnmarshal[map[string]string](t, actual.Data[clusterconfiguration.BootstrapTemplateFile])
+	if data["auto_create_topics_enabled"] != "false" {
 		t.Fatalf("expecting configmap containing 'auto_create_topics_enabled: false' but got %v", data)
 	}
 
 	// calling ensure for second time to see the resource does not get updated
-	err = cm.Ensure(context.Background())
-	assert.NoError(t, err)
-
+	cm = mustCfgAndCm()
 	err = c.Get(context.Background(), cm.Key(), actual)
 	assert.NoError(t, err)
 	if actual.ResourceVersion != originalResourceVersion {
 		t.Fatalf("second ensure: expecting version %s but got %s", originalResourceVersion, actual.GetResourceVersion())
 	}
 
-	// verify the update patches the config
+	// verify the update patches the config.
+	// CombinedCfg is immutable once it's been written out, so we have to create a new value here.
 	cluster.Spec.Configuration.KafkaAPI[0].Port = 1111
 	cluster.Spec.Configuration.KafkaAPI[0].TLS.Enabled = true
-
-	err = cm.Ensure(context.Background())
-	assert.NoError(t, err)
+	cm = mustCfgAndCm()
 
 	err = c.Get(context.Background(), cm.Key(), actual)
 	assert.NoError(t, err)
 	if actual.ResourceVersion == originalResourceVersion {
 		t.Fatalf("expecting version to get updated after resource update but is %s", originalResourceVersion)
 	}
-	data = actual.Data["redpanda.yaml"]
-	if !strings.Contains(data, "cert_file") || !strings.Contains(data, "port: 1111") {
-		t.Fatalf("expecting configmap updated but got %v", data)
-	}
+	rpYaml := mustUnmarshal[config.RedpandaYaml](t, actual.Data[clusterconfiguration.RedpandaYamlTemplateFile])
+	assert.NotEmpty(t, rpYaml.Redpanda.KafkaAPITLS[0].CertFile, "expecting configmap updated")
+	assert.Equal(t, 1111, rpYaml.Redpanda.KafkaAPI[0].Port, "expecting configmap updated")
+}
+
+func mustUnmarshal[T any](t *testing.T, entry string) T {
+	var value T
+	require.NoError(t, yaml.Unmarshal([]byte(entry), &value))
+	return value
 }
 
 //nolint:funlen // the subtests might causes linter to complain
