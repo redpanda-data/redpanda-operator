@@ -46,10 +46,14 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -577,7 +581,7 @@ func Run(
 			return err
 		}
 
-		if err = (&redpandacontrollers.ManagedDecommissionReconciler{
+		if err = (&manageddecommission.ManagedDecommissionReconciler{
 			Client:        mgr.GetClient(),
 			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),
 			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
@@ -587,7 +591,7 @@ func Run(
 		}
 
 		if runThisController(NodeController, additionalControllers) {
-			if err = (&redpandacontrollers.RedpandaNodePVCReconciler{
+			if err = (&nodewatcher.RedpandaNodePVCReconciler{
 				Client:       mgr.GetClient(),
 				OperatorMode: operatorMode,
 			}).SetupWithManager(mgr); err != nil {
@@ -597,7 +601,7 @@ func Run(
 		}
 
 		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&redpandacontrollers.DecommissionReconciler{
+			if err = (&olddecommission.DecommissionReconciler{
 				Client:                   mgr.GetClient(),
 				OperatorMode:             operatorMode,
 				DecommissionWaitInterval: decommissionWaitInterval,
@@ -618,7 +622,7 @@ func Run(
 	case NamespaceControllerMode:
 		ctrl.Log.Info("running as a namespace controller", "mode", NamespaceControllerMode, "namespace", namespace)
 		if runThisController(NodeController, additionalControllers) {
-			if err = (&redpandacontrollers.RedpandaNodePVCReconciler{
+			if err = (&nodewatcher.RedpandaNodePVCReconciler{
 				Client:       mgr.GetClient(),
 				OperatorMode: operatorMode,
 			}).SetupWithManager(mgr); err != nil {
@@ -628,7 +632,7 @@ func Run(
 		}
 
 		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&redpandacontrollers.DecommissionReconciler{
+			if err = (&olddecommission.DecommissionReconciler{
 				Client:                   mgr.GetClient(),
 				OperatorMode:             operatorMode,
 				DecommissionWaitInterval: decommissionWaitInterval,
@@ -649,7 +653,7 @@ func Run(
 	} else {
 		setupLog.Info("starting PVCUnbinder controller", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
 
-		if err := (&decommissioning.PVCUnbinder{
+		if err := (&pvcunbinder.Controller{
 			Client:   mgr.GetClient(),
 			Timeout:  unbindPVCsAfter,
 			Selector: unbinderSelector,
