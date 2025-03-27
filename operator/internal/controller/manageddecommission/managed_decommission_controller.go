@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package manageddecommission
 
 import (
 	"context"
@@ -42,6 +42,9 @@ const (
 	decommissionWaitJitterFactor = 0.2
 
 	defaultDecommissionWaitInterval = 10 * time.Second
+
+	revisionPath        = "/revision"
+	componentLabelValue = "redpanda-statefulset"
 )
 
 var ErrZeroReplicas = errors.New("redpanda replicas is zero")

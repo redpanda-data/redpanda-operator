@@ -2,51 +2,25 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: decommissioner-role
+  name: decommissioning
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - watch
 - apiGroups:
   - ""
   resources:
   - persistentvolumes
   verbs:
   - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: decommissioning
+  namespace: default
+rules:
 - apiGroups:
   - ""
   resources:
-  - pods
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
+  - configmaps
   verbs:
   - create
   - delete
@@ -55,13 +29,6 @@ rules:
   - patch
   - update
   - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: decommissioner-role
-  namespace: default
-rules:
 - apiGroups:
   - ""
   resources:
