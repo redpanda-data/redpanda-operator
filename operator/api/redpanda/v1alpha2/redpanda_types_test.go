@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,6 +75,59 @@ var (
 		return metav1.Time{Time: time.Unix(0, nsec)}
 	})
 )
+
+func TestFullNameOverride(t *testing.T) {
+	tcs := []struct {
+		name             string
+		rp               redpandav1alpha2.Redpanda
+		expectedFullname string
+	}{
+		{
+			name: "Deprecated full name only",
+			rp: redpandav1alpha2.Redpanda{
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+						DeprecatedFullNameOverride: "deprecated",
+						FullnameOverride:           nil,
+					},
+				},
+			},
+			expectedFullname: "deprecated",
+		},
+		{
+			name: "Full name only",
+			rp: redpandav1alpha2.Redpanda{
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+						DeprecatedFullNameOverride: "",
+						FullnameOverride:           ptr.To("fullname"),
+					},
+				},
+			},
+			expectedFullname: "fullname",
+		},
+		{
+			name: "Both full name set",
+			rp: redpandav1alpha2.Redpanda{
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+						DeprecatedFullNameOverride: "deprecated",
+						FullnameOverride:           ptr.To("fullname-wins"),
+					},
+				},
+			},
+			expectedFullname: "fullname-wins",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			dot, err := tc.rp.GetDot(&rest.Config{})
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedFullname, dot.Values["fullnameOverride"].(string))
+		})
+	}
+}
 
 // TestRedpanda_ValuesJSON asserts that .ValuesJSON appropriately coalesces the
 // value of CloudStorageEnabled into a boolean.
