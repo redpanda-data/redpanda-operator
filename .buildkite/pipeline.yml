@@ -46,7 +46,7 @@ steps:
     label: ":gandalf: Nightly Releases"
     timeout_in_minutes: 10
     agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     commands:
       - |
         aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l9j0i2e0
@@ -97,7 +97,7 @@ steps:
       build.branch == build.tag
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
     agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     plugins:
       - seek-oss/aws-sm#v2.3.2:
           json-to-env:
