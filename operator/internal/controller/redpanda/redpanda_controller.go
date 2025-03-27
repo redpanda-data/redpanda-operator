@@ -209,7 +209,7 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 			// if no longer managed by us, attempt to remove the finalizer
 			controllerutil.RemoveFinalizer(rp, FinalizerKey)
 			if err := r.Client.Update(ctx, rp); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, errors.WithStack(err)
 			}
 		}
 
@@ -228,29 +228,29 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		controllerutil.AddFinalizer(rp, FinalizerKey)
 		if err := r.Client.Patch(ctx, rp, patch); err != nil {
 			log.Error(err, "unable to register finalizer")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, errors.WithStack(err)
 		}
 	}
 
 	rp, err := r.reconcileFlux(ctx, rp)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.WithStack(err)
 	}
 
 	if err := r.reconcileDefluxed(ctx, rp); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.WithStack(err)
 	}
 
 	if err := r.reconcileStatus(ctx, rp); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.WithStack(err)
 	}
 
 	if err := r.reconcileLicense(ctx, rp); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.WithStack(err)
 	}
 
 	if err := r.reconcileClusterConfig(ctx, rp); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.WithStack(err)
 	}
 
 	// Reconciliation has completed without any errors, therefore we observe our
@@ -284,17 +284,17 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 	// pull our deployments and stateful sets
 	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	connectorsDeployments, err := connectorsDeploymentsForCluster(ctx, r.Client, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	deployments := append(consoleDeployments, connectorsDeployments...)
@@ -320,7 +320,7 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 	// need to perform a decommission.
 	needsDecommission, err := r.needsDecommission(ctx, rp, redpandaStatefulSets)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if needsDecommission {
@@ -367,7 +367,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 		IsUpgrade: true,
 	}, values)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	var errs []error
@@ -436,7 +436,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 
 	// Garbage collect any objects that are no longer needed.
 	if err := r.reconcileDefluxGC(ctx, rp, created); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -486,7 +486,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer client.Close()
 
@@ -503,7 +503,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 
 			return nil
 		}
-		return err
+		return errors.WithStack(err)
 	}
 
 	licenseInfo, err := client.GetLicenseInfo(ctx)
@@ -519,7 +519,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 
 			return nil
 		}
-		return err
+		return errors.WithStack(err)
 	}
 
 	var message string
@@ -605,24 +605,24 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer client.Close()
 
 	config, err := r.clusterConfigFor(ctx, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	usersTXT, err := r.usersTXTFor(ctx, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	syncer := syncclusterconfig.Syncer{Client: client}
 
 	if err := syncer.Sync(ctx, config, usersTXT); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
@@ -638,7 +638,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
 	values, err := rp.GetValues()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	if !values.Auth.SASL.Enabled {
@@ -652,7 +652,7 @@ func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alph
 		if apierrors.IsNotFound(err) {
 			return map[string][]byte{}, nil
 		}
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return users.Data, nil
@@ -668,7 +668,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 
 	dot, err := rp.GetDot(&rest.Config{})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// The most reliable way to get the correct and full cluster config is to
@@ -687,12 +687,12 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 
 	expanded, err := expander.Expand(ctx, clusterConfigTemplate)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	var desired map[string]any
 	if err := yaml.Unmarshal([]byte(expanded), &desired); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return desired, nil
@@ -703,7 +703,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpanda
 
 	types, err := allListTypes(r.Client)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// For all types in the redpanda helm chart,
@@ -720,7 +720,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpanda
 				log.Info("Skipping unknown GVK", "gvk", fmt.Sprintf("%T", typ))
 				continue
 			}
-			return err
+			return errors.WithStack(err)
 		}
 
 		if err := apimeta.EachListItem(typ, func(o runtime.Object) error {
@@ -753,7 +753,7 @@ func (r *RedpandaReconciler) reconcileDefluxGC(ctx context.Context, rp *redpanda
 
 			return nil
 		}); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -775,7 +775,7 @@ func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *redpandav1al
 
 	// Check if HelmRepository exists or create it
 	if err := r.reconcileHelmRepository(ctx, rp); err != nil {
-		return rp, err
+		return rp, errors.WithStack(err)
 	}
 
 	if !ptr.Deref(rp.Status.HelmRepositoryReady, false) {
@@ -784,7 +784,7 @@ func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *redpandav1al
 
 	// Check if HelmRelease exists or create it also
 	if err := r.reconcileHelmRelease(ctx, rp); err != nil {
-		return rp, err
+		return rp, errors.WithStack(err)
 	}
 
 	return rp, nil
@@ -793,7 +793,7 @@ func (r *RedpandaReconciler) reconcileFlux(ctx context.Context, rp *redpandav1al
 func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpandav1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	defer client.Close()
 
@@ -817,11 +817,11 @@ func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpanda
 func (r *RedpandaReconciler) reconcileHelmRelease(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	hr, err := r.createHelmReleaseFromTemplate(ctx, rp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := r.apply(ctx, hr); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	isGenerationCurrent := hr.Generation == hr.Status.ObservedGeneration
@@ -867,13 +867,13 @@ func (r *RedpandaReconciler) reconcileHelmRepository(ctx context.Context, rp *re
 
 func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if err := r.deleteHelmChart(ctx, rp); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
 		controllerutil.RemoveFinalizer(rp, FinalizerKey)
 		if err := r.Client.Update(ctx, rp); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -1018,7 +1018,7 @@ func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *redpan
 	key := client.ObjectKeyFromObject(rp)
 	latest := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	// HACK: Disable optimistic locking. Technically, the correct way to do
 	// this is to set both objects' ResourceVersion to "". It's a waste of
@@ -1030,7 +1030,7 @@ func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *redpan
 func (r *RedpandaReconciler) apply(ctx context.Context, obj client.Object) error {
 	gvk, err := r.Client.GroupVersionKindFor(obj)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	obj.SetManagedFields(nil)
@@ -1089,14 +1089,14 @@ func allListTypes(c client.Client) ([]client.ObjectList, error) {
 	for _, t := range redpanda.Types() {
 		gvk, err := c.GroupVersionKindFor(t)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 
 		gvk.Kind += "List"
 
 		list, err := c.Scheme().New(gvk)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 
 		types = append(types, list.(client.ObjectList))
