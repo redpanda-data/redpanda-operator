@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: 'The `chartVersion` field supports only charts within the `v5.9.x` and `v5.10.x` series. Pre-existing Redpanda resources with an older version should be upgraded before upgrading the operator.'
+time: 2025-03-27T16:03:28.845272-04:00

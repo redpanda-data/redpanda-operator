@@ -43,6 +43,13 @@ type ChartRef struct {
 	// Specifies the name of the chart to deploy.
 	ChartName string `json:"chartName,omitempty"`
 	// Defines the version of the Redpanda Helm chart to deploy.
+	// Only charts in the v5.9.x and v5.10.x series are supported.
+	//
+	// If unspecified, defaults to the operator's vendored chart version: `v5.9.21`.
+	//
+	// It is recommended to leave this field unspecified.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern="^v?5\\.(9|10)\\."
 	ChartVersion string `json:"chartVersion,omitempty"`
 	// Defines the chart repository to use. Defaults to `redpanda` if not defined.
 	HelmRepositoryName string `json:"helmRepositoryName,omitempty"`
@@ -54,25 +61,20 @@ type ChartRef struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// Defines how to handle upgrades, including failures.
 	Upgrade *HelmUpgrade `json:"upgrade,omitempty"`
-	// IMPORTANT: Beta Feature
+	// `useFlux` controls whether or not a vendored version of FluxCD is
+	// used to deploy Redpanda.
 	//
-	// Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
-	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
-	// ChartRef fields to be ignored.
+	// When `true`, FluxCD deploys the Redpanda Helm chart. The
+	// The Redpanda Operator manages only FluxCD resources such as
+	// HelmRepository, HelmChart, and HelmRelease.
 	//
-	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding
-	// version of the Redpanda chart.
+	// When `false`, the Redpanda Operator deploys Redpanda directly using
+	// its internal Go-based Helm chart. FluxCD resources are still
+	// managed by the operator albeit in a suspended state.
 	//
-	// Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
-	// manually deleted.
-	//
-	// To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false`
-	// will suspend these resources instead of removing them.
-	//
-	// References:
-	// - https://fluxcd.io/flux/components/helm/helmreleases/#suspend
-	// - https://fluxcd.io/flux/components/source/helmrepositories/#suspend
-	//
+	// If `false`, `chartVersion` MUST be `v5.9.21` or unspecified. The
+	// operator does not reconcile any Redpanda resources that have `chartVersion` set to
+	// another version while `useFlux` is `false.
 	// +optional
 	UseFlux *bool `json:"useFlux,omitempty"`
 }

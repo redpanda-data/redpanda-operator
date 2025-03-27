@@ -88,6 +88,14 @@ func TestDefluxedMinimumVersion(t *testing.T) {
 		"'useFlux' should reference the version %q of the go.mod installed redpanda chart. Do you need to run 'task generate' or update the comment?",
 		redpanda.Chart.Metadata().Version,
 	)
+
+	require.Containsf(
+		t,
+		recursiveProperties["spec"].Properties["chartRef"].Properties["chartVersion"].Description,
+		redpanda.Chart.Metadata().Version,
+		"'chartVersion' should reference the version %q of the go.mod installed Redpanda chart. Do you need to run 'task generate' or update the comment?",
+		redpanda.Chart.Metadata().Version,
+	)
 }
 
 // TestRedpanda_ValuesJSON asserts that .ValuesJSON appropriately coalesces the

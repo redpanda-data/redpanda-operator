@@ -64,7 +64,7 @@ var _ = Describe("Redpanda Controller", func() {
 					},
 					Spec: redpandav1alpha2.RedpandaSpec{
 						ChartRef: redpandav1alpha2.ChartRef{
-							ChartVersion:       "5.x.x",
+							ChartVersion:       "5.9.x",
 							HelmRepositoryName: HelmRepositoryName,
 						},
 						ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{},

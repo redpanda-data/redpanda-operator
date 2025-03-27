@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: 'The `useFlux` field now defaults to `false`'
+time: 2025-03-27T16:00:13.035675-04:00
