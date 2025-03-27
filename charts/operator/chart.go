@@ -28,7 +28,6 @@ var (
 	// objects produced by the redpanda chart.
 	Scheme = runtime.NewScheme()
 
-	//go:embed Chart.lock
 	//go:embed Chart.yaml
 	//go:embed templates/*
 	//go:embed values.schema.json
