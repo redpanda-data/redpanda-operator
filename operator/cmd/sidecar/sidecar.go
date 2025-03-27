@@ -22,10 +22,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
+
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 var schemes = []func(s *runtime.Scheme) error{
 	clientgoscheme.AddToScheme,
@@ -192,10 +195,10 @@ func Run(
 	}
 
 	if runUnbinder {
-		if err := (&decommissioning.PVCUnbinder{
+		if err := (&pvcunbinder.Controller{
 			Client:  mgr.GetClient(),
 			Timeout: unbinderTimeout,
-			Filter:  decommissioning.FilterPodOwner(clusterNamespace, clusterName),
+			Filter:  pvcunbinder.FilterPodOwner(clusterNamespace, clusterName),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
