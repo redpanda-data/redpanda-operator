@@ -293,16 +293,12 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	// DeepCopy values to prevent any accidental mutations that may occur
-	// within the chart itself.
-	values := rp.Spec.ClusterSpec.DeepCopy()
-
 	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, values)
+	}, rp.AsValues())
 	if err != nil {
 		return errors.WithStack(err)
 	}
