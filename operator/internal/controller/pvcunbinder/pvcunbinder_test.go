@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package decommissioning_test
+package pvcunbinder_test
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -110,7 +110,7 @@ func TestPVCUnbinderShouldRemediate(t *testing.T) {
 		},
 	}
 
-	r := &decommissioning.PVCUnbinder{
+	r := &pvcunbinder.Controller{
 		Timeout: 30 * time.Second,
 		Selector: labels.SelectorFromSet(labels.Set{
 			"key": "value",
@@ -232,7 +232,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	r := decommissioning.PVCUnbinder{Client: c}
+	r := pvcunbinder.Controller{Client: c}
 	require.NoError(t, r.SetupWithManager(mgr))
 
 	tgo(t, ctx, func(ctx context.Context) error {

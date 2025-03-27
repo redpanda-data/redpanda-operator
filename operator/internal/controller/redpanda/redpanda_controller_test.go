@@ -41,6 +41,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -52,7 +53,7 @@ import (
 // operatorRBAC is the ClusterRole and Role generated via controller-gen and
 // goembeded so it can be used for tests.
 //
-//go:embed role.yaml
+//go:embed testdata/role.yaml
 var operatorRBAC []byte
 
 // NB: This test setup is largely incompatible with webhooks. Though we might
@@ -596,7 +597,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			return err
 		}
 
-		return (&redpanda.ManagedDecommissionReconciler{
+		return (&manageddecommission.ManagedDecommissionReconciler{
 			Client:        mgr.GetClient(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory: s.clientFactory,

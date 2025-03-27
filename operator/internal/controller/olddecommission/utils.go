@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package olddecommission
 
 import (
 	"context"
@@ -90,7 +90,7 @@ func getHelmValues(ctx context.Context, c client.Client, log logr.Logger, releas
 }
 
 func bestTrySetRetainPV(c client.Client, log logr.Logger, ctx context.Context, name, namespace string) {
-	log.WithName("RedpandaNodePVCReconciler.bestTrySetRetainPV")
+	log.WithName("DecommissionReconciler.bestTrySetRetainPV")
 	pv := &corev1.PersistentVolume{}
 	if getErr := c.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pv); getErr != nil {
 		Infof(log, "could not change retain policy of pv %s", pv.Name)
