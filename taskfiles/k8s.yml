@@ -9,6 +9,62 @@ tasks:
     - generate-manifests
     cmds:
       - task: generate:crd-docs
+
+      # For each controller (or really itemizable RBAC source), generate an
+      # isolated rbac bundle. These are used by the helm charts to check
+      # whether or not permissions are correctly in sync. As we allow VERY
+      # granular toggling at the moment it's critical to upkeep this bookkeeping.
+      - for:
+        - NAME: rpk-debug-bundle
+          PATH: ./internal/controller/rpkdebugbundle
+        - NAME: node-watcher
+          PATH: ./internal/controller/nodewatcher
+        - NAME: old-decommission
+          PATH: ./internal/controller/olddecommission
+        - NAME: managed-decommission
+          PATH: ./internal/controller/manageddecommission
+        - NAME: pvcunbinder
+          PATH: ./internal/controller/pvcunbinder
+        - NAME: v2-manager
+          PATH: ./internal/controller/redpanda
+        - NAME: v1-manager
+          PATH: ./internal/controller/vectorized
+        - NAME: decommission
+          PATH: ./internal/controller/decommissioning
+        - NAME: sidecar
+          PATH: ./cmd/sidecar
+        - NAME: leader-election
+          PATH: ./cmd/run
+        cmd: |
+          controller-gen \
+            object:headerFile="../licenses/boilerplate.go.txt" \
+            paths={{ .ITEM.PATH }} \
+            rbac:roleName={{ .ITEM.NAME }} \
+            output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
+
+      # Some integration tests use their RBAC declarations but generally
+      # require some additional permissions (e.g. leader election, running
+      # multiple controllers)
+      - |
+        controller-gen \
+          object:headerFile="../licenses/boilerplate.go.txt" \
+          paths=./cmd/run \
+          paths=./internal/controller/decommissioning \
+          rbac:roleName=decommissioning \
+          output:rbac:stdout > ./internal/controller/decommissioning/testdata/role.yaml
+
+      - |
+        controller-gen \
+          object:headerFile="../licenses/boilerplate.go.txt" \
+          paths=./cmd/run \
+          paths=./internal/controller/redpanda \
+          paths=./internal/controller/manageddecommission \
+          paths=./internal/controller/nodewatcher \
+          paths=./internal/controller/olddecommission \
+          rbac:roleName=manager \
+          output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
+
+      # Generate the full bundle for kustomize and the operator chart.
       - |
         controller-gen \
           object:headerFile="../licenses/boilerplate.go.txt" \
@@ -18,32 +74,7 @@ tasks:
           rbac:roleName=manager-role \
           output:crd:artifacts:config=config/crd/bases \
           output:rbac:artifacts:config=config/rbac/bases/operator
-      - |
-        controller-gen \
-          paths='./internal/controller/redpanda/...' \
-          rbac:roleName=v2-manager-role \
-          output:rbac:artifacts:config=config/rbac/v2-manager-role
-      # controller-gen won't output to multiple directories and we need a copy
-      # of resources for tests, so cp it is.
-      - cp ./config/rbac/v2-manager-role/*.yaml ./internal/controller/redpanda/
-      - |
-        controller-gen \
-          paths='./internal/decommissioning/...' \
-          rbac:roleName=decommissioner-role \
-          output:rbac:artifacts:config=config/rbac/decommissioner-role
-      # controller-gen won't output to multiple directories and we need a copy
-      # of resources for tests, so cp it is.
-      - cp ./config/rbac/decommissioner-role/*.yaml ./internal/decommissioning/
-      - |
-        controller-gen \
-          paths='./internal/controller/vectorized/...' \
-          rbac:roleName=v1-manager-role \
-          output:rbac:artifacts:config=config/rbac/v1-manager-role
-      - |
-        controller-gen \
-          paths='./cmd/run/...' \
-          rbac:roleName=leader-election-role \
-          output:rbac:artifacts:config=config/rbac/leader-election-role
+
       - |
         applyconfiguration-gen \
         --go-header-file "../licenses/boilerplate.go.txt" \
