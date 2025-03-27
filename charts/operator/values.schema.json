@@ -815,9 +815,6 @@
     },
     "monitoring": {
       "properties": {
-        "deployPrometheusKubeStack": {
-          "type": "boolean"
-        },
         "enabled": {
           "type": "boolean"
         }
