@@ -525,7 +525,7 @@ external:
 -- extra-volumes-and-volumesmounts --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[7].name}", "test-extra-volume"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[9].name}", "test-extra-volume"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"redpanda\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/lifecycle"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"sidecar\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/config-watcher"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"tuning\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/tuning"]
@@ -536,39 +536,30 @@ external:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 statefulset:
-  extraVolumeMounts: |-
-    - name: test-extra-volume
-      mountPath: /fake/lifecycle
-  extraVolumes: |-
-    - name: test-extra-volume
-      secret:
-        secretName: {{ (include "redpanda.fullname" . | trunc 50 ) }}-sts-lifecycle
-        defaultMode: 0774
-  sideCars:
-    configWatcher:
-      extraVolumeMounts: |-
-        - name: test-extra-volume
-          mountPath: /fake/config-watcher
   initContainers:
     fsValidator:
       enabled: true
-      extraVolumeMounts: |-
-        - name: test-extra-volume
-          mountPath: /fake/fsValidator
-    configurator:
-      extraVolumeMounts: |-
-        - name: test-extra-volume
-          mountPath: /fake/configurator
-    tuning:
-      extraVolumeMounts: |-
-        - name: test-extra-volume
-          mountPath: /fake/tuning
     setDataDirOwnership:
       enabled: true
-      extraVolumeMounts: |-
+  podTemplate:
+    spec:
+      initContainers:
+      - name: "tuning"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/tuning
+      - name: "redpanda-configurator"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/configurator
+      - name: "set-datadir-ownership"
+        volumeMounts:
         - name: test-extra-volume
           mountPath: /fake/setDataDirOwnership
-    extraInitContainers: |-
+      - name: "fs-validator"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/fsValidator
       - name: "test-init-container"
         image: "mintel/docker-alpine-bash-curl-jq:latest"
         command: [ "/bin/bash", "-c" ]
@@ -576,6 +567,20 @@ statefulset:
           - |
             set -xe
             echo "Hello World!"
+      containers:
+      - name: redpanda
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/lifecycle
+      - name: sidecar
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/config-watcher
+      volumes:
+      - name: test-extra-volume
+        secret:
+          secretName: '{{ (include "redpanda.fullname" . | trunc 50 ) }}-sts-lifecycle'
+          defaultMode: 0774
 
 -- template-console-examples --
 # ASSERT-NO-ERROR
@@ -772,8 +777,6 @@ logging:
 monitoring:
   enabled: true
   scrapeInterval: 30s
-nodeSelector:
-  cloud.redpanda.com/role: redpanda
 post_install_job:
   podTemplate:
     spec:
@@ -813,73 +816,59 @@ statefulset:
     - --dump-memory-diagnostics-on-alloc-failure-kind=all
   budget:
     maxUnavailable: 1
-  extraVolumeMounts: |-
-    - mountPath: /etc/ssl/certs/redpanda-truststore.crt
-      name: redpanda-truststore
-      subPath: redpanda-truststore.crt
-      readOnly: true
-  extraVolumes: |-
-    - name: redpanda-truststore
-      configMap:
-        name: redpanda-truststore.crt
-        defaultMode: 0644
-        optional: false
-        items:
-        - key: redpanda-truststore.pem
-          path: redpanda-truststore.crt
   initContainers:
-    configurator:
-      resources:
-        limits:
-          cpu: 100m
-          memory: 256Mi
-        requests:
-          cpu: 100m
-          memory: 256Mi
     fsValidator:
       enabled: true
-      resources:
-        limits:
-          cpu: 100m
-          memory: 256Mi
-        requests:
-          cpu: 100m
-          memory: 256Mi
     setDataDirOwnership:
       enabled: false
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
   podTemplate:
     labels:
       azure.workload.identity/use: "true"
       cloud.redpanda.com/network-loadbalancer-access: "true"
-  priorityClassName: system-node-critical
+    spec:
+      nodeSelector:
+        cloud.redpanda.com/role: redpanda
+      terminationGracePeriodSeconds: 120
+      priorityClassName: system-node-critical
+      tolerations:
+        - effect: NoSchedule
+          key: cloud.redpanda.com/role
+          operator: Equal
+          value: redpanda
+      initContainers:
+      - name: redpanda-configurator
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      - name: fs-validator
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      containers:
+      - name: redpanda
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/redpanda-truststore.crt
+          name: redpanda-truststore
+          subPath: redpanda-truststore.crt
+          readOnly: true
+      volumes:
+      - name: redpanda-truststore
+        configMap:
+          name: redpanda-truststore.crt
+          defaultMode: 0644
+          optional: false
+          items:
+          - key: redpanda-truststore.pem
+            path: redpanda-truststore.crt
   replicas: 3
-  sideCars:
-    configWatcher:
-      enabled: true
-      resources:
-        limits:
-          cpu: 256m
-          memory: 256Mi
-        requests:
-          cpu: 256m
-          memory: 256Mi
-      securityContext:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-            - ALL
-        privileged: false
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
-  terminationGracePeriodSeconds: 120
 storage:
   persistentVolume:
     enabled: true
@@ -900,11 +889,6 @@ tls:
       secretRef:
         name: selfsigned-cert
   enabled: true
-tolerations:
-  - effect: NoSchedule
-    key: cloud.redpanda.com/role
-    operator: Equal
-    value: redpanda
 tuning:
   tune_aio_events: false
 
@@ -998,18 +982,8 @@ resources:
     enable_memory_locking: true
 statefulset:
   initContainers:
-    configurator:
-      resources:
-        limits:
-          cpu: "1"
-          memory: 1Gi
     setDataDirOwnership:
       enabled: true
-    tuning:
-      resources:
-        limits:
-          cpu: "1"
-          memory: 1Gi
   replicas: 3
 storage:
   hostPath: /redpanda-data
