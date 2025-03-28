@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Certificate reloading for webhook and metrics endpoints should now behave correctly.
+time: 2025-03-28T11:22:31.608235Z

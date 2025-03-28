@@ -321,6 +321,9 @@ func Run(
 				setupLog.Error(err, "Failed to initialize webhook certificate watcher")
 				os.Exit(1)
 			}
+			go func() {
+				setupLog.Error(webhookCertWatcher.Start(ctx), "webhook cert watcher exits")
+			}()
 
 			webhookTLSOpts = append(webhookTLSOpts, func(config *tls.Config) {
 				config.GetCertificate = webhookCertWatcher.GetCertificate
@@ -371,6 +374,9 @@ func Run(
 			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
 			os.Exit(1)
 		}
+		go func() {
+			setupLog.Error(metricsCertWatcher.Start(ctx), "metrics cert watcher exits")
+		}()
 
 		metricsServerOptions.TLSOpts = append(metricsServerOptions.TLSOpts, func(config *tls.Config) {
 			config.GetCertificate = metricsCertWatcher.GetCertificate
