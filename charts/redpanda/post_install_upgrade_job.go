@@ -106,81 +106,81 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 			),
 		},
 		Spec: batchv1.JobSpec{
-			Template: StrategicMergePatch(values.PostInstallJob.PodTemplate, corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: fmt.Sprintf("%s-post-", dot.Release.Name),
-					Labels: helmette.Merge(
-						map[string]string{
-							"app.kubernetes.io/name":      Name(dot),
-							"app.kubernetes.io/instance":  dot.Release.Name,
-							"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(dot)),
-						},
-						helmette.Default(map[string]string{}, values.CommonLabels),
-					),
-				},
-				Spec: corev1.PodSpec{
-					NodeSelector:                 values.NodeSelector,
-					Affinity:                     postInstallJobAffinity(dot),
-					Tolerations:                  tolerations(dot),
-					RestartPolicy:                corev1.RestartPolicyNever,
-					SecurityContext:              PodSecurityContext(dot),
-					ImagePullSecrets:             helmette.Default(nil, values.ImagePullSecrets),
-					InitContainers:               []corev1.Container{bootstrapYamlTemplater(dot)},
-					AutomountServiceAccountToken: ptr.To(false),
-					Containers: []corev1.Container{
-						{
-							Name:  PostInstallContainerName,
-							Image: image,
-							Env:   PostInstallUpgradeEnvironmentVariables(dot),
-							// See sync-cluster-config in the operator for exact details. Roughly, it:
-							// 1. Sets the redpanda license
-							// 2. Sets the redpanda cluster config
-							// 3. Restarts schema-registry (see https://github.com/redpanda-data/redpanda-operator/issues/232)
-							// Upon the post-install run, the clusters's
-							// configuration will be re-set (that is set again
-							// not reset) which is an unfortunate but ultimately acceptable side effect.
-							Command: []string{
-								"/redpanda-operator",
-								"sync-cluster-config",
-								"--users-directory", "/etc/secrets/users",
-								"--redpanda-yaml", "/tmp/base-config/redpanda.yaml",
-								"--bootstrap-yaml", "/tmp/config/.bootstrap.yaml",
-							},
-							Resources: ptr.Deref(values.PostInstallJob.Resources, corev1.ResourceRequirements{}),
-							// Note: this is a semantic change/fix from the template, which specified the merge in the incorrect order
-							SecurityContext: ptr.To(helmette.MergeTo[corev1.SecurityContext](
-								ptr.Deref(values.PostInstallJob.SecurityContext, corev1.SecurityContext{}),
-								ContainerSecurityContext(dot),
-							)),
-							VolumeMounts: append(
-								CommonMounts(dot),
-								corev1.VolumeMount{Name: "config", MountPath: "/tmp/config"},
-								corev1.VolumeMount{Name: "base-config", MountPath: "/tmp/base-config"},
+			Template: StrategicMergePatch(
+				values.PostInstallJob.PodTemplate,
+				StrategicMergePatch(
+					values.PodTemplate,
+					corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							GenerateName: fmt.Sprintf("%s-post-", dot.Release.Name),
+							Labels: helmette.Merge(
+								map[string]string{
+									"app.kubernetes.io/name":      Name(dot),
+									"app.kubernetes.io/instance":  dot.Release.Name,
+									"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(dot)),
+								},
+								helmette.Default(map[string]string{}, values.CommonLabels),
 							),
 						},
-					},
-					Volumes: append(
-						CommonVolumes(dot),
-						corev1.Volume{
-							Name: "base-config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: Fullname(dot),
+						Spec: corev1.PodSpec{
+							NodeSelector:                 values.NodeSelector,
+							Affinity:                     postInstallJobAffinity(dot),
+							Tolerations:                  tolerations(dot),
+							RestartPolicy:                corev1.RestartPolicyNever,
+							ImagePullSecrets:             helmette.Default(nil, values.ImagePullSecrets),
+							InitContainers:               []corev1.Container{bootstrapYamlTemplater(dot)},
+							AutomountServiceAccountToken: ptr.To(false),
+							Containers: []corev1.Container{
+								{
+									Name:  PostInstallContainerName,
+									Image: image,
+									Env:   PostInstallUpgradeEnvironmentVariables(dot),
+									// See sync-cluster-config in the operator for exact details. Roughly, it:
+									// 1. Sets the redpanda license
+									// 2. Sets the redpanda cluster config
+									// 3. Restarts schema-registry (see https://github.com/redpanda-data/redpanda-operator/issues/232)
+									// Upon the post-install run, the clusters's
+									// configuration will be re-set (that is set again
+									// not reset) which is an unfortunate but ultimately acceptable side effect.
+									Command: []string{
+										"/redpanda-operator",
+										"sync-cluster-config",
+										"--users-directory", "/etc/secrets/users",
+										"--redpanda-yaml", "/tmp/base-config/redpanda.yaml",
+										"--bootstrap-yaml", "/tmp/config/.bootstrap.yaml",
 									},
+									Resources: ptr.Deref(values.PostInstallJob.Resources, corev1.ResourceRequirements{}),
+									VolumeMounts: append(
+										CommonMounts(dot),
+										corev1.VolumeMount{Name: "config", MountPath: "/tmp/config"},
+										corev1.VolumeMount{Name: "base-config", MountPath: "/tmp/base-config"},
+									),
 								},
 							},
+							Volumes: append(
+								CommonVolumes(dot),
+								corev1.Volume{
+									Name: "base-config",
+									VolumeSource: corev1.VolumeSource{
+										ConfigMap: &corev1.ConfigMapVolumeSource{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: Fullname(dot),
+											},
+										},
+									},
+								},
+								corev1.Volume{
+									Name: "config",
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								},
+							),
+							ServiceAccountName: ServiceAccountName(dot),
 						},
-						corev1.Volume{
-							Name: "config",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					),
-					ServiceAccountName: ServiceAccountName(dot),
-				},
-			}),
+					},
+				),
+			),
 		},
 	}
 

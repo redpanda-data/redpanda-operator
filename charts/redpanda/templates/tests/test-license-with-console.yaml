@@ -30,9 +30,6 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   restartPolicy: Never
-  securityContext:
-    runAsUser: 65535
-    runAsGroup: 65535
   {{- with .Values.imagePullSecrets }}
   imagePullSecrets: {{- toYaml . | nindent 4 }}
   {{- end }}

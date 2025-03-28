@@ -324,35 +324,6 @@ func CertSecretName(dot *helmette.Dot, certName string, cert *TLSCert) string {
 	return fmt.Sprintf("%s-%s-cert", Fullname(dot), certName)
 }
 
-// PodSecurityContext returns a subset of [corev1.PodSecurityContext] for the
-// redpanda Statefulset. It is also used as the default PodSecurityContext.
-func PodSecurityContext(dot *helmette.Dot) *corev1.PodSecurityContext {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	sc := ptr.Deref(values.Statefulset.PodSecurityContext, values.Statefulset.SecurityContext)
-
-	return &corev1.PodSecurityContext{
-		FSGroup:             sc.FSGroup,
-		FSGroupChangePolicy: sc.FSGroupChangePolicy,
-	}
-}
-
-// ContainerSecurityContext returns a subset of [corev1.SecurityContext] for
-// the redpanda Statefulset. It is also used as the default
-// ContainerSecurityContext.
-func ContainerSecurityContext(dot *helmette.Dot) corev1.SecurityContext {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	sc := ptr.Deref(values.Statefulset.PodSecurityContext, values.Statefulset.SecurityContext)
-
-	return corev1.SecurityContext{
-		RunAsUser:                sc.RunAsUser,
-		RunAsGroup:               coalesce([]*int64{sc.RunAsGroup, sc.FSGroup}),
-		AllowPrivilegeEscalation: coalesce([]*bool{sc.AllowPrivilegeEscalation, sc.AllowPriviledgeEscalation}),
-		RunAsNonRoot:             sc.RunAsNonRoot,
-	}
-}
-
 //nolint:stylecheck
 func RedpandaAtLeast_22_2_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_2_0)
@@ -436,7 +407,13 @@ func StrategicMergePatch(overrides PodTemplate, original corev1.PodTemplateSpec)
 	// - No support for Directives
 	// - List merging by key is handled on a case by case basis.
 	// - Can't "unset" optional values in the original due to there being no
-	//   difference between *T being explicitly nil or not yet.
+	//   difference between *T being explicitly nil or not set.
+
+	// Nasty hack to work around mutability issues when using MergeTo on a
+	// deeply nested object. gotohelm doesn't currently have a deepCopy method,
+	// so we marshal to JSON and then unmarshal back into the same type.
+	overridesClone := helmette.FromJSON(helmette.ToJSON(overrides))
+	overrides = helmette.MergeTo[PodTemplate](overridesClone)
 
 	overrideSpec := overrides.Spec
 	if overrideSpec == nil {
