@@ -17,6 +17,7 @@ import (
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -57,7 +58,8 @@ type PartialValues struct {
 	Tests            *struct {
 		Enabled *bool "json:\"enabled,omitempty\""
 	} "json:\"tests,omitempty\""
-	Force *bool "json:\"force,omitempty\""
+	Force       *bool               "json:\"force,omitempty\""
+	PodTemplate *PartialPodTemplate "json:\"podTemplate,omitempty\""
 }
 
 type PartialImage struct {
@@ -171,25 +173,22 @@ type PartialStorage struct {
 }
 
 type PartialPostInstallJob struct {
-	Resources       *corev1.ResourceRequirements "json:\"resources,omitempty\""
-	Affinity        *corev1.Affinity             "json:\"affinity,omitempty\""
-	Enabled         *bool                        "json:\"enabled,omitempty\""
-	Labels          map[string]string            "json:\"labels,omitempty\""
-	Annotations     map[string]string            "json:\"annotations,omitempty\""
-	SecurityContext *corev1.SecurityContext      "json:\"securityContext,omitempty\""
-	PodTemplate     *PartialPodTemplate          "json:\"podTemplate,omitempty\""
+	Resources   *corev1.ResourceRequirements "json:\"resources,omitempty\""
+	Affinity    *corev1.Affinity             "json:\"affinity,omitempty\""
+	Enabled     *bool                        "json:\"enabled,omitempty\""
+	Labels      map[string]string            "json:\"labels,omitempty\""
+	Annotations map[string]string            "json:\"annotations,omitempty\""
+	PodTemplate *PartialPodTemplate          "json:\"podTemplate,omitempty\""
 }
 
 type PartialStatefulset struct {
-	AdditionalSelectorLabels map[string]string "json:\"additionalSelectorLabels,omitempty\" jsonschema:\"required\""
-	NodeAffinity             map[string]any    "json:\"nodeAffinity,omitempty\""
-	Replicas                 *int32            "json:\"replicas,omitempty\" jsonschema:\"required\""
-	UpdateStrategy           *struct {
-		Type *string "json:\"type,omitempty\" jsonschema:\"required,pattern=^(RollingUpdate|OnDelete)$\""
-	} "json:\"updateStrategy,omitempty\" jsonschema:\"required\""
-	AdditionalRedpandaCmdFlags []string            "json:\"additionalRedpandaCmdFlags,omitempty\""
-	Annotations                map[string]string   "json:\"annotations,omitempty\" jsonschema:\"deprecated\""
-	PodTemplate                *PartialPodTemplate "json:\"podTemplate,omitempty\" jsonschema:\"required\""
+	AdditionalSelectorLabels   map[string]string                 "json:\"additionalSelectorLabels,omitempty\" jsonschema:\"required\""
+	NodeAffinity               map[string]any                    "json:\"nodeAffinity,omitempty\""
+	Replicas                   *int32                            "json:\"replicas,omitempty\" jsonschema:\"required\""
+	UpdateStrategy             *appsv1.StatefulSetUpdateStrategy "json:\"updateStrategy,omitempty\" jsonschema:\"required\""
+	AdditionalRedpandaCmdFlags []string                          "json:\"additionalRedpandaCmdFlags,omitempty\""
+	Annotations                map[string]string                 "json:\"annotations,omitempty\" jsonschema:\"deprecated\""
+	PodTemplate                *PartialPodTemplate               "json:\"podTemplate,omitempty\" jsonschema:\"required\""
 	Budget                     *struct {
 		MaxUnavailable *int32 "json:\"maxUnavailable,omitempty\" jsonschema:\"required\""
 	} "json:\"budget,omitempty\" jsonschema:\"required\""
@@ -225,13 +224,11 @@ type PartialStatefulset struct {
 		TopologyKey       *string                               "json:\"topologyKey,omitempty\""
 		WhenUnsatisfiable *corev1.UnsatisfiableConstraintAction "json:\"whenUnsatisfiable,omitempty\" jsonschema:\"pattern=^(ScheduleAnyway|DoNotSchedule)$\""
 	} "json:\"topologySpreadConstraints,omitempty\" jsonschema:\"required,minItems=1\""
-	Tolerations        []corev1.Toleration     "json:\"tolerations,omitempty\" jsonschema:\"required\""
-	PodSecurityContext *PartialSecurityContext "json:\"podSecurityContext,omitempty\""
-	SecurityContext    *PartialSecurityContext "json:\"securityContext,omitempty\" jsonschema:\"required\""
-	SideCars           *PartialSidecars        "json:\"sideCars,omitempty\" jsonschema:\"required\""
-	ExtraVolumes       *string                 "json:\"extraVolumes,omitempty\""
-	ExtraVolumeMounts  *string                 "json:\"extraVolumeMounts,omitempty\""
-	InitContainers     *struct {
+	Tolerations       []corev1.Toleration "json:\"tolerations,omitempty\" jsonschema:\"required\""
+	SideCars          *PartialSidecars    "json:\"sideCars,omitempty\" jsonschema:\"required\""
+	ExtraVolumes      *string             "json:\"extraVolumes,omitempty\""
+	ExtraVolumeMounts *string             "json:\"extraVolumeMounts,omitempty\""
+	InitContainers    *struct {
 		Configurator *struct {
 			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
 			Resources         map[string]any "json:\"resources,omitempty\""
@@ -304,6 +301,12 @@ type PartialConfig struct {
 	Tunable              PartialTunableConfig         "json:\"tunable,omitempty\" jsonschema:\"required\""
 }
 
+type PartialPodTemplate struct {
+	Labels      map[string]string                      "json:\"labels,omitempty\" jsonschema:\"required\""
+	Annotations map[string]string                      "json:\"annotations,omitempty\" jsonschema:\"required\""
+	Spec        *applycorev1.PodSpecApplyConfiguration "json:\"spec,omitempty\""
+}
+
 type PartialService struct {
 	Name     *string "json:\"name,omitempty\""
 	Internal *struct {
@@ -338,22 +341,6 @@ type PartialTiered struct {
 }
 
 type PartialTieredStorageConfig map[string]any
-
-type PartialPodTemplate struct {
-	Labels      map[string]string                      "json:\"labels,omitempty\" jsonschema:\"required\""
-	Annotations map[string]string                      "json:\"annotations,omitempty\" jsonschema:\"required\""
-	Spec        *applycorev1.PodSpecApplyConfiguration "json:\"spec,omitempty\""
-}
-
-type PartialSecurityContext struct {
-	RunAsUser                 *int64                         "json:\"runAsUser,omitempty\""
-	RunAsGroup                *int64                         "json:\"runAsGroup,omitempty\""
-	AllowPrivilegeEscalation  *bool                          "json:\"allowPrivilegeEscalation,omitempty\""
-	AllowPriviledgeEscalation *bool                          "json:\"allowPriviledgeEscalation,omitempty\""
-	RunAsNonRoot              *bool                          "json:\"runAsNonRoot,omitempty\""
-	FSGroup                   *int64                         "json:\"fsGroup,omitempty\""
-	FSGroupChangePolicy       *corev1.PodFSGroupChangePolicy "json:\"fsGroupChangePolicy,omitempty\""
-}
 
 type PartialSidecars struct {
 	Image *struct {

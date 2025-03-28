@@ -167,14 +167,6 @@ Use AppVersion if image.tag is not set
 {{- toJson (dict "bool" $result) -}}
 {{- end -}}
 
-{{- define "pod-security-context" -}}
-{{- get ((include "redpanda.PodSecurityContext" (dict "a" (list .))) | fromJson) "r" | toYaml }}
-{{- end -}}
-
-{{- define "container-security-context" -}}
-{{- get ((include "redpanda.ContainerSecurityContext" (dict "a" (list .))) | fromJson) "r" | toYaml }}
-{{- end -}}
-
 {{- define "admin-tls-curl-flags" -}}
   {{- $result := "" -}}
   {{- if (include "admin-internal-tls-enabled" . | fromJson).bool -}}

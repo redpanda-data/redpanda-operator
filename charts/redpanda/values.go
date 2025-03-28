@@ -18,6 +18,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	_ "github.com/quasilyte/go-ruleguard/dsl"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -33,16 +34,11 @@ const (
 	defaultTruststorePath = "/etc/ssl/certs/ca-certificates.crt"
 
 	// RedpandaContainerName is the user facing name of the redpanda container
-	// in the redpanda StatefulSet. While the name of the container can
-	// technically change, this is the name that is used to locate the
-	// [corev1.Container] that will be smp'd into the redpanda container.
+	// in the redpanda StatefulSet.
 	RedpandaContainerName = "redpanda"
 	// PostUpgradeContainerName is the user facing name of the post-install
 	// job's container.
 	PostInstallContainerName = "post-install"
-	// PostUpgradeContainerName is the user facing name of the post-upgrade
-	// job's container.
-	PostUpgradeContainerName = "post-upgrade"
 	// RedpandaControllersContainerName is the container that can perform day
 	// 2 operation similarly to Redpanda operator.
 	RedpandaControllersContainerName = "redpanda-controllers"
@@ -103,29 +99,13 @@ type Values struct {
 	Tests            *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
-	Force bool `json:"force"`
+	Force       bool        `json:"force"`
+	PodTemplate PodTemplate `json:"podTemplate"`
 }
 
 // +gotohelm:ignore=true
 func (Values) JSONSchemaExtend(schema *jsonschema.Schema) {
 	deprecate(schema, "license_key", "license_secret_ref")
-}
-
-// SecurityContext is a legacy mishmash of [corev1.PodSecurityContext] and
-// [corev1.SecurityContext]. It's type exists for backwards compat purposes
-// only.
-type SecurityContext struct {
-	RunAsUser                *int64 `json:"runAsUser"`
-	RunAsGroup               *int64 `json:"runAsGroup"`
-	AllowPrivilegeEscalation *bool  `json:"allowPrivilegeEscalation"`
-	// AllowPriviledgeEscalation is typoed version of
-	// [SecurityContext.AllowPrivilegeEscalation]. It's respected for backwards
-	// compatibility.
-	// Deprecated: Prefer AllowPrivilegeEscalation.
-	AllowPriviledgeEscalation *bool                          `json:"allowPriviledgeEscalation"`
-	RunAsNonRoot              *bool                          `json:"runAsNonRoot"`
-	FSGroup                   *int64                         `json:"fsGroup"`
-	FSGroupChangePolicy       *corev1.PodFSGroupChangePolicy `json:"fsGroupChangePolicy"`
 }
 
 type Image struct {
@@ -765,9 +745,7 @@ type PostInstallJob struct {
 	Enabled     bool                         `json:"enabled"`
 	Labels      map[string]string            `json:"labels"`
 	Annotations map[string]string            `json:"annotations"`
-	// Deprecated. Prefer [PodTemplate.Spec.SecurityContext].
-	SecurityContext *corev1.SecurityContext `json:"securityContext"`
-	PodTemplate     PodTemplate             `json:"podTemplate"`
+	PodTemplate PodTemplate                  `json:"podTemplate"`
 }
 
 type PodTemplate struct {
@@ -777,13 +755,11 @@ type PodTemplate struct {
 }
 
 type Statefulset struct {
-	AdditionalSelectorLabels map[string]string `json:"additionalSelectorLabels" jsonschema:"required"`
-	NodeAffinity             map[string]any    `json:"nodeAffinity"`
-	Replicas                 int32             `json:"replicas" jsonschema:"required"`
-	UpdateStrategy           struct {
-		Type string `json:"type" jsonschema:"required,pattern=^(RollingUpdate|OnDelete)$"`
-	} `json:"updateStrategy" jsonschema:"required"`
-	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags"`
+	AdditionalSelectorLabels   map[string]string                `json:"additionalSelectorLabels" jsonschema:"required"`
+	NodeAffinity               map[string]any                   `json:"nodeAffinity"`
+	Replicas                   int32                            `json:"replicas" jsonschema:"required"`
+	UpdateStrategy             appsv1.StatefulSetUpdateStrategy `json:"updateStrategy" jsonschema:"required"`
+	AdditionalRedpandaCmdFlags []string                         `json:"additionalRedpandaCmdFlags"`
 	// Annotations are used only for `Statefulset.spec.template.metadata.annotations`. The StatefulSet does not have
 	// any dedicated annotation.
 	Annotations map[string]string `json:"annotations" jsonschema:"deprecated"`
@@ -823,14 +799,10 @@ type Statefulset struct {
 		TopologyKey       string                               `json:"topologyKey"`
 		WhenUnsatisfiable corev1.UnsatisfiableConstraintAction `json:"whenUnsatisfiable" jsonschema:"pattern=^(ScheduleAnyway|DoNotSchedule)$"`
 	} `json:"topologySpreadConstraints" jsonschema:"required,minItems=1"`
-	Tolerations []corev1.Toleration `json:"tolerations" jsonschema:"required"`
-	// Deprecated. Prefer [PodTemplate.Spec.SecurityContext].
-	PodSecurityContext *SecurityContext `json:"podSecurityContext"`
-	// Deprecated. Prefer [PodTemplate.Spec.Containers[*].SecurityContext].
-	SecurityContext   SecurityContext `json:"securityContext" jsonschema:"required"`
-	SideCars          Sidecars        `json:"sideCars" jsonschema:"required"`
-	ExtraVolumes      string          `json:"extraVolumes"`      // XXX this is template-expanded into yaml
-	ExtraVolumeMounts string          `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+	Tolerations       []corev1.Toleration `json:"tolerations" jsonschema:"required"`
+	SideCars          Sidecars            `json:"sideCars" jsonschema:"required"`
+	ExtraVolumes      string              `json:"extraVolumes"`      // XXX this is template-expanded into yaml
+	ExtraVolumeMounts string              `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 	InitContainers    struct {
 		Configurator struct {
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
@@ -861,11 +833,6 @@ type Statefulset struct {
 		Repository string `json:"repository"`
 		Tag        string `json:"tag"`
 	} `json:"initContainerImage"`
-}
-
-// +gotohelm:ignore=true
-func (Statefulset) JSONSchemaExtend(schema *jsonschema.Schema) {
-	deprecate(schema, "podSecurityContext", "securityContext")
 }
 
 type ServiceAccountCfg struct {
