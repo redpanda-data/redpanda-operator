@@ -378,6 +378,42 @@ func cleanForK8s(in string) string {
 	return strings.TrimSuffix(helmette.Trunc(63, in), "-")
 }
 
+// StructuredTpl (inefficiently) recurses through all fields of T and expands
+// any string fields containing template delimiters with [helmette.Tpl].
+func StructuredTpl[T any](dot *helmette.Dot, in T) T {
+	untyped := helmette.UnmarshalInto[map[string]any](in)
+	expanded := recursiveTpl(dot, untyped)
+	return helmette.MergeTo[T](expanded)
+}
+
+// recursiveTpl is a helper for [StructuredTpl]. It performs all the works, it
+// just operates on untyped values.
+func recursiveTpl(dot *helmette.Dot, data any) any {
+	kind := helmette.KindOf(data)
+
+	if kind == "map" {
+		m := data.(map[string]any)
+		for key, value := range m {
+			m[key] = recursiveTpl(dot, value)
+		}
+		return m
+	} else if kind == "slice" {
+		// NB: Slices in helm are immutable so we have to make a new slice here.
+		s := data.([]any)
+		var out []any
+		for i := range s {
+			out = append(out, recursiveTpl(dot, s[i]))
+		}
+		return out
+	} else if kind == "string" && helmette.Contains("{{", data.(string)) {
+		// Tpl is quite slow, so we gate this on template delimiters for a
+		// little speed up.
+		return helmette.Tpl(dot, data.(string), dot)
+	}
+
+	return data
+}
+
 // StrategicMergePatch is a half-baked implementation of Kubernetes' strategic
 // merge patch. It's closer to a merge patch with smart handling of lists
 // that's tailored to the values permitted by [PodTemplate].
@@ -449,6 +485,10 @@ func StrategicMergePatch(overrides PodTemplate, original corev1.PodTemplateSpec)
 
 	if merged.Spec.Tolerations == nil {
 		merged.Spec.Tolerations = []corev1.Toleration{}
+	}
+
+	if merged.Spec.ImagePullSecrets == nil {
+		merged.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 	}
 
 	return merged
