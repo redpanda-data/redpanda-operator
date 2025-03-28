@@ -530,6 +530,28 @@ Node selection constraints for scheduling Pods, can override this for StatefulSe
 
 **Default:** `{}`
 
+### [podTemplate.annotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.annotations)
+
+Annotations to apply (or overwrite the default) to all Pods of this Chart.
+
+**Default:** `{}`
+
+### [podTemplate.labels](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.labels)
+
+Labels to apply (or overwrite the default) to all Pods of this Chart.
+
+**Default:** `{}`
+
+### [podTemplate.spec](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.spec)
+
+A subset of Kubernetes' PodSpec type that will be merged into the PodSpec of all Pods for this Chart. See [Merge Semantics](#merging-semantics) for details.
+
+**Default:**
+
+```
+{"securityContext":{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}}
+```
+
 ### [post_install_job.affinity](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=post_install_job.affinity)
 
 **Default:** `{}`
@@ -935,16 +957,6 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 **Default:** `3`
 
-### [statefulset.securityContext](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.securityContext)
-
-DEPRECATED: Prefer to use podTemplate.spec.securityContext or podTemplate.spec.containers[0].securityContext.
-
-**Default:**
-
-```
-{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}
-```
-
 ### [statefulset.sideCars.brokerDecommissioner.decommissionAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionAfter)
 
 **Default:** `"60s"`
@@ -970,12 +982,6 @@ DEPRECATED: Please use statefulset.sideCars.extraVolumeMounts
 ### [statefulset.sideCars.configWatcher.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.configWatcher.resources)
 
 DEPRECATED: Please use statefulset.sideCars.resources
-
-**Default:** `{}`
-
-### [statefulset.sideCars.configWatcher.securityContext](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.configWatcher.securityContext)
-
-DEPRECATED: Please use statefulset.sideCars.securityContext
 
 **Default:** `{}`
 

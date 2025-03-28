@@ -14,9 +14,11 @@
 # limitations under the License.
 ---
 statefulset:
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
+  podTemplate:
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
 
 tolerations:
   - key: "example-key"
@@ -40,9 +42,11 @@ affinity:
 
 
 post_install_job:
-  securityContext:
-    # This should override the default above
-    runAsUser: 2000
+  podTemplate:
+    spec:
+      securityContext:
+        # This should override the default above
+        runAsUser: 2000
 
   resources:
     limits:

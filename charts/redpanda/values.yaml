@@ -63,6 +63,19 @@ image:
   # If `image.tag` is 'latest', the default is `Always`.
   pullPolicy: IfNotPresent
 
+podTemplate:
+  # -- Labels to apply (or overwrite the default) to all Pods of this Chart.
+  labels: {}
+  # -- Annotations to apply (or overwrite the default) to all Pods of this Chart.
+  annotations: {}
+  # -- A subset of Kubernetes' PodSpec type that will be merged into the
+  # PodSpec of all Pods for this Chart. See [Merge Semantics](#merging-semantics) for details.
+  spec:
+    securityContext:
+      fsGroup: 101
+      runAsUser: 101
+      fsGroupChangePolicy: OnRootMismatch
+
 # -- Redpanda Service settings.
 # service:
 #   -- set service.name to override the default service name
@@ -677,11 +690,6 @@ statefulset:
   - maxSkew: 1
     topologyKey: topology.kubernetes.io/zone
     whenUnsatisfiable: ScheduleAnyway
-  # -- DEPRECATED: Prefer to use podTemplate.spec.securityContext or podTemplate.spec.containers[0].securityContext.
-  securityContext:
-    fsGroup: 101
-    runAsUser: 101
-    fsGroupChangePolicy: OnRootMismatch
   sideCars:
     # -- To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see
     # https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed
@@ -719,8 +727,6 @@ statefulset:
       enabled: true
       # -- DEPRECATED: Please use statefulset.sideCars.resources
       resources: {}
-      # -- DEPRECATED: Please use statefulset.sideCars.securityContext
-      securityContext: {}
       # -- DEPRECATED: Please use statefulset.sideCars.extraVolumeMounts
       extraVolumeMounts: |-
     # -- DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder
