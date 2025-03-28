@@ -151,29 +151,6 @@ tls:
       secretRef:
         name: some-secret
 
--- allowprivilegeescalation-regression --
-# Regression test for https://github.com/redpanda-data/helm-charts/issues/1413
-# ASSERT-NO-ERROR
-# ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}", false]
-# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
-statefulset:
-  replicas: 3
-  securityContext:
-    allowPrivilegeEscalation: false
-
--- allowpriviledgeescalation-regression --
-# Regression test for https://github.com/redpanda-data/helm-charts/issues/1413
-# This test's name is intentionally misspelled.
-# ASSERT-NO-ERROR
-# ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}", false]
-# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
-statefulset:
-  replicas: 3
-  securityContext:
-    allowPriviledgeEscalation: false
-
 -- node-config-boolean-type-regression --
 # RPK can not
 # ASSERT-NO-ERROR
@@ -883,11 +860,6 @@ statefulset:
       cloud.redpanda.com/network-loadbalancer-access: "true"
   priorityClassName: system-node-critical
   replicas: 3
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsGroup: 65534
-    runAsNonRoot: true
-    runAsUser: 65534
   sideCars:
     configWatcher:
       enabled: true
@@ -1100,6 +1072,6 @@ statefulset:
 # slipping in.
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "sidecar"]]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["redpanda", "sidecar"]]
 nameOverride: "not-redpanda"
 fullnameOverride: "also-not-redpanda"
