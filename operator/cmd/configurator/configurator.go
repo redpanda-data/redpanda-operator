@@ -129,15 +129,62 @@ func (c *configuratorConfig) String() string {
 var errorMissingEnvironmentVariable = errors.New("missing environment variable")
 
 func Command() *cobra.Command {
-	return &cobra.Command{
+	var (
+		cloudSecretsEnabled          bool
+		cloudSecretsPrefix           string
+		cloudSecretsAWSRegion        string
+		cloudSecretsAWSRoleARN       string
+		cloudSecretsGCPProjectID     string
+		cloudSecretsAzureKeyVaultURI string
+	)
+	cmd := &cobra.Command{
 		Use:     "configurator",
 		Short:   "Configure redpanda.yaml based on Pod metadata",
 		Aliases: []string{"configure"},
-		Run:     run,
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := cmd.Context()
+			var cloudExpander *pkgsecrets.CloudExpander
+			if cloudSecretsEnabled {
+				cloudConfig := pkgsecrets.ExpanderCloudConfiguration{}
+				if cloudSecretsAWSRegion != "" && cloudSecretsAWSRoleARN != "" {
+					cloudConfig.AWSRegion = cloudSecretsAWSRegion
+					cloudConfig.AWSRoleARN = cloudSecretsAWSRoleARN
+				} else if cloudSecretsGCPProjectID != "" {
+					cloudConfig.GCPProjectID = cloudSecretsGCPProjectID
+				} else if cloudSecretsAzureKeyVaultURI != "" {
+					cloudConfig.AzureKeyVaultURI = cloudSecretsAzureKeyVaultURI
+				} else {
+					log.Fatal("Cloud secrets are enabled but configuration for cloud provider is missing or invalid")
+				}
+				var err error
+				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, cloudSecretsPrefix, cloudConfig)
+				if err != nil {
+					log.Fatalf("Unable to start manager: %s", err)
+				}
+			}
+
+			run(
+				ctx,
+				cloudExpander,
+			)
+		},
 	}
+
+	// secret store related flags
+	cmd.Flags().BoolVar(&cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
+	cmd.Flags().StringVar(&cloudSecretsPrefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
+	cmd.Flags().StringVar(&cloudSecretsAWSRegion, "cloud-secrets-aws-region", "", "AWS Region in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
+	cmd.Flags().StringVar(&cloudSecretsGCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
+
+	return cmd
 }
 
-func run(cmd *cobra.Command, args []string) {
+func run(
+	ctx context.Context,
+	cloudExpander *pkgsecrets.CloudExpander,
+) {
 	log.Print("The redpanda configurator is starting")
 
 	c, err := checkEnvVars()
@@ -227,7 +274,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	if c.bootstrapTemplate != "" && c.bootstrapDestination != "" {
 		// Perform the bootstrap templating
-		err := templateBootstrapYaml(c.bootstrapTemplate, c.bootstrapDestination)
+		err := templateBootstrapYaml(ctx, cloudExpander, c.bootstrapTemplate, c.bootstrapDestination)
 		if err != nil {
 			log.Fatalf("%s", fmt.Errorf("unable to template the .bootstrap.yaml file: %w", err))
 		}
