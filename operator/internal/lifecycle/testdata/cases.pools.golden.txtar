@@ -1,0 +1,357 @@
+-- basic-test --
+- apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-5.9.21
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test
+    namespace: basic-test
+  spec:
+    podManagementPolicy: Parallel
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: redpanda-statefulset
+        app.kubernetes.io/instance: basic-test
+        app.kubernetes.io/name: redpanda
+    serviceName: basic-test
+    template:
+      metadata:
+        annotations:
+          config.redpanda.com/checksum: 185aaf952885b6464965abdd1757bd2962b2dc0d49aeb493feb9843203fc7833
+        creationTimestamp: null
+        labels:
+          app.kubernetes.io/component: redpanda-statefulset
+          app.kubernetes.io/instance: basic-test
+          app.kubernetes.io/managed-by: Helm
+          app.kubernetes.io/name: redpanda
+          helm.sh/chart: redpanda-5.9.21
+          redpanda.com/poddisruptionbudget: basic-test
+      spec:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: redpanda-statefulset
+                  app.kubernetes.io/instance: basic-test
+                  app.kubernetes.io/name: redpanda
+              topologyKey: kubernetes.io/hostname
+        automountServiceAccountToken: false
+        containers:
+        - command:
+          - rpk
+          - redpanda
+          - start
+          - --advertise-rpc-addr=$(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:33145
+          env:
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - bash
+                - -c
+                - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
+                  post-start $(date): /" | tee /proc/1/fd/1; true'
+            preStop:
+              exec:
+                command:
+                - bash
+                - -c
+                - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
+                  pre-stop $(date): /" | tee /proc/1/fd/1; true'
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt
+                "https://${SERVICE_NAME}.basic-test.basic-test.svc.cluster.local.:9644/v1/status/ready"
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          name: redpanda
+          ports:
+          - containerPort: 9644
+            name: admin
+          - containerPort: 9645
+            name: admin-default
+          - containerPort: 8082
+            name: http
+          - containerPort: 8083
+            name: http-default
+          - containerPort: 9093
+            name: kafka
+          - containerPort: 9094
+            name: kafka-default
+          - containerPort: 33145
+            name: rpc
+          - containerPort: 8081
+            name: schemaregistry
+          - containerPort: 8084
+            name: schema-default
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2560Mi
+          securityContext:
+            runAsGroup: 101
+            runAsUser: 101
+          startupProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.basic-test.basic-test.svc.cluster.local.:9644/v1/status/ready")
+                echo $RESULT
+                echo $RESULT | grep ready
+            failureThreshold: 120
+            initialDelaySeconds: 1
+            periodSeconds: 10
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+          - mountPath: /var/lifecycle
+            name: lifecycle-scripts
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
+        - args:
+          - sidecar
+          - --redpanda-yaml
+          - /etc/redpanda/redpanda.yaml
+          - --redpanda-cluster-namespace
+          - basic-test
+          - --redpanda-cluster-name
+          - basic-test
+          - --run-broker-probe
+          - --broker-probe-broker-url
+          - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
+          command:
+          - /redpanda-operator
+          env:
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v2.3.8-24.3.6
+          name: sidecar
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 8093
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+          resources: {}
+          securityContext: {}
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access
+            readOnly: true
+        initContainers:
+        - command:
+          - /bin/bash
+          - -c
+          - rpk redpanda tune all
+          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          name: tuning
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - SYS_RESOURCE
+            privileged: true
+            runAsGroup: 0
+            runAsUser: 0
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: base-config
+        - command:
+          - /bin/bash
+          - -c
+          - trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}"
+            & wait $!
+          env:
+          - name: CONFIGURATOR_SCRIPT
+            value: /etc/secrets/configurator/scripts/configurator.sh
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: KUBERNETES_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP_ADDRESS
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          name: redpanda-configurator
+          resources: {}
+          securityContext:
+            runAsGroup: 101
+            runAsUser: 101
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+          - mountPath: /etc/secrets/configurator/scripts/
+            name: basic-test-configurator
+        - command:
+          - /redpanda-operator
+          - envsubst
+          - /tmp/base-config/bootstrap.yaml
+          - --output
+          - /tmp/config/.bootstrap.yaml
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v2.3.8-24.3.6
+          name: bootstrap-yaml-envsubst
+          resources:
+            limits:
+              cpu: 100m
+              memory: 125Mi
+            requests:
+              cpu: 100m
+              memory: 125Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+          - mountPath: /tmp/config/
+            name: config
+          - mountPath: /tmp/base-config/
+            name: base-config
+        securityContext:
+          fsGroup: 101
+          fsGroupChangePolicy: OnRootMismatch
+        serviceAccountName: default
+        terminationGracePeriodSeconds: 90
+        topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: redpanda-statefulset
+              app.kubernetes.io/instance: basic-test
+              app.kubernetes.io/name: redpanda
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+        volumes:
+        - name: redpanda-default-cert
+          secret:
+            defaultMode: 288
+            secretName: basic-test-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: basic-test-external-cert
+        - name: lifecycle-scripts
+          secret:
+            defaultMode: 509
+            secretName: basic-test-sts-lifecycle
+        - configMap:
+            name: basic-test
+          name: base-config
+        - emptyDir: {}
+          name: config
+        - name: basic-test-configurator
+          secret:
+            defaultMode: 509
+            secretName: basic-test-configurator
+        - name: datadir
+          persistentVolumeClaim:
+            claimName: datadir
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
+    updateStrategy:
+      type: RollingUpdate
+    volumeClaimTemplates:
+    - metadata:
+        creationTimestamp: null
+        labels:
+          app.kubernetes.io/component: redpanda
+          app.kubernetes.io/instance: basic-test
+          app.kubernetes.io/name: redpanda
+        name: datadir
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+      status: {}
+  status:
+    availableReplicas: 0
+    replicas: 0
