@@ -48,6 +48,7 @@ For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions
 * Toggling `useFlux`, in either direction, no longer causes the bootstrap user's password to be regenerated.
 
   Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
+* Certificate reloading for webhook and metrics endpoints should now behave correctly.
 
 ## v2.3.8-24.3.6 - 2025-03-05
 ### Fixed
