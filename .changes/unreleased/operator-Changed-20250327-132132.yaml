@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    The redpanda operator's helm chart has been merged into the operator itself.
+
+      Going forward the chart's `version` and `appVersion` will always be equal.
+time: 2025-03-27T13:21:32.469272-04:00

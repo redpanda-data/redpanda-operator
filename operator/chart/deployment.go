@@ -63,7 +63,7 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: SelectorLabels(dot),
 			},
-			Strategy: *values.Strategy,
+			Strategy: values.Strategy,
 			Template: StrategicMergePatch(&corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      values.PodTemplate.Metadata.Labels,
