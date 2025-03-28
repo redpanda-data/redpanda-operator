@@ -11,7 +11,7 @@ notify:
     context: k8s-operator-v2-helm
 steps:
 - agents:
-    queue: v6-amd64-builders-m6id
+    queue: k8s-m6id12xlarge
   command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:lint
   key: lint
   label: Lint
@@ -27,7 +27,7 @@ steps:
   key: unit
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:unit
     key: unit-run
     label: Run Unit Tests
@@ -69,7 +69,7 @@ steps:
   key: integration
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:integration
     key: integration-run
     label: Run Integration Tests
@@ -111,7 +111,7 @@ steps:
   key: acceptance
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:acceptance
     key: acceptance-run
     label: Run Acceptance Tests
@@ -153,7 +153,7 @@ steps:
   key: kuttl-v1
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1
     key: kuttl-v1-run
     label: Run Kuttl-V1 Tests
@@ -195,7 +195,7 @@ steps:
   key: kuttl-v1-nodepools
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1-nodepools
     key: kuttl-v1-nodepools-run
     label: Run Kuttl-V1-Nodepools Tests
@@ -237,7 +237,7 @@ steps:
   key: kuttl-v2
   steps:
   - agents:
-      queue: v6-amd64-builders-m6id
+      queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v2
     key: kuttl-v2-run
     label: Run Kuttl-V2 Tests
