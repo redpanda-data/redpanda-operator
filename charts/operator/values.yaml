@@ -147,8 +147,6 @@ commonLabels: {}
 monitoring:
   # -- Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.
   enabled: false
-  # -- Deploys the [Prometheus community Helm chart](https://prometheus-community.github.io/helm-charts/).
-  deployPrometheusKubeStack: false
 
 # Sets the name of the Secret in which to store the self-signed TLS certificate for the Webhooks when `webhook.enabled` is `true`.
 webhookSecretName: webhook-server-cert
