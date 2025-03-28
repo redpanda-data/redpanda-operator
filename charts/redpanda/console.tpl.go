@@ -36,7 +36,7 @@ func consoleChartIntegration(dot *helmette.Dot) []kube.Object {
 
 	consoleValue := helmette.UnmarshalInto[console.Values](consoleDot.Values)
 	// Pass the same Redpanda License to Console
-	if license := GetLicenseLiteral(dot); license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
+	if license := values.Enterprise.License; license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
 		consoleValue.Secret.Create = true
 		consoleValue.Secret.License = license
 	}
@@ -70,13 +70,8 @@ func consoleChartIntegration(dot *helmette.Dot) []kube.Object {
 		}
 
 		// Create License reference for Console
-		if secret := GetLicenseSecretReference(dot); secret != nil {
-			consoleValue.LicenseSecretRef = &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secret.Name,
-				},
-				Key: secret.Key,
-			}
+		if secret := values.Enterprise.LicenseSecretRef; secret != nil {
+			consoleValue.LicenseSecretRef = secret
 		}
 
 		consoleValue.ExtraVolumes = consoleTLSVolumes(dot)

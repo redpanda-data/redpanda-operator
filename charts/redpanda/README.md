@@ -249,7 +249,7 @@ Enterprise (optional) For details, see the [License documentation](https://docs.
 **Default:**
 
 ```
-{"license":"","licenseSecretRef":{}}
+{"license":"","licenseSecretRef":null}
 ```
 
 ### [enterprise.license](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=enterprise.license)
@@ -262,7 +262,7 @@ license (optional).
 
 Secret name and key where the license key is stored.
 
-**Default:** `{}`
+**Default:** `nil`
 
 ### [external](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=external)
 
@@ -341,18 +341,6 @@ The Redpanda version. See DockerHub for: [All stable versions](https://hub.docke
 Pull secrets may be used to provide credentials to image repositories See the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
 **Default:** `[]`
-
-### [license_key](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=license_key)
-
-DEPRECATED Enterprise license key (optional). For details, see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).
-
-**Default:** `""`
-
-### [license_secret_ref](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=license_secret_ref)
-
-DEPRECATED Secret name and secret key where the license key is stored.
-
-**Default:** `{}`
 
 ### [listeners](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners)
 
