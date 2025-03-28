@@ -213,13 +213,14 @@ func tolerations(dot *helmette.Dot) []corev1.Toleration {
 // container.
 func PostInstallUpgradeEnvironmentVariables(dot *helmette.Dot) []corev1.EnvVar {
 	envars := []corev1.EnvVar{}
+	values := helmette.Unwrap[Values](dot.Values)
 
-	if license := GetLicenseLiteral(dot); license != "" {
+	if license := values.Enterprise.License; license != "" {
 		envars = append(envars, corev1.EnvVar{
 			Name:  "REDPANDA_LICENSE",
 			Value: license,
 		})
-	} else if secretReference := GetLicenseSecretReference(dot); secretReference != nil {
+	} else if secretReference := values.Enterprise.LicenseSecretRef; secretReference != nil {
 		envars = append(envars, corev1.EnvVar{
 			Name: "REDPANDA_LICENSE",
 			ValueFrom: &corev1.EnvVarSource{
@@ -230,37 +231,4 @@ func PostInstallUpgradeEnvironmentVariables(dot *helmette.Dot) []corev1.EnvVar {
 
 	// include any authentication envvars as well.
 	return bootstrapEnvVars(dot, envars)
-}
-
-func GetLicenseLiteral(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.Enterprise.License != "" {
-		return values.Enterprise.License
-	}
-
-	// Deprecated licenseKey fallback if Enterprise.License is not set
-	return values.LicenseKey
-}
-
-func GetLicenseSecretReference(dot *helmette.Dot) *corev1.SecretKeySelector {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !helmette.Empty(values.Enterprise.LicenseSecretRef) {
-		return &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: values.Enterprise.LicenseSecretRef.Name,
-			},
-			Key: values.Enterprise.LicenseSecretRef.Key,
-		}
-		// Deprecated licenseSecretRef fallback if Enterprise.LicenseSecretRef is not set
-	} else if !helmette.Empty(values.LicenseSecretRef) {
-		return &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: values.LicenseSecretRef.SecretName,
-			},
-			Key: values.LicenseSecretRef.SecretKey,
-		}
-	}
-	return nil
 }

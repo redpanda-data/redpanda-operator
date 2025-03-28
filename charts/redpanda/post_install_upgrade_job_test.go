@@ -41,23 +41,14 @@ func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
 			[]corev1.EnvVar{{Name: "REDPANDA_LICENSE", Value: "fake.license"}},
 		},
 		{
-			"only-deprecated-literal-license",
-			Values{
-				Storage:    Storage{Tiered: Tiered{}},
-				LicenseKey: "fake.license",
-			},
-			[]corev1.EnvVar{{Name: "REDPANDA_LICENSE", Value: "fake.license"}},
-		},
-		{
 			name: "only-secret-ref-license",
 			values: Values{
 				Storage: Storage{Tiered: Tiered{}},
-				Enterprise: Enterprise{LicenseSecretRef: &struct {
-					Key  string `json:"key"`
-					Name string `json:"name"`
-				}{
-					Key:  "some-key",
-					Name: "some-secret",
+				Enterprise: Enterprise{LicenseSecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "some-secret",
+					},
+					Key: "some-key",
 				}},
 			},
 			expectedEnvVars: []corev1.EnvVar{{Name: "REDPANDA_LICENSE", ValueFrom: &corev1.EnvVarSource{
@@ -66,27 +57,6 @@ func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
 					Key:                  "some-key",
 				},
 			}}},
-		},
-		{
-			name: "only-deprecated-secret-ref-license",
-			values: Values{
-				Storage: Storage{Tiered: Tiered{}},
-				LicenseSecretRef: &LicenseSecretRef{
-					SecretName: "some-secret",
-					SecretKey:  "some-key",
-				},
-			},
-			expectedEnvVars: []corev1.EnvVar{
-				{
-					Name: "REDPANDA_LICENSE",
-					ValueFrom: &corev1.EnvVarSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: "some-secret"},
-							Key:                  "some-key",
-						},
-					},
-				},
-			},
 		},
 		{
 			name: "azure-literal-shared-key",
