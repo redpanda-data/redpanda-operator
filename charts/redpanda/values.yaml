@@ -710,7 +710,8 @@ statefulset:
     repository: busybox
     tag: latest
   # -- Additional flags to pass to redpanda,
-  additionalRedpandaCmdFlags: []
+  additionalRedpandaCmdFlags:
+    - --blocked-reactor-reports-per-minute=0
 #    - --unsafe-bypass-fsync
 
 # -- Service account management.

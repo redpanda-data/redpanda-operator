@@ -713,7 +713,11 @@ The name of the service account to use. If not set and `serviceAccount.create` i
 
 Additional flags to pass to redpanda,
 
-**Default:** `[]`
+**Default:**
+
+```
+["--blocked-reactor-reports-per-minute=0"]
+```
 
 ### [statefulset.additionalSelectorLabels](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.additionalSelectorLabels)
 

@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: To prevent Redpanda crash the flag `--blocked-reactor-reports-per-minute=0` is added to the deployment.
+time: 2025-04-15T20:37:06.072385+02:00
