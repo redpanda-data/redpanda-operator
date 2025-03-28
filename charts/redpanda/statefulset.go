@@ -453,22 +453,50 @@ func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Cont
 func securityContextUidGid(dot *helmette.Dot, containerName string) (int64, int64) {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	uid := values.Statefulset.SecurityContext.RunAsUser
-	if values.Statefulset.PodSecurityContext != nil && values.Statefulset.PodSecurityContext.RunAsUser != nil {
-		uid = values.Statefulset.PodSecurityContext.RunAsUser
+	gid, uid := giduidFromPodTemplate(&values.PodTemplate, RedpandaContainerName)
+	sgid, suid := giduidFromPodTemplate(&values.Statefulset.PodTemplate, RedpandaContainerName)
+
+	if sgid != nil {
+		gid = sgid
 	}
-	if uid == nil {
+
+	if suid != nil {
+		uid = suid
+	}
+
+	if gid == nil {
 		panic(fmt.Sprintf(`%s container requires runAsUser to be specified`, containerName))
 	}
 
-	gid := values.Statefulset.SecurityContext.FSGroup
-	if values.Statefulset.PodSecurityContext != nil && values.Statefulset.PodSecurityContext.FSGroup != nil {
-		gid = values.Statefulset.PodSecurityContext.FSGroup
-	}
-	if gid == nil {
+	if uid == nil {
 		panic(fmt.Sprintf(`%s container requires fsGroup to be specified`, containerName))
 	}
+
 	return *uid, *gid
+}
+
+func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int64) {
+	var gid *int64
+	var uid *int64
+
+	if tpl.Spec == nil {
+		return nil, nil
+	}
+
+	if tpl.Spec.SecurityContext != nil {
+		gid = tpl.Spec.SecurityContext.FSGroup
+		uid = tpl.Spec.SecurityContext.RunAsUser
+	}
+
+	for _, container := range tpl.Spec.Containers {
+		if ptr.Deref(container.Name, "") == containerName && container.SecurityContext != nil {
+			if container.SecurityContext.RunAsUser != nil {
+				uid = container.SecurityContext.RunAsUser
+			}
+		}
+	}
+
+	return gid, uid
 }
 
 func statefulSetInitContainerFSValidator(dot *helmette.Dot) *corev1.Container {
@@ -488,7 +516,6 @@ func statefulSetInitContainerFSValidator(dot *helmette.Dot) *corev1.Container {
 				values.Statefulset.InitContainers.FSValidator.ExpectedFS,
 			),
 		},
-		SecurityContext: ptr.To(ContainerSecurityContext(dot)),
 		VolumeMounts: append(append(CommonMounts(dot),
 			templateToVolumeMounts(dot, values.Statefulset.InitContainers.FSValidator.ExtraVolumeMounts)...),
 			corev1.VolumeMount{
@@ -624,9 +651,8 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 				},
 			},
 		}),
-		SecurityContext: ptr.To(ContainerSecurityContext(dot)),
-		VolumeMounts:    volMounts,
-		Resources:       helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.InitContainers.Configurator.Resources),
+		VolumeMounts: volMounts,
+		Resources:    helmette.UnmarshalInto[corev1.ResourceRequirements](values.Statefulset.InitContainers.Configurator.Resources),
 	}
 }
 
@@ -656,7 +682,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(dot))
 
 	container := corev1.Container{
-		Name:  Name(dot),
+		Name:  RedpandaContainerName,
 		Image: fmt.Sprintf(`%s:%s`, values.Image.Repository, Tag(dot)),
 		Env:   bootstrapEnvVars(dot, statefulSetRedpandaEnv()),
 		Lifecycle: &corev1.Lifecycle{
@@ -734,10 +760,11 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 				values.Listeners.RPC.Port,
 			),
 		},
-		VolumeMounts: append(StatefulSetVolumeMounts(dot),
-			templateToVolumeMounts(dot, values.Statefulset.ExtraVolumeMounts)...),
-		SecurityContext: ptr.To(ContainerSecurityContext(dot)),
-		Resources:       values.Resources.GetResourceRequirements(),
+		VolumeMounts: append(
+			StatefulSetVolumeMounts(dot),
+			templateToVolumeMounts(dot, values.Statefulset.ExtraVolumeMounts)...,
+		),
+		Resources: values.Resources.GetResourceRequirements(),
 	}
 
 	// admin http kafka schemaRegistry rpc
@@ -979,6 +1006,7 @@ func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
 		sv := semver(dot)
 		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
 	}
+
 	ss := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -995,29 +1023,34 @@ func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
 			},
 			ServiceName:         ServiceName(dot),
 			Replicas:            ptr.To(values.Statefulset.Replicas),
-			UpdateStrategy:      helmette.UnmarshalInto[appsv1.StatefulSetUpdateStrategy](values.Statefulset.UpdateStrategy),
+			UpdateStrategy:      values.Statefulset.UpdateStrategy,
 			PodManagementPolicy: "Parallel",
-			Template: StrategicMergePatch(values.Statefulset.PodTemplate, corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      StatefulSetPodLabels(dot),
-					Annotations: StatefulSetPodAnnotations(dot, statefulSetChecksumAnnotation(dot)),
-				},
-				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken:  ptr.To(false),
-					TerminationGracePeriodSeconds: ptr.To(values.Statefulset.TerminationGracePeriodSeconds),
-					SecurityContext:               PodSecurityContext(dot),
-					ServiceAccountName:            ServiceAccountName(dot),
-					ImagePullSecrets:              helmette.Default(nil, values.ImagePullSecrets),
-					InitContainers:                StatefulSetInitContainers(dot),
-					Containers:                    StatefulSetContainers(dot),
-					Volumes:                       StatefulSetVolumes(dot),
-					TopologySpreadConstraints:     statefulSetTopologySpreadConstraints(dot),
-					NodeSelector:                  statefulSetNodeSelectors(dot),
-					Affinity:                      statefulSetAffinity(dot),
-					PriorityClassName:             values.Statefulset.PriorityClassName,
-					Tolerations:                   statefulSetTolerations(dot),
-				},
-			}),
+			Template: StrategicMergePatch(
+				values.Statefulset.PodTemplate,
+				StrategicMergePatch(
+					values.PodTemplate,
+					corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels:      StatefulSetPodLabels(dot),
+							Annotations: StatefulSetPodAnnotations(dot, statefulSetChecksumAnnotation(dot)),
+						},
+						Spec: corev1.PodSpec{
+							AutomountServiceAccountToken:  ptr.To(false),
+							TerminationGracePeriodSeconds: ptr.To(values.Statefulset.TerminationGracePeriodSeconds),
+							ServiceAccountName:            ServiceAccountName(dot),
+							ImagePullSecrets:              helmette.Default(nil, values.ImagePullSecrets),
+							InitContainers:                StatefulSetInitContainers(dot),
+							Containers:                    StatefulSetContainers(dot),
+							Volumes:                       StatefulSetVolumes(dot),
+							TopologySpreadConstraints:     statefulSetTopologySpreadConstraints(dot),
+							NodeSelector:                  statefulSetNodeSelectors(dot),
+							Affinity:                      statefulSetAffinity(dot),
+							PriorityClassName:             values.Statefulset.PriorityClassName,
+							Tolerations:                   statefulSetTolerations(dot),
+						},
+					},
+				),
+			),
 			VolumeClaimTemplates: nil, // Set below
 		},
 	}
