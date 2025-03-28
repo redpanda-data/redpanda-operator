@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -173,17 +172,9 @@ func (r *Cluster) Default() {
 }
 
 func (r *Cluster) getDefaultAdditionalConfiguration() map[string]int {
-	if featuregates.InternalTopicReplication(r.Spec.Version) {
-		return map[string]int{
-			defaultTopicReplicationKey:        defaultTopicReplicationNumber,
-			internalTopicReplicationFactorKey: defaultInternalTopicReplicationNumber,
-		}
-	} else {
-		return map[string]int{
-			defaultTopicReplicationKey:           defaultTopicReplicationNumber,
-			transactionCoordinatorReplicationKey: transactionCoordinatorReplicationNumber,
-			idAllocatorReplicationKey:            idAllocatorReplicationNumber,
-		}
+	return map[string]int{
+		defaultTopicReplicationKey:        defaultTopicReplicationNumber,
+		internalTopicReplicationFactorKey: defaultInternalTopicReplicationNumber,
 	}
 }
 
@@ -275,9 +266,7 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 	}
 	allErrs = append(allErrs, r.validateArchivalStorage()...)
 	allErrs = append(allErrs, r.validatePodDisruptionBudget()...)
-	if featuregates.InternalTopicReplication(r.Spec.Version) {
-		allErrs = append(allErrs, r.validateAdditionalConfiguration()...)
-	}
+	allErrs = append(allErrs, r.validateAdditionalConfiguration()...)
 	allErrs = append(allErrs, r.validatePriorityClassName()...)
 	return allErrs
 }

@@ -29,7 +29,6 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/patch"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
 )
 
 const (
@@ -421,10 +420,6 @@ func (r *StatefulSetResource) disableMaintenanceModeOnDecommissionedNodes(
 		return nil
 	}
 	log := r.logger.WithName("disableMaintenanceModeOnDecommissionedNodes").WithValues("node_id", *brokerID)
-
-	if !featuregates.MaintenanceMode(r.pandaCluster.Status.Version) {
-		return nil
-	}
 
 	pod, err := r.getPodByBrokerID(ctx, brokerID)
 	if err != nil {

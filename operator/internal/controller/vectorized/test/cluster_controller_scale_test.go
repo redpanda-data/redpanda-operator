@@ -214,7 +214,7 @@ var _ = Describe("Redpanda node pool scale", func() {
 				Namespace: "default",
 			}
 
-			redpandaCluster.Spec.Version = featuregates.V22_3.String()
+			redpandaCluster.Spec.Version = featuregates.V23_2.String()
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 			By("Keeping the StatefulSet at single replica until initialized")
 			var sts appsv1.StatefulSet
