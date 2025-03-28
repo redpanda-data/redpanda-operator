@@ -35,8 +35,6 @@ type PartialValues struct {
 	Image            *PartialImage                 "json:\"image,omitempty\" jsonschema:\"required,description=Values used to define the container image to be used for Redpanda\""
 	Service          *PartialService               "json:\"service,omitempty\""
 	ImagePullSecrets []corev1.LocalObjectReference "json:\"imagePullSecrets,omitempty\""
-	LicenseKey       *string                       "json:\"license_key,omitempty\" jsonschema:\"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$\""
-	LicenseSecretRef *PartialLicenseSecretRef      "json:\"license_secret_ref,omitempty\" jsonschema:\"deprecated\""
 	AuditLogging     *PartialAuditLogging          "json:\"auditLogging,omitempty\""
 	Enterprise       *PartialEnterprise            "json:\"enterprise,omitempty\""
 	RackAwareness    *PartialRackAwareness         "json:\"rackAwareness,omitempty\""
@@ -82,11 +80,8 @@ type PartialAuditLogging struct {
 }
 
 type PartialEnterprise struct {
-	License          *string "json:\"license,omitempty\""
-	LicenseSecretRef *struct {
-		Key  *string "json:\"key,omitempty\""
-		Name *string "json:\"name,omitempty\""
-	} "json:\"licenseSecretRef,omitempty\""
+	License          *string                   "json:\"license,omitempty\""
+	LicenseSecretRef *corev1.SecretKeySelector "json:\"licenseSecretRef,omitempty\""
 }
 
 type PartialRackAwareness struct {
@@ -312,11 +307,6 @@ type PartialService struct {
 	Internal *struct {
 		Annotations map[string]string "json:\"annotations,omitempty\""
 	} "json:\"internal,omitempty\""
-}
-
-type PartialLicenseSecretRef struct {
-	SecretName *string "json:\"secret_name,omitempty\""
-	SecretKey  *string "json:\"secret_key,omitempty\""
 }
 
 type PartialTLSCertMap map[string]PartialTLSCert
