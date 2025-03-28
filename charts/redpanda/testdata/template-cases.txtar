@@ -794,8 +794,6 @@ logging:
 monitoring:
   enabled: true
   scrapeInterval: 30s
-nodeSelector:
-  cloud.redpanda.com/role: redpanda
 post_install_job:
   podTemplate:
     spec:
@@ -880,7 +878,16 @@ statefulset:
     labels:
       azure.workload.identity/use: "true"
       cloud.redpanda.com/network-loadbalancer-access: "true"
-  priorityClassName: system-node-critical
+    spec:
+      nodeSelector:
+        cloud.redpanda.com/role: redpanda
+      terminationGracePeriodSeconds: 120
+      priorityClassName: system-node-critical
+      tolerations:
+        - effect: NoSchedule
+          key: cloud.redpanda.com/role
+          operator: Equal
+          value: redpanda
   replicas: 3
   sideCars:
     configWatcher:
@@ -901,7 +908,6 @@ statefulset:
         runAsGroup: 65534
         runAsNonRoot: true
         runAsUser: 65534
-  terminationGracePeriodSeconds: 120
 storage:
   persistentVolume:
     enabled: true
@@ -922,11 +928,6 @@ tls:
       secretRef:
         name: selfsigned-cert
   enabled: true
-tolerations:
-  - effect: NoSchedule
-    key: cloud.redpanda.com/role
-    operator: Equal
-    value: redpanda
 tuning:
   tune_aio_events: false
 

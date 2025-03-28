@@ -27,12 +27,6 @@ Kubernetes: `>= 1.25.0-0`
 
 ## Settings
 
-### [affinity](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=affinity)
-
-Affinity constraints for scheduling Pods, can override this for StatefulSets and Jobs. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
-
-**Default:** `{}`
-
 ### [auditLogging](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=auditLogging)
 
 Audit logging for a redpanda cluster, must have enabled sasl and have one kafka listener supporting sasl authentication for audit logging to work. Note this feature is only available for redpanda versions >= v23.3.0.
@@ -347,12 +341,6 @@ The Redpanda version. See DockerHub for: [All stable versions](https://hub.docke
 
 **Default:** `Chart.appVersion`.
 
-### [imagePullSecrets](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=imagePullSecrets)
-
-Pull secrets may be used to provide credentials to image repositories See the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
-
-**Default:** `[]`
-
 ### [license_key](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=license_key)
 
 DEPRECATED Enterprise license key (optional). For details, see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).
@@ -535,12 +523,6 @@ Override `redpanda.name` template.
 
 **Default:** `""`
 
-### [nodeSelector](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=nodeSelector)
-
-Node selection constraints for scheduling Pods, can override this for StatefulSets. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector).
-
-**Default:** `{}`
-
 ### [podTemplate.annotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.annotations)
 
 Annotations to apply (or overwrite the default) to all Pods of this Chart.
@@ -560,12 +542,14 @@ A subset of Kubernetes' PodSpec type that will be merged into the PodSpec of all
 **Default:**
 
 ```
-{"securityContext":{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}}
+{"imagePullSecrets":[],"securityContext":{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}}
 ```
 
-### [post_install_job.affinity](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=post_install_job.affinity)
+### [podTemplate.spec.imagePullSecrets](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.spec.imagePullSecrets)
 
-**Default:** `{}`
+Pull secrets may be used to provide credentials to image repositories See the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+**Default:** `[]`
 
 ### [post_install_job.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=post_install_job.enabled)
 
@@ -766,12 +750,6 @@ Additional labels to be added to statefulset label selector. For example, `my.k8
 
 **Default:** `{}`
 
-### [statefulset.annotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.annotations)
-
-DEPRECATED Please use statefulset.podTemplate.annotations. Annotations are used only for `Statefulset.spec.template.metadata.annotations`. The StatefulSet does not have any dedicated annotation.
-
-**Default:** `{}`
-
 ### [statefulset.budget.maxUnavailable](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.budget.maxUnavailable)
 
 **Default:** `1`
@@ -840,60 +818,6 @@ To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limi
 
 **Default:** `{}`
 
-### [statefulset.initContainers.setTieredStorageCacheDirOwnership.extraVolumeMounts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.setTieredStorageCacheDirOwnership.extraVolumeMounts)
-
-**Default:** `""`
-
-### [statefulset.initContainers.setTieredStorageCacheDirOwnership.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.setTieredStorageCacheDirOwnership.resources)
-
-To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request.
-
-**Default:** `{}`
-
-### [statefulset.initContainers.tuning.extraVolumeMounts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.tuning.extraVolumeMounts)
-
-**Default:** `""`
-
-### [statefulset.initContainers.tuning.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.tuning.resources)
-
-To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request.
-
-**Default:** `{}`
-
-### [statefulset.livenessProbe.failureThreshold](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.livenessProbe.failureThreshold)
-
-**Default:** `3`
-
-### [statefulset.livenessProbe.initialDelaySeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.livenessProbe.initialDelaySeconds)
-
-**Default:** `10`
-
-### [statefulset.livenessProbe.periodSeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.livenessProbe.periodSeconds)
-
-**Default:** `10`
-
-### [statefulset.nodeSelector](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.nodeSelector)
-
-Node selection constraints for scheduling Pods of this StatefulSet. These constraints override the global `nodeSelector` value. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector).
-
-**Default:** `{}`
-
-### [statefulset.podAffinity](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podAffinity)
-
-Inter-Pod Affinity rules for scheduling Pods of this StatefulSet. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#inter-pod-affinity-and-anti-affinity).
-
-**Default:** `{}`
-
-### [statefulset.podAntiAffinity](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podAntiAffinity)
-
-Anti-affinity rules for scheduling Pods of this StatefulSet. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#inter-pod-affinity-and-anti-affinity). You may either edit the default settings for anti-affinity rules, or specify new anti-affinity rules to use instead of the defaults.
-
-**Default:**
-
-```
-{"custom":{},"topologyKey":"kubernetes.io/hostname","type":"hard","weight":100}
-```
-
 ### [statefulset.podAntiAffinity.custom](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podAntiAffinity.custom)
 
 Change `podAntiAffinity.type` to `custom` and provide your own podAntiAffinity rules here.
@@ -937,30 +861,32 @@ A subset of Kubernetes' PodSpec type that will be merged into the final PodSpec.
 **Default:**
 
 ```
-{"containers":[],"securityContext":{}}
+{"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchLabels":{"app.kubernetes.io/component":"{{ include \"redpanda.name\" . }}-statefulset","app.kubernetes.io/instance":"{{ .Release.Name }}","app.kubernetes.io/name":"{{ include \"redpanda.name\" . }}"}},"topologyKey":"kubernetes.io/hostname"}]}},"containers":[{"livenessProbe":{"failureThreshold":3,"initialDelaySeconds":10,"periodSeconds":10},"name":"redpanda","startupProbe":{"failureThreshold":120,"initialDelaySeconds":1,"periodSeconds":10}},{"name":"sidecar","readinessProbe":{"failureThreshold":3,"initialDelaySeconds":1,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":0}}],"nodeSelector":{},"priorityClassName":"","securityContext":{},"terminationGracePeriodSeconds":90,"tolerations":[],"topologySpreadConstraints":[{"labelSelector":{"matchLabels":{"app.kubernetes.io/component":"{{ include \"redpanda.name\" . }}-statefulset","app.kubernetes.io/instance":"{{ .Release.Name }}","app.kubernetes.io/name":"{{ include \"redpanda.name\" . }}"}},"maxSkew":1,"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway"}]}
 ```
 
-### [statefulset.priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.priorityClassName)
+### [statefulset.podTemplate.spec.nodeSelector](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podTemplate.spec.nodeSelector)
+
+Node selection constraints for scheduling Pods of this StatefulSet. These constraints override the global `nodeSelector` value. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector).
+
+**Default:** `{}`
+
+### [statefulset.podTemplate.spec.priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podTemplate.spec.priorityClassName)
 
 PriorityClassName given to Pods of this StatefulSet. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass).
 
 **Default:** `""`
 
-### [statefulset.readinessProbe.failureThreshold](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.readinessProbe.failureThreshold)
+### [statefulset.podTemplate.spec.terminationGracePeriodSeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podTemplate.spec.terminationGracePeriodSeconds)
 
-**Default:** `3`
+Termination grace period in seconds is time required to execute preStop hook which puts particular Redpanda Pod (process/container) into maintenance mode. Before settle down on particular value please put Redpanda under load and perform rolling upgrade or rolling restart. That value needs to accommodate two processes: * preStop hook needs to put Redpanda into maintenance mode * after preStop hook Redpanda needs to handle gracefully SIGTERM signal  Both processes are executed sequentially where preStop hook has hard deadline in the middle of terminationGracePeriodSeconds.  REF: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
 
-### [statefulset.readinessProbe.initialDelaySeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.readinessProbe.initialDelaySeconds)
+**Default:** `90`
 
-**Default:** `1`
+### [statefulset.podTemplate.spec.tolerations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podTemplate.spec.tolerations)
 
-### [statefulset.readinessProbe.periodSeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.readinessProbe.periodSeconds)
+Taints to be tolerated by Pods of this StatefulSet. These tolerations override the global tolerations value. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
 
-**Default:** `10`
-
-### [statefulset.readinessProbe.successThreshold](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.readinessProbe.successThreshold)
-
-**Default:** `1`
+**Default:** `[]`
 
 ### [statefulset.replicas](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.replicas)
 
@@ -1045,44 +971,6 @@ To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limi
 ### [statefulset.sideCars.securityContext](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.securityContext)
 
 **Default:** `{}`
-
-### [statefulset.startupProbe](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.startupProbe)
-
-Adjust the period for your probes to meet your needs. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
-
-**Default:**
-
-```
-{"failureThreshold":120,"initialDelaySeconds":1,"periodSeconds":10}
-```
-
-### [statefulset.terminationGracePeriodSeconds](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.terminationGracePeriodSeconds)
-
-Termination grace period in seconds is time required to execute preStop hook which puts particular Redpanda Pod (process/container) into maintenance mode. Before settle down on particular value please put Redpanda under load and perform rolling upgrade or rolling restart. That value needs to accommodate two processes: * preStop hook needs to put Redpanda into maintenance mode * after preStop hook Redpanda needs to handle gracefully SIGTERM signal  Both processes are executed sequentially where preStop hook has hard deadline in the middle of terminationGracePeriodSeconds.  REF: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
-
-**Default:** `90`
-
-### [statefulset.tolerations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.tolerations)
-
-Taints to be tolerated by Pods of this StatefulSet. These tolerations override the global tolerations value. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
-
-**Default:** `[]`
-
-### [statefulset.topologySpreadConstraints[0].maxSkew](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.topologySpreadConstraints[0].maxSkew)
-
-**Default:** `1`
-
-### [statefulset.topologySpreadConstraints[0].topologyKey](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.topologySpreadConstraints[0].topologyKey)
-
-**Default:**
-
-```
-"topology.kubernetes.io/zone"
-```
-
-### [statefulset.topologySpreadConstraints[0].whenUnsatisfiable](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.topologySpreadConstraints[0].whenUnsatisfiable)
-
-**Default:** `"ScheduleAnyway"`
 
 ### [statefulset.updateStrategy.type](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.updateStrategy.type)
 
@@ -1249,12 +1137,6 @@ Indicates whether or not the Secret holding this certificate includes a `ca.crt`
 Enable TLS globally for all listeners. Each listener must include a Certificate name in its `<listener>.tls` object. To allow you to enable TLS for individual listeners, Certificates in `auth.tls.certs` are always loaded, even if `tls.enabled` is `false`. See `listeners.<listener-name>.tls.enabled`.
 
 **Default:** `true`
-
-### [tolerations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=tolerations)
-
-Taints to be tolerated by Pods, can override this for StatefulSets. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
-
-**Default:** `[]`
 
 ### [tuning](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=tuning)
 

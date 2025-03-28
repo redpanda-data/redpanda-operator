@@ -66,38 +66,34 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any                `json:"global,omitempty"`
-	NameOverride     string                        `json:"nameOverride"`
-	FullnameOverride string                        `json:"fullnameOverride"`
-	ClusterDomain    string                        `json:"clusterDomain"`
-	CommonLabels     map[string]string             `json:"commonLabels"`
-	NodeSelector     map[string]string             `json:"nodeSelector"`
-	Affinity         corev1.Affinity               `json:"affinity" jsonschema:"required"`
-	Tolerations      []corev1.Toleration           `json:"tolerations"`
-	Image            Image                         `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service                      `json:"service"`
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets"`
-	LicenseKey       string                        `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	LicenseSecretRef *LicenseSecretRef             `json:"license_secret_ref" jsonschema:"deprecated"`
-	AuditLogging     AuditLogging                  `json:"auditLogging"`
-	Enterprise       Enterprise                    `json:"enterprise"`
-	RackAwareness    RackAwareness                 `json:"rackAwareness"`
-	Console          console.PartialValues         `json:"console,omitempty"`
-	Connectors       connectors.PartialValues      `json:"connectors"`
-	Auth             Auth                          `json:"auth"`
-	TLS              TLS                           `json:"tls"`
-	External         ExternalConfig                `json:"external"`
-	Logging          Logging                       `json:"logging"`
-	Monitoring       Monitoring                    `json:"monitoring"`
-	Resources        RedpandaResources             `json:"resources"`
-	Storage          Storage                       `json:"storage"`
-	PostInstallJob   PostInstallJob                `json:"post_install_job"`
-	Statefulset      Statefulset                   `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg             `json:"serviceAccount"`
-	RBAC             RBAC                          `json:"rbac"`
-	Tuning           Tuning                        `json:"tuning"`
-	Listeners        Listeners                     `json:"listeners"`
-	Config           Config                        `json:"config"`
+	Global           map[string]any           `json:"global,omitempty"`
+	NameOverride     string                   `json:"nameOverride"`
+	FullnameOverride string                   `json:"fullnameOverride"`
+	ClusterDomain    string                   `json:"clusterDomain"`
+	CommonLabels     map[string]string        `json:"commonLabels"`
+	Image            Image                    `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service                 `json:"service"`
+	LicenseKey       string                   `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	LicenseSecretRef *LicenseSecretRef        `json:"license_secret_ref" jsonschema:"deprecated"`
+	AuditLogging     AuditLogging             `json:"auditLogging"`
+	Enterprise       Enterprise               `json:"enterprise"`
+	RackAwareness    RackAwareness            `json:"rackAwareness"`
+	Console          console.PartialValues    `json:"console,omitempty"`
+	Connectors       connectors.PartialValues `json:"connectors"`
+	Auth             Auth                     `json:"auth"`
+	TLS              TLS                      `json:"tls"`
+	External         ExternalConfig           `json:"external"`
+	Logging          Logging                  `json:"logging"`
+	Monitoring       Monitoring               `json:"monitoring"`
+	Resources        RedpandaResources        `json:"resources"`
+	Storage          Storage                  `json:"storage"`
+	PostInstallJob   PostInstallJob           `json:"post_install_job"`
+	Statefulset      Statefulset              `json:"statefulset"`
+	ServiceAccount   ServiceAccountCfg        `json:"serviceAccount"`
+	RBAC             RBAC                     `json:"rbac"`
+	Tuning           Tuning                   `json:"tuning"`
+	Listeners        Listeners                `json:"listeners"`
+	Config           Config                   `json:"config"`
 	Tests            *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
@@ -742,12 +738,10 @@ func (s *Storage) StorageMinFreeBytes() int64 {
 }
 
 type PostInstallJob struct {
-	Resources   *corev1.ResourceRequirements `json:"resources"`
-	Affinity    corev1.Affinity              `json:"affinity"`
-	Enabled     bool                         `json:"enabled"`
-	Labels      map[string]string            `json:"labels"`
-	Annotations map[string]string            `json:"annotations"`
-	PodTemplate PodTemplate                  `json:"podTemplate"`
+	Enabled     bool              `json:"enabled"`
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
+	PodTemplate PodTemplate       `json:"podTemplate"`
 }
 
 type PodTemplate struct {
@@ -758,78 +752,31 @@ type PodTemplate struct {
 
 type Statefulset struct {
 	AdditionalSelectorLabels   map[string]string                `json:"additionalSelectorLabels" jsonschema:"required"`
-	NodeAffinity               map[string]any                   `json:"nodeAffinity"`
 	Replicas                   int32                            `json:"replicas" jsonschema:"required"`
 	UpdateStrategy             appsv1.StatefulSetUpdateStrategy `json:"updateStrategy" jsonschema:"required"`
 	AdditionalRedpandaCmdFlags []string                         `json:"additionalRedpandaCmdFlags"`
-	// Annotations are used only for `Statefulset.spec.template.metadata.annotations`. The StatefulSet does not have
-	// any dedicated annotation.
-	Annotations map[string]string `json:"annotations" jsonschema:"deprecated"`
-	PodTemplate PodTemplate       `json:"podTemplate" jsonschema:"required"`
-	Budget      struct {
+	PodTemplate                PodTemplate                      `json:"podTemplate" jsonschema:"required"`
+	Budget                     struct {
 		MaxUnavailable int32 `json:"maxUnavailable" jsonschema:"required"`
 	} `json:"budget" jsonschema:"required"`
-	StartupProbe struct {
-		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
-		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
-		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
-	} `json:"startupProbe" jsonschema:"required"`
-	LivenessProbe struct {
-		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
-		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
-		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
-	} `json:"livenessProbe" jsonschema:"required"`
-	ReadinessProbe struct {
-		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
-		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
-		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
-		SuccessThreshold    int32 `json:"successThreshold"`
-		TimeoutSeconds      int32 `json:"timeoutSeconds"`
-	} `json:"readinessProbe" jsonschema:"required"`
-	PodAffinity     map[string]any `json:"podAffinity" jsonschema:"required"`
 	PodAntiAffinity struct {
 		TopologyKey string         `json:"topologyKey" jsonschema:"required"`
 		Type        string         `json:"type" jsonschema:"required,pattern=^(hard|soft|custom)$"`
 		Weight      int32          `json:"weight" jsonschema:"required"`
 		Custom      map[string]any `json:"custom"`
 	} `json:"podAntiAffinity" jsonschema:"required"`
-	NodeSelector                  map[string]string `json:"nodeSelector" jsonschema:"required"`
-	PriorityClassName             string            `json:"priorityClassName" jsonschema:"required"`
-	TerminationGracePeriodSeconds int64             `json:"terminationGracePeriodSeconds"`
-	TopologySpreadConstraints     []struct {
-		MaxSkew           int32                                `json:"maxSkew"`
-		TopologyKey       string                               `json:"topologyKey"`
-		WhenUnsatisfiable corev1.UnsatisfiableConstraintAction `json:"whenUnsatisfiable" jsonschema:"pattern=^(ScheduleAnyway|DoNotSchedule)$"`
-	} `json:"topologySpreadConstraints" jsonschema:"required,minItems=1"`
-	Tolerations       []corev1.Toleration `json:"tolerations" jsonschema:"required"`
-	SideCars          Sidecars            `json:"sideCars" jsonschema:"required"`
-	ExtraVolumes      string              `json:"extraVolumes"`      // XXX this is template-expanded into yaml
-	ExtraVolumeMounts string              `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-	InitContainers    struct {
+	SideCars       Sidecars `json:"sideCars" jsonschema:"required"`
+	InitContainers struct {
 		Configurator struct {
-			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-			Resources         map[string]any `json:"resources"`
+			Resources map[string]any `json:"resources"`
 		} `json:"configurator"`
 		FSValidator struct {
-			Enabled           bool           `json:"enabled"`
-			Resources         map[string]any `json:"resources"`
-			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-			ExpectedFS        string         `json:"expectedFS"`
+			Enabled    bool   `json:"enabled"`
+			ExpectedFS string `json:"expectedFS"`
 		} `json:"fsValidator"`
 		SetDataDirOwnership struct {
-			Enabled           bool           `json:"enabled"`
-			Resources         map[string]any `json:"resources"`
-			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+			Enabled bool `json:"enabled"`
 		} `json:"setDataDirOwnership"`
-		SetTieredStorageCacheDirOwnership struct {
-			Resources         map[string]any `json:"resources"`
-			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-		} `json:"setTieredStorageCacheDirOwnership"`
-		Tuning struct {
-			Resources         map[string]any `json:"resources"`
-			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-		} `json:"tuning"`
-		ExtraInitContainers string `json:"extraInitContainers"` // XXX this is template-expanded into yaml
 	} `json:"initContainers"`
 	InitContainerImage struct {
 		Repository string `json:"repository"`
@@ -880,10 +827,7 @@ type Sidecars struct {
 		Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
 		Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
 	} `json:"image"`
-	ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-	Resources         map[string]any          `json:"resources"`
-	SecurityContext   *corev1.SecurityContext `json:"securityContext"`
-	PVCUnbinder       struct {
+	PVCUnbinder struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
 	} `json:"pvcUnbinder"`
@@ -893,24 +837,19 @@ type Sidecars struct {
 		DecommissionRequeueTimeout string `json:"decommissionRequeueTimeout"`
 	} `json:"brokerDecommissioner"`
 	ConfigWatcher struct {
-		Enabled           bool                    `json:"enabled"`
-		ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
-		Resources         map[string]any          `json:"resources"`
-		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
+		Enabled bool `json:"enabled"`
 	} `json:"configWatcher"`
 	Controllers struct {
 		Image struct {
 			Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
 			Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
 		} `json:"image"`
-		Enabled            bool                    `json:"enabled"`
-		CreateRBAC         bool                    `json:"createRBAC"`
-		Resources          any                     `json:"resources"`
-		SecurityContext    *corev1.SecurityContext `json:"securityContext"`
-		HealthProbeAddress string                  `json:"healthProbeAddress"`
-		MetricsAddress     string                  `json:"metricsAddress"`
-		PprofAddress       string                  `json:"pprofAddress"`
-		Run                []string                `json:"run"`
+		Enabled            bool     `json:"enabled"`
+		CreateRBAC         bool     `json:"createRBAC"`
+		HealthProbeAddress string   `json:"healthProbeAddress"`
+		MetricsAddress     string   `json:"metricsAddress"`
+		PprofAddress       string   `json:"pprofAddress"`
+		Run                []string `json:"run"`
 	} `json:"controllers"`
 }
 

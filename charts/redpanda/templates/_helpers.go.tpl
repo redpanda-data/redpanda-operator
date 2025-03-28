@@ -459,6 +459,61 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.StructuredTpl" -}}
+{{- $dot := (index .a 0) -}}
+{{- $in := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $untyped := $in -}}
+{{- $expanded := (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $dot $untyped) ))) "r") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (merge (dict ) $expanded)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.recursiveTpl" -}}
+{{- $dot := (index .a 0) -}}
+{{- $data := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $kind := (kindOf $data) -}}
+{{- if (eq $kind "map") -}}
+{{- $m := (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $data) ))) "r") -}}
+{{- range $key, $value := $m -}}
+{{- $_ := (set $m $key (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $dot $value) ))) "r")) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $m) | toJson -}}
+{{- break -}}
+{{- else -}}{{- if (eq $kind "slice") -}}
+{{- $s := (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "[]%s" "interface {}") $data) ))) "r") -}}
+{{- $out := (coalesce nil) -}}
+{{- range $i, $_ := $s -}}
+{{- $out = (concat (default (list ) $out) (list (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $dot (index $s $i)) ))) "r"))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $out) | toJson -}}
+{{- break -}}
+{{- else -}}{{- if (and (eq $kind "string") (contains "{{" (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data) ))) "r"))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (tpl (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data) ))) "r") $dot)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $data) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.StrategicMergePatch" -}}
 {{- $overrides := (index .a 0) -}}
 {{- $original := (index .a 1) -}}
@@ -486,6 +541,9 @@
 {{- if (eq (toJson $merged.spec.tolerations) "null") -}}
 {{- $_ := (set $merged.spec "tolerations" (list )) -}}
 {{- end -}}
+{{- if (eq (toJson $merged.spec.imagePullSecrets) "null") -}}
+{{- $_ := (set $merged.spec "imagePullSecrets" (list )) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $merged) | toJson -}}
 {{- break -}}
@@ -502,9 +560,9 @@
 {{- $originalKeys := (dict ) -}}
 {{- $overrideByKey := (dict ) -}}
 {{- range $_, $el := $override -}}
-{{- $_490_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
-{{- $key := (index $_490_key_ok 0) -}}
-{{- $ok := (index $_490_key_ok 1) -}}
+{{- $_530_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
+{{- $key := (index $_530_key_ok 0) -}}
+{{- $ok := (index $_530_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -515,13 +573,13 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
-{{- $_502_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
-{{- $key := (index $_502_key__ 0) -}}
-{{- $_ := (index $_502_key__ 1) -}}
+{{- $_542_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
+{{- $key := (index $_542_key__ 0) -}}
+{{- $_ := (index $_542_key__ 1) -}}
 {{- $_ := (set $originalKeys $key true) -}}
-{{- $_504_elOverride_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil)) ))) "r") -}}
-{{- $elOverride_7 := (index $_504_elOverride_7_ok_8 0) -}}
-{{- $ok_8 := (index $_504_elOverride_7_ok_8 1) -}}
+{{- $_544_elOverride_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil)) ))) "r") -}}
+{{- $elOverride_7 := (index $_544_elOverride_7_ok_8 0) -}}
+{{- $ok_8 := (index $_544_elOverride_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $merged = (concat (default (list ) $merged) (list (get (fromJson (include $mergeFunc (dict "a" (list $el $elOverride_7) ))) "r"))) -}}
 {{- else -}}
@@ -532,15 +590,15 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
-{{- $_514_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
-{{- $key := (index $_514_key_ok 0) -}}
-{{- $ok := (index $_514_key_ok 1) -}}
+{{- $_554_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey) ))) "r") -}}
+{{- $key := (index $_554_key_ok 0) -}}
+{{- $ok := (index $_554_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
-{{- $_519___ok_9 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false) ))) "r") -}}
-{{- $_ := (index $_519___ok_9 0) -}}
-{{- $ok_9 := (index $_519___ok_9 1) -}}
+{{- $_559___ok_9 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false) ))) "r") -}}
+{{- $_ := (index $_559___ok_9 0) -}}
+{{- $ok_9 := (index $_559___ok_9 1) -}}
 {{- if $ok_9 -}}
 {{- continue -}}
 {{- end -}}

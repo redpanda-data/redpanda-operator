@@ -38,8 +38,9 @@ func TestStrategicMergePatch(t *testing.T) {
 					Annotations: map[string]string{},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{},
-					Tolerations:  []corev1.Toleration{},
+					NodeSelector:     map[string]string{},
+					Tolerations:      []corev1.Toleration{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
 				},
 			},
 		},
@@ -61,8 +62,9 @@ func TestStrategicMergePatch(t *testing.T) {
 					Annotations: map[string]string{"x": "y"},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{},
-					Tolerations:  []corev1.Toleration{},
+					NodeSelector:     map[string]string{},
+					Tolerations:      []corev1.Toleration{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser: ptr.To[int64](100),
 					},
@@ -89,8 +91,9 @@ func TestStrategicMergePatch(t *testing.T) {
 					Annotations: map[string]string{"x": "y"},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{},
-					Tolerations:  []corev1.Toleration{},
+					NodeSelector:     map[string]string{},
+					Tolerations:      []corev1.Toleration{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser: ptr.To[int64](100),
 					},
@@ -158,8 +161,9 @@ func TestStrategicMergePatch(t *testing.T) {
 					Annotations: map[string]string{"a": "b", "x": "y"},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{},
-					Tolerations:  []corev1.Toleration{},
+					NodeSelector:     map[string]string{},
+					Tolerations:      []corev1.Toleration{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:    ptr.To[int64](100),
 						RunAsGroup:   ptr.To[int64](300),

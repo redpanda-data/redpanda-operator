@@ -107,9 +107,9 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 		},
 		Spec: batchv1.JobSpec{
 			Template: StrategicMergePatch(
-				values.PostInstallJob.PodTemplate,
+				StructuredTpl(dot, values.PostInstallJob.PodTemplate),
 				StrategicMergePatch(
-					values.PodTemplate,
+					StructuredTpl(dot, values.PodTemplate),
 					corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							GenerateName: fmt.Sprintf("%s-post-", dot.Release.Name),
@@ -123,11 +123,7 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 							),
 						},
 						Spec: corev1.PodSpec{
-							NodeSelector:                 values.NodeSelector,
-							Affinity:                     postInstallJobAffinity(dot),
-							Tolerations:                  tolerations(dot),
 							RestartPolicy:                corev1.RestartPolicyNever,
-							ImagePullSecrets:             helmette.Default(nil, values.ImagePullSecrets),
 							InitContainers:               []corev1.Container{bootstrapYamlTemplater(dot)},
 							AutomountServiceAccountToken: ptr.To(false),
 							Containers: []corev1.Container{
@@ -149,7 +145,6 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 										"--redpanda-yaml", "/tmp/base-config/redpanda.yaml",
 										"--bootstrap-yaml", "/tmp/config/.bootstrap.yaml",
 									},
-									Resources: ptr.Deref(values.PostInstallJob.Resources, corev1.ResourceRequirements{}),
 									VolumeMounts: append(
 										CommonMounts(dot),
 										corev1.VolumeMount{Name: "config", MountPath: "/tmp/config"},
@@ -185,28 +180,6 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 	}
 
 	return job
-}
-
-// was: post-install-job-affinity
-// Set affinity for post_install_job, defaults to global affinity if not defined in post_install_job
-func postInstallJobAffinity(dot *helmette.Dot) *corev1.Affinity {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !helmette.Empty(values.PostInstallJob.Affinity) {
-		return &values.PostInstallJob.Affinity
-	}
-
-	return helmette.MergeTo[*corev1.Affinity](values.PostInstallJob.Affinity, values.Affinity)
-}
-
-func tolerations(dot *helmette.Dot) []corev1.Toleration {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	var result []corev1.Toleration
-	for _, t := range values.Tolerations {
-		result = append(result, helmette.MergeTo[corev1.Toleration](t))
-	}
-	return result
 }
 
 // PostInstallUpgradeEnvironmentVariables returns environment variables assigned to Redpanda
