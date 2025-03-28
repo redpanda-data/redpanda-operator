@@ -76,8 +76,6 @@ type Values struct {
 	Image            Image                         `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
 	Service          *Service                      `json:"service"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets"`
-	LicenseKey       string                        `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	LicenseSecretRef *LicenseSecretRef             `json:"license_secret_ref" jsonschema:"deprecated"`
 	AuditLogging     AuditLogging                  `json:"auditLogging"`
 	Enterprise       Enterprise                    `json:"enterprise"`
 	RackAwareness    RackAwareness                 `json:"rackAwareness"`
@@ -103,11 +101,6 @@ type Values struct {
 	PodTemplate PodTemplate `json:"podTemplate"`
 }
 
-// +gotohelm:ignore=true
-func (Values) JSONSchemaExtend(schema *jsonschema.Schema) {
-	deprecate(schema, "license_key", "license_secret_ref")
-}
-
 type Image struct {
 	Repository string            `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda"`
 	Tag        ImageTag          `json:"tag" jsonschema:"default=Chart.appVersion"`
@@ -128,11 +121,6 @@ type Service struct {
 	Internal struct {
 		Annotations map[string]string `json:"annotations"`
 	} `json:"internal"`
-}
-
-type LicenseSecretRef struct {
-	SecretName string `json:"secret_name"`
-	SecretKey  string `json:"secret_key"`
 }
 
 type AuditLogging struct {
@@ -202,11 +190,13 @@ func (a *AuditLogging) Translate(dot *helmette.Dot, isSASLEnabled bool) map[stri
 }
 
 type Enterprise struct {
-	License          string `json:"license"`
-	LicenseSecretRef *struct {
-		Key  string `json:"key"`
-		Name string `json:"name"`
-	} `json:"licenseSecretRef"`
+	License          string                    `json:"license"`
+	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
+}
+
+// +gotohelm:ignore=true
+func (Enterprise) JSONSchemaExtend(schema *jsonschema.Schema) {
+	makeNullable(schema, "licenseSecretRef")
 }
 
 type RackAwareness struct {

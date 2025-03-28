@@ -70,8 +70,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $envars := (list ) -}}
-{{- $license_1 := (get (fromJson (include "redpanda.GetLicenseLiteral" (dict "a" (list $dot) ))) "r") -}}
-{{- $secretReference_2 := (get (fromJson (include "redpanda.GetLicenseSecretReference" (dict "a" (list $dot) ))) "r") -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $license_1 := $values.enterprise.license -}}
+{{- $secretReference_2 := $values.enterprise.licenseSecretRef -}}
 {{- if (ne $license_1 "") -}}
 {{- $envars = (concat (default (list ) $envars) (list (mustMergeOverwrite (dict "name" "" ) (dict "name" "REDPANDA_LICENSE" "value" $license_1 )))) -}}
 {{- else -}}{{- if (ne (toJson $secretReference_2) "null") -}}
@@ -80,43 +81,6 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "redpanda.bootstrapEnvVars" (dict "a" (list $dot $envars) ))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.GetLicenseLiteral" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- if (ne $values.enterprise.license "") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $values.enterprise.license) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $values.license_key) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.GetLicenseSecretReference" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- if (not (empty $values.enterprise.licenseSecretRef)) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "key" "" ) (mustMergeOverwrite (dict ) (dict "name" $values.enterprise.licenseSecretRef.name )) (dict "key" $values.enterprise.licenseSecretRef.key ))) | toJson -}}
-{{- break -}}
-{{- else -}}{{- if (not (empty $values.license_secret_ref)) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "key" "" ) (mustMergeOverwrite (dict ) (dict "name" $values.license_secret_ref.secret_name )) (dict "key" $values.license_secret_ref.secret_key ))) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
