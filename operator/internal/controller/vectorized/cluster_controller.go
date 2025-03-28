@@ -69,17 +69,18 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	configuratorSettings      resources.ConfiguratorSettings
-	clusterDomain             string
-	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
-	DecommissionWaitInterval  time.Duration
-	MetricsTimeout            time.Duration
-	RestrictToRedpandaVersion string
-	GhostDecommissioning      bool
-	AutoDeletePVCs            bool
-	Dialer                    redpanda.DialContextFunc
+	Log                            logr.Logger
+	configuratorSettings           resources.ConfiguratorSettings
+	clusterDomain                  string
+	Scheme                         *runtime.Scheme
+	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
+	DecommissionWaitInterval       time.Duration
+	MetricsTimeout                 time.Duration
+	RestrictToRedpandaVersion      string
+	GhostDecommissioning           bool
+	AutoDeletePVCs                 bool
+	ConfigurationReassertionPeriod time.Duration
+	Dialer                         redpanda.DialContextFunc
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -184,9 +185,9 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, nil
 	}
 
-	// Expect featuregate to be supported. Clusters <22.3.0 are unsupported.
-	if !featuregates.EmptySeedStartCluster(vectorizedCluster.Spec.Version) {
-		return ctrl.Result{}, fmt.Errorf("Redpanda version >=v22.3.0 is required to support FeatureGate EmptySeedStartCluster")
+	// Expect featuregate to be supported. Clusters <23.2.0 are unsupported.
+	if !featuregates.MinimumSupportedVersion(vectorizedCluster.Spec.Version) {
+		return ctrl.Result{}, fmt.Errorf("Redpanda version >=%s is required to support FeatureGate EmptySeedStartCluster", featuregates.V23_2.String())
 	}
 
 	ar.bootstrapService()
@@ -275,7 +276,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	err = r.reconcileConfiguration(
+	delay, err := r.reconcileConfiguration(
 		ctx,
 		&vectorizedCluster,
 		cm,
@@ -293,10 +294,8 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	if featuregates.CentralizedConfiguration(vectorizedCluster.Spec.Version) {
-		if cc := vectorizedCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType); cc == nil || cc.Status != corev1.ConditionTrue {
-			return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
-		}
+	if cc := vectorizedCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType); cc == nil || cc.Status != corev1.ConditionTrue {
+		return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
 	}
 
 	// The following should be at the last part as it requires AdminAPI to be running
@@ -327,7 +326,13 @@ func (r *ClusterReconciler) Reconcile(
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
-	return ctrl.Result{}, nil
+	// Finally: re-enqueue for another pass
+	if delay == 0 {
+		delay = r.configurationReassertionPeriod()
+	}
+	return ctrl.Result{
+		RequeueAfter: delay,
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
