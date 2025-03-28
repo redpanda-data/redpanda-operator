@@ -292,6 +292,14 @@ func Command() *cobra.Command {
 	clientOptions.BindFlags(cmd.Flags())
 	kubeConfigOpts.BindFlags(cmd.Flags())
 
+	// secret store related flags
+	cmd.Flags().BoolVar(&cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
+	cmd.Flags().StringVar(&cloudSecretsPrefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
+	cmd.Flags().StringVar(&cloudSecretsAWSRegion, "cloud-secrets-aws-region", "", "AWS Region in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
+	cmd.Flags().StringVar(&cloudSecretsGCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
+
 	// Deprecated flags.
 	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
 	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
@@ -526,6 +534,7 @@ func Run(
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 			GhostDecommissioning:      ghostbuster,
 			AutoDeletePVCs:            autoDeletePVCs,
+			CloudSecretsExpander:      cloudExpander,
 		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
 			return err

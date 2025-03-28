@@ -119,7 +119,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Now we can mark the new lastAppliedConfiguration for next update
-	properties, err := config.ConcreteConfiguration(ctx, r.Client, redpandaCluster.Namespace, schema)
+	properties, err := config.ConcreteConfiguration(ctx, r.Client, r.CloudSecretsExpander, redpandaCluster.Namespace, schema)
 	if err != nil {
 		return errorWithContext(err, "could not concretize configuration to store last applied configuration in the cluster")
 	}
@@ -164,7 +164,7 @@ func (r *ClusterReconciler) getOrInitLastAppliedConfiguration(
 		return lastApplied, nil
 	}
 
-	concreteCfg, err := config.ConcreteConfiguration(ctx, r.Client, namespace, schema)
+	concreteCfg, err := config.ConcreteConfiguration(ctx, r.Client, r.CloudSecretsExpander, namespace, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	// Because we're going to perform a declarative application, invalid values will either
 	// be overwritten (if they're supplied in the cfg), or removed (if they're not).
 	// No additional handling is needed.
-	properties, err := cfg.ConcreteConfiguration(ctx, r, redpandaCluster.Namespace, schema)
+	properties, err := cfg.ConcreteConfiguration(ctx, r, r.CloudSecretsExpander, redpandaCluster.Namespace, schema)
 	if err != nil {
 		return false, err
 	}
@@ -291,7 +291,7 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	lastAppliedConfiguration map[string]interface{},
 	statefulSetResource *resources.StatefulSetResource,
 ) (hash string, changed bool, err error) {
-	hash, err = config.GetCentralizedConfigurationHash(ctx, r.Client, schema, redpandaCluster.Namespace)
+	hash, err = config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, redpandaCluster.Namespace)
 	if err != nil {
 		return "", false, newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)(err, "could not compute hash of the new configuration")
 	}
