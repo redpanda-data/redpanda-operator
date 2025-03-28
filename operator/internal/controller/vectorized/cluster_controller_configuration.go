@@ -131,7 +131,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Now we can mark the new lastAppliedCriticalConfiguration for next update
-	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander ,schema, redpandaCluster.Namespace)
+	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, redpandaCluster.Namespace)
 	if err != nil {
 		return 0, errorWithContext(err, "could not concretize critical configuration to store last applied configuration in the cluster")
 	}

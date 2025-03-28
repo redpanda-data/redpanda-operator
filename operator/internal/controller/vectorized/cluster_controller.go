@@ -70,18 +70,18 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	configuratorSettings      resources.ConfiguratorSettings
-	clusterDomain             string
-	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
+	Log                            logr.Logger
+	configuratorSettings           resources.ConfiguratorSettings
+	clusterDomain                  string
+	Scheme                         *runtime.Scheme
+	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
 	ConfigurationReassertionPeriod time.Duration
-	DecommissionWaitInterval  time.Duration
-	MetricsTimeout            time.Duration
-	RestrictToRedpandaVersion string
-	GhostDecommissioning      bool
-	AutoDeletePVCs            bool
-	Dialer                    redpanda.DialContextFunc
+	DecommissionWaitInterval       time.Duration
+	MetricsTimeout                 time.Duration
+	RestrictToRedpandaVersion      string
+	GhostDecommissioning           bool
+	AutoDeletePVCs                 bool
+	Dialer                         redpanda.DialContextFunc
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config
 	CloudSecretsExpander *pkgsecrets.CloudExpander
