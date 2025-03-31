@@ -70,17 +70,18 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	configuratorSettings      resources.ConfiguratorSettings
-	clusterDomain             string
-	Scheme                    *runtime.Scheme
-	AdminAPIClientFactory     adminutils.NodePoolAdminAPIClientFactory
-	DecommissionWaitInterval  time.Duration
-	MetricsTimeout            time.Duration
-	RestrictToRedpandaVersion string
-	GhostDecommissioning      bool
-	AutoDeletePVCs            bool
-	Dialer                    redpanda.DialContextFunc
+	Log                            logr.Logger
+	configuratorSettings           resources.ConfiguratorSettings
+	clusterDomain                  string
+	Scheme                         *runtime.Scheme
+	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
+	ConfigurationReassertionPeriod time.Duration
+	DecommissionWaitInterval       time.Duration
+	MetricsTimeout                 time.Duration
+	RestrictToRedpandaVersion      string
+	GhostDecommissioning           bool
+	AutoDeletePVCs                 bool
+	Dialer                         redpanda.DialContextFunc
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config
 	CloudSecretsExpander *pkgsecrets.CloudExpander
@@ -279,7 +280,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	err = r.reconcileConfiguration(
+	delay, err := r.reconcileConfiguration(
 		ctx,
 		&vectorizedCluster,
 		cm,
@@ -331,7 +332,13 @@ func (r *ClusterReconciler) Reconcile(
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
-	return ctrl.Result{}, nil
+	// Finally: re-enqueue for another pass
+	if delay == 0 {
+		delay = r.configurationReassertionPeriod()
+	}
+	return ctrl.Result{
+		RequeueAfter: delay,
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
