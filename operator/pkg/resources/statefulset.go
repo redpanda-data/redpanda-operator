@@ -803,17 +803,19 @@ func (r *StatefulSetResource) canOverwriteBootstrapForAnyPreexistingResource(ctx
 	}
 	// Check to see if we have the signature env variable in the initContainer;
 	// if so we're good to continue.
-	for _, ev := range oldObj.Spec.Template.Spec.InitContainers[0].Env {
-		if ev.Name == bootstrapTemplateEnvVar {
-			// This already has the hooks; it's fine to patch.
+	if len(oldObj.Spec.Template.Spec.InitContainers) > 0 {
+		for _, ev := range oldObj.Spec.Template.Spec.InitContainers[0].Env {
+			if ev.Name == bootstrapTemplateEnvVar {
+				// This already has the hooks; it's fine to patch.
+				return true, nil
+			}
+		}
+		// Check to see if we are changing any images; if so, we can patch.
+		if sts.Spec.Template.Spec.InitContainers[0].Image != r.fullConfiguratorImage() {
 			return true, nil
 		}
 	}
-	// Check to see if we are changing any images; if so, we can patch.
-	if sts.Spec.Template.Spec.InitContainers[0].Image != r.fullConfiguratorImage() {
-		return true, nil
-	}
-	if sts.Spec.Template.Spec.Containers[0].Image != r.pandaCluster.FullImageName() {
+	if len(sts.Spec.Template.Spec.Containers) > 0 && sts.Spec.Template.Spec.Containers[0].Image != r.pandaCluster.FullImageName() {
 		return true, nil
 	}
 	// Otherwise, we'll leave this untouched for the moment; it's already running,
