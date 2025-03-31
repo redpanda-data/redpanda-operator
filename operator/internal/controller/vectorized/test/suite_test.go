@@ -198,27 +198,19 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		return testKafkaAdmin, nil
 	}
 
+	driftCheckPeriod := 500 * time.Millisecond
 	err = (&vectorized.ClusterReconciler{
-		Client:                   k8sManager.GetClient(),
-		Log:                      l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
-		Scheme:                   k8sManager.GetScheme(),
-		AdminAPIClientFactory:    testAdminAPIFactory,
-		DecommissionWaitInterval: 100 * time.Millisecond,
+		Client:                         k8sManager.GetClient(),
+		Log:                            l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
+		Scheme:                         k8sManager.GetScheme(),
+		AdminAPIClientFactory:          testAdminAPIFactory,
+		DecommissionWaitInterval:       100 * time.Millisecond,
+		ConfigurationReassertionPeriod: driftCheckPeriod,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
 		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	driftCheckPeriod := 500 * time.Millisecond
-	err = (&vectorized.ClusterConfigurationDriftReconciler{
-		Client:                k8sManager.GetClient(),
-		Log:                   l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
-		Scheme:                k8sManager.GetScheme(),
-		AdminAPIClientFactory: testAdminAPIFactory,
-		DriftCheckPeriod:      &driftCheckPeriod,
-	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&vectorized.ConsoleReconciler{
