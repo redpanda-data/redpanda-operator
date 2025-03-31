@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: The operator is going to restart the cluster on any change to the cluster configuration
+time: 2025-04-03T13:12:31.215439+02:00

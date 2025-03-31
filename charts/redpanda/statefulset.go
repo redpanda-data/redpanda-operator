@@ -1051,7 +1051,7 @@ func statefulSetChecksumAnnotation(dot *helmette.Dot) string {
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
-	dependencies = append(dependencies, RedpandaConfigFile(dot, false))
+	dependencies = append(dependencies, RedpandaConfigFile(dot, false), RedpandaClusterConfig(dot))
 	if values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(values.External.Domain, ""))
 		if helmette.Empty(values.External.Addresses) {

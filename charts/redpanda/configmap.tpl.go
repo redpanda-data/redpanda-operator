@@ -122,6 +122,11 @@ func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string 
 	return helmette.ToYaml(redpandaYaml)
 }
 
+func RedpandaClusterConfig(dot *helmette.Dot) string {
+	values := helmette.Unwrap[Values](dot.Values)
+	return helmette.ToYaml(values.Config.Cluster.Translate())
+}
+
 // RPKProfile returns a [corev1.ConfigMap] for aiding users in connecting to
 // the external listeners of their redpanda cluster.
 // It is meant for external consumption via NOTES.txt and is not used within
