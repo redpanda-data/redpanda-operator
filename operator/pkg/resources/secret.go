@@ -94,14 +94,6 @@ func (r *PreStartStopScriptResource) update(
 	c k8sclient.Client,
 	logger logr.Logger,
 ) error {
-	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedConfigurationAnnotationKey]; ok {
-		if modified.Annotations == nil {
-			modified.Annotations = make(map[string]string)
-		}
-		modified.Annotations[LastAppliedConfigurationAnnotationKey] = val
-	}
-
 	_, err := Update(ctx, current, modified, c, logger)
 	return err
 }

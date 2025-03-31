@@ -10,10 +10,8 @@
 package resources
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -60,8 +58,9 @@ var (
 	errKeyDoesNotExistInSecretData        = errors.New("cannot find key in secret data")
 	errCloudStorageSecretKeyCannotBeEmpty = errors.New("cloud storage SecretKey string cannot be empty")
 
-	// LastAppliedConfigurationAnnotationKey is used to store the last applied centralized configuration for doing three-way merge
-	LastAppliedConfigurationAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/last-applied-configuration"
+	// LastAppliedCriticalConfigurationAnnotationKey is used to store the hash of the most-recently-applied configuration,
+	// selecting only those values which are marked in the schema as requiring a cluster restart.
+	LastAppliedCriticalConfigurationAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/last-applied-critical-configuration"
 )
 
 var _ Resource = &ConfigMapResource{}
@@ -130,11 +129,11 @@ func (r *ConfigMapResource) update(
 	logger logr.Logger,
 ) error {
 	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedConfigurationAnnotationKey]; ok {
+	if val, ok := current.Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
 		if modified.Annotations == nil {
 			modified.Annotations = make(map[string]string)
 		}
-		modified.Annotations[LastAppliedConfigurationAnnotationKey] = val
+		modified.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = val
 	}
 
 	if err := r.markConfigurationConditionChanged(ctx, current, modified); err != nil {
@@ -732,11 +731,12 @@ func (r *ConfigMapResource) globalConfigurationChanged(
 	return newConfigNode != oldConfigNode || newConfigBootstrap != oldConfigBootstrap
 }
 
-// GetLastAppliedConfigurationFromCluster returns the last applied configuration from the configmap,
+// GetAnnotationFromCluster returns the last applied configuration from the configmap,
 // together with information about the presence of the configmap itself.
-func (r *ConfigMapResource) GetLastAppliedConfigurationFromCluster(
+func (r *ConfigMapResource) GetAnnotationFromCluster(
 	ctx context.Context,
-) (lastConfig map[string]interface{}, configmapExists bool, err error) {
+	annotation string,
+) (annotationValue *string, configmapExists bool, err error) {
 	existing := corev1.ConfigMap{}
 	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -745,69 +745,33 @@ func (r *ConfigMapResource) GetLastAppliedConfigurationFromCluster(
 		}
 		return nil, false, fmt.Errorf("could not load configmap for reading last applied configuration: %w", err)
 	}
-	if ann, ok := existing.Annotations[LastAppliedConfigurationAnnotationKey]; ok {
-		var cnf map[string]interface{}
-		decoder := json.NewDecoder(bytes.NewReader([]byte(ann)))
-		decoder.UseNumber()
-		if err := decoder.Decode(&cnf); err != nil {
-			return nil, true, fmt.Errorf("could not unmarshal last applied configuration from configmap annotation %q: %w", LastAppliedConfigurationAnnotationKey, err)
-		}
-		cleanupJSONNumbers(cnf)
-		return cnf, true, nil
+	if ann, ok := existing.Annotations[annotation]; ok {
+		return &ann, true, nil
 	}
 	return nil, true, nil
 }
 
-// cleanupJSONNumbers translates json Number objects into int64 or float64, otherwise yaml.v3
-// will convert them into strings when marshaling
-func cleanupJSONNumbers(cnf map[string]interface{}) {
-	var replace map[string]interface{}
-	for k, v := range cnf {
-		switch d := v.(type) {
-		case json.Number:
-			if replace == nil {
-				replace = make(map[string]interface{})
-			}
-			if conv, err := d.Int64(); err == nil {
-				replace[k] = conv
-			} else if conv, err := d.Float64(); err == nil {
-				replace[k] = conv
-			}
-		case map[string]interface{}:
-			cleanupJSONNumbers(d)
-		}
-	}
-	for k, v := range replace {
-		cnf[k] = v
-	}
-}
-
-// SetLastAppliedConfigurationInCluster saves the last applied configuration in the configmap
-func (r *ConfigMapResource) SetLastAppliedConfigurationInCluster(
-	ctx context.Context, cfg map[string]interface{},
+// SetAnnotationForCluster sets or updates an annotation in the configmap
+func (r *ConfigMapResource) SetAnnotationForCluster(
+	ctx context.Context, annotation string, newValue *string,
 ) error {
 	existing := corev1.ConfigMap{}
 	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
 		return fmt.Errorf("could not load configmap for storing last applied configuration: %w", err)
 	}
-	if cfg == nil {
-		// Save an empty map instead of "null"
-		cfg = make(map[string]interface{})
-	}
-	// TODO: external reference versions here
-	ser, err := json.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("could not marhsal configuration: %w", err)
-	}
-	newAnnotation := string(ser)
-	if existing.Annotations[LastAppliedConfigurationAnnotationKey] != newAnnotation {
-		if existing.Annotations == nil {
-			existing.Annotations = make(map[string]string)
+	existingValue, found := existing.Annotations[annotation]
+	if newValue == nil {
+		if !found {
+			return nil
 		}
-		existing.Annotations[LastAppliedConfigurationAnnotationKey] = string(ser)
-		return r.Update(ctx, &existing)
+		delete(existing.Annotations, annotation)
+	} else {
+		if existingValue == *newValue {
+			return nil
+		}
+		existing.Annotations[annotation] = *newValue
 	}
-	return nil
+	return r.Update(ctx, &existing)
 }
 
 // PrepareSeedServerList - supports only > 22.3 (featuregates.EmptySeedStartCluster(r.pandaCluster.Spec.Version))
