@@ -134,6 +134,9 @@ tasks:
       - 'echo "~~~ Logging into Dockerhub :docker:"'
       - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
         silent: true
+      - 'echo "~~~ Logging into ECR :ecr:"'
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l9j0i2e0
+        silent: true
       - defer: docker logout
       - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
       - task: :build:operator-image
