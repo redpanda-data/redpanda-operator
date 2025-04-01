@@ -46,10 +46,9 @@ steps:
     label: ":gandalf: Nightly Releases"
     timeout_in_minutes: 10
     agents:
-      queue: k8s-m6id12xlarge
+      queue: v6-amd64-builders-m6id
     commands:
       - |
-        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l9j0i2e0
         ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-nightly-artifacts
     # Build nightly releases whenever NIGHTLY_RELEASE is set and it's triggered
     # from a schedule or the BK UI. Notably, we permit building nightlies from
@@ -97,7 +96,7 @@ steps:
       build.branch == build.tag
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
     agents:
-      queue: k8s-m6id12xlarge
+      queue: v6-amd64-builders-m6id
     plugins:
       - seek-oss/aws-sm#v2.3.2:
           json-to-env:
