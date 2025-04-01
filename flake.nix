@@ -46,6 +46,7 @@
             packages = [
               pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               pkgs.applyconfiguration-gen
+              pkgs.awscli2
               pkgs.backport
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
