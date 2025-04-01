@@ -140,7 +140,6 @@ tasks:
         vars:
           TAGS:
           - docker.io/redpandadata/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
-          - public.ecr.aws/l9j0i2e0/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
           PLATFORMS:
           - linux/amd64
           - linux/arm64
