@@ -1,112 +1,115 @@
-linters:
-  # Disable all linters, we explicitly opt into ones we want.
-  disable-all: true
+version: "2"
+formatters:
+  enable:
+  - gci
+  - gofumpt
+  settings:
+    gci:
+      sections:
+      - standard
+      - default
+      - prefix(github.com/redpanda-data/redpanda-operator)
 
+      custom-order: true
+      no-inline-comments: false
+      no-prefix-comments: false
+  exclusions:
+    generated: strict
+
+linters:
   enable:
   - depguard
   - errcheck
-  - gci
   - gocritic
-  - gofumpt
   - gosec
-  - gosimple
   - govet
   - importas
   - ineffassign
   - misspell
   - staticcheck
-  - stylecheck
   - unparam
   - unused
+  settings:
+    errcheck:
+      exclude-functions:
+      - io.Close()
 
-linters-settings:
-  depguard:
+    depguard:
+      rules:
+        # cockroachdb errors is the most complete error library. It automatically
+        # adds stack traces and has a very pleasant %v formatting.
+        errors:
+          deny:
+          - pkg: "^errors$"
+            desc: 'use "github.com/cockroachdb/errors"'
+          - pkg: "^github.com/pkg/errors"
+            desc: 'use "github.com/cockroachdb/errors"'
+        gotohelm:
+          deny:
+          - pkg: "github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
+            desc: 'use "github.com/redpanda-data/redpanda-operator/gotohelm"'
+        chart-versions:
+          deny:
+          - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
+            desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"'
+          - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
+            desc: 'import specific charts, the overarching charts module is now deprecated'
+
+    gosec:
+      excludes:
+      - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
+
+      config:
+        G306: "0644" # Maximum allowed os.WriteFile Permissions
+
+    importas:
+      # Disallow not using aliases for all matches of the below alias list.
+      no-unaliased: true
+      # Enforce standard import aliases for k8s type packages of (group)(version)
+      alias:
+      - pkg: k8s.io/api/(\w+)/(v\d)
+        alias: $1$2
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+        alias: metav1
+      - pkg: k8s.io/client-go/applyconfigurations/(\w+)/(v\w+)
+        alias: apply$1$2
+      - pkg: github.com/redpanda-data/redpanda-operator/operator/api/(\w+)/(v\w+)
+        alias: $1$2
+      - pkg: github.com/cert-manager/cert-manager/pkg/apis/meta/v1
+        alias: cmmetav1
+      - pkg: github.com/cert-manager/cert-manager/pkg/apis/certmanager/(v\w+)
+        alias: certmanager$1
+      - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
+        alias: monitoring$1
+
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        - ruleguard
+      settings:
+        # NB: For ruleguard to work, every go.mod must include the ruleguard
+        # library. This is handled with a stub rules.go file in every module in
+        # this repository.
+        ruleguard:
+          # ${configDir} is the only expanded variable. Paths are otherwise
+          # relative to the directory that golangci-lint is invoked in.
+          # rules.go
+          # - "rules.go" -> Load rules.go for each linted go.mod file due to taskfile cd'ing into each module.
+          rules: "rules.go"
+          failOn: all # all ensures we get nice error messages if something is misconfigured.
+
+    staticcheck:
+      checks: ["all", "-ST1005", "-ST1000"]
+
+  exclusions:
     rules:
-      # cockroachdb errors is the most complete error library. It automatically
-      # adds stack traces and has a very pleasant %v formatting.
-      errors:
-        deny:
-        - pkg: "^errors$"
-          desc: 'use "github.com/cockroachdb/errors"'
-        - pkg: "^github.com/pkg/errors"
-          desc: 'use "github.com/cockroachdb/errors"'
-      gotohelm:
-        deny:
-        - pkg: "github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
-          desc: 'use "github.com/redpanda-data/redpanda-operator/gotohelm"'
-      chart-versions:
-        deny:
-        - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
-          desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"'
-        - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
-          desc: 'import specific charts, the overarching charts module is now deprecated'
-
-  gci:
-    sections:
-    - standard
-    - default
-    - prefix(github.com/redpanda-data/redpanda-operator)
-
-    custom-order: true
-    skip-generated: true
-    no-inline-comments: false
-    no-prefix-comments: false
-
-  gosec:
-    excludes:
-    - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
-
-    config:
-      G306: "0644" # Maximum allowed os.WriteFile Permissions
-
-  importas:
-    # Disallow not using aliases for all matches of the below alias list.
-    no-unaliased: true
-    # Enforce standard import aliases for k8s type packages of (group)(version)
-    alias:
-    - pkg: k8s.io/api/(\w+)/(v\d)
-      alias: $1$2
-    - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
-      alias: metav1
-    - pkg: k8s.io/client-go/applyconfigurations/(\w+)/(v\w+)
-      alias: apply$1$2
-    - pkg: github.com/redpanda-data/redpanda-operator/operator/api/(\w+)/(v\w+)
-      alias: $1$2
-    - pkg: github.com/cert-manager/cert-manager/pkg/apis/meta/v1
-      alias: cmmetav1
-    - pkg: github.com/cert-manager/cert-manager/pkg/apis/certmanager/(v\w+)
-      alias: certmanager$1
-    - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
-      alias: monitoring$1
-
-  gocritic:
-    disable-all: true
-    enabled-checks:
-      - ruleguard
-    settings:
-      # NB: For ruleguard to work, every go.mod must include the ruleguard
-      # library. This is handled with a stub rules.go file in every module in
-      # this repository.
-      ruleguard:
-        # ${configDir} is the only expanded variable. Paths are otherwise
-        # relative to the directory that golangci-lint is invoked in.
-        # rules.go
-        # - "rules.go" -> Load rules.go for each linted go.mod file due to taskfile cd'ing into each module.
-        rules: "rules.go"
-        failOn: all # all ensures we get nice error messages if something is misconfigured.
-
-  stylecheck:
-    checks: ["*", "-ST1005"]
-
-issues:
-  exclude-rules:
     # unparam will complain about functions that are called with a constant
     # parameter. In production code, that may be helpful but it harms the
     # readability of test code to eliminate such cases.
-    - linters:
-      - unparam
+    - path: '(.+)_test\.go'
       text: "always receives"
-      path: '(.+)_test\.go'
+      linters:
+      - unparam
     # We're not aiming to be secure in our tests.
     - linters:
       - gosec
