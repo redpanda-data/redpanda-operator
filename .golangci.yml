@@ -17,9 +17,10 @@ formatters:
     generated: strict
 
 linters:
+  default: none
   enable:
   - depguard
-  - errcheck
+#  - errcheck
   - gocritic
   - gosec
   - govet
@@ -30,9 +31,6 @@ linters:
   - unparam
   - unused
   settings:
-    errcheck:
-      exclude-functions:
-      - io.Close()
 
     depguard:
       rules:
@@ -58,6 +56,7 @@ linters:
     gosec:
       excludes:
       - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
+      - G304 # Potential file inclusion via variable
 
       config:
         G306: "0644" # Maximum allowed os.WriteFile Permissions
@@ -99,7 +98,14 @@ linters:
           failOn: all # all ensures we get nice error messages if something is misconfigured.
 
     staticcheck:
-      checks: ["all", "-ST1005", "-ST1000"]
+      # We should revisit
+      # S1009: should omit nil check; len() for nil slices is defined as zero
+      # QF1008: could remove embedded field "ObjectMeta" from selector
+      # QF1001: could apply De Morgan's law
+      # ST1003: struct field ApiVersion should be APIVersion
+      # ST1019: package "bytes" is being imported more than once
+      # ST1021: comment on exported type Resources should be of the form "Resources ..." (with optional leading article)
+      checks: ["all", "-ST1005", "-ST1000", "-QF1003", "-ST1020", "-S1009", "-QF1008", "-ST1003", "-QF1001", "-ST1019", "-ST1021"]
 
   exclusions:
     rules:

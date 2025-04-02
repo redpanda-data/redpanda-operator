@@ -94,7 +94,7 @@ func run(args []string, outFlag, headerFlag, structFlag string) {
 	}
 
 	if outFlag == "-" {
-		fmt.Println(buf.Bytes())
+		fmt.Println(buf.String())
 	} else {
 		if err := os.WriteFile(outFlag, buf.Bytes(), 0o644); err != nil {
 			panic(err)

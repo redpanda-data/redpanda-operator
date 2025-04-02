@@ -42,7 +42,7 @@ type (
 func ExpandForBootstrap(cfg vectorizedv1alpha1.ClusterConfiguration) (map[string]ClusterConfigTemplateValue, []corev1.EnvVar, error) {
 	expanded := make(map[string]ClusterConfigTemplateValue, len(cfg))
 	ensureVar := func(k string) string {
-		return "REDPANDA_" + strings.Replace(strings.ToUpper(k), ".", "_", -1)
+		return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 	}
 	var envs []corev1.EnvVar
 	for k, v := range cfg {
