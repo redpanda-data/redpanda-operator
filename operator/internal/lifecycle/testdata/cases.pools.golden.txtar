@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.21
+      helm.sh/chart: redpanda-5.9.20
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -28,14 +28,14 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: 185aaf952885b6464965abdd1757bd2962b2dc0d49aeb493feb9843203fc7833
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.9.21
+          helm.sh/chart: redpanda-5.9.20
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
