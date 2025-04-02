@@ -117,6 +117,12 @@ func WithCleanupPVCs(cleanup bool) Option {
 	}
 }
 
+func WithSyncPeriod(d time.Duration) Option {
+	return func(ssd *StatefulSetDecomissioner) {
+		ssd.syncPeriod = d
+	}
+}
+
 type StatefulSetDecomissioner struct {
 	client               client.Client
 	factory              internalclient.ClientFactory
@@ -129,6 +135,7 @@ type StatefulSetDecomissioner struct {
 	delayedVolumeCache   *CategorizedDelayedCache[types.NamespacedName, types.NamespacedName]
 	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
 	cleanupPVCs          bool
+	syncPeriod           time.Duration
 }
 
 func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...Option) *StatefulSetDecomissioner {
@@ -260,7 +267,10 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{RequeueAfter: timeout}, nil
 	}
 
-	return ctrl.Result{}, nil
+	// If a schedule is configured, just requeue with this period.
+	// Sometimes, the node disappears and no event about sts/pod is fired, or fired before we can actually decommission the ghost broker.
+	// Running the reconciler regularly ensures we're not missing any ghost brokers.
+	return ctrl.Result{RequeueAfter: s.syncPeriod}, nil
 }
 
 // Decommission decommissions any stray resources for a StatefulSet. This includes:
