@@ -119,40 +119,41 @@ func (s *LabelSelectorValue) Type() string {
 
 func Command() *cobra.Command {
 	var (
-		clusterDomain                   string
-		metricsAddr                     string
-		secureMetrics                   bool
-		enableHTTP2                     bool
-		probeAddr                       string
-		pprofAddr                       string
-		enableLeaderElection            bool
-		webhookEnabled                  bool
-		configuratorBaseImage           string
-		configuratorTag                 string
-		configuratorImagePullPolicy     string
-		decommissionWaitInterval        time.Duration
-		metricsTimeout                  time.Duration
-		restrictToRedpandaVersion       string
-		namespace                       string
-		additionalControllers           []string
-		operatorMode                    bool
-		ghostbuster                     bool
-		unbindPVCsAfter                 time.Duration
-		unbinderSelector                LabelSelectorValue
-		autoDeletePVCs                  bool
-		webhookCertPath                 string
-		webhookCertName                 string
-		webhookCertKey                  string
-		metricsCertPath                 string
-		metricsCertName                 string
-		metricsCertKey                  string
-		enableGhostBrokerDecommissioner bool
-		cloudSecretsEnabled             bool
-		cloudSecretsPrefix              string
-		cloudSecretsAWSRegion           string
-		cloudSecretsAWSRoleARN          string
-		cloudSecretsGCPProjectID        string
-		cloudSecretsAzureKeyVaultURI    string
+		clusterDomain                       string
+		metricsAddr                         string
+		secureMetrics                       bool
+		enableHTTP2                         bool
+		probeAddr                           string
+		pprofAddr                           string
+		enableLeaderElection                bool
+		webhookEnabled                      bool
+		configuratorBaseImage               string
+		configuratorTag                     string
+		configuratorImagePullPolicy         string
+		decommissionWaitInterval            time.Duration
+		metricsTimeout                      time.Duration
+		restrictToRedpandaVersion           string
+		namespace                           string
+		additionalControllers               []string
+		operatorMode                        bool
+		ghostbuster                         bool
+		unbindPVCsAfter                     time.Duration
+		unbinderSelector                    LabelSelectorValue
+		autoDeletePVCs                      bool
+		webhookCertPath                     string
+		webhookCertName                     string
+		webhookCertKey                      string
+		metricsCertPath                     string
+		metricsCertName                     string
+		metricsCertKey                      string
+		enableGhostBrokerDecommissioner     bool
+		ghostBrokerDecommissionerSyncPeriod time.Duration
+		cloudSecretsEnabled                 bool
+		cloudSecretsPrefix                  string
+		cloudSecretsAWSRegion               string
+		cloudSecretsAWSRoleARN              string
+		cloudSecretsGCPProjectID            string
+		cloudSecretsAzureKeyVaultURI        string
 	)
 
 	cmd := &cobra.Command{
@@ -210,6 +211,7 @@ func Command() *cobra.Command {
 				metricsCertName,
 				metricsCertKey,
 				enableGhostBrokerDecommissioner,
+				ghostBrokerDecommissionerSyncPeriod,
 				cloudExpander,
 			)
 		},
@@ -251,6 +253,7 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
 	cmd.Flags().StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	cmd.Flags().BoolVar(&enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
+	cmd.Flags().DurationVar(&ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 
 	// secret store related flags
 	cmd.Flags().BoolVar(&cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
@@ -316,6 +319,7 @@ func Run(
 	metricsCertName string,
 	metricsCertKey string,
 	enableGhostBrokerDecommissioner bool,
+	ghostBrokerDecommissionerSyncPeriod time.Duration,
 	cloudExpander *pkgsecrets.CloudExpander,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
@@ -656,6 +660,7 @@ func Run(
 
 	if enableGhostBrokerDecommissioner {
 		d := decommissioning.NewStatefulSetDecommissioner(mgr, &v1Fetcher{client: mgr.GetClient()},
+			decommissioning.WithSyncPeriod(ghostBrokerDecommissionerSyncPeriod),
 			decommissioning.WithCleanupPVCs(false),
 			decommissioning.WithFactory(internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient())),
 			decommissioning.WithFilter(func(ctx context.Context, sts *appsv1.StatefulSet) (bool, error) {
