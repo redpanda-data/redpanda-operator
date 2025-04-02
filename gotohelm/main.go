@@ -71,7 +71,7 @@ func writeToStdout(chart *gotohelm.Chart) {
 
 func writeToDir(chart *gotohelm.Chart, dir string) error {
 	for _, f := range chart.Files {
-		file, err := os.OpenFile(path.Join(dir, f.Name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+		file, err := os.OpenFile(path.Join(dir, f.Name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) //nolint:gosec
 		if err != nil {
 			return err
 		}
