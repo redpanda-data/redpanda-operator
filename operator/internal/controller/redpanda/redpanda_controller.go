@@ -67,7 +67,7 @@ type gvkKey struct {
 type RedpandaReconciler struct {
 	// KubeConfig is the [kube.Config] that provides the go helm chart
 	// Kubernetes access. It should be the same config used to create client.
-	KubeConfig    kube.Config
+	KubeConfig    *kube.RESTConfig
 	Client        client.Client
 	Scheme        *runtime.Scheme
 	EventRecorder kuberecorder.EventRecorder

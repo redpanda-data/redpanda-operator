@@ -589,7 +589,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
-			KubeConfig:    kube.RestToConfig(mgr.GetConfig()),
+			KubeConfig:    mgr.GetConfig(),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory: s.clientFactory,
