@@ -38,7 +38,7 @@ empty string.
 
 			if output != "" && output != "-" {
 				var err error
-				out, err = os.OpenFile(output, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o775)
+				out, err = os.OpenFile(output, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o775) //nolint:gosec
 				if err != nil {
 					return err
 				}
