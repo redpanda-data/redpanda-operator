@@ -12,7 +12,6 @@ package lifecycle
 import (
 	"context"
 
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -24,7 +23,7 @@ import (
 
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type V2SimpleResourceRenderer struct {
-	kubeConfig clientcmdapi.Config
+	kubeConfig *kube.RESTConfig
 }
 
 var _ SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2SimpleResourceRenderer)(nil)
@@ -32,7 +31,7 @@ var _ SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpan
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
 func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
-		kubeConfig: kube.RestToConfig(mgr.GetConfig()),
+		kubeConfig: mgr.GetConfig(),
 	}
 }
 
@@ -42,7 +41,7 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
 	values := cluster.Spec.ClusterSpec.DeepCopy()
 
-	rendered, err := redpanda.Chart.Render(&m.kubeConfig, helmette.Release{
+	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",

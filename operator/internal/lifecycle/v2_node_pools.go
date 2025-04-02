@@ -13,7 +13,6 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -25,7 +24,7 @@ import (
 
 // V2NodePoolRenderer represents a node pool renderer for v2 clusters.
 type V2NodePoolRenderer struct {
-	kubeConfig clientcmdapi.Config
+	kubeConfig *kube.RESTConfig
 }
 
 var _ NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2NodePoolRenderer)(nil)
@@ -33,7 +32,7 @@ var _ NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = 
 // NewV2NodePoolRenderer returns a V2NodePoolRenderer.
 func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
 	return &V2NodePoolRenderer{
-		kubeConfig: kube.RestToConfig(mgr.GetConfig()),
+		kubeConfig: mgr.GetConfig(),
 	}
 }
 
@@ -43,7 +42,7 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
 	values := cluster.Spec.ClusterSpec.DeepCopy()
 
-	rendered, err := redpanda.Chart.Render(&m.kubeConfig, helmette.Release{
+	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
