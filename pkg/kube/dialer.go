@@ -98,7 +98,7 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 	headers.Set(corev1.StreamType, corev1.StreamTypeError)
 	errorStream, err := conn.CreateStream(headers)
 	if err != nil {
-		conn.Close()
+		conn.Close() //nolint:gosec
 
 		return nil, fmt.Errorf("creating error stream: %w", err)
 	}
@@ -106,13 +106,13 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 	headers.Set(corev1.StreamType, corev1.StreamTypeData)
 	dataStream, err := conn.CreateStream(headers)
 	if err != nil {
-		conn.Close()
+		conn.Close() //nolint:gosec
 
 		return nil, fmt.Errorf("creating data stream: %w", err)
 	}
 
 	onClose := func() {
-		conn.Close()
+		conn.Close() //nolint:gosec
 	}
 
 	return wrapConn(onClose, network, address, dataStream, errorStream), nil
@@ -233,7 +233,7 @@ func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Conne
 
 	if protocol != portForwardProtocolV1Name {
 		if conn != nil {
-			conn.Close()
+			conn.Close() //nolint:gosec
 		}
 
 		return nil, fmt.Errorf("unable to negotiate protocol: client supports %q, server returned %q", portForwardProtocolV1Name, protocol)
