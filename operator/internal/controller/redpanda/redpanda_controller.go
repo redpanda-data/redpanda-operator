@@ -291,7 +291,7 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 	// within the chart itself.
 	values := rp.Spec.ClusterSpec.DeepCopy()
 
-	objs, err := redpanda.Chart.Render(&r.KubeConfig, helmette.Release{
+	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
