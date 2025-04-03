@@ -65,7 +65,7 @@ func TestToolVersions(t *testing.T) {
 		"helm-docs -v",
 		"ct version",
 		"changie --version",
-		"aws --version",
+		"aws --version | cut -d ' ' -f 1-2", // cut removes os/arch
 	} {
 		out := sh(cmd)
 		bin := strings.SplitN(cmd, " ", 2)[0]
