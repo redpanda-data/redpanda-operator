@@ -59,7 +59,7 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 type RedpandaController string
@@ -161,6 +161,12 @@ func Command() *cobra.Command {
 		metricsCertKey                      string
 		enableGhostBrokerDecommissioner     bool
 		ghostBrokerDecommissionerSyncPeriod time.Duration
+		cloudSecretsEnabled                 bool
+		cloudSecretsPrefix                  string
+		cloudSecretsAWSRegion               string
+		cloudSecretsAWSRoleARN              string
+		cloudSecretsGCPProjectID            string
+		cloudSecretsAzureKeyVaultURI        string
 	)
 
 	cmd := &cobra.Command{
@@ -168,6 +174,25 @@ func Command() *cobra.Command {
 		Short: "Run the redpanda operator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
+			var cloudExpander *pkgsecrets.CloudExpander
+			if cloudSecretsEnabled {
+				cloudConfig := pkgsecrets.ExpanderCloudConfiguration{}
+				if cloudSecretsAWSRegion != "" && cloudSecretsAWSRoleARN != "" {
+					cloudConfig.AWSRegion = cloudSecretsAWSRegion
+					cloudConfig.AWSRoleARN = cloudSecretsAWSRoleARN
+				} else if cloudSecretsGCPProjectID != "" {
+					cloudConfig.GCPProjectID = cloudSecretsGCPProjectID
+				} else if cloudSecretsAzureKeyVaultURI != "" {
+					cloudConfig.AzureKeyVaultURI = cloudSecretsAzureKeyVaultURI
+				} else {
+					return errors.New("Cloud secrets are enabled but configuration for cloud provider is missing or invalid")
+				}
+				var err error
+				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, cloudSecretsPrefix, cloudConfig)
+				if err != nil {
+					return err
+				}
+			}
 
 			return Run(
 				ctx,
@@ -203,6 +228,7 @@ func Command() *cobra.Command {
 				metricsCertKey,
 				enableGhostBrokerDecommissioner,
 				ghostBrokerDecommissionerSyncPeriod,
+				cloudExpander,
 			)
 		},
 	}
@@ -253,6 +279,14 @@ func Command() *cobra.Command {
 	// 3rd party flags.
 	clientOptions.BindFlags(cmd.Flags())
 	kubeConfigOpts.BindFlags(cmd.Flags())
+
+	// secret store related flags
+	cmd.Flags().BoolVar(&cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
+	cmd.Flags().StringVar(&cloudSecretsPrefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
+	cmd.Flags().StringVar(&cloudSecretsAWSRegion, "cloud-secrets-aws-region", "", "AWS Region in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
+	cmd.Flags().StringVar(&cloudSecretsGCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
+	cmd.Flags().StringVar(&cloudSecretsAzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
 
 	// Deprecated flags.
 	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
@@ -311,6 +345,7 @@ func Run(
 	metricsCertKey string,
 	enableGhostBrokerDecommissioner bool,
 	ghostBrokerDecommissionerSyncPeriod time.Duration,
+	cloudExpander *pkgsecrets.CloudExpander,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -475,6 +510,7 @@ func Run(
 			RestrictToRedpandaVersion: restrictToRedpandaVersion,
 			GhostDecommissioning:      ghostbuster,
 			AutoDeletePVCs:            autoDeletePVCs,
+			CloudSecretsExpander:      cloudExpander,
 		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
 			return err
@@ -559,7 +595,7 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:         kube.RestToConfig(mgr.GetConfig()),
+			KubeConfig:         mgr.GetConfig(),
 			Client:             mgr.GetClient(),
 			Scheme:             mgr.GetScheme(),
 			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
