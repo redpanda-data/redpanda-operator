@@ -67,7 +67,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.1
           lifecycle:
             postStart:
               exec:
@@ -117,9 +117,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
           startupProbe:
             exec:
               command:
@@ -183,7 +180,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext: {}
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -199,7 +195,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.1
           name: tuning
           resources: {}
           securityContext:
@@ -237,12 +233,9 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.1
           name: redpanda-configurator
           resources: {}
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -281,6 +274,7 @@
         securityContext:
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
+          runAsUser: 101
         serviceAccountName: default
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:

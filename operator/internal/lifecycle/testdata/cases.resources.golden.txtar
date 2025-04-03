@@ -257,7 +257,6 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/name: redpanda
       spec:
-        affinity: {}
         automountServiceAccountToken: false
         containers:
         - command:
@@ -272,9 +271,7 @@
           image: docker.redpanda.com/redpandadata/redpanda-operator:v2.3.8-24.3.6
           name: post-install
           resources: {}
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
+          securityContext: {}
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -313,6 +310,7 @@
         securityContext:
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
+          runAsUser: 101
         serviceAccountName: default
         volumes:
         - name: redpanda-default-cert
@@ -997,7 +995,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-v0.0-k8s0-be94e29d-helm-chart
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1014,7 +1012,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-v0.0-k8s0-be94e29d-helm-chart
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1029,7 +1027,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 305efbcbb703038386eb5720d60a950bfd5550f95f68020474c39e2dd545c0a6
+          checksum-redpanda-chart/config: 4563480c06cf3aeae1538f866fafb7037e1a330c8d36867b18997c7a20f319c4
           checksum/config: 23e1498cb98cc20f2ac1f9810212242a0a855a456b0635259ef94d3406de3551
         creationTimestamp: null
         labels:
@@ -1101,7 +1099,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-v0.0-k8s0-be94e29d-helm-chart
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1118,7 +1116,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-v0.0-k8s0-be94e29d-helm-chart
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
