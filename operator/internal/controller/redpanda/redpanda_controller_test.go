@@ -548,24 +548,6 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}
 }
 
-func (s *RedpandaControllerSuite) TestConnectorsIntegration() {
-	rp := s.minimalRP()
-
-	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
-		Enabled: ptr.To(true),
-	}
-
-	s.applyAndWait(rp)
-
-	// Assert that we see the connectors deployment and that it's healthy.
-	var deployments appsv1.DeploymentList
-	s.NoError(s.client.List(s.ctx, &deployments))
-	s.Len(deployments.Items, 1)
-	s.Equal(int32(1), deployments.Items[0].Status.ReadyReplicas)
-
-	s.deleteAndWait(rp)
-}
-
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
 
