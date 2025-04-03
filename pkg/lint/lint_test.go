@@ -209,6 +209,10 @@ func TestGoModLint(t *testing.T) {
 			modPrefix + "charts/operator",
 			modPrefix + "charts/redpanda/v5",
 		},
+
+		modPrefix + "operator": {
+			modPrefix + "charts/redpanda/v5",
+		},
 	}
 
 	// This could also be done with go work sync but go.work causes many other
