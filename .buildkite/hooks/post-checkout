@@ -1,0 +1,17 @@
+# important: assumes that each agent runs a single job at a time
+
+# ignore errors
+set +e
+
+if [[ $BUILDKITE_AGENT_META_DATA_QUEUE == "pipeline-uploader" ]]; then
+  echo "Skipping on `pipeline-uploader` agents"
+  exit 0
+fi
+
+echo "Cleaning up unused docker containers"
+for id in $(docker ps --quiet); do
+  echo "Killing $id"
+  docker kill $id
+done
+
+docker system prune --all --volumes --force
