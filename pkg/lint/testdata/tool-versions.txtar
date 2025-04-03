@@ -1,8 +1,8 @@
 version.BuildInfo{Version:"v3.17.2", GitCommit:"v3.17.2", GitTreeState:"", GoVersion:"go1.24.1"}
 
 -- aws --
-# aws --version
-aws-cli/2.24.24 Python/3.12.9 Linux/6.1.128-136.201.amzn2023.x86_64 source/x86_64
+# aws --version | cut -d ' ' -f 1-2
+aws-cli/2.24.24 Python/3.12.9
 
 -- changie --
 # changie --version
