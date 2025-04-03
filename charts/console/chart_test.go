@@ -37,6 +37,18 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
+func TestArtifactHubImages(t *testing.T) {
+	var images []map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(Chart.Metadata().Annotations["artifacthub.io/images"]), &images))
+
+	require.Equal(t, []map[string]any{
+		{
+			"name":  "console",
+			"image": "docker.redpanda.com/redpandadata/console:" + Chart.Metadata().AppVersion,
+		},
+	}, images)
+}
+
 // TestValues asserts that the chart's values.yaml file can be losslessly
 // loaded into our type [Values] struct.
 // NB: values.yaml should round trip through [Values], not [PartialValues], as
