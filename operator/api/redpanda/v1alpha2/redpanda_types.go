@@ -289,18 +289,6 @@ func (in *Redpanda) GetValues() (redpandachart.Values, error) {
 }
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
-	var values []byte
-	var partial redpandachart.PartialValues
-
-	values, err := json.Marshal(in.Spec.ClusterSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(values, &partial); err != nil {
-		return nil, err
-	}
-
 	release := helmette.Release{
 		Name:      in.Name,
 		Namespace: in.Namespace,
@@ -309,5 +297,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 		IsUpgrade: true,
 	}
 
-	return redpandachart.Chart.Dot(restConfig, release, partial)
+	return redpandachart.Chart.Dot(restConfig, release, in.Spec.ClusterSpec)
 }

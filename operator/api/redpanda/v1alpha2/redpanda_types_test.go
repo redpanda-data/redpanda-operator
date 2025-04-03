@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,6 +75,21 @@ var (
 		return metav1.Time{Time: time.Unix(0, nsec)}
 	})
 )
+
+func TestFullNameOverride(t *testing.T) {
+	rp := redpandav1alpha2.Redpanda{
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				DeprecatedFullNameOverride: "test",
+				FullnameOverride:           nil,
+			},
+		},
+	}
+
+	dot, err := rp.GetDot(&rest.Config{})
+	require.NoError(t, err)
+	require.Equal(t, "", dot.Values["fullnameOverride"].(string))
+}
 
 // TestRedpanda_ValuesJSON asserts that .ValuesJSON appropriately coalesces the
 // value of CloudStorageEnabled into a boolean.
