@@ -25,6 +25,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
+	github.com/redpanda-data/common-go/secrets v0.1.2
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756
@@ -247,7 +248,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redpanda-data/common-go/secrets v0.1.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect

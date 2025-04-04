@@ -25,7 +25,7 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 const (

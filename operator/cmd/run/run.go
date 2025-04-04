@@ -56,9 +56,9 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 type RedpandaController string
