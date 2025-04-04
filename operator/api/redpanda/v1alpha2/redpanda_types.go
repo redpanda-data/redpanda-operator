@@ -24,9 +24,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 const (
@@ -310,5 +309,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 		IsUpgrade: true,
 	}
 
-	return redpandachart.Chart.Dot(ptr.To(kube.RestToConfig(restConfig)), release, partial)
+	return redpandachart.Chart.Dot(restConfig, release, partial)
 }

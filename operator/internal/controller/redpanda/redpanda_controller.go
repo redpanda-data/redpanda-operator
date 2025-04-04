@@ -39,11 +39,11 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -67,7 +67,7 @@ type gvkKey struct {
 type RedpandaReconciler struct {
 	// KubeConfig is the [kube.Config] that provides the go helm chart
 	// Kubernetes access. It should be the same config used to create client.
-	KubeConfig    kube.Config
+	KubeConfig    *kube.RESTConfig
 	Client        client.Client
 	Scheme        *runtime.Scheme
 	EventRecorder kuberecorder.EventRecorder
@@ -291,7 +291,7 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 	// within the chart itself.
 	values := rp.Spec.ClusterSpec.DeepCopy()
 
-	objs, err := redpanda.Chart.Render(&r.KubeConfig, helmette.Release{
+	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
