@@ -1,6 +1,7 @@
 package configurator
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -9,11 +10,12 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 // Template out the bootstrap file
 // This takes an input template, resolves any remaining external references, then writes out the resulting bootstrap file
-func templateBootstrapYaml(inFile, outFile string) error {
+func templateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile string) error {
 	var template map[string]clusterconfiguration.ClusterConfigTemplateValue
 	buf, err := os.ReadFile(inFile)
 	if err != nil {
@@ -27,7 +29,7 @@ func templateBootstrapYaml(inFile, outFile string) error {
 	keys := slices.Sorted(maps.Keys(template))
 	for _, k := range keys {
 		// Work out what the value should be and add it to the output.
-		repr, err := clusterconfiguration.ExpandValueForTemplate(template[k])
+		repr, err := clusterconfiguration.ExpandValueForTemplate(ctx, cloudExpander, template[k])
 		if err != nil {
 			return fmt.Errorf("cannot resolve value %s: %w", k, err)
 		}

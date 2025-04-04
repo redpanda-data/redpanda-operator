@@ -36,6 +36,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
