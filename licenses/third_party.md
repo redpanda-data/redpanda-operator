@@ -100,7 +100,7 @@ run `task generate:third-party-licenses-list`
 | github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.2.1/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
-| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.2.1/LICENSE) |
+| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.2.2/LICENSE) |
 | github.com/golang/groupcache/lru | [Apache-2.0](https://github.com/golang/groupcache/blob/41bb18bfe9da/LICENSE) |
 | github.com/golang/protobuf/proto | [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.4/LICENSE) |
 | github.com/gonvenience/bunt | [MIT](https://github.com/gonvenience/bunt/blob/v1.3.5/LICENSE) |
@@ -247,7 +247,7 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/e7e105de:LICENSE) |
 | golang.org/x/mod/semver | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.22.0:LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.34.0:LICENSE) |
-| golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.23.0:LICENSE) |
+| golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.28.0:LICENSE) |
 | golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.10.0:LICENSE) |
 | golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.29.0:LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.28.0:LICENSE) |
