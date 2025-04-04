@@ -130,12 +130,6 @@ func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (
 		return false, fmt.Errorf("fetching broker partitions: %w", err)
 	}
 
-	// do we have any leaderless or under-replicated nodes?
-	if summary.Leaderless != 0 || summary.UnderReplicated != 0 {
-		p.logger.Info("broker has leaderless or under-replicated partitions", "leaderless", summary.Leaderless, "under-replicated", summary.UnderReplicated)
-		return false, nil
-	}
-
 	clusterHealth, err := client.GetHealthOverview(ctx)
 	if err != nil {
 		return false, fmt.Errorf("fetching cluster health: %w", err)
