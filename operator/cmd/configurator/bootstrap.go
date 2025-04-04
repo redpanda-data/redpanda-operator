@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 // Template out the bootstrap file
