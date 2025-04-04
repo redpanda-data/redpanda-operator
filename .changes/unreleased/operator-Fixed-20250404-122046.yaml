@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |
+    Removed check for under replicated partitions in healthz to prevent unhealthy pods in cluster when one pod fails
+time: 2025-04-04T12:20:46.081-04:00
