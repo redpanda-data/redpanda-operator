@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -56,7 +57,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -813,7 +813,7 @@ Starting helm repository that serves %q as the development version of the redpan
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
 			Client:            mgr.GetClient(),
-			KubeConfig:        kube.RestToConfig(mgr.GetConfig()),
+			KubeConfig:        mgr.GetConfig(),
 			Scheme:            mgr.GetScheme(),
 			EventRecorder:     mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory:     s.clientFactory,
