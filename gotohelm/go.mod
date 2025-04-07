@@ -4,7 +4,7 @@ go 1.23.7
 
 require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-00010101000000-000000000000
 	golang.org/x/tools v0.27.0
 )
 

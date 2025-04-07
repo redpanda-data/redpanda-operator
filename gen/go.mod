@@ -19,7 +19,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250404234541-e713ed43cde0
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.21.0
