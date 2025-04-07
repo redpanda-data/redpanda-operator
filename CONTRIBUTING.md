@@ -84,6 +84,9 @@ applying the "no-changelog" label.
 
 ## Releasing
 
+> [!TIP]
+> `<version>`, within this section, refers to "internal versions" which do not include `-k8s`. e.g. `v25.1.0`.
+
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
     - If minting a pre-release, specify `-k` to keep the unreleased changes in place for the official release.
