@@ -1,4 +1,0 @@
-project: charts/console
-kind: Added
-body: Updated and automated generation of `values.schema.json`
-time: 2025-03-14T17:14:46.51302-04:00

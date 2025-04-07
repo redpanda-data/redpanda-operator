@@ -255,11 +255,15 @@ func TestGoHelmEquivalence(t *testing.T) {
 
 func TestAppVersion(t *testing.T) {
 	const project = "charts/console"
+	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(.+)$`)
+
 	output, err := exec.Command("changie", "latest", "-j", project).CombinedOutput()
 	require.NoError(t, err)
 
-	// Trim the project prefix to just get `x.y.z`
-	expected := string(output[len(project+"/v"):])
+	// Trim the project prefix to just get `x.y.z` and regex replace to
+	// "k8s-ify" it as Chart.yaml's Version is an "external version" and
+	// changie versions are "internal".
+	expected := re.ReplaceAllString(string(output[len(project+"/v"):]), "$1.$2-k8s$3")
 	actual := Chart.Metadata().Version
 
 	require.Equalf(t, expected, actual, "Chart.yaml's version should be %q; got %q\nDid you forget to update Chart.yaml before minting a release?\nMake sure to bump appVersion as well!", expected, actual)
