@@ -84,9 +84,6 @@ applying the "no-changelog" label.
 
 ## Releasing
 
-> [!TIP]
-> `<version>`, within this section, refers to "internal versions" which do not include `-k8s`. e.g. `v25.1.0`.
-
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
     - If minting a pre-release, specify `-k` to keep the unreleased changes in place for the official release.
@@ -97,7 +94,7 @@ To release any project in this repository:
 7. Create a [Release on GitHub](https://github.com/redpanda-data/redpanda-operator/releases)
     - Associate it with the tag pushed in the previous step.
     - Paste the contents of `.changes/<project>/<version>.md`, excluding the header, into the release notes field.
-    - Use the header of `./changes/<project>/<version>.md` as the release name. e.g. `<project>: v42.8+k8s1`
+    - Name the release `<project>: <version>`
 
 ## Nightly build
 
