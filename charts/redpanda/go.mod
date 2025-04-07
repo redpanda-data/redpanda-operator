@@ -10,8 +10,9 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322
+	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/stretchr/testify v1.10.0
@@ -183,7 +184,7 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
@@ -198,7 +199,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
 	helm.sh/helm/v3 v3.14.4 // indirect
 	k8s.io/apiextensions-apiserver v0.30.3 // indirect
 	k8s.io/apiserver v0.30.3 // indirect
