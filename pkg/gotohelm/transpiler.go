@@ -1202,31 +1202,31 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return args[0]
 	case "k8s.io/utils/ptr.Equal":
 		return litCall("_shims.ptr_Equal", args...)
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Dig":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Dig", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Dig":
 		return &BuiltInCall{FuncName: "dig", Arguments: append(args[2:], args[1], args[0])}
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Unwrap":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Unwrap", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Unwrap":
 		return &Selector{Expr: args[0], Field: "AsMap"}
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.UnmarshalInto":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.UnmarshalInto", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.UnmarshalInto":
 		return args[0]
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsIntegral":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.AsIntegral", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsIntegral":
 		return litCall("_shims.asintegral", args...)
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsNumeric":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.AsNumeric", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.AsNumeric":
 		return litCall("_shims.asnumeric", args...)
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Merge":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Merge", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Merge":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
 	// Add note about this change.
 	case "helm.sh/helm/v3/pkg/chartutil.(Values).AsMap":
 		return &Selector{Expr: receiver, Field: "AsMap"}
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MergeTo":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.MergeTo", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MergeTo":
 		dict := DictLiteral{}
 		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedKeys":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.SortedKeys", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedKeys":
 		return &BuiltInCall{FuncName: "sortAlpha", Arguments: []Node{&BuiltInCall{FuncName: "keys", Arguments: args}}}
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Get":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Get", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
 
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedMap":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.SortedMap", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.SortedMap":
 		// In go, map iteration is non-deterministic which can cause
 		// differences in go vs helm output. A ruleguard linter is responsible
 		// for enforcing the usage of this helper. text/template's range node
@@ -1234,13 +1234,13 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// "transpiles away".
 		return args[0]
 
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Tpl":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Tpl", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Tpl":
 		// In go land, tpl requires a handle to the chart's .Dot so we can get
 		// the chart's templates. Helm doesn't require this as that's just how
 		// tpl works. So just clip out the fist argument.
 		return &BuiltInCall{FuncName: "tpl", Arguments: args[1:]}
 
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Lookup", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of
 		// Lookup will always be a pointer as only pointers implement
 		// kube.Object.
@@ -1276,7 +1276,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "time.(Duration).String":
 		return litCall("_shims.time_Duration_String", args...)
 
-	case "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MustDuration":
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.MustDuration", "github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette.MustDuration":
 		return litCall(
 			"_shims.time_Duration_String",
 			litCall("_shims.time_ParseDuration", args...),

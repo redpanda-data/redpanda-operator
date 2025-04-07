@@ -394,8 +394,6 @@ github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe
 github.com/quasilyte/go-ruleguard/dsl v0.3.22/go.mod h1:KeCP03KrjuSO0H1kTuZQCWlQPulDV6YMIXmpQss17rU=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0 h1:3/+oHeq4g2kqqyCKSIOlK7kDDmLu6iB+CB2iwa9SrQo=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0/go.mod h1:wxLJbE/FXztdk10KntI7D2XxWwMGK873j4LEXsertco=
-github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250404234541-e713ed43cde0 h1:nO6wkFbyK5PGJDD6RJM48kdUkpxYf5Vdp0ijliAn+L8=
-github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250404234541-e713ed43cde0/go.mod h1:sJCEdJT8emKXErzpQHTEQzjBMPimY0G51xXFmNbRSPg=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
