@@ -26,6 +26,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 const (
@@ -107,11 +108,11 @@ func (c *GlobalConfiguration) SetAdditionalFlatProperties(
 // ConcreteConfiguration uses the expander to completely bottom out all configuration values
 // into concrete ones, according to the supplied schema. This is performed once only,
 // with repeated calls using the cached computation.
-func (c *GlobalConfiguration) ConcreteConfiguration(ctx context.Context, reader client.Reader, namespace string, schema rpadmin.ConfigSchema) (map[string]any, error) {
+func (c *GlobalConfiguration) ConcreteConfiguration(ctx context.Context, reader client.Reader, cloudExpander *pkgsecrets.CloudExpander, namespace string, schema rpadmin.ConfigSchema) (map[string]any, error) {
 	if c.concreteValues != nil {
 		return c.concreteValues, nil
 	}
-	concreteCfg, err := clusterconfiguration.ExpandForConfiguration(ctx, reader, namespace, c.BootstrapConfiguration, schema)
+	concreteCfg, err := clusterconfiguration.ExpandForConfiguration(ctx, reader, cloudExpander, namespace, c.BootstrapConfiguration, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -157,10 +158,11 @@ func (c *GlobalConfiguration) FinalizeToTemplate() error {
 func (c *GlobalConfiguration) GetCentralizedConfigurationHash(
 	ctx context.Context,
 	reader client.Reader,
+	cloudExpander *pkgsecrets.CloudExpander,
 	schema rpadmin.ConfigSchema,
 	namespace string,
 ) (string, error) {
-	concreteCfg, err := c.ConcreteConfiguration(ctx, reader, namespace, schema)
+	concreteCfg, err := c.ConcreteConfiguration(ctx, reader, cloudExpander, namespace, schema)
 	if err != nil {
 		return "", err
 	}

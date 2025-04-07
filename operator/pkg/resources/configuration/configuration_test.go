@@ -32,7 +32,7 @@ func TestRedpandaProperties(t *testing.T) {
 	config := configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeCentralized, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "b", concreteCfg["a"])
 	assert.NotContains(t, config.NodeConfiguration.Redpanda.Other, "a")
@@ -40,7 +40,7 @@ func TestRedpandaProperties(t *testing.T) {
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeClassic, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.NotContains(t, concreteCfg, "a")
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
@@ -48,7 +48,7 @@ func TestRedpandaProperties(t *testing.T) {
 	config = configuration.GlobalConfiguration{Mode: configuration.GlobalConfigurationModeMixed, NodeConfiguration: rpkcfg.ProdDefault()}
 	config.SetAdditionalRedpandaProperty("a", "b")
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "b", concreteCfg["a"])
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
@@ -59,7 +59,7 @@ func TestFlatProperties(t *testing.T) {
 	err := config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", concreteCfg["a"])
@@ -69,7 +69,7 @@ func TestFlatProperties(t *testing.T) {
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
@@ -79,7 +79,7 @@ func TestFlatProperties(t *testing.T) {
 	err = config.SetAdditionalFlatProperties(map[string]string{"redpanda.a": "b", "redpanda.node_id": "33"})
 	require.NoError(t, err)
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err = config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, 33, *config.NodeConfiguration.Redpanda.ID)
 	assert.Equal(t, "b", config.NodeConfiguration.Redpanda.Other["a"])
@@ -95,7 +95,7 @@ func TestKnownNodeProperties(t *testing.T) {
 	}))
 
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, "/tmp", config.NodeConfiguration.Redpanda.CloudStorageCacheDirectory)
@@ -126,7 +126,7 @@ func TestDeleteProperties(t *testing.T) {
 	config.SetAdditionalRedpandaProperty("a6", nilSlice)
 
 	require.NoError(t, config.FinalizeToTemplate())
-	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, "", nil)
+	concreteCfg, err := config.ConcreteConfiguration(context.TODO(), nil, nil, "", nil)
 	require.NoError(t, err)
 
 	assert.Len(t, concreteCfg, 1)
