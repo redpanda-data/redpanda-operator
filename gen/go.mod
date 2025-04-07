@@ -144,8 +144,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322 // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
