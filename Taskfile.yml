@@ -40,7 +40,7 @@ vars:
     sh: '{{.SRC_DIR}}/ci/scripts/version.sh operator'
   CONSOLE_CHART_VERSION:
     # NB: CONSOLE_CHART_VERSION is currently only used for the console chart's nightly releases.
-    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/console -e'
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/console'
 
 includes:
   build: taskfiles/build.yml
