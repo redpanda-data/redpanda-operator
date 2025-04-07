@@ -431,10 +431,10 @@ github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0leargg
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe60+5DqOpCjPE=
 github.com/quasilyte/go-ruleguard/dsl v0.3.22/go.mod h1:KeCP03KrjuSO0H1kTuZQCWlQPulDV6YMIXmpQss17rU=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86 h1:7U/To3tCZBdD5Cb5ihQk+sfq9QwXbOE1ZEdYjkYfROM=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86/go.mod h1:VTE5b2s0AWj/gJ1ygVXbfMaDKd6mmxiIgbw32hD2w94=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86 h1:OIMgob/yXf+LmtfBd4D9URQs3ULGZmjnCLwbTb61kb0=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86/go.mod h1:uMzbKxddryc+t69uOI6U7yTaXAVqjEtZ6gGH3sszgIk=
+github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 h1:aSlJX+HNh9C9NKA0+xp9DfYwfVs1fp4tkFaZS9DUkXM=
+github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
+github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 h1:HIkLbEDKeCALHFytZdHfeWYo/9JMa1yh4QlsIlhlsB8=
+github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:Sof2HY8U+RLesHJInGLoqhUMzN8iN8gUHXALbROsew8=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0 h1:3/+oHeq4g2kqqyCKSIOlK7kDDmLu6iB+CB2iwa9SrQo=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250404234541-e713ed43cde0/go.mod h1:wxLJbE/FXztdk10KntI7D2XxWwMGK873j4LEXsertco=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=
