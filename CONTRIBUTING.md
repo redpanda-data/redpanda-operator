@@ -46,6 +46,14 @@ Last step would be to perform the following command
 kubectl set image deployment/OPERATOR_DEPLOYMENT_NAME manager=YOUR_CONTAINER_REGISTRY:YOUR_CONTAINER_TAG 
 ```
 
+## Branching
+
+This repository follows [trunk based development](https://trunkbaseddevelopment.com/) practices.
+
+Releases are performed with git tags on `main` until breaking/backwards incompatible changes are necessary in which case we will ["branch late"](https://trunkbaseddevelopment.com/branch-for-release/#late-creation-of-release-branches).
+
+The "map" of active branches can be found in the [README.md](README.md) of `main`.
+
 ## Backporting
 
 We are currently experimenting with workflows for backporting leveraging the
