@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: bumped `appVersion` to [v25.1.1](https://github.com/redpanda-data/redpanda/releases/tag/v25.1.1).
+time: 2025-04-07T13:17:45.434493-04:00
