@@ -80,7 +80,9 @@ func TestChartLock(t *testing.T) {
 			// describes length to make matching easier.
 			return rev[:8]
 		}
-		return req.Mod.Version
+		// Remove the `v` from the go dependency e.g. v3.0.0 will become 3.0.0
+		// That will match what the Chart.lock reports
+		return req.Mod.Version[1:]
 	}
 
 	consoleModule := goMod.Require[slices.IndexFunc(goMod.Require, func(req *modfile.Require) bool {

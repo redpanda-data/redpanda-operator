@@ -17,7 +17,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
