@@ -48,7 +48,8 @@ import (
 )
 
 const (
-	FinalizerKey = "operator.redpanda.com/finalizer"
+	FinalizerKey            = "operator.redpanda.com/finalizer"
+	ClusterConfigVersionKey = "operator.redpanda.com/cluster-config-version"
 
 	NotManaged = "false"
 
@@ -293,12 +294,28 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
 
+	helmChartValues := rp.Spec.ClusterSpec.DeepCopy()
+	// The pods are being annotated with the cluster config version so that they
+	// are restarted on any change to the cluster config.
+	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil && c.Status == metav1.ConditionTrue {
+		if helmChartValues.Statefulset == nil {
+			helmChartValues.Statefulset = &redpandav1alpha2.Statefulset{}
+		}
+		if helmChartValues.Statefulset.PodTemplate == nil {
+			helmChartValues.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
+		}
+		if helmChartValues.Statefulset.PodTemplate.Annotations == nil {
+			helmChartValues.Statefulset.PodTemplate.Annotations = map[string]string{}
+		}
+		helmChartValues.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
+	}
+
 	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, rp.Spec.ClusterSpec.DeepCopy())
+	}, helmChartValues)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -535,8 +552,8 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 	}
 
 	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
-
-	if err := syncer.Sync(ctx, config, usersTXT); err != nil {
+	configVersion, err := syncer.Sync(ctx, config, usersTXT)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -545,6 +562,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: rp.Generation,
 		Reason:             "ConfigSynced",
+		Message:            fmt.Sprintf("ClusterConfig at Version %d", configVersion),
 	})
 
 	return nil
