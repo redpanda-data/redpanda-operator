@@ -25,9 +25,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 const (
@@ -45,7 +44,7 @@ type ChartRef struct {
 	// Defines the version of the Redpanda Helm chart to deploy.
 	// Only charts in the v5.9.x and v5.10.x series are supported.
 	//
-	// If unspecified, defaults to the operator's vendored chart version: `v5.9.21`.
+	// If unspecified, defaults to the operator's vendored chart version: `v5.10.1`.
 	//
 	// It is recommended to leave this field unspecified.
 	// +kubebuilder:validation:Type=string
@@ -72,7 +71,7 @@ type ChartRef struct {
 	// its internal Go-based Helm chart. FluxCD resources are still
 	// managed by the operator albeit in a suspended state.
 	//
-	// If `false`, `chartVersion` MUST be `v5.9.21` or unspecified. The
+	// If `false`, `chartVersion` MUST be `v5.10.1` or unspecified. The
 	// operator does not reconcile any Redpanda resources that have `chartVersion` set to
 	// another version while `useFlux` is `false.
 	// +optional
@@ -324,5 +323,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 		IsUpgrade: true,
 	}
 
-	return redpandachart.Chart.Dot(ptr.To(kube.RestToConfig(restConfig)), release, partial)
+	return redpandachart.Chart.Dot(restConfig, release, partial)
 }
