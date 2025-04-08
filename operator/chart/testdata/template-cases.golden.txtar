@@ -1470,7 +1470,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=a35
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -3347,7 +3346,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Ae
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -5188,7 +5186,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=a4SuUdq
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -7051,7 +7048,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=OdrK
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -7524,7 +7520,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Y
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -8477,7 +8472,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=gT
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -9395,7 +9389,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Qgv
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -12250,7 +12243,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=HhY5pV
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -13222,7 +13214,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=DCM8
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -14644,7 +14635,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=vOvAQKBh
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -16293,7 +16283,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=BpnfO
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -18341,7 +18330,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=5ruW
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -21500,7 +21488,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=zoF
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -22855,7 +22842,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=S3
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -24646,7 +24632,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=NaLO9z
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -28832,7 +28817,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=hPrI1P
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -29666,7 +29650,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=v1480
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -44063,7 +44046,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -45719,7 +45701,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=TwQtVGrOeJf
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -48467,7 +48448,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=ozF
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -50808,7 +50788,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -52521,7 +52500,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -53400,7 +53378,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -54284,7 +54261,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -55671,7 +55647,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -57138,7 +57113,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -58022,7 +57996,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -59986,7 +59959,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -61084,7 +61056,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -64288,7 +64259,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -65318,7 +65288,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -74470,7 +74439,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -75717,7 +75685,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -77790,7 +77757,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -79018,7 +78984,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -81082,7 +81047,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -85613,7 +85577,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -86790,7 +86753,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -88108,7 +88070,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -88934,7 +88895,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -90163,7 +90123,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -96183,7 +96142,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -96986,7 +96944,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -100481,7 +100438,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -101530,7 +101486,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -102416,7 +102371,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -103319,7 +103273,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -104205,7 +104158,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -105025,7 +104977,6 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
@@ -105922,7 +105873,6 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
-        - --configurator-tag=v2.3.6-24.3.3
         command:
         - /manager
         env: []
