@@ -1,6 +1,6 @@
 dependencies:
 - name: console
-  repository: https://charts.redpanda.com
+  repository: file://../console
   version: 3.0.0
-digest: sha256:48a8eb68dc63fc908ee6de55505e13de824a58d2bcef7e03749c1d1978680278
-generated: "2025-04-08T14:00:17.889873+02:00"
+digest: sha256:8422a2d0e04e3000fccf0c14e9f2a7e1b5b46a925103841b9bb3a82a9fca56e1
+generated: "2025-04-08T16:22:51.243216-04:00"

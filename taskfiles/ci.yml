@@ -20,29 +20,29 @@ tasks:
 
   test:unit:
     cmds:
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests-*.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests.xml"'
       - task: :test:unit
         vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=unit-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=unit-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
     cmds:
       - defer: 'kind delete clusters --all'
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests.xml"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=integration-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
     cmds:
       - defer: 'kind delete clusters --all'
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests-*.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests.xml"'
       - task: :test:acceptance
         vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=acceptance-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=acceptance-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:kuttl-v1:
     cmds:

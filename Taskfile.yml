@@ -11,15 +11,6 @@ vars:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
     sh: 'realpath {{default ".build" .BUILD_ROOT}}'
-  _MOD:
-    # top level shopt doesn't appear to apply to sh. ** matches symlinks,
-    # meaning src/go/k8s will list the operator twice, not great for all our
-    # test scripts. We use grep to filter out anything starting with s. For
-    # whatever reason, grep resolves to /usr/bin/grep when run in this way so
-    # -P is out.
-    sh: shopt -s globstar; dirname $(ls **/go.mod | grep -o '^[^s].*')
-  PKG: './...'
-  MOD: '{{default ._MOD .MOD}}'
   TIMESTAMP: # Timestamp used for any build artifacts.
     # MacOS' man page isn't helpful. https://man7.org/linux/man-pages/man1/date.1.html
     # Roughly ISO 8601
@@ -52,10 +43,12 @@ includes:
 tasks:
   lint:
     desc: "Lint all go code and helm charts"
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-      - for:
-          var: MOD
-        cmd: cd {{.ITEM}} && golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
+      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - ct lint --chart-dirs ./charts --check-version-increment=false --all
       - actionlint
 
@@ -74,10 +67,14 @@ tasks:
     sources:
     - ./**/go.mod
     - ./**/go.sum
+    vars:
+      MOD:
+        sh: go work edit -json | jq -r '.Use.[].DiskPath'
     cmds:
     - for:
         var: MOD
       cmd: go mod tidy -C {{.ITEM}}
+    - go work sync
 
   fmt:
     desc: "gofumpt all go code"
@@ -153,17 +150,18 @@ tasks:
     desc: "Run all unit tests (~5m)"
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-    # NB: xargs is used here in favor of taskfile's for as it allows parent
-    # tasks to utilizing xargs' templating (%).
-    - echo "{{.MOD}}" | xargs -t -I % {{.GO_TEST_RUNNER}} -C % {{.CLI_ARGS}} {{.PKG}}
+    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
 
   test:integration:
     desc: "Run all integration tests (~90m)"
     deps:
     - build:image
     cmds:
-    - task: charts:kind-cluster
+    - task: charts:kind-cluster # Kind cluster is currently used for chart integration tests
     - kind load docker-image localhost/redpanda-operator:dev
     - task: test:unit
       vars:
