@@ -6,7 +6,7 @@ replace (
 	// As gen schema generates a schema for a chart via reflect, we
 	// want it to always operate on the current chart version.
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
@@ -18,7 +18,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/spf13/cobra v1.8.1

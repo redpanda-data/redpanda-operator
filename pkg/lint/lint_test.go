@@ -166,7 +166,7 @@ func TestGoModLint(t *testing.T) {
 		// into their respective charts to resolve this).
 		modPrefix + "gen": {
 			modPrefix + "charts/console/v3",
-			modPrefix + "charts/redpanda/v5",
+			modPrefix + "charts/redpanda/v25",
 			modPrefix + "operator",
 		},
 	}
