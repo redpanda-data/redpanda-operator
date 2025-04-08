@@ -21,7 +21,6 @@ linters:
   enable:
   - depguard
 #  - errcheck
-  - gocritic
   - gosec
   - govet
   - importas
@@ -80,22 +79,6 @@ linters:
         alias: certmanager$1
       - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
         alias: monitoring$1
-
-    gocritic:
-      disable-all: true
-      enabled-checks:
-        - ruleguard
-      settings:
-        # NB: For ruleguard to work, every go.mod must include the ruleguard
-        # library. This is handled with a stub rules.go file in every module in
-        # this repository.
-        ruleguard:
-          # ${configDir} is the only expanded variable. Paths are otherwise
-          # relative to the directory that golangci-lint is invoked in.
-          # rules.go
-          # - "rules.go" -> Load rules.go for each linted go.mod file due to taskfile cd'ing into each module.
-          rules: "rules.go"
-          failOn: all # all ensures we get nice error messages if something is misconfigured.
 
     staticcheck:
       # We should revisit

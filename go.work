@@ -1,0 +1,16 @@
+go 1.23.7
+
+use (
+	./acceptance
+	./alias
+	./charts/connectors
+	./charts/console
+	./charts/redpanda
+	./gen
+	./gotohelm
+	./gotohelm/testdata/src/example
+	./harpoon
+	./licenseupdater
+	./operator
+	./pkg
+)
