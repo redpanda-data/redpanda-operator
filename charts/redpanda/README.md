@@ -22,7 +22,7 @@ Kubernetes: `>= 1.25.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://registry-1.docker.io/redpandadata | console(console-unstable) | v0.0-k8s0-be94e29d-helm-chart |
+| https://charts.redpanda.com | console(console) | >=3.0.0-0 |
 
 ## Settings
 
