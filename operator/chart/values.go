@@ -36,7 +36,6 @@ type Values struct {
 	ReplicaCount       int32                         `json:"replicaCount"`
 	ClusterDomain      string                        `json:"clusterDomain"`
 	Image              Image                         `json:"image"`
-	KubeRBACProxy      KubeRBACProxyConfig           `json:"kubeRbacProxy"`
 	Config             Config                        `json:"config"`
 	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets"`
 	LogLevel           string                        `json:"logLevel"`
