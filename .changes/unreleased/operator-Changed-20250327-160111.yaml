@@ -1,4 +1,0 @@
-project: operator
-kind: Changed
-body: 'The `chartRef.useFlux: false` configuration, is now considered stable.'
-time: 2025-03-27T16:01:11.777354-04:00
