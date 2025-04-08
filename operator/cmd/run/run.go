@@ -517,17 +517,6 @@ func Run(
 			return err
 		}
 
-		if err = (&vectorizedcontrollers.ClusterConfigurationDriftReconciler{
-			Client:                    mgr.GetClient(),
-			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("ClusterConfigurationDrift"),
-			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminAPIClientFactory,
-			RestrictToRedpandaVersion: restrictToRedpandaVersion,
-		}).WithClusterDomain(clusterDomain).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "ClusterConfigurationDrift")
-			return err
-		}
-
 		if err = vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).
 			SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "ClustersMetrics")

@@ -12,10 +12,12 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -64,7 +66,7 @@ var (
 	k8sClient             client.Client
 	testEnv               *testutils.RedpandaTestEnv
 	cfg                   *rest.Config
-	testAdminAPI          *adminutils.MockAdminAPI
+	testAdminAPI          func(string) *adminutils.MockAdminAPI
 	testAdminAPIFactory   adminutils.NodePoolAdminAPIClientFactory
 	testStore             *consolepkg.Store
 	testKafkaAdmin        *mockKafkaAdmin
@@ -142,23 +144,52 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		Expect(controller.SetupWithManager(ctx, k8sManager)).ToNot(HaveOccurred())
 	}
 
-	testAdminAPI = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI")}
+	testAdminAPIs := make(map[string]*adminutils.MockAdminAPI)
+	var mu sync.Mutex
+	testAdminAPI = func(clusterName string) *adminutils.MockAdminAPI {
+		mu.Lock()
+		defer mu.Unlock()
+		api, found := testAdminAPIs[clusterName]
+		if !found {
+			api = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI").WithName(clusterName)}
+
+			api.Clear()
+
+			// Register some known properties for all tests
+			api.RegisterPropertySchema("auto_create_topics_enabled", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
+			api.RegisterPropertySchema("cloud_storage_segment_max_upload_interval_sec", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
+			api.RegisterPropertySchema("log_segment_size", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
+			api.RegisterPropertySchema("enable_rack_awareness", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
+
+			// By default we set the following properties and they'll be loaded by redpanda from the .bootstrap.yaml
+			// So we initialize the test admin API with those
+			api.SetProperty("auto_create_topics_enabled", false)
+			api.SetProperty("cloud_storage_segment_max_upload_interval_sec", 1800)
+			api.SetProperty("log_segment_size", 536870912)
+			api.SetProperty("enable_rack_awareness", true)
+
+			testAdminAPIs[clusterName] = api
+		}
+		return api
+	}
+
 	testAdminAPIFactory = func(
 		_ context.Context,
 		_ client.Reader,
-		_ *vectorizedv1alpha1.Cluster,
+		cluster *vectorizedv1alpha1.Cluster,
 		_ string,
 		_ types.AdminTLSConfigProvider,
 		_ redpanda.DialContextFunc,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
+		api := testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
 		if len(pods) == 1 {
 			return &adminutils.NodePoolScopedMockAdminAPI{
-				MockAdminAPI: testAdminAPI,
+				MockAdminAPI: api,
 				Pod:          pods[0],
 			}, nil
 		}
-		return testAdminAPI, nil
+		return api, nil
 	}
 
 	testStore = consolepkg.NewStore(k8sManager.GetClient(), k8sManager.GetScheme())
@@ -167,27 +198,19 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		return testKafkaAdmin, nil
 	}
 
+	driftCheckPeriod := 500 * time.Millisecond
 	err = (&vectorized.ClusterReconciler{
-		Client:                   k8sManager.GetClient(),
-		Log:                      l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
-		Scheme:                   k8sManager.GetScheme(),
-		AdminAPIClientFactory:    testAdminAPIFactory,
-		DecommissionWaitInterval: 100 * time.Millisecond,
+		Client:                         k8sManager.GetClient(),
+		Log:                            l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
+		Scheme:                         k8sManager.GetScheme(),
+		AdminAPIClientFactory:          testAdminAPIFactory,
+		DecommissionWaitInterval:       100 * time.Millisecond,
+		ConfigurationReassertionPeriod: driftCheckPeriod,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
 		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	driftCheckPeriod := 500 * time.Millisecond
-	err = (&vectorized.ClusterConfigurationDriftReconciler{
-		Client:                k8sManager.GetClient(),
-		Log:                   l.WithName("controllers").WithName("core").WithName("RedpandaCluster"),
-		Scheme:                k8sManager.GetScheme(),
-		AdminAPIClientFactory: testAdminAPIFactory,
-		DriftCheckPeriod:      &driftCheckPeriod,
-	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&vectorized.ConsoleReconciler{
@@ -238,23 +261,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 }, NodeTimeout(20*time.Second))
-
-var _ = BeforeEach(func() {
-	By("Cleaning the admin API")
-	testAdminAPI.Clear()
-	// Register some known properties for all tests
-	testAdminAPI.RegisterPropertySchema("auto_create_topics_enabled", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
-	testAdminAPI.RegisterPropertySchema("cloud_storage_segment_max_upload_interval_sec", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
-	testAdminAPI.RegisterPropertySchema("log_segment_size", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "integer"})
-	testAdminAPI.RegisterPropertySchema("enable_rack_awareness", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "boolean"})
-
-	// By default we set the following properties and they'll be loaded by redpanda from the .bootstrap.yaml
-	// So we initialize the test admin API with those
-	testAdminAPI.SetProperty("auto_create_topics_enabled", false)
-	testAdminAPI.SetProperty("cloud_storage_segment_max_upload_interval_sec", 1800)
-	testAdminAPI.SetProperty("log_segment_size", 536870912)
-	testAdminAPI.SetProperty("enable_rack_awareness", true)
-})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

@@ -140,7 +140,7 @@ func Update(
 		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
 		patch.IgnorePDBSelector(),
 		utils.IgnoreAnnotation(redpandaAnnotatorKey),
-		utils.IgnoreAnnotation(LastAppliedConfigurationAnnotationKey),
+		utils.IgnoreAnnotation(LastAppliedCriticalConfigurationAnnotationKey),
 	}
 	annotator := patch.NewAnnotator(redpandaAnnotatorKey)
 	patchResult, err := patch.NewPatchMaker(annotator, &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{}).Calculate(current, modified, opts...)
@@ -208,12 +208,12 @@ func prepareResourceForUpdate(current runtime.Object, modified client.Object) {
 	// Additional cases due to controller using update instead of patch
 	case *corev1.ConfigMap:
 		cm := t
-		if ann, ok := current.(*corev1.ConfigMap).Annotations[LastAppliedConfigurationAnnotationKey]; ok {
+		if ann, ok := current.(*corev1.ConfigMap).Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
 			// We always ignore this annotation during normal reconciliation
 			if cm.Annotations == nil {
 				cm.Annotations = make(map[string]string)
 			}
-			cm.Annotations[LastAppliedConfigurationAnnotationKey] = ann
+			cm.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = ann
 		}
 	}
 }
