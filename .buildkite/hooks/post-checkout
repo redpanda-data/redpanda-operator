@@ -4,7 +4,7 @@
 set +e
 
 if [[ $BUILDKITE_AGENT_META_DATA_QUEUE == "pipeline-uploader" ]]; then
-  echo "Skipping on `pipeline-uploader` agents"
+  echo "Skipping on 'pipeline-uploader' agents"
   exit 0
 fi
 
@@ -14,4 +14,6 @@ for id in $(docker ps --quiet); do
   docker kill $id
 done
 
-docker system prune --all --volumes --force
+docker container prune --force
+docker volume prune --force
+docker network prune --force
