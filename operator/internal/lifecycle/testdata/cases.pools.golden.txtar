@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -35,7 +35,7 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.9.20
+          helm.sh/chart: redpanda-25.1.1-beta1
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
