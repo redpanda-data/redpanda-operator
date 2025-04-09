@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external
@@ -60,7 +60,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -90,7 +90,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -139,7 +139,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar-controllers
@@ -213,7 +213,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar-controllers
@@ -242,7 +242,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configuration
@@ -257,7 +257,6 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/name: redpanda
       spec:
-        affinity: {}
         automountServiceAccountToken: false
         containers:
         - command:
@@ -272,9 +271,7 @@
           image: docker.redpanda.com/redpandadata/redpanda-operator:v2.3.8-24.3.6
           name: post-install
           resources: {}
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
+          securityContext: {}
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -313,6 +310,7 @@
         securityContext:
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
+          runAsUser: 101
         serviceAccountName: default
         volumes:
         - name: redpanda-default-cert
@@ -518,7 +516,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -559,7 +557,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk
@@ -576,7 +574,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-selfsigned-issuer
@@ -596,7 +594,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-issuer
@@ -617,7 +615,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-selfsigned-issuer
@@ -637,7 +635,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-issuer
@@ -658,7 +656,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-certificate
@@ -688,7 +686,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-certificate
@@ -718,7 +716,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-cert
@@ -759,7 +757,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-cert
@@ -800,7 +798,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sts-lifecycle
@@ -896,7 +894,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.9.20
+      helm.sh/chart: redpanda-25.1.1-beta1
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configurator
@@ -949,7 +947,7 @@
 - apiVersion: v1
   data:
     config.yaml: |
-      # from .Values.console.config
+      # from .Values.config
       kafka:
         brokers:
         - basic-test-0.basic-test.basic-test.svc.cluster.local.:9093
@@ -993,11 +991,11 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0-beta.1
+      app.kubernetes.io/version: v3.0.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-3.0.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1010,11 +1008,11 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0-beta.1
+      app.kubernetes.io/version: v3.0.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-3.0.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1029,8 +1027,8 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 305efbcbb703038386eb5720d60a950bfd5550f95f68020474c39e2dd545c0a6
-          checksum/config: 23e1498cb98cc20f2ac1f9810212242a0a855a456b0635259ef94d3406de3551
+          checksum-redpanda-chart/config: 06cfff1a362dc4aa1e0d137e03063cdf68a1fb6449796e17e4b9d08071cb5464
+          checksum/config: 3cfe51f0baef37d1fe24fbb98752c49da32c608bf8265bab411251ad63faa913
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: basic-test
@@ -1041,7 +1039,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.0.0-beta.1
+          image: docker.redpanda.com/redpandadata/console:v3.0.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -1097,11 +1095,11 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0-beta.1
+      app.kubernetes.io/version: v3.0.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-3.0.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1114,11 +1112,11 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0-beta.1
+      app.kubernetes.io/version: v3.0.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-0.7.31
+      helm.sh/chart: console-3.0.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console

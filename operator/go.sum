@@ -741,12 +741,10 @@ github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 h1:+
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20/go.mod h1:DC42/3+k5PefSo4IalYbDN3yRZrVFP0b69+gC/NwGd4=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756 h1:Ej60mXTkl+Gg3EV4QiKYtmW0rJ1BHyVGoFwJ4DwjvGc=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756/go.mod h1:c9U+W6CCLWHWk9jBEzzUM7Q7ya4ot57FghxtaVdMrNQ=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756 h1:5t2kJdC2lL/s2JIp3q0bCXxaYjTUo4f6rx3/5r5q9No=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0-20250324171046-34430507e756/go.mod h1:rM1G0g5+l5GykYQId/2C09Gfo5IUMIznW7uUjuzicP4=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4 h1:3WscsyoRkPqOx1ZAFTkEvaNupfdThzF5kPw7izqLpTc=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250325145836-f7393134f8f4/go.mod h1:H26FUPjOr4VfTbqtxySNqBq5Dv0IJ/xF0jfqRjOOqe8=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab h1:aa1fDNQ2IqVM7Y45RgoJUABwfvVa4pgVIAu51tD7nOo=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250321104408-a6c0672707ab/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0 h1:S7fmi5TAlj+5GBU8UKhELscg5BpzQBWQynuSDxujPKQ=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0/go.mod h1:AQWidq2TAeQZbwbrGc/1JcdxUK9aAd5B08SVePxRy3I=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
+github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38 h1:6dqTsDtXqW4SICnuDFpKpVXFPQAJWTo/HA885UQ6wD0=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38/go.mod h1:s76fz8ecr9vdhO66k5ZH9jQV9ioOrbm6CbBZgjeglNw=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=

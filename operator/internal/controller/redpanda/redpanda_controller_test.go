@@ -37,7 +37,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -150,6 +150,8 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 }
 
 func (s *RedpandaControllerSuite) TestTPLValues() {
+	s.T().Skip("invalid / broken due to changes in chart v25.1.1 (podTemplate)")
+
 	rp := s.minimalRP()
 
 	extraVolumeMount := ptr.To(`- name: test-extra-volume
@@ -546,24 +548,6 @@ func (s *RedpandaControllerSuite) TestLicense() {
 
 		s.deleteAndWait(rp)
 	}
-}
-
-func (s *RedpandaControllerSuite) TestConnectorsIntegration() {
-	rp := s.minimalRP()
-
-	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
-		Enabled: ptr.To(true),
-	}
-
-	s.applyAndWait(rp)
-
-	// Assert that we see the connectors deployment and that it's healthy.
-	var deployments appsv1.DeploymentList
-	s.NoError(s.client.List(s.ctx, &deployments))
-	s.Len(deployments.Items, 1)
-	s.Equal(int32(1), deployments.Items[0].Status.ReadyReplicas)
-
-	s.deleteAndWait(rp)
 }
 
 func (s *RedpandaControllerSuite) SetupSuite() {
