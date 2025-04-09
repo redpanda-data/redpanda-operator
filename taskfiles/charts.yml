@@ -9,7 +9,7 @@ tasks:
       - task: generate:redpanda
       - task: generate:connectors
       # Generate chart README.md's
-      - helm-docs -c ./charts/
+      - helm-docs --chart-to-generate charts/connectors,charts/console,charts/redpanda,operator/chart
 
   generate:console:
     desc: "Generate files for the console Helm chart"
