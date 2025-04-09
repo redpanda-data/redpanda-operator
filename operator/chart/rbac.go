@@ -200,9 +200,59 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 						APIGroups: []string{""},
 						Resources: []string{"persistentvolumes"},
 					},
+					// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+					// with the redpanda chart. They are all superfluous.
+					{
+						Verbs:     []string{"create", "patch"},
+						APIGroups: []string{""},
+						Resources: []string{"events"},
+					},
+					{
+						Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+						APIGroups: []string{""},
+						Resources: []string{"pods"},
+					},
+					{
+						Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+						APIGroups: []string{"coordination.k8s.io"},
+						Resources: []string{"leases"},
+					},
+					{
+						Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+						APIGroups: []string{"apps"},
+						Resources: []string{"statefulsets"},
+					},
+					{
+						Verbs:     []string{"get", "list", "watch", "update", "patch", "delete"},
+						APIGroups: []string{""},
+						Resources: []string{"persistentvolumeclaims", "persistentvolumes"},
+					},
 				},
 			},
 		}...)
+	}
+
+	// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+	// with the redpanda chart. They are all superfluous.
+	if values.RBAC.CreateRPKBundleCRs {
+		clusterRoles = append(clusterRoles, rbacv1.ClusterRole{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRole",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        cleanForK8sWithSuffix(Fullname(dot), "rpk-bundle"),
+				Labels:      Labels(dot),
+				Annotations: values.Annotations,
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					Verbs:     []string{"get", "list"},
+					APIGroups: []string{""},
+					Resources: []string{"nodes", "configmaps", "endpoints", "events", "limitranges", "persistentvolumeclaims", "pods", "pods/log", "replicationcontrollers", "resourcequotas", "serviceaccounts", "services"},
+				},
+			},
+		})
 	}
 
 	return append(clusterRoles, rbacv1.ClusterRole{
@@ -268,6 +318,34 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 				},
 			},
 		},
+	}
+
+	// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+	// with the redpanda chart. They are all superfluous.
+	if values.RBAC.CreateRPKBundleCRs {
+		bindings = append(bindings, rbacv1.ClusterRoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRoleBinding",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        cleanForK8sWithSuffix(Fullname(dot), "rpk-bundle"),
+				Labels:      Labels(dot),
+				Annotations: values.Annotations,
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     cleanForK8sWithSuffix(Fullname(dot), "rpk-bundle"),
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      ServiceAccountName(dot),
+					Namespace: dot.Release.Namespace,
+				},
+			},
+		})
 	}
 
 	if values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs {
@@ -475,6 +553,18 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 					Verbs:     []string{"get", "patch", "update"},
 					APIGroups: []string{"helm.toolkit.fluxcd.io"},
 					Resources: []string{"helmreleases/status"},
+				},
+				// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+				// with the redpanda chart. They are all superfluous.
+				{
+					Verbs:     []string{"delete", "get", "list", "patch", "update", "watch"},
+					APIGroups: []string{""},
+					Resources: []string{"persistentvolumeclaims"},
+				},
+				{
+					Verbs:     []string{"patch", "update"},
+					APIGroups: []string{"apps"},
+					Resources: []string{"statefulsets/status"},
 				},
 			},
 		})

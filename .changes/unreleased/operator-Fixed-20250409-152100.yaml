@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Expanded the set of rules in both Roles and ClusterRoles to be appropriately in sync with the redpanda helm chart.
+time: 2025-04-09T15:21:00.532563-04:00
