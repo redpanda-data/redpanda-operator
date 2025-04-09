@@ -181,6 +181,7 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 		{
 			name: "additional-controllers",
 			paths: []string{
+				"../config/rbac/itemized/decommission.yaml",
 				"../config/rbac/itemized/leader-election.yaml",
 				"../config/rbac/itemized/managed-decommission.yaml",
 				"../config/rbac/itemized/node-watcher.yaml",
