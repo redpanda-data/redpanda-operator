@@ -101,6 +101,12 @@ type RedpandaReconciler struct {
 // The leases is used by controller-runtime in sidecar. Operator main reconciliation needs to have leases permissions in order to create role that have the same permissions.
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
+// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+// with the redpanda chart. They are all superfluous.
+// +kubebuilder:rbac:groups="",namespace=default,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets/status,verbs=patch;update
+// +kubebuilder:rbac:groups="",namespace="default",resources=persistentvolumeclaims,verbs=get;list;patch;update;watch;delete
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	if err := registerHelmReferencedIndex(ctx, mgr, "statefulset", &appsv1.StatefulSet{}); err != nil {

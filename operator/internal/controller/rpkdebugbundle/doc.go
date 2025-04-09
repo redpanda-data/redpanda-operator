@@ -6,3 +6,7 @@
 package rpkdebugbundle
 
 // +kubebuilder:rbac:groups="",namespace=default,resources=configmaps;endpoints;events;limitranges;persistentvolumeclaims;pods;pods/log;replicationcontrollers;resourcequotas;serviceaccounts;services,verbs=get;list
+
+// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
+// with the redpanda chart. They are all superfluous.
+// +kubebuilder:rbac:groups="",resources=nodes;configmaps;endpoints;events;limitranges;persistentvolumeclaims;pods;pods/log;replicationcontrollers;resourcequotas;serviceaccounts;services,verbs=get;list
