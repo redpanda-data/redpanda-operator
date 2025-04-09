@@ -56,6 +56,7 @@ For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions
 
   Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
 * Certificate reloading for webhook and metrics endpoints should now behave correctly.
+* Expanded the set of rules in both Roles and ClusterRoles to be appropriately in sync with the redpanda helm chart.
 
 ## v2.3.8-24.3.6 - 2025-03-05
 ### Fixed
