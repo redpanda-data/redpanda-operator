@@ -171,7 +171,7 @@ func TestGoModLint(t *testing.T) {
 		},
 
 		modPrefix + "operator": {
-			modPrefix + "charts/redpanda/v5",
+			modPrefix + "charts/redpanda/v25",
 		},
 	}
 

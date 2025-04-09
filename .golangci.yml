@@ -49,7 +49,7 @@ linters:
         chart-versions:
           deny:
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
-            desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"'
+            desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
 
