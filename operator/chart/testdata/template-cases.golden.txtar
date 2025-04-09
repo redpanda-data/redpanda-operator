@@ -527,6 +527,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -749,14 +767,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -844,14 +860,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -1479,6 +1493,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1761,14 +1793,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -1856,14 +1886,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -2488,6 +2516,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2718,14 +2764,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -2813,14 +2857,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -3463,6 +3505,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -3711,14 +3771,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -3806,14 +3864,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -4438,6 +4494,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -4699,14 +4773,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -4794,14 +4866,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -5435,6 +5505,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -5673,14 +5761,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -5768,14 +5854,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -6421,6 +6505,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -6687,14 +6789,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -6782,14 +6882,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -7421,6 +7519,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7691,14 +7807,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -7786,14 +7900,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -8126,14 +8238,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -8221,14 +8331,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -8878,6 +8986,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -9141,14 +9267,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -9236,14 +9360,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -9882,6 +10004,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -10126,14 +10266,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -10221,14 +10359,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -10407,6 +10543,41 @@ metadata:
     app.kubernetes.io/name: Ubj
     app.kubernetes.io/version: v2.4.1
     helm.sh/chart: operator-v2.4.1
+  name: rcE-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
   name: rcE
 rules:
 - apiGroups:
@@ -10510,6 +10681,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: rcE
+subjects:
+- kind: ServiceAccount
+  name: rcE
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: rcE-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rcE-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: rcE
@@ -10865,6 +11060,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -11210,14 +11423,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -11305,14 +11516,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -11958,6 +12167,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -12199,14 +12426,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -12294,14 +12519,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -12926,6 +13149,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -13205,14 +13446,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -13300,14 +13539,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -13946,6 +14183,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -14192,14 +14447,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -14287,14 +14540,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -14706,14 +14957,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -14801,14 +15050,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -15423,6 +15670,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -15689,14 +15954,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -15784,14 +16047,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -16241,14 +16502,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -16336,14 +16595,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -16562,6 +16819,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -17059,6 +17371,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -17512,14 +17842,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -17607,14 +17935,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -18257,6 +18583,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18555,14 +18899,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -18650,14 +18992,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -19300,6 +19640,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19592,14 +19950,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -19687,14 +20043,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -20315,6 +20669,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -20715,14 +21087,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -20810,14 +21180,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -21449,6 +21817,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -21705,14 +22091,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -21800,14 +22184,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -21998,6 +22380,44 @@ metadata:
     app.kubernetes.io/version: v2.4.1
     gWL: pM
     helm.sh/chart: operator-v2.4.1
+  name: sFwgtf-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.4.1
+    gWL: pM
+    helm.sh/chart: operator-v2.4.1
   name: sFwgtf
 rules:
 - apiGroups:
@@ -22104,6 +22524,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: sFwgtf
+subjects:
+- kind: ServiceAccount
+  name: sFwgtf
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.4.1
+    gWL: pM
+    helm.sh/chart: operator-v2.4.1
+  name: sFwgtf-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sFwgtf-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: sFwgtf
@@ -22463,6 +22910,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -22981,14 +23446,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -23076,14 +23539,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -23281,6 +23742,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23771,6 +24287,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -24327,14 +24861,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -24422,14 +24954,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -25073,6 +25603,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -25463,14 +26011,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -25558,14 +26104,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -26212,14 +26756,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -26307,14 +26849,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -26968,6 +27508,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -27463,14 +28021,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -27558,14 +28114,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -28204,6 +28758,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28811,14 +29383,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -28906,14 +29476,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -29432,14 +30000,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -29527,14 +30093,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -29700,6 +30264,42 @@ metadata:
     app.kubernetes.io/name: aYT
     app.kubernetes.io/version: v2.4.1
     helm.sh/chart: operator-v2.4.1
+  name: D-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
   name: D
 rules:
 - apiGroups:
@@ -29804,6 +30404,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: D
+subjects:
+- kind: ServiceAccount
+  name: 40Wt
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: D-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: D-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: 40Wt
@@ -30159,6 +30784,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -30618,14 +31261,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -30713,14 +31354,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -31414,14 +32053,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -31509,14 +32146,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -31739,6 +32374,97 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: tDyp0579ogHIu-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -31859,6 +32585,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: tDyp0579ogHIu
+subjects:
+- kind: ServiceAccount
+  name: Zihc6G
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: tDyp0579ogHIu-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tDyp0579ogHIu-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: Zihc6G
@@ -32239,6 +32990,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -32957,14 +33726,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -33052,14 +33819,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -33626,14 +34391,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -33721,14 +34484,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -33894,6 +34655,42 @@ metadata:
     app.kubernetes.io/version: v2.4.1
     helm.sh/chart: operator-v2.4.1
     uUW: Us
+  name: 6z0k3NX-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    uUW: Us
   name: 6z0k3NX
 rules:
 - apiGroups:
@@ -33998,6 +34795,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 6z0k3NX
+subjects:
+- kind: ServiceAccount
+  name: 9xg1jKJ
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    uUW: Us
+  name: 6z0k3NX-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 6z0k3NX-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: 9xg1jKJ
@@ -34353,6 +35175,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -34973,14 +35813,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -35068,14 +35906,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -35739,14 +36575,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -35834,14 +36668,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -36486,14 +37318,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -36581,14 +37411,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -37349,14 +38177,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -37444,14 +38270,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -38122,14 +38946,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -38217,14 +39039,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -38445,6 +39265,96 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -38563,6 +39473,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: fjEnE
+subjects:
+- kind: ServiceAccount
+  name: dgtMSpw
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fjEnE-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: dgtMSpw
@@ -38940,6 +39874,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -39590,14 +40542,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -39685,14 +40635,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -40286,14 +41234,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -40381,14 +41327,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -40963,14 +41907,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -41058,14 +42000,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -41263,6 +42203,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -41753,6 +42748,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -42369,14 +43382,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -42464,14 +43475,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -42675,6 +43684,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -43175,6 +44239,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -43962,14 +45044,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -44057,14 +45137,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -44755,14 +45833,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -44850,14 +45926,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -45023,6 +46097,42 @@ metadata:
     app.kubernetes.io/name: 23c
     app.kubernetes.io/version: v2.4.1
     helm.sh/chart: operator-v2.4.1
+  name: Uu-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
   name: Uu
 rules:
 - apiGroups:
@@ -45127,6 +46237,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Uu
+subjects:
+- kind: ServiceAccount
+  name: 5rSJNtq
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: Uu-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Uu-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: 5rSJNtq
@@ -45482,6 +46617,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -46271,14 +47424,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -46366,14 +47517,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -47103,14 +48252,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -47198,14 +48345,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -47890,14 +49035,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -47985,14 +49128,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -48199,6 +49340,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -48704,6 +49900,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -49328,14 +50542,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -49423,14 +50635,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -49596,6 +50806,42 @@ metadata:
     app.kubernetes.io/name: icwMYEubJ
     app.kubernetes.io/version: v2.4.1
     helm.sh/chart: operator-v2.4.1
+  name: qVYvaMYre-rpk-bundle
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
   name: qVYvaMYre
 rules:
 - apiGroups:
@@ -49700,6 +50946,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: qVYvaMYre
+subjects:
+- kind: ServiceAccount
+  name: Rsep9k
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: qVYvaMYre-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: qVYvaMYre-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: Rsep9k
@@ -50055,6 +51326,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -50698,14 +51987,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -50793,14 +52080,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -51018,6 +52303,61 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -51513,6 +52853,24 @@ rules:
   - helmreleases/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
   - patch
   - update
 ---
@@ -52214,14 +53572,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -52309,14 +53665,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -53164,7 +54518,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -53186,6 +54540,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -53209,7 +54564,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -53231,6 +54586,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -54025,7 +55381,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -54047,6 +55403,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -54070,7 +55427,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -54092,6 +55449,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -54886,7 +56244,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -54908,6 +56266,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -54931,7 +56290,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -54953,6 +56312,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -55756,7 +57116,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -55778,6 +57138,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -55801,7 +57162,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -55823,6 +57184,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -56167,6 +57529,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 2jUS
+subjects:
+- kind: ServiceAccount
+  name: 2jUS
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    ybiJQZ: Ga
+  creationTimestamp: null
+  labels:
+    1c0jr: ImaKzYy
+    afd: Q9L
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: eMNuQ
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: 2jUS-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 2jUS-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: 2jUS
@@ -56649,7 +58036,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -56671,6 +58058,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -56694,7 +58082,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -56716,6 +58104,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -57051,6 +58440,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: WM
+subjects:
+- kind: ServiceAccount
+  name: WM
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: hJkIJY5Y
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    kP0Mu: tnINl
+  name: WM-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: WM-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: WM
@@ -57509,7 +58921,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -57531,6 +58943,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -57554,7 +58967,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -57576,6 +58989,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -58039,7 +59453,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -58061,6 +59475,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -58084,7 +59499,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -58106,6 +59521,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -58635,7 +60051,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -58657,6 +60073,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -58680,7 +60097,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -58702,6 +60119,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -59519,7 +60937,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -59541,6 +60959,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -59564,7 +60983,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -59586,6 +61005,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -60399,7 +61819,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -60421,6 +61841,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -60444,7 +61865,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -60466,6 +61887,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -60809,6 +62231,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: G
+subjects:
+- kind: ServiceAccount
+  name: Fzbi9OkP
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Hp8LxD6: 9oZ3ip
+    Jw: Jn
+    lKmeE2: L
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 8V1wVzO
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: G-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: G-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: Fzbi9OkP
@@ -61460,7 +62907,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -61482,6 +62929,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -61505,7 +62953,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -61527,6 +62975,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -62376,7 +63825,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -62398,6 +63847,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -62421,7 +63871,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -62443,6 +63893,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -63449,7 +64900,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -63471,6 +64922,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -63494,7 +64946,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -63516,6 +64968,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -64439,7 +65892,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -64461,6 +65914,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -64484,7 +65938,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -64506,6 +65960,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -65397,7 +66852,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -65419,6 +66874,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -65442,7 +66898,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -65464,6 +66920,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -66050,7 +67507,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -66072,6 +67529,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -66095,7 +67553,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -66117,6 +67575,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -66654,7 +68113,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -66676,6 +68135,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -66699,7 +68159,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -66721,6 +68181,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -67736,7 +69197,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -67758,6 +69219,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -67781,7 +69243,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -67803,6 +69265,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -68519,7 +69982,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -68541,6 +70004,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -68564,7 +70028,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -68586,6 +70050,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -69184,7 +70649,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -69206,6 +70671,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -69229,7 +70695,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -69251,6 +70717,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -69569,6 +71036,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: m7Z5VmKktJ
+subjects:
+- kind: ServiceAccount
+  name: 8QmVHY8X
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    Pu8: aQVSuDE
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: nUS
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: m7Z5VmKktJ-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: m7Z5VmKktJ-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: 8QmVHY8X
@@ -70501,7 +71991,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -70523,6 +72013,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -70546,7 +72037,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -70568,6 +72059,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -71747,7 +73239,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -71769,6 +73261,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -71792,7 +73285,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -71814,6 +73307,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -72593,7 +74087,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -72615,6 +74109,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -72638,7 +74133,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -72660,6 +74155,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -73505,7 +75001,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -73527,6 +75023,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -73550,7 +75047,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -73572,6 +75069,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -74324,7 +75822,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -74346,6 +75844,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -74369,7 +75868,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -74391,6 +75890,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -74727,6 +76227,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Hjo9sbxO
+subjects:
+- kind: ServiceAccount
+  name: "567"
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    qA: WyamBB
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 8ZgI1VH
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: Hjo9sbxO-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Hjo9sbxO-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: "567"
@@ -75488,7 +77011,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -75510,6 +77033,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -75533,7 +77057,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -75555,6 +77079,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -76867,7 +78392,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -76889,6 +78414,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -76912,7 +78438,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -76934,6 +78460,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -78136,7 +79663,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -78158,6 +79685,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -78181,7 +79709,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -78203,6 +79731,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -78544,6 +80073,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 2rNNJQv8k5j97
+subjects:
+- kind: ServiceAccount
+  name: K
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    T5I7K: mjLC
+    pKSYI: IDK
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vYy9
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: 2rNNJQv8k5j97-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 2rNNJQv8k5j97-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: K
@@ -79371,7 +80924,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -79393,6 +80946,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -79416,7 +80970,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -79438,6 +80992,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -80262,7 +81817,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -80284,6 +81839,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -80307,7 +81863,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -80329,6 +81885,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -81538,7 +83095,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -81560,6 +83117,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -81583,7 +83141,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -81605,6 +83163,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -82864,7 +84423,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -82886,6 +84445,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -82909,7 +84469,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -82931,6 +84491,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -83522,7 +85083,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -83544,6 +85105,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -83567,7 +85129,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -83589,6 +85151,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -84782,7 +86345,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -84804,6 +86367,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -84827,7 +86391,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -84849,6 +86413,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -85187,6 +86752,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Sb2hWn
+subjects:
+- kind: ServiceAccount
+  name: g
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    Jacfyrff: CPx2
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: MOjCBp
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: Sb2hWn-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Sb2hWn-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: g
@@ -86057,7 +87645,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -86079,6 +87667,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -86102,7 +87691,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -86124,6 +87713,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -87283,7 +88873,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -87305,6 +88895,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -87328,7 +88919,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -87350,6 +88941,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -88041,7 +89633,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -88063,6 +89655,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -88086,7 +89679,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -88108,6 +89701,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -88434,6 +90028,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: nJ
+subjects:
+- kind: ServiceAccount
+  name: xOqjN
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    XFSHB: ot7Wo
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: o2
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    q93: ONPg3F
+    rZBEA7mOLYT: iFtHtFH
+  name: nJ-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nJ-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: xOqjN
@@ -89178,7 +90797,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -89200,6 +90819,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -89223,7 +90843,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -89245,6 +90865,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -90567,7 +92188,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -90589,6 +92210,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -90612,7 +92234,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -90634,6 +92256,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -91418,7 +93041,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -91440,6 +93063,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -91463,7 +93087,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -91485,6 +93109,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -91831,6 +93456,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Wo
+subjects:
+- kind: ServiceAccount
+  name: drBf
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    2Kv4rY7: ihBdOLL
+  creationTimestamp: null
+  labels:
+    DZeu: yUBayuz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: L07
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+    nI2ZSs: 4AI8h
+  name: Wo-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Wo-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: drBf
@@ -92661,7 +94311,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -92683,6 +94333,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -92706,7 +94357,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -92728,6 +94379,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -94053,7 +95705,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -94075,6 +95727,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -94098,7 +95751,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -94120,6 +95773,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -94958,7 +96612,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -94980,6 +96634,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -95003,7 +96658,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -95025,6 +96680,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -95359,6 +97015,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: KXsg6
+subjects:
+- kind: ServiceAccount
+  name: J2qRpt9
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    C1ah: ""
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Tlv
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: KXsg6-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: KXsg6-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: J2qRpt9
@@ -96176,7 +97855,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -96198,6 +97877,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -96221,7 +97901,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -96243,6 +97923,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -97365,7 +99046,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -97387,6 +99068,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -97410,7 +99092,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -97432,6 +99114,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -97770,6 +99453,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: "02"
+subjects:
+- kind: ServiceAccount
+  name: "02"
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    DQ: JM
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "Y"
+    app.kubernetes.io/version: v2.4.1
+    helm.sh/chart: operator-v2.4.1
+  name: 02-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 02-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: "02"
@@ -98634,7 +100340,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -98656,6 +100362,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -98679,7 +100386,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -98701,6 +100408,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -99442,7 +101150,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -99464,6 +101172,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -99487,7 +101196,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -99509,6 +101218,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -99843,6 +101553,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: KPhNK5uNi
+subjects:
+- kind: ServiceAccount
+  name: hOWRGjU5
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    GnXQ: mU
+    dEUN: 9jQ
+    eWh: j
+  creationTimestamp: null
+  labels:
+    1DVgfA62: TO
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: MkL0HtR
+    app.kubernetes.io/version: v2.4.1
+    dwmXsKZoxFp: TZf
+    helm.sh/chart: operator-v2.4.1
+  name: KPhNK5uNi-rpk-bundle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: KPhNK5uNi-rpk-bundle
 subjects:
 - kind: ServiceAccount
   name: hOWRGjU5
@@ -100684,7 +102421,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -100706,6 +102443,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -100729,7 +102467,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -100751,6 +102489,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -101597,7 +103336,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -101619,6 +103358,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -101642,7 +103382,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -101664,6 +103404,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -102950,7 +104691,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -102972,6 +104713,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -102995,7 +104737,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -103017,6 +104759,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -103573,6 +105316,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -103792,14 +105553,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -103887,14 +105646,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -104519,6 +106276,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -104755,14 +106530,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -104850,14 +106623,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -105482,6 +107253,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -105701,14 +107490,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -105796,14 +107583,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -106428,6 +108213,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -106647,14 +108450,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -106742,14 +108543,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -107581,7 +109380,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -107603,6 +109402,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
 
           # Wait for things to be ready
@@ -107626,7 +109426,7 @@ spec:
             name: cluster-tls
           spec:
             image: "docker.redpanda.com/redpandadata/redpanda"
-            version: "v24.2.1"
+            version: "v25.1.1"
             replicas: 3
             resources:
               requests:
@@ -107648,6 +109448,7 @@ spec:
               pandaproxyApi:
               - port: 8082
               developerMode: true
+          
           EOF
           $KUBECTL -n default delete pvc --all
       volumeMounts:
@@ -108204,6 +110005,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -108430,14 +110249,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
@@ -108525,14 +110342,12 @@ spec:
           metadata:
             name: cluster-tls
           spec:
-            chartRef:
-              chartVersion: ">4.0.0"
             clusterSpec:
               console:
                 enabled: false
               image:
                 repository: docker.redpanda.com/redpandadata/redpanda
-                tag: v24.2.1
+                tag: v25.1.1
               listeners:
                 admin:
                   external: {}
