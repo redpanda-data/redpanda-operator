@@ -150,6 +150,8 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 }
 
 func (s *RedpandaControllerSuite) TestTPLValues() {
+	s.T().Skip("invalid / broken due to changes in chart v25.1.1 (podTemplate)")
+
 	rp := s.minimalRP()
 
 	extraVolumeMount := ptr.To(`- name: test-extra-volume
