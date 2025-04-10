@@ -120,3 +120,19 @@ tasks:
     cmds:
     # Generate helm templates from Go definitions
     - gotohelm -write ./templates . {{ .DEPS }}
+
+  download-dependencies:
+    desc: "Build out the charts/ directory from the Chart.lock file"
+    vars:
+      CHART: '{{ .CHART }}'
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+    requires:
+      vars: [CHART]
+    dir: "{{ .DIR }}"
+    sources:
+    - ./charts/*
+    generates:
+    - ./charts/*
+    cmds:
+    - helm repo add redpanda https://charts.redpanda.com
+    - helm dep build .
