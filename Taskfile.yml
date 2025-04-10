@@ -56,7 +56,7 @@ tasks:
       - for:
           var: MOD
         cmd: cd {{.ITEM}} && golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
-      - ct lint --chart-dirs ./charts --check-version-increment=false --all
+      - helm lint --strict ./charts/* ./operator/chart/
       - actionlint
 
   lint-fix:
