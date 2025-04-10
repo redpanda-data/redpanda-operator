@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Removed
+body: Removed regex validation of all image tags.
+time: 2025-04-10T13:32:44.183762-04:00
