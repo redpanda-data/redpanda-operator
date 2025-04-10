@@ -49,7 +49,9 @@ tasks:
       PKG: '{{ .PKG | default ._PKG }}'
     cmds:
       - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
-      - ct lint --chart-dirs ./charts --check-version-increment=false --all
+      - task: charts:download-dependencies
+        vars: { CHART: redpanda }
+      - helm lint --strict ./charts/* ./operator/chart/
       - actionlint
 
   lint-fix:

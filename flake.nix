@@ -51,7 +51,6 @@
               pkgs.backport
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
-              pkgs.chart-testing
               pkgs.controller-gen
               pkgs.crd-ref-docs # Generates documentation from CRD definitions. Used by our docs but present here to let us control and test the config.yaml
               pkgs.diffutils # Provides `diff`, used by golangci-lint.

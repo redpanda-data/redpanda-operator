@@ -50,7 +50,6 @@ func TestToolVersions(t *testing.T) {
 		"task --version",
 		"yq --version",
 		"helm-docs -v",
-		"ct version",
 		"changie --version",
 		"aws --version | cut -d ' ' -f 1-2", // cut removes os/arch
 	} {
