@@ -58,9 +58,8 @@ type PartialValues struct {
 }
 
 type PartialImage struct {
-	Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda\""
-	Tag        *ImageTag          "json:\"tag,omitempty\" jsonschema:\"default=Chart.appVersion\""
-	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required\""
+	Repository *string "json:\"repository,omitempty\" jsonschema:\"required\""
+	Tag        *string "json:\"tag,omitempty\" jsonschema:\"required\""
 }
 
 type PartialAuditLogging struct {
@@ -280,10 +279,7 @@ type PartialTiered struct {
 type PartialTieredStorageConfig map[string]any
 
 type PartialSidecars struct {
-	Image *struct {
-		Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-		Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-	} "json:\"image,omitempty\""
+	Image       *PartialImage "json:\"image,omitempty\""
 	PVCUnbinder *struct {
 		Enabled     *bool   "json:\"enabled,omitempty\""
 		UnbindAfter *string "json:\"unbindAfter,omitempty\""
@@ -297,16 +293,13 @@ type PartialSidecars struct {
 		Enabled *bool "json:\"enabled,omitempty\""
 	} "json:\"configWatcher,omitempty\""
 	Controllers *struct {
-		Image *struct {
-			Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-			Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-		} "json:\"image,omitempty\""
-		Enabled            *bool    "json:\"enabled,omitempty\""
-		CreateRBAC         *bool    "json:\"createRBAC,omitempty\""
-		HealthProbeAddress *string  "json:\"healthProbeAddress,omitempty\""
-		MetricsAddress     *string  "json:\"metricsAddress,omitempty\""
-		PprofAddress       *string  "json:\"pprofAddress,omitempty\""
-		Run                []string "json:\"run,omitempty\""
+		Image              *PartialImage "json:\"image,omitempty\""
+		Enabled            *bool         "json:\"enabled,omitempty\""
+		CreateRBAC         *bool         "json:\"createRBAC,omitempty\""
+		HealthProbeAddress *string       "json:\"healthProbeAddress,omitempty\""
+		MetricsAddress     *string       "json:\"metricsAddress,omitempty\""
+		PprofAddress       *string       "json:\"pprofAddress,omitempty\""
+		Run                []string      "json:\"run,omitempty\""
 	} "json:\"controllers,omitempty\""
 }
 

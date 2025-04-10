@@ -215,6 +215,21 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 	return c.restConfig
 }
 
+func (c *Cluster) ImportImage(image string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if out, err := exec.Command(
+		"k3d",
+		"image",
+		"import",
+		fmt.Sprintf("--cluster=%s", c.Name),
+		image,
+	).CombinedOutput(); err != nil {
+		return fmt.Errorf("%w: %s", err, out)
+	}
+	return nil
+}
+
 func (c *Cluster) DeleteNode(name string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

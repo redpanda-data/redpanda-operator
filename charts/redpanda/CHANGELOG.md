@@ -96,6 +96,7 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
   - `statefulset.sidecars.extraVolumeMounts` -> `statefulset.podTemplate.spec.containers[*].volumeMounts`
   - `statefulset.sidecars.resources` -> `statefulset.podTemplate.spec.containers[*].resources`
   - `statefulset.sidecars.securityContext` -> `statefulset.podTemplate.spec.containers[*].securityContext`
+* Removed regex validation of all image tags.
 ### Fixed
 * Reverse order of applying resources to first create ClusterRole and then ClusterRoleBinding.
   When Redpanda custom resource has enabled RBAC the reconciliation was blocked due
