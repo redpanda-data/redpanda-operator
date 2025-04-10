@@ -127,9 +127,8 @@ type SecurityContext struct {
 }
 
 type Image struct {
-	Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda"`
-	Tag        ImageTag `json:"tag" jsonschema:"default=Chart.appVersion"`
-	PullPolicy string   `json:"pullPolicy" jsonschema:"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
+	Repository string `json:"repository" jsonschema:"required"`
+	Tag        string `json:"tag" jsonschema:"required"`
 }
 
 // +gotohelm:ignore=true
@@ -912,10 +911,7 @@ func (t *Tuning) Translate() map[string]any {
 }
 
 type Sidecars struct {
-	Image struct {
-		Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
-		Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
-	} `json:"image"`
+	Image             Image                   `json:"image"`
 	ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 	Resources         map[string]any          `json:"resources"`
 	SecurityContext   *corev1.SecurityContext `json:"securityContext"`
@@ -935,10 +931,7 @@ type Sidecars struct {
 		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		Image struct {
-			Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
-			Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
-		} `json:"image"`
+		Image              Image                   `json:"image"`
 		Enabled            bool                    `json:"enabled"`
 		CreateRBAC         bool                    `json:"createRBAC"`
 		Resources          any                     `json:"resources"`
