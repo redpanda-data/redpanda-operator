@@ -63,6 +63,11 @@ type gvkKey struct {
 	Key client.ObjectKey
 }
 
+type Image struct {
+	Repository string
+	Tag        string
+}
+
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	// KubeConfig is the [rest.Config] that provides the go helm chart
@@ -72,6 +77,7 @@ type RedpandaReconciler struct {
 	Scheme        *runtime.Scheme
 	EventRecorder kuberecorder.EventRecorder
 	ClientFactory internalclient.ClientFactory
+	OperatorImage *Image
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.

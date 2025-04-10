@@ -89,16 +89,13 @@ func TestOperatorRBACInSync(t *testing.T) {
 							Enabled: ptr.To(true),
 						},
 						Controllers: &struct {
-							Image *struct {
-								Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-								Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-							} "json:\"image,omitempty\""
-							Enabled            *bool    "json:\"enabled,omitempty\""
-							CreateRBAC         *bool    "json:\"createRBAC,omitempty\""
-							HealthProbeAddress *string  "json:\"healthProbeAddress,omitempty\""
-							MetricsAddress     *string  "json:\"metricsAddress,omitempty\""
-							PprofAddress       *string  "json:\"pprofAddress,omitempty\""
-							Run                []string "json:\"run,omitempty\""
+							Image              *redpanda.PartialImage "json:\"image,omitempty\""
+							Enabled            *bool                  "json:\"enabled,omitempty\""
+							CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
+							HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
+							MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
+							PprofAddress       *string                "json:\"pprofAddress,omitempty\""
+							Run                []string               "json:\"run,omitempty\""
 						}{
 							Enabled:    ptr.To(true),
 							CreateRBAC: ptr.To(true),

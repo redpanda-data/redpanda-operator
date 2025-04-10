@@ -246,6 +246,28 @@ func TestIntegrationChart(t *testing.T) {
 					}},
 				},
 			},
+			Statefulset: &redpanda.PartialStatefulset{
+				SideCars: &redpanda.PartialSidecars{
+					Image: &redpanda.PartialImage{
+						Repository: ptr.To("localhost/redpanda-operator"),
+						Tag:        ptr.To("dev"),
+					},
+					Controllers: &struct {
+						Image              *redpanda.PartialImage "json:\"image,omitempty\""
+						Enabled            *bool                  "json:\"enabled,omitempty\""
+						CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
+						HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
+						MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
+						PprofAddress       *string                "json:\"pprofAddress,omitempty\""
+						Run                []string               "json:\"run,omitempty\""
+					}{
+						Image: &redpanda.PartialImage{
+							Repository: ptr.To("localhost/redpanda-operator"),
+							Tag:        ptr.To("dev"),
+						},
+					},
+				},
+			},
 		}
 
 		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
@@ -307,6 +329,28 @@ func TestIntegrationChart(t *testing.T) {
 				SASL: &redpanda.PartialSASLAuth{
 					Enabled:   ptr.To(true),
 					SecretRef: ptr.To("my-secret"),
+				},
+			},
+			Statefulset: &redpanda.PartialStatefulset{
+				SideCars: &redpanda.PartialSidecars{
+					Image: &redpanda.PartialImage{
+						Repository: ptr.To("localhost/redpanda-operator"),
+						Tag:        ptr.To("dev"),
+					},
+					Controllers: &struct {
+						Image              *redpanda.PartialImage "json:\"image,omitempty\""
+						Enabled            *bool                  "json:\"enabled,omitempty\""
+						CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
+						HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
+						MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
+						PprofAddress       *string                "json:\"pprofAddress,omitempty\""
+						Run                []string               "json:\"run,omitempty\""
+					}{
+						Image: &redpanda.PartialImage{
+							Repository: ptr.To("localhost/redpanda-operator"),
+							Tag:        ptr.To("dev"),
+						},
+					},
 				},
 			},
 		}
@@ -747,6 +791,28 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 				},
 			},
 		},
+		Statefulset: &redpanda.PartialStatefulset{
+			SideCars: &redpanda.PartialSidecars{
+				Image: &redpanda.PartialImage{
+					Repository: ptr.To("localhost/redpanda-operator"),
+					Tag:        ptr.To("dev"),
+				},
+				Controllers: &struct {
+					Image              *redpanda.PartialImage "json:\"image,omitempty\""
+					Enabled            *bool                  "json:\"enabled,omitempty\""
+					CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
+					HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
+					MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
+					PprofAddress       *string                "json:\"pprofAddress,omitempty\""
+					Run                []string               "json:\"run,omitempty\""
+				}{
+					Image: &redpanda.PartialImage{
+						Repository: ptr.To("localhost/redpanda-operator"),
+						Tag:        ptr.To("dev"),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -810,6 +876,28 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
 					Cert:              ptr.To("provided"),
+				},
+			},
+		},
+		Statefulset: &redpanda.PartialStatefulset{
+			SideCars: &redpanda.PartialSidecars{
+				Image: &redpanda.PartialImage{
+					Repository: ptr.To("localhost/redpanda-operator"),
+					Tag:        ptr.To("dev"),
+				},
+				Controllers: &struct {
+					Image              *redpanda.PartialImage "json:\"image,omitempty\""
+					Enabled            *bool                  "json:\"enabled,omitempty\""
+					CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
+					HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
+					MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
+					PprofAddress       *string                "json:\"pprofAddress,omitempty\""
+					Run                []string               "json:\"run,omitempty\""
+				}{
+					Image: &redpanda.PartialImage{
+						Repository: ptr.To("localhost/redpanda-operator"),
+						Tag:        ptr.To("dev"),
+					},
 				},
 			},
 		},

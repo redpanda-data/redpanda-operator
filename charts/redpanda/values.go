@@ -102,9 +102,8 @@ type Values struct {
 }
 
 type Image struct {
-	Repository string            `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda"`
-	Tag        ImageTag          `json:"tag" jsonschema:"default=Chart.appVersion"`
-	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"required"`
+	Repository string `json:"repository" jsonschema:"required"`
+	Tag        string `json:"tag" jsonschema:"required"`
 }
 
 // +gotohelm:ignore=true
@@ -812,10 +811,7 @@ func (t *Tuning) Translate() map[string]any {
 }
 
 type Sidecars struct {
-	Image struct {
-		Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
-		Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
-	} `json:"image"`
+	Image       Image `json:"image"`
 	PVCUnbinder struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
@@ -829,10 +825,7 @@ type Sidecars struct {
 		Enabled bool `json:"enabled"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		Image struct {
-			Tag        ImageTag `json:"tag" jsonschema:"required,default=Chart.appVersion"`
-			Repository string   `json:"repository" jsonschema:"required,default=docker.redpanda.com/redpandadata/redpanda-operator"`
-		} `json:"image"`
+		Image              Image    `json:"image"`
 		Enabled            bool     `json:"enabled"`
 		CreateRBAC         bool     `json:"createRBAC"`
 		HealthProbeAddress string   `json:"healthProbeAddress"`

@@ -1012,6 +1012,7 @@ type Config struct {
 
 // SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
 type SideCars struct {
+	Image *RedpandaImage `json:"image,omitempty"`
 	// Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster.
 	ConfigWatcher *ConfigWatcher `json:"configWatcher,omitempty"`
 	RpkStatus     *SideCarObj    `json:"rpkStatus,omitempty"`
