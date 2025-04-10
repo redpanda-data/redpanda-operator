@@ -62,9 +62,8 @@ type PartialValues struct {
 }
 
 type PartialImage struct {
-	Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda\""
-	Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"default=Chart.appVersion\""
-	PullPolicy *string   "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
+	Repository *string "json:\"repository,omitempty\" jsonschema:\"required\""
+	Tag        *string "json:\"tag,omitempty\" jsonschema:\"required\""
 }
 
 type PartialAuditLogging struct {
@@ -360,10 +359,7 @@ type PartialSecurityContext struct {
 }
 
 type PartialSidecars struct {
-	Image *struct {
-		Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-		Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-	} "json:\"image,omitempty\""
+	Image             *PartialImage           "json:\"image,omitempty\""
 	ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
 	Resources         map[string]any          "json:\"resources,omitempty\""
 	SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
@@ -383,10 +379,7 @@ type PartialSidecars struct {
 		SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
 	} "json:\"configWatcher,omitempty\""
 	Controllers *struct {
-		Image *struct {
-			Tag        *ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-			Repository *string   "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-		} "json:\"image,omitempty\""
+		Image              *PartialImage           "json:\"image,omitempty\""
 		Enabled            *bool                   "json:\"enabled,omitempty\""
 		CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
 		Resources          any                     "json:\"resources,omitempty\""

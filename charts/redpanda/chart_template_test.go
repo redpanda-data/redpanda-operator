@@ -319,48 +319,48 @@ func VersionGoldenTestsCases(t *testing.T) []txtar.File {
 		ErrMsg *string
 	}{
 		{
-			Image:  redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v22.1.0"))},
+			Image:  redpanda.PartialImage{Tag: ptr.To("v22.1.0")},
 			ErrMsg: ptr.To("no longer supported"),
 		},
 		{
-			Image:  redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v22.2.0"))},
+			Image:  redpanda.PartialImage{Tag: ptr.To("v22.2.0")},
 			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
 		},
 		{
-			Image:  redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v22.3.0"))},
+			Image:  redpanda.PartialImage{Tag: ptr.To("v22.3.0")},
 			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v22.3.14"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v22.3.14")},
 		},
 		{
-			Image:  redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v22.4.0"))},
+			Image:  redpanda.PartialImage{Tag: ptr.To("v22.4.0")},
 			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
 		},
 		{
-			Image:  redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v23.1.1"))},
+			Image:  redpanda.PartialImage{Tag: ptr.To("v23.1.1")},
 			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v23.1.2"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v23.1.2")},
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v23.1.3"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v23.1.3")},
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v23.2.1"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v23.2.1")},
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v23.3.0"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v23.3.0")},
 		},
 		{
-			Image: redpanda.PartialImage{Tag: ptr.To(redpanda.ImageTag("v24.1.0"))},
+			Image: redpanda.PartialImage{Tag: ptr.To("v24.1.0")},
 		},
 		{
-			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To(redpanda.ImageTag("v24.1.0"))},
+			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To("v24.1.0")},
 		},
 		{
-			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To(redpanda.ImageTag("v23.2.8"))},
+			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To("v23.2.8")},
 		},
 	}
 
