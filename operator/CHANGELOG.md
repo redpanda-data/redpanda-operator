@@ -58,6 +58,59 @@ For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions
 * Certificate reloading for webhook and metrics endpoints should now behave correctly.
 * Expanded the set of rules in both Roles and ClusterRoles to be appropriately in sync with the redpanda helm chart.
 
+## v25.1.1-beta1 - 2025-04-10
+### Added
+* Added scheduled sync of ghost broker decommissioner to ensure it's running, even if no watches trigger the reconciler.
+### Changed
+* Bumped internal redpanda chart to  v5.9.19.
+  `chartRef` now defaults to v5.9.19.
+  When `useFlux` is `false`, the equivalent of chart v5.9.19 will be deployed.
+
+* Bumped the internal chart version to v5.9.20.
+* [Chart] Moved all template rendering into `entry-point.yaml` to match the redpanda and console charts.
+* The redpanda operator's helm chart has been merged into the operator itself.
+
+  Going forward the chart's `version` and `appVersion` will always be equal.
+### Removed
+* Removed bundled FluxCD controllers, bundled FluxCD CRDs, and support for delegating control to FluxCD.
+
+  Previously reconciled FluxCD resources (`HelmRepository`, `HelmRelease`)
+  will **NOT** be garbage collected upon upgrading. If the operator is
+  coexisting with a FluxCD installation, please take care to manually remove
+  the left over resources.
+
+  `chartRef.useFlux: true` and `chartRef.chartVersion` are no longer
+  supported. The controller will log errors and abort reconcilation until the
+  fields are unset. Ensure that both have been removed from all `Redpanda`
+  resources before upgrading.
+
+  All other `chartRef` fields are deprecated and are no longer referenced.
+
+  `helmRelease`, `helmReleaseReady`, `helmRepository`, `helmRepositoryReady`,
+  and `upgradeFailures` are no longer set on `RedpandaStatus`, similar to their
+  behavior when `useFlux: false` was set.
+* `gcr.io/kubebuilder/kube-rbac-proxy` container is deprecated and has been removed from the Redpanda
+operator helm chart. The same ports will continue to serve metrics using kubebuilder's built in RBAC.
+
+Any existing prometheus rules don't need to be adjusted.
+
+For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
+
+* The V1 operator now requires a minimum Redpanda version of 23.2; all feature-gated behaviour that supported older versions is now enabled unconditionally.
+### Fixed
+* Usage of `tpl` and `include` now function as expected when `useFlux: false` is set.
+
+  `{{ (get (fromJson (include "redpanda.Fullname" (dict "a" (list .)))) "r") }}` would previously failure with fairly arcane errors.
+
+  Now, the above example will correctly render to a string value. However,
+  syntax errors and the like are still reported in an arcane fashion.
+
+* Toggling `useFlux`, in either direction, no longer causes the bootstrap user's password to be regenerated.
+
+  Manual mitigation steps are available [here](https://github.com/redpanda-data/helm-charts/issues/1596#issuecomment-2628356953).
+* Certificate reloading for webhook and metrics endpoints should now behave correctly.
+* Expanded the set of rules in both Roles and ClusterRoles to be appropriately in sync with the redpanda helm chart.
+
 ## v2.3.8-24.3.6 - 2025-03-05
 ### Fixed
 * Fixed the way that paths are handled for the config watcher routine in the sidecar process.

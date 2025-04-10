@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"slices"
 	"strconv"
@@ -44,24 +45,24 @@ type ChartYAML struct {
 	Annotations map[string]string `json:"annotations"`
 }
 
-func TestVersionIsAppVersion(t *testing.T) {
-	require.Equal(t, Chart.Metadata().AppVersion, Chart.Metadata().Version, "The Operator and its chart are distributed as the same package. Any changes to appVersion should be made to version and visa vera.")
-}
-
-func TestArtifactHubImages(t *testing.T) {
+func TestChartYaml(t *testing.T) {
+	const changieCmd = "changie latest -j operator"
 	const operatorRepo = "docker.redpanda.com/redpandadata/redpanda-operator"
 
-	chartBytes, err := os.ReadFile("Chart.yaml")
+	out, err := exec.Command("sh", "-c", changieCmd).CombinedOutput()
 	require.NoError(t, err)
 
-	var chart ChartYAML
-	require.NoError(t, yaml.Unmarshal(chartBytes, &chart))
+	expectedVersion := string(out[len("operator/"):])
+
+	assert.Equal(t, expectedVersion, Chart.Metadata().Version, "Chart.yaml's version should match `%s: %s", changieCmd, expectedVersion)
+
+	assert.Equal(t, Chart.Metadata().AppVersion, Chart.Metadata().Version, "The Operator and its chart are distributed as the same package. Any changes to appVersion should be made to version and visa vera.")
 
 	assert.Contains(
 		t,
-		chart.Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", operatorRepo, chart.AppVersion),
-		"artifacthub.io/images should be in sync with .appVersion",
+		Chart.Metadata().Annotations["artifacthub.io/images"],
+		fmt.Sprintf("%s:%s", operatorRepo, expectedVersion),
+		"artifacthub.io/images should be in sync with .version",
 	)
 }
 

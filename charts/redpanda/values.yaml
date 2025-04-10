@@ -667,7 +667,7 @@ statefulset:
     custom: {}
   sideCars:
     image:
-      tag: v2.3.8-24.3.6
+      tag: v25.1.1-beta1
       repository: docker.redpanda.com/redpandadata/redpanda-operator
     # The PVCUnbinder helps keep redpanda operational in the event of a tolerable Node or Disk loss event when non-remountable storage,
     # such as `local` or `hostPath`, are used. It does so by monitoring redpanda Pods that are in a "Pending" state for at least the period
@@ -688,7 +688,7 @@ statefulset:
       enabled: true
     controllers:
       image:
-        tag: v2.3.8-24.3.6
+        tag: v25.1.1-beta1
         repository: docker.redpanda.com/redpandadata/redpanda-operator
       # You must also enable RBAC, `rbac.enabled=true`, to deploy this sidecar
       enabled: false
