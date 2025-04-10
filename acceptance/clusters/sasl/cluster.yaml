@@ -14,3 +14,11 @@ spec:
             mechanism: SCRAM-SHA-512
     statefulset:
       replicas: 1
+      sideCars:
+        image:
+          tag: dev
+          repository: localhost/redpanda-operator
+        controllers:
+          image:
+            tag: dev
+            repository: localhost/redpanda-operator
