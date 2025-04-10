@@ -165,7 +165,7 @@ type EnterpriseSecretStore struct {
 	GCPSecretManager EnterpriseSecretManagerGCP        `json:"gcpSecretManager" yaml:"gcpSecretManager"`
 	AWSSecretManager EnterpriseSecretManagerAWS        `json:"awsSecretManager" yaml:"awsSecretManager"`
 	KafkaConnect     EnterpriseSecretStoreKafkaConnect `json:"kafkaConnect" yaml:"kafkaConnect"`
-	Scopes           []string                          `json:"scopes" yaml:"scopes"`
+	Scopes           []string                          `json:"scopes,omitempty" yaml:"scopes,omitempty"`
 }
 
 type EnterpriseSecretManagerGCP struct {
