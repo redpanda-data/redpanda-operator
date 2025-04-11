@@ -24,7 +24,6 @@ type PartialValues struct {
 	ReplicaCount       *int32                        "json:\"replicaCount,omitempty\""
 	ClusterDomain      *string                       "json:\"clusterDomain,omitempty\""
 	Image              *PartialImage                 "json:\"image,omitempty\""
-	KubeRBACProxy      *PartialKubeRBACProxyConfig   "json:\"kubeRbacProxy,omitempty\""
 	Config             *PartialConfig                "json:\"config,omitempty\""
 	ImagePullSecrets   []corev1.LocalObjectReference "json:\"imagePullSecrets,omitempty\""
 	LogLevel           *string                       "json:\"logLevel,omitempty\""
@@ -53,11 +52,6 @@ type PartialImage struct {
 	Repository *string            "json:\"repository,omitempty\""
 	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
 	Tag        *string            "json:\"tag,omitempty\""
-}
-
-type PartialKubeRBACProxyConfig struct {
-	LogLevel *int          "json:\"logLevel,omitempty\""
-	Image    *PartialImage "json:\"image,omitempty\""
 }
 
 type PartialConfig struct {
