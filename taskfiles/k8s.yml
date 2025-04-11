@@ -149,7 +149,7 @@ tasks:
       # NB: cp -r/-R is dependent on the implementation (macOS vs Linux).
       # cp -R src/. dest/ <- Same behavior, copy contents of src to dest.
       # cp -r src/ dest <- Different. macOS == copy contents, linux == copy src folder into dest.
-      - cp -R charts/operator/. {{.TMP_PATH}}
+      - cp -R operator/chart/. {{.TMP_PATH}}
       # The Chart.yaml name needs to match with docker hub OCI registry, so that helm push correctly
       # finds OCI registry.
       # Reference
