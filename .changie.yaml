@@ -31,6 +31,9 @@ envPrefix: CHANGIE_
 # https://go.dev/wiki/Modules#what-are-multi-module-repositories
 projectsVersionSeparator: "/"
 projects:
+- label: GoToHelm
+  key: gotohelm
+  changelog: gotohelm/CHANGELOG.md
 - label: Redpanda Operator
   key: operator
   changelog: operator/CHANGELOG.md
