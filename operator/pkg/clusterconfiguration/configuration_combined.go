@@ -141,6 +141,15 @@ func (c *CombinedCfg) Templates() (map[string]string, error) {
 	return c.templates, c.Error()
 }
 
+// AdditionalInitEnvVars will finalise the set of any remaining env variables to add,
+// then return that final list.
+func (c *CombinedCfg) AdditionalInitEnvVars() ([]corev1.EnvVar, error) {
+	if _, err := c.Templates(); err != nil {
+		return nil, err
+	}
+	return c.initEnvVars, nil
+}
+
 // Reification (that is, the concretising of all values). Since fixups may require environment variable
 // settings - which come from k8s sources - and access to the cloud expander, and may rely upon secrets
 // and other k8s resources being created - then this should be called as late as possible.

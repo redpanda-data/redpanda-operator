@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
@@ -41,7 +43,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
@@ -147,6 +148,16 @@ func TestEnsure(t *testing.T) {
 				return np.Name == tt.nodePoolName
 			})
 			assert.NotEqual(t, -1, npIndex, "could not find nodePool")
+			cfg, err := resources.CreateConfiguration(t.Context(),
+				c,
+				nil,
+				tt.pandaCluster,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			sts := resources.NewStatefulSet(
 				c,
 				tt.pandaCluster,
@@ -162,10 +173,7 @@ func TestEnsure(t *testing.T) {
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
-				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-					return &configuration.GlobalConfiguration{}, nil
-				},
+				cfg,
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
@@ -632,6 +640,16 @@ func TestCurrentVersion(t *testing.T) {
 				pod.Labels = labels.ForCluster(cluster).WithNodePool(cluster.Spec.NodePools[0].Name)
 				assert.NoError(t, c.Create(context.TODO(), &pod))
 			}
+			cfg, err := resources.CreateConfiguration(t.Context(),
+				c,
+				nil,
+				cluster,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			sts := resources.NewStatefulSet(c, cluster, scheme.Scheme,
 				"cluster.local",
 				"servicename",
@@ -644,10 +662,7 @@ func TestCurrentVersion(t *testing.T) {
 					ConfiguratorTag:       "latest",
 					ImagePullPolicy:       "Always",
 				},
-				func(ctx context.Context) (string, error) { return hash, nil },
-				func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-					return &configuration.GlobalConfiguration{}, nil
-				},
+				cfg,
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
@@ -905,9 +920,30 @@ func TestStatefulSetResource_IsManagedDecommission(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := resources.CreateConfiguration(t.Context(),
+				c,
+				nil,
+				tt.fields.pandaCluster,
+				"",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			r := resources.NewStatefulSet(nil,
 				tt.fields.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				cfg,
+				nil,
+				nil,
+				time.Hour,
 				tt.fields.logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Replicas: ptr.To(int32(0))}},
@@ -1030,9 +1066,30 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := resources.CreateConfiguration(t.Context(),
+				c,
+				nil,
+				tt.pandaCluster,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				cfg,
+				nil,
+				nil,
+				time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
@@ -1407,9 +1464,30 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := resources.CreateConfiguration(t.Context(),
+				c,
+				nil,
+				tt.pandaCluster,
+				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				types.NamespacedName{Name: "test", Namespace: "test"},
+				TestBrokerTLSConfigProvider{},
+			)
+			require.NoError(t, err)
 			r := resources.NewStatefulSet(nil,
 				tt.pandaCluster,
-				nil, "", "", types.NamespacedName{}, nil, nil, "", resources.ConfiguratorSettings{}, nil, nil, nil, nil, time.Hour,
+				nil,
+				"",
+				"",
+				types.NamespacedName{},
+				nil,
+				nil,
+				"",
+				resources.ConfiguratorSettings{},
+				cfg,
+				nil,
+				nil,
+				time.Hour,
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},

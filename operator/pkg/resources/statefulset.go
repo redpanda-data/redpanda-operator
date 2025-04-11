@@ -324,7 +324,7 @@ func (r *StatefulSetResource) obj(
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	configMapHash, err := r.cfg.GetNodeConfigHash(ctx, r)
+	configMapHash, err := r.cfg.GetNodeConfigHash(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -733,16 +733,13 @@ func (r *StatefulSetResource) obj(
 			},
 		)
 		// If the bootstrap template needs additional env vars, inject them here
-		conf, err := r.configurationGetter(ctx)
+		additionalEnv, err := r.cfg.AdditionalInitEnvVars()
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
 		}
-		_, templateEnv, err := clusterconfiguration.ExpandForBootstrap(conf.BootstrapConfiguration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot extract environment variables from bootstrap template: %w", err)
-		}
-		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, templateEnv...)
+		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, additionalEnv...)
 	} else {
+		// TODO: drop this. It'll trigger a restart when the operator moves, but as per discussions that's considered acceptable.
 		// Keep the old .bootstrap.yaml in place.
 		ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      "configmap-dir",
@@ -964,6 +961,7 @@ func prepareAdditionalArguments(
 	return out
 }
 
+// TODO: lift this into configuration construction
 func (r *StatefulSetResource) pandaproxyEnvVars() []corev1.EnvVar {
 	var envs []corev1.EnvVar
 	listener := r.pandaCluster.PandaproxyAPIExternal()

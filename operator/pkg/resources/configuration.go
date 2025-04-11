@@ -51,7 +51,7 @@ func CreateConfiguration(
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
 	c := pandaCluster.Spec.Configuration
-	cr := cfg.Node.Redpanda
+	cr := &cfg.Node.Redpanda
 
 	internalListener := pandaCluster.InternalListener()
 	internalAuthN := &internalListener.AuthenticationMethod

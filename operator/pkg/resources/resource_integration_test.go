@@ -34,7 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
 var c client.Client
@@ -83,6 +82,16 @@ func TestEnsure_StatefulSet(t *testing.T) {
 	err := c.Create(context.Background(), cluster)
 	require.NoError(t, err)
 
+	cfg, err := res.CreateConfiguration(t.Context(),
+		c,
+		nil,
+		cluster,
+		"cluster.local",
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		TestBrokerTLSConfigProvider{},
+	)
+	require.NoError(t, err)
 	sts := res.NewStatefulSet(
 		c,
 		cluster,
@@ -98,10 +107,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 			ConfiguratorTag:       "latest",
 			ImagePullPolicy:       "Always",
 		},
-		func(ctx context.Context) (string, error) { return hash, nil },
-		func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
-			return &configuration.GlobalConfiguration{}, nil
-		},
+		cfg,
 		adminutils.NewNodePoolInternalAdminAPI,
 		nil,
 		time.Second,
@@ -147,17 +153,24 @@ func TestEnsure_ConfigMap(t *testing.T) {
 	}
 	assert.NoError(t, c.Create(context.Background(), &secret))
 
+	cfg, err := res.CreateConfiguration(t.Context(),
+		c,
+		nil,
+		cluster,
+		"cluster.local",
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		types.NamespacedName{Name: "test", Namespace: "test"},
+		TestBrokerTLSConfigProvider{},
+	)
+	require.NoError(t, err)
 	cm := res.NewConfigMap(
 		c,
 		cluster,
 		scheme.Scheme,
-		"cluster.local",
-		types.NamespacedName{},
-		types.NamespacedName{},
-		TestBrokerTLSConfigProvider{},
+		cfg,
 		ctrl.Log.WithName("test"))
 
-	err := cm.Ensure(context.Background())
+	err = cm.Ensure(context.Background())
 	assert.NoError(t, err)
 
 	actual := &corev1.ConfigMap{}
