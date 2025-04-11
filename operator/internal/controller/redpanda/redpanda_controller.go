@@ -366,7 +366,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 	values := rp.Spec.ClusterSpec.DeepCopy()
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
-	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil && c.Status == metav1.ConditionTrue {
+	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
 		if values.Statefulset == nil {
 			values.Statefulset = &redpandav1alpha2.Statefulset{}
 		}
@@ -639,17 +639,27 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 	}
 
 	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
-	configVersion, err := syncer.Sync(ctx, config, usersTXT)
+	configStatus, err := syncer.Sync(ctx, config, usersTXT)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
+	// As some configs won't be respected until all brokers have been restarted,
+	// ClusterConfigSynced won't be reported as true until the config has been
+	// synchronized AND no broker restarts are required.
+	// `Reason` will indicate the difference between needing to sync a condition
+	// and waiting for a Broker restarts.
+	condition := metav1.ConditionTrue
+	reason := "ConfigSynced"
+	if configStatus.NeedsRestart {
+		condition = metav1.ConditionFalse
+		reason = "RestartRequired"
+	}
 	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
 		Type:               redpandav1alpha2.ClusterConfigSynced,
-		Status:             metav1.ConditionTrue,
+		Status:             condition,
 		ObservedGeneration: rp.Generation,
-		Reason:             "ConfigSynced",
-		Message:            fmt.Sprintf("ClusterConfig at Version %d", configVersion),
+		Reason:             reason,
+		Message:            fmt.Sprintf("ClusterConfig at Version %d", configStatus.Version),
 	})
 
 	return nil
