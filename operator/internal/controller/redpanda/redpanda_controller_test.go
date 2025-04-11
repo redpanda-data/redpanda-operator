@@ -28,6 +28,7 @@ import (
 	fluxclient "github.com/fluxcd/pkg/runtime/client"
 	sourcecontrollerv1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -295,33 +296,6 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP(false)
-	s.applyAndWait(rp)
-
-	setConfig := func(cfg map[string]any) {
-		asJSON, err := json.Marshal(cfg)
-		s.Require().NoError(err)
-
-		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJSON}
-		s.applyAndWait(rp)
-		s.applyAndWaitFor(func(o client.Object) bool {
-			rp := o.(*redpandav1alpha2.Redpanda)
-			for _, cond := range rp.Status.Conditions {
-				if cond.Type == redpandav1alpha2.ClusterConfigSynced {
-					return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue
-				}
-			}
-			return false
-		}, rp)
-	}
-	s.applyAndWait(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "creds",
-		},
-		Data: map[string][]byte{
-			"access_key": []byte("VURYSECRET"),
-		},
-	})
-
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
 		SASL: &redpandav1alpha2.SASL{
@@ -346,10 +320,40 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			},
 		},
 	}
+	s.applyAndWait(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "creds",
+		},
+		Data: map[string][]byte{
+			"access_key": []byte("VURYSECRET"),
+		},
+	})
+	s.applyAndWait(rp)
+
+	setConfig := func(cfg map[string]any) func() {
+		asJSON, err := json.Marshal(cfg)
+		s.Require().NoError(err)
+
+		rp.Spec.ClusterSpec.Config.Cluster = &runtime.RawExtension{Raw: asJSON}
+		s.apply(rp)
+		return func() {
+			s.waitUntilReady(rp)
+			s.waitFor(rp, func(o client.Object) bool {
+				rp := o.(*redpandav1alpha2.Redpanda)
+				for _, cond := range rp.Status.Conditions {
+					if cond.Type == redpandav1alpha2.ClusterConfigSynced {
+						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue
+					}
+				}
+				return false
+			})
+		}
+	}
 
 	cases := []struct {
-		In       map[string]any
-		Expected map[string]any
+		In              map[string]any
+		Expected        map[string]any
+		ExpectedRestart bool
 	}{
 		{
 			In: map[string]any{
@@ -383,39 +387,51 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				// "superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
+		{
+			In: map[string]any{
+				"data_transforms_enabled": true, // needs restart
+			},
+			Expected: map[string]any{
+				"data_transforms_enabled": true,
+			},
+			ExpectedRestart: true,
+		},
 	}
 
 	for _, c := range cases {
-		setConfig(c.In)
-
 		adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 		s.Require().NoError(err)
 		defer adminClient.Close()
+		st, err := adminClient.ClusterConfigStatus(s.ctx, false)
+		assert.NoError(s.T(), err)
+		initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
+			return int(a.ConfigVersion - b.ConfigVersion)
+		}).ConfigVersion
+
+		waitFn := setConfig(c.In)
+		s.EventuallyWithT(func(t *assert.CollectT) {
+			st, err := adminClient.ClusterConfigStatus(s.ctx, false)
+			if !assert.NoError(t, err) {
+				return
+			}
+			currVersion := slices.MinFunc(st, func(a, b rpadmin.ConfigStatus) int {
+				return int(a.ConfigVersion - b.ConfigVersion)
+			}).ConfigVersion
+
+			assert.Greater(t, currVersion, initialVersion, "expected config version to increase")
+
+			assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
+				return cs.Restart
+			}), "expected no brokers to need restart")
+		}, time.Minute, time.Second)
+		// wait for the cluster to be ready and the configuration synced
+		waitFn()
 
 		config, err := adminClient.Config(s.ctx, false)
 		s.Require().NoError(err)
-
 		// Only assert that c.Expected is a subset of the set config.
 		// The chart/operator injects a bunch of "useful" values by default.
 		s.Subset(config, c.Expected)
-
-		// check that the pods are annotated with the config version
-		s.applyAndWaitFor(func(o client.Object) bool {
-			rp := o.(*redpandav1alpha2.Redpanda)
-			cond := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced)
-			if cond != nil {
-				conditionIsSet := (cond.Status == metav1.ConditionTrue &&
-					strings.HasPrefix(cond.Message, "ClusterConfig at Version "))
-
-				annotationIsSet := (rp.Spec.ClusterSpec != nil &&
-					rp.Spec.ClusterSpec.Statefulset != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate.Annotations != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate.Annotations[redpanda.ClusterConfigVersionKey] == cond.Message)
-				return conditionIsSet && annotationIsSet
-			}
-			return false
-		}, rp)
 	}
 
 	s.deleteAndWait(rp)
@@ -1011,25 +1027,32 @@ func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
 }
 
 func (s *RedpandaControllerSuite) applyAndWait(objs ...client.Object) {
-	s.applyAndWaitFor(func(obj client.Object) bool {
-		switch obj := obj.(type) {
-		case *redpandav1alpha2.Redpanda:
-			ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-			upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
-			return upToDate && ready
-
-		case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
-			*rbacv1.ClusterRole, *rbacv1.Role, *rbacv1.RoleBinding, *rbacv1.ClusterRoleBinding:
-			return true
-
-		default:
-			s.T().Fatalf("unhandled object %T in applyAndWait", obj)
-			panic("unreachable")
-		}
-	}, objs...)
+	s.apply(objs...)
+	s.waitUntilReady(objs...)
 }
 
-func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
+func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
+	for _, obj := range objs {
+		s.waitFor(obj, func(obj client.Object) bool {
+			switch obj := obj.(type) {
+			case *redpandav1alpha2.Redpanda:
+				ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
+				upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+				return upToDate && ready
+
+			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
+				*rbacv1.ClusterRole, *rbacv1.Role, *rbacv1.RoleBinding, *rbacv1.ClusterRoleBinding:
+				return true
+
+			default:
+				s.T().Fatalf("unhandled object %T in applyAndWait", obj)
+				panic("unreachable")
+			}
+		})
+	}
+}
+
+func (s *RedpandaControllerSuite) apply(objs ...client.Object) {
 	for _, obj := range objs {
 		gvk, err := s.client.GroupVersionKindFor(obj)
 		s.NoError(err)
@@ -1040,20 +1063,12 @@ func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool,
 
 		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
 	}
+}
 
+func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
+	s.apply(objs...)
 	for _, obj := range objs {
-		s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
-			if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
-				return false, err
-			}
-
-			if cond(obj) {
-				return true, nil
-			}
-
-			s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
-			return false, nil
-		}))
+		s.waitFor(obj, cond)
 	}
 }
 
