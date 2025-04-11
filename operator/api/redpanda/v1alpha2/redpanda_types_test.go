@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,10 +31,12 @@ import (
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -76,6 +79,58 @@ var (
 		return metav1.Time{Time: time.Unix(0, nsec)}
 	})
 )
+
+// TestEmbededStructsTranslate is a regression test for a very subtle bug in gotohelm which caused fields of embedded structs to get dropped due to using an old version of mapstructure.
+// See https://github.com/redpanda-data/redpanda-operator/issues/649 and https://redpandadata.slack.com/archives/C06KND42UFK/p1744315909937719
+func TestEmbededStructsTranslate(t *testing.T) {
+	var spec redpandav1alpha2.RedpandaClusterSpec
+
+	require.NoError(t, yaml.Unmarshal([]byte(`
+listeners:
+  admin:
+    external:
+      my-admin:
+        port: 1234
+        tls:
+          cert: default
+          trustStore:
+            configMapKeyRef:
+              key: my-admin.crt
+              name: admin-cm
+    tls:
+      trustStore:
+        configMapKeyRef:
+          key: other.crt
+          name: admin-cm
+`), &spec))
+
+	objs, err := redpanda.Chart.Render(nil, helmette.Release{}, spec)
+	require.NoError(t, err)
+
+	for _, obj := range objs {
+		sts, ok := obj.(*appsv1.StatefulSet)
+		if !ok {
+			continue
+		}
+
+		for _, vol := range sts.Spec.Template.Spec.Volumes {
+			if vol.Name != "truststores" {
+				continue
+			}
+
+			// LocalObjectReference is embedded, if the bug is fixed, we'll see that Name is set successfully.
+			for _, source := range vol.Projected.Sources {
+				if source.ConfigMap != nil {
+					require.NotZero(t, source.ConfigMap.LocalObjectReference.Name)
+				} else if source.Secret != nil {
+					require.NotZero(t, source.Secret.LocalObjectReference.Name)
+				}
+			}
+		}
+
+		break
+	}
+}
 
 func TestDefluxedMinimumVersion(t *testing.T) {
 	crd := crds.Redpanda()

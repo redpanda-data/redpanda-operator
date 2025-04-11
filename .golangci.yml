@@ -22,6 +22,7 @@ linters:
   - depguard
 #  - errcheck
   - gocritic
+  - gomodguard
   - gosec
   - govet
   - importas
@@ -56,6 +57,12 @@ linters:
 
       config:
         G306: "0644" # Maximum allowed os.WriteFile Permissions
+
+    gomodguard:
+      versions:
+        - github.com/redpanda-data/redpanda-operator/gotohelm/cmd/gotohelm:
+            version: '< 1.0.0'
+            reason: 'v0.0.0 has too many instances floating around and may cause regressions'
 
     importas:
       # Disallow not using aliases for all matches of the below alias list.
