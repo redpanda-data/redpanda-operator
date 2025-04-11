@@ -30,7 +30,12 @@ import (
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
-// CreateConfiguration creates a combined config
+// CreateConfiguration creates a combined config.
+// This code is specific to the v1 CRD, but it uses a shared capability for managing node and cluster configuration.
+// Extracted from configmap.go.
+// TODO: CombinedCfg supports the registration of volume mounts, etc; at the moment this code makes only very
+// limited use of that facility. We can lift the volume management, etc, from pki and so on into the configuration
+// construction to have it all in one spot.
 func CreateConfiguration(
 	ctx context.Context,
 	client k8sclient.Client,
