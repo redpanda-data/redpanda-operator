@@ -37,6 +37,7 @@
           devshells.default = {
             env = [
               { name = "GOPRIVATE"; value = "github.com/redpanda-data/flux-controller-shim"; }
+              { name = "GOROOT"; value = "${pkgs.go_1_23}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.29.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
             ];
