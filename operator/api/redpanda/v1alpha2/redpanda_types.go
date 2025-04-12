@@ -294,7 +294,7 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 }
 
 func (in *Redpanda) GetValues() (redpandachart.Values, error) {
-	values, err := redpandachart.Chart.LoadValues(in.AsValues())
+	values, err := redpandachart.Chart.LoadValues(in)
 	if err != nil {
 		return redpandachart.Values{}, errors.WithStack(err)
 	}
@@ -303,6 +303,8 @@ func (in *Redpanda) GetValues() (redpandachart.Values, error) {
 }
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
+	helmChartValues := (*RedpandaClusterSpecAlt)(in.Spec.ClusterSpec.DeepCopy())
+
 	return redpandachart.Chart.Dot(
 		restConfig,
 		helmette.Release{
@@ -311,25 +313,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 			Service:   "redpanda",
 			IsInstall: true,
 			IsUpgrade: true,
-		},
-		in.AsValues())
-}
-
-// AsValues overcome the difference between calling `redpandachart.Chart.LoadValues`
-// vs doing roundtrip of json marshal and unmarshal from RedpandaClusterSpec to redpandachart.PartialValues
-func (in *Redpanda) AsValues() *RedpandaClusterSpec {
-	spec := in.Spec.ClusterSpec.DeepCopy()
-
-	// To help users the migration is done automatically from deprecated
-	// field to the correct FullnameOverride
-	if spec != nil {
-		if spec.DeprecatedFullNameOverride != "" && spec.FullnameOverride == nil {
-			spec.FullnameOverride = ptr.To(spec.DeprecatedFullNameOverride)
-		}
-
-		// Deprecated field can overwrite the FullnameOverride
-		spec.DeprecatedFullNameOverride = ""
-	}
-
-	return spec
+		}, helmChartValues)
 }
