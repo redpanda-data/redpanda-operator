@@ -81,6 +81,7 @@ func TestFullNameOverride(t *testing.T) {
 		name             string
 		rp               redpandav1alpha2.Redpanda
 		expectedFullname string
+		expectedJSON     []byte
 	}{
 		{
 			name: "Deprecated full name only",
@@ -93,6 +94,7 @@ func TestFullNameOverride(t *testing.T) {
 				},
 			},
 			expectedFullname: "deprecated",
+			expectedJSON:     []byte("{\"fullnameOverride\":\"deprecated\"}"),
 		},
 		{
 			name: "Full name only",
@@ -105,6 +107,7 @@ func TestFullNameOverride(t *testing.T) {
 				},
 			},
 			expectedFullname: "fullname",
+			expectedJSON:     []byte("{\"fullnameOverride\":\"fullname\"}"),
 		},
 		{
 			name: "Both full name set",
@@ -117,11 +120,17 @@ func TestFullNameOverride(t *testing.T) {
 				},
 			},
 			expectedFullname: "fullname-wins",
+			expectedJSON:     []byte("{\"fullnameOverride\":\"fullname-wins\"}"),
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			helmChartValues := (*redpandav1alpha2.RedpandaClusterSpecAlt)(tc.rp.Spec.ClusterSpec.DeepCopy())
+			b, err := json.Marshal(helmChartValues)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedJSON, b)
+
 			dot, err := tc.rp.GetDot(&rest.Config{})
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedFullname, dot.Values["fullnameOverride"].(string))
