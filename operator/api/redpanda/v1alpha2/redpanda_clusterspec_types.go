@@ -22,6 +22,24 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 )
 
+// RedpandaClusterSpecAlt type is a wrapper around RedpandaClusterSpec due to a fact that during
+// json marshalling deprecated field which has `fullNameOverride` json struct annotation, which is
+// then converted by json.Marshal function into `fullnameOverride` field. The difference between the two
+// is letter `N` or `n` with the `Name`. Any user that want to not mistake the two fields needs to
+// cast RedpandaClusterSpec to RedpandaClusterSpecAlt beforing calling json.Marshal
+type RedpandaClusterSpecAlt RedpandaClusterSpec
+
+func (alt *RedpandaClusterSpecAlt) MarshalJSON() ([]byte, error) {
+	r := RedpandaClusterSpec(*alt)
+	if r.DeprecatedFullNameOverride != "" && r.FullnameOverride == nil {
+		r.FullnameOverride = &alt.DeprecatedFullNameOverride
+	}
+
+	r.DeprecatedFullNameOverride = ""
+
+	return json.Marshal(r)
+}
+
 // RedpandaClusterSpec defines the desired state of a Redpanda cluster. These settings are the same as those defined in the Redpanda Helm chart. The values in these settings are passed to the Redpanda Helm chart through Flux. For all default values and links to more documentation, see https://docs.redpanda.com/current/reference/redpanda-helm-spec/.
 type RedpandaClusterSpec struct {
 	// Customizes the labels `app.kubernetes.io/component=<nameOverride>-statefulset` and `app.kubernetes.io/name=<nameOverride>` on the StatefulSet Pods. The default is `redpanda`.

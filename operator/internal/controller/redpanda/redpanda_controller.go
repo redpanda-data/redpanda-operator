@@ -363,7 +363,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 
 	// DeepCopy values to prevent any accidental mutations that may occur
 	// within the chart itself.
-	values := rp.AsValues()
+	values := (*redpandav1alpha2.RedpandaClusterSpecAlt)(rp.Spec.ClusterSpec.DeepCopy())
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
 	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
