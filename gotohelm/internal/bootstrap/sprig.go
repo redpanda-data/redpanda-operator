@@ -84,3 +84,7 @@ func Duration(d int64) string {
 func RegexFind(pattern string, in any) string {
 	return sprig.FuncMap()["regexFind"].(func(string, string) string)(pattern, in.(string))
 }
+
+func FromYaml(string) map[string]any {
+	panic("not implemented")
+}

@@ -1232,6 +1232,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: []Node{&BuiltInCall{Func: Literal("keys"), Arguments: args}}}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.FromYaml":
+		return litCall("_shims.fromYaml", args...)
 
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.SortedMap":
 		// In go, map iteration is non-deterministic which can cause

@@ -101,3 +101,8 @@ func Duration(d int64) string {
 func RegexFind(pattern string, in any) string {
 	panic("not implemented")
 }
+
+// +gotohelm:builtin=fromYaml
+func FromYaml(string) map[string]any {
+	panic("not implemented")
+}

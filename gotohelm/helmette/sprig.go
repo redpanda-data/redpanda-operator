@@ -365,16 +365,17 @@ func FromJSON(data string) any {
 	return out
 }
 
-// FromYaml is the go equivalent of sprig's `fromYaml`.
-// +gotohelm:builtin=fromYaml
-func FromYaml(input string) any {
-	var out []byte
-	out, err := yaml.Marshal(input)
-	if err != nil {
-		// Swallow errors inside of a template.
-		return ""
+// FromYaml is the go equivalent of gohelm's wrapper around helm's `fromYaml`
+// Rather than silently failing, FromYaml panics when Unmarshaling fails.
+// WARNING: In helm world, T is largely ignored. Calls must ensure data is well
+// formed.
+func FromYaml[T any](input string) T {
+	// See also: bootstrap.go's FromYaml for the actual wrapper implementation.
+	var out T
+	if err := yaml.Unmarshal([]byte(input), &out); err != nil {
+		panic(err)
 	}
-	return strings.TrimSuffix(string(out), "\n")
+	return out
 }
 
 // MustFromJSON is the go equivalent of sprig's `mustFromJson`.

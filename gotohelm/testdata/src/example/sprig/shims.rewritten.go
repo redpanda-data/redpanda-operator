@@ -21,6 +21,8 @@ func numericTestInputs(dot *helmette.Dot) []any {
 		[]int{},
 		map[string]any{},
 		dot.Values["numeric"],
+		// Ideally we'd test the failure case but we don't have a harness for testing failures.
+		helmette.FromYaml[map[string]any]("key: value\nkey2: value2"),
 	}
 }
 

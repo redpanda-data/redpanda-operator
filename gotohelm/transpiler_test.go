@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -295,6 +296,16 @@ func NewHelmRunner(chartName string, cfg *kube.RESTConfig, logf func(string, ...
 	funcs["lookup"] = runner.lookupFn
 	funcs["toYaml"] = helmette.ToYaml
 	funcs["tpl"] = runner.tplFn
+	funcs["fromYaml"] = func(str string) map[string]interface{} {
+		// Ripped from helm:
+		// https://github.com/helm/helm/blob/3bb50bbbdd9c946ba9989fbe4fb4104766302a64/pkg/engine/funcs.go#L97C1-L104C2
+		m := map[string]interface{}{}
+
+		if err := yaml.Unmarshal([]byte(str), &m); err != nil {
+			m["Error"] = err.Error()
+		}
+		return m
+	}
 
 	runner.tpl = runner.tpl.Funcs(funcs)
 

@@ -128,6 +128,18 @@ func lookup(apiVersion, kind, namespace, name string) (map[string]any, bool) {
 	return result, true
 }
 
+// wrapper around helm's fromYaml that fails if unmarshalling fails.
+func fromYaml(in string) map[string]any {
+	result := FromYaml(in)
+	// Helm's fromYaml returns an map[string]any with an Error key if
+	// unmarshaling fails. In such a case, we panic rather than letting
+	// undefined behavior occur.
+	if HasKey(result, "Error") && Len(result) == 1 {
+		panic(fmt.Sprintf("fromYaml: unmarshalling failed: %s", result["Error"]))
+	}
+	return result
+}
+
 func asnumeric(value any) (any, bool) {
 	if TypeIs("float64", value) {
 		return value, true
