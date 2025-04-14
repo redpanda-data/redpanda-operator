@@ -63,11 +63,7 @@ var seedObjects = []kube.Object{
 }
 
 type TestSpec struct {
-	Unsupported bool
-	// ValuesChanged when `false`, the default, will cause the test to assert that
-	// .Values has not be mutated by the chart. Set to `true` to disable.
-	ValuesChanged bool
-	Values        []map[string]any
+	Values []map[string]any
 	// Namespace, if specified, is used as the gotohelm namespace to filter
 	// templates names. If not specified, the package name is used.
 	Namespace string
@@ -119,7 +115,6 @@ var testSpecs = map[string]TestSpec{
 		Values: []map[string]any{
 			{"int": 8, "boolean": true, "string": "testing-testing"},
 		},
-		ValuesChanged: true,
 	},
 	"inputs": {
 		Values: []map[string]any{
@@ -149,6 +144,7 @@ var testSpecs = map[string]TestSpec{
 			},
 		},
 	},
+	"files": {},
 }
 
 func TestTranspile(t *testing.T) {
@@ -191,10 +187,6 @@ func TestTranspile(t *testing.T) {
 				t.Skipf("no test spec for %q", pkg.Name)
 			}
 
-			if spec.Unsupported {
-				t.Skipf("%q is not currently supported", pkg.Name)
-			}
-
 			chart, err := Transpile(pkg, commonPkg)
 			require.NoError(t, err)
 
@@ -233,6 +225,12 @@ func TestTranspile(t *testing.T) {
 				t.Run(fmt.Sprintf("Values%d", i), func(t *testing.T) {
 					t.Logf("using values: %#v", values)
 
+					// MUST round trip values through JSON marshalling to
+					// ensure that types between go/helm/templates are the same.
+					// Numbers should always be integers :[
+					values, err := valuesutil.RoundTripThrough[map[string]any](values)
+					require.NoError(t, err)
+
 					dot := helmette.Dot{
 						Values: values,
 						Chart: helmette.Chart{
@@ -244,30 +242,17 @@ func TestTranspile(t *testing.T) {
 							Name:      "release-name",
 							Namespace: "release-namespace",
 						},
+						Files: helmette.NewFiles(os.DirFS(filepath.Join(td, "src", "example", pkg.Name))),
 					}
 
-					// MUST round trip values through JSON marshalling to
-					// ensure that types between go/helm/templates are the same.
-					// Numbers should always be integers :[ (TODO: Can Yaml
-					// technically encode the difference between ints and
-					// floats?)
-					dot, err = valuesutil.RoundTripThrough[map[string]any](dot)
-					require.NoError(t, err)
-
-					clonedDot, err := valuesutil.RoundTripThrough[map[string]any](dot)
-					require.NoError(t, err)
-
-					actualJSON, err := helmRunner.Render(ctx, &dot)
-					require.NoError(t, err, "error from helm runner")
-
+					// Kinda cheating here, goRunner is used first as it's
+					// guaranteed to not mutate values because it pipes
+					// everything to a subprocess.
 					gocodeJSON, err := goRunner.Render(ctx, &dot)
 					require.NoError(t, err, "error from go runner")
 
-					if spec.ValuesChanged {
-						require.NotEqual(t, clonedDot, dot)
-					} else {
-						require.Equal(t, clonedDot, dot)
-					}
+					actualJSON, err := helmRunner.Render(ctx, &dot)
+					require.NoError(t, err, "error from helm runner")
 
 					goPretty, err := json.MarshalIndent(gocodeJSON, "", "\t")
 					require.NoError(t, err)

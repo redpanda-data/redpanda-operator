@@ -21,6 +21,7 @@ import (
 	"example.com/example/astrewrites"
 	"example.com/example/changing_inputs"
 	"example.com/example/directives"
+	"example.com/example/files"
 	"example.com/example/flowcontrol"
 	"example.com/example/inputs"
 	"example.com/example/k8s"
@@ -57,9 +58,11 @@ func main() {
 			panic(err)
 		}
 
-		// HACK: Inject an FS into .Templates to test `tpl`. This is done
-		// "lazily" so this FS always contains freshly transpiled templates.
+		// HACK: Inject an FS into .Templates and Files to test `tpl` and
+		// Files, respectively. This is done "lazily" so this FS always
+		// contains freshly transpiled templates.
 		dot.Templates = os.DirFS("./" + dot.Chart.Name)
+		dot.Files = helmette.NewFiles(os.DirFS("./" + dot.Chart.Name))
 
 		// HACK: Inject the kube rest client we've picked up from KUBECONFIG.
 		dot.KubeConfig = kubeConfig
@@ -152,6 +155,11 @@ func runChart(dot *helmette.Dot) (_ map[string]any, err any) {
 	case "syntax":
 		return map[string]any{
 			"Syntax": syntax.Syntax(),
+		}, nil
+
+	case "files":
+		return map[string]any{
+			"Files": files.Files(dot),
 		}, nil
 
 	default:
