@@ -261,10 +261,10 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 	case *ast.BranchStmt:
 		switch stmt.Tok {
 		case token.BREAK:
-			return &Statement{NoCapture: true, Expr: &Literal{Value: "break"}}
+			return &Statement{NoCapture: true, Expr: Literal("break")}
 
 		case token.CONTINUE:
-			return &Statement{NoCapture: true, Expr: &Literal{Value: "continue"}}
+			return &Statement{NoCapture: true, Expr: Literal("continue")}
 		}
 
 	case *ast.ReturnStmt:
@@ -337,7 +337,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 					FuncName: "set",
 					Arguments: []Node{
 						selector.Expr,
-						&Literal{Value: strconv.Quote(selector.Field)},
+						Quoted(selector.Field),
 						t.transpileExpr(stmt.Rhs[0]),
 					},
 				},
@@ -482,9 +482,9 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		case *ast.IncDecStmt:
 			switch p.Tok {
 			case token.INC:
-				step = &Literal{Value: "1"}
+				step = Literal("1")
 			case token.DEC:
-				step = &Literal{Value: "-1"}
+				step = Literal("-1")
 			}
 		default:
 			panic(&Unsupported{
@@ -503,7 +503,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		}
 		return &Range{
 			Key:   &Ident{Name: "_"},
-			Value: &Literal{Value: fmt.Sprintf("$%s", stmt.Init.(*ast.AssignStmt).Lhs[0].(*ast.Ident).Name)},
+			Value: Literal(fmt.Sprintf("$%s", stmt.Init.(*ast.AssignStmt).Lhs[0].(*ast.Ident).Name)),
 			Over: &UntilStep{
 				Start: start,
 				Stop:  stop,
@@ -572,7 +572,7 @@ func (t *Transpiler) transpileMVAssignStmt(stmt *ast.AssignStmt) Node {
 			New: stmt.Tok.String() == ":=",
 			RHS: t.maybeCast(&BuiltInCall{FuncName: "index", Arguments: []Node{
 				intermediate,
-				&Literal{Value: fmt.Sprintf("%d", i)},
+				Literal(fmt.Sprintf("%d", i)),
 			}}, t.typeOf(ident)),
 		})
 	}
@@ -586,7 +586,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		return nil
 
 	case *ast.BasicLit:
-		return t.maybeCast(&Literal{Value: n.Value}, t.typeOf(n))
+		return t.maybeCast(Literal(n.Value), t.typeOf(n))
 
 	case *ast.ParenExpr:
 		return &ParenExpr{Expr: t.transpileExpr(n.X)}
@@ -603,7 +603,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 
 		// If low isn't specified it defaults to zero
 		if low == nil {
-			low = &Literal{Value: "0"}
+			low = Literal("0")
 		}
 
 		// The builtin `slice` function from go would work great here but sprig
@@ -619,7 +619,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 
 			// Sprig's substring will run [start:] if end is < 0.
 			if high == nil {
-				high = &Literal{Value: "-1"}
+				high = Literal("-1")
 			}
 
 			return &BuiltInCall{FuncName: "substr", Arguments: []Node{low, high, target}}
@@ -698,7 +698,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 				}
 
 				d.KeysValues = append(d.KeysValues, &KeyValue{
-					Key:   NewLiteral(field.JSONName()),
+					Key:   Quoted(field.JSONName()),
 					Value: t.transpileExpr(value),
 				})
 			}
@@ -738,7 +738,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 					Fset: t.Fset,
 				})
 			}
-			return NewLiteral(
+			return Quoted(
 				fmt.Sprintf("%s.%s", t.namespaceFor(obj.Pkg()), t.funcNameFor(obj)),
 			)
 
@@ -748,7 +748,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			if n.Name == "_" {
 				return &Ident{Name: n.Name}
 			}
-			return &Literal{Value: n.Name}
+			return Literal(n.Name)
 
 		default:
 			panic(&Unsupported{
@@ -828,9 +828,9 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			return func(a, b Node) Node {
 				switch side {
 				case "lhs":
-					return builtin(op, builtin("toJson", a), NewLiteral("null"))
+					return builtin(op, builtin("toJson", a), Quoted("null"))
 				case "rhs":
-					return builtin(op, builtin("toJson", b), NewLiteral("null"))
+					return builtin(op, builtin("toJson", b), Quoted("null"))
 				default:
 					panic("side should only be lhs or rhs")
 				}
@@ -838,7 +838,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		}
 
 		strConcat := func(a, b Node) Node {
-			return builtin("printf", NewLiteral("%s%s"), a, b)
+			return builtin("printf", Quoted("%s%s"), a, b)
 		}
 
 		// Poor man's pattern matching :[
@@ -935,7 +935,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			return t.transpileExpr(n.X)
 		case token.SUB:
 			if i, ok := n.X.(*ast.BasicLit); ok {
-				return &Literal{Value: fmt.Sprintf("-%s", i.Value)}
+				return Literal(fmt.Sprintf("-%s", i.Value))
 			}
 		}
 
@@ -1162,7 +1162,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 				FuncName: "list",
 				Arguments: []Node{
 					&BuiltInCall{FuncName: builtin, Arguments: args},
-					&Literal{Value: "nil"},
+					Literal("nil"),
 				},
 			}
 		}
@@ -1265,7 +1265,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 
 				// Inject the apiVersion and kind as arguments and snip `dot`
 				// from the arguments list.
-				args := append([]Node{NewLiteral(apiVersion), NewLiteral(kind)}, args[1:]...)
+				args := append([]Node{Quoted(apiVersion), Quoted(kind)}, args[1:]...)
 
 				return litCall("_shims.lookup", args...)
 			}
@@ -1409,7 +1409,7 @@ func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {
 			if from.String() == "byte" {
 				return &BuiltInCall{
 					FuncName:  "printf",
-					Arguments: append([]Node{&Literal{Value: "\"%c\""}}, node),
+					Arguments: append([]Node{Literal("\"%c\"")}, node),
 				}
 			}
 			return &BuiltInCall{FuncName: "toString", Arguments: []Node{node}}
@@ -1435,32 +1435,32 @@ func (t *Transpiler) transpileTypeRepr(typ types.Type) Node {
 	switch typ := typ.(type) {
 	case *types.Pointer:
 		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
-			NewLiteral("*%s"),
+			Quoted("*%s"),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Array:
 		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
-			NewLiteral(fmt.Sprintf("[%d]%%s", typ.Len())),
+			Quoted(fmt.Sprintf("[%d]%%s", typ.Len())),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Slice:
 		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
-			NewLiteral("[]%s"),
+			Quoted("[]%s"),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Map:
 		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
-			NewLiteral("map[%s]%s"),
+			Quoted("map[%s]%s"),
 			t.transpileTypeRepr(typ.Key()),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Basic:
-		return NewLiteral(typ.String())
+		return Quoted(typ.String())
 	case *types.Alias:
 		return t.transpileTypeRepr(typ.Rhs())
 	case *types.Interface:
 		if typ.Empty() {
-			return NewLiteral("interface {}")
+			return Quoted("interface {}")
 		}
 	}
 	panic(fmt.Sprintf("unsupported type: %v", typ))
@@ -1472,7 +1472,7 @@ func (t *Transpiler) transpileConst(c *types.Const) Node {
 	// definitions.
 
 	if c.Val().Kind() != constant.Float {
-		return t.maybeCast(&Literal{Value: c.Val().ExactString()}, c.Type())
+		return t.maybeCast(Literal(c.Val().ExactString()), c.Type())
 	}
 
 	// Floats are a bit weird. Go may store them as a quotient in some cases to
@@ -1485,7 +1485,7 @@ func (t *Transpiler) transpileConst(c *types.Const) Node {
 	// that go's float64 values have the exact same problem, we're going to
 	// ignore it for now and hope it's not a terrible mistake.
 	as64, _ := constant.Float64Val(c.Val())
-	return t.maybeCast(&Literal{Value: strconv.FormatFloat(as64, 'f', -1, 64)}, c.Type())
+	return t.maybeCast(Literal(strconv.FormatFloat(as64, 'f', -1, 64)), c.Type())
 }
 
 func (t *Transpiler) isString(e ast.Expr) bool {
@@ -1504,9 +1504,9 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 	case "k8s.io/apimachinery/pkg/util/intstr.IntOrString":
 		// IntOrString's zero value appears to marshal to a 0 though it's
 		// unclear how correct this is.
-		return &Literal{Value: "0"}
+		return Literal("0")
 	case "k8s.io/apimachinery/pkg/api/resource.Quantity":
-		return &Literal{Value: `"0"`}
+		return Literal(`"0"`)
 	}
 
 	// If encoding/json is in the dependency chain for this package, we'll
@@ -1535,13 +1535,13 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 	case *types.Basic:
 		switch underlying.Info() {
 		case types.IsString:
-			return &Literal{Value: `""`}
+			return Literal(`""`)
 		case types.IsInteger, types.IsUnsigned | types.IsInteger:
-			return &Literal{Value: "0"}
+			return Literal("0")
 		case types.IsFloat:
-			return &BuiltInCall{FuncName: "float64", Arguments: []Node{&Literal{Value: "0"}}}
+			return &BuiltInCall{FuncName: "float64", Arguments: []Node{Literal("0")}}
 		case types.IsBoolean:
-			return &Literal{Value: "false"}
+			return Literal("false")
 		default:
 			panic(fmt.Sprintf("unsupported Basic type: %#v", typ))
 		}
@@ -1563,7 +1563,7 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 			}
 
 			out.KeysValues = append(out.KeysValues, &KeyValue{
-				Key:   NewLiteral(field.JSONName()),
+				Key:   Quoted(field.JSONName()),
 				Value: t.zeroOf(field.Field.Type()),
 			})
 		}
@@ -1640,9 +1640,9 @@ func (t *Transpiler) maybeCast(n Node, to types.Type) Node {
 		case types.Float64, types.UntypedFloat:
 			// As a special case, floating point literals just need to contain
 			// a decimal point (.) to be interpreted correctly.
-			if lit, ok := n.(*Literal); ok {
-				if !strings.Contains(lit.Value, ".") {
-					lit.Value += ".0"
+			if lit, ok := n.(Literal); ok {
+				if !strings.Contains(string(lit), ".") {
+					lit += ".0"
 				}
 				return lit
 			}

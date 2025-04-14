@@ -156,14 +156,14 @@ type Call struct {
 }
 
 func litCall(funcName string, args ...Node) *Call {
-	return &Call{FuncName: NewLiteral(funcName), Arguments: args}
+	return &Call{FuncName: Quoted(funcName), Arguments: args}
 }
 
 func (c *Call) Write(w io.Writer) {
 	args := &DictLiteral{
 		KeysValues: []*KeyValue{
 			{
-				Key: NewLiteral("a"),
+				Key: Quoted("a"),
 				Value: &BuiltInCall{
 					FuncName:  "list",
 					Arguments: c.Arguments,
@@ -276,16 +276,14 @@ func (r *Return) Write(w io.Writer) {
 	fmt.Fprintf(w, "{{- break -}}\n")
 }
 
-type Literal struct {
-	Value string
+type Literal string
+
+func Quoted(unquoted string) Literal {
+	return Literal(strconv.Quote(unquoted))
 }
 
-func NewLiteral(unquoted string) *Literal {
-	return &Literal{Value: strconv.Quote(unquoted)}
-}
-
-func (l *Literal) Write(w io.Writer) {
-	fmt.Fprintf(w, "%s", l.Value)
+func (l Literal) Write(w io.Writer) {
+	fmt.Fprintf(w, "%s", l)
 }
 
 type Block struct {
