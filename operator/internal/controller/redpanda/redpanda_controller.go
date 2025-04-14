@@ -363,7 +363,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 
 	// DeepCopy values to prevent any accidental mutations that may occur
 	// within the chart itself.
-	values := rp.Spec.ClusterSpec.DeepCopy()
+	values := rp.AsValues()
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
 	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
@@ -384,7 +384,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, rp.AsValues())
+	}, values)
 	if err != nil {
 		return errors.WithStack(err)
 	}
