@@ -276,7 +276,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		for _, r := range stmt.Results {
 			results = append(results, t.transpileExpr(r))
 		}
-		return &Return{Expr: &BuiltInCall{FuncName: "list", Arguments: results}}
+		return &Return{Expr: &BuiltInCall{Func: Literal("list"), Arguments: results}}
 
 	case *ast.AssignStmt:
 		// "unroll" in-lined assignments
@@ -334,7 +334,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 
 			return &Statement{
 				Expr: &BuiltInCall{
-					FuncName: "set",
+					Func: Literal("set"),
 					Arguments: []Node{
 						selector.Expr,
 						Quoted(selector.Field),
@@ -349,7 +349,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		if idx, ok := stmt.Lhs[0].(*ast.IndexExpr); ok {
 			return &Statement{
 				Expr: &BuiltInCall{
-					FuncName: "set",
+					Func: Literal("set"),
 					Arguments: []Node{
 						t.transpileExpr(idx.X),
 						t.transpileExpr(idx.Index),
@@ -570,7 +570,7 @@ func (t *Transpiler) transpileMVAssignStmt(stmt *ast.AssignStmt) Node {
 		stmts = append(stmts, &Assignment{
 			LHS: t.transpileExpr(ident),
 			New: stmt.Tok.String() == ":=",
-			RHS: t.maybeCast(&BuiltInCall{FuncName: "index", Arguments: []Node{
+			RHS: t.maybeCast(&BuiltInCall{Func: Literal("index"), Arguments: []Node{
 				intermediate,
 				Literal(fmt.Sprintf("%d", i)),
 			}}, t.typeOf(ident)),
@@ -622,7 +622,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 				high = Literal("-1")
 			}
 
-			return &BuiltInCall{FuncName: "substr", Arguments: []Node{low, high, target}}
+			return &BuiltInCall{Func: Literal("substr"), Arguments: []Node{low, high, target}}
 		}
 
 		args := []Node{target, low}
@@ -632,7 +632,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		if n.Slice3 && n.Max != nil {
 			args = append(args, max)
 		}
-		return &BuiltInCall{FuncName: "mustSlice", Arguments: args}
+		return &BuiltInCall{Func: Literal("mustSlice"), Arguments: args}
 
 	case *ast.CompositeLit:
 
@@ -652,7 +652,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 				elts = append(elts, t.transpileExpr(el))
 			}
 			return &BuiltInCall{
-				FuncName:  "list",
+				Func:      Literal("list"),
 				Arguments: elts,
 			}
 
@@ -708,7 +708,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			args = append(args, &d)
 
 			return &BuiltInCall{
-				FuncName:  "mustMergeOverwrite",
+				Func:      Literal("mustMergeOverwrite"),
 				Arguments: args,
 			}
 
@@ -801,7 +801,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		// Closure helpers to make the following logic a bit nicer.
 
 		builtin := func(name string, args ...Node) Node {
-			return &BuiltInCall{FuncName: name, Arguments: args}
+			return &BuiltInCall{Func: Literal(name), Arguments: args}
 		}
 
 		f := func(op string) func(a, b Node) Node {
@@ -812,7 +812,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 
 		wrapWithCast := func(op, cast string) func(a, b Node) Node {
 			return func(a, b Node) Node {
-				return &Cast{To: cast, X: &BuiltInCall{FuncName: op, Arguments: []Node{a, b}}}
+				return &Cast{To: cast, X: &BuiltInCall{Func: Literal(op), Arguments: []Node{a, b}}}
 			}
 		}
 
@@ -927,7 +927,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		switch n.Op {
 		case token.NOT:
 			return &BuiltInCall{
-				FuncName:  "not",
+				Func:      Literal("not"),
 				Arguments: []Node{t.transpileExpr(n.X)},
 			}
 		case token.AND:
@@ -961,15 +961,15 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 				// X[index] -> (ternary (index X index) (zero) (hasKey X index))
 				return &BuiltInCall{
 					// Ternary signature is (trueVal, falseVal, testVal)
-					FuncName: "ternary",
+					Func: Literal("ternary"),
 					Arguments: []Node{
 						&BuiltInCall{
-							FuncName:  "index",
+							Func:      Literal("index"),
 							Arguments: []Node{expr, index},
 						},
 						elemZero,
 						&BuiltInCall{
-							FuncName:  "hasKey",
+							Func:      Literal("hasKey"),
 							Arguments: []Node{expr, index},
 						},
 					},
@@ -981,7 +981,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		// for us as it returns nil for missing keys due to all maps being
 		// `map[string]any`'s.
 		return &BuiltInCall{
-			FuncName: "index",
+			Func: Literal("index"),
 			Arguments: []Node{
 				t.transpileExpr(n.X),
 				t.transpileExpr(n.Index),
@@ -1066,8 +1066,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 			// append(x) -> (append (default (list) x))
 			defaultToEmpty := func(n Node) Node {
 				return &BuiltInCall{
-					FuncName:  "default",
-					Arguments: []Node{&BuiltInCall{FuncName: "list"}, n},
+					Func:      Literal("default"),
+					Arguments: []Node{&BuiltInCall{Func: Literal("list")}, n},
 				}
 			}
 
@@ -1078,7 +1078,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 			// append(x, y...) -> (concat x y)
 			if n.Ellipsis.IsValid() {
 				return &BuiltInCall{
-					FuncName: "concat",
+					Func: Literal("concat"),
 					Arguments: []Node{
 						defaultToEmpty(args[0]),
 						defaultToEmpty(args[len(args)-1]),
@@ -1088,18 +1088,18 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 
 			// If no spread, just concat the arguments list.
 			return &BuiltInCall{
-				FuncName: "concat",
+				Func: Literal("concat"),
 				Arguments: []Node{
 					defaultToEmpty(args[0]),
-					&BuiltInCall{FuncName: "list", Arguments: args[1:]},
+					&BuiltInCall{Func: Literal("list"), Arguments: args[1:]},
 				},
 			}
 		case "panic":
-			return &BuiltInCall{FuncName: "fail", Arguments: args}
+			return &BuiltInCall{Func: Literal("fail"), Arguments: args}
 		case "len":
 			return t.maybeCast(litCall("_shims.len", args...), types.Typ[types.Int])
 		case "delete":
-			return &BuiltInCall{FuncName: "unset", Arguments: args}
+			return &BuiltInCall{Func: Literal("unset"), Arguments: args}
 		default:
 			panic(fmt.Sprintf("unsupport golang builtin %q", n.Fun.(*ast.Ident).Name))
 		}
@@ -1148,7 +1148,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	// hit, construct a BuiltInCall.
 	if builtin := t.builtins[id]; builtin != "" {
 		if signature.Results().Len() < 2 {
-			return &BuiltInCall{FuncName: builtin, Arguments: args}
+			return &BuiltInCall{Func: Literal(builtin), Arguments: args}
 		}
 
 		// Special case, if the return signature is (T, error). We'll
@@ -1159,9 +1159,9 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// non-nil error.
 		if named, ok := signature.Results().At(1).Type().(*types.Named); ok && named.Obj().Pkg() == nil && named.Obj().Name() == "error" {
 			return &BuiltInCall{
-				FuncName: "list",
+				Func: Literal("list"),
 				Arguments: []Node{
-					&BuiltInCall{FuncName: builtin, Arguments: args},
+					&BuiltInCall{Func: Literal(builtin), Arguments: args},
 					Literal("nil"),
 				},
 			}
@@ -1192,15 +1192,15 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 
 	switch id {
 	case "sort.Strings":
-		return &BuiltInCall{FuncName: "sortAlpha", Arguments: args}
+		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: args}
 	case "strings.TrimSuffix":
-		return &BuiltInCall{FuncName: "trimSuffix", Arguments: []Node{args[1], args[0]}}
+		return &BuiltInCall{Func: Literal("trimSuffix"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimPrefix":
-		return &BuiltInCall{FuncName: "trimPrefix", Arguments: []Node{args[1], args[0]}}
+		return &BuiltInCall{Func: Literal("trimPrefix"), Arguments: []Node{args[1], args[0]}}
 	case "strings.HasPrefix":
-		return &BuiltInCall{FuncName: "hasPrefix", Arguments: []Node{args[1], args[0]}}
+		return &BuiltInCall{Func: Literal("hasPrefix"), Arguments: []Node{args[1], args[0]}}
 	case "strings.ReplaceAll":
-		return &BuiltInCall{FuncName: "replace", Arguments: []Node{args[1], args[2], args[0]}}
+		return &BuiltInCall{Func: Literal("replace"), Arguments: []Node{args[1], args[2], args[0]}}
 	case "k8s.io/apimachinery/pkg/util/intstr.FromInt32", "k8s.io/apimachinery/pkg/util/intstr.FromInt", "k8s.io/apimachinery/pkg/util/intstr.FromString":
 		return args[0]
 	case "k8s.io/utils/ptr.Deref":
@@ -1210,7 +1210,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "k8s.io/utils/ptr.Equal":
 		return litCall("_shims.ptr_Equal", args...)
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Dig":
-		return &BuiltInCall{FuncName: "dig", Arguments: append(args[2:], args[1], args[0])}
+		return &BuiltInCall{Func: Literal("dig"), Arguments: append(args[2:], args[1], args[0])}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Unwrap":
 		return &Selector{Expr: args[0], Field: "AsMap"}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.UnmarshalInto":
@@ -1221,15 +1221,15 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return litCall("_shims.asnumeric", args...)
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Merge":
 		dict := DictLiteral{}
-		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
+		return &BuiltInCall{Func: Literal("merge"), Arguments: append([]Node{&dict}, args...)}
 	// Add note about this change.
 	case "helm.sh/helm/v3/pkg/chartutil.(Values).AsMap":
 		return &Selector{Expr: receiver, Field: "AsMap"}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.MergeTo":
 		dict := DictLiteral{}
-		return &BuiltInCall{FuncName: "merge", Arguments: append([]Node{&dict}, args...)}
+		return &BuiltInCall{Func: Literal("merge"), Arguments: append([]Node{&dict}, args...)}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.SortedKeys":
-		return &BuiltInCall{FuncName: "sortAlpha", Arguments: []Node{&BuiltInCall{FuncName: "keys", Arguments: args}}}
+		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: []Node{&BuiltInCall{Func: Literal("keys"), Arguments: args}}}
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Get":
 		return litCall("_shims.get", args...)
 
@@ -1245,7 +1245,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// In go land, tpl requires a handle to the chart's .Dot so we can get
 		// the chart's templates. Helm doesn't require this as that's just how
 		// tpl works. So just clip out the fist argument.
-		return &BuiltInCall{FuncName: "tpl", Arguments: args[1:]}
+		return &BuiltInCall{Func: Literal("tpl"), Arguments: args[1:]}
 
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.Lookup":
 		// Super ugly but it's fairly safe to assume that the return type of
@@ -1361,7 +1361,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 
 		// When receiver is a pointer then dictionary can be passed as is.
 		// When receiver is not a pointer then dictionary is deep copied to emulate immutability.
-		receiverArg = &BuiltInCall{FuncName: "deepCopy", Arguments: []Node{t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)}}
+		receiverArg = &BuiltInCall{Func: Literal("deepCopy"), Arguments: []Node{t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)}}
 		if mutable {
 			receiverArg = t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)
 		}
@@ -1408,11 +1408,11 @@ func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {
 		case types.String:
 			if from.String() == "byte" {
 				return &BuiltInCall{
-					FuncName:  "printf",
+					Func:      Literal("printf"),
 					Arguments: append([]Node{Literal("\"%c\"")}, node),
 				}
 			}
-			return &BuiltInCall{FuncName: "toString", Arguments: []Node{node}}
+			return &BuiltInCall{Func: Literal("toString"), Arguments: []Node{node}}
 		}
 	case *types.Interface:
 		// Cast to any or interface{}.
@@ -1434,22 +1434,22 @@ func (t *Transpiler) transpileTypeRepr(typ types.Type) Node {
 	// which returns `interface {}`.
 	switch typ := typ.(type) {
 	case *types.Pointer:
-		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
+		return &BuiltInCall{Func: Literal("printf"), Arguments: []Node{
 			Quoted("*%s"),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Array:
-		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
+		return &BuiltInCall{Func: Literal("printf"), Arguments: []Node{
 			Quoted(fmt.Sprintf("[%d]%%s", typ.Len())),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Slice:
-		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
+		return &BuiltInCall{Func: Literal("printf"), Arguments: []Node{
 			Quoted("[]%s"),
 			t.transpileTypeRepr(typ.Elem()),
 		}}
 	case *types.Map:
-		return &BuiltInCall{FuncName: "printf", Arguments: []Node{
+		return &BuiltInCall{Func: Literal("printf"), Arguments: []Node{
 			Quoted("map[%s]%s"),
 			t.transpileTypeRepr(typ.Key()),
 			t.transpileTypeRepr(typ.Elem()),
@@ -1539,7 +1539,7 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 		case types.IsInteger, types.IsUnsigned | types.IsInteger:
 			return Literal("0")
 		case types.IsFloat:
-			return &BuiltInCall{FuncName: "float64", Arguments: []Node{Literal("0")}}
+			return &BuiltInCall{Func: Literal("float64"), Arguments: []Node{Literal("0")}}
 		case types.IsBoolean:
 			return Literal("false")
 		default:

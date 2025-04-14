@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list "" ((0 | int) | int) (1.0 | float64) (list ) (dict ) (index $dot.Values "numeric"))) | toJson -}}
+{{- (dict "r" (list "" ((0 | int) | int) (1.0 | float64) (list) (dict) (index $dot.Values "numeric"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -14,14 +14,14 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $inputs := (get (fromJson (include "sprig.numericTestInputs" (dict "a" (list $dot) ))) "r") -}}
-{{- $inputs = (concat (default (list ) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
-{{- $outputs := (list ) -}}
+{{- $inputs := (get (fromJson (include "sprig.numericTestInputs" (dict "a" (list $dot)))) "r") -}}
+{{- $inputs = (concat (default (list) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
+{{- $outputs := (list) -}}
 {{- range $_, $in := $inputs -}}
-{{- $_35_value_isNumeric := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $in) ))) "r") -}}
+{{- $_35_value_isNumeric := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $in)))) "r") -}}
 {{- $value := ((index $_35_value_isNumeric 0) | float64) -}}
 {{- $isNumeric := (index $_35_value_isNumeric 1) -}}
-{{- $outputs = (concat (default (list ) $outputs) (list (list $in $value $isNumeric))) -}}
+{{- $outputs = (concat (default (list) $outputs) (list (list $in $value $isNumeric))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -36,14 +36,14 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $inputs := (get (fromJson (include "sprig.numericTestInputs" (dict "a" (list $dot) ))) "r") -}}
-{{- $inputs = (concat (default (list ) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
-{{- $outputs := (list ) -}}
+{{- $inputs := (get (fromJson (include "sprig.numericTestInputs" (dict "a" (list $dot)))) "r") -}}
+{{- $inputs = (concat (default (list) $inputs) (list ((10 | int) | int) 1.5 (index $dot.Values "numeric"))) -}}
+{{- $outputs := (list) -}}
 {{- range $_, $in := $inputs -}}
-{{- $_52_value_isIntegral := (get (fromJson (include "_shims.asintegral" (dict "a" (list $in) ))) "r") -}}
+{{- $_52_value_isIntegral := (get (fromJson (include "_shims.asintegral" (dict "a" (list $in)))) "r") -}}
 {{- $value := ((index $_52_value_isIntegral 0) | int) -}}
 {{- $isIntegral := (index $_52_value_isIntegral 1) -}}
-{{- $outputs = (concat (default (list ) $outputs) (list (list $in $value $isIntegral))) -}}
+{{- $outputs = (concat (default (list) $outputs) (list (list $in $value $isIntegral))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -57,10 +57,10 @@
 {{- define "sprig.mapIteration" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $m := (dict "a" true "b" true "c" true "d" true "0" true "1" true "2" true ) -}}
+{{- $m := (dict "a" true "b" true "c" true "d" true "0" true "1" true "2" true) -}}
 {{- $out := (coalesce nil) -}}
 {{- range $key, $_ := $m -}}
-{{- $out = (concat (default (list ) $out) (list $key)) -}}
+{{- $out = (concat (default (list) $out) (list $key)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}

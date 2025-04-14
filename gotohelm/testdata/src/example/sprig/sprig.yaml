@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "asIntegral" (get (fromJson (include "sprig.asIntegral" (dict "a" (list $dot) ))) "r") "asNumeric" (get (fromJson (include "sprig.asNumeric" (dict "a" (list $dot) ))) "r") "atoi" (get (fromJson (include "sprig.atoi" (dict "a" (list ) ))) "r") "concat" (get (fromJson (include "sprig.concat" (dict "a" (list ) ))) "r") "default" (get (fromJson (include "sprig.default_" (dict "a" (list ) ))) "r") "empty" (get (fromJson (include "sprig.empty" (dict "a" (list ) ))) "r") "errTypes" (get (fromJson (include "sprig.errTypes" (dict "a" (list ) ))) "r") "first" (get (fromJson (include "sprig.first" (dict "a" (list ) ))) "r") "float" (get (fromJson (include "sprig.float" (dict "a" (list ) ))) "r") "hasPrefix" (get (fromJson (include "sprig.hasPrefix" (dict "a" (list ) ))) "r") "keys" (get (fromJson (include "sprig.keys" (dict "a" (list ) ))) "r") "len" (get (fromJson (include "sprig.lenTest" (dict "a" (list ) ))) "r") "mapIteration" (get (fromJson (include "sprig.mapIteration" (dict "a" (list ) ))) "r") "min" (get (fromJson (include "sprig.minFunc" (dict "a" (list ) ))) "r") "regex" (get (fromJson (include "sprig.regex" (dict "a" (list ) ))) "r") "regexReplaceAll" (get (fromJson (include "sprig.regexReplaceAll" (dict "a" (list ) ))) "r") "regexSplit" (get (fromJson (include "sprig.regexSplit" (dict "a" (list ) ))) "r") "strings" (get (fromJson (include "sprig.stringsFunctions" (dict "a" (list ) ))) "r") "toString" (get (fromJson (include "sprig.toString" (dict "a" (list ) ))) "r") "tpl" (get (fromJson (include "sprig.tpl" (dict "a" (list $dot) ))) "r") "trim" (get (fromJson (include "sprig.trim" (dict "a" (list ) ))) "r") "unset" (get (fromJson (include "sprig.unset" (dict "a" (list ) ))) "r") "yaml" (get (fromJson (include "sprig.yaml" (dict "a" (list ) ))) "r") )) | toJson -}}
+{{- (dict "r" (dict "asIntegral" (get (fromJson (include "sprig.asIntegral" (dict "a" (list $dot)))) "r") "asNumeric" (get (fromJson (include "sprig.asNumeric" (dict "a" (list $dot)))) "r") "atoi" (get (fromJson (include "sprig.atoi" (dict "a" (list)))) "r") "concat" (get (fromJson (include "sprig.concat" (dict "a" (list)))) "r") "default" (get (fromJson (include "sprig.default_" (dict "a" (list)))) "r") "empty" (get (fromJson (include "sprig.empty" (dict "a" (list)))) "r") "errTypes" (get (fromJson (include "sprig.errTypes" (dict "a" (list)))) "r") "first" (get (fromJson (include "sprig.first" (dict "a" (list)))) "r") "float" (get (fromJson (include "sprig.float" (dict "a" (list)))) "r") "hasPrefix" (get (fromJson (include "sprig.hasPrefix" (dict "a" (list)))) "r") "keys" (get (fromJson (include "sprig.keys" (dict "a" (list)))) "r") "len" (get (fromJson (include "sprig.lenTest" (dict "a" (list)))) "r") "mapIteration" (get (fromJson (include "sprig.mapIteration" (dict "a" (list)))) "r") "min" (get (fromJson (include "sprig.minFunc" (dict "a" (list)))) "r") "regex" (get (fromJson (include "sprig.regex" (dict "a" (list)))) "r") "regexReplaceAll" (get (fromJson (include "sprig.regexReplaceAll" (dict "a" (list)))) "r") "regexSplit" (get (fromJson (include "sprig.regexSplit" (dict "a" (list)))) "r") "strings" (get (fromJson (include "sprig.stringsFunctions" (dict "a" (list)))) "r") "toString" (get (fromJson (include "sprig.toString" (dict "a" (list)))) "r") "tpl" (get (fromJson (include "sprig.tpl" (dict "a" (list $dot)))) "r") "trim" (get (fromJson (include "sprig.trim" (dict "a" (list)))) "r") "unset" (get (fromJson (include "sprig.unset" (dict "a" (list)))) "r") "yaml" (get (fromJson (include "sprig.yaml" (dict "a" (list)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -35,7 +35,7 @@
 {{- $spl := (index $_70_spl__ 0) -}}
 {{- $_ := (index $_70_spl__ 1) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list ) (list (mustRegexSplit " " "1 2 3 4 5" -1) (mustRegexSplit " " "1 2 3 4 5" (1 | int)) (mustRegexSplit " " "1 2 3 4 5" (2 | int)) (mustRegexSplit " " "1 2 3 4 5" (10 | int)))) (list $spl))) | toJson -}}
+{{- (dict "r" (concat (default (list) (list (mustRegexSplit " " "1 2 3 4 5" -1) (mustRegexSplit " " "1 2 3 4 5" (1 | int)) (mustRegexSplit " " "1 2 3 4 5" (2 | int)) (mustRegexSplit " " "1 2 3 4 5" (10 | int)))) (list $spl))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -44,7 +44,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (toYaml (coalesce nil)) (toYaml (dict "test" "test" )) (toYaml (dict )) (toYaml (list "test" "test2")))) | toJson -}}
+{{- (dict "r" (list (toYaml (coalesce nil)) (toYaml (dict "test" "test")) (toYaml (dict)) (toYaml (list "test" "test2")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -54,7 +54,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (tpl `hello world` (coalesce nil)) (tpl `{{ .Foo }}` (dict "Foo" "bar" )) (tpl `{{ . }}` (3 | int)) (tpl `{{ . | toJson }}` (3 | int)) (tpl `{{ (dict "a" (list))  | include "sprig.trim" }}` (coalesce nil)))) | toJson -}}
+{{- (dict "r" (list (tpl `hello world` (coalesce nil)) (tpl `{{ .Foo }}` (dict "Foo" "bar")) (tpl `{{ . }}` (3 | int)) (tpl `{{ . | toJson }}` (3 | int)) (tpl `{{ (dict "a" (list))  | include "sprig.trim" }}` (coalesce nil)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -81,7 +81,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (toString (1 | int)) (toString -2) (toString "test") (toString (dict "test" "test" )) (toString (list 2.3 3.5)) (toString (list "a" "b" "c")) (toString (list true false)))) | toJson -}}
+{{- (dict "r" (list (toString (1 | int)) (toString -2) (toString "test") (toString (dict "test" "test")) (toString (list 2.3 3.5)) (toString (list "a" "b" "c")) (toString (list true false)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -90,7 +90,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (first (list "one" "two")) (first (list -3 -4)) (first (list 5.5 6.6)) (first (list 7 8)) (first (list true false)) (first (list false true)) (first (list )) (first (list )) (first (list )) (first (list )) (first (list )) (first (list )))) | toJson -}}
+{{- (dict "r" (list (first (list "one" "two")) (first (list -3 -4)) (first (list 5.5 6.6)) (first (list 7 8)) (first (list true false)) (first (list false true)) (first (list)) (first (list)) (first (list)) (first (list)) (first (list)) (first (list)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -98,8 +98,8 @@
 {{- define "sprig.lenTest" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $mapWithKeys := (dict "test" "test" ) -}}
-{{- $initializedMap := (dict ) -}}
+{{- $mapWithKeys := (dict "test" "test") -}}
+{{- $initializedMap := (dict) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (len $mapWithKeys) (len $initializedMap))) | toJson -}}
 {{- break -}}
@@ -169,10 +169,10 @@
 {{- define "sprig.keys" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $keys := (keys (dict "0" (0 | int) "1" (1 | int) )) -}}
+{{- $keys := (keys (dict "0" (0 | int) "1" (1 | int))) -}}
 {{- $_ := (sortAlpha $keys) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list $keys (keys (dict )))) | toJson -}}
+{{- (dict "r" (list $keys (keys (dict)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -181,7 +181,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (concat (list (1 | int) (2 | int)) (list (3 | int) (4 | int))) (concat (list (1 | int) (2 | int)) (list (3 | int) (4 | int)) (list (5 | int) (6 | int))) (concat (default (list ) (list (1 | int) (2 | int))) (default (list ) (list (3 | int) (4 | int)))) (concat (default (list ) (list (1 | int) (2 | int))) (list (3 | int) (4 | int))))) | toJson -}}
+{{- (dict "r" (list (concat (list (1 | int) (2 | int)) (list (3 | int) (4 | int))) (concat (list (1 | int) (2 | int)) (list (3 | int) (4 | int)) (list (5 | int) (6 | int))) (concat (default (list) (list (1 | int) (2 | int))) (default (list) (list (3 | int) (4 | int)))) (concat (default (list) (list (1 | int) (2 | int))) (list (3 | int) (4 | int))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -189,10 +189,10 @@
 {{- define "sprig.unset" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $m1 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int) ) -}}
-{{- $m2 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int) ) -}}
-{{- $m3 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int) ) -}}
-{{- $m4 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int) ) -}}
+{{- $m1 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int)) -}}
+{{- $m2 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int)) -}}
+{{- $m3 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int)) -}}
+{{- $m4 := (dict "0" (0 | int) "1" (1 | int) "2" (2 | int)) -}}
 {{- $_ := (unset $m2 "0") -}}
 {{- $_ := (unset $m3 "2") -}}
 {{- $_ := (unset $m3 "1") -}}
@@ -210,7 +210,7 @@
 {{- $defaultInt := (1234 | int) -}}
 {{- $defaultStrSlice := (list $defaultStr) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (default "" $defaultStr) (default "value" $defaultStr) (default (coalesce nil) $defaultStrSlice) (default (list ) $defaultStrSlice) (default (0 | int) $defaultInt) (default (1 | int) $defaultInt))) | toJson -}}
+{{- (dict "r" (list (default "" $defaultStr) (default "value" $defaultStr) (default (coalesce nil) $defaultStrSlice) (default (list) $defaultStrSlice) (default (0 | int) $defaultInt) (default (1 | int) $defaultInt))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -219,7 +219,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (empty (coalesce nil)) (empty "") (empty (list )) (empty (list "")) (empty (dict )) (empty (dict "key" (coalesce nil) )) (empty (1 | int)) (empty (0 | int)) (empty false) (empty true) (empty "") (empty "hello") (empty (mustMergeOverwrite (dict ) (dict ))) (empty (mustMergeOverwrite (dict ) (dict "Value" (1 | int) ))))) | toJson -}}
+{{- (dict "r" (list (empty (coalesce nil)) (empty "") (empty (list)) (empty (list "")) (empty (dict)) (empty (dict "key" (coalesce nil))) (empty (1 | int)) (empty (0 | int)) (empty false) (empty true) (empty "") (empty "hello") (empty (mustMergeOverwrite (dict) (dict))) (empty (mustMergeOverwrite (dict) (dict "Value" (1 | int)))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
