@@ -32,6 +32,7 @@ type Dot struct {
 	Release   Release
 	Chart     Chart
 	Subcharts map[string]*Dot
+	Files     Files
 	// Capabilities
 
 	// KubeConfig is a hacked in value to allow `Lookup` to not rely on global
@@ -47,6 +48,41 @@ type Dot struct {
 	// special case to rehydrate it.
 	// WARNING: DO NOT USE OR REFERENCE IN HELM CHARTS. IT WILL NOT WORK.
 	Templates fs.FS `json:"-"`
+}
+
+// Files is a re-implementation of helm's `.Files` construct.
+// https://helm.sh/docs/chart_template_guide/accessing_files/
+type Files struct {
+	fs fs.FS
+}
+
+func NewFiles(fs fs.FS) Files {
+	return Files{fs: fs}
+}
+
+func (f *Files) Get(path string) string {
+	// If path isn't found, an empty string will be returned
+	return string(f.GetBytes(path))
+}
+
+func (f *Files) GetBytes(path string) []byte {
+	// https://github.com/helm/helm/blob/3bb50bbbdd9c946ba9989fbe4fb4104766302a64/pkg/engine/files.go#L50-L53
+	content, _ := fs.ReadFile(f.fs, path)
+	// If content, isn't found an empty byte slice is returned.
+	return content
+}
+
+func (f *Files) Lines(path string) []string {
+	// https://github.com/helm/helm/blob/3bb50bbbdd9c946ba9989fbe4fb4104766302a64/pkg/engine/files.go#L157-L164
+	content := f.Get(path)
+	if content == "" {
+		return []string{}
+	}
+	// Strip trailing newlines, like helm does.
+	if content[len(content)-1] == '\n' {
+		content = content[:len(content)-1]
+	}
+	return strings.Split(content, "\n")
 }
 
 type Release struct {

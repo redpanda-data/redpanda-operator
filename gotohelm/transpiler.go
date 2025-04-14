@@ -1283,6 +1283,16 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	case "time.(Duration).String":
 		return litCall("_shims.time_Duration_String", args...)
 
+	// .Files support
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.(*Files).Get":
+		return &BuiltInCall{Func: &Selector{Expr: receiver, Field: "Get"}, Arguments: args}
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.(*Files).GetBytes":
+		return &BuiltInCall{Func: &Selector{Expr: receiver, Field: "GetBytes"}, Arguments: args}
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.(*Files).Lines":
+		return &BuiltInCall{Func: &Selector{Expr: receiver, Field: "Lines"}, Arguments: args}
+	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.(*Files).Glob":
+		return &BuiltInCall{Func: &Selector{Expr: receiver, Field: "Glob"}, Arguments: args}
+
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.MustDuration":
 		return litCall(
 			"_shims.time_Duration_String",

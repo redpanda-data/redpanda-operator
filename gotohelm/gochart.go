@@ -285,6 +285,7 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		Subcharts:  subcharts,
 		Values:     parentValues,
 		Templates:  templates,
+		Files:      helmette.NewFiles(c.fs),
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
 			Version:    c.metadata.Version,
