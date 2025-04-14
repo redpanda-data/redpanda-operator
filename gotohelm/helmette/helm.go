@@ -120,7 +120,7 @@ func Tpl(dot *Dot, tpl string, context any) string {
 	fns := sprig.TxtFuncMap()
 	maps.Copy(fns, template.FuncMap{
 		"toYaml":   ToYaml,
-		"fromYaml": FromYaml,
+		"fromYaml": FromYaml[map[string]any],
 		"toJson":   ToJSON,
 		"fromJson": FromJSON,
 
