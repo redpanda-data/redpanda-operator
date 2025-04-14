@@ -10,9 +10,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $ashe := (mustMergeOverwrite (dict "IsLongHaired" false "name" "" ) (mustMergeOverwrite (dict "name" "" ) (dict "name" "Ashe" )) (dict )) -}}
+{{- $ashe := (mustMergeOverwrite (dict "IsLongHaired" false "name" "") (mustMergeOverwrite (dict "name" "") (dict "name" "Ashe")) (dict)) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack) ))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack) ))) "r"))) | toJson -}}
+{{- (dict "r" (list (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe)))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $ashe)))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June)))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.June)))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack)))) "r") (get (fromJson (include "typing.Pet.Greet" (dict "a" (list $values.Jack)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

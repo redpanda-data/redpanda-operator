@@ -124,16 +124,15 @@ func (i *Ident) Write(w io.Writer) {
 }
 
 type BuiltInCall struct {
-	FuncName  string
+	Func      Node
 	Arguments []Node
 }
 
 func (c *BuiltInCall) Write(w io.Writer) {
-	fmt.Fprintf(w, "(%s ", c.FuncName)
-	for i, arg := range c.Arguments {
-		if i > 0 {
-			fmt.Fprintf(w, " ")
-		}
+	fmt.Fprintf(w, "(")
+	c.Func.Write(w)
+	for _, arg := range c.Arguments {
+		fmt.Fprintf(w, " ")
 		arg.Write(w)
 	}
 	fmt.Fprintf(w, ")")
@@ -165,7 +164,7 @@ func (c *Call) Write(w io.Writer) {
 			{
 				Key: Quoted("a"),
 				Value: &BuiltInCall{
-					FuncName:  "list",
+					Func:      Literal("list"),
 					Arguments: c.Arguments,
 				},
 			},
@@ -202,10 +201,10 @@ type DictLiteral struct {
 }
 
 func (d *DictLiteral) Write(w io.Writer) {
-	fmt.Fprintf(w, "(dict ")
+	fmt.Fprintf(w, "(dict")
 	for _, p := range d.KeysValues {
-		p.Write(w)
 		fmt.Fprintf(w, " ")
+		p.Write(w)
 	}
 	fmt.Fprintf(w, ")")
 }

@@ -205,8 +205,8 @@
 {{- end -}}
 {{- $reprStr := (toString $repr) -}}
 {{- $unit := (regexFind "(k|m|M|G|T|P|Ki|Mi|Gi|Ti|Pi)$" $repr) -}}
-{{- $numeric := (float64 (substr (0 | int) ((sub ((get (fromJson (include "_shims.len" (dict "a" (list $reprStr) ))) "r") | int) ((get (fromJson (include "_shims.len" (dict "a" (list $unit) ))) "r") | int)) | int) $reprStr)) -}}
-{{- $_184_scale_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list (dict "" 1.0 "m" 0.001 "k" (1000 | int) "M" (1000000 | int) "G" (1000000000 | int) "T" (1000000000000 | int) "P" (1000000000000000 | int) "Ki" (1024 | int) "Mi" (1048576 | int) "Gi" (1073741824 | int) "Ti" (1099511627776 | int) "Pi" (1125899906842624 | int) ) $unit (float64 0)) ))) "r") -}}
+{{- $numeric := (float64 (substr (0 | int) ((sub ((get (fromJson (include "_shims.len" (dict "a" (list $reprStr)))) "r") | int) ((get (fromJson (include "_shims.len" (dict "a" (list $unit)))) "r") | int)) | int) $reprStr)) -}}
+{{- $_184_scale_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list (dict "" 1.0 "m" 0.001 "k" (1000 | int) "M" (1000000 | int) "G" (1000000000 | int) "T" (1000000000000 | int) "P" (1000000000000000 | int) "Ki" (1024 | int) "Mi" (1048576 | int) "Gi" (1073741824 | int) "Ti" (1099511627776 | int) "Pi" (1125899906842624 | int)) $unit (float64 0))))) "r") -}}
 {{- $scale := ((index $_184_scale_ok 0) | float64) -}}
 {{- $ok := (index $_184_scale_ok 1) -}}
 {{- if (not $ok) -}}
@@ -222,7 +222,7 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_207_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr) ))) "r") -}}
+{{- $_207_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
 {{- $numeric := ((index $_207_numeric_scale 0) | float64) -}}
 {{- $scale := ((index $_207_numeric_scale 1) | float64) -}}
 {{- $strs := (list "" "m" "k" "M" "G" "T" "P" "Ki" "Mi" "Gi" "Ti" "Pi") -}}
@@ -250,7 +250,7 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_234_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr) ))) "r") -}}
+{{- $_234_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
 {{- $numeric := ((index $_234_numeric_scale 0) | float64) -}}
 {{- $scale := ((index $_234_numeric_scale 1) | float64) -}}
 {{- $_is_returning = true -}}
@@ -263,7 +263,7 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_239_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr) ))) "r") -}}
+{{- $_239_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
 {{- $numeric := ((index $_239_numeric_scale 0) | float64) -}}
 {{- $scale := ((index $_239_numeric_scale 1) | float64) -}}
 {{- $_is_returning = true -}}
@@ -276,7 +276,7 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $unitMap := (dict "s" ((1000000000 | int64) | int64) "m" ((60000000000 | int64) | int64) "h" ((3600000000000 | int64) | int64) ) -}}
+{{- $unitMap := (dict "s" ((1000000000 | int64) | int64) "m" ((60000000000 | int64) | int64) "h" ((3600000000000 | int64) | int64)) -}}
 {{- $original := $repr -}}
 {{- $value := ((0 | int64) | int64) -}}
 {{- if (eq $repr "") -}}
@@ -295,12 +295,12 @@
 {{- if (eq $n "") -}}
 {{- $_ := (fail (printf "invalid Duration: %q" $original)) -}}
 {{- end -}}
-{{- $repr = (substr ((get (fromJson (include "_shims.len" (dict "a" (list $n) ))) "r") | int) -1 $repr) -}}
+{{- $repr = (substr ((get (fromJson (include "_shims.len" (dict "a" (list $n)))) "r") | int) -1 $repr) -}}
 {{- $unit := (regexFind `^(h|m|s)` $repr) -}}
 {{- if (eq $unit "") -}}
 {{- $_ := (fail (printf "invalid Duration: %q" $original)) -}}
 {{- end -}}
-{{- $repr = (substr ((get (fromJson (include "_shims.len" (dict "a" (list $unit) ))) "r") | int) -1 $repr) -}}
+{{- $repr = (substr ((get (fromJson (include "_shims.len" (dict "a" (list $unit)))) "r") | int) -1 $repr) -}}
 {{- $value = ((add $value (((mul (int64 $n) (ternary (index $unitMap $unit) 0 (hasKey $unitMap $unit))) | int64))) | int64) -}}
 {{- end -}}
 {{- if $_is_returning -}}

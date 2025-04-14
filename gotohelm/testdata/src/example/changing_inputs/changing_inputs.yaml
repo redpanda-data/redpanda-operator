@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- range $k, $v := $dot.Values -}}
-{{- $_19___ok_1 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" $v "") ))) "r") -}}
+{{- $_19___ok_1 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" $v "")))) "r") -}}
 {{- $_ := (index $_19___ok_1 0) -}}
 {{- $ok_1 := (index $_19___ok_1 1) -}}
 {{- if $ok_1 -}}
