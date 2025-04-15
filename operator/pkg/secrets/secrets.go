@@ -13,8 +13,9 @@ import (
 )
 
 type CloudExpander struct {
-	client secrets.SecretAPI
-	logger *slog.Logger
+	client         secrets.SecretAPI
+	logger         *slog.Logger
+	ignoreNotFound bool
 }
 
 type ExpanderCloudConfiguration struct {
@@ -24,11 +25,13 @@ type ExpanderCloudConfiguration struct {
 	AzureKeyVaultURI string
 }
 
-// NewCloudExpander creates a new CloudExpander
+// NewCloudExpander creates a new CloudExpander.
+// It provides a way to expand secret references from cloud secret store.
 func NewCloudExpander(
 	ctx context.Context,
 	prefix string,
 	cloudConfig ExpanderCloudConfiguration,
+	ignoreNotFound bool,
 ) (*CloudExpander, error) {
 	logger := log.FromContext(ctx)
 	slogLogger := slog.New(logr.ToSlogHandler(logger.WithName("slog").WithValues("mode", "slog")))
@@ -73,15 +76,27 @@ func NewCloudExpander(
 }
 
 // NewCloudExpanderFromAPI creates a new CloudExpander
-func NewCloudExpanderFromAPI(api secrets.SecretAPI) *CloudExpander {
-	return &CloudExpander{client: api}
+func NewCloudExpanderFromAPI(
+	api secrets.SecretAPI,
+	ignoreNotFound bool,
+) *CloudExpander {
+	return &CloudExpander{
+		client:         api,
+		logger:         slog.Default(),
+		ignoreNotFound: ignoreNotFound,
+	}
 }
 
 // Expand expands the secret value by retrieving it from the cloud secret store
 func (t *CloudExpander) Expand(ctx context.Context, name string) (string, error) {
 	value, found := t.client.GetSecretValue(ctx, name)
 	if !found {
-		return "", errors.Newf("secret %s not found", name)
+		err := errors.Newf("secret %s not found", name)
+		if t.ignoreNotFound {
+			t.logger.Warn("cannot expand secret %s, secret not found", slog.Any("error", err))
+			return "", nil
+		}
+		return "", err
 	}
 	return value, nil
 }
