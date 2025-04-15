@@ -265,15 +265,16 @@ type PartialStatefulset struct {
 }
 
 type PartialServiceAccountCfg struct {
-	Annotations                  map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
-	AutomountServiceAccountToken *bool             "json:\"automountServiceAccountToken,omitempty\""
-	Create                       *bool             "json:\"create,omitempty\" jsonschema:\"required\""
-	Name                         *string           "json:\"name,omitempty\" jsonschema:\"required\""
+	Annotations                            map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
+	Create                                 *bool             "json:\"create,omitempty\" jsonschema:\"required\""
+	Name                                   *string           "json:\"name,omitempty\" jsonschema:\"required\""
+	DeprecatedAutomountServiceAccountToken *bool             "json:\"automountServiceAccountToken,omitempty\""
 }
 
 type PartialRBAC struct {
-	Enabled     *bool             "json:\"enabled,omitempty\" jsonschema:\"required\""
-	Annotations map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
+	Enabled        *bool             "json:\"enabled,omitempty\" jsonschema:\"required\""
+	RPKDebugBundle *bool             "json:\"rpkDebugBundle,omitempty\" jsonschema:\"required\""
+	Annotations    map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
 }
 
 type PartialTuning struct {

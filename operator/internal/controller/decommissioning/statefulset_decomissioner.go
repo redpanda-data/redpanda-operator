@@ -171,16 +171,6 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=core,namespace=default,resources=secrets,verbs=get;list;watch
 
-// HACK / REMOVE ME SOON: This false set of permissions is here to be in sync
-// with the redpanda chart. They are all superfluous.
-// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;delete;patch;update;create
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;patch;update;delete;create
-// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;delete;update;patch
-// +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;delete;update
-// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;delete;get;list;patch;update;watch
-
 func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
 	pvcPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{

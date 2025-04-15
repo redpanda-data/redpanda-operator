@@ -79,7 +79,7 @@ tasks:
 
   gotohelm:
     cmds:
-      - GOBIN={{ .BUILD_ROOT }} go install github.com/redpanda-data/redpanda-operator/gotohelm/cmd/gotohelm@v1.0.0
+      - GOBIN={{ .BUILD_ROOT }} go install github.com/redpanda-data/redpanda-operator/gotohelm/cmd/gotohelm@v1.1.0
 
   licenseupdater:
     cmds:

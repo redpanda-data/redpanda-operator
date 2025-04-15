@@ -39,6 +39,7 @@ var (
 
 	//go:embed Chart.lock
 	//go:embed Chart.yaml
+	//go:embed files/*
 	//go:embed templates/*
 	//go:embed values.schema.json
 	//go:embed values.yaml
@@ -101,8 +102,6 @@ func render(dot *helmette.Dot) []kube.Object {
 		ServiceAccount(dot),
 		ServiceInternal(dot),
 		ServiceMonitor(dot),
-		SidecarControllersRole(dot),
-		SidecarControllersRoleBinding(dot),
 		StatefulSet(dot),
 		PostInstallUpgradeJob(dot),
 	}
@@ -129,7 +128,15 @@ func render(dot *helmette.Dot) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
+	for _, obj := range Roles(dot) {
+		manifests = append(manifests, obj)
+	}
+
 	for _, obj := range ClusterRoles(dot) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range RoleBindings(dot) {
 		manifests = append(manifests, obj)
 	}
 

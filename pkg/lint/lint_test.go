@@ -175,6 +175,7 @@ func TestGoModLint(t *testing.T) {
 		"k8s.io/utils":                     "v0.0.0-20240711033017-18e509b52bc8",
 		"sigs.k8s.io/controller-runtime":   "v0.18.5",
 		"sigs.k8s.io/yaml":                 "v1.4.0",
+		"github.com/redpanda-data/redpanda-operator/gotohelm": "v1.1.0",
 	}
 
 	modPaths, err := filepath.Glob("../../*/go.mod")

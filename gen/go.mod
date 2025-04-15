@@ -146,7 +146,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 // indirect
-	github.com/redpanda-data/redpanda-operator/gotohelm v1.0.0 // indirect
+	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect

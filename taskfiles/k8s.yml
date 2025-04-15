@@ -17,6 +17,8 @@ tasks:
       - for:
         - NAME: rpk-debug-bundle
           PATH: ./internal/controller/rpkdebugbundle
+        - NAME: rack-awareness
+          PATH: ./internal/controller/rackawareness
         - NAME: node-watcher
           PATH: ./internal/controller/nodewatcher
         - NAME: old-decommission
@@ -42,6 +44,19 @@ tasks:
             rbac:roleName={{ .ITEM.NAME }} \
             output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
 
+      # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
+      # The chart embeds these permissions so they can't get out of sync with the operator.
+      - rm ../charts/redpanda/files/*.yaml
+      - |
+        yq e \
+          --split-exp '"../charts/redpanda/files/\( .metadata.name ).\( .kind ).yaml"' \
+          '.' \
+          ./config/rbac/itemized/decommission.yaml \
+          ./config/rbac/itemized/pvcunbinder.yaml \
+          ./config/rbac/itemized/sidecar.yaml \
+          ./config/rbac/itemized/rpk-debug-bundle.yaml \
+          ./config/rbac/itemized/rack-awareness.yaml
+
       # Some integration tests use their RBAC declarations but generally
       # require some additional permissions (e.g. leader election, running
       # multiple controllers)
@@ -58,6 +73,8 @@ tasks:
           object:headerFile="../licenses/boilerplate.go.txt" \
           paths=./cmd/run \
           paths=./internal/controller/redpanda \
+          paths=./internal/controller/rackawareness \
+          paths=./internal/controller/rpkdebugbundle \
           paths=./internal/controller/manageddecommission \
           paths=./internal/controller/nodewatcher \
           paths=./internal/controller/olddecommission \

@@ -10,6 +10,7 @@
 package redpanda_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/json"
@@ -37,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/connectors"
@@ -88,6 +90,73 @@ func TestIntegrationChart(t *testing.T) {
 	redpandaChart := "."
 
 	h := helmtest.Setup(t)
+
+	t.Run("rbac", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
+			// Default + RackAwareness
+			Values: minimalValues(&redpanda.PartialValues{
+				RackAwareness: &redpanda.PartialRackAwareness{
+					Enabled:        ptr.To(true),
+					NodeAnnotation: ptr.To("k3s.io/hostname"),
+				},
+			}),
+		})
+
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+			"app.kubernetes.io/instance":  release.Name,
+			"app.kubernetes.io/component": release.Chart + "-statefulset",
+		})
+		require.NoError(t, err)
+
+		// Assert that all containers are ready, this ensures that the SideCar
+		// container is working as expected.
+		for _, pod := range pods.Items {
+			for _, container := range pod.Status.ContainerStatuses {
+				require.True(t, container.Ready, "Container %q of Pod %q should be ready", container.Name, pod.Name)
+			}
+		}
+
+		// Assert that rpk debug bundle, which pings the k8s API, works with default values.
+		{
+			selector := fmt.Sprintf("app.kubernetes.io/instance=%s,app.kubernetes.io/component=%s-statefulset", release.Name, release.Chart)
+
+			var stdout bytes.Buffer
+			require.NoError(t, env.Ctl().Exec(ctx, &pods.Items[0], kube.ExecOptions{
+				Container: "redpanda",
+				Command:   []string{"rpk", "debug", "bundle", "--namespace", release.Namespace, "--label-selector", selector},
+				Stdout:    &stdout,
+			}))
+
+			t.Logf("rpk debug bundle output:\n%s\n", stdout.String())
+
+			// Aside from asserting that RPK doesn't exit 1, we do some light
+			// checks on the stdout to ensure we've not seen any issues
+			// mentioning the inability to fetch Pods. We previously attempted
+			// to assert that 2 expected errors were reported but different
+			// errors happen on *nix vs macOS which makes such an assertion
+			// unreliable.
+			require.NotContains(t, stdout.String(), "no pods found in namespace")
+			require.Contains(t, stdout.String(), "Debug bundle saved to")
+		}
+
+		// Assert that rack awareness, which pings the k8s API, works.
+		{
+			var stdout bytes.Buffer
+			require.NoError(t, env.Ctl().Exec(ctx, &pods.Items[0], kube.ExecOptions{
+				Container: "redpanda",
+				Command:   []string{"cat", "/etc/redpanda/redpanda.yaml"},
+				Stdout:    &stdout,
+			}))
+
+			// Not the best assert, we're just looking to check that the `rack` key
+			// has been set to some value that starts with k3d- which indicates the
+			// interaction with the k8s API worked as expected.
+			require.Contains(t, stdout.String(), "rack: k3d-")
+		}
+	})
 
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
 		ctx := testutil.Context(t)
@@ -1078,67 +1147,5 @@ func TestGoHelmEquivalence(t *testing.T) {
 				assert.Equal(t, helmObjs[i], goObjs[i])
 			}
 		})
-	}
-}
-
-func GetInitContainer() *struct {
-	Configurator *struct {
-		ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-		Resources         map[string]any "json:\"resources,omitempty\""
-	} "json:\"configurator,omitempty\""
-	FSValidator *struct {
-		Enabled           *bool          "json:\"enabled,omitempty\""
-		Resources         map[string]any "json:\"resources,omitempty\""
-		ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-		ExpectedFS        *string        "json:\"expectedFS,omitempty\""
-	} "json:\"fsValidator,omitempty\""
-	SetDataDirOwnership *struct {
-		Enabled           *bool          "json:\"enabled,omitempty\""
-		Resources         map[string]any "json:\"resources,omitempty\""
-		ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-	} "json:\"setDataDirOwnership,omitempty\""
-	SetTieredStorageCacheDirOwnership *struct {
-		Resources         map[string]any "json:\"resources,omitempty\""
-		ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-	} "json:\"setTieredStorageCacheDirOwnership,omitempty\""
-	Tuning *struct {
-		Resources         map[string]any "json:\"resources,omitempty\""
-		ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-	} "json:\"tuning,omitempty\""
-	ExtraInitContainers *string "json:\"extraInitContainers,omitempty\""
-} {
-	return &struct {
-		Configurator *struct {
-			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-			Resources         map[string]any "json:\"resources,omitempty\""
-		} "json:\"configurator,omitempty\""
-		FSValidator *struct {
-			Enabled           *bool          "json:\"enabled,omitempty\""
-			Resources         map[string]any "json:\"resources,omitempty\""
-			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-			ExpectedFS        *string        "json:\"expectedFS,omitempty\""
-		} "json:\"fsValidator,omitempty\""
-		SetDataDirOwnership *struct {
-			Enabled           *bool          "json:\"enabled,omitempty\""
-			Resources         map[string]any "json:\"resources,omitempty\""
-			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-		} "json:\"setDataDirOwnership,omitempty\""
-		SetTieredStorageCacheDirOwnership *struct {
-			Resources         map[string]any "json:\"resources,omitempty\""
-			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-		} "json:\"setTieredStorageCacheDirOwnership,omitempty\""
-		Tuning *struct {
-			Resources         map[string]any "json:\"resources,omitempty\""
-			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
-		} "json:\"tuning,omitempty\""
-		ExtraInitContainers *string "json:\"extraInitContainers,omitempty\""
-	}{
-		ExtraInitContainers: ptr.To(`- name: "test-init-container"
-  image: "mintel/docker-alpine-bash-curl-jq:latest"
-  command: [ "/bin/bash", "-c" ]
-  args:
-    - |
-      set -xe
-      echo "Hello World!"`),
 	}
 }
