@@ -58,6 +58,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 )
 
@@ -166,6 +167,12 @@ func Command() *cobra.Command {
 		metricsCertKey                      string
 		enableGhostBrokerDecommissioner     bool
 		ghostBrokerDecommissionerSyncPeriod time.Duration
+		cloudSecretsEnabled                 bool
+		cloudSecretsPrefix                  string
+		cloudSecretsAWSRegion               string
+		cloudSecretsAWSRoleARN              string
+		cloudSecretsGCPProjectID            string
+		cloudSecretsAzureKeyVaultURI        string
 	)
 
 	cmd := &cobra.Command{
@@ -173,6 +180,25 @@ func Command() *cobra.Command {
 		Short: "Run the redpanda operator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
+			var cloudExpander *pkgsecrets.CloudExpander
+			if cloudSecretsEnabled {
+				cloudConfig := pkgsecrets.ExpanderCloudConfiguration{}
+				if cloudSecretsAWSRegion != "" && cloudSecretsAWSRoleARN != "" {
+					cloudConfig.AWSRegion = cloudSecretsAWSRegion
+					cloudConfig.AWSRoleARN = cloudSecretsAWSRoleARN
+				} else if cloudSecretsGCPProjectID != "" {
+					cloudConfig.GCPProjectID = cloudSecretsGCPProjectID
+				} else if cloudSecretsAzureKeyVaultURI != "" {
+					cloudConfig.AzureKeyVaultURI = cloudSecretsAzureKeyVaultURI
+				} else {
+					return errors.New("Cloud secrets are enabled but configuration for cloud provider is missing or invalid")
+				}
+				var err error
+				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, cloudSecretsPrefix, cloudConfig)
+				if err != nil {
+					return err
+				}
+			}
 
 			return Run(
 				ctx,
@@ -208,6 +234,13 @@ func Command() *cobra.Command {
 				metricsCertKey,
 				enableGhostBrokerDecommissioner,
 				ghostBrokerDecommissionerSyncPeriod,
+				cloudExpander,
+				cloudSecretsEnabled,
+				cloudSecretsPrefix,
+				cloudSecretsAWSRegion,
+				cloudSecretsAWSRoleARN,
+				cloudSecretsGCPProjectID,
+				cloudSecretsAzureKeyVaultURI,
 			)
 		},
 	}
@@ -316,6 +349,13 @@ func Run(
 	metricsCertKey string,
 	enableGhostBrokerDecommissioner bool,
 	ghostBrokerDecommissionerSyncPeriod time.Duration,
+	cloudExpander *pkgsecrets.CloudExpander,
+	cloudSecretsEnabled bool,
+	cloudSecretsPrefix string,
+	cloudSecretsAWSRegion string,
+	cloudSecretsAWSRoleARN string,
+	cloudSecretsGCPProjectID string,
+	cloudSecretsAzureKeyVaultURI string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -435,9 +475,15 @@ func Run(
 	}
 
 	configurator := resources.ConfiguratorSettings{
-		ConfiguratorBaseImage: configuratorBaseImage,
-		ConfiguratorTag:       configuratorTag,
-		ImagePullPolicy:       corev1.PullPolicy(configuratorImagePullPolicy),
+		ConfiguratorBaseImage:        configuratorBaseImage,
+		ConfiguratorTag:              configuratorTag,
+		ImagePullPolicy:              corev1.PullPolicy(configuratorImagePullPolicy),
+		CloudSecretsEnabled:          cloudSecretsEnabled,
+		CloudSecretsPrefix:           cloudSecretsPrefix,
+		CloudSecretsAWSRegion:        cloudSecretsAWSRegion,
+		CloudSecretsAWSRoleARN:       cloudSecretsAWSRoleARN,
+		CloudSecretsGCPProjectID:     cloudSecretsGCPProjectID,
+		CloudSecretsAzureKeyVaultURI: cloudSecretsAzureKeyVaultURI,
 	}
 
 	// init running state values if we are not in operator mode
