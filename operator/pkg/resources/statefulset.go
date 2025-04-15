@@ -90,6 +90,13 @@ type ConfiguratorSettings struct {
 	ConfiguratorBaseImage string
 	ConfiguratorTag       string
 	ImagePullPolicy       corev1.PullPolicy
+
+	CloudSecretsEnabled          bool
+	CloudSecretsPrefix           string
+	CloudSecretsAWSRegion        string
+	CloudSecretsAWSRoleARN       string
+	CloudSecretsGCPProjectID     string
+	CloudSecretsAzureKeyVaultURI string
 }
 
 // StatefulSetResource is part of the reconciliation of redpanda.vectorized.io CRD
@@ -510,7 +517,7 @@ func (r *StatefulSetResource) obj(
 							Name:            configuratorContainerName,
 							Image:           r.fullConfiguratorImage(),
 							Command:         []string{"/redpanda-operator"},
-							Args:            []string{"configure"},
+							Args:            r.getConfiguratorArgs(),
 							ImagePullPolicy: r.configuratorSettings.ImagePullPolicy,
 							Env: append([]corev1.EnvVar{
 								{
@@ -814,6 +821,27 @@ func (r *StatefulSetResource) canOverwriteBootstrapForAnyPreexistingResource(ctx
 	// Otherwise, we'll leave this untouched for the moment; it's already running,
 	// and so the bootstrap configuration is irrelevant.
 	return false, nil
+}
+
+func (r *StatefulSetResource) getConfiguratorArgs() []string {
+	result := []string{"configure"}
+	if r.configuratorSettings.CloudSecretsEnabled {
+		result = append(result, "--enable-cloud-secrets=true")
+		result = append(result, fmt.Sprintf("--cloud-secrets-prefix=%s", r.configuratorSettings.CloudSecretsPrefix))
+		if r.configuratorSettings.CloudSecretsAWSRegion != "" {
+			result = append(result, fmt.Sprintf("--cloud-secrets-aws-region=%s", r.configuratorSettings.CloudSecretsAWSRegion))
+		}
+		if r.configuratorSettings.CloudSecretsAWSRoleARN != "" {
+			result = append(result, fmt.Sprintf("--cloud-secrets-aws-role-arn=%s", r.configuratorSettings.CloudSecretsAWSRoleARN))
+		}
+		if r.configuratorSettings.CloudSecretsGCPProjectID != "" {
+			result = append(result, fmt.Sprintf("--cloud-secrets-gcp-project-id=%s", r.configuratorSettings.CloudSecretsGCPProjectID))
+		}
+		if r.configuratorSettings.CloudSecretsAzureKeyVaultURI != "" {
+			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-ur=%s", r.configuratorSettings.CloudSecretsAzureKeyVaultURI))
+		}
+	}
+	return result
 }
 
 // getPrestopHook creates a hook that drains the node before shutting down.
