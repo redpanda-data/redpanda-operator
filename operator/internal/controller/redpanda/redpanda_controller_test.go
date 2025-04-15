@@ -352,11 +352,12 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	cases := []struct {
-		In              map[string]any
-		Expected        map[string]any
-		ExpectedRestart bool
+		Name     string
+		In       map[string]any
+		Expected map[string]any
 	}{
 		{
+			Name: "should_create_superusers",
 			In: map[string]any{
 				"admin_api_require_auth":      true,
 				"enable_schema_id_validation": "redpanda",
@@ -372,6 +373,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			},
 		},
 		{
+			Name: "should_enable_transactions",
 			In: map[string]any{
 				"enable_transactions":         true,
 				"enable_schema_id_validation": "none",
@@ -389,50 +391,55 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			},
 		},
 		{
+			// Adding a test case with data_transforms_enabled which requires a
+			// cluster restart, to validate that the operator ensures the cluster
+			// is restarted.
+			Name: "should_enable_transforms",
 			In: map[string]any{
 				"data_transforms_enabled": true, // needs restart
 			},
 			Expected: map[string]any{
 				"data_transforms_enabled": true,
 			},
-			ExpectedRestart: true,
 		},
 	}
 
 	for _, c := range cases {
-		adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
-		s.Require().NoError(err)
-		defer adminClient.Close()
-		st, err := adminClient.ClusterConfigStatus(s.ctx, false)
-		assert.NoError(s.T(), err)
-		initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
-			return int(a.ConfigVersion - b.ConfigVersion)
-		}).ConfigVersion
-
-		waitFn := setConfig(c.In)
-		s.EventuallyWithT(func(t *assert.CollectT) {
+		s.Run(fmt.Sprintf(c.Name, c.In), func() {
+			adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+			s.Require().NoError(err)
+			defer adminClient.Close()
 			st, err := adminClient.ClusterConfigStatus(s.ctx, false)
-			if !assert.NoError(t, err) {
-				return
-			}
-			currVersion := slices.MinFunc(st, func(a, b rpadmin.ConfigStatus) int {
+			assert.NoError(s.T(), err)
+			initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
 				return int(a.ConfigVersion - b.ConfigVersion)
 			}).ConfigVersion
 
-			assert.Greater(t, currVersion, initialVersion, "expected config version to increase")
+			waitFn := setConfig(c.In)
+			s.EventuallyWithT(func(t *assert.CollectT) {
+				st, err := adminClient.ClusterConfigStatus(s.ctx, false)
+				if !assert.NoError(t, err) {
+					return
+				}
+				currVersion := slices.MinFunc(st, func(a, b rpadmin.ConfigStatus) int {
+					return int(a.ConfigVersion - b.ConfigVersion)
+				}).ConfigVersion
 
-			assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
-				return cs.Restart
-			}), "expected no brokers to need restart")
-		}, time.Minute, time.Second)
-		// wait for the cluster to be ready and the configuration synced
-		waitFn()
+				assert.Greater(t, currVersion, initialVersion, "expected config version to increase")
 
-		config, err := adminClient.Config(s.ctx, false)
-		s.Require().NoError(err)
-		// Only assert that c.Expected is a subset of the set config.
-		// The chart/operator injects a bunch of "useful" values by default.
-		s.Subset(config, c.Expected)
+				assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
+					return cs.Restart
+				}), "expected no brokers to need restart")
+			}, time.Minute, time.Second)
+			// wait for the cluster to be ready and the configuration synced
+			waitFn()
+
+			config, err := adminClient.Config(s.ctx, false)
+			s.Require().NoError(err)
+			// Only assert that c.Expected is a subset of the set config.
+			// The chart/operator injects a bunch of "useful" values by default.
+			s.Subset(config, c.Expected)
+		})
 	}
 
 	s.deleteAndWait(rp)
