@@ -219,6 +219,12 @@ func Command() *cobra.Command {
 				enableGhostBrokerDecommissioner,
 				ghostBrokerDecommissionerSyncPeriod,
 				cloudExpander,
+				cloudSecretsEnabled,
+				cloudSecretsPrefix,
+				cloudSecretsAWSRegion,
+				cloudSecretsAWSRoleARN,
+				cloudSecretsGCPProjectID,
+				cloudSecretsAzureKeyVaultURI,
 			)
 		},
 	}
@@ -327,6 +333,12 @@ func Run(
 	enableGhostBrokerDecommissioner bool,
 	ghostBrokerDecommissionerSyncPeriod time.Duration,
 	cloudExpander *pkgsecrets.CloudExpander,
+	cloudSecretsEnabled bool,
+	cloudSecretsPrefix string,
+	cloudSecretsAWSRegion string,
+	cloudSecretsAWSRoleARN string,
+	cloudSecretsGCPProjectID string,
+	cloudSecretsAzureKeyVaultURI string,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -446,9 +458,15 @@ func Run(
 	}
 
 	configurator := resources.ConfiguratorSettings{
-		ConfiguratorBaseImage: configuratorBaseImage,
-		ConfiguratorTag:       configuratorTag,
-		ImagePullPolicy:       corev1.PullPolicy(configuratorImagePullPolicy),
+		ConfiguratorBaseImage:        configuratorBaseImage,
+		ConfiguratorTag:              configuratorTag,
+		ImagePullPolicy:              corev1.PullPolicy(configuratorImagePullPolicy),
+		CloudSecretsEnabled:          cloudSecretsEnabled,
+		CloudSecretsPrefix:           cloudSecretsPrefix,
+		CloudSecretsAWSRegion:        cloudSecretsAWSRegion,
+		CloudSecretsAWSRoleARN:       cloudSecretsAWSRoleARN,
+		CloudSecretsGCPProjectID:     cloudSecretsGCPProjectID,
+		CloudSecretsAzureKeyVaultURI: cloudSecretsAzureKeyVaultURI,
 	}
 
 	// init running state values if we are not in operator mode

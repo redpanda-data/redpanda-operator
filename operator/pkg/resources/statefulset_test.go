@@ -158,9 +158,13 @@ func TestEnsure(t *testing.T) {
 				TestAdminTLSConfigProvider{},
 				"",
 				resources.ConfiguratorSettings{
-					ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
-					ConfiguratorTag:       "latest",
-					ImagePullPolicy:       "Always",
+					ConfiguratorBaseImage:  "redpanda-data/redpanda-operator",
+					ConfiguratorTag:        "latest",
+					ImagePullPolicy:        "Always",
+					CloudSecretsEnabled:    true,
+					CloudSecretsPrefix:     "test",
+					CloudSecretsAWSRegion:  "region",
+					CloudSecretsAWSRoleARN: "arn",
 				},
 				func(ctx context.Context) (string, error) { return hash, nil },
 				func(ctx context.Context) (*configuration.GlobalConfiguration, error) {
@@ -239,6 +243,9 @@ func TestEnsure(t *testing.T) {
 				err = c.Delete(context.Background(), tt.existingObject)
 				assert.NoError(t, err, tt.name)
 			}
+			actualConfiguratorArgs := actual.Spec.Template.Spec.InitContainers[0].Args
+			assert.Equal(t, 5, len(actualConfiguratorArgs))
+
 			err = c.Delete(context.Background(), tt.pandaCluster)
 			if !apierrors.IsNotFound(err) {
 				assert.NoError(t, err, tt.name)
