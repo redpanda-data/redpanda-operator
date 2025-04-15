@@ -215,20 +215,7 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 		volumes = append(volumes, *v)
 	}
 
-	// Volume is used when:
-	// * service account automount is set to false
-	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
-		foundK8STokenVolume := false
-		for _, v := range volumes {
-			if strings.HasPrefix(ServiceAccountVolumeName+"-", v.Name) {
-				foundK8STokenVolume = true
-			}
-		}
-
-		if !foundK8STokenVolume {
-			volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
-		}
-	}
+	volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
 
 	return volumes
 }
@@ -354,6 +341,7 @@ func StatefulSetVolumeMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		{Name: "base-config", MountPath: "/tmp/base-config"},
 		{Name: "lifecycle-scripts", MountPath: "/var/lifecycle"},
 		{Name: "datadir", MountPath: "/var/lib/redpanda/data"},
+		{Name: ServiceAccountVolumeName, MountPath: DefaultAPITokenMountPath, ReadOnly: true},
 	}...)
 
 	if len(values.Listeners.TrustStores(&values.TLS)) > 0 {
@@ -566,19 +554,12 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 			MountPath: "/etc/secrets/configurator/scripts/",
 		},
 	)
-	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) &&
-		values.RackAwareness.Enabled {
-		mountName := ServiceAccountVolumeName
-		for _, vol := range StatefulSetVolumes(dot) {
-			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
-				mountName = vol.Name
-			}
-		}
 
+	if values.RackAwareness.Enabled {
 		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      mountName,
-			ReadOnly:  true,
+			Name:      ServiceAccountVolumeName,
 			MountPath: DefaultAPITokenMountPath,
+			ReadOnly:  true,
 		})
 	}
 
@@ -880,37 +861,20 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 	}
 
 	volumeMounts := append(
-		append(CommonMounts(dot),
-			corev1.VolumeMount{
-				Name:      "config",
-				MountPath: "/etc/redpanda",
-			},
-		),
-		templateToVolumeMounts(dot, values.Statefulset.SideCars.ExtraVolumeMounts)...,
+		CommonMounts(dot),
+		corev1.VolumeMount{
+			Name:      "config",
+			MountPath: "/etc/redpanda",
+		},
+		corev1.VolumeMount{
+			Name:      ServiceAccountVolumeName,
+			MountPath: DefaultAPITokenMountPath,
+			ReadOnly:  true,
+		},
 	)
 
-	volumeMounts = append(
-		volumeMounts,
-		templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...,
-	)
-
-	if !ptr.Deref(values.ServiceAccount.AutomountServiceAccountToken, false) {
-		mountName := ServiceAccountVolumeName
-		for _, vol := range StatefulSetVolumes(dot) {
-			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
-				mountName = vol.Name
-				break
-			}
-		}
-
-		if mountName != "" {
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      mountName,
-				ReadOnly:  true,
-				MountPath: DefaultAPITokenMountPath,
-			})
-		}
-	}
+	volumeMounts = append(volumeMounts, templateToVolumeMounts(dot, values.Statefulset.SideCars.ExtraVolumeMounts)...)
+	volumeMounts = append(volumeMounts, templateToVolumeMounts(dot, values.Statefulset.SideCars.ConfigWatcher.ExtraVolumeMounts)...)
 
 	return &corev1.Container{
 		Name:            "sidecar",

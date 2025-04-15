@@ -83,22 +83,6 @@ func FullLabels(dot *helmette.Dot) map[string]string {
 	return helmette.Merge(labels, defaults)
 }
 
-// Create the name of the service account to use
-func ServiceAccountName(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-	serviceAccount := values.ServiceAccount
-
-	if serviceAccount.Create && serviceAccount.Name != "" {
-		return serviceAccount.Name
-	} else if serviceAccount.Create {
-		return Fullname(dot)
-	} else if serviceAccount.Name != "" {
-		return serviceAccount.Name
-	}
-
-	return "default"
-}
-
 // Use AppVersion if image.tag is not set
 func Tag(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
