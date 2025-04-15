@@ -13,9 +13,27 @@ package redpanda
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
+
+// Create the name of the service account to use
+func ServiceAccountName(dot *helmette.Dot) string {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	serviceAccount := values.ServiceAccount
+
+	if serviceAccount.Create && serviceAccount.Name != "" {
+		return serviceAccount.Name
+	} else if serviceAccount.Create {
+		return Fullname(dot)
+	} else if serviceAccount.Name != "" {
+		return serviceAccount.Name
+	}
+
+	return "default"
+}
 
 func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 	values := helmette.Unwrap[Values](dot.Values)
@@ -35,6 +53,6 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Labels:      FullLabels(dot),
 			Annotations: values.ServiceAccount.Annotations,
 		},
-		AutomountServiceAccountToken: values.ServiceAccount.AutomountServiceAccountToken,
+		AutomountServiceAccountToken: ptr.To(false),
 	}
 }
