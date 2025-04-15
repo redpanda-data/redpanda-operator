@@ -1,0 +1,9 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+  `serviceAccount.create` now defaults to `true`.
+
+    The previous behavior resulted in using the `default` service account and
+    extending it with all bindings generated from the chart. Such behavior is
+    unlikely to be desired.
+time: 2025-04-16T10:23:40.052218-04:00

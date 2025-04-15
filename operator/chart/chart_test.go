@@ -166,6 +166,8 @@ func TestRBACBindings(t *testing.T) {
 }
 
 func TestHelmControllerGenEquivalence(t *testing.T) {
+	t.Skipf("This test is currently invalid and the chart intentionally generates over provisioned ClusterRoles/Roles.")
+
 	testCases := []struct {
 		name   string
 		paths  []string

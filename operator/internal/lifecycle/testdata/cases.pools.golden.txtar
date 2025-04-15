@@ -143,6 +143,9 @@
             name: lifecycle-scripts
           - mountPath: /var/lib/redpanda/data
             name: datadir
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access
+            readOnly: true
         - args:
           - sidecar
           - --redpanda-yaml
@@ -275,7 +278,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: default
+        serviceAccountName: basic-test
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:

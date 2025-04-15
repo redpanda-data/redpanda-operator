@@ -15297,10 +15297,14 @@
         },
         "enabled": {
           "type": "boolean"
+        },
+        "rpkDebugBundle": {
+          "type": "boolean"
         }
       },
       "required": [
         "enabled",
+        "rpkDebugBundle",
         "annotations"
       ],
       "type": "object"

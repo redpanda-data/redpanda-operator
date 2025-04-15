@@ -8,7 +8,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
   verbs:
   - create
   - delete
@@ -17,17 +16,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  - limitranges
-  - pods/log
-  - replicationcontrollers
-  - resourcequotas
-  verbs:
-  - get
-  - list
 - apiGroups:
   - ""
   resources:
@@ -54,7 +42,16 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumes
+  - pods
   verbs:
   - delete
   - get
@@ -148,18 +145,6 @@ rules:
   - topics
   - users
   verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - create
-  - delete
   - get
   - list
   - patch

@@ -120,9 +120,22 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - endpoints
+  - limitranges
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
+  - get
+  - list
   - patch
 - apiGroups:
   - ""

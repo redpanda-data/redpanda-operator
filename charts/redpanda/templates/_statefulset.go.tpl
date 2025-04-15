@@ -82,20 +82,7 @@
 {{- if (ne (toJson $v_6) "null") -}}
 {{- $volumes = (concat (default (list) $volumes) (list $v_6)) -}}
 {{- end -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false)))) "r")) -}}
-{{- $foundK8STokenVolume := false -}}
-{{- range $_, $v := $volumes -}}
-{{- if (hasPrefix $v.name (printf "%s%s" "kube-api-access" "-")) -}}
-{{- $foundK8STokenVolume = true -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- if (not $foundK8STokenVolume) -}}
 {{- $volumes = (concat (default (list) $volumes) (list (get (fromJson (include "redpanda.kubeTokenAPIVolume" (dict "a" (list "kube-api-access")))) "r"))) -}}
-{{- end -}}
-{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volumes) | toJson -}}
 {{- break -}}
@@ -163,7 +150,7 @@
 {{- $_is_returning := false -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $mounts = (concat (default (list) $mounts) (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "lifecycle-scripts" "mountPath" "/var/lifecycle")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data"))))) -}}
+{{- $mounts = (concat (default (list) $mounts) (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "lifecycle-scripts" "mountPath" "/var/lifecycle")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true))))) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "redpanda.Listeners.TrustStores" (dict "a" (list $values.listeners $values.tls)))) "r"))))) "r") | int) (0 | int)) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "truststores" "mountPath" "/etc/truststores" "readOnly" true)))) -}}
 {{- end -}}
@@ -228,9 +215,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_415_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_415_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_415_uid_gid 1) | int64) -}}
+{{- $_403_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_403_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_403_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -243,12 +230,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $_443_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_443_gid_uid 0) -}}
-{{- $uid := (index $_443_gid_uid 1) -}}
-{{- $_444_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_444_sgid_suid 0) -}}
-{{- $suid := (index $_444_sgid_suid 1) -}}
+{{- $_431_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_431_gid_uid 0) -}}
+{{- $uid := (index $_431_gid_uid 1) -}}
+{{- $_432_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_432_sgid_suid 0) -}}
+{{- $suid := (index $_432_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -325,9 +312,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_527_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_527_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_527_uid_gid 1) | int64) -}}
+{{- $_515_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_515_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_515_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $values.storage $dot)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
@@ -351,17 +338,8 @@
 {{- $values := $dot.Values.AsMap -}}
 {{- $volMounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $volMounts = (concat (default (list) $volMounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf `%.51s-configurator` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")) "mountPath" "/etc/secrets/configurator/scripts/")))) -}}
-{{- if (and (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false)))) "r")) $values.rackAwareness.enabled) -}}
-{{- $mountName := "kube-api-access" -}}
-{{- range $_, $vol := (get (fromJson (include "redpanda.StatefulSetVolumes" (dict "a" (list $dot)))) "r") -}}
-{{- if (hasPrefix $vol.name (printf "%s%s" "kube-api-access" "-")) -}}
-{{- $mountName = $vol.name -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $volMounts = (concat (default (list) $volMounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" $mountName "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount")))) -}}
+{{- if $values.rackAwareness.enabled -}}
+{{- $volMounts = (concat (default (list) $volMounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true)))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda-configurator" "image" (printf `%s:%s` $values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) "command" (list `/bin/bash` `-c` `trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`) "env" (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $dot (list (mustMergeOverwrite (dict "name" "") (dict "name" "CONFIGURATOR_SCRIPT" "value" "/etc/secrets/configurator/scripts/configurator.sh")) (mustMergeOverwrite (dict "name" "") (dict "name" "SERVICE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "metadata.name")) "resourceFieldRef" (coalesce nil) "configMapKeyRef" (coalesce nil) "secretKeyRef" (coalesce nil))))) (mustMergeOverwrite (dict "name" "") (dict "name" "KUBERNETES_NODE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "spec.nodeName")))))) (mustMergeOverwrite (dict "name" "") (dict "name" "HOST_IP_ADDRESS" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "status.hostIP"))))))))))) "r") "volumeMounts" $volMounts))) | toJson -}}
@@ -493,22 +471,7 @@
 {{- if $values.statefulset.sideCars.pvcUnbinder.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--run-pvc-unbinder` (printf "--pvc-unbinder-timeout=%s" $values.statefulset.sideCars.pvcUnbinder.unbindAfter)))) -}}
 {{- end -}}
-{{- $volumeMounts := (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")))) -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $values.serviceAccount.automountServiceAccountToken false)))) "r")) -}}
-{{- $mountName := "kube-api-access" -}}
-{{- range $_, $vol := (get (fromJson (include "redpanda.StatefulSetVolumes" (dict "a" (list $dot)))) "r") -}}
-{{- if (hasPrefix $vol.name (printf "%s%s" "kube-api-access" "-")) -}}
-{{- $mountName = $vol.name -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- if (ne $mountName "") -}}
-{{- $volumeMounts = (concat (default (list) $volumeMounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" $mountName "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount")))) -}}
-{{- end -}}
-{{- end -}}
+{{- $volumeMounts := (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/etc/redpanda")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount" "readOnly" true)))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "sidecar" "image" (printf `%s:%s` $values.statefulset.sideCars.image.repository $values.statefulset.sideCars.image.tag) "command" (list `/redpanda-operator`) "args" $args "env" (concat (default (list) (get (fromJson (include "redpanda.rpkEnvVars" (dict "a" (list $dot (coalesce nil))))) "r")) (default (list) (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))) "volumeMounts" $volumeMounts "readinessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/healthz" "port" (8093 | int))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int) "successThreshold" (1 | int) "timeoutSeconds" (0 | int)))))) | toJson -}}
 {{- break -}}
