@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 
@@ -93,7 +94,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 
 			syncer := Syncer{Client: client, Mode: syncerMode}
 
-			if err := syncer.Sync(ctx, clusterConfig, usersTXTs); err != nil {
+			if _, err := syncer.Sync(ctx, clusterConfig, usersTXTs); err != nil {
 				return err
 			}
 
@@ -272,7 +273,18 @@ type Syncer struct {
 	EqualityCheck func(key string, desired any, current any) bool
 }
 
-func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) error {
+type ClusterConfigStatus struct {
+	Version      int64
+	NeedsRestart bool
+}
+
+// Sync will compare the current cluster configuration with the desired
+// configuration and apply any changes.
+//
+// If no changes are needed, it will return the highest config version from
+// reported by the brokers. If there's a change, it will return the new version
+// of the cluster config.
+func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) (*ClusterConfigStatus, error) {
 	equal := s.EqualityCheck
 	if equal == nil {
 		equal = func(_ string, desired, current any) bool {
@@ -285,7 +297,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 
 	current, err := s.Client.Config(ctx, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var added []string
@@ -293,7 +305,10 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
 	removed := []string{}
 	upsert := maps.Clone(desired)
-
+	status, err := s.Client.ClusterConfigStatus(ctx, true)
+	if err != nil {
+		return nil, err
+	}
 	if s.Mode == SyncerModeDeclarative {
 		for key, value := range current {
 			if currentValue, ok := desired[key]; !ok {
@@ -308,10 +323,6 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 		// they will otherwise linger, since AdminAPI.Config does not return those entries.
 		// We always send requests for config status to the leader to avoid inconsistencies
 		// due to config propagation delays.
-		status, err := s.Client.ClusterConfigStatus(ctx, true)
-		if err != nil {
-			return err
-		}
 		for i := range status {
 			for _, invalid := range status[i].Invalid {
 				if _, ok := desired[invalid]; !ok {
@@ -325,7 +336,6 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 			}
 		}
 	}
-
 	for key, value := range upsert {
 		if currentValue, ok := current[key]; !ok {
 			added = append(added, key)
@@ -336,7 +346,13 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 
 	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
 		logger.Info("no cluster config changes to apply")
-		return nil
+		// find the highest config version
+		return &ClusterConfigStatus{
+			Version: slices.MaxFunc(status, func(a, b rpadmin.ConfigStatus) int {
+				return int(a.ConfigVersion - b.ConfigVersion)
+			}).ConfigVersion,
+			NeedsRestart: slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+		}, nil
 	}
 
 	{
@@ -353,12 +369,18 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 
 	result, err := s.Client.PatchClusterConfig(ctx, upsert, removed)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Info("updated cluster configuration", "config_version", result.ConfigVersion)
-
-	return nil
+	status, err = s.Client.ClusterConfigStatus(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	return &ClusterConfigStatus{
+		Version:      int64(result.ConfigVersion),
+		NeedsRestart: slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+	}, nil
 }
 
 func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, usersTXT map[string][]byte) {
