@@ -19,102 +19,140 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+func Roles(dot *helmette.Dot) []*rbacv1.Role {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	// path of static role definition -> Enabled
+	mapping := map[string]bool{
+		"files/sidecar.Role.yaml":          values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/pvcunbinder.Role.yaml":      values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/decommission.Role.yaml":     values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/rpk-debug-bundle.Role.yaml": values.RBAC.Enabled && values.RBAC.RPKDebugBundle,
+	}
+
+	var roles []*rbacv1.Role
+	for file, enabled := range helmette.SortedMap(mapping) {
+		if !enabled {
+			continue
+		}
+
+		role := helmette.FromYaml[rbacv1.Role](dot.Files.Get(file))
+
+		// Populated all chart values on the loaded static Role.
+		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Name(dot), role.ObjectMeta.Name)
+		role.ObjectMeta.Namespace = dot.Release.Namespace
+		role.ObjectMeta.Labels = FullLabels(dot)
+		role.ObjectMeta.Annotations = helmette.Merge(
+			map[string]string{},
+			values.ServiceAccount.Annotations, // For backwards compatibility
+			values.RBAC.Annotations,
+		)
+
+		roles = append(roles, &role)
+	}
+
+	return roles
+}
+
 func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	var crs []*rbacv1.ClusterRole
-	if cr := SidecarControllersClusterRole(dot); cr != nil {
-		crs = append(crs, cr)
+	// path of static ClusterRole definition -> Enabled
+	mapping := map[string]bool{
+		"files/pvcunbinder.ClusterRole.yaml":    values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/decommission.ClusterRole.yaml":   values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/rack-awareness.ClusterRole.yaml": values.RBAC.Enabled && values.RackAwareness.Enabled,
 	}
 
-	if !values.RBAC.Enabled {
-		return crs
+	var clusterRoles []*rbacv1.ClusterRole
+	for file, enabled := range helmette.SortedMap(mapping) {
+		if !enabled {
+			continue
+		}
+
+		role := helmette.FromYaml[rbacv1.ClusterRole](dot.Files.Get(file))
+
+		// Populated all chart values on the loaded static Role.
+		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(dot), role.ObjectMeta.Name)
+		role.ObjectMeta.Labels = FullLabels(dot)
+		role.ObjectMeta.Annotations = helmette.Merge(
+			map[string]string{},
+			values.ServiceAccount.Annotations, // For backwards compatibility
+			values.RBAC.Annotations,
+		)
+
+		clusterRoles = append(clusterRoles, &role)
 	}
 
-	rpkBundleName := fmt.Sprintf("%s-rpk-bundle", Fullname(dot))
+	return clusterRoles
+}
 
-	crs = append(crs, []*rbacv1.ClusterRole{
-		{
+func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	// Rather than worrying about syncing logic, we just generate the list of
+	// bindings from the roles that we create.
+	var roleBindings []*rbacv1.RoleBinding
+	for _, role := range Roles(dot) {
+		roleBindings = append(roleBindings, &rbacv1.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRole",
+				Kind:       "RoleBinding",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        Fullname(dot),
-				Labels:      FullLabels(dot),
-				Annotations: values.ServiceAccount.Annotations,
+				Name:      role.ObjectMeta.Name,
+				Labels:    FullLabels(dot),
+				Namespace: dot.Release.Namespace,
+				Annotations: helmette.Merge(
+					map[string]string{},
+					values.ServiceAccount.Annotations, // For backwards compatibility
+					values.RBAC.Annotations,
+				),
 			},
-			Rules: []rbacv1.PolicyRule{
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Role",
+				Name:     role.ObjectMeta.Name,
+			},
+			Subjects: []rbacv1.Subject{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"nodes"},
-					Verbs:     []string{"get", "list"},
+					Kind:      "ServiceAccount",
+					Name:      ServiceAccountName(dot),
+					Namespace: dot.Release.Namespace,
 				},
 			},
-		},
-		{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRole",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        rpkBundleName,
-				Labels:      FullLabels(dot),
-				Annotations: values.ServiceAccount.Annotations,
-			},
-			Rules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{
-						"configmaps",
-						"endpoints",
-						"events",
-						"limitranges",
-						"persistentvolumeclaims",
-						"pods",
-						"pods/log",
-						"replicationcontrollers",
-						"resourcequotas",
-						"serviceaccounts",
-						"services",
-					},
-					Verbs: []string{"get", "list"},
-				},
-			},
-		},
-	}...)
+		})
+	}
 
-	return crs
+	return roleBindings
 }
 
 func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
+	// Rather than worrying about syncing logic, we just generate the list of
+	// bindings from the roles that we create.
 	var crbs []*rbacv1.ClusterRoleBinding
-	if crb := SidecarControllersClusterRoleBinding(dot); crb != nil {
-		crbs = append(crbs, crb)
-	}
-
-	if !values.RBAC.Enabled {
-		return crbs
-	}
-
-	rpkBundleName := fmt.Sprintf("%s-rpk-bundle", Fullname(dot))
-	crbs = append(crbs, []*rbacv1.ClusterRoleBinding{
-		{
+	for _, clusterRole := range ClusterRoles(dot) {
+		crbs = append(crbs, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRoleBinding",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        Fullname(dot),
-				Labels:      FullLabels(dot),
-				Annotations: values.ServiceAccount.Annotations,
+				Name:      clusterRole.ObjectMeta.Name,
+				Labels:    FullLabels(dot),
+				Namespace: dot.Release.Namespace,
+				Annotations: helmette.Merge(
+					map[string]string{},
+					values.ServiceAccount.Annotations, // For backwards compatibility
+					values.RBAC.Annotations,
+				),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
-				Name:     Fullname(dot),
+				Name:     clusterRole.ObjectMeta.Name,
 			},
 			Subjects: []rbacv1.Subject{
 				{
@@ -123,197 +161,8 @@ func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 					Namespace: dot.Release.Namespace,
 				},
 			},
-		},
-		{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        rpkBundleName,
-				Labels:      FullLabels(dot),
-				Annotations: values.ServiceAccount.Annotations,
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     rpkBundleName,
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      ServiceAccountName(dot),
-					Namespace: dot.Release.Namespace,
-				},
-			},
-		},
-	}...)
+		})
+	}
 
 	return crbs
-}
-
-func SidecarControllersClusterRole(dot *helmette.Dot) *rbacv1.ClusterRole {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
-		return nil
-	}
-
-	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "ClusterRole",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        sidecarControllerName,
-			Labels:      FullLabels(dot),
-			Annotations: values.ServiceAccount.Annotations,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs:     []string{"delete", "get", "list", "patch", "update", "watch"},
-				APIGroups: []string{""},
-				Resources: []string{"persistentvolumeclaims"},
-			},
-			{
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-			},
-			{
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets"},
-			},
-			{
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-				APIGroups: []string{"coordination.k8s.io"},
-				Resources: []string{"leases"},
-			},
-			{
-				Verbs:     []string{"create", "patch"},
-				APIGroups: []string{""},
-				Resources: []string{"events"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"persistentvolumes"},
-				Verbs:     []string{"delete", "get", "list", "patch", "update", "watch"},
-			},
-		},
-	}
-}
-
-func SidecarControllersClusterRoleBinding(dot *helmette.Dot) *rbacv1.ClusterRoleBinding {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.SideCars.ShouldCreateRBAC() {
-		return nil
-	}
-
-	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
-	return &rbacv1.ClusterRoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "ClusterRoleBinding",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        sidecarControllerName,
-			Labels:      FullLabels(dot),
-			Annotations: values.ServiceAccount.Annotations,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     sidecarControllerName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      ServiceAccountName(dot),
-				Namespace: dot.Release.Namespace,
-			},
-		},
-	}
-}
-
-func SidecarControllersRole(dot *helmette.Dot) *rbacv1.Role {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "Role",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        sidecarControllerName,
-			Namespace:   dot.Release.Namespace,
-			Labels:      FullLabels(dot),
-			Annotations: values.ServiceAccount.Annotations,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-				APIGroups: []string{"coordination.k8s.io"},
-				Resources: []string{"leases"},
-			},
-			{
-				Verbs:     []string{"create", "patch"},
-				APIGroups: []string{""},
-				Resources: []string{"events"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets/status"},
-				Verbs:     []string{"patch", "update"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets"},
-				Verbs:     []string{"get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"persistentvolumeclaims"},
-				Verbs:     []string{"delete", "get", "list", "patch", "update", "watch"},
-			},
-		},
-	}
-}
-
-func SidecarControllersRoleBinding(dot *helmette.Dot) *rbacv1.RoleBinding {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	sidecarControllerName := fmt.Sprintf("%s-sidecar-controllers", Fullname(dot))
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "RoleBinding",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        sidecarControllerName,
-			Namespace:   dot.Release.Namespace,
-			Labels:      FullLabels(dot),
-			Annotations: values.ServiceAccount.Annotations,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     sidecarControllerName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      ServiceAccountName(dot),
-				Namespace: dot.Release.Namespace,
-			},
-		},
-	}
 }

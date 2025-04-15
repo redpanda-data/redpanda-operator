@@ -79,6 +79,24 @@
     disruptionsAllowed: 0
     expectedPods: 0
 - apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test
+    namespace: basic-test
+- apiVersion: v1
   kind: Service
   metadata:
     creationTimestamp: null
@@ -127,105 +145,6 @@
     type: ClusterIP
   status:
     loadBalancer: {}
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta1
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-sidecar-controllers
-    namespace: basic-test
-  rules:
-  - apiGroups:
-    - coordination.k8s.io
-    resources:
-    - leases
-    verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-  - apiGroups:
-    - ""
-    resources:
-    - events
-    verbs:
-    - create
-    - patch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets/status
-    verbs:
-    - patch
-    - update
-  - apiGroups:
-    - ""
-    resources:
-    - secrets
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - patch
-    - update
-    - watch
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumeclaims
-    verbs:
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta1
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-sidecar-controllers
-    namespace: basic-test
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: basic-test-sidecar-controllers
-  subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: basic-test
 - apiVersion: batch/v1
   kind: Job
   metadata:
@@ -311,7 +230,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: default
+        serviceAccountName: basic-test
         volumes:
         - name: redpanda-default-cert
           secret:
@@ -786,6 +705,349 @@
       size: 256
     secretName: basic-test-external-cert
   status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-decommission
+    namespace: basic-test
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumeclaims
+    verbs:
+    - delete
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-pvcunbinder
+    namespace: basic-test
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumeclaims
+    - pods
+    verbs:
+    - delete
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-rpk-debug-bundle
+    namespace: basic-test
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - endpoints
+    - events
+    - limitranges
+    - persistentvolumeclaims
+    - pods
+    - pods/log
+    - replicationcontrollers
+    - resourcequotas
+    - serviceaccounts
+    - services
+    verbs:
+    - get
+    - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-sidecar
+    namespace: basic-test
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test-decommission
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    verbs:
+    - patch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test-pvcunbinder
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    verbs:
+    - get
+    - list
+    - patch
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-decommission
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: redpanda-decommission
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-pvcunbinder
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: redpanda-pvcunbinder
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-rpk-debug-bundle
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: redpanda-rpk-debug-bundle
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: redpanda-sidecar
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: redpanda-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test-decommission
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: basic-test-decommission
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-25.1.1-beta1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test-pvcunbinder
+    namespace: basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: basic-test-pvcunbinder
+  subjects:
+  - kind: ServiceAccount
+    name: basic-test
+    namespace: basic-test
 - apiVersion: v1
   kind: Secret
   metadata:
