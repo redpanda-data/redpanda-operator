@@ -869,15 +869,20 @@ func (Statefulset) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type ServiceAccountCfg struct {
-	Annotations                  map[string]string `json:"annotations" jsonschema:"required"`
-	AutomountServiceAccountToken *bool             `json:"automountServiceAccountToken,omitempty"`
-	Create                       bool              `json:"create" jsonschema:"required"`
-	Name                         string            `json:"name" jsonschema:"required"`
+	Annotations map[string]string `json:"annotations" jsonschema:"required"`
+	Create      bool              `json:"create" jsonschema:"required"`
+	Name        string            `json:"name" jsonschema:"required"`
+
+	// DeprecatedAutomountServiceAccountToken is an unused value that will be
+	// removed in an upcoming release. It is unused and is only present to keep
+	// the field in our JSON schema.
+	DeprecatedAutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
 }
 
 type RBAC struct {
-	Enabled     bool              `json:"enabled" jsonschema:"required"`
-	Annotations map[string]string `json:"annotations" jsonschema:"required"`
+	Enabled        bool              `json:"enabled" jsonschema:"required"`
+	RPKDebugBundle bool              `json:"rpkDebugBundle" jsonschema:"required"`
+	Annotations    map[string]string `json:"annotations" jsonschema:"required"`
 }
 
 type Tuning struct {

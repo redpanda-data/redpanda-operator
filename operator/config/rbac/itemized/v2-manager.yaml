@@ -92,17 +92,6 @@ rules:
   - create
   - patch
 - apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -115,13 +104,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets/status
-  verbs:
-  - patch
-  - update
 - apiGroups:
   - autoscaling
   resources:
