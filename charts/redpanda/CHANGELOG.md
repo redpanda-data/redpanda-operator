@@ -97,6 +97,7 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
   - `statefulset.sidecars.resources` -> `statefulset.podTemplate.spec.containers[*].resources`
   - `statefulset.sidecars.securityContext` -> `statefulset.podTemplate.spec.containers[*].securityContext`
 * Removed regex validation of all image tags.
+* The unrespected`kafkaEndpoint` listener parameter has been removed from `values.yaml`
 ### Fixed
 * Reverse order of applying resources to first create ClusterRole and then ClusterRoleBinding.
   When Redpanda custom resource has enabled RBAC the reconciliation was blocked due
@@ -104,6 +105,7 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
 
 * Fixed an issue where not explicitly specifying a SASL auth mechanism when SASL is enabled caused Console to fail to start up.
 * Prevent broker nodes from restarting when solely the cluster replica amount changes
+* `authentication_method` is no longer set on `http_api` as redpanda itself does not support authentication on the http API.
 
 ## v25.1.1-beta1 - 2025-04-08
 ### Added
