@@ -83,16 +83,18 @@ func (c *Client) CreateTopic(ctx context.Context, topicName string) (map[string]
 		return nil, err
 	}
 
-	var out bytes.Buffer
+	var stderr bytes.Buffer
+	var stdout bytes.Buffer
 	if err = c.Ctl.Exec(ctx, pod, kube.ExecOptions{
-		Command: []string{"bash", "-c", fmt.Sprintf(`rpk topic create %s -r 3 -p 3`, topicName)},
-		Stderr:  &out,
+		Command: []string{"bash", "-c", fmt.Sprintf(`rpk topic create %s -r 1 -p 3`, topicName)},
+		Stdout:  &stdout,
+		Stderr:  &stderr,
 	}); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "STDOUT:\n%s\n\nSTDERR:\n%s\n", stdout.String(), stderr.String())
 	}
 
 	var cfg map[string]any
-	if err = yaml.Unmarshal(out.Bytes(), &cfg); err != nil {
+	if err = yaml.Unmarshal(stderr.Bytes(), &cfg); err != nil {
 		return nil, err
 	}
 
@@ -105,20 +107,17 @@ func (c *Client) KafkaProduce(ctx context.Context, input, topicName string) (str
 		return "", err
 	}
 
-	var out, eb bytes.Buffer
+	var stderr bytes.Buffer
+	var stdout bytes.Buffer
 	if err = c.Ctl.Exec(ctx, pod, kube.ExecOptions{
 		Command: []string{"bash", "-c", fmt.Sprintf(`echo %s | rpk topic produce %s`, input, topicName)},
-		Stdout:  &out,
-		Stderr:  &eb,
-	}); err != nil {
-		return "", err
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+	}); err != nil || stderr.Len() > 0 {
+		return "", errors.Wrapf(err, "STDOUT:\n%s\n\nSTDERR:\n%s\n", stdout.String(), stderr.String())
 	}
 
-	if eb.String() != "" {
-		return "", errors.New(eb.String())
-	}
-
-	return out.String(), nil
+	return stdout.String(), nil
 }
 
 func (c *Client) KafkaConsume(ctx context.Context, topicName string) (map[string]any, error) {
@@ -127,21 +126,18 @@ func (c *Client) KafkaConsume(ctx context.Context, topicName string) (map[string
 		return nil, err
 	}
 
-	var out, eb bytes.Buffer
+	var stderr bytes.Buffer
+	var stdout bytes.Buffer
 	if err = c.Ctl.Exec(ctx, pod, kube.ExecOptions{
 		Command: []string{"bash", "-c", fmt.Sprintf(`rpk topic consume %s -n 1`, topicName)},
-		Stdout:  &out,
-		Stderr:  &eb,
-	}); err != nil {
-		return nil, err
-	}
-
-	if eb.String() != "" {
-		return nil, errors.New(eb.String())
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+	}); err != nil || stderr.Len() > 0 {
+		return nil, errors.Wrapf(err, "STDOUT:\n%s\n\nSTDERR:\n%s\n", stdout.String(), stderr.String())
 	}
 
 	var event map[string]any
-	if err = json.Unmarshal(out.Bytes(), &event); err != nil {
+	if err = json.Unmarshal(stdout.Bytes(), &event); err != nil {
 		return nil, err
 	}
 
