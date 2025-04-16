@@ -160,54 +160,6 @@ Pull secrets may be used to provide credentials to image repositories See the [K
 
 **Default:** `[]`
 
-### [kubeRbacProxy](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy)
-
-Configuration for the `kube-rbac-proxy`, a component that provides an HTTP proxy to perform authorization checks.
-
-**Default:**
-
-```
-{"image":{"pullPolicy":"IfNotPresent","repository":"gcr.io/kubebuilder/kube-rbac-proxy","tag":"v0.14.0"},"logLevel":10}
-```
-
-### [kubeRbacProxy.image](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy.image)
-
-Sets settings for pulling the `kube-rbac-proxy` image.
-
-**Default:**
-
-```
-{"pullPolicy":"IfNotPresent","repository":"gcr.io/kubebuilder/kube-rbac-proxy","tag":"v0.14.0"}
-```
-
-### [kubeRbacProxy.image.pullPolicy](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy.image.pullPolicy)
-
-Sets the `pullPolicy` for `kube-rbac-proxy` image
-
-**Default:** `"IfNotPresent"`
-
-### [kubeRbacProxy.image.repository](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy.image.repository)
-
-Sets the repository in which the `kube-rbac-proxy` image is available.
-
-**Default:**
-
-```
-"gcr.io/kubebuilder/kube-rbac-proxy"
-```
-
-### [kubeRbacProxy.image.tag](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy.image.tag)
-
-Sets the `kube-rbac-proxy` image tag.
-
-**Default:** `"v0.14.0"`
-
-### [kubeRbacProxy.logLevel](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=kubeRbacProxy.logLevel)
-
-Sets log level for kube rbac proxy
-
-**Default:** `10`
-
 ### [logLevel](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=logLevel)
 
 Log level Valid values (from least to most verbose) are: `warn`, `info`, `debug`, and `trace`.
