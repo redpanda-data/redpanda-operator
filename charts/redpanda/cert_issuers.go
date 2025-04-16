@@ -42,37 +42,23 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 	}
 
 	for name, data := range helmette.SortedMap(values.TLS.Certs) {
-		// If secretRef is defined, do not create any of these certificates or when
-		// TLS reference is not enabled.
-		if !helmette.Empty(data.SecretRef) || !ptr.Deref(data.Enabled, true) {
+		// If this certificate is disabled (.Enabled), provided directly by the
+		// end user (.SecretRef), or has an issuer provided (.IssuerRef), we
+		// don't need to bootstrap an issuer.
+		if !ptr.Deref(data.Enabled, true) || data.SecretRef != nil || data.IssuerRef != nil {
 			continue
 		}
 
-		// If issuerRef is defined, use the specified issuer for the certs
-		// If it's not defined, create and use our own issuer.
-		if data.IssuerRef == nil {
-			// The self-signed issuer is used to create the self-signed CA
-			issuers = append(issuers,
-				&certmanagerv1.Issuer{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "cert-manager.io/v1",
-						Kind:       "Issuer",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(dot), name),
-						Namespace: dot.Release.Namespace,
-						Labels:    FullLabels(dot),
-					},
-					Spec: certmanagerv1.IssuerSpec{
-						IssuerConfig: certmanagerv1.IssuerConfig{
-							SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-						},
-					},
-				},
-			)
-		}
+		// Otherwise we need to bootstrap a CA Issuer as explained here:
+		// https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers
 
-		// This is the self-signed CA used to issue certs
+		// First we create a self-signed (self-signing) Issuer. Unlike what the name would
+		// indicate this Issuer does NOT have a key pair associated with it. It
+		// simply signs Certificates with their own private key.
+		// tl;dr: This Issuer is not self-signed but produces Certificates that
+		// are themselves self-signed.
+		// NB: Technically, we only need a single self signer. For backwards
+		// compatibility, we generate one per cert.
 		issuers = append(issuers,
 			&certmanagerv1.Issuer{
 				TypeMeta: metav1.TypeMeta{
@@ -80,21 +66,22 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 					Kind:       "Issuer",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(dot), name),
+					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(dot), name),
 					Namespace: dot.Release.Namespace,
 					Labels:    FullLabels(dot),
 				},
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
-						CA: &certmanagerv1.CAIssuer{
-							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
-						},
+						// SelfSigningIssuer would be a MUCH better name.
+						SelfSigned: &certmanagerv1.SelfSignedIssuer{},
 					},
 				},
 			},
 		)
 
-		// This is the root CA certificate
+		// This is the CA that will be signed with it's own private key by the
+		// above issuer. It will then be used as the Root CA for the Issuer
+		// that the chart actually uses.
 		certs = append(certs,
 			&certmanagerv1.Certificate{
 				TypeMeta: metav1.TypeMeta{
@@ -123,6 +110,33 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 				},
 			},
 		)
+
+		// This Issuer works like a normal CA Issuer using the above
+		// Certificate as it's root. NB: The root CA is self signed and
+		// therefore all Certificates from this Issuer will be self signed as
+		// well. That is distinct from the Issuer being a
+		// [certmanagerv1.SelfSignedIssuer].
+		issuers = append(issuers,
+			&certmanagerv1.Issuer{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "cert-manager.io/v1",
+					Kind:       "Issuer",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(dot), name),
+					Namespace: dot.Release.Namespace,
+					Labels:    FullLabels(dot),
+				},
+				Spec: certmanagerv1.IssuerSpec{
+					IssuerConfig: certmanagerv1.IssuerConfig{
+						CA: &certmanagerv1.CAIssuer{
+							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
+						},
+					},
+				},
+			},
+		)
+
 	}
 
 	return issuers, certs
