@@ -5,6 +5,7 @@ go 1.23.7
 require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cockroachdb/errors v1.11.3
+	github.com/imdario/mergo v0.3.16
 	github.com/invopop/jsonschema v0.12.0
 	github.com/json-iterator/go v1.1.12
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
@@ -13,7 +14,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.0.0
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.18.0
@@ -109,7 +110,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/homeport/dyff v1.7.1 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
-	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -153,6 +153,7 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250417174137-234f93a35ce2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
@@ -208,7 +209,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
 	k8s.io/kubectl v0.30.3 // indirect
 	oras.land/oras-go v1.2.5 // indirect
-	sigs.k8s.io/gateway-api v1.0.0 // indirect
+	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.16.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect

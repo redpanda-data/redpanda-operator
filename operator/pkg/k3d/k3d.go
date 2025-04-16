@@ -124,6 +124,11 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		}
 		return nil, err
 	}
+
+	if err := cluster.ImportImage("localhost/redpanda-operator:dev"); err != nil {
+		return nil, err
+	}
+
 	return cluster, nil
 }
 
@@ -209,6 +214,21 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	}
 
 	return cluster, nil
+}
+
+func (c *Cluster) ImportImage(image string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if out, err := exec.Command(
+		"k3d",
+		"image",
+		"import",
+		fmt.Sprintf("--cluster=%s", c.Name),
+		image,
+	).CombinedOutput(); err != nil {
+		return fmt.Errorf("%w: %s", err, out)
+	}
+	return nil
 }
 
 func (c *Cluster) RESTConfig() *kube.RESTConfig {
