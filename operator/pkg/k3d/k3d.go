@@ -124,6 +124,11 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		}
 		return nil, err
 	}
+
+	if err := cluster.ImportImage("localhost/redpanda-operator:dev"); err != nil {
+		return nil, err
+	}
+
 	return cluster, nil
 }
 

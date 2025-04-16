@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/imdario/mergo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -36,6 +37,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
@@ -156,8 +158,6 @@ func TestIntegrationChart(t *testing.T) {
 		serverTLSSecretName := "server-tls-secret"
 		clientTLSSecretName := "client-tls-secret"
 
-		partial := mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName)
-
 		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
 		require.NoError(t, err)
 
@@ -192,6 +192,8 @@ func TestIntegrationChart(t *testing.T) {
 		}
 		_, err = kube.Create[corev1.Secret](ctx, env.Ctl(), c)
 		require.NoError(t, err)
+
+		partial := mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName)
 
 		rpRelease := env.Install(ctx, redpandaChart, helm.InstallOptions{
 			Values:    partial,
@@ -228,7 +230,7 @@ func TestIntegrationChart(t *testing.T) {
 
 		env := h.Namespaced(t)
 
-		partial := redpanda.PartialValues{
+		partial := minimalValues(&redpanda.PartialValues{
 			External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 			ClusterDomain: ptr.To("cluster.local"),
 			Config: &redpanda.PartialConfig{
@@ -246,29 +248,7 @@ func TestIntegrationChart(t *testing.T) {
 					}},
 				},
 			},
-			Statefulset: &redpanda.PartialStatefulset{
-				SideCars: &redpanda.PartialSidecars{
-					Image: &redpanda.PartialImage{
-						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
-					},
-					Controllers: &struct {
-						Image              *redpanda.PartialImage "json:\"image,omitempty\""
-						Enabled            *bool                  "json:\"enabled,omitempty\""
-						CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
-						HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
-						MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
-						PprofAddress       *string                "json:\"pprofAddress,omitempty\""
-						Run                []string               "json:\"run,omitempty\""
-					}{
-						Image: &redpanda.PartialImage{
-							Repository: ptr.To("localhost/redpanda-operator"),
-							Tag:        ptr.To("dev"),
-						},
-					},
-				},
-			},
-		}
+		})
 
 		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
 		require.NoError(t, err)
@@ -317,7 +297,7 @@ func TestIntegrationChart(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		partial := redpanda.PartialValues{
+		partial := minimalValues(&redpanda.PartialValues{
 			External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 			ClusterDomain: ptr.To("cluster.local"),
 			Config: &redpanda.PartialConfig{
@@ -331,29 +311,7 @@ func TestIntegrationChart(t *testing.T) {
 					SecretRef: ptr.To("my-secret"),
 				},
 			},
-			Statefulset: &redpanda.PartialStatefulset{
-				SideCars: &redpanda.PartialSidecars{
-					Image: &redpanda.PartialImage{
-						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
-					},
-					Controllers: &struct {
-						Image              *redpanda.PartialImage "json:\"image,omitempty\""
-						Enabled            *bool                  "json:\"enabled,omitempty\""
-						CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
-						HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
-						MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
-						PprofAddress       *string                "json:\"pprofAddress,omitempty\""
-						Run                []string               "json:\"run,omitempty\""
-					}{
-						Image: &redpanda.PartialImage{
-							Repository: ptr.To("localhost/redpanda-operator"),
-							Tag:        ptr.To("dev"),
-						},
-					},
-				},
-			},
-		}
+		})
 
 		r, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1799999999))
 		require.NoError(t, err)
@@ -745,39 +703,27 @@ func httpProxyListenerTest(ctx context.Context, rpk Client) error {
 	return nil
 }
 
-func mTLSValuesUsingCertManager() redpanda.PartialValues {
-	return redpanda.PartialValues{
+func mTLSValuesUsingCertManager() *redpanda.PartialValues {
+	return minimalValues(&redpanda.PartialValues{
 		External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 		ClusterDomain: ptr.To("cluster.local"),
 		Listeners: &redpanda.PartialListeners{
 			Admin: &redpanda.PartialAdminListeners{
-				//External: redpanda.PartialExternalListeners[redpanda.PartialAdminExternal]{
-				//	"default": redpanda.PartialAdminExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
-				//},
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			HTTP: &redpanda.PartialHTTPListeners{
-				//External: redpanda.PartialExternalListeners[redpanda.PartialHTTPExternal]{
-				//	"default": redpanda.PartialHTTPExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
-				//},
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			Kafka: &redpanda.PartialKafkaListeners{
-				//External: redpanda.PartialExternalListeners[redpanda.PartialKafkaExternal]{
-				//	"default": redpanda.PartialKafkaExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
-				//},
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			SchemaRegistry: &redpanda.PartialSchemaRegistryListeners{
-				//External: redpanda.PartialExternalListeners[redpanda.PartialSchemaRegistryExternal]{
-				//	"default": redpanda.PartialSchemaRegistryExternal{Enabled: ptr.To(false), Port: ptr.To(int32(0))},
-				//},
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
 				},
@@ -791,33 +737,11 @@ func mTLSValuesUsingCertManager() redpanda.PartialValues {
 				},
 			},
 		},
-		Statefulset: &redpanda.PartialStatefulset{
-			SideCars: &redpanda.PartialSidecars{
-				Image: &redpanda.PartialImage{
-					Repository: ptr.To("localhost/redpanda-operator"),
-					Tag:        ptr.To("dev"),
-				},
-				Controllers: &struct {
-					Image              *redpanda.PartialImage "json:\"image,omitempty\""
-					Enabled            *bool                  "json:\"enabled,omitempty\""
-					CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
-					HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
-					MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
-					PprofAddress       *string                "json:\"pprofAddress,omitempty\""
-					Run                []string               "json:\"run,omitempty\""
-				}{
-					Image: &redpanda.PartialImage{
-						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
-					},
-				},
-			},
-		},
-	}
+	})
 }
 
-func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string) redpanda.PartialValues {
-	return redpanda.PartialValues{
+func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string) *redpanda.PartialValues {
+	return minimalValues(&redpanda.PartialValues{
 		External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 		ClusterDomain: ptr.To("cluster.local"),
 		TLS: &redpanda.PartialTLS{
@@ -879,7 +803,19 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 				},
 			},
 		},
+	})
+}
+
+func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
+	final := &redpanda.PartialValues{
+		Console: &console.PartialValues{
+			Enabled: ptr.To(false),
+		},
 		Statefulset: &redpanda.PartialStatefulset{
+			Replicas: ptr.To[int32](1),
+			PodTemplate: &redpanda.PartialPodTemplate{
+				Spec: applycorev1.PodSpec().WithTerminationGracePeriodSeconds(10),
+			},
 			SideCars: &redpanda.PartialSidecars{
 				Image: &redpanda.PartialImage{
 					Repository: ptr.To("localhost/redpanda-operator"),
@@ -902,6 +838,14 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 			},
 		},
 	}
+
+	for _, p := range partials {
+		if err := mergo.Merge(final, p); err != nil {
+			panic(err) // Should never happen (tm).
+		}
+	}
+
+	return final
 }
 
 // getConfigMaps is parsing all manifests (resources) created by helm template

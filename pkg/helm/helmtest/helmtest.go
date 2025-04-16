@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -34,7 +35,10 @@ type Env struct {
 
 // Setup creates a new [Env] using whatever cluster is available in KUBECONFIG.
 func Setup(t *testing.T) *Env {
-	ctl, err := kube.FromEnv()
+	cluster, err := k3d.GetOrCreate("testenv", k3d.WithAgents(3))
+	require.NoError(t, err)
+
+	ctl, err := kube.FromRESTConfig(cluster.RESTConfig())
 	require.NoError(t, err)
 
 	client, err := helm.New(helm.Options{
@@ -42,8 +46,6 @@ func Setup(t *testing.T) *Env {
 		ConfigHome: testutil.TempDir(t),
 	})
 	require.NoError(t, err)
-
-	require.NoError(t, ensureCertManager(context.Background(), client))
 
 	return &Env{ctl: ctl, helm: client}
 }
@@ -91,6 +93,12 @@ func (e *NamespacedEnv) Install(ctx context.Context, chart string, opts helm.Ins
 	release, err := e.env.helm.Install(ctx, chart, opts)
 	require.NoError(e.t, err)
 
+	e.t.Cleanup(func() {
+		if !testutil.Retain() {
+			require.NoError(e.t, e.env.helm.Uninstall(ctx, release))
+		}
+	})
+
 	return release
 }
 
@@ -123,21 +131,4 @@ func tempNamespace(t *testing.T, ctx context.Context, ctl *kube.Ctl) *corev1.Nam
 	})
 
 	return ns
-}
-
-func ensureCertManager(ctx context.Context, client *helm.Client) error {
-	if err := client.RepoAdd(ctx, "jetstack", "https://charts.jetstack.io"); err != nil {
-		return err
-	}
-
-	_, err := client.Upgrade(ctx, "cert-manager", "jetstack/cert-manager", helm.UpgradeOptions{
-		Install:         true,
-		Version:         "v1.14.2",
-		Namespace:       "cert-manager",
-		CreateNamespace: true,
-		Values: map[string]any{
-			"installCRDs": true,
-		},
-	})
-	return err
 }
