@@ -18,7 +18,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.1
-	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250416175220-c6f8d18c5557
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
