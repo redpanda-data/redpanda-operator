@@ -42,9 +42,10 @@ func (n NotifyGitHubCommitStatus) MarshalJSON() ([]byte, error) {
 }
 
 type TestSuite struct {
-	Name     string
-	Required bool
-	Timeout  time.Duration
+	Name      string
+	Required  bool
+	Timeout   time.Duration
+	Condition string
 
 	JUnitPattern *string
 }
@@ -59,22 +60,26 @@ func (suite *TestSuite) junitPattern() string {
 func (suite *TestSuite) ToStep() pipeline.Step {
 	prettyName := fmt.Sprintf("%s Tests", cases.Title(language.English, cases.NoLower).String(suite.Name))
 
+	remainingFields := map[string]any{
+		"soft_fail":          !suite.Required,
+		"timeout_in_minutes": int(suite.Timeout.Minutes()),
+		"agents":             AgentsLarge,
+		"notify": []any{
+			NotifyGitHubCommitStatus{Context: prettyName},
+		},
+	}
+	if suite.Condition != "" {
+		remainingFields["if"] = suite.Condition
+	}
 	return &pipeline.GroupStep{
-		Group: &prettyName,
 		Key:   strings.ToLower(suite.Name),
+		Group: &prettyName,
 		Steps: pipeline.Steps{
 			&pipeline.CommandStep{
-				Key:     strings.ToLower(suite.Name) + "-run",
-				Label:   "Run " + prettyName,
-				Command: "./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:" + strings.ToLower(suite.Name),
-				RemainingFields: map[string]any{
-					"soft_fail":          !suite.Required,
-					"timeout_in_minutes": int(suite.Timeout.Minutes()),
-					"agents":             AgentsLarge,
-					"notify": []any{
-						NotifyGitHubCommitStatus{Context: prettyName},
-					},
-				},
+				Key:             strings.ToLower(suite.Name) + "-run",
+				Label:           "Run " + prettyName,
+				Command:         "./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:" + strings.ToLower(suite.Name),
+				RemainingFields: remainingFields,
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
 						GITHUB_API_TOKEN, // Required to clone private GH repos (Flux Shims, buildkite slack).
