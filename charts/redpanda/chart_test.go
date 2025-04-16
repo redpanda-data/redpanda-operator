@@ -89,6 +89,54 @@ func TestIntegrationChart(t *testing.T) {
 
 	h := helmtest.Setup(t)
 
+	t.Run("set-datadir-ownership", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		// If the install succeeds, then the init container has worked as
+		// expected.
+		_ = env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Statefulset: &redpanda.PartialStatefulset{
+					InitContainers: &struct {
+						Configurator *struct {
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+						} "json:\"configurator,omitempty\""
+						FSValidator *struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+							ExpectedFS        *string        "json:\"expectedFS,omitempty\""
+						} "json:\"fsValidator,omitempty\""
+						SetDataDirOwnership *struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"setDataDirOwnership,omitempty\""
+						SetTieredStorageCacheDirOwnership *struct {
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"setTieredStorageCacheDirOwnership,omitempty\""
+						Tuning *struct {
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"tuning,omitempty\""
+						ExtraInitContainers *string "json:\"extraInitContainers,omitempty\""
+					}{
+						SetDataDirOwnership: &struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						}{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			}),
+		})
+	})
+
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
 		ctx := testutil.Context(t)
 
@@ -218,7 +266,7 @@ func TestIntegrationChart(t *testing.T) {
 					Users: []redpanda.PartialSASLUser{{
 						Name:      ptr.To("superuser"),
 						Password:  ptr.To("superpassword"),
-						Mechanism: ptr.To[redpanda.SASLMechanism]("SCRAM-SHA-512"),
+						Mechanism: ptr.To("SCRAM-SHA-512"),
 					}},
 				},
 			},
@@ -781,6 +829,8 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 }
 
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
+	devTag := redpanda.ImageTag("dev")
+
 	final := &redpanda.PartialValues{
 		Console: &console.PartialValues{
 			Enabled: ptr.To(false),
@@ -791,22 +841,33 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 				Spec: applycorev1.PodSpec().WithTerminationGracePeriodSeconds(10),
 			},
 			SideCars: &redpanda.PartialSidecars{
-				Image: &redpanda.PartialImage{
+				Image: &struct {
+					Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+					Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+				}{
 					Repository: ptr.To("localhost/redpanda-operator"),
-					Tag:        ptr.To("dev"),
+					Tag:        &devTag,
 				},
 				Controllers: &struct {
-					Image              *redpanda.PartialImage "json:\"image,omitempty\""
-					Enabled            *bool                  "json:\"enabled,omitempty\""
-					CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
-					HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
-					MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
-					PprofAddress       *string                "json:\"pprofAddress,omitempty\""
-					Run                []string               "json:\"run,omitempty\""
+					Image *struct {
+						Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+						Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+					} "json:\"image,omitempty\""
+					Enabled            *bool                   "json:\"enabled,omitempty\""
+					CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
+					Resources          any                     "json:\"resources,omitempty\""
+					SecurityContext    *corev1.SecurityContext "json:\"securityContext,omitempty\""
+					HealthProbeAddress *string                 "json:\"healthProbeAddress,omitempty\""
+					MetricsAddress     *string                 "json:\"metricsAddress,omitempty\""
+					PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
+					Run                []string                "json:\"run,omitempty\""
 				}{
-					Image: &redpanda.PartialImage{
+					Image: &struct {
+						Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
+						Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
+					}{
 						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
+						Tag:        &devTag,
 					},
 				},
 			},
