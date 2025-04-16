@@ -416,6 +416,10 @@ func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Cont
 			`-c`,
 			fmt.Sprintf(`chown %d:%d -R /var/lib/redpanda/data`, uid, gid),
 		},
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser:  ptr.To[int64](0),
+			RunAsGroup: ptr.To[int64](0),
+		},
 		VolumeMounts: append(
 			CommonMounts(dot),
 			corev1.VolumeMount{
@@ -543,6 +547,10 @@ func statefulSetInitContainerSetTieredStorageCacheDirOwnership(dot *helmette.Dot
 				uid, gid,
 				cacheDir,
 			),
+		},
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser:  ptr.To[int64](0),
+			RunAsGroup: ptr.To[int64](0),
 		},
 		VolumeMounts: mounts,
 	}
