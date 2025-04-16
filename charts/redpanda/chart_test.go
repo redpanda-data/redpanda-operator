@@ -89,6 +89,54 @@ func TestIntegrationChart(t *testing.T) {
 
 	h := helmtest.Setup(t)
 
+	t.Run("set-datadir-ownership", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		// If the install succeeds, then the init container has worked as
+		// expected.
+		_ = env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Statefulset: &redpanda.PartialStatefulset{
+					InitContainers: &struct {
+						Configurator *struct {
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+						} "json:\"configurator,omitempty\""
+						FSValidator *struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+							ExpectedFS        *string        "json:\"expectedFS,omitempty\""
+						} "json:\"fsValidator,omitempty\""
+						SetDataDirOwnership *struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"setDataDirOwnership,omitempty\""
+						SetTieredStorageCacheDirOwnership *struct {
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"setTieredStorageCacheDirOwnership,omitempty\""
+						Tuning *struct {
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						} "json:\"tuning,omitempty\""
+						ExtraInitContainers *string "json:\"extraInitContainers,omitempty\""
+					}{
+						SetDataDirOwnership: &struct {
+							Enabled           *bool          "json:\"enabled,omitempty\""
+							Resources         map[string]any "json:\"resources,omitempty\""
+							ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
+						}{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			}),
+		})
+	})
+
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
 		ctx := testutil.Context(t)
 
