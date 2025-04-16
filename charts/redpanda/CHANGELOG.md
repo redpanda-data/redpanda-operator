@@ -104,6 +104,7 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
 
 * Fixed an issue where not explicitly specifying a SASL auth mechanism when SASL is enabled caused Console to fail to start up.
 * Prevent broker nodes from restarting when solely the cluster replica amount changes
+* Broken `Issuer`s and `Certificate`s are no longer needlessly generated when `tls.<cert>.issuerRef` is provided.
 * Fixed the security contexts' of `set-datadir-ownership` and `set-tiered-storage-cache-dir-ownership`.
 
 ## v25.1.1-beta1 - 2025-04-08

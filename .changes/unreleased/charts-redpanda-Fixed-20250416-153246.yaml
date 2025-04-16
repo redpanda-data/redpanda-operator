@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: 'Broken `Issuer`s and `Certificate`s are no longer needlessly generated when `tls.<cert>.issuerRef` is provided.'
+time: 2025-04-16T15:32:46.331658-04:00
