@@ -157,6 +157,10 @@ tasks:
 
   test:integration:
     desc: "Run all integration tests (~90m)"
+    deps:
+    # The operator image is required to test the configurator and sidecar.
+    # In integration tests, the operator itself will be run from the go test process.
+    - build:image
     cmds:
     - task: test:unit
       vars:
@@ -166,11 +170,13 @@ tasks:
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
+    deps:
+      - build:image
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
       CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
     cmds:
-    - task: build:image
+    - task: charts:kind-cluster
     - kind load docker-image localhost/redpanda-operator:dev
     - task: test:unit
       vars:
