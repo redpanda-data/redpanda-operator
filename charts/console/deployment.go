@@ -329,7 +329,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
-						Key: "authentication-jwt-secret",
+						Key: "authentication-jwt-signingkey",
 					},
 				},
 			},

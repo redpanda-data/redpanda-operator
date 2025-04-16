@@ -1,0 +1,5 @@
+project: charts/console
+kind: Fixed
+body: |- 
+    Correct the secret key reference for authentication JWT signing key.
+time: 2025-04-16T14:52:03.053968-03:00
