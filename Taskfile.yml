@@ -157,6 +157,10 @@ tasks:
 
   test:integration:
     desc: "Run all integration tests (~90m)"
+    deps:
+    # The operator image is required to test the configurator and sidecar.
+    # In integration tests, the operator itself will be run from the go test process.
+    - build:image
     cmds:
     - task: test:unit
       vars:
