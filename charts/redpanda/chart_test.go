@@ -115,6 +115,35 @@ func TestIntegrationChart(t *testing.T) {
 
 	h := helmtest.Setup(t)
 
+	t.Run("set-datadir-ownership", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		// If the install succeeds, then the init container has worked as
+		// expected.
+		_ = env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Statefulset: &redpanda.PartialStatefulset{
+					InitContainers: &struct {
+						FSValidator *struct {
+							Enabled    *bool   "json:\"enabled,omitempty\""
+							ExpectedFS *string "json:\"expectedFS,omitempty\""
+						} "json:\"fsValidator,omitempty\""
+						SetDataDirOwnership *struct {
+							Enabled *bool "json:\"enabled,omitempty\""
+						} "json:\"setDataDirOwnership,omitempty\""
+					}{
+						SetDataDirOwnership: &struct {
+							Enabled *bool "json:\"enabled,omitempty\""
+						}{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			}),
+		})
+	})
+
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
 		ctx := testutil.Context(t)
 

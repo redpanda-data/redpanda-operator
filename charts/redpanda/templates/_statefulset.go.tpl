@@ -232,7 +232,7 @@
 {{- $uid := ((index $_415_uid_gid 0) | int64) -}}
 {{- $gid := ((index $_415_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -243,12 +243,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $_439_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_439_gid_uid 0) -}}
-{{- $uid := (index $_439_gid_uid 1) -}}
-{{- $_440_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_440_sgid_suid 0) -}}
-{{- $suid := (index $_440_sgid_suid 1) -}}
+{{- $_443_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_443_gid_uid 0) -}}
+{{- $uid := (index $_443_gid_uid 1) -}}
+{{- $_444_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_444_sgid_suid 0) -}}
+{{- $suid := (index $_444_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -325,9 +325,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_523_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_523_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_523_uid_gid 1) | int64) -}}
+{{- $_527_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_527_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_527_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $values.storage $dot)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
@@ -339,7 +339,7 @@
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" $name "mountPath" $cacheDir)))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" `set-tiered-storage-cache-dir-ownership` "image" (printf `%s:%s` $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `mkdir -p %s; chown %d:%d -R %s` $cacheDir $uid $gid $cacheDir)) "volumeMounts" $mounts))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" `set-tiered-storage-cache-dir-ownership` "image" (printf `%s:%s` $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `mkdir -p %s; chown %d:%d -R %s` $cacheDir $uid $gid $cacheDir)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" $mounts))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
