@@ -40,14 +40,12 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // isn't a node pool.
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
-	helmChartValues := (*redpandav1alpha2.RedpandaClusterSpecAlt)(cluster.Spec.ClusterSpec.DeepCopy())
-
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, helmChartValues)
+	}, cluster.Spec.ClusterSpec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}

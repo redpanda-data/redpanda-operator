@@ -39,14 +39,12 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // should be considered a node pool.
 func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
-	helmChartValues := (*redpandav1alpha2.RedpandaClusterSpecAlt)(cluster.Spec.ClusterSpec.DeepCopy())
-
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, helmChartValues)
+	}, cluster.Spec.ClusterSpec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}
