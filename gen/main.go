@@ -6,6 +6,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gen/partial"
 	"github.com/redpanda-data/redpanda-operator/gen/pipeline"
 	"github.com/redpanda-data/redpanda-operator/gen/schema"
+	"github.com/redpanda-data/redpanda-operator/gen/status"
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 		partial.Cmd(),
 		pipeline.Cmd(),
 		schema.Cmd(),
+		status.Cmd(),
 	)
 
 	if err := root.Execute(); err != nil {
