@@ -126,8 +126,7 @@ func TestFullNameOverride(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			helmChartValues := (*redpandav1alpha2.RedpandaClusterSpecAlt)(tc.rp.Spec.ClusterSpec.DeepCopy())
-			b, err := json.Marshal(helmChartValues)
+			b, err := json.Marshal(tc.rp.Spec.ClusterSpec.DeepCopy())
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedJSON, b)
 
