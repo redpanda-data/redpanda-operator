@@ -302,8 +302,6 @@ func (in *Redpanda) GetValues() (redpandachart.Values, error) {
 }
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
-	helmChartValues := (*RedpandaClusterSpecAlt)(in.Spec.ClusterSpec.DeepCopy())
-
 	return redpandachart.Chart.Dot(
 		ptr.To(kube.RestToConfig(restConfig)),
 		helmette.Release{
@@ -312,5 +310,5 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 			Service:   "redpanda",
 			IsInstall: true,
 			IsUpgrade: true,
-		}, helmChartValues)
+		}, in.Spec.ClusterSpec.DeepCopy())
 }
