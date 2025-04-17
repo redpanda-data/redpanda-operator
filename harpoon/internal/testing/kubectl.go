@@ -100,7 +100,7 @@ func KubectlDelete(ctx context.Context, fileOrDirectory string, options ...*Kube
 		mergedOptions = mergedOptions.merge(option)
 	}
 
-	return kubectl(ctx, mergedOptions, "delete", "-f", fileOrDirectory, "--ignore-not-found=true")
+	return kubectl(ctx, mergedOptions, "delete", "-f", fileOrDirectory, "--ignore-not-found=true", "--timeout=30s")
 }
 
 func KubectlApply(ctx context.Context, fileOrDirectory string, options ...*KubectlOptions) (string, error) {

@@ -293,6 +293,15 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 		return nil
 	}
 
+	// This is a temporary fixture until https://redpandadata.atlassian.net/browse/K8S-517 is handled more wholistically.
+	// If ClusterConfigSynced is not true, the cluster may experience a rolling
+	// restart which breaks some assumptions about the ready condition. So we
+	// gate readiness on the cluster config being synced as well.
+	if !apimeta.IsStatusConditionTrue(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced) {
+		_ = redpandav1alpha2.RedpandaNotReady(rp, "ClusterConfigNotSynced", "Cluster Configuration has not yet completely synced")
+		return nil
+	}
+
 	_ = redpandav1alpha2.RedpandaReady(rp)
 	return nil
 }
