@@ -1268,7 +1268,7 @@ LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls"]
 ==== ListenerTLS
 
-_Underlying type:_ _xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-struct-cert -string -json-cert-omitempty- enabled -bool -json-enabled-omitempty- secretref -string -json-secretref-omitempty- requireclientauth -bool -json-requireclientauth-omitempty- truststore -truststore -json-truststore-omitempty-[$$struct{Cert *string "json:\"cert,omitempty\""; Enabled *bool "json:\"enabled,omitempty\""; SecretRef *string "json:\"secretRef,omitempty\""; RequireClientAuth *bool "json:\"requireClientAuth,omitempty\""; TrustStore *TrustStore "json:\"trustStore,omitempty\""}$$]_
+
 
 ListenerTLS configures TLS configuration for each listener in the Helm values.
 
@@ -1284,6 +1284,22 @@ ListenerTLS configures TLS configuration for each listener in the Helm values.
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry[$$SchemaRegistry$$]
 ****
 
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cert`* __string__ | References a specific certificate for the listener. + |  | 
+| *`enabled`* __boolean__ | Specifies whether TLS is enabled for the listener. + |  | 
+| *`secretRef`* __string__ | References a Secret resource containing TLS credentials for the listener. +
+
+
+Deprecated: Setting SecretRef has no affect and will be removed in +
+future releases. + |  | 
+| *`requireClientAuth`* __boolean__ | Indicates whether client authentication (mTLS) is required. + |  | 
+| *`trustStore`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-truststore[$$TrustStore$$]__ | TrustStore allows setting the `truststore_path` on this listener. If +
+specified, this field takes precedence over [Certificate.CAEnabled]. + |  | MaxProperties: 1 +
+MinProperties: 1 +
+
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners"]
@@ -1813,7 +1829,6 @@ RedpandaClusterSpec defines the desired state of a Redpanda cluster. These setti
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspecalt[$$RedpandaClusterSpecAlt$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]
 ****
 
@@ -1859,8 +1874,6 @@ StatefulSets and Jobs. For details, see the [Kubernetes +
 documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity). + |  | 
 | *`tests`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enablable[$$Enablable$$]__ |  |  | 
 |===
-
-
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors"]
