@@ -136,6 +136,7 @@ func Command() *cobra.Command {
 		cloudSecretsAWSRoleARN       string
 		cloudSecretsGCPProjectID     string
 		cloudSecretsAzureKeyVaultURI string
+		cloudSecretsIgnoreNotFound   bool
 	)
 	cmd := &cobra.Command{
 		Use:     "configurator",
@@ -157,7 +158,7 @@ func Command() *cobra.Command {
 					log.Fatal("Cloud secrets are enabled but configuration for cloud provider is missing or invalid")
 				}
 				var err error
-				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, cloudSecretsPrefix, cloudConfig)
+				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, cloudSecretsPrefix, cloudConfig, cloudSecretsIgnoreNotFound)
 				if err != nil {
 					log.Fatalf("Unable to start manager: %s", err)
 				}
@@ -177,6 +178,7 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&cloudSecretsAWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
 	cmd.Flags().StringVar(&cloudSecretsGCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
 	cmd.Flags().StringVar(&cloudSecretsAzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
+	cmd.Flags().BoolVar(&cloudSecretsIgnoreNotFound, "ignore-cloud-secrets-not-found", false, "Set to true if secret references pointing to secret that's not found should be ignored.")
 
 	return cmd
 }

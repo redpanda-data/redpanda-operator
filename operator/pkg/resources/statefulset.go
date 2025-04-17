@@ -96,6 +96,7 @@ type ConfiguratorSettings struct {
 	CloudSecretsAWSRoleARN       string
 	CloudSecretsGCPProjectID     string
 	CloudSecretsAzureKeyVaultURI string
+	CloudSecretsIgnoreNotFound   bool
 }
 
 // StatefulSetResource is part of the reconciliation of redpanda.vectorized.io CRD
@@ -835,7 +836,10 @@ func (r *StatefulSetResource) getConfiguratorArgs() []string {
 			result = append(result, fmt.Sprintf("--cloud-secrets-gcp-project-id=%s", r.configuratorSettings.CloudSecretsGCPProjectID))
 		}
 		if r.configuratorSettings.CloudSecretsAzureKeyVaultURI != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-ur=%s", r.configuratorSettings.CloudSecretsAzureKeyVaultURI))
+			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-uri=%s", r.configuratorSettings.CloudSecretsAzureKeyVaultURI))
+		}
+		if r.configuratorSettings.CloudSecretsIgnoreNotFound {
+			result = append(result, "--ignore-cloud-secrets-not-found=true")
 		}
 	}
 	return result

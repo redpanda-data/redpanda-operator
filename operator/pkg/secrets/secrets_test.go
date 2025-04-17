@@ -10,7 +10,7 @@ import (
 func TestMaybeExpand(t *testing.T) {
 	t.Parallel()
 
-	expander := NewCloudExpanderFromAPI(&FakeSecretAPI{})
+	expander := NewCloudExpanderFromAPI(&FakeSecretAPI{}, false)
 	tests := []struct {
 		name           string
 		value          string
@@ -42,6 +42,36 @@ func TestMaybeExpand(t *testing.T) {
 			if actual != tt.expectedString {
 				t.Errorf("got %s, want %s", actual, tt.expectedString)
 			}
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestExpand(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		value          string
+		ignoreNotFound bool
+		expectedError  bool
+		expectedString string
+	}{
+		{
+			name:           "secret not exists",
+			value:          "${secrets.no-existing}",
+			ignoreNotFound: true,
+			expectedError:  false,
+		},
+	}
+	for _, tt := range tests {
+		expander := NewCloudExpanderFromAPI(&FakeSecretAPI{}, tt.ignoreNotFound)
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := expander.Expand(context.Background(), tt.value)
 			if tt.expectedError {
 				assert.Error(t, err)
 			} else {
