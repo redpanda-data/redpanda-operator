@@ -1,5 +1,8 @@
 project: charts/console
 kind: Fixed
 body: |- 
-    Correct the secret key reference for authentication JWT signing key.
+    Console chart fixes:
+    - Correct the secret key reference for authentication JWT signing key.  
+    - Correct the environment variable reference schema registry password.  
+    - Add value for schema registry bearer token secret.  
 time: 2025-04-16T14:52:03.053968-03:00

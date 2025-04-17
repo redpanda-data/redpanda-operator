@@ -281,7 +281,7 @@ func TestIntegrationChart(t *testing.T) {
 		partial := PartialValues{
 			Image: &PartialImage{
 				Repository: ptr.To("redpandadata/console-unstable"),
-				Tag:        ptr.To("master-2bb3af4"),
+				Tag:        ptr.To("master-50322d5"),
 			},
 			Config: map[string]any{
 				"kafka": map[string]any{
@@ -309,5 +309,87 @@ func TestIntegrationChart(t *testing.T) {
 
 		assert.NoError(t, err, "Failed to get debug vars")
 		assert.Contains(t, body, "--config.filepath=/etc/console/configs/config.yaml")
+	})
+
+	t.Run("validate secrets", func(t *testing.T) {
+		ctx := testutil.Context(t)
+
+		env := h.Namespaced(t)
+
+		partial := PartialValues{
+			Image: &PartialImage{
+				Repository: ptr.To("redpandadata/console-unstable"),
+				Tag:        ptr.To("master-50322d5"),
+			},
+			Config: map[string]any{
+				"kafka": map[string]any{
+					"brokers": []string{"some-broker-address:9092"}, // Console and this test does not care whether we have a real broker
+				},
+			},
+			LicenseSecretRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "console-license-secret",
+				},
+			},
+			Secret: &PartialSecretConfig{
+				Create: ptr.To(true),
+				Kafka: &PartialKafkaSecrets{
+					SASLPassword: ptr.To("test-sasl-password"),
+				},
+				SchemaRegistry: &PartialSchemaRegistrySecrets{
+					Password: ptr.To("test-schema-registry-password"),
+				},
+				Authentication: &PartialAuthenticationSecrets{
+					JWTSigningKey: ptr.To("test-jwt-signing-key"),
+				},
+				Redpanda: &PartialRedpandaSecrets{
+					AdminAPI: &PartialRedpandaAdminAPISecrets{
+						Password: ptr.To("test-redpanda-admin-api-password"),
+					},
+				},
+			},
+		}
+
+		consoleRelease := env.Install(ctx, consoleChart, helm.InstallOptions{
+			Values:       partial,
+			Namespace:    env.Namespace(),
+			GenerateName: true,
+		})
+
+		dot, err := Chart.Dot(nil, helmette.Release{
+			Name:      consoleRelease.Name,
+			Namespace: consoleRelease.Namespace,
+		}, partial)
+		require.NoError(t, err)
+
+		client, err := NewClient(ctx, env.Ctl(), dot)
+		assert.NoError(t, err, "Failed to create console client")
+
+		body, err := client.GetDebugVars(ctx)
+
+		assert.NoError(t, err, "Failed to get debug vars")
+		assert.Contains(t, body, "--config.filepath=/etc/console/configs/config.yaml")
+
+		consoleSecret, err := client.GetConsoleSecret(ctx)
+		assert.NoError(t, err, "Failed to get console secret")
+		assert.Equal(t, "test-sasl-password", string(consoleSecret.Data["kafka-sasl-password"]))
+		assert.Equal(t, "test-schema-registry-password", string(consoleSecret.Data["schema-registry-password"]))
+		assert.Equal(t, "test-jwt-signing-key", string(consoleSecret.Data["authentication-jwt-signingkey"]))
+		assert.Equal(t, "test-redpanda-admin-api-password", string(consoleSecret.Data["redpanda-admin-api-password"]))
+
+		pod, err := client.GetConsolePod(ctx)
+		assert.NoError(t, err, "Failed to get console pod")
+		envs := pod.Spec.Containers[0].Env
+		envMap := make(map[string]string)
+		for _, env := range envs {
+			envMap[env.Name] = env.Value
+		}
+		fmt.Printf("\n%+v\n", envMap)
+
+		assert.Equal(t, "test-sasl-password", envMap["KAFKA_SASL_PASSWORD"])
+		assert.Equal(t, "test-schema-registry-password", envMap["SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD"])
+		assert.Equal(t, "test-jwt-signing-key", envMap["JWT_SIGNING_KEY"])
+		assert.Equal(t, "test-redpanda-admin-api-password", envMap["REDPANDA_ADMIN_API_PASSWORD"])
+		assert.Equal(t, "console-license-secret", envMap["LICENSE"])
 	})
 }

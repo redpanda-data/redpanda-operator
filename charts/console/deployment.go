@@ -309,13 +309,27 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 		{
 			Value: values.Secret.SchemaRegistry.Password,
 			EnvVar: corev1.EnvVar{
-				Name: "SCHEMAREGISTRY_PASSWORD",
+				Name: "SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: Fullname(dot),
 						},
 						Key: "schema-registry-password",
+					},
+				},
+			},
+		},
+		{
+			Value: values.Secret.SchemaRegistry.BearerToken,
+			EnvVar: corev1.EnvVar{
+				Name: "SCHEMAREGISTRY_AUTHENTICATION_BEARERTOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: Fullname(dot),
+						},
+						Key: "schema-registry-bearertoken",
 					},
 				},
 			},
