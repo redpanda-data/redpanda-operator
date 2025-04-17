@@ -78,6 +78,9 @@ var (
 	// ErrClusterStateCheckHealthRetryable is the error set on any condition that is derived in
 	// a subsequent transition when a retryable error has occurred while checking health
 	ErrClusterStateCheckHealthRetryable = errors.New("retrying after error checking health")
+	// ErrClusterStateCheckLicenseRetryable is the error set on any condition that is derived in
+	// a subsequent transition when a retryable error has occurred while checking license validity
+	ErrClusterStateCheckLicenseRetryable = errors.New("retrying after error checking license validity")
 	// ErrClusterStateSyncResourcesRetryable is the error set on any condition that is derived in
 	// a subsequent transition when a retryable error has occurred while synchronizing cluster resources
 	ErrClusterStateSyncResourcesRetryable = errors.New("retrying after error synchronizing cluster resources")
@@ -87,6 +90,9 @@ var (
 	// ErrClusterStateCheckHealthTerminal is the error set on any any condition that is derived in
 	// a subsequent transition when a known terminal error has occurred while checking health
 	ErrClusterStateCheckHealthTerminal = errors.New("terminal error when checking health")
+	// ErrClusterStateCheckLicenseTerminal is the error set on any any condition that is derived in
+	// a subsequent transition when a known terminal error has occurred while checking license validity
+	ErrClusterStateCheckLicenseTerminal = errors.New("terminal error when checking license validity")
 	// ErrClusterStateSyncResourcesTerminal is the error set on any any condition that is derived in
 	// a subsequent transition when a known terminal error has occurred while synchronizing cluster resources
 	ErrClusterStateSyncResourcesTerminal = errors.New("terminal error when synchronizing cluster resources")
@@ -96,6 +102,9 @@ var (
 	// ClusterStateRequeueBeforeCheckHealthMessage is the message used to requeue a reconciliation
 	// request before transitioning away from checking health
 	ClusterStateRequeueBeforeCheckHealthMessage = "requeueing before finishing checking health"
+	// ClusterStateRequeueBeforeCheckLicenseMessage is the message used to requeue a reconciliation
+	// request before transitioning away from checking license validity
+	ClusterStateRequeueBeforeCheckLicenseMessage = "requeueing before finishing checking license validity"
 	// ClusterStateRequeueBeforeSyncResourcesMessage is the message used to requeue a reconciliation
 	// request before transitioning away from synchronizing cluster resources
 	ClusterStateRequeueBeforeSyncResourcesMessage = "requeueing before finishing synchronizing cluster resources"
@@ -149,6 +158,7 @@ func (s *ClusterStateCheckHealth) conditions(errs ...error) []metav1.Condition {
 
 	if isRetry {
 		s.status.Healthy.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckHealthMessage, err)
+		s.status.LicenseValid.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckHealthMessage, err)
 		s.status.ClusterResourcesSynced.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckHealthMessage, err)
 		s.status.ClusterConfigurationApplied.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckHealthMessage, err)
 		s.status.Quiesced.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckHealthMessage, err)
@@ -160,6 +170,7 @@ func (s *ClusterStateCheckHealth) conditions(errs ...error) []metav1.Condition {
 		// we only set terminal errors on non-final conditions, namely because
 		// the errors are *terminal* - hence we won't retry.
 		s.status.Healthy.TerminalError = err
+		s.status.LicenseValid.TerminalError = ErrClusterStateCheckHealthTerminal
 		s.status.ClusterResourcesSynced.TerminalError = ErrClusterStateCheckHealthTerminal
 		s.status.ClusterConfigurationApplied.TerminalError = ErrClusterStateCheckHealthTerminal
 
@@ -167,6 +178,7 @@ func (s *ClusterStateCheckHealth) conditions(errs ...error) []metav1.Condition {
 	}
 
 	s.status.Healthy.Error = err
+	s.status.LicenseValid.StillReconciling = ErrClusterStateCheckHealthRetryable
 	s.status.ClusterResourcesSynced.StillReconciling = ErrClusterStateCheckHealthRetryable
 	s.status.ClusterConfigurationApplied.StillReconciling = ErrClusterStateCheckHealthRetryable
 	s.status.Quiesced.StillReconciling = ErrClusterStateCheckHealthRetryable
@@ -226,8 +238,106 @@ func InitializeClusterState(generation int64, syncFn func(conditions []metav1.Co
 	return &ClusterStateCheckHealth{generation: generation, status: status, syncFn: syncFn, arguments: defaultArgumentClusterState()}
 }
 
+// TransitionToCheckLicense returns the next state in the state machine, marking the current state as transitioned and no longer usable
+func (s *ClusterStateCheckHealth) TransitionToCheckLicense() *ClusterStateCheckLicense {
+	if s.transitioned {
+		panic("states are meant to transition linearly, this state is already marked as transitioned, so it cannot transition again")
+	}
+
+	s.transitioned = true
+	return &ClusterStateCheckLicense{generation: s.generation, status: s.status, syncFn: s.syncFn, arguments: s.arguments}
+}
+
+// NotHealthy sets the  NotHealthy reason on the Healthy condition
+func (s *ClusterStateCheckHealth) NotHealthy(message string) *ClusterStateCheckHealth {
+	s.status.Healthy.NotHealthy = errors.New(message)
+	return s
+}
+
+// ClusterStateCheckLicense represents a controller which is currently checking license validity
+type ClusterStateCheckLicense struct {
+	generation   int64
+	arguments    *argumentClusterState
+	syncFn       func(conditions []metav1.Condition) (ctrl.Result, error)
+	status       *ClusterStatus
+	transitioned bool
+	synced       bool
+}
+
+func (s *ClusterStateCheckLicense) conditions(errs ...error) []metav1.Condition {
+	err := errors.Join(errs...)
+	isRetry := errors.As(err, &RetryError{})
+	isTerminal := errors.As(err, &TerminalError{})
+
+	if isRetry {
+		s.status.LicenseValid.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckLicenseMessage, err)
+		s.status.ClusterResourcesSynced.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckLicenseMessage, err)
+		s.status.ClusterConfigurationApplied.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckLicenseMessage, err)
+		s.status.Quiesced.StillReconciling = fmt.Errorf("%s: %w", ClusterStateRequeueBeforeCheckLicenseMessage, err)
+
+		return s.status.Conditions(s.generation)
+	}
+
+	if isTerminal {
+		// we only set terminal errors on non-final conditions, namely because
+		// the errors are *terminal* - hence we won't retry.
+		s.status.LicenseValid.TerminalError = err
+		s.status.ClusterResourcesSynced.TerminalError = ErrClusterStateCheckLicenseTerminal
+		s.status.ClusterConfigurationApplied.TerminalError = ErrClusterStateCheckLicenseTerminal
+
+		return s.status.Conditions(s.generation)
+	}
+
+	s.status.LicenseValid.Error = err
+	s.status.ClusterResourcesSynced.StillReconciling = ErrClusterStateCheckLicenseRetryable
+	s.status.ClusterConfigurationApplied.StillReconciling = ErrClusterStateCheckLicenseRetryable
+	s.status.Quiesced.StillReconciling = ErrClusterStateCheckLicenseRetryable
+
+	return s.status.Conditions(s.generation)
+}
+
+// Sync synchronizes the current state with the Kubernetes api. It wraps whatever synchronization closure
+// was passed when initializing the state. Sync can only ever be called once and cannot be called
+// if the state is transitioned away from with a TransitionTo* call. Sync should only be called when you
+// no longer want to process anymore in a reconciliation loop.
+func (s *ClusterStateCheckLicense) Sync(errs ...error) (ctrl.Result, error) {
+	if s.transitioned {
+		panic("states are meant to transition linearly, this state is already marked as transitioned, so it should no longer be used for synchronization")
+	}
+	if s.synced {
+		panic("states are meant to synchronize statuses only once, this state is already marked as synced, so it cannot be used to sync again")
+	}
+
+	s.synced = true
+	// final roll-up is set here, there will be an error because we synchronized early in this case
+	s.status.Stable.Unstable = fmt.Errorf("cluster not stable: %w", errors.Join(
+		s.status.Quiesced.MaybeError(),
+		s.status.Ready.MaybeError(),
+		s.status.ClusterResourcesSynced.MaybeError(),
+		s.status.ClusterConfigurationApplied.MaybeError(),
+	))
+
+	result, err := s.syncFn(s.conditions(errs...))
+	combinedErr := errors.Join(append(errs, err)...)
+	if IsTerminalError(combinedErr) {
+		// this is marked as terminal, only requeue if we've errored when synchronizing
+		return ctrl.Result{}, err
+	}
+	if IsRetryError(combinedErr) && err == nil {
+		// this is retryable and we did not have an error synchronizing, so ignore the
+		// original error and just retry directly
+		return ctrl.Result{Requeue: true, RequeueAfter: retryIn(combinedErr)}, nil
+	}
+	if combinedErr != nil {
+		// this is not an explicit retry, so just propagate whatever error
+		return ctrl.Result{}, combinedErr
+	}
+	// no errors, so we halt
+	return result, nil
+}
+
 // TransitionToSyncResources returns the next state in the state machine, marking the current state as transitioned and no longer usable
-func (s *ClusterStateCheckHealth) TransitionToSyncResources() *ClusterStateSyncResources {
+func (s *ClusterStateCheckLicense) TransitionToSyncResources() *ClusterStateSyncResources {
 	if s.transitioned {
 		panic("states are meant to transition linearly, this state is already marked as transitioned, so it cannot transition again")
 	}
@@ -236,9 +346,15 @@ func (s *ClusterStateCheckHealth) TransitionToSyncResources() *ClusterStateSyncR
 	return &ClusterStateSyncResources{generation: s.generation, status: s.status, syncFn: s.syncFn, arguments: s.arguments}
 }
 
-// NotHealthy sets the  NotHealthy reason on the Healthy condition
-func (s *ClusterStateCheckHealth) NotHealthy(message string) *ClusterStateCheckHealth {
-	s.status.Healthy.NotHealthy = errors.New(message)
+// LicenseExpired sets the  LicenseExpired reason on the LicenseValid condition
+func (s *ClusterStateCheckLicense) LicenseExpired(message string) *ClusterStateCheckLicense {
+	s.status.LicenseValid.LicenseExpired = errors.New(message)
+	return s
+}
+
+// LicenseNotPresent sets the  LicenseNotPresent reason on the LicenseValid condition
+func (s *ClusterStateCheckLicense) LicenseNotPresent(message string) *ClusterStateCheckLicense {
+	s.status.LicenseValid.LicenseNotPresent = errors.New(message)
 	return s
 }
 

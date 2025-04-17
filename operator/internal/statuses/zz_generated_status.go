@@ -33,6 +33,12 @@ type ClusterStatus struct {
 	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
 	// must be set by a controller when it subsequently reconciles a cluster.
 	Healthy *ClusterHealthyStatus
+	// ClusterLicenseValidStatus - This condition indicates whether a cluster has a
+	// valid license.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	LicenseValid *ClusterLicenseValidStatus
 	// ClusterClusterResourcesSyncedStatus - This condition indicates whether
 	// cluster configuration parameters have currently been applied to a cluster for
 	// the given generation.
@@ -67,6 +73,7 @@ func NewCluster() *ClusterStatus {
 	return &ClusterStatus{
 		&ClusterReadyStatus{},
 		&ClusterHealthyStatus{},
+		&ClusterLicenseValidStatus{},
 		&ClusterClusterResourcesSyncedStatus{},
 		&ClusterClusterConfigurationAppliedStatus{},
 		&ClusterQuiescedStatus{},
@@ -79,6 +86,7 @@ func (s *ClusterStatus) Conditions(generation int64) []metav1.Condition {
 	return []metav1.Condition{
 		s.Ready.Condition(generation),
 		s.Healthy.Condition(generation),
+		s.LicenseValid.Condition(generation),
 		s.ClusterResourcesSynced.Condition(generation),
 		s.ClusterConfigurationApplied.Condition(generation),
 		s.Quiesced.Condition(generation),
@@ -350,6 +358,213 @@ func (s *ClusterHealthyStatus) MaybeError() error {
 	}
 	if s.NotHealthy != nil {
 		return s.NotHealthy
+	}
+
+	return nil
+}
+
+// ClusterLicenseValidStatus - This condition indicates whether a cluster has a
+// valid license.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type ClusterLicenseValidStatus struct {
+	// ClusterLicenseValidConditionReasonTerminalError - This reason is used when a
+	// cluster has only been partially reconciled and we have early returned due to
+	// a known terminal error occurring prior to applying the desired cluster state.
+	// Any conditions not already derived should also receive the "TerminalError"
+	// reason. The cluster should also no longer be reconciled until it or an
+	// underlying resource is changed.
+	TerminalError error
+	// ClusterLicenseValidConditionReasonError - This reason is used when a cluster
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired cluster state. It
+	// should only be set on the conditions currently in scope for the current
+	// cluster state, any subsequently derived conditions should use
+	// "StillReconciling".
+	Error error
+	// ClusterLicenseValidConditionReasonStillReconciling - This reason is used when
+	// a cluster has only been partially reconciled and we have early returned due
+	// to a blocking condition prior to applying the desired cluster state. It does
+	// not necessarily indicate an underlying error occurred during reconciliation.
+	StillReconciling error
+	// ClusterLicenseValidConditionReasonLicenseExpired - This reason is used with
+	// the "LicenseValid" condition when a cluster has an expired license.
+	LicenseExpired error
+	// ClusterLicenseValidConditionReasonLicenseNotPresent - This reason is used
+	// with the "LicenseValid" condition when a cluster has no license.
+	LicenseNotPresent error
+}
+
+const (
+	// ClusterLicenseValidCondition - This condition indicates whether a cluster has
+	// a valid license.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	ClusterLicenseValidCondition = "LicenseValid"
+	// ClusterLicenseValidConditionReasonLicenseValid - This reason is used with the
+	// "LicenseValid" condition when the condition is True.
+	ClusterLicenseValidConditionReasonLicenseValid = "LicenseValid"
+	// ClusterLicenseValidConditionReasonTerminalError - This reason is used when a
+	// cluster has only been partially reconciled and we have early returned due to
+	// a known terminal error occurring prior to applying the desired cluster state.
+	// Any conditions not already derived should also receive the "TerminalError"
+	// reason. The cluster should also no longer be reconciled until it or an
+	// underlying resource is changed.
+	ClusterLicenseValidConditionReasonTerminalError = "TerminalError"
+	// ClusterLicenseValidConditionReasonError - This reason is used when a cluster
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired cluster state. It
+	// should only be set on the conditions currently in scope for the current
+	// cluster state, any subsequently derived conditions should use
+	// "StillReconciling".
+	ClusterLicenseValidConditionReasonError = "Error"
+	// ClusterLicenseValidConditionReasonStillReconciling - This reason is used when
+	// a cluster has only been partially reconciled and we have early returned due
+	// to a blocking condition prior to applying the desired cluster state. It does
+	// not necessarily indicate an underlying error occurred during reconciliation.
+	ClusterLicenseValidConditionReasonStillReconciling = "StillReconciling"
+	// ClusterLicenseValidConditionReasonLicenseExpired - This reason is used with
+	// the "LicenseValid" condition when a cluster has an expired license.
+	ClusterLicenseValidConditionReasonLicenseExpired = "LicenseExpired"
+	// ClusterLicenseValidConditionReasonLicenseNotPresent - This reason is used
+	// with the "LicenseValid" condition when a cluster has no license.
+	ClusterLicenseValidConditionReasonLicenseNotPresent = "LicenseNotPresent"
+)
+
+// Condition returns the status condition of the ClusterLicenseValidStatus based
+// off of the underlying errors that are set.
+func (s *ClusterLicenseValidStatus) Condition(generation int64) metav1.Condition {
+	if s.TerminalError != nil {
+		return metav1.Condition{
+			Type:               ClusterLicenseValidCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             ClusterLicenseValidConditionReasonTerminalError,
+			Message:            s.TerminalError.Error(),
+			ObservedGeneration: generation,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+	if s.Error != nil {
+		return metav1.Condition{
+			Type:               ClusterLicenseValidCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             ClusterLicenseValidConditionReasonError,
+			Message:            s.Error.Error(),
+			ObservedGeneration: generation,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+	if s.StillReconciling != nil {
+		return metav1.Condition{
+			Type:               ClusterLicenseValidCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             ClusterLicenseValidConditionReasonStillReconciling,
+			Message:            s.StillReconciling.Error(),
+			ObservedGeneration: generation,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+	if s.LicenseExpired != nil {
+		return metav1.Condition{
+			Type:               ClusterLicenseValidCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             ClusterLicenseValidConditionReasonLicenseExpired,
+			Message:            s.LicenseExpired.Error(),
+			ObservedGeneration: generation,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+	if s.LicenseNotPresent != nil {
+		return metav1.Condition{
+			Type:               ClusterLicenseValidCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             ClusterLicenseValidConditionReasonLicenseNotPresent,
+			Message:            s.LicenseNotPresent.Error(),
+			ObservedGeneration: generation,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+
+	return metav1.Condition{
+		Type:               ClusterLicenseValidCondition,
+		Status:             metav1.ConditionTrue,
+		Reason:             ClusterLicenseValidConditionReasonLicenseValid,
+		Message:            "Cluster has a valid license",
+		ObservedGeneration: generation,
+		LastTransitionTime: metav1.Now(),
+	}
+}
+
+// MarshalJSON marshals a ClusterLicenseValidStatus value to JSON
+func (s *ClusterLicenseValidStatus) MarshalJSON() ([]byte, error) {
+	data := map[string]string{}
+	if s.TerminalError != nil {
+		data["TerminalError"] = s.TerminalError.Error()
+	}
+	if s.Error != nil {
+		data["Error"] = s.Error.Error()
+	}
+	if s.StillReconciling != nil {
+		data["StillReconciling"] = s.StillReconciling.Error()
+	}
+	if s.LicenseExpired != nil {
+		data["LicenseExpired"] = s.LicenseExpired.Error()
+	}
+	if s.LicenseNotPresent != nil {
+		data["LicenseNotPresent"] = s.LicenseNotPresent.Error()
+	}
+
+	return json.Marshal(data)
+}
+
+// UnmarshalJSON unmarshals a ClusterLicenseValidStatus from JSON
+func (s *ClusterLicenseValidStatus) UnmarshalJSON(b []byte) error {
+	data := map[string]string{}
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+	if err, ok := data["TerminalError"]; ok {
+		s.TerminalError = errors.New(err)
+	}
+	if err, ok := data["Error"]; ok {
+		s.Error = errors.New(err)
+	}
+	if err, ok := data["StillReconciling"]; ok {
+		s.StillReconciling = errors.New(err)
+	}
+	if err, ok := data["LicenseExpired"]; ok {
+		s.LicenseExpired = errors.New(err)
+	}
+	if err, ok := data["LicenseNotPresent"]; ok {
+		s.LicenseNotPresent = errors.New(err)
+	}
+
+	return nil
+}
+
+// HasError returns whether any of the underlying errors for the given condition are set.
+func (s *ClusterLicenseValidStatus) HasError() bool {
+	return s.TerminalError != nil || s.Error != nil || s.StillReconciling != nil || s.LicenseExpired != nil || s.LicenseNotPresent != nil
+}
+
+// MaybeError returns an underlying error for the given condition if one has been set.
+func (s *ClusterLicenseValidStatus) MaybeError() error {
+	if s.TerminalError != nil {
+		return s.TerminalError
+	}
+	if s.Error != nil {
+		return s.Error
+	}
+	if s.StillReconciling != nil {
+		return s.StillReconciling
+	}
+	if s.LicenseExpired != nil {
+		return s.LicenseExpired
+	}
+	if s.LicenseNotPresent != nil {
+		return s.LicenseNotPresent
 	}
 
 	return nil

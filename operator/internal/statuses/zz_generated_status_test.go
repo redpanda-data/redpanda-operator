@@ -65,6 +65,41 @@ func TestClusterHealthyStatus(t *testing.T) {
 	assert.True(t, status.HasError())
 }
 
+func TestClusterLicenseValidStatus(t *testing.T) {
+	t.Parallel()
+	expected := errors.New("expected")
+
+	status := &ClusterLicenseValidStatus{}
+	assert.Equal(t, "Cluster has a valid license", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseValid, status.Condition(0).Reason)
+	assert.False(t, status.HasError())
+
+	status = &ClusterLicenseValidStatus{TerminalError: expected}
+	assert.Equal(t, "expected", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonTerminalError, status.Condition(0).Reason)
+	assert.True(t, status.HasError())
+
+	status = &ClusterLicenseValidStatus{Error: expected}
+	assert.Equal(t, "expected", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonError, status.Condition(0).Reason)
+	assert.True(t, status.HasError())
+
+	status = &ClusterLicenseValidStatus{StillReconciling: expected}
+	assert.Equal(t, "expected", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonStillReconciling, status.Condition(0).Reason)
+	assert.True(t, status.HasError())
+
+	status = &ClusterLicenseValidStatus{LicenseExpired: expected}
+	assert.Equal(t, "expected", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseExpired, status.Condition(0).Reason)
+	assert.True(t, status.HasError())
+
+	status = &ClusterLicenseValidStatus{LicenseNotPresent: expected}
+	assert.Equal(t, "expected", status.Condition(0).Message)
+	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseNotPresent, status.Condition(0).Reason)
+	assert.True(t, status.HasError())
+}
+
 func TestClusterClusterResourcesSyncedStatus(t *testing.T) {
 	t.Parallel()
 	expected := errors.New("expected")
@@ -162,25 +197,30 @@ func TestClusterStatus(t *testing.T) {
 	assert.Equal(t, conditionType, conditions[1].Type)
 	assert.Equal(t, reason, conditions[1].Reason)
 
-	conditionType = ClusterClusterResourcesSyncedCondition
-	reason = ClusterClusterResourcesSyncedConditionReasonSynced
+	conditionType = ClusterLicenseValidCondition
+	reason = ClusterLicenseValidConditionReasonLicenseValid
 	assert.Equal(t, conditionType, conditions[2].Type)
 	assert.Equal(t, reason, conditions[2].Reason)
 
-	conditionType = ClusterClusterConfigurationAppliedCondition
-	reason = ClusterClusterConfigurationAppliedConditionReasonApplied
+	conditionType = ClusterClusterResourcesSyncedCondition
+	reason = ClusterClusterResourcesSyncedConditionReasonSynced
 	assert.Equal(t, conditionType, conditions[3].Type)
 	assert.Equal(t, reason, conditions[3].Reason)
 
-	conditionType = ClusterQuiescedCondition
-	reason = ClusterQuiescedConditionReasonQuiesced
+	conditionType = ClusterClusterConfigurationAppliedCondition
+	reason = ClusterClusterConfigurationAppliedConditionReasonApplied
 	assert.Equal(t, conditionType, conditions[4].Type)
 	assert.Equal(t, reason, conditions[4].Reason)
 
-	conditionType = ClusterStableCondition
-	reason = ClusterStableConditionReasonStable
+	conditionType = ClusterQuiescedCondition
+	reason = ClusterQuiescedConditionReasonQuiesced
 	assert.Equal(t, conditionType, conditions[5].Type)
 	assert.Equal(t, reason, conditions[5].Reason)
+
+	conditionType = ClusterStableCondition
+	reason = ClusterStableConditionReasonStable
+	assert.Equal(t, conditionType, conditions[6].Type)
+	assert.Equal(t, reason, conditions[6].Reason)
 }
 
 func TestClusterReadyStatusMarshaling(t *testing.T) {
@@ -211,6 +251,26 @@ func TestClusterHealthyStatusMarshaling(t *testing.T) {
 	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
 	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
 	assert.Equal(t, status.NotHealthy.Error(), unmarshaled.NotHealthy.Error())
+}
+
+func TestClusterLicenseValidStatusMarshaling(t *testing.T) {
+	t.Parallel()
+	status := &ClusterLicenseValidStatus{
+		TerminalError:     errors.New("TerminalError"),
+		Error:             errors.New("Error"),
+		StillReconciling:  errors.New("StillReconciling"),
+		LicenseExpired:    errors.New("LicenseExpired"),
+		LicenseNotPresent: errors.New("LicenseNotPresent"),
+	}
+	data, err := json.Marshal(status)
+	require.NoError(t, err)
+	unmarshaled := &ClusterLicenseValidStatus{}
+	require.NoError(t, json.Unmarshal(data, &unmarshaled))
+	assert.Equal(t, status.TerminalError.Error(), unmarshaled.TerminalError.Error())
+	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
+	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
+	assert.Equal(t, status.LicenseExpired.Error(), unmarshaled.LicenseExpired.Error())
+	assert.Equal(t, status.LicenseNotPresent.Error(), unmarshaled.LicenseNotPresent.Error())
 }
 
 func TestClusterClusterResourcesSyncedStatusMarshaling(t *testing.T) {

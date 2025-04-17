@@ -112,6 +112,11 @@
         # Example:
         # provides: [ version ]
         provides: []
+      - name: CheckLicense
+        action: checking license validity
+        description: >
+          This state occurs when we attempt to check the cluster license.
+        conditions: [ LicenseValid ]
       - name: SyncResources
         action: synchronizing cluster resources
         description: >
@@ -159,6 +164,25 @@
         - name: NotHealthy
           description: >
             This reason is used with the "Healthy" condition when a cluster is not healthy.
+    - name: LicenseValid
+      description: >
+        This condition indicates whether a cluster has a valid license.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      base:
+        name: LicenseValid
+        message: Cluster has a valid license
+        description: >
+          This reason is used with the "LicenseValid" condition when the condition is True.
+      errors:
+        - name: LicenseExpired
+          description: >
+            This reason is used with the "LicenseValid" condition when a cluster has an expired license.
+        - name: LicenseNotPresent
+          description: >
+            This reason is used with the "LicenseValid" condition when a cluster has no license.
     # Note that this and the following condition do not have any "errors" defined. What this
     # essentially means is that there is no valid time when we should continue reconciling
     # when this condition is False. In other words, this condition will always either be True
