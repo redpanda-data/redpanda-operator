@@ -53,10 +53,11 @@ func Secret(dot *helmette.Dot) *corev1.Secret {
 			"kafka-tls-key":                     ptr.Deref(values.Secret.Kafka.TLSKey, ""),
 
 			// schema registry
-			"schema-registry-password": ptr.Deref(values.Secret.SchemaRegistry.Password, ""),
-			"schemaregistry-tls-ca":    ptr.Deref(values.Secret.SchemaRegistry.TLSCA, ""),
-			"schemaregistry-tls-cert":  ptr.Deref(values.Secret.SchemaRegistry.TLSCert, ""),
-			"schemaregistry-tls-key":   ptr.Deref(values.Secret.SchemaRegistry.TLSKey, ""),
+			"schema-registry-password":    ptr.Deref(values.Secret.SchemaRegistry.Password, ""),
+			"schema-registry-bearertoken": ptr.Deref(values.Secret.SchemaRegistry.BearerToken, ""),
+			"schemaregistry-tls-ca":       ptr.Deref(values.Secret.SchemaRegistry.TLSCA, ""),
+			"schemaregistry-tls-cert":     ptr.Deref(values.Secret.SchemaRegistry.TLSCert, ""),
+			"schemaregistry-tls-key":      ptr.Deref(values.Secret.SchemaRegistry.TLSKey, ""),
 
 			// Authentication
 			"authentication-jwt-signingkey":     jwtSigningKey,

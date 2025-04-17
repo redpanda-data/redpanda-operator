@@ -148,10 +148,11 @@ type KafkaSecrets struct {
 }
 
 type SchemaRegistrySecrets struct {
-	Password *string `json:"password,omitempty"`
-	TLSCA    *string `json:"tlsCa,omitempty"`
-	TLSCert  *string `json:"tlsCert,omitempty"`
-	TLSKey   *string `json:"tlsKey,omitempty"`
+	BearerToken *string `json:"bearerToken,omitempty"`
+	Password    *string `json:"password,omitempty"`
+	TLSCA       *string `json:"tlsCa,omitempty"`
+	TLSCert     *string `json:"tlsCert,omitempty"`
+	TLSKey      *string `json:"tlsKey,omitempty"`
 }
 
 type AuthenticationSecrets struct {

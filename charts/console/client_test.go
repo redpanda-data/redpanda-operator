@@ -71,7 +71,7 @@ func NewClient(ctx context.Context, kubeCtl *kube.Ctl, dot *helmette.Dot) (*Clie
 	return c, nil
 }
 
-func (c *Client) getConsolePod(ctx context.Context) (*corev1.Pod, error) {
+func (c *Client) GetConsolePod(ctx context.Context) (*corev1.Pod, error) {
 	deploys, err := kube.List[appsv1.DeploymentList](ctx, c.Ctl,
 		k8sclient.InNamespace(c.Release.Namespace),
 	)
@@ -105,8 +105,20 @@ func (c *Client) getConsolePod(ctx context.Context) (*corev1.Pod, error) {
 	return &pods.Items[0], nil
 }
 
+func (c *Client) GetConsoleSecret(ctx context.Context) (*corev1.Secret, error) {
+	s, err := kube.Get[corev1.Secret](ctx, c.Ctl, kube.ObjectKey{
+		Name:      "console",
+		Namespace: c.Release.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
 func (c *Client) GetDebugVars(ctx context.Context) (string, error) {
-	pod, err := c.getConsolePod(ctx)
+	pod, err := c.GetConsolePod(ctx)
 	if err != nil {
 		return "", err
 	}
