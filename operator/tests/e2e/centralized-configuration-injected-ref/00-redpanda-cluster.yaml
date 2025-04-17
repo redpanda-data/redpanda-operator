@@ -39,3 +39,4 @@ spec:
       configMapKeyRef:
         name: injected-value
         key: value-1
+      useRawValue: true

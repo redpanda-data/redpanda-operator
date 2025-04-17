@@ -130,9 +130,16 @@ func (c *clusterCfg) finalize(parent *CombinedCfg) error {
 			}); err != nil {
 				return fmt.Errorf("compiling ConfigMapRef %q: %w", k, err)
 			}
-			c.templated[k] = vectorizedv1alpha1.YAMLRepresentation(`""`)
-			// NOTE: this is an env var reference. Assuming the value's intended to be interpreted as a string, we may want CEL to wrap a `repr(..)` around this.
-			c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+			c.templated[k] = ``
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			if v.UseRawValue {
+				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+			} else {
+				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
+			}
 		case v.SecretKeyRef != nil:
 			envName := keyToEnvVar(k)
 			if err := parent.EnsureInitEnv(corev1.EnvVar{
@@ -143,13 +150,27 @@ func (c *clusterCfg) finalize(parent *CombinedCfg) error {
 			}); err != nil {
 				return fmt.Errorf("compiling SecretRef %q: %w", k, err)
 			}
-			c.templated[k] = vectorizedv1alpha1.YAMLRepresentation(`""`)
-			// NOTE: this is an env var reference. Assuming the value's intended to be interpreted as a string, we want CEL to wrap a `repr(..)` around this.
-			c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+			c.templated[k] = ``
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			if v.UseRawValue {
+				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+			} else {
+				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
+			}
 		case v.ExternalSecretRef != nil:
-			c.templated[k] = vectorizedv1alpha1.YAMLRepresentation(`""`)
-			// NOTE: this is an external secret reference. Assuming the value's intended to be interpreted as a string, we want CEL to wrap a `repr(..)` around this.
-			c.AddFixup(k, fmt.Sprintf(`%s(%s(%s("%s")))`, CELRepr, CELExternalSecretRef, CELEnvString, *v.ExternalSecretRef))
+			c.templated[k] = `""`
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			if v.UseRawValue {
+				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, *v.ExternalSecretRef))
+			} else {
+				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, *v.ExternalSecretRef))
+			}
 		}
 	}
 	return nil
