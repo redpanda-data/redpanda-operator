@@ -1306,6 +1306,10 @@ func (t *InternalTLS) TrustStoreFilePath(tls *TLS) string {
 // ServerCAPath returns the path on disk to a certificate that may be used to
 // verify a connection with this server.
 func (t *InternalTLS) ServerCAPath(tls *TLS) string {
+	if t.TrustStore != nil {
+		return t.TrustStore.TrustStoreFilePath()
+	}
+
 	if tls.Certs.MustGet(t.Cert).CAEnabled {
 		return fmt.Sprintf("%s/%s/ca.crt", certificateMountPoint, t.Cert)
 	}
