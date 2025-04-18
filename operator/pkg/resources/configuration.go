@@ -442,7 +442,7 @@ func prepareSchemaRegistryClient(
 	}
 
 	// Late binding of SASL SCRAM credentialsRetrieve SCRAM credentials
-	cfg.Node.PandaproxyClient.SASLMechanism = ptr.To(saslMechanism)
+	cfg.Node.SchemaRegistryClient.SASLMechanism = ptr.To(saslMechanism)
 	_ = cfg.EnsureInitEnv(corev1.EnvVar{
 		Name: "SCHEMA_REGISTRY_CLIENT_USERNAME",
 		ValueFrom: &corev1.EnvVarSource{
