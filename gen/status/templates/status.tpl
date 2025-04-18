@@ -12,126 +12,179 @@ package {{ $.Package }}
 // GENERATED from {{ $.File }}, DO NOT EDIT DIRECTLY
 
 import (
-	"encoding/json"
-	"errors"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-{{ range $status := $.Statuses -}}
+{{ range $status := $.Statuses -}}{{/* Type Declarations */}}
+{{- range $condition := $status.Conditions }}
+{{ $condition.ConditionComment }}
+type {{ $condition.GoConditionName }} string
+{{- end }}
+{{- end }}{{/* Type Declarations */}}
 
+const (
+{{- range $status := $.Statuses -}}
+{{- range $i, $condition := $status.Conditions }}
+    {{- if ne $i 0}}
+    {{/* break */}}
+    {{- end }}
+    {{ $condition.Comment }}
+	{{ $condition.GoName }} = "{{ $condition.Name }}"
+	{{- range $reason := $condition.Reasons }}
+    {{ $reason.Comment }}
+	{{ $reason.GoName }} {{ $condition.GoConditionName }} = "{{ $reason.Name }}"
+    {{- end }}
+{{- end }}
+{{- end }}
+)
+
+{{ range $status := $.Statuses -}}{{/* Status Structure */}}
 {{ $status.Comment }}
 type {{ $status.GoName }} struct {
-	{{- range $conditionType := $status.Types }}
-	{{ $conditionType.StructComment }}
-	{{ $conditionType.Name }} *{{ $conditionType.GoStructName }}{{ end }}
+    generation int64
+    conditions []metav1.Condition
+    hasTerminalError bool
+	{{- range $condition := $status.ManualConditions }}
+	is{{ $condition.Name }}Set bool
+    {{- if $condition.HasTransientError }}
+	is{{ $condition.Name }}TransientError bool
+    {{- end }}
+    {{- end }}
 }
 
 // New{{ $status.Kind }}() returns a new {{ $status.GoName }}
-func New{{ $status.Kind }}() *{{ $status.GoName }} {
+func New{{ $status.Kind }}(generation int64) *{{ $status.GoName }} {
 	return &{{ $status.GoName }}{
-    {{- range $conditionType := $status.Types }}
-	    &{{ $conditionType.GoStructName }}{},
-    {{- end }}
+        generation: generation,
     }
 }
 
 // Conditions returns the aggregated status conditions of the {{ $status.GoName }}.
-func (s *{{ $status.GoName }}) Conditions(generation int64) []metav1.Condition {
-	return []metav1.Condition{
-		{{- range $conditionType := $status.Types }}
-		s.{{ $conditionType.Name }}.Condition(generation),{{ end }}
-	}
-}
-{{- range $conditionType := $status.Types }}{{/* Conditions */}}
+func (s *{{ $status.GoName }}) Conditions() []metav1.Condition {
+    conditions := append([]metav1.Condition{}, s.conditions...)
 
-{{ $conditionType.StructComment }}
-type {{ $conditionType.GoStructName }} struct {
-	{{- range $reason := $conditionType.Reasons }}
-	{{ $reason.Comment }}
-	{{ $reason.Name }} error
+    {{- range $condition:= $status.FinalConditions }}
+    conditions = append(conditions, s.get{{ $condition.Name }}())
     {{- end }}
-}
 
-const (
-    {{ $conditionType.ConditionComment }}
-	{{ $conditionType.GoConditionName }} = "{{ $conditionType.Name }}"
-	{{ $conditionType.Base.Comment }}
-	{{ $conditionType.Base.GoName }} = "{{ $conditionType.Base.Name }}"
-	{{- range $reason := $conditionType.Reasons }}
-	{{ $reason.Comment }}
-	{{ $reason.GoName }} = "{{ $reason.Name }}"
+    {{- range $condition:= $status.RollupConditions }}
+    conditions = append(conditions, s.get{{ $condition.Name }}(conditions))
     {{- end }}
-)
 
-{{ $conditionType.ConditionFuncComment }}
-func (s *{{ $conditionType.GoStructName }}) Condition(generation int64) metav1.Condition {
-	{{- range $reason := $conditionType.Reasons }}
-	if s.{{ $reason.Name }} != nil {
-		return metav1.Condition{
-			Type:               {{ $conditionType.GoConditionName }},
-			Status:             metav1.Condition{{ $reason.DefaultValue }},
-			Reason:             {{ $reason.GoName}},
-			Message:            s.{{ $reason.Name }}.Error(),
-			ObservedGeneration: generation,
-			LastTransitionTime: metav1.Now(),
-		}
-	}
-	{{- end }}
-
-	return metav1.Condition{
-		Type:               {{ $conditionType.GoConditionName }},
-		Status:             metav1.ConditionTrue,
-		Reason:             {{ $conditionType.Base.GoName }},
-		Message:            "{{ $conditionType.Base.Message }}",
-		ObservedGeneration: generation,
-		LastTransitionTime: metav1.Now(),
-	}
+	return conditions
 }
 
-// MarshalJSON marshals a {{ $conditionType.GoStructName }} value to JSON
-func (s *{{ $conditionType.GoStructName }}) MarshalJSON() ([]byte, error) {
-	data := map[string]string{}
-	{{- range $reason := $conditionType.Reasons }}
-	if s.{{ $reason.Name }} != nil {
-		data["{{ $reason.Name }}"] = s.{{ $reason.Name }}.Error()
-	}
-	{{- end }}
+{{- range $condition := $status.ManualConditions }}{{/* ManualConditions */}}
+// Set{{ $condition.Name }} sets the underlying condition to the given reason.
+func (s *{{ $status.GoName }}) Set{{ $condition.Name }}(reason {{ $condition.GoConditionName }}, messages ...string) {
+    if s.is{{ $condition.Name }}Set {
+        panic("you should only ever set a condition once, doing so more than once is a programming error")
+    }
 
-	return json.Marshal(data)
+    var status metav1.ConditionStatus
+
+    s.is{{ $condition.Name }}Set = true
+    message := strings.Join(messages, "; ")
+
+    switch reason {
+    {{- range $i, $reason := $condition.Reasons }}
+	    case {{ $reason.GoName }}:
+        {{- if $reason.IsTransientError }}
+            s.is{{ $condition.Name }}TransientError = true
+        {{- end }}
+        {{- if $reason.IsTerminalError }}
+            s.hasTerminalError = true
+        {{- end }}
+        {{- if ne $reason.Message "" }}
+            if message == "" {
+                message = "{{ $reason.Message }}"
+            }
+        {{- end }}
+            status = metav1.Condition{{ if eq $i 0 }}True{{ else }}False{{ end }}
+    {{- end }}
+        default:
+            panic("unhandled reason type")
+    }
+
+    if message == "" {
+        panic("message must be set")
+    }
+
+    s.conditions = append(s.conditions, metav1.Condition{
+        Type:               {{ $condition.GoName }},
+        Status:             status,
+        Reason:             string(reason),
+        Message:            message,
+        ObservedGeneration: s.generation,
+    })
 }
+{{- end }}{{/* Manual Conditions */}}
 
-// UnmarshalJSON unmarshals a {{ $conditionType.GoStructName }} from JSON
-func (s *{{ $conditionType.GoStructName }}) UnmarshalJSON(b []byte) error {
-	data := map[string]string{}
-	if err := json.Unmarshal(b, &data); err != nil {
-		return err
-	}
-	{{- range $reason := $conditionType.Reasons }}
-	if err, ok := data["{{ $reason.Name }}"]; ok {
-		s.{{ $reason.Name }} = errors.New(err)
-	}
-	{{- end }}
+{{- range $condition := $status.FinalConditions }}{{/* FinalConditions */}}
 
-	return nil
+func (s *{{ $status.GoName }}) get{{ $condition.Name }}() metav1.Condition {
+    {{- if $status.HasTransientError }}
+    transientErrorConditionsSet := {{ range $i, $condition := $status.TransientErrorConditions }}{{ if ne $i 0 }}|| {{ end }}s.is{{ $condition.Name }}TransientError{{ end }}
+    {{- end }}
+    allConditionsSet := {{ range $i, $condition := $status.ManualConditions }}{{ if ne $i 0 }}&& {{ end }}s.is{{ $condition.Name }}Set{{ end }}
+
+    if (allConditionsSet || s.hasTerminalError) {{ if $status.HasTransientError }}&& !transientErrorConditionsSet {{end}}{
+        return metav1.Condition{
+            Type:               {{ $condition.GoName }},
+            Status:             metav1.ConditionTrue,
+            Reason:             string({{ (index $condition.Reasons 0).GoName }}),
+            Message:            "{{ (index $condition.Reasons 0).Message }}",
+            ObservedGeneration: s.generation,
+        }
+    }
+
+    return metav1.Condition{
+        Type:               {{ $condition.GoName }},
+        Status:             metav1.ConditionFalse,
+        Reason:             string({{ (index $condition.Reasons 1).GoName }}),
+        Message:            "{{ (index $condition.Reasons 1).Message }}",
+        ObservedGeneration: s.generation,
+    }
 }
+{{- end }}{{/* Final Conditions */}}
 
-{{ if not $conditionType.Ignore -}}
-// HasError returns whether any of the underlying errors for the given condition are set.
-func (s *{{ $conditionType.GoStructName }}) HasError() bool {
-	return {{ range $index, $reason := $conditionType.Reasons }}{{ if (ne $index 0) }} || {{ end }}s.{{$reason.Name}} != nil{{ end }}
+{{- range $condition := $status.RollupConditions }}{{/* RollupConditions */}}
+
+func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Condition) metav1.Condition {
+    allConditionsFoundAndTrue := true
+    for _, condition := range []string{ {{ range $i, $condition := $condition.RollupConditions }}{{ if ne $i 0 }}, {{ end }}{{ $condition.GoName }}{{ end }} } {
+        conditionFoundAndTrue := false
+        for _, setCondition := range conditions {
+            if setCondition.Type == condition {
+                conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue 
+                break
+            }
+        }
+        if !conditionFoundAndTrue {
+            allConditionsFoundAndTrue = false
+            break
+        }
+    }
+
+    if allConditionsFoundAndTrue {
+        return metav1.Condition{
+            Type:               {{ $condition.GoName }},
+            Status:             metav1.ConditionTrue,
+            Reason:             string({{ (index $condition.Reasons 0).GoName }}),
+            Message:            "{{ (index $condition.Reasons 0).Message }}",
+            ObservedGeneration: s.generation,
+        }
+    }
+
+    return metav1.Condition{
+        Type:               {{ $condition.GoName }},
+        Status:             metav1.ConditionFalse,
+        Reason:             string({{ (index $condition.Reasons 1).GoName }}),
+        Message:            "{{ (index $condition.Reasons 1).Message }}",
+        ObservedGeneration: s.generation,
+    }
 }
-
-// MaybeError returns an underlying error for the given condition if one has been set.
-func (s *{{ $conditionType.GoStructName }}) MaybeError() error {
-	{{- range $index, $reason := $conditionType.Reasons }}
-	if s.{{$reason.Name}} != nil {
-		return s.{{$reason.Name}}
-	}
-	{{- end }}
-
-	return nil
-}
-{{- end }}
-{{- end }}{{/* END Conditions */}}
-{{ end }}
+{{- end }}{{/* Rollup Conditions */}}
+{{ end }}{{/* Status Structure */}}

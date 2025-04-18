@@ -12,319 +12,425 @@ package statuses
 // GENERATED from statuses.yaml, DO NOT EDIT DIRECTLY
 
 import (
-	"encoding/json"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestClusterReadyStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
+func assertConditionStatusReason(t *testing.T, name string, status metav1.ConditionStatus, reason string, conditions []metav1.Condition) {
+	t.Helper()
 
-	status := &ClusterReadyStatus{}
-	assert.Equal(t, "Cluster ready to service requests", status.Condition(0).Message)
-	assert.Equal(t, ClusterReadyConditionReasonReady, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterReadyStatus{NotReady: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterReadyConditionReasonNotReady, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterHealthyStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterHealthyStatus{}
-	assert.Equal(t, "Cluster is healthy", status.Condition(0).Message)
-	assert.Equal(t, ClusterHealthyConditionReasonHealthy, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterHealthyStatus{TerminalError: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterHealthyConditionReasonTerminalError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterHealthyStatus{Error: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterHealthyConditionReasonError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterHealthyStatus{StillReconciling: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterHealthyConditionReasonStillReconciling, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterHealthyStatus{NotHealthy: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterHealthyConditionReasonNotHealthy, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterLicenseValidStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterLicenseValidStatus{}
-	assert.Equal(t, "Cluster has a valid license", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseValid, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterLicenseValidStatus{TerminalError: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonTerminalError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterLicenseValidStatus{Error: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterLicenseValidStatus{StillReconciling: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonStillReconciling, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterLicenseValidStatus{LicenseExpired: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseExpired, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterLicenseValidStatus{LicenseNotPresent: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterLicenseValidConditionReasonLicenseNotPresent, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterClusterResourcesSyncedStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterClusterResourcesSyncedStatus{}
-	assert.Equal(t, "Cluster configuration successfully applied", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterResourcesSyncedConditionReasonSynced, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterClusterResourcesSyncedStatus{TerminalError: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterResourcesSyncedConditionReasonTerminalError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterClusterResourcesSyncedStatus{Error: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterResourcesSyncedConditionReasonError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterClusterResourcesSyncedStatus{StillReconciling: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterResourcesSyncedConditionReasonStillReconciling, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterClusterConfigurationAppliedStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterClusterConfigurationAppliedStatus{}
-	assert.Equal(t, "Cluster configuration successfully applied", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterConfigurationAppliedConditionReasonApplied, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterClusterConfigurationAppliedStatus{TerminalError: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterConfigurationAppliedConditionReasonTerminalError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterClusterConfigurationAppliedStatus{Error: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterConfigurationAppliedConditionReasonError, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-
-	status = &ClusterClusterConfigurationAppliedStatus{StillReconciling: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterClusterConfigurationAppliedConditionReasonStillReconciling, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterQuiescedStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterQuiescedStatus{}
-	assert.Equal(t, "Cluster reconciliation finished", status.Condition(0).Message)
-	assert.Equal(t, ClusterQuiescedConditionReasonQuiesced, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterQuiescedStatus{StillReconciling: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterQuiescedConditionReasonStillReconciling, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterStableStatus(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &ClusterStableStatus{}
-	assert.Equal(t, "Cluster Stable", status.Condition(0).Message)
-	assert.Equal(t, ClusterStableConditionReasonStable, status.Condition(0).Reason)
-	assert.False(t, status.HasError())
-
-	status = &ClusterStableStatus{Unstable: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, ClusterStableConditionReasonUnstable, status.Condition(0).Reason)
-	assert.True(t, status.HasError())
-}
-
-func TestClusterStatus(t *testing.T) {
-	t.Parallel()
-	status := NewCluster()
-	conditions := status.Conditions(0)
-	var conditionType string
-	var reason string
-
-	conditionType = ClusterReadyCondition
-	reason = ClusterReadyConditionReasonReady
-	assert.Equal(t, conditionType, conditions[0].Type)
-	assert.Equal(t, reason, conditions[0].Reason)
-
-	conditionType = ClusterHealthyCondition
-	reason = ClusterHealthyConditionReasonHealthy
-	assert.Equal(t, conditionType, conditions[1].Type)
-	assert.Equal(t, reason, conditions[1].Reason)
-
-	conditionType = ClusterLicenseValidCondition
-	reason = ClusterLicenseValidConditionReasonLicenseValid
-	assert.Equal(t, conditionType, conditions[2].Type)
-	assert.Equal(t, reason, conditions[2].Reason)
-
-	conditionType = ClusterClusterResourcesSyncedCondition
-	reason = ClusterClusterResourcesSyncedConditionReasonSynced
-	assert.Equal(t, conditionType, conditions[3].Type)
-	assert.Equal(t, reason, conditions[3].Reason)
-
-	conditionType = ClusterClusterConfigurationAppliedCondition
-	reason = ClusterClusterConfigurationAppliedConditionReasonApplied
-	assert.Equal(t, conditionType, conditions[4].Type)
-	assert.Equal(t, reason, conditions[4].Reason)
-
-	conditionType = ClusterQuiescedCondition
-	reason = ClusterQuiescedConditionReasonQuiesced
-	assert.Equal(t, conditionType, conditions[5].Type)
-	assert.Equal(t, reason, conditions[5].Reason)
-
-	conditionType = ClusterStableCondition
-	reason = ClusterStableConditionReasonStable
-	assert.Equal(t, conditionType, conditions[6].Type)
-	assert.Equal(t, reason, conditions[6].Reason)
-}
-
-func TestClusterReadyStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterReadyStatus{
-		NotReady: errors.New("NotReady"),
+	for _, condition := range conditions {
+		if condition.Type == name {
+			assert.Equal(t, status, condition.Status, "%s should be %v but was %v", name, status, condition.Status)
+			assert.Equal(t, reason, condition.Reason, "%s should have reason %v but was %v", name, reason, condition.Reason)
+			return
+		}
 	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterReadyStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.NotReady.Error(), unmarshaled.NotReady.Error())
+
+	t.Errorf("did not find condition with the name %q", name)
 }
 
-func TestClusterHealthyStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterHealthyStatus{
-		TerminalError:    errors.New("TerminalError"),
-		Error:            errors.New("Error"),
-		StillReconciling: errors.New("StillReconciling"),
-		NotHealthy:       errors.New("NotHealthy"),
+func assertNoCondition(t *testing.T, name string, conditions []metav1.Condition) {
+	t.Helper()
+
+	for _, condition := range conditions {
+		if condition.Type == name {
+			t.Errorf("found condition %q with reason %q and status %v when there should be none", name, condition.Reason, condition.Status)
+			return
+		}
 	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterHealthyStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.TerminalError.Error(), unmarshaled.TerminalError.Error())
-	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
-	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
-	assert.Equal(t, status.NotHealthy.Error(), unmarshaled.NotHealthy.Error())
 }
 
-func TestClusterLicenseValidStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterLicenseValidStatus{
-		TerminalError:     errors.New("TerminalError"),
-		Error:             errors.New("Error"),
-		StillReconciling:  errors.New("StillReconciling"),
-		LicenseExpired:    errors.New("LicenseExpired"),
-		LicenseNotPresent: errors.New("LicenseNotPresent"),
-	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterLicenseValidStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.TerminalError.Error(), unmarshaled.TerminalError.Error())
-	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
-	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
-	assert.Equal(t, status.LicenseExpired.Error(), unmarshaled.LicenseExpired.Error())
-	assert.Equal(t, status.LicenseNotPresent.Error(), unmarshaled.LicenseNotPresent.Error())
-}
+type setClusterFunc func(status *ClusterStatus)
 
-func TestClusterClusterResourcesSyncedStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterClusterResourcesSyncedStatus{
-		TerminalError:    errors.New("TerminalError"),
-		Error:            errors.New("Error"),
-		StillReconciling: errors.New("StillReconciling"),
-	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterClusterResourcesSyncedStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.TerminalError.Error(), unmarshaled.TerminalError.Error())
-	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
-	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
-}
+func TestCluster(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct {
+		condition string
+		reason    string
+		expected  metav1.ConditionStatus
+		setFn     setClusterFunc
+	}{
+		"Ready/Ready": {
+			condition: ClusterReady,
+			reason:    string(ClusterReadyReasonReady),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+		},
+		"Ready/NotReady": {
+			condition: ClusterReady,
+			reason:    string(ClusterReadyReasonNotReady),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonNotReady, "reason") },
+		},
+		"Ready/Error": {
+			condition: ClusterReady,
+			reason:    string(ClusterReadyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonError, "reason") },
+		},
+		"Ready/TerminalError": {
+			condition: ClusterReady,
+			reason:    string(ClusterReadyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonTerminalError, "reason") },
+		},
+		"Healthy/Healthy": {
+			condition: ClusterHealthy,
+			reason:    string(ClusterHealthyReasonHealthy),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+		},
+		"Healthy/NotHealthy": {
+			condition: ClusterHealthy,
+			reason:    string(ClusterHealthyReasonNotHealthy),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonNotHealthy, "reason") },
+		},
+		"Healthy/Error": {
+			condition: ClusterHealthy,
+			reason:    string(ClusterHealthyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonError, "reason") },
+		},
+		"Healthy/TerminalError": {
+			condition: ClusterHealthy,
+			reason:    string(ClusterHealthyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonTerminalError, "reason") },
+		},
+		"LicenseValid/Valid": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonValid),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+		},
+		"LicenseValid/Expired": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonExpired),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonExpired, "reason") },
+		},
+		"LicenseValid/NotPresent": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonNotPresent),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonNotPresent, "reason") },
+		},
+		"LicenseValid/Error": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonError, "reason") },
+		},
+		"LicenseValid/TerminalError": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonTerminalError, "reason") },
+		},
+		"ResourcesSynced/Synced": {
+			condition: ClusterResourcesSynced,
+			reason:    string(ClusterResourcesSyncedReasonSynced),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+		},
+		"ResourcesSynced/Error": {
+			condition: ClusterResourcesSynced,
+			reason:    string(ClusterResourcesSyncedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonError, "reason") },
+		},
+		"ResourcesSynced/TerminalError": {
+			condition: ClusterResourcesSynced,
+			reason:    string(ClusterResourcesSyncedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetResourcesSynced(ClusterResourcesSyncedReasonTerminalError, "reason")
+			},
+		},
+		"ConfigurationApplied/Applied": {
+			condition: ClusterConfigurationApplied,
+			reason:    string(ClusterConfigurationAppliedReasonApplied),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+			},
+		},
+		"ConfigurationApplied/Error": {
+			condition: ClusterConfigurationApplied,
+			reason:    string(ClusterConfigurationAppliedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonError, "reason")
+			},
+		},
+		"ConfigurationApplied/TerminalError": {
+			condition: ClusterConfigurationApplied,
+			reason:    string(ClusterConfigurationAppliedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonTerminalError, "reason")
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
-func TestClusterClusterConfigurationAppliedStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterClusterConfigurationAppliedStatus{
-		TerminalError:    errors.New("TerminalError"),
-		Error:            errors.New("Error"),
-		StillReconciling: errors.New("StillReconciling"),
-	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterClusterConfigurationAppliedStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.TerminalError.Error(), unmarshaled.TerminalError.Error())
-	assert.Equal(t, status.Error.Error(), unmarshaled.Error.Error())
-	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
-}
+			status := NewCluster(0)
 
-func TestClusterQuiescedStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterQuiescedStatus{
-		StillReconciling: errors.New("StillReconciling"),
+			assertNoCondition(t, tt.condition, status.Conditions())
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.Conditions())
+		})
 	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterQuiescedStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.StillReconciling.Error(), unmarshaled.StillReconciling.Error())
-}
 
-func TestClusterStableStatusMarshaling(t *testing.T) {
-	t.Parallel()
-	status := &ClusterStableStatus{
-		Unstable: errors.New("Unstable"),
+	// final conditions tests
+	for name, conditionReason := range map[string]struct {
+		condition   string
+		trueReason  string
+		falseReason string
+	}{
+		"Quiesced": {
+			condition:   ClusterQuiesced,
+			trueReason:  string(ClusterQuiescedReasonQuiesced),
+			falseReason: string(ClusterQuiescedReasonStillReconciling),
+		},
+	} {
+		conditionReason := conditionReason
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewCluster(0)
+
+			// attempt to set all conditions one by one until they are all set
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+
+			status.SetReady(ClusterReadyReasonReady, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+
+			status.SetHealthy(ClusterHealthyReasonHealthy, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+
+			status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+
+			status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+
+			status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.Conditions())
+		})
 	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &ClusterStableStatus{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	assert.Equal(t, status.Unstable.Error(), unmarshaled.Unstable.Error())
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn   setClusterFunc
+		setConditionReasons []setClusterFunc
+	}{
+		"Transient Error: Error, Condition: Ready": {
+			setTransientErrFn: func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonError, "reason") },
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: Healthy": {
+			setTransientErrFn: func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonError, "reason") },
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: LicenseValid": {
+			setTransientErrFn: func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonError, "reason") },
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ResourcesSynced": {
+			setTransientErrFn: func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonError, "reason") },
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ConfigurationApplied": {
+			setTransientErrFn: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonError, "reason")
+			},
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewCluster(0)
+
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+		})
+	}
+
+	// terminal error tests
+	for name, setFn := range map[string]setClusterFunc{
+		"Terminal Error: TerminalError, Condition: Ready":        func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: Healthy":      func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: LicenseValid": func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: ResourcesSynced": func(status *ClusterStatus) {
+			status.SetResourcesSynced(ClusterResourcesSyncedReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: ConfigurationApplied": func(status *ClusterStatus) {
+			status.SetConfigurationApplied(ClusterConfigurationAppliedReasonTerminalError, "reason")
+		},
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewCluster(0)
+
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+
+			setFn(status)
+
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionTrue, string(ClusterQuiescedReasonQuiesced), status.Conditions())
+		})
+	}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition      string
+		trueReason     string
+		falseReason    string
+		falseCondition setClusterFunc
+		trueConditions []setClusterFunc
+	}{
+		"Rollup Conditions: Stable, All True": {
+			condition:   ClusterStable,
+			trueReason:  string(ClusterStableReasonStable),
+			falseReason: string(ClusterStableReasonUnstable),
+			trueConditions: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Ready": {
+			condition:      ClusterStable,
+			trueReason:     string(ClusterStableReasonStable),
+			falseReason:    string(ClusterStableReasonUnstable),
+			falseCondition: func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonTerminalError, "reason") },
+			trueConditions: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: LicenseValid": {
+			condition:      ClusterStable,
+			trueReason:     string(ClusterStableReasonStable),
+			falseReason:    string(ClusterStableReasonUnstable),
+			falseCondition: func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonTerminalError, "reason") },
+			trueConditions: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ResourcesSynced": {
+			condition:   ClusterStable,
+			trueReason:  string(ClusterStableReasonStable),
+			falseReason: string(ClusterStableReasonUnstable),
+			falseCondition: func(status *ClusterStatus) {
+				status.SetResourcesSynced(ClusterResourcesSyncedReasonTerminalError, "reason")
+			},
+			trueConditions: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ConfigurationApplied": {
+			condition:   ClusterStable,
+			trueReason:  string(ClusterStableReasonStable),
+			falseReason: string(ClusterStableReasonUnstable),
+			falseCondition: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonTerminalError, "reason")
+			},
+			trueConditions: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewCluster(0)
+
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.Conditions())
+			}
+		})
+	}
 }
