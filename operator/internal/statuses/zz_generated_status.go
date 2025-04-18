@@ -257,13 +257,9 @@ func NewCluster(generation int64) *ClusterStatus {
 
 // Conditions returns the aggregated status conditions of the ClusterStatus.
 func (s *ClusterStatus) Conditions() []metav1.Condition {
-	conditions := []metav1.Condition{}
-
-	for _, condition := range s.conditions {
-		conditions = append(conditions, condition)
-	}
+	conditions := append([]metav1.Condition{}, s.conditions...)
 	conditions = append(conditions, s.getQuiesced())
-	conditions = append(conditions, s.getStable())
+	conditions = append(conditions, s.getStable(conditions))
 
 	return conditions
 }
@@ -499,11 +495,11 @@ func (s *ClusterStatus) getQuiesced() metav1.Condition {
 	}
 }
 
-func (s *ClusterStatus) getStable() metav1.Condition {
+func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Condition {
 	allConditionsFoundAndTrue := true
 	for _, condition := range []string{ClusterQuiesced, ClusterReady, ClusterLicenseValid, ClusterResourcesSynced, ClusterConfigurationApplied} {
 		conditionFoundAndTrue := false
-		for _, setCondition := range s.conditions {
+		for _, setCondition := range conditions {
 			if setCondition.Type == condition {
 				conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue
 				break

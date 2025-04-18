@@ -63,17 +63,14 @@ func New{{ $status.Kind }}(generation int64) *{{ $status.GoName }} {
 
 // Conditions returns the aggregated status conditions of the {{ $status.GoName }}.
 func (s *{{ $status.GoName }}) Conditions() []metav1.Condition {
-    conditions := []metav1.Condition{}
+    conditions := append([]metav1.Condition{}, s.conditions...)
 
-    for _, condition := range s.conditions {
-        conditions = append(conditions, condition)
-    }
     {{- range $condition:= $status.FinalConditions }}
     conditions = append(conditions, s.get{{ $condition.Name }}())
     {{- end }}
 
     {{- range $condition:= $status.RollupConditions }}
-    conditions = append(conditions, s.get{{ $condition.Name }}())
+    conditions = append(conditions, s.get{{ $condition.Name }}(conditions))
     {{- end }}
 
 	return conditions
@@ -155,11 +152,11 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}() metav1.Condition {
 
 {{- range $condition := $status.RollupConditions }}{{/* RollupConditions */}}
 
-func (s *{{ $status.GoName }}) get{{ $condition.Name }}() metav1.Condition {
+func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Condition) metav1.Condition {
     allConditionsFoundAndTrue := true
     for _, condition := range []string{ {{ range $i, $condition := $condition.RollupConditions }}{{ if ne $i 0 }}, {{ end }}{{ $condition.GoName }}{{ end }} } {
         conditionFoundAndTrue := false
-        for _, setCondition := range s.conditions {
+        for _, setCondition := range conditions {
             if setCondition.Type == condition {
                 conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue 
                 break

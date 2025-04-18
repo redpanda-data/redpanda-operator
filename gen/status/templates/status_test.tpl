@@ -18,12 +18,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func assertConditionStatus(t *testing.T, name string, status metav1.ConditionStatus, conditions []metav1.Condition) {
+func assertConditionStatusReason(t *testing.T, name string, status metav1.ConditionStatus, reason string, conditions []metav1.Condition) {
 	t.Helper()
 
 	for _, condition := range conditions {
 		if condition.Type == name {
-			assert.Equal(t, status, condition.Status)
+			assert.Equal(t, status, condition.Status, "%s should be %v but was %v", name, status, condition.Status)
+			assert.Equal(t, reason, condition.Reason, "%s should have reason %v but was %v", name, reason, condition.Reason)
 			return
 		}
 	}
@@ -31,20 +32,69 @@ func assertConditionStatus(t *testing.T, name string, status metav1.ConditionSta
 	t.Errorf("did not find condition with the name %q", name)
 }
 
+func assertNoCondition(t *testing.T, name string, conditions []metav1.Condition) {
+	t.Helper()
+
+	for _, condition := range conditions {
+		if condition.Type == name {
+			t.Errorf("found condition %q with reason %q and status %v when there should be none", name, condition.Reason, condition.Status)
+			return
+		}
+	}
+}
+
 {{- range $status := $.Statuses }}
 
 type set{{ $status.Kind }}Func func(status *{{ $status.Kind }}Status)
 
 func Test{{ $status.Kind }}(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct{
+		condition string
+		reason string
+		expected metav1.ConditionStatus
+		setFn set{{ $status.Kind }}Func
+	}{
+	{{- range $condition := $status.ManualConditions }}
+	{{- range $i, $reason := $condition.Reasons }}
+		"{{ $condition.Name }}/{{ $reason.Name }}": {
+			condition: {{ $condition.GoName }},
+			reason: string({{ $reason.GoName }}),
+			expected: metav1.Condition{{ if eq $i 0 }}True{{ else }}False{{ end }},
+			setFn: func(status *{{ $status.Kind }}Status) { status.Set{{ $condition.Name }}({{$reason.GoName}}, "reason") },
+		},
+	{{- end }}
+	{{- end }}
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := New{{ $status.Kind }}(0)
+
+			assertNoCondition(t, tt.condition, status.Conditions())
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.Conditions())
+		})
+	}
+
     {{- if $status.HasFinalConditions }}
 
 	// final conditions tests
-	for name, condition := range map[string]string{
+	for name, conditionReason := range map[string]struct{
+		condition string
+		trueReason string
+		falseReason string
+	}{
 	{{- range $finalCondition := $status.FinalConditions }}
-		"{{ $finalCondition.Name }}": {{ $finalCondition.GoName }},
+		"{{ $finalCondition.Name }}": {
+			condition: {{ $finalCondition.GoName }},
+			trueReason: string({{ (index $finalCondition.Reasons 0).GoName }}),
+			falseReason: string({{ (index $finalCondition.Reasons 1).GoName }}),
+		},
 	{{- end }}
 	} {
-		condition := condition
+		conditionReason := conditionReason
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -52,11 +102,11 @@ func Test{{ $status.Kind }}(t *testing.T) {
 
 			// attempt to set all conditions one by one until they are all set
 			{{ range $condition := $status.ManualConditions -}}			
-			assertConditionStatus(t, condition, metav1.ConditionFalse, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
 
 			status.Set{{ $condition.Name }}({{ (index $condition.Reasons 0).GoName }}, "reason")
 			{{ end -}}
-			assertConditionStatus(t, condition, metav1.ConditionTrue, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.Conditions())
 		})
 	}
 	{{- end}}
@@ -86,7 +136,7 @@ func Test{{ $status.Kind }}(t *testing.T) {
 			status := New{{ $status.Kind }}(0)
 			
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
 			{{- end }}
 
 			tt.setTransientErrFn(status)
@@ -95,7 +145,7 @@ func Test{{ $status.Kind }}(t *testing.T) {
 			}
 
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
 			{{- end }}
 		})
 	}
@@ -116,14 +166,73 @@ func Test{{ $status.Kind }}(t *testing.T) {
 			status := New{{ $status.Kind }}(0)
 			
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
 			{{- end }}
 
 			setFn(status)
 
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionTrue, status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionTrue, string({{ (index $condition.Reasons 0).GoName }}), status.Conditions())
 			{{- end }}
+		})
+	}
+	{{- end }}
+
+	{{- if $status.HasRollupConditions }}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition string
+		trueReason string
+		falseReason string
+		falseCondition set{{ $status.Kind }}Func
+		trueConditions []set{{ $status.Kind }}Func
+	} {
+		{{- range $rollup := $status.RollupConditions }}
+		"Rollup Conditions: {{ $rollup.Name }}, All True": {
+			condition: {{ $rollup.GoName }},
+			trueReason: string({{ (index $rollup.Reasons 0).GoName }}),
+			falseReason: string({{ (index $rollup.Reasons 1).GoName }}),
+			trueConditions: []set{{ $status.Kind }}Func{
+				{{- range $condition := $status.ManualConditions }}
+				func(status *{{$status.Kind}}Status) { status.Set{{ $condition.Name }}({{ (index $condition.Reasons 0).GoName }}, "reason") },
+				{{- end }}
+			},
+		},
+		{{- range $i, $condition := $rollup.RollupConditions }}{{- if not $condition.IsCalculated }}
+		"Rollup Conditions: {{ $rollup.Name }}, False Condition: {{ $condition.Name }}": {
+			condition: {{ $rollup.GoName }},
+			trueReason: string({{ (index $rollup.Reasons 0).GoName }}),
+			falseReason: string({{ (index $rollup.Reasons 1).GoName }}),
+			falseCondition: func(status *{{$status.Kind}}Status) { status.Set{{ $condition.Name }}({{ $condition.TerminalErrorReasonNamed "TerminalError" }}, "reason") },
+			trueConditions: []set{{ $status.Kind }}Func{
+				{{- range $otherCondition := $status.ManualConditions }}{{- if (ne $otherCondition.Name $condition.Name) }}
+				func(status *{{$status.Kind}}Status) { status.Set{{ $otherCondition.Name }}({{ (index $otherCondition.Reasons 0).GoName }}, "reason") },
+				{{- end }}{{- end }}
+			},
+		},
+		{{- end }}{{- end }}{{- end }}
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := New{{ $status.Kind }}(0)
+			
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.Conditions())
+			}
 		})
 	}
 	{{- end }}
