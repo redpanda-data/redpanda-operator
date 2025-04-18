@@ -123,6 +123,10 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
 * Fixed rack awareness by mounting a service account token to the initcontainer when rack awareness is enabled.
 * Broken `Issuer`s and `Certificate`s are no longer needlessly generated when `tls.<cert>.issuerRef` is provided.
 * Fixed the security contexts' of `set-datadir-ownership` and `set-tiered-storage-cache-dir-ownership`.
+* The `schema_registry_client` and `pandaproxy_client` stanzas of `redpanda.yaml`
+  now respect `listeners.kafka.tls.trustStore`, when provided.
+  See also [helm-chart 1573 issue](https://github.com/redpanda-data/helm-charts/issues/1573).
+
 
 ## v25.1.1-beta1 - 2025-04-08
 ### Added
