@@ -97,7 +97,7 @@ tasks:
 
   generate:statuses:
     run: when_changed
-    internal: true
+    # internal: true
     dir: 'operator'
     sources:
     - ./statuses.yaml
@@ -106,7 +106,7 @@ tasks:
     generates:
     - ./internal/statuses/*.go
     cmds:
-    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml
+    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
     deps:
     - task: :build:gen
 

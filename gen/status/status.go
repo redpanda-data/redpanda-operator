@@ -10,11 +10,20 @@
 package status
 
 import (
+	"bufio"
 	"bytes"
 	_ "embed"
+	"fmt"
+	"go/ast"
 	"go/format"
+	"go/parser"
+	"go/printer"
+	"go/token"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"text/template"
 	"time"
 
@@ -51,9 +60,11 @@ func init() {
 }
 
 type StatusConfig struct {
-	StatusesFile string
-	Package      string
-	Outputs      StatusConfigOutputs
+	StatusesFile    string
+	Package         string
+	APIDirectory    string
+	RewriteComments bool
+	Outputs         StatusConfigOutputs
 }
 
 type StatusConfigOutputs struct {
@@ -77,6 +88,12 @@ func Render(config StatusConfig) error {
 
 	for _, status := range statuses {
 		status.normalize()
+	}
+
+	if config.RewriteComments {
+		if err := rewriteAPIComments(statuses, config); err != nil {
+			return err
+		}
 	}
 
 	return render(&templateInfo{
@@ -164,4 +181,195 @@ func renderStateFile(info *templateInfo) ([]byte, error) {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+func rewriteAPIComments(statuses []*status, config StatusConfig) error {
+	collectedStructs := map[string]map[string]*status{}
+	for i, s := range statuses {
+		for _, structPath := range s.AppliesTo {
+			path := filepath.Dir(structPath)
+			name := filepath.Base(structPath)
+			pathStructs := collectedStructs[path]
+			if pathStructs == nil {
+				pathStructs = map[string]*status{}
+			}
+			pathStructs[name] = statuses[i]
+			collectedStructs[path] = pathStructs
+		}
+	}
+
+	for path, structs := range collectedStructs {
+		path := filepath.Join(config.APIDirectory, path)
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			fset := token.NewFileSet()
+			file, err := parser.ParseFile(fset, filepath.Join(path, entry.Name()), nil, parser.ParseComments)
+			if err != nil {
+				return err
+			}
+
+			modified := false
+			ast.Inspect(file, func(node ast.Node) bool {
+				if tombstoneComments(node, structs) {
+					modified = true
+				}
+
+				return true
+			})
+
+			if modified {
+				// first render out the AST again
+				var buffer bytes.Buffer
+				if err := printer.Fprint(&buffer, fset, file); err != nil {
+					return err
+				}
+
+				// now remove all tombstones and replace with printer comments
+				data, err := replaceTombstones(&buffer, structs)
+				if err != nil {
+					return err
+				}
+
+				if err := os.WriteFile(filepath.Join(path, entry.Name()), data, 0o644); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func replaceTombstones(r io.Reader, structs map[string]*status) ([]byte, error) {
+	scanner := bufio.NewScanner(r)
+	var fileContents bytes.Buffer
+	lastStructure := ""
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		lineString := strings.TrimSpace(string(line))
+		if strings.HasPrefix(lineString, "//") {
+			lineString = strings.TrimPrefix(lineString, "//")
+			lineString = strings.TrimSpace(lineString)
+			// just to make sure we're not having a valid comment
+			minimumLine := 9
+			matchedStruct, err := regexp.MatchString("^Z*$", lineString)
+			if err != nil {
+				return nil, err
+			}
+			if len(lineString) > minimumLine && matchedStruct {
+				continue
+			}
+			matchedField, err := regexp.MatchString("^Y*$", lineString)
+			if err != nil {
+				return nil, err
+			}
+			if len(lineString) > minimumLine && matchedField {
+				continue
+			}
+		}
+
+		structureLine := false
+		for name, status := range structs {
+			// append all of our comments just before writing the line
+			if strings.HasPrefix(lineString, fmt.Sprintf("type %s struct {", name)) {
+				for _, condition := range status.Types {
+					for _, column := range condition.PrinterColumns {
+						if _, err := fileContents.WriteString(column.Comment() + "\n"); err != nil {
+							return nil, err
+						}
+					}
+				}
+				// now make sure we know that we need to replace any Status comments
+				lastStructure = name
+				structureLine = true
+				break
+			}
+		}
+
+		if !structureLine && lastStructure != "" {
+			if strings.HasPrefix(lineString, "Status") {
+				status := structs[lastStructure]
+				if _, err := fileContents.WriteString("\t" + status.DefaultStatusComment() + "\n"); err != nil {
+					return nil, err
+				}
+				// now reset so we don't modify anything else
+				lastStructure = ""
+			}
+		}
+
+		if _, err := fileContents.Write(append(line, '\n')); err != nil {
+			return nil, err
+		}
+	}
+
+	return format.Source(fileContents.Bytes())
+}
+
+func tombstoneComments(node ast.Node, structs map[string]*status) bool {
+	genDecl, ok := node.(*ast.GenDecl)
+	if !ok || genDecl.Tok != token.TYPE {
+		return false
+	}
+
+	for _, spec := range genDecl.Specs {
+		typeSpec, ok := spec.(*ast.TypeSpec)
+		if !ok {
+			continue
+		}
+
+		structType, ok := typeSpec.Type.(*ast.StructType)
+		if !ok {
+			continue
+		}
+
+		if _, ok := structs[typeSpec.Name.Name]; !ok {
+			return false
+		}
+
+		for _, field := range structType.Fields.List {
+			isStatus := false
+			for _, name := range field.Names {
+				if name.Name == "Status" {
+					isStatus = true
+					break
+				}
+			}
+
+			if !isStatus {
+				continue
+			}
+
+			if field.Doc == nil {
+				field.Doc = &ast.CommentGroup{}
+			}
+			for _, doc := range field.Doc.List {
+				if strings.HasPrefix(doc.Text, "// +kubebuilder:default") {
+					doc.Text = "//" + strings.Repeat("Y", len(doc.Text)-2)
+					break
+				}
+			}
+		}
+
+		if genDecl.Doc == nil {
+			genDecl.Doc = &ast.CommentGroup{}
+		}
+
+		for _, doc := range genDecl.Doc.List {
+			if strings.HasPrefix(doc.Text, "// +kubebuilder:printcolumn:name") && strings.Contains(doc.Text, ".status.conditions") {
+				doc.Text = "//" + strings.Repeat("Z", len(doc.Text)-2)
+			}
+		}
+
+		return true
+	}
+
+	return false
 }

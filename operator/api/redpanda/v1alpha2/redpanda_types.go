@@ -186,10 +186,10 @@ func (s *RedpandaLicenseStatus) String() string {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=redpandas
 // +kubebuilder:resource:shortName=rp
-// +kubebuilder:printcolumn:name="License",type="string",JSONPath=`.status.conditions[?(@.type=="ClusterLicenseValid")].message`,description=""
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
-// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="License",type="string",JSONPath=".status.conditions[?(@.type==\"LicenseValid\")].message",description=""
 type Redpanda struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -197,6 +197,7 @@ type Redpanda struct {
 	// Defines the desired state of the Redpanda cluster.
 	Spec RedpandaSpec `json:"spec,omitempty"`
 	// Represents the current status of the Redpanda cluster.
+	// +kubebuilder:default={conditions: [{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Healthy", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "LicenseValid", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ClusterResourcesSynced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ClusterConfigurationApplied", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}]}
 	Status RedpandaStatus `json:"status,omitempty"`
 }
 

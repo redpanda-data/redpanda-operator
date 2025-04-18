@@ -32,6 +32,8 @@
 #    conditions := status.Conditions(myKind.Generation)
 
 - kind: Cluster
+  appliesTo:
+    - redpanda/v1alpha2/Redpanda
   # states is basically a list of state machine transitions and how they correspond to
   # resolution of various states in our reconcile loop. The reason that this is useful
   # is that it allows for updating all subsequent conditions determined after some operation
@@ -131,6 +133,10 @@
     Defines the observed status conditions of a cluster.
   types:
     - name: Ready
+      printerColumns:
+        - name: Ready
+        - name: Status
+          message: true
       description: >
         This condition indicates whether a cluster is ready to serve any
         traffic. This can happen, for example if a cluster is partially degraded
@@ -165,6 +171,9 @@
           description: >
             This reason is used with the "Healthy" condition when a cluster is not healthy.
     - name: LicenseValid
+      printerColumns:
+        - name: License
+          message: true
       description: >
         This condition indicates whether a cluster has a valid license.
 

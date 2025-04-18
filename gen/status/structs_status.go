@@ -9,13 +9,18 @@
 
 package status
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type status struct {
-	Kind        string
-	Description string
-	States      *stateMachine
-	Types       []*conditionType
+	Kind                   string
+	AppliesTo              []string
+	Description            string
+	States                 *stateMachine
+	DefaultConditionReason *reasonType
+	Types                  []*conditionType
 }
 
 func (s *status) HasStateMachine() bool {
@@ -40,6 +45,14 @@ func (s *status) Transitions() []*stateTransition {
 	return s.States.Transitions
 }
 
+func (s *status) DefaultStatusComment() string {
+	defaultStatuses := []string{}
+	for _, condition := range s.Types {
+		defaultStatuses = append(defaultStatuses, condition.defaultStatus())
+	}
+	return fmt.Sprintf("// +kubebuilder:default={conditions: [%s]}", strings.Join(defaultStatuses, ", "))
+}
+
 func (s *status) InitialConditions() []*conditionType {
 	conditionTypes := []*conditionType{}
 	for _, condition := range s.States.InitialConditions {
@@ -57,20 +70,53 @@ func (s *status) normalize() {
 	if s.States != nil {
 		s.States.normalize(s)
 	}
+
+	if s.DefaultConditionReason == nil {
+		s.DefaultConditionReason = &reasonType{
+			Name:    "NotReconciled",
+			Message: "Waiting for controller",
+		}
+	}
+
 	for _, conditionType := range s.Types {
 		conditionType.normalize(s)
 	}
 }
 
-type conditionType struct {
+type printerFormat struct {
 	Name        string
 	Description string
-	Operation   string
-	Ignore      bool
-	Base        *reasonType
-	Errors      []*reasonType
+	Message     bool
 
-	kind string
+	condition *conditionType
+}
+
+func (p *printerFormat) Comment() string {
+	field := "status"
+	if p.Message {
+		field = "message"
+	}
+	return fmt.Sprintf(
+		`// +kubebuilder:printcolumn:name="%s",type="string",JSONPath=".status.conditions[?(@.type==\"%s\")].%s",description="%s"`,
+		p.Name, p.condition.Name, field, p.Description,
+	)
+}
+
+func (p *printerFormat) normalize(condition *conditionType) {
+	p.condition = condition
+}
+
+type conditionType struct {
+	Name           string
+	Description    string
+	Operation      string
+	Ignore         bool
+	PrinterColumns []*printerFormat
+	Base           *reasonType
+	Errors         []*reasonType
+
+	kind          string
+	defaultReason *reasonType
 }
 
 func (c *conditionType) StructComment() string {
@@ -99,6 +145,10 @@ func (c *conditionType) GoConditionName() string {
 	return fmt.Sprintf("%s%sCondition", c.kind, c.Name)
 }
 
+func (c *conditionType) defaultStatus() string {
+	return fmt.Sprintf(`{type: %q, status: "Unknown", reason: %q, message: %q}`, c.Name, c.defaultReason.Name, c.defaultReason.Message)
+}
+
 func (c *conditionType) NonStateErrorReasons() []*reasonType {
 	reasons := []*reasonType{}
 
@@ -114,6 +164,7 @@ func (c *conditionType) NonStateErrorReasons() []*reasonType {
 
 func (c *conditionType) normalize(status *status) {
 	c.kind = status.Kind
+	c.defaultReason = status.DefaultConditionReason
 
 	if c.Base == nil {
 		c.Base = &reasonType{}
@@ -153,6 +204,10 @@ func (c *conditionType) normalize(status *status) {
 	c.Base.normalize(status, c)
 	for _, reason := range c.Errors {
 		reason.normalize(status, c)
+	}
+
+	for _, column := range c.PrinterColumns {
+		column.normalize(c)
 	}
 }
 
