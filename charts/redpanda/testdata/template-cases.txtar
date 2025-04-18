@@ -948,3 +948,174 @@ statefulset:
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["redpanda", "sidecar"]]
 nameOverride: "not-redpanda"
 fullnameOverride: "also-not-redpanda"
+
+-- trust-store-reference --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+auth:
+  sasl:
+    enabled: false
+
+external:
+  enabled: true
+  type: LoadBalancer
+  domain: <our domain>
+  addresses:
+    - redpanda-0
+    - redpanda-1
+    - redpanda-2
+  externalDns:
+    enabled: true
+  service:
+    enabled: true
+
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+      secretRef:
+        name: redpanda-tls-cert
+      clientSecretRef:
+        name: redpanda-admin-cert
+
+listeners:
+  admin:
+    port: 9643
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9644
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9644
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9094
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9094
+  http:
+    enabled: true
+    port: 8082
+    kafkaEndpoint: default
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8083
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8083
+  rpc:
+    port: 33145
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+  schemaRegistry:
+    enabled: true
+    port: 8081
+    kafkaEndpoint: default
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8084
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8084
+
+console:
+  enabled: true
+  image:
+    tag: v2.7.0
+  config:
+    kafka:
+      tls:
+        enabled: true
+        caFilepath: /mnt/cert/admin/ca.crt
+        certFilepath: /mnt/cert/admin/tls.crt
+        keyFilepath: /mnt/cert/admin/tls.key
+        insecureSkipTlsVerify: false
+      schemaRegistry:
+        tls:
+          enabled: true
+          caFilepath: /mnt/cert/admin/ca.crt
+          certFilepath: /mnt/cert/admin/tls.crt
+          keyFilepath: /mnt/cert/admin/tls.key
+          insecureSkipTlsVerify: false
+    redpanda:
+      adminApi:
+        tls:
+          enabled: true
+          caFilepath: /mnt/cert/admin/ca.crt
+          certFilepath: /mnt/cert/admin/tls.crt
+          keyFilepath: /mnt/cert/admin/tls.key
+          insecureSkipTlsVerify: false
+  secretMounts:
+    - name: tls-admin-certs
+      secretName: redpanda-admin-cert
+      path: /mnt/cert/admin
+      defaultMode: 272
