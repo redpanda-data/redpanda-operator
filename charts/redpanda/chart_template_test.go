@@ -180,6 +180,9 @@ func TestTemplate(t *testing.T) {
 				case `ASSERT-FIELD-EQUALS`:
 					AssertFieldEquals(t, params, objs)
 
+				case `ASSERT-NESTED-FIELD-EQUALS`:
+					AssertNestedFieldEquals(t, params, objs)
+
 				case `ASSERT-FIELD-CONTAINS`:
 					AssertFieldContains(t, params, objs)
 
@@ -511,11 +514,36 @@ func AssertFieldEquals(t *testing.T, params []json.RawMessage, objs []kube.Objec
 	require.NoError(t, json.Unmarshal(params[1], &key))
 	require.NoError(t, json.Unmarshal(params[2], &fieldPath))
 
-	execJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
+	findAndExecJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
 		actual, err := json.Marshal(result)
 		require.NoError(t, err)
 
 		require.JSONEq(t, string(fieldValue), string(actual), "%q", fieldPath)
+	})
+}
+
+func AssertNestedFieldEquals(t *testing.T, params []json.RawMessage, objs []kube.Object) {
+	var gvk string
+	var key string
+	var fieldPath string
+	var nestedFieldPath string
+	fieldValue := params[4] // No need to unmarshal this one.
+
+	require.NoError(t, json.Unmarshal(params[0], &gvk))
+	require.NoError(t, json.Unmarshal(params[1], &key))
+	require.NoError(t, json.Unmarshal(params[2], &fieldPath))
+	require.NoError(t, json.Unmarshal(params[3], &nestedFieldPath))
+
+	findAndExecJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
+		obj := map[string]any{}
+		s := result.(string)
+		require.NoError(t, yaml.Unmarshal([]byte(s), &obj))
+		execJSONPath(t, obj, nestedFieldPath, func(result any) {
+			actual, err := json.Marshal(result)
+			require.NoError(t, err)
+
+			require.JSONEq(t, string(fieldValue), string(actual), "%q", nestedFieldPath)
+		})
 	})
 }
 
@@ -530,7 +558,7 @@ func AssertFieldContains(t *testing.T, params []json.RawMessage, objs []kube.Obj
 	require.NoError(t, json.Unmarshal(params[2], &fieldPath))
 	require.NoError(t, json.Unmarshal(params[3], &contained))
 
-	execJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
+	findAndExecJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
 		assert.Contains(t, result, contained)
 	})
 }
@@ -546,12 +574,12 @@ func AssertFieldNotContains(t *testing.T, params []json.RawMessage, objs []kube.
 	require.NoError(t, json.Unmarshal(params[2], &fieldPath))
 	require.NoError(t, json.Unmarshal(params[3], &contained))
 
-	execJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
+	findAndExecJSONPath(t, objs, gvk, key, fieldPath, func(result any) {
 		assert.NotContains(t, result, contained)
 	})
 }
 
-func execJSONPath(t *testing.T, objs []kube.Object, gvk, key, jsonPath string, fn func(any)) {
+func findAndExecJSONPath(t *testing.T, objs []kube.Object, gvk, key, jsonPath string, fn func(any)) {
 	for _, obj := range objs {
 		kind := obj.GetObjectKind().GroupVersionKind().Kind
 		groupVersion := obj.GetObjectKind().GroupVersionKind().GroupVersion().String()
@@ -564,34 +592,38 @@ func execJSONPath(t *testing.T, objs []kube.Object, gvk, key, jsonPath string, f
 			continue
 		}
 
-		// See https://kubernetes.io/docs/reference/kubectl/jsonpath/
-		path := jsonpath.New("").AllowMissingKeys(true)
-		require.NoError(t, path.Parse(jsonPath))
-
-		results, err := path.FindResults(obj)
-		require.NoError(t, err)
-
-		// If jsonPath contains a range loop or {range}{end} block, the result
-		// will be an array of values. If not, the results are still an array
-		// but test writers would expect it to be a single value.
-		resultIsArray := strings.Contains(jsonPath, "*") || strings.Contains(jsonPath, "{range")
-
-		for _, result := range results {
-			var unwrapped []any
-			for _, x := range result {
-				unwrapped = append(unwrapped, x.Interface())
-			}
-
-			if resultIsArray {
-				fn(unwrapped)
-			} else {
-				require.Len(t, unwrapped, 1, "non iterating JSON path found multiple results: %s", jsonPath)
-				fn(unwrapped[0])
-			}
-		}
+		execJSONPath(t, obj, jsonPath, fn)
 
 		return
 	}
 
 	t.Fatalf("object %q of kind %q not found", gvk, key)
+}
+
+func execJSONPath(t *testing.T, obj any, jsonPath string, fn func(any)) {
+	// See https://kubernetes.io/docs/reference/kubectl/jsonpath/
+	path := jsonpath.New("").AllowMissingKeys(true)
+	require.NoError(t, path.Parse(jsonPath))
+
+	results, err := path.FindResults(obj)
+	require.NoError(t, err)
+
+	// If jsonPath contains a range loop or {range}{end} block, the result
+	// will be an array of values. If not, the results are still an array
+	// but test writers would expect it to be a single value.
+	resultIsArray := strings.Contains(jsonPath, "*") || strings.Contains(jsonPath, "{range")
+
+	for _, result := range results {
+		var unwrapped []any
+		for _, x := range result {
+			unwrapped = append(unwrapped, x.Interface())
+		}
+
+		if resultIsArray {
+			fn(unwrapped)
+		} else {
+			require.Len(t, unwrapped, 1, "non iterating JSON path found multiple results: %s", jsonPath)
+			fn(unwrapped[0])
+		}
+	}
 }
