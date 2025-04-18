@@ -12,66 +12,120 @@ package {{ $.Package }}
 // GENERATED from statuses.yaml, DO NOT EDIT DIRECTLY
 
 import (
-	"encoding/json"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-{{ range $status := $.Statuses -}}
-{{- range $conditionType := $status.Types }}
+func assertConditionStatus(t *testing.T, name string, status metav1.ConditionStatus, conditions []metav1.Condition) {
+	t.Helper()
 
-func Test{{ $conditionType.GoStructName }}(t *testing.T) {
-	t.Parallel()
-	expected := errors.New("expected")
-
-	status := &{{ $conditionType.GoStructName }}{}
-	assert.Equal(t, "{{ $conditionType.Base.Message }}", status.Condition(0).Message)
-	assert.Equal(t, {{ $conditionType.Base.GoName }}, status.Condition(0).Reason)
-	{{ if not $conditionType.Ignore }}assert.False(t, status.HasError()){{ end }}
-	{{- range $reason := $conditionType.Reasons }}
-
-	status = &{{ $conditionType.GoStructName }}{ {{ $reason.Name }}: expected}
-	assert.Equal(t, "expected", status.Condition(0).Message)
-	assert.Equal(t, {{ $reason.GoName }}, status.Condition(0).Reason)
-	{{ if not $conditionType.Ignore }}assert.True(t, status.HasError()){{ end }}
-	{{- end }}
-}
-{{- end }}
-
-func Test{{ $status.GoName }}(t *testing.T) {
-	t.Parallel()
-	status := New{{ $status.Kind }}()
-	conditions := status.Conditions(0)
-	var conditionType string
-	var reason string
-	{{- range $index, $conditionType := $status.Types }}
-
-	conditionType = {{ $conditionType.GoConditionName }}
-	reason = {{ $conditionType.Base.GoName }} 
-	assert.Equal(t, conditionType, conditions[{{ $index }}].Type)
-	assert.Equal(t, reason, conditions[{{ $index }}].Reason)
-	{{- end }}
-}
-
-{{- range $conditionType := $status.Types }}
-
-func Test{{ $conditionType.GoStructName }}Marshaling(t *testing.T) {
-	t.Parallel()
-	status := &{{ $conditionType.GoStructName }}{
-		{{- range $reason := $conditionType.Reasons }}
-		{{ $reason.Name }}: errors.New("{{ $reason.Name }}"),
-        {{- end }}
+	for _, condition := range conditions {
+		if condition.Type == name {
+			assert.Equal(t, status, condition.Status)
+			return
+		}
 	}
-	data, err := json.Marshal(status)
-	require.NoError(t, err)
-	unmarshaled := &{{ $conditionType.GoStructName }}{}
-	require.NoError(t, json.Unmarshal(data, &unmarshaled))
-	{{- range $reason := $conditionType.Reasons }}
-	assert.Equal(t, status.{{ $reason.Name }}.Error(), unmarshaled.{{ $reason.Name }}.Error())
+
+	t.Errorf("did not find condition with the name %q", name)
+}
+
+{{- range $status := $.Statuses }}
+
+type set{{ $status.Kind }}Func func(status *{{ $status.Kind }}Status)
+
+func Test{{ $status.Kind }}(t *testing.T) {
+    {{- if $status.HasFinalConditions }}
+
+	// final conditions tests
+	for name, condition := range map[string]string{
+	{{- range $finalCondition := $status.FinalConditions }}
+		"{{ $finalCondition.Name }}": {{ $finalCondition.GoName }},
+	{{- end }}
+	} {
+		condition := condition
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := New{{ $status.Kind }}(0)
+
+			// attempt to set all conditions one by one until they are all set
+			{{ range $condition := $status.ManualConditions -}}			
+			assertConditionStatus(t, condition, metav1.ConditionFalse, status.Conditions())
+
+			status.Set{{ $condition.Name }}({{ (index $condition.Reasons 0).GoName }}, "reason")
+			{{ end -}}
+			assertConditionStatus(t, condition, metav1.ConditionTrue, status.Conditions())
+		})
+	}
+	{{- end}}
+
+    {{- if $status.HasTransientError }}
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn set{{ $status.Kind }}Func
+		setConditionReasons []set{{ $status.Kind }}Func
+	}{
+		{{- range $err := $status.TransientErrors }}{{- range $i, $condition := $status.TransientErrorConditions }}
+		"Transient Error: {{ $err.Name }}, Condition: {{ $condition.Name }}": {
+			setTransientErrFn: func(status *{{$status.Kind}}Status) { status.Set{{ $condition.Name }}({{ $condition.TransientErrorReasonNamed $err.Name }}, "reason") },
+			setConditionReasons: []set{{ $status.Kind }}Func{
+			{{- range $j, $otherCondition := $status.ManualConditions }}{{- if ne $i $j }}
+				func(status *{{$status.Kind}}Status) { status.Set{{ $otherCondition.Name }}({{ (index $otherCondition.Reasons 0).GoName }}, "reason") },
+			{{- end }}{{- end }}
+			},
+		},
+		{{- end }}{{- end }}
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := New{{ $status.Kind }}(0)
+			
+			{{ range $condition := $status.FinalConditions -}}
+			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			{{- end }}
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			{{ range $condition := $status.FinalConditions -}}
+			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			{{- end }}
+		})
+	}
+	{{- end }}
+
+	{{- if $status.HasTerminalError }}
+
+	// terminal error tests
+	for name, setFn := range map[string]set{{ $status.Kind }}Func {
+		{{- range $err := $status.TerminalErrors }}{{- range $i, $condition := $status.TerminalErrorConditions }}
+		"Terminal Error: {{ $err.Name }}, Condition: {{ $condition.Name }}": func(status *{{$status.Kind}}Status) { status.Set{{ $condition.Name }}({{ $condition.TerminalErrorReasonNamed $err.Name }}, "reason") },
+		{{- end }}{{- end }}
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := New{{ $status.Kind }}(0)
+			
+			{{ range $condition := $status.FinalConditions -}}
+			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionFalse, status.Conditions())
+			{{- end }}
+
+			setFn(status)
+
+			{{ range $condition := $status.FinalConditions -}}
+			assertConditionStatus(t, {{ $condition.GoName }}, metav1.ConditionTrue, status.Conditions())
+			{{- end }}
+		})
+	}
 	{{- end }}
 }
 {{- end }}
-{{ end }}

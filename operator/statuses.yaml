@@ -34,104 +34,23 @@
 - kind: Cluster
   appliesTo:
     - redpanda/v1alpha2/Redpanda
-  # states is basically a list of state machine transitions and how they correspond to
-  # resolution of various states in our reconcile loop. The reason that this is useful
-  # is that it allows for updating all subsequent conditions determined after some operation
-  # when a failure happened at some previous operation as well as automatically determining
-  # whether or not reconciliation has finished and calculating any derived status conditions based
-  # on all previous conditions being set.
-  states:
-    # initialConditions are the conditions that we should be able to set *immediately* on
-    # state machine initialization. In this case we should be able to set the "Ready"
-    # condition as we pull all existing Kubernetes resources prior to kicking off the rest of
-    # reconciliation and Ready should be derived from the state of the underlying cluster's
-    # StatefulSets.
-    initialConditions: [ Ready ]
-    # transitionReasons are reasons injected into every underlying condition that are
-    # set when reconciliation early-returns for some reason due to an encountered error or
-    # some condition that should be waited upon.
-    # 
-    # *NOTE*: currently these are actually hardcoded in gen status and may need to be
-    # modified down the line.
-    transitionReasons:
-      - name: StillReconciling
-        description: >
-          This reason is used when a cluster has only been partially reconciled and we have early returned
-          due to a blocking condition prior to applying the desired cluster state. It does not necessarily
-          indicate an underlying error occurred during reconciliation.
-      - name: Error
-        description: >
-          This reason is used when a cluster has only been partially reconciled and we have early returned
-          due to a retryable error occurring prior to applying the desired cluster state. It should only be
-          set on the conditions currently in scope for the current cluster state, any subsequently derived
-          conditions should use "StillReconciling".
-      - name: TerminalError
-        description: >
-          This reason is used when a cluster has only been partially reconciled and we have early returned
-          due to a known terminal error occurring prior to applying the desired cluster state. Any conditions
-          not already derived should also receive the "TerminalError" reason. The cluster should also no longer
-          be reconciled until it or an underlying resource is changed.
-    # finalCondition is a condition specified for some sort of "finalized" state. In other words, if we get to
-    # the final transition in our state machine, then this condition will be set to True and in any other
-    # situation, will be set to false.
-    finalCondition: Quiesced
-    # arguments may be specified to allow for additional arguments to be passed in our rendered state machine
-    # synchronization function. Typically these arguments will correspond to different status fields that can
-    # be determined during various states. They ought to have a corresponding "provides" under one of the
-    # defined "transitions" below.
-    # 
-    # Example:
-    # - name: version
-    #   type: string
-    #   default: Unknown
-    arguments: []
-    # rollup defines a rollup condition that is set based on a combination of other conditions. It is set any
-    # time a (*transition).Sync function is called.
-    rollup:
-      condition: Stable
-      # checkedConditions specifies which conditions must be error free for this condition to be set to True
-      checkedConditions: [ Quiesced, Ready, ClusterResourcesSynced, ClusterConfigurationApplied ]
-      # onValidationFail says what to set the condition to when the above check does not succeed
-      onValidationFail:
-        reason: Unstable
-        message: cluster not stable
-    # transitions defines the main states of the state machine. Each transition roughly corresponds to some
-    # sort of unit of work that could potentially error (potentially in multiple places) in our reconcile loop.
-    # Each transition can potentially set errors on multiple states via helper methods injected onto the
-    # generated transition state. If no helpers are called, then the condition is considered True.
-    transitions:
-      - name: CheckHealth
-        # action is used to generate some human readable description of what's going on in this state transition
-        # when an error occurs
-        action: checking health
-        description: >
-          This state occurs when we pull data from the cluster about whether it's actually
-          healthy or not.
-        conditions: [ Healthy ]
-        # provides specifies which of the state syncing arguments this transition can set. It's used in generating
-        # Set* methods on the transition state which can be called prior to transitioning states. 
-        # 
-        # Example:
-        # provides: [ version ]
-        provides: []
-      - name: CheckLicense
-        action: checking license validity
-        description: >
-          This state occurs when we attempt to check the cluster license.
-        conditions: [ LicenseValid ]
-      - name: SyncResources
-        action: synchronizing cluster resources
-        description: >
-          This state occurs when we are attempting to synchronize cluster resources.
-        conditions: [ ClusterResourcesSynced ]
-      - name: ApplyConfiguration
-        action: applying cluster configuration
-        description: >
-          This state occurs when we are attempting to apply cluster configuration.
-        conditions: [ ClusterConfigurationApplied ]
+  errors:
+    - name: Error
+      transient: true
+      description: >
+        This reason is used when a cluster has only been partially reconciled and we have early returned
+        due to a retryable error occurring prior to applying the desired cluster state. It should only be
+        set on the conditions currently in scope for the current cluster state, any subsequently derived
+        conditions should use "StillReconciling".
+    - name: TerminalError
+      description: >
+        This reason is used when a cluster has only been partially reconciled and we have early returned
+        due to a known terminal error occurring prior to applying the desired cluster state. Any conditions
+        not already derived should also receive the "TerminalError" reason. The cluster should also no longer
+        be reconciled until it or an underlying resource is changed.
   description:
     Defines the observed status conditions of a cluster.
-  types:
+  conditions:
     - name: Ready
       printerColumns:
         - name: Ready
@@ -145,12 +64,11 @@
         This condition defaults to "Unknown" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Ready
-        message: Cluster ready to service requests
-        description: >
-          This reason is used with the "Ready" condition when the condition is True.
-      errors:
+      reasons:
+        - name: Ready
+          message: Cluster ready to service requests
+          description: >
+            This reason is used with the "Ready" condition when the condition is True.
         - name: NotReady
           description: >
             This reason is used with the "Ready" condition when a cluster is not ready.
@@ -161,12 +79,11 @@
         This condition defaults to "Unknown" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Healthy
-        message: Cluster is healthy
-        description: >
-          This reason is used with the "Healthy" condition when the condition is True.
-      errors:
+      reasons:
+        - name: Healthy
+          message: Cluster is healthy
+          description: >
+            This reason is used with the "Healthy" condition when the condition is True.
         - name: NotHealthy
           description: >
             This reason is used with the "Healthy" condition when a cluster is not healthy.
@@ -180,16 +97,15 @@
         This condition defaults to "Unknown" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: LicenseValid
-        message: Cluster has a valid license
-        description: >
-          This reason is used with the "LicenseValid" condition when the condition is True.
-      errors:
-        - name: LicenseExpired
+      reasons:
+        - name: Valid
+          message: Cluster has a valid license
+          description: >
+            This reason is used with the "LicenseValid" condition when the condition is True.
+        - name: Expired
           description: >
             This reason is used with the "LicenseValid" condition when a cluster has an expired license.
-        - name: LicenseNotPresent
+        - name: NotPresent
           description: >
             This reason is used with the "LicenseValid" condition when a cluster has no license.
     # Note that this and the following condition do not have any "errors" defined. What this
@@ -197,7 +113,7 @@
     # when this condition is False. In other words, this condition will always either be True
     # or we've aborted reconciliation early with either a requeue or a terminal error. All of
     # its error reasons are injected from the state machine definitions at the top of the file.
-    - name: ClusterResourcesSynced
+    - name: ResourcesSynced
       description: >
         This condition indicates whether cluster configuration parameters
         have currently been applied to a cluster for the given generation.
@@ -205,12 +121,12 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Synced
-        message: Cluster configuration successfully applied
-        description: >
-          This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
-    - name: ClusterConfigurationApplied
+      reasons:
+        - name: Synced
+          message: Cluster configuration successfully applied
+          description: >
+            This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
+    - name: ConfigurationApplied
       description: >
         This condition indicates whether cluster configuration parameters
         have currently been applied to a cluster for the given generation.
@@ -218,12 +134,13 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Applied
-        message: Cluster configuration successfully applied
-        description: >
-          This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
+      reasons:
+        - name: Applied
+          message: Cluster configuration successfully applied
+          description: >
+            This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
     - name: Quiesced
+      final: true
       description: >
         This condition is used as to indicate that the cluster is no longer reconciling
         due to it being in a finalized state for the current generation.
@@ -231,18 +148,19 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Quiesced
-        message: Cluster reconciliation finished
-        description: >
-          This reason is used with the "Quiesced" condition when the condition is True.
-      errors:
+      reasons:
+        - name: Quiesced
+          message: Cluster reconciliation finished
+          description: >
+            This reason is used with the "Quiesced" condition when the condition is True.
         - name: StillReconciling
+          message: Cluster still reconciling
           description: >
             This reason is used with the "Quiesced" condition when a cluster has only been
             partially reconciled and we have not fully completed reconciliation. This
             happens when, for example, we're doing a cluster scaling operation.
     - name: Stable
+      rollup: [ Quiesced, Ready, LicenseValid, ResourcesSynced, ConfigurationApplied ]
       description: >
         This condition is used as a roll-up status for any sort of automation such as
         terraform.
@@ -250,13 +168,13 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      base:
-        name: Stable
-        message: Cluster Stable
-        description: >
-          This reason is used with the "Stable" condition when the condition is True.
-      errors:
+      reasons:
+        - name: Stable
+          message: Cluster Stable
+          description: >
+            This reason is used with the "Stable" condition when the condition is True.
         - name: Unstable
+          message: Cluster Unstable
           description: >
             This reason is used with the "Stable" condition when a cluster has not yet
             stabilized for automation purposes.

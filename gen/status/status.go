@@ -13,16 +13,19 @@ import (
 	"bufio"
 	"bytes"
 	_ "embed"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/printer"
+	"go/scanner"
 	"go/token"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -33,15 +36,12 @@ import (
 )
 
 var (
-	//go:embed templates/state.tpl
-	statusStateTemplate string
 	//go:embed templates/status_test.tpl
 	statusTestsTemplate string
 	//go:embed templates/status.tpl
-	statusTemplate       string
-	statusGenerator      *template.Template
-	statusTestGenerator  *template.Template
-	statusStateGenerator *template.Template
+	statusTemplate      string
+	statusGenerator     *template.Template
+	statusTestGenerator *template.Template
 
 	helpers = map[string]any{
 		"year": func() string {
@@ -55,7 +55,6 @@ var (
 
 func init() {
 	statusGenerator = template.Must(template.New("statuses").Funcs(helpers).Parse(statusTemplate))
-	statusStateGenerator = template.Must(template.New("statusState").Funcs(helpers).Parse(statusStateTemplate))
 	statusTestGenerator = template.Must(template.New("statusTests").Funcs(helpers).Parse(statusTestsTemplate))
 }
 
@@ -127,9 +126,6 @@ func render(info *templateInfo, outputs StatusConfigOutputs) error {
 	if err := renderAndWrite(outputs.Directory, outputs.StatusFile, info, renderStatusFile); err != nil {
 		return err
 	}
-	if err := renderAndWrite(outputs.Directory, outputs.StateFile, info, renderStateFile); err != nil {
-		return err
-	}
 	if err := renderAndWrite(outputs.Directory, outputs.StatusTestFile, info, renderStatusTestFile); err != nil {
 		return err
 	}
@@ -144,6 +140,9 @@ func renderAndWrite(directory, file string, info *templateInfo, renderFn func(in
 	}
 	formatted, err := format.Source(data)
 	if err != nil {
+		if contextualErrors := contextualizeFormatErrors(data, err); contextualErrors != "" {
+			fmt.Println(contextualErrors)
+		}
 		return err
 	}
 
@@ -170,14 +169,6 @@ func renderStatusFile(info *templateInfo) ([]byte, error) {
 func renderStatusTestFile(info *templateInfo) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := statusTestGenerator.Execute(&buffer, info); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
-}
-
-func renderStateFile(info *templateInfo) ([]byte, error) {
-	var buffer bytes.Buffer
-	if err := statusStateGenerator.Execute(&buffer, info); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
@@ -280,7 +271,7 @@ func replaceTombstones(r io.Reader, structs map[string]*status) ([]byte, error) 
 		for name, status := range structs {
 			// append all of our comments just before writing the line
 			if strings.HasPrefix(lineString, fmt.Sprintf("type %s struct {", name)) {
-				for _, condition := range status.Types {
+				for _, condition := range status.Conditions {
 					for _, column := range condition.PrinterColumns {
 						if _, err := fileContents.WriteString(column.Comment() + "\n"); err != nil {
 							return nil, err
@@ -310,7 +301,14 @@ func replaceTombstones(r io.Reader, structs map[string]*status) ([]byte, error) 
 		}
 	}
 
-	return format.Source(fileContents.Bytes())
+	data, err := format.Source(fileContents.Bytes())
+	if err != nil {
+		if contextualErrors := contextualizeFormatErrors(fileContents.Bytes(), err); contextualErrors != "" {
+			fmt.Println(contextualErrors)
+		}
+	}
+
+	return data, err
 }
 
 func tombstoneComments(node ast.Node, structs map[string]*status) bool {
@@ -372,4 +370,29 @@ func tombstoneComments(node ast.Node, structs map[string]*status) bool {
 	}
 
 	return false
+}
+
+func contextualizeFormatErrors(data []byte, err error) string {
+	var serr scanner.ErrorList
+	if errors.As(err, &serr) {
+		errContext := []string{}
+		lines := strings.Split(string(data), "\n")
+
+		for i, err := range serr {
+			line := err.Pos.Line
+
+			lineContext := []string{"[ERROR " + strconv.Itoa(i+1) + "]:\n"}
+			if line-2 >= 0 {
+				lineContext = append(lineContext, lines[line-2])
+			}
+			lineContext = append(lineContext, lines[line-1])
+			if line < len(lines) {
+				lineContext = append(lineContext, lines[line])
+			}
+			errContext = append(errContext, strings.Join(lineContext, "\n"))
+		}
+		return strings.Join(errContext, "\n\n")
+	}
+
+	return ""
 }

@@ -197,7 +197,7 @@ type Redpanda struct {
 	// Defines the desired state of the Redpanda cluster.
 	Spec RedpandaSpec `json:"spec,omitempty"`
 	// Represents the current status of the Redpanda cluster.
-	// +kubebuilder:default={conditions: [{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Healthy", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "LicenseValid", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ClusterResourcesSynced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ClusterConfigurationApplied", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}]}
+	// +kubebuilder:default={conditions: [{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Healthy", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "LicenseValid", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ResourcesSynced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "ConfigurationApplied", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller"}]}
 	Status RedpandaStatus `json:"status,omitempty"`
 }
 
