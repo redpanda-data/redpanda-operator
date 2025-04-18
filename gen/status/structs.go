@@ -78,18 +78,6 @@ func (s *status) RollupConditions() []*conditionType {
 	return conditions
 }
 
-func (s *status) NonRollupConditions() []*conditionType {
-	conditions := []*conditionType{}
-
-	for _, condition := range s.Conditions {
-		if len(condition.Rollup) == 0 {
-			conditions = append(conditions, condition)
-		}
-	}
-
-	return conditions
-}
-
 func (s *status) HasFinalConditions() bool {
 	return len(s.FinalConditions()) > 0
 }
@@ -189,8 +177,6 @@ func (p *printerFormat) normalize(condition *conditionType) {
 type conditionType struct {
 	Name           string
 	Description    string
-	Operation      string
-	Ignore         bool
 	PrinterColumns []*printerFormat
 	Reasons        []*reasonType
 	Final          bool

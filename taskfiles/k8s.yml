@@ -97,7 +97,7 @@ tasks:
 
   generate:statuses:
     run: when_changed
-    # internal: true
+    internal: true
     dir: 'operator'
     sources:
     - ./statuses.yaml
