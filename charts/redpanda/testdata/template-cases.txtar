@@ -1384,3 +1384,156 @@ tuning:
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["not-redpanda", "sidecar"]]
 nameOverride: "not-redpanda"
 fullnameOverride: "also-not-redpanda"
+
+-- trust-store-reference --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# The trust store test defined in any listener (internal or external) should allow referencing external certificate authority (trust store)
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy.pandaproxy_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy.pandaproxy_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy_client.broker_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.admin_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.admin_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.kafka_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.kafka_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.rpc_server_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.admin_api.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.kafka_api.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.schema_registry.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry_client.broker_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry.schema_registry_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry.schema_registry_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+auth:
+  sasl:
+    enabled: false
+
+external:
+  enabled: true
+  type: LoadBalancer
+  domain: <our domain>
+  addresses:
+    - redpanda-0
+    - redpanda-1
+    - redpanda-2
+  externalDns:
+    enabled: true
+  service:
+    enabled: true
+
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+      secretRef:
+        name: redpanda-tls-cert
+      clientSecretRef:
+        name: redpanda-admin-cert
+
+listeners:
+  admin:
+    port: 9643
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9644
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9644
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9094
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9094
+  http:
+    enabled: true
+    port: 8082
+    kafkaEndpoint: default
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8083
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8083
+  rpc:
+    port: 33145
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+  schemaRegistry:
+    enabled: true
+    port: 8081
+    kafkaEndpoint: default
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8084
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8084

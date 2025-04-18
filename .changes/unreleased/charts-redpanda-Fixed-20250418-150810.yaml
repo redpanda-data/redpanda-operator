@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |
+  The `schema_registry_client` and `pandaproxy_client` stanzas of `redpanda.yaml`
+    now respect `listeners.kafka.tls.trustStore`, when provided.
+    See also [helm-chart 1573 issue](https://github.com/redpanda-data/helm-charts/issues/1573).
+time: 2025-04-18T15:08:10.408204+02:00
