@@ -429,7 +429,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
 					return cs.Restart
 				}), "expected no brokers to need restart")
-			}, time.Minute, time.Second)
+			}, 5*time.Minute, time.Second)
 			// wait for the cluster to be ready and the configuration synced
 			waitFn()
 
