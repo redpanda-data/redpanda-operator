@@ -9,6 +9,7 @@ tasks:
     - generate-manifests
     cmds:
       - task: generate:crd-docs
+      - task: generate:statuses
 
       # For each controller (or really itemizable RBAC source), generate an
       # isolated rbac bundle. These are used by the helm charts to check
@@ -110,6 +111,23 @@ tasks:
       --config crd-ref-docs-config.yaml \
       --source-path ./api/redpanda/v1alpha2/ \
       --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc
+
+  generate:statuses:
+    run: when_changed
+    internal: true
+    dir: 'operator'
+    sources:
+    - ./statuses.yaml
+    label: "generate:statuses"
+    desc: "Generate the statuses files used in our controllers."
+    generates:
+    - ./internal/statuses/*.go
+    cmds:
+    # Don't rewrite struct comments for now
+    # - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
+    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml
+    deps:
+    - task: :build:gen
 
   fetch-latest-redpanda:
     desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
