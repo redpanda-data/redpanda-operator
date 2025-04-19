@@ -409,7 +409,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			s.Require().NoError(err)
 			defer adminClient.Close()
 			st, err := adminClient.ClusterConfigStatus(s.ctx, false)
-			assert.NoError(s.T(), err)
+			s.Assert().NoError(err)
 			initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
 				return int(a.ConfigVersion - b.ConfigVersion)
 			}).ConfigVersion
