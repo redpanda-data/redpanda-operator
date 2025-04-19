@@ -30,14 +30,9 @@ redpanda:
           name: kafka
     developer_mode: true
     auto_create_topics_enabled: true
-    cloud_storage_segment_max_upload_interval_sec: 1800
-    default_topic_partitions: 3
-    enable_idempotence: true
-    enable_rack_awareness: true
     fetch_reads_debounce_timeout: 10
     group_initial_rebalance_delay: 0
     group_topic_partitions: 3
-    log_segment_size: 536870912
     log_segment_size_min: 1
     storage_min_free_bytes: 10485760
     topic_partitions_per_shard: 1000
@@ -74,5 +69,16 @@ schema_registry:
         - address: 0.0.0.0
           port: 8081
           name: external
+EOF
+)
+
+expected_bootstrap=$(
+  cat <<EOF
+auto_create_topics_enabled: false
+cloud_storage_segment_max_upload_interval_sec: 1800
+default_topic_partitions: 3
+enable_idempotence: true
+enable_rack_awareness: true
+log_segment_size: 536870912
 EOF
 )

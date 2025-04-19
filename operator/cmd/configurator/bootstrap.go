@@ -4,36 +4,38 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"maps"
 	"os"
 	"slices"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 // Template out the bootstrap file
 // This takes an input template, resolves any remaining external references, then writes out the resulting bootstrap file
-func templateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile string) error {
-	var template map[string]clusterconfiguration.ClusterConfigTemplateValue
+func templateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile, fixups string) error {
+	var bootstrap map[string]string
 	buf, err := os.ReadFile(inFile)
 	if err != nil {
 		return fmt.Errorf("cannot load bootstrap template file: %w", err)
 	}
-	if err := json.Unmarshal(buf, &template); err != nil {
+	if err := json.Unmarshal(buf, &bootstrap); err != nil {
 		return fmt.Errorf("cannot parse bootstrap template file: %w", err)
 	}
 
+	// Perform optional fixups if required
+	bootstrap, err = applyFixups(ctx, bootstrap, fixups, cloudExpander)
+	if err != nil {
+		log.Fatalf("%s", fmt.Errorf("unable to apply fixups to .bootstrap.yaml: %w", err))
+	}
+
 	var config []string
-	keys := slices.Sorted(maps.Keys(template))
+	keys := slices.Sorted(maps.Keys(bootstrap))
 	for _, k := range keys {
-		// Work out what the value should be and add it to the output.
-		repr, err := clusterconfiguration.ExpandValueForTemplate(ctx, cloudExpander, template[k])
-		if err != nil {
-			return fmt.Errorf("cannot resolve value %s: %w", k, err)
-		}
-		config = append(config, fmt.Sprintf("%s: %s", k, repr))
+		// Append the final representation to the bootstrap file
+		config = append(config, fmt.Sprintf("%s: %s", k, bootstrap[k]))
 	}
 
 	output := strings.Join(config, "\n")

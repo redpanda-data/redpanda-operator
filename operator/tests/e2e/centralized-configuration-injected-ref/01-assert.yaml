@@ -1,17 +1,16 @@
-apiVersion: redpanda.vectorized.io/v1alpha1
-kind: Cluster
+apiVersion: v1
+kind: Pod
 metadata:
-  name: centralized-configuration-injected-ref
+  labels:
+    job-name: get-centralized-config-0-injected-ref
 status:
-  replicas: 2
-  restarting: false
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-commands:
-- timeout: 300
-  script: |
-    kubectl wait --for=condition=ClusterConfigured=True cluster/centralized-configuration-injected-ref --timeout 300s --namespace $NAMESPACE
+  containerStatuses:
+    - name: curl
+      state:
+        terminated:
+          message: |
+            1003
+  phase: Succeeded
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

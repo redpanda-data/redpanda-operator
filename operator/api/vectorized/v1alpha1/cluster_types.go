@@ -223,30 +223,36 @@ type YAMLRepresentation string
 // YAML rules in order to preserve numerical fidelity.
 // Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
 // which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
-// throughout. The octet sequence of a Representation will be inserted into a bootstrap template
+// throughout. The octet sequence of a representation will be inserted into a bootstrap template
 // verbatim.
 // TODO: this type should be lifted to a shared module rather than duplicated in the `redpanda` CRD definition.
 // TODO: add CEL validation here.
 type ClusterConfigValue struct {
-	// If the value is directly known, its yaml representation can be embedded here.
-	// Use the string representation of a yaml-serialised value in order to preserve accuracy.
+	// If the value is directly known, its YAML-compatible representation can be embedded here.
+	// Use the string representation of a serialised value in order to preserve accuracy.
+	// Prefer JSON-encoding for values that have multi-line representations in YAML.
 	// Example:
 	// The string "foo" should be the five octets "\"foo\""
 	// A true value should be the four octets "true".
 	// The number -123456 should be a seven-octet sequence, "-123456".
 	Repr *YAMLRepresentation `json:"repr,omitempty"`
-	// If the value is supplied by an k8s object reference, coordinates are embedded here.
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
 	// For target values, the string value fetched from the source will be treated as
-	// a value encoded according to YAML rules; the string can then be embedded verbatim into
-	// the bootstrap file.
+	// a raw string (and appropriately quoted for use in the bootstrap file) unless `useRawValue` is set.
 	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
 	// Should the value be contained in a k8s secret rather than configmap, we can refer
 	// to it here.
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 	// If the value is supplied by an external source, coordinates are embedded here.
-	// Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
-	// TODO: This decision needs finalising and documenting.
+	// Note: we interpret all fetched external secrets as raw string values by default
+	// and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
 	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
+	// Any referenced value (from kubernetes or external lookup) is typically considered to be a raw string;
+	// by default it'll be quoted as a string after its lookup is resolved. To skip that behaviour,
+	// and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
+	// for use in the bootstrap configuration), set useRawValue to true.
+	// In particular, this value should be set to `true` if your external source contains a numeric value.
+	UseRawValue bool `json:"useRawValue,omitempty"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:
