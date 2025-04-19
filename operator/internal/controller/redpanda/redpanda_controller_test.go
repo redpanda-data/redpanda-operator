@@ -418,8 +418,10 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			s.EventuallyWithT(func(t *assert.CollectT) {
 				st, err := adminClient.ClusterConfigStatus(s.ctx, false)
 				if !assert.NoError(t, err) {
+					s.T().Logf("[%s] getting cluster config status failed with: %v", time.Now().Format(time.DateTime), err)
 					return
 				}
+				s.T().Logf("[%s] cluster status: %v", time.Now().Format(time.DateTime), st)
 				currVersion := slices.MinFunc(st, func(a, b rpadmin.ConfigStatus) int {
 					return int(a.ConfigVersion - b.ConfigVersion)
 				}).ConfigVersion
