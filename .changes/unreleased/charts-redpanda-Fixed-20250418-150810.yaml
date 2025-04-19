@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Respect internal Kafka listener trustStore configuration when schema_registry_client and pandaproxy_client kafka client configuration is generated.
+time: 2025-04-18T15:08:10.408204+02:00
