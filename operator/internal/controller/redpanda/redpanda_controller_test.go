@@ -404,7 +404,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	for _, c := range cases {
-		s.Run(fmt.Sprintf(c.Name, c.In), func() {
+		s.Run(c.Name, func() {
 			adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 			s.Require().NoError(err)
 			defer adminClient.Close()
