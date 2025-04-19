@@ -175,11 +175,14 @@ func (r *ManagedDecommissionReconciler) cleanUp(ctx context.Context, rp *redpand
 		}
 	}
 
-	apimeta.RemoveStatusCondition(rp.GetConditions(), ManagedDecommissionConditionType)
+	if apimeta.RemoveStatusCondition(rp.GetConditions(), ManagedDecommissionConditionType) {
+		log.Info("Clean up", "conditions", rp.GetConditions(), "annotations", rp.GetAnnotations())
+		if err := updateRedpanda(ctx, rp, r.Client); err != nil {
+			return errors.WithStack(err)
+		}
+	}
 
-	log.Info("Clean up", "conditions", rp.GetConditions(), "annotations", rp.GetAnnotations())
-
-	return updateRedpanda(ctx, rp, r.Client)
+	return nil
 }
 
 func redpandaPodsSelector(rp *redpandav1alpha2.Redpanda) labels.Selector {
