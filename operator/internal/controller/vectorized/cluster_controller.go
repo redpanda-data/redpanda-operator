@@ -47,6 +47,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/patch"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/featuregates"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -80,6 +81,9 @@ type ClusterReconciler struct {
 	GhostDecommissioning      bool
 	AutoDeletePVCs            bool
 	Dialer                    redpanda.DialContextFunc
+	// this is provided if external cloud secret resolution is configured. It's
+	// used to expand external cloud secrets from config
+	CloudSecretsExpander *pkgsecrets.CloudExpander
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
