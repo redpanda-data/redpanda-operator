@@ -13,6 +13,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -38,4 +39,20 @@ func checkClusterAvailability(ctx context.Context, t framework.TestingT, cluster
 		return hasCondition
 	}, 5*time.Minute, 5*time.Second, `Cluster %q never contained the condition reason "RedpandaClusterDeployed", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	t.Logf("Cluster %q is ready!", clusterName)
+}
+
+func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster string) {
+	clients := clientsForCluster(ctx, cluster)
+	var health rpadmin.ClusterHealthOverview
+	var err error
+
+	c := clients.RedpandaAdmin(ctx)
+
+	require.Eventually(t, func() bool {
+		health, err = c.GetHealthOverview(ctx)
+		require.NoError(t, err)
+
+		t.Logf("Cluster health: %v", health.IsHealthy)
+		return health.IsHealthy
+	}, 5*time.Minute, 5*time.Second, `Cluster %q never become healthy: %+v`, cluster, health)
 }

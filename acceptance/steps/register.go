@@ -18,6 +18,9 @@ func init() {
 
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
+	framework.RegisterStep(`^I record "([^"]*)" of "([^"]*)" with "([^"]*)" name as "([^"]*)"$`, recordVariable)
+	framework.RegisterStep(`^recorded "([^"]*)" has the same value as "([^"]*)" of "([^"]*)" with "([^"]*)" name$`, assertVariableValue)
+
 	// Schema scenario steps
 	framework.RegisterStep(`^there is no schema "([^"]*)" in cluster "([^"]*)"$`, thereIsNoSchema)
 	framework.RegisterStep(`^schema "([^"]*)" is successfully synced$`, schemaIsSuccessfullySynced)
@@ -48,4 +51,12 @@ func init() {
 	framework.RegisterStep(`^its metrics endpoint should reject authorization random token request with status code "([^"]*)"$`, requestMetricsEndpointWithTLSAndRandomToken)
 	framework.RegisterStep(`^"([^"]*)" service account has bounded "([^"]*)" cluster role$`, createClusterRoleBinding)
 	framework.RegisterStep(`^its metrics endpoint should accept https request with "([^"]*)" service account token$`, acceptServiceAccountMetricsRequest)
+
+	// Helm migration scenario steps
+	framework.RegisterStep(`^a Helm release named "([^"]*)\" of local Redpanda Helm Chart with values:$`, iInstallHelmRelease)
+	framework.RegisterStep(`^I apply the following Redpanda custom resource manifest for migration:$`, iApplyKubernetesManifest)
+	framework.RegisterStep(`^the Redpanda custom resource "([^"]*)" becomes Ready.$`, checkClusterAvailability)
+	framework.RegisterStep(`^the StatefulSet "([^"]*)" has an OwnerReference pointing to the Redpanda custom resource "([^"]*)".$`, statefulSetHaveOwnerReference)
+	framework.RegisterStep(`^"([^"]*)" helm release can be deleted by removing secret$`, iDeleteHelmReleaseSecret)
+	framework.RegisterStep(`^"([^"]*)" Redpanda cluster is healthy$`, redpandaClusterIsHealthy)
 }
