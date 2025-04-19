@@ -387,7 +387,6 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				"cloud_storage_access_key":  "VURYSECRET",
 				"cloud_storage_disable_tls": true,
 				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
-				// "superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
 		{
