@@ -22,7 +22,6 @@ status:
   availableReplicas: 1
   collisionCount: 0
   currentReplicas: 1
-  observedGeneration: 2
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1

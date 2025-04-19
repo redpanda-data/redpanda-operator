@@ -23,7 +23,6 @@ status:
   availableReplicas: 5
   collisionCount: 0
   currentReplicas: 5
-  observedGeneration: 1
   readyReplicas: 5
   replicas: 5
   updatedReplicas: 5
