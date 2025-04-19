@@ -180,11 +180,11 @@ func TestCluster(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := NewCluster(0)
+			status := NewCluster()
 
-			assertNoCondition(t, tt.condition, status.Conditions())
+			assertNoCondition(t, tt.condition, status.getConditions(0))
 			tt.setFn(status)
-			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.Conditions())
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
 		})
 	}
 
@@ -204,25 +204,25 @@ func TestCluster(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := NewCluster(0)
+			status := NewCluster()
 
 			// attempt to set all conditions one by one until they are all set
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetReady(ClusterReadyReasonReady, "reason")
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetHealthy(ClusterHealthyReasonHealthy, "reason")
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason")
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason")
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
 		})
 	}
 
@@ -291,16 +291,16 @@ func TestCluster(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := NewCluster(0)
+			status := NewCluster()
 
-			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.getConditions(0))
 
 			tt.setTransientErrFn(status)
 			for _, setFn := range tt.setConditionReasons {
 				setFn(status)
 			}
 
-			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.getConditions(0))
 		})
 	}
 
@@ -320,13 +320,13 @@ func TestCluster(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := NewCluster(0)
+			status := NewCluster()
 
-			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.Conditions())
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionFalse, string(ClusterQuiescedReasonStillReconciling), status.getConditions(0))
 
 			setFn(status)
 
-			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionTrue, string(ClusterQuiescedReasonQuiesced), status.Conditions())
+			assertConditionStatusReason(t, ClusterQuiesced, metav1.ConditionTrue, string(ClusterQuiescedReasonQuiesced), status.getConditions(0))
 		})
 	}
 
@@ -415,9 +415,9 @@ func TestCluster(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := NewCluster(0)
+			status := NewCluster()
 
-			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
 
 			if tt.falseCondition != nil {
 				tt.falseCondition(status)
@@ -427,9 +427,9 @@ func TestCluster(t *testing.T) {
 			}
 
 			if tt.falseCondition != nil {
-				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
 			} else {
-				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.Conditions())
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
 			}
 		})
 	}

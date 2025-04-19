@@ -25,6 +25,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -48,6 +50,13 @@ var (
 		"year": func() string {
 			return time.Now().Format("2006")
 		},
+		"mergeImports": func(statuses []*status) []string {
+			merged := []string{}
+			for _, status := range statuses {
+				merged = append(merged, status.Imports()...)
+			}
+			return slices.Compact(sort.StringSlice(merged))
+		},
 	}
 )
 
@@ -59,6 +68,7 @@ func init() {
 type StatusConfig struct {
 	StatusesFile    string
 	Package         string
+	BasePackage     string
 	APIDirectory    string
 	RewriteComments bool
 	Outputs         StatusConfigOutputs
@@ -84,7 +94,7 @@ func Render(config StatusConfig) error {
 	}
 
 	for _, status := range statuses {
-		status.normalize()
+		status.normalize(config.BasePackage + "/" + config.APIDirectory)
 	}
 
 	if config.RewriteComments {

@@ -11,6 +11,7 @@ package status
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -21,6 +22,8 @@ type status struct {
 	Errors                 []*errorType
 	DefaultConditionReason *reasonType
 	Conditions             []*conditionType
+
+	basePkg string
 }
 
 func (s *status) Comment() string {
@@ -28,6 +31,32 @@ func (s *status) Comment() string {
 		return ""
 	}
 	return writeComment(s.GoName(), s.Description)
+}
+
+func (s *status) Imports() []string {
+	applies := []string{}
+	appliesMap := map[string]struct{}{}
+	for _, appliesTo := range s.AppliesTo {
+		appliesMap[filepath.Dir(appliesTo)] = struct{}{}
+	}
+
+	for appliesTo := range appliesMap {
+		alias := strings.Join(strings.Split(appliesTo, "/"), "")
+		applies = append(applies, fmt.Sprintf("%s %q", alias, s.basePkg+"/"+appliesTo))
+	}
+
+	return applies
+}
+
+func (s *status) ImportedKinds() []string {
+	impts := []string{}
+	for _, appliesTo := range s.AppliesTo {
+		impt := strings.Join(strings.SplitN(appliesTo, "/", 2), "")
+		impt = "*" + strings.Join(strings.SplitN(impt, "/", 2), ".")
+		impts = append(impts, impt)
+	}
+
+	return impts
 }
 
 func (s *status) GoName() string {
@@ -138,13 +167,15 @@ func (s *status) TerminalErrorConditions() []*conditionType {
 	return conditions
 }
 
-func (s *status) normalize() {
+func (s *status) normalize(basePkg string) {
 	if s.DefaultConditionReason == nil {
 		s.DefaultConditionReason = &reasonType{
 			Name:    "NotReconciled",
 			Message: "Waiting for controller",
 		}
 	}
+
+	s.basePkg = basePkg
 
 	for _, conditionType := range s.Conditions {
 		conditionType.normalize(s)

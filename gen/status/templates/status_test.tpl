@@ -70,11 +70,11 @@ func Test{{ $status.Kind }}(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := New{{ $status.Kind }}(0)
+			status := New{{ $status.Kind }}()
 
-			assertNoCondition(t, tt.condition, status.Conditions())
+			assertNoCondition(t, tt.condition, status.getConditions(0))
 			tt.setFn(status)
-			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.Conditions())
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
 		})
 	}
 
@@ -98,15 +98,15 @@ func Test{{ $status.Kind }}(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := New{{ $status.Kind }}(0)
+			status := New{{ $status.Kind }}()
 
 			// attempt to set all conditions one by one until they are all set
 			{{ range $condition := $status.ManualConditions -}}			
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.Set{{ $condition.Name }}({{ (index $condition.Reasons 0).GoName }}, "reason")
 			{{ end -}}
-			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.Conditions())
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
 		})
 	}
 	{{- end}}
@@ -133,10 +133,10 @@ func Test{{ $status.Kind }}(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := New{{ $status.Kind }}(0)
+			status := New{{ $status.Kind }}()
 			
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.getConditions(0))
 			{{- end }}
 
 			tt.setTransientErrFn(status)
@@ -145,7 +145,7 @@ func Test{{ $status.Kind }}(t *testing.T) {
 			}
 
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.getConditions(0))
 			{{- end }}
 		})
 	}
@@ -163,16 +163,16 @@ func Test{{ $status.Kind }}(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := New{{ $status.Kind }}(0)
+			status := New{{ $status.Kind }}()
 			
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionFalse, string({{ (index $condition.Reasons 1).GoName }}), status.getConditions(0))
 			{{- end }}
 
 			setFn(status)
 
 			{{ range $condition := $status.FinalConditions -}}
-			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionTrue, string({{ (index $condition.Reasons 0).GoName }}), status.Conditions())
+			assertConditionStatusReason(t, {{ $condition.GoName }}, metav1.ConditionTrue, string({{ (index $condition.Reasons 0).GoName }}), status.getConditions(0))
 			{{- end }}
 		})
 	}
@@ -217,9 +217,9 @@ func Test{{ $status.Kind }}(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			status := New{{ $status.Kind }}(0)
+			status := New{{ $status.Kind }}()
 			
-			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
 
 			if tt.falseCondition != nil {
 				tt.falseCondition(status)
@@ -229,9 +229,9 @@ func Test{{ $status.Kind }}(t *testing.T) {
 			}
 
 			if tt.falseCondition != nil {
-				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.Conditions())
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
 			} else {
-				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.Conditions())
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
 			}
 		})
 	}

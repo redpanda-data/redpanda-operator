@@ -14,7 +14,13 @@ package statuses
 import (
 	"strings"
 
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 // ClusterReadyCondition - This condition indicates whether a cluster is ready
@@ -233,7 +239,6 @@ const (
 
 // ClusterStatus - Defines the observed status conditions of a cluster.
 type ClusterStatus struct {
-	generation                           int64
 	conditions                           []metav1.Condition
 	hasTerminalError                     bool
 	isReadySet                           bool
@@ -249,17 +254,53 @@ type ClusterStatus struct {
 }
 
 // NewCluster() returns a new ClusterStatus
-func NewCluster(generation int64) *ClusterStatus {
-	return &ClusterStatus{
-		generation: generation,
-	}
+func NewCluster() *ClusterStatus {
+	return &ClusterStatus{}
 }
 
-// Conditions returns the aggregated status conditions of the ClusterStatus.
-func (s *ClusterStatus) Conditions() []metav1.Condition {
+// UpdateConditions updates any conditions for the passed in object that need to be updated.
+func (s *ClusterStatus) UpdateConditions(o client.Object) bool {
+	var conditions *[]metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.Redpanda:
+		conditions = &kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	updated := false
+	for _, condition := range s.getConditions(o.GetGeneration()) {
+		if apimeta.SetStatusCondition(conditions, condition) {
+			updated = true
+		}
+	}
+
+	return updated
+}
+
+// StatusConditionConfigs returns a set of configurations that can be used with Server Side Apply.
+func (s *ClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.ConditionApplyConfiguration {
+	var conditions []metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.Redpanda:
+		conditions = kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// conditions returns the aggregated status conditions of the ClusterStatus.
+func (s *ClusterStatus) getConditions(generation int64) []metav1.Condition {
 	conditions := append([]metav1.Condition{}, s.conditions...)
 	conditions = append(conditions, s.getQuiesced())
 	conditions = append(conditions, s.getStable(conditions))
+
+	for i, condition := range conditions {
+		condition.ObservedGeneration = generation
+		conditions[i] = condition
+	}
 
 	return conditions
 }
@@ -298,11 +339,10 @@ func (s *ClusterStatus) SetReady(reason ClusterReadyCondition, messages ...strin
 	}
 
 	s.conditions = append(s.conditions, metav1.Condition{
-		Type:               ClusterReady,
-		Status:             status,
-		Reason:             string(reason),
-		Message:            message,
-		ObservedGeneration: s.generation,
+		Type:    ClusterReady,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
 	})
 }
 
@@ -340,11 +380,10 @@ func (s *ClusterStatus) SetHealthy(reason ClusterHealthyCondition, messages ...s
 	}
 
 	s.conditions = append(s.conditions, metav1.Condition{
-		Type:               ClusterHealthy,
-		Status:             status,
-		Reason:             string(reason),
-		Message:            message,
-		ObservedGeneration: s.generation,
+		Type:    ClusterHealthy,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
 	})
 }
 
@@ -384,11 +423,10 @@ func (s *ClusterStatus) SetLicenseValid(reason ClusterLicenseValidCondition, mes
 	}
 
 	s.conditions = append(s.conditions, metav1.Condition{
-		Type:               ClusterLicenseValid,
-		Status:             status,
-		Reason:             string(reason),
-		Message:            message,
-		ObservedGeneration: s.generation,
+		Type:    ClusterLicenseValid,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
 	})
 }
 
@@ -424,11 +462,10 @@ func (s *ClusterStatus) SetResourcesSynced(reason ClusterResourcesSyncedConditio
 	}
 
 	s.conditions = append(s.conditions, metav1.Condition{
-		Type:               ClusterResourcesSynced,
-		Status:             status,
-		Reason:             string(reason),
-		Message:            message,
-		ObservedGeneration: s.generation,
+		Type:    ClusterResourcesSynced,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
 	})
 }
 
@@ -464,11 +501,10 @@ func (s *ClusterStatus) SetConfigurationApplied(reason ClusterConfigurationAppli
 	}
 
 	s.conditions = append(s.conditions, metav1.Condition{
-		Type:               ClusterConfigurationApplied,
-		Status:             status,
-		Reason:             string(reason),
-		Message:            message,
-		ObservedGeneration: s.generation,
+		Type:    ClusterConfigurationApplied,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
 	})
 }
 
@@ -478,20 +514,18 @@ func (s *ClusterStatus) getQuiesced() metav1.Condition {
 
 	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
 		return metav1.Condition{
-			Type:               ClusterQuiesced,
-			Status:             metav1.ConditionTrue,
-			Reason:             string(ClusterQuiescedReasonQuiesced),
-			Message:            "Cluster reconciliation finished",
-			ObservedGeneration: s.generation,
+			Type:    ClusterQuiesced,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(ClusterQuiescedReasonQuiesced),
+			Message: "Cluster reconciliation finished",
 		}
 	}
 
 	return metav1.Condition{
-		Type:               ClusterQuiesced,
-		Status:             metav1.ConditionFalse,
-		Reason:             string(ClusterQuiescedReasonStillReconciling),
-		Message:            "Cluster still reconciling",
-		ObservedGeneration: s.generation,
+		Type:    ClusterQuiesced,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(ClusterQuiescedReasonStillReconciling),
+		Message: "Cluster still reconciling",
 	}
 }
 
@@ -513,19 +547,17 @@ func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Conditio
 
 	if allConditionsFoundAndTrue {
 		return metav1.Condition{
-			Type:               ClusterStable,
-			Status:             metav1.ConditionTrue,
-			Reason:             string(ClusterStableReasonStable),
-			Message:            "Cluster Stable",
-			ObservedGeneration: s.generation,
+			Type:    ClusterStable,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(ClusterStableReasonStable),
+			Message: "Cluster Stable",
 		}
 	}
 
 	return metav1.Condition{
-		Type:               ClusterStable,
-		Status:             metav1.ConditionFalse,
-		Reason:             string(ClusterStableReasonUnstable),
-		Message:            "Cluster Unstable",
-		ObservedGeneration: s.generation,
+		Type:    ClusterStable,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(ClusterStableReasonUnstable),
+		Message: "Cluster Unstable",
 	}
 }

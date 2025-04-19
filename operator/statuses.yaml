@@ -5,9 +5,15 @@
 # 
 # General usage:
 # 
-#    status := statuses.NewMyKind(myKind.Generation)
+#    status := statuses.NewMyKind()
 #    status.SetMyCondition(statues.MyKindMyConditionMyReason, "something happened!") // or don't pass any strings for reasons that have default messages
-#    conditions := status.Conditions() // this will return an slice of any set conditions along with conditions that should be calculated every loop
+# 
+#    // for server side applies you can do
+#    kubernetes.ApplyPatch(config.WithStatus(mypackageac.SchemaStatus()
+#      .WithConditions(status.StatusConditionConfigs(myKind)...)))
+# 
+#    // or for a standard update (internally this acts like apimeta.SetStatusCondition)
+#    if status.UpdateConditions(myKind) { client.Update(...) }
 
 # kind is the name of the status struct, here we'll generate a struct named "Cluster"
 - kind: Cluster

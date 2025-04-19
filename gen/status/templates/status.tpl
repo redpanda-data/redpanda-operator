@@ -14,7 +14,17 @@ package {{ $.Package }}
 import (
 	"strings"
 
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
+    {{- range $i, $pkg := (mergeImports $.Statuses) }}
+    {{- if eq $i 0 }}
+    {{/* br */}}
+    {{- end }}
+    {{ $pkg }}
+    {{- end }}
+    "github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 {{ range $status := $.Statuses -}}{{/* Type Declarations */}}
@@ -43,7 +53,6 @@ const (
 {{ range $status := $.Statuses -}}{{/* Status Structure */}}
 {{ $status.Comment }}
 type {{ $status.GoName }} struct {
-    generation int64
     conditions []metav1.Condition
     hasTerminalError bool
 	{{- range $condition := $status.ManualConditions }}
@@ -55,14 +64,49 @@ type {{ $status.GoName }} struct {
 }
 
 // New{{ $status.Kind }}() returns a new {{ $status.GoName }}
-func New{{ $status.Kind }}(generation int64) *{{ $status.GoName }} {
-	return &{{ $status.GoName }}{
-        generation: generation,
-    }
+func New{{ $status.Kind }}() *{{ $status.GoName }} {
+	return &{{ $status.GoName }}{}
 }
 
-// Conditions returns the aggregated status conditions of the {{ $status.GoName }}.
-func (s *{{ $status.GoName }}) Conditions() []metav1.Condition {
+// UpdateConditions updates any conditions for the passed in object that need to be updated.
+func (s *{{ $status.GoName }}) UpdateConditions(o client.Object) bool {
+    var conditions *[]metav1.Condition
+    switch kind := o.(type) {
+        {{- range $kind := $status.ImportedKinds }}
+    case {{ $kind }}:
+        conditions = &kind.Status.Conditions
+        {{- end }}
+    default:
+        panic("unsupported kind")
+    }
+
+    updated := false
+    for _, condition := range s.getConditions(o.GetGeneration()) {
+        if apimeta.SetStatusCondition(conditions, condition) {
+            updated = true
+        }
+    }
+
+    return updated
+}
+
+// StatusConditionConfigs returns a set of configurations that can be used with Server Side Apply.
+func (s *{{ $status.GoName }}) StatusConditionConfigs(o client.Object) []*applymetav1.ConditionApplyConfiguration {
+    var conditions []metav1.Condition
+    switch kind := o.(type) {
+        {{- range $kind := $status.ImportedKinds }}
+    case {{ $kind }}:
+        conditions = kind.Status.Conditions
+        {{- end }}
+    default:
+        panic("unsupported kind")
+    }
+
+    return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// conditions returns the aggregated status conditions of the {{ $status.GoName }}.
+func (s *{{ $status.GoName }}) getConditions(generation int64) []metav1.Condition {
     conditions := append([]metav1.Condition{}, s.conditions...)
 
     {{- range $condition:= $status.FinalConditions }}
@@ -72,6 +116,11 @@ func (s *{{ $status.GoName }}) Conditions() []metav1.Condition {
     {{- range $condition:= $status.RollupConditions }}
     conditions = append(conditions, s.get{{ $condition.Name }}(conditions))
     {{- end }}
+
+    for i, condition := range conditions {
+        condition.ObservedGeneration = generation
+        conditions[i] = condition
+    }
 
 	return conditions
 }
@@ -117,7 +166,6 @@ func (s *{{ $status.GoName }}) Set{{ $condition.Name }}(reason {{ $condition.GoC
         Status:             status,
         Reason:             string(reason),
         Message:            message,
-        ObservedGeneration: s.generation,
     })
 }
 {{- end }}{{/* Manual Conditions */}}
@@ -136,7 +184,6 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}() metav1.Condition {
             Status:             metav1.ConditionTrue,
             Reason:             string({{ (index $condition.Reasons 0).GoName }}),
             Message:            "{{ (index $condition.Reasons 0).Message }}",
-            ObservedGeneration: s.generation,
         }
     }
 
@@ -145,7 +192,6 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}() metav1.Condition {
         Status:             metav1.ConditionFalse,
         Reason:             string({{ (index $condition.Reasons 1).GoName }}),
         Message:            "{{ (index $condition.Reasons 1).Message }}",
-        ObservedGeneration: s.generation,
     }
 }
 {{- end }}{{/* Final Conditions */}}
@@ -174,7 +220,6 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Cond
             Status:             metav1.ConditionTrue,
             Reason:             string({{ (index $condition.Reasons 0).GoName }}),
             Message:            "{{ (index $condition.Reasons 0).Message }}",
-            ObservedGeneration: s.generation,
         }
     }
 
@@ -183,7 +228,6 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Cond
         Status:             metav1.ConditionFalse,
         Reason:             string({{ (index $condition.Reasons 1).GoName }}),
         Message:            "{{ (index $condition.Reasons 1).Message }}",
-        ObservedGeneration: s.generation,
     }
 }
 {{- end }}{{/* Rollup Conditions */}}
