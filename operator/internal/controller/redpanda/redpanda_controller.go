@@ -54,9 +54,10 @@ import (
 )
 
 const (
-	FinalizerKey            = "operator.redpanda.com/finalizer"
-	ClusterConfigVersionKey = "operator.redpanda.com/cluster-config-version"
-	FluxFinalizerKey        = "finalizers.fluxcd.io"
+	FinalizerKey                    = "operator.redpanda.com/finalizer"
+	ClusterConfigVersionKey         = "operator.redpanda.com/cluster-config-version"
+	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
+	FluxFinalizerKey                = "finalizers.fluxcd.io"
 
 	NotManaged = "false"
 
@@ -366,17 +367,19 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 	values := rp.Spec.ClusterSpec.DeepCopy()
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
-	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
-		if values.Statefulset == nil {
-			values.Statefulset = &redpandav1alpha2.Statefulset{}
+	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
+		if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
+			if values.Statefulset == nil {
+				values.Statefulset = &redpandav1alpha2.Statefulset{}
+			}
+			if values.Statefulset.PodTemplate == nil {
+				values.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
+			}
+			if values.Statefulset.PodTemplate.Annotations == nil {
+				values.Statefulset.PodTemplate.Annotations = map[string]string{}
+			}
+			values.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
 		}
-		if values.Statefulset.PodTemplate == nil {
-			values.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
-		}
-		if values.Statefulset.PodTemplate.Annotations == nil {
-			values.Statefulset.PodTemplate.Annotations = map[string]string{}
-		}
-		values.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
 	}
 
 	objs, err := redpanda.Chart.Render(&r.KubeConfig, helmette.Release{
