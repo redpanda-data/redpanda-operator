@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -168,7 +169,12 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
 		if err != nil {
-			return err
+			var nomatcherr apimeta.NoKindMatchError
+			if !errors.As(err, &nomatcherr) {
+				return err
+			}
+			// we have a no match error, so just drop the watch altogether
+			continue
 		}
 
 		if mapping.Name() == meta.RESTScopeNamespace.Name() {
