@@ -146,7 +146,7 @@ func Command() *cobra.Command {
 			var cloudExpander *pkgsecrets.CloudExpander
 			if cloudSecretsEnabled {
 				cloudConfig := pkgsecrets.ExpanderCloudConfiguration{}
-				if cloudSecretsAWSRegion != "" && cloudSecretsAWSRoleARN != "" {
+				if cloudSecretsAWSRegion != "" {
 					cloudConfig.AWSRegion = cloudSecretsAWSRegion
 					cloudConfig.AWSRoleARN = cloudSecretsAWSRoleARN
 				} else if cloudSecretsGCPProjectID != "" {
