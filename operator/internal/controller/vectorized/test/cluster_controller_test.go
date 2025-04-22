@@ -823,7 +823,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			// exists. This verifies that these situations are handled
 			// gracefully and without error
 			r := &vectorized.ClusterReconciler{
-				Client:                   fake.NewClientBuilder().Build(),
+				Client:                   fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build(),
 				Log:                      ctrl.Log,
 				Scheme:                   controller.UnifiedScheme,
 				AdminAPIClientFactory:    testAdminAPIFactory,
@@ -842,7 +842,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 		It("Should throw error due to restricted redpanda version", func() {
 			restrictedVersion := "v23.2.2"
 			key, redpandaCluster := getVersionedRedpanda("restricted-redpanda-negative", restrictedVersion)
-			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).Build()
+			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).WithScheme(controller.UnifiedScheme).Build()
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
@@ -871,7 +871,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			for i := range pods {
 				objects = append(objects, pods[i])
 			}
-			fc := fake.NewClientBuilder().WithObjects(objects...).WithStatusSubresource(objects...).Build()
+			fc := fake.NewClientBuilder().WithObjects(objects...).WithScheme(controller.UnifiedScheme).WithStatusSubresource(objects...).Build()
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
@@ -901,7 +901,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		r := &vectorized.ClusterReconciler{
-			Client:                   fake.NewClientBuilder().Build(),
+			Client:                   fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build(),
 			Log:                      ctrl.Log,
 			Scheme:                   controller.UnifiedScheme,
 			AdminAPIClientFactory:    testAdminAPIFactory,
