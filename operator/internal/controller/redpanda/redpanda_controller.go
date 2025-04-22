@@ -48,8 +48,10 @@ import (
 )
 
 const (
-	FinalizerKey            = "operator.redpanda.com/finalizer"
-	ClusterConfigVersionKey = "operator.redpanda.com/cluster-config-version"
+	FinalizerKey                    = "operator.redpanda.com/finalizer"
+	ClusterConfigVersionKey         = "operator.redpanda.com/cluster-config-version"
+	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
+	FluxFinalizerKey                = "finalizers.fluxcd.io"
 
 	NotManaged = "false"
 
@@ -297,17 +299,19 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 	helmChartValues := rp.Spec.ClusterSpec.DeepCopy()
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
-	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
-		if helmChartValues.Statefulset == nil {
-			helmChartValues.Statefulset = &redpandav1alpha2.Statefulset{}
+	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
+		if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
+			if helmChartValues.Statefulset == nil {
+				helmChartValues.Statefulset = &redpandav1alpha2.Statefulset{}
+			}
+			if helmChartValues.Statefulset.PodTemplate == nil {
+				helmChartValues.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
+			}
+			if helmChartValues.Statefulset.PodTemplate.Annotations == nil {
+				helmChartValues.Statefulset.PodTemplate.Annotations = map[string]string{}
+			}
+			helmChartValues.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
 		}
-		if helmChartValues.Statefulset.PodTemplate == nil {
-			helmChartValues.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
-		}
-		if helmChartValues.Statefulset.PodTemplate.Annotations == nil {
-			helmChartValues.Statefulset.PodTemplate.Annotations = map[string]string{}
-		}
-		helmChartValues.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
 	}
 
 	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{

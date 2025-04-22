@@ -294,6 +294,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
+	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
 		SASL: &redpandav1alpha2.SASL{
@@ -709,7 +710,8 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
+			Name:        "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
+			Annotations: map[string]string{},
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			// Any empty structs are to make setting them more ergonomic
