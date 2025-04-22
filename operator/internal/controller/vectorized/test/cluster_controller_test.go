@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +31,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -825,7 +825,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			r := &vectorized.ClusterReconciler{
 				Client:                   fake.NewClientBuilder().Build(),
 				Log:                      ctrl.Log,
-				Scheme:                   scheme.Scheme,
+				Scheme:                   controller.UnifiedScheme,
 				AdminAPIClientFactory:    testAdminAPIFactory,
 				DecommissionWaitInterval: 100 * time.Millisecond,
 			}
@@ -846,7 +846,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
-				Scheme:                    scheme.Scheme,
+				Scheme:                    controller.UnifiedScheme,
 				AdminAPIClientFactory:     testAdminAPIFactory,
 				DecommissionWaitInterval:  100 * time.Millisecond,
 				RestrictToRedpandaVersion: allowedVersion,
@@ -875,7 +875,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
-				Scheme:                    scheme.Scheme,
+				Scheme:                    controller.UnifiedScheme,
 				AdminAPIClientFactory:     testAdminAPIFactory,
 				DecommissionWaitInterval:  100 * time.Millisecond,
 				RestrictToRedpandaVersion: allowedVersion,
@@ -893,7 +893,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 
 	DescribeTable("Image pull policy tests table", func(imagePullPolicy string, matcher types2.GomegaMatcher) {
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme: scheme.Scheme,
+			Scheme: controller.UnifiedScheme,
 			Metrics: metricsserver.Options{
 				BindAddress: "0",
 			},
@@ -903,7 +903,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 		r := &vectorized.ClusterReconciler{
 			Client:                   fake.NewClientBuilder().Build(),
 			Log:                      ctrl.Log,
-			Scheme:                   scheme.Scheme,
+			Scheme:                   controller.UnifiedScheme,
 			AdminAPIClientFactory:    testAdminAPIFactory,
 			DecommissionWaitInterval: 100 * time.Millisecond,
 		}
