@@ -12,11 +12,12 @@ package lifecycle
 import (
 	"context"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 )
 
 // ClusterStatus represents a generic status of a cluster
