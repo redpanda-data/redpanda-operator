@@ -398,24 +398,6 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 		// Only assert that c.Expected is a subset of the set config.
 		// The chart/operator injects a bunch of "useful" values by default.
 		s.Subset(config, c.Expected)
-
-		// check that the pods are annotated with the config version
-		s.applyAndWaitFor(func(o client.Object) bool {
-			rp := o.(*redpandav1alpha2.Redpanda)
-			cond := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced)
-			if cond != nil {
-				conditionIsSet := (cond.Status == metav1.ConditionTrue &&
-					strings.HasPrefix(cond.Message, "ClusterConfig at Version "))
-
-				annotationIsSet := (rp.Spec.ClusterSpec != nil &&
-					rp.Spec.ClusterSpec.Statefulset != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate.Annotations != nil &&
-					rp.Spec.ClusterSpec.Statefulset.PodTemplate.Annotations[redpanda.ClusterConfigVersionKey] == cond.Message)
-				return conditionIsSet && annotationIsSet
-			}
-			return false
-		}, rp)
 	}
 
 	s.deleteAndWait(rp)

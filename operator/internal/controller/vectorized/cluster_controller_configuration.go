@@ -239,7 +239,8 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 		},
 	}
 	// The updated config_version is logged by syncer
-	if _, err := syncer.Sync(ctx, properties, nil); err != nil {
+	err = syncer.Sync(ctx, properties, nil)
+	if err != nil {
 		var conditionData *vectorizedv1alpha1.ClusterCondition
 		conditionData, err = tryMapErrorToCondition(err)
 		if err != nil {

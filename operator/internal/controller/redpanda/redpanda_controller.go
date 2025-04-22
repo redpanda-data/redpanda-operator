@@ -54,9 +54,8 @@ import (
 )
 
 const (
-	FinalizerKey            = "operator.redpanda.com/finalizer"
-	ClusterConfigVersionKey = "operator.redpanda.com/cluster-config-version"
-	FluxFinalizerKey        = "finalizers.fluxcd.io"
+	FinalizerKey     = "operator.redpanda.com/finalizer"
+	FluxFinalizerKey = "finalizers.fluxcd.io"
 
 	NotManaged = "false"
 
@@ -361,24 +360,6 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 		return nil
 	}
 
-	// DeepCopy values to prevent any accidental mutations that may occur
-	// within the chart itself.
-	values := rp.Spec.ClusterSpec.DeepCopy()
-	// The pods are being annotated with the cluster config version so that they
-	// are restarted on any change to the cluster config.
-	if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil && c.Status == metav1.ConditionTrue {
-		if values.Statefulset == nil {
-			values.Statefulset = &redpandav1alpha2.Statefulset{}
-		}
-		if values.Statefulset.PodTemplate == nil {
-			values.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
-		}
-		if values.Statefulset.PodTemplate.Annotations == nil {
-			values.Statefulset.PodTemplate.Annotations = map[string]string{}
-		}
-		values.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
-	}
-
 	objs, err := redpanda.Chart.Render(&r.KubeConfig, helmette.Release{
 		Namespace: rp.Namespace,
 		Name:      rp.GetHelmReleaseName(),
@@ -639,8 +620,8 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 	}
 
 	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
-	configVersion, err := syncer.Sync(ctx, config, usersTXT)
-	if err != nil {
+
+	if err := syncer.Sync(ctx, config, usersTXT); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -649,7 +630,6 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: rp.Generation,
 		Reason:             "ConfigSynced",
-		Message:            fmt.Sprintf("ClusterConfig at Version %d", configVersion),
 	})
 
 	return nil
