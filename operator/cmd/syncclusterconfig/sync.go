@@ -20,8 +20,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"maps"
 	"os"
 	"path/filepath"
@@ -276,6 +279,8 @@ type Syncer struct {
 type ClusterConfigStatus struct {
 	Version      int64
 	NeedsRestart bool
+	// Hash of the properties that need restart
+	PropertiesThatNeedRestartHash string
 }
 
 // Sync will compare the current cluster configuration with the desired
@@ -308,6 +313,14 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	status, err := s.Client.ClusterConfigStatus(ctx, true)
 	if err != nil {
 		return nil, err
+	}
+	schema, err := s.Client.ClusterConfigSchema(ctx)
+	if err != nil {
+		return nil, err
+	}
+	hashOfConfigsThatNeedRestart, err := hashConfigsThatNeedRestart(desired, schema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash config: %w", err)
 	}
 	if s.Mode == SyncerModeDeclarative {
 		for key, value := range current {
@@ -343,7 +356,6 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 			changed = append(changed, key)
 		}
 	}
-
 	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
 		logger.Info("no cluster config changes to apply")
 		// find the highest config version
@@ -351,7 +363,8 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 			Version: slices.MaxFunc(status, func(a, b rpadmin.ConfigStatus) int {
 				return int(a.ConfigVersion - b.ConfigVersion)
 			}).ConfigVersion,
-			NeedsRestart: slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+			NeedsRestart:                  slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+			PropertiesThatNeedRestartHash: hashOfConfigsThatNeedRestart,
 		}, nil
 	}
 
@@ -378,8 +391,9 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 		return nil, err
 	}
 	return &ClusterConfigStatus{
-		Version:      int64(result.ConfigVersion),
-		NeedsRestart: slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+		Version:                       int64(result.ConfigVersion),
+		NeedsRestart:                  slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+		PropertiesThatNeedRestartHash: hashOfConfigsThatNeedRestart,
 	}, nil
 }
 
@@ -409,4 +423,20 @@ func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any
 	}
 
 	config[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
+}
+
+// hashConfigsThatNeedRestart returns a hash of the config that needs the
+// cluster to restart when changed.
+func hashConfigsThatNeedRestart(m map[string]any, schema rpadmin.ConfigSchema) (string, error) {
+	configNeedRestart := make(map[string]any)
+	for k, v := range m {
+		if meta, ok := schema[k]; ok && meta.NeedsRestart {
+			configNeedRestart[k] = v
+		}
+	}
+	hasher := fnv.New64()
+	if err := json.NewEncoder(hasher).Encode(configNeedRestart); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
