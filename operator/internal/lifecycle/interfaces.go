@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,35 +23,47 @@ import (
 // based on its desired and actual state as well as whether
 // it has reached a finalized reconciliation state.
 type ClusterStatus struct {
+	// Pools contains the status for each of our pools
+	Pools []PoolStatus
+	// Status is a generated status conditions container for clusters
+	Status *statuses.ClusterStatus
+}
+
+type PoolStatus struct {
+	// Name is the name of the pool
+	Name string
 	// Replicas is the number of actual replicas currently across
-	// the cluster. This differs from DesiredReplicas during
+	// the node pool. This differs from DesiredReplicas during
 	// a scaling operation, but should be the same once the cluster
 	// has quiesced.
-	Replicas int
+	Replicas int32
 	// DesiredReplicas is the number of replicas that ought to be
 	// run for the cluster. It combines the desired replicas across
 	// all node pools.
-	DesiredReplicas int
+	DesiredReplicas int32
 	// OutOfDateReplicas is the number of replicas that don't currently
 	// match their node pool definitions. If OutOfDateReplicas is not 0
 	// it should mean that the operator will soon roll this many pods.
-	OutOfDateReplicas int
+	OutOfDateReplicas int32
 	// UpToDateReplicas is the number of replicas that currently match
 	// their node pool definitions.
-	UpToDateReplicas int
+	UpToDateReplicas int32
 	// CondemnedReplicas is the number of replicas that will be decommissioned
 	// as part of a scaling down operation.
-	CondemnedReplicas int
+	CondemnedReplicas int32
 	// ReadyReplicas is the number of replicas whose readiness probes are
 	// currently passing.
-	ReadyReplicas int
+	ReadyReplicas int32
 	// RunningReplicas is the number of replicas that are actively in a running
 	// state.
-	RunningReplicas int
-	// Quiesced indicates that no more reconciliation will occur for the given
-	// cluster unless Kubernetes state changes. Reconciliation is done for the
-	// current iteration of a cluster.
-	Quiesced bool
+	RunningReplicas int32
+}
+
+// NewClusterStatus creates a cluster status object to be used in reconciliation
+func NewClusterStatus() *ClusterStatus {
+	return &ClusterStatus{
+		Status: statuses.NewCluster(),
+	}
 }
 
 // OwnershipResolver is responsible for determining what
@@ -107,7 +120,7 @@ type ClusterStatusUpdater[T any, U Cluster[T]] interface {
 	// Update updates the internal cluster's status based on the ClusterStatus it
 	// is given. If any fields are updated it should return `true` so that the
 	// status of the cluster can be synced.
-	Update(cluster U, status ClusterStatus) bool
+	Update(cluster U, status *ClusterStatus) bool
 }
 
 // ResourceManagerFactory bundles together concrete implementations of OwnershipResolver

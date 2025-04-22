@@ -97,57 +97,112 @@ type Migration struct {
 	ConsoleRef vectorizedv1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
+// NodePoolStatus defines the observed state of any node pools tied to this cluster
+type NodePoolStatus struct {
+	// Name is the name of the pool
+	Name string `json:"name"`
+	// Replicas is the number of actual replicas currently across
+	// the node pool. This differs from DesiredReplicas during
+	// a scaling operation, but should be the same once the cluster
+	// has quiesced.
+	Replicas int32 `json:"replicas"`
+	// DesiredReplicas is the number of replicas that ought to be
+	// run for the cluster. It combines the desired replicas across
+	// all node pools.
+	DesiredReplicas int32 `json:"desiredReplicas"`
+	// OutOfDateReplicas is the number of replicas that don't currently
+	// match their node pool definitions. If OutOfDateReplicas is not 0
+	// it should mean that the operator will soon roll this many pods.
+	OutOfDateReplicas int32 `json:"outOfDateReplicas"`
+	// UpToDateReplicas is the number of replicas that currently match
+	// their node pool definitions.
+	UpToDateReplicas int32 `json:"upToDateReplicas"`
+	// CondemnedReplicas is the number of replicas that will be decommissioned
+	// as part of a scaling down operation.
+	CondemnedReplicas int32 `json:"condemnedReplicas"`
+	// ReadyReplicas is the number of replicas whose readiness probes are
+	// currently passing.
+	ReadyReplicas int32 `json:"readyReplicas"`
+	// RunningReplicas is the number of replicas that are actively in a running
+	// state.
+	RunningReplicas int32 `json:"runningReplicas"`
+}
+
 // RedpandaStatus defines the observed state of Redpanda
 type RedpandaStatus struct {
-	// Specifies the last observed generation.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
 	// Conditions holds the conditions for the Redpanda.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// LastHandledReconcileAt holds the value of the most recent
-	// reconcile request value, so a change of the annotation value
-	// can be detected.
-	// +optional
-	LastHandledReconcileAt string `json:"lastHandledReconcileAt,omitempty"`
-
-	// LastAppliedRevision is the revision of the last successfully applied source.
-	// +optional
-	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
-
-	// LastAttemptedRevision is the revision of the last reconciliation attempt.
-	// +optional
-	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
-
-	// +optional
-	HelmRelease string `json:"helmRelease,omitempty"`
-
-	// +optional
-	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
-
-	// +optional
-	HelmRepository string `json:"helmRepository,omitempty"`
-
-	// +optional
-	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
-
-	// +optional
-	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
-
-	// Failures is the reconciliation failure count against the latest desired
-	// state. It is reset after a successful reconciliation.
-	// +optional
-	Failures int64 `json:"failures,omitempty"`
-
-	// +optional
-	InstallFailures int64 `json:"installFailures,omitempty"`
 
 	// LicenseStatus contains information about the current state of any
 	// installed license in the Redpanda cluster.
 	// +optional
 	LicenseStatus *RedpandaLicenseStatus `json:"license,omitempty"`
+
+	// NodePools contains information about the node pools associated
+	// with this cluster.
+	// +optional
+	NodePools []NodePoolStatus `json:"nodePools,omitempty"`
+
+	// everything below here is deprecated and should be removed
+
+	// Specifies the last observed generation.
+	// deprecated
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// LastHandledReconcileAt holds the value of the most recent
+	// reconcile request value, so a change of the annotation value
+	// can be detected.
+	// deprecated
+	// +optional
+	LastHandledReconcileAt string `json:"lastHandledReconcileAt,omitempty"`
+
+	// LastAppliedRevision is the revision of the last successfully applied source.
+	// deprecated
+	// +optional
+	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
+
+	// LastAttemptedRevision is the revision of the last reconciliation attempt.
+	// deprecated
+	// +optional
+	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
+
+	// deprecated
+	// +optional
+	HelmRelease string `json:"helmRelease,omitempty"`
+
+	// deprecated
+	// +optional
+	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
+
+	// deprecated
+	// +optional
+	HelmRepository string `json:"helmRepository,omitempty"`
+
+	// deprecated
+	// +optional
+	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
+
+	// deprecated
+	// +optional
+	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
+
+	// Failures is the reconciliation failure count against the latest desired
+	// state. It is reset after a successful reconciliation.
+	// deprecated
+	// +optional
+	Failures int64 `json:"failures,omitempty"`
+
+	// deprecated
+	// +optional
+	InstallFailures int64 `json:"installFailures,omitempty"`
+
+	// ManagedDecommissioningNode indicates that a node is currently being
+	// decommissioned from the cluster and provides its ordinal number.
+	// deprecated
+	// +optional
+	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
 }
 
 type RedpandaLicenseStatus struct {

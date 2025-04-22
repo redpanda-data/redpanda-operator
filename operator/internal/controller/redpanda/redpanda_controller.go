@@ -14,35 +14,29 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"slices"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	kuberecorder "k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
@@ -59,12 +53,13 @@ const (
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
-)
 
-type gvkKey struct {
-	GVK schema.GroupVersionKind
-	Key client.ObjectKey
-}
+	// reqeueueTimeout is the time that the reconciler will
+	// wait before requeueing a cluster to be reconciled when
+	// we've explicitly aborted a reconciliation loop early
+	// due to an in-progress oepration
+	requeueTimeout = 10 * time.Second
+)
 
 type Image struct {
 	Repository string
@@ -75,11 +70,11 @@ type Image struct {
 type RedpandaReconciler struct {
 	// KubeConfig is the [rest.Config] that provides the go helm chart
 	// Kubernetes access. It should be the same config used to create client.
-	KubeConfig    *rest.Config
-	Client        client.Client
-	Scheme        *runtime.Scheme
-	EventRecorder kuberecorder.EventRecorder
-	ClientFactory internalclient.ClientFactory
+	KubeConfig      *rest.Config
+	Client          client.Client
+	LifecycleClient *lifecycle.ResourceClient[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda]
+	EventRecorder   kuberecorder.EventRecorder
+	ClientFactory   internalclient.ClientFactory
 	// OperatorImage is the image to use for any instances of the operator
 	// within redpanda deployments. e.g. StatefulSet.Sidecar.Image. The
 	// redpanda chart ships with it's own default but we want this field to be
@@ -116,196 +111,160 @@ type RedpandaReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	if err := registerHelmReferencedIndex(ctx, mgr, "statefulset", &appsv1.StatefulSet{}); err != nil {
-		return err
-	}
-	if err := registerHelmReferencedIndex(ctx, mgr, "deployment", &appsv1.Deployment{}); err != nil {
-		return err
-	}
+	builder := ctrl.NewControllerManagedBy(mgr)
 
-	helmManagedComponentPredicate, err := predicate.LabelSelectorPredicate(
-		metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{{
-				Key:      "app.kubernetes.io/name", // look for only redpanda or console pods
-				Operator: metav1.LabelSelectorOpIn,
-				Values:   []string{"redpanda", "console", "connectors"},
-			}, {
-				Key:      "app.kubernetes.io/instance", // make sure we have a cluster name
-				Operator: metav1.LabelSelectorOpExists,
-			}, {
-				Key:      "batch.kubernetes.io/job-name", // filter out the job pods since they also have name=redpanda
-				Operator: metav1.LabelSelectorOpDoesNotExist,
-			}},
-		},
-	)
-	if err != nil {
-		return err
-	}
+	r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{})
 
-	managedWatchOption := builder.WithPredicates(helmManagedComponentPredicate)
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Redpanda{}).
-		Watches(&appsv1.StatefulSet{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
-		Watches(&appsv1.Deployment{}, enqueueClusterFromHelmManagedObject(), managedWatchOption).
-		Complete(r)
+	return builder.Complete(r)
 }
 
-func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx, done := context.WithCancel(c)
-	defer done()
-
+func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	start := time.Now()
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.Reconcile")
 
 	defer func() {
 		durationMsg := fmt.Sprintf("reconciliation finished in %s", time.Since(start).String())
-		log.V(logger.TraceLevel).Info(durationMsg)
+		log.V(TraceLevel).Info(durationMsg)
 	}()
 
-	log.V(logger.TraceLevel).Info("Starting reconcile loop")
+	log.V(TraceLevel).Info("Starting reconcile loop")
 
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Examine if the object is under deletion
-	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
-		return ctrl.Result{}, r.reconcileDelete(ctx, rp)
+	// grab our existing and desired pool resources
+	// so that we can immediately calculate cluster status
+	// from and sync in any subsequent operation that
+	// early returns
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp)
+	if err != nil {
+		log.Error(err, "fetching pools")
+		return ctrl.Result{}, err
 	}
+
+	status := lifecycle.NewClusterStatus()
+	status.Pools = pools.PoolStatuses()
 
 	if !isRedpandaManaged(ctx, rp) {
-		if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
-			// if no longer managed by us, attempt to remove the finalizer
-			controllerutil.RemoveFinalizer(rp, FinalizerKey)
+		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := r.Client.Update(ctx, rp); err != nil {
-				return ctrl.Result{}, errors.WithStack(err)
+				log.Error(err, "updating cluster finalizer")
+				// no need to update the status at this point since the
+				// previous update failed
+				return ignoreConflict(err)
 			}
 		}
-
 		return ctrl.Result{}, nil
 	}
 
-	// add finalizer if not exist
-	if !controllerutil.ContainsFinalizer(rp, FinalizerKey) {
-		patch := client.MergeFrom(rp.DeepCopy())
-		controllerutil.AddFinalizer(rp, FinalizerKey)
-		if err := r.Client.Patch(ctx, rp, patch); err != nil {
-			log.Error(err, "unable to register finalizer")
-			return ctrl.Result{}, errors.WithStack(err)
+	// Examine if the object is under deletion
+	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
+		// clean up all dependant resources
+		if deleted, err := r.LifecycleClient.DeleteAll(ctx, rp); deleted || err != nil {
+			return r.syncStatusErr(ctx, err, status, rp)
 		}
-	}
-
-	// Upgrade checks. Don't reconcile if UseFlux is true or if ChartRef is set.
-	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux {
-		log.Error(nil, "useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
+		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
+			if err := r.Client.Update(ctx, rp); err != nil {
+				log.Error(err, "updating cluster finalizer")
+				// no need to update the status at this point since the
+				// previous update failed
+				return ignoreConflict(err)
+			}
+		}
 		return ctrl.Result{}, nil
 	}
 
-	if rp.Spec.ChartRef.ChartVersion != "" {
-		msg := "Specifying chartVersion is no longer supported. Please downgrade or unset `chartRef.chartVersion`"
-		log.Error(nil, msg)
-		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, msg)
+	// we are not deleting, so add a finalizer first before
+	// allocating any additional resources
+	if controllerutil.AddFinalizer(rp, FinalizerKey) {
+		if err := r.Client.Update(ctx, rp); err != nil {
+			log.Error(err, "updating cluster finalizer")
+			return ignoreConflict(err)
+		}
 		return ctrl.Result{}, nil
 	}
 
+	// TODO: can we remove this sooner than later as it's essentially advisory?
+	if err := validateClusterParameters(rp); err != nil {
+		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
+
+		log.Error(err, "validating cluster parameters")
+		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, err.Error())
+		return r.syncStatus(ctx, status, rp)
+	}
+
+	// we sync all our non pool resources first so that they're in-place
+	// prior to us scaling up our node pools
 	if err := r.reconcileResources(ctx, rp); err != nil {
-		return ctrl.Result{}, errors.WithStack(err)
+		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
+
+		log.Error(err, "error reconciling resources")
+		return r.syncStatusErr(ctx, err, status, rp)
 	}
 
-	if err := r.reconcileStatus(ctx, rp); err != nil {
-		return ctrl.Result{}, errors.WithStack(err)
-	}
-
-	if err := r.reconcileLicense(ctx, rp); err != nil {
-		return ctrl.Result{}, errors.WithStack(err)
-	}
-
-	if err := r.reconcileClusterConfig(ctx, rp); err != nil {
-		return ctrl.Result{}, errors.WithStack(err)
-	}
-
-	// Reconciliation has completed without any errors, therefore we observe our
-	// generation and persist any status changes.
-	rp.Status.ObservedGeneration = rp.Generation
-
-	// Update status after reconciliation.
-	if updateStatusErr := r.patchRedpandaStatus(ctx, rp); updateStatusErr != nil {
-		log.Error(updateStatusErr, "unable to update status after reconciliation")
-		return ctrl.Result{}, updateStatusErr
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	// pull our deployments and stateful sets
-	redpandaStatefulSets, err := redpandaStatefulSetsForCluster(ctx, r.Client, rp)
+	// next we sync up all of our pools themselves
+	admin, requeue, err := r.reconcilePools(ctx, rp, pools)
 	if err != nil {
-		return errors.WithStack(err)
-	}
+		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
 
-	consoleDeployments, err := consoleDeploymentsForCluster(ctx, r.Client, rp)
+		log.Error(err, "error reconciling pools")
+		return r.syncStatusErr(ctx, err, status, rp)
+	}
+	if requeue {
+		return r.syncStatusAndRequeue(ctx, status, rp)
+	}
+	defer admin.Close()
+
+	status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
+
+	_, requeue, err = r.reconcileClusterConfig(ctx, admin, rp)
 	if err != nil {
-		return errors.WithStack(err)
+		status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
+
+		log.Error(err, "error reconciling cluster config")
+		return r.syncStatusErr(ctx, err, status, rp)
+	}
+	if requeue {
+		return r.syncStatusAndRequeue(ctx, status, rp)
 	}
 
-	connectorsDeployments, err := connectorsDeploymentsForCluster(ctx, r.Client, rp)
+	status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
+
+	license, err := r.reconcileLicense(ctx, admin, rp, status)
 	if err != nil {
-		return errors.WithStack(err)
+		log.Error(err, "error reconciling license")
+		return r.syncStatusErr(ctx, err, status, rp)
+	}
+	if license != nil {
+		rp.Status.LicenseStatus = license
 	}
 
-	deployments := append(consoleDeployments, connectorsDeployments...)
-
-	if len(redpandaStatefulSets) == 0 {
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Redpanda StatefulSet not yet created")
-		return nil
+	if err := r.reconcileClusterHealth(ctx, admin, status); err != nil {
+		log.Error(err, "error reconciling cluster healthy")
+		return r.syncStatusErr(ctx, err, status, rp)
 	}
 
-	// check to make sure that our stateful set pods are all current
-	if message, ready := checkStatefulSetStatus(redpandaStatefulSets); !ready {
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", message)
-		return nil
-	}
-
-	// check to make sure that our deployment pods are all current
-	if message, ready := checkDeploymentsStatus(deployments); !ready {
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "ConsolePodsNotReady", message)
-		return nil
-	}
-
-	// Once we know that STS Pods are up and running, make sure that we don't
-	// need to perform a decommission.
-	needsDecommission, err := r.needsDecommission(ctx, rp, redpandaStatefulSets)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if needsDecommission {
-		_ = redpandav1alpha2.RedpandaNotReady(rp, "RedpandaPodsNotReady", "Cluster currently decommissioning dead nodes")
-		return nil
-	}
-
-	_ = redpandav1alpha2.RedpandaReady(rp)
-	return nil
+	return r.syncStatus(ctx, status, rp)
 }
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	log := ctrl.LoggerFrom(ctx)
-
-	values := rp.Spec.ClusterSpec.DeepCopy()
-
-	if values.Statefulset == nil {
-		values.Statefulset = &redpandav1alpha2.Statefulset{}
+	cloned := rp.DeepCopy()
+	if cloned.Spec.ClusterSpec == nil {
+		cloned.Spec.ClusterSpec = &redpandav1alpha2.RedpandaClusterSpec{}
 	}
 
-	if values.Statefulset.SideCars == nil {
-		values.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	if cloned.Spec.ClusterSpec.Statefulset == nil {
+		cloned.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
 	}
 
-	if values.Statefulset.SideCars.Image == nil {
-		values.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
+	if cloned.Spec.ClusterSpec.Statefulset.SideCars == nil {
+		cloned.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	}
+
+	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image == nil {
+		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
 	}
 
 	// If not explicitly specified, set the tag and repository of the sidecar
@@ -314,138 +273,143 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 	// This ensures that custom deployments (e.g.
 	// localhost/redpanda-operator:dev) will use the image they are deployed
 	// with.
-	if values.Statefulset.SideCars.Image.Tag == nil {
-		values.Statefulset.SideCars.Image.Tag = &r.OperatorImage.Tag
+	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag == nil {
+		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag = &r.OperatorImage.Tag
 	}
 
-	if values.Statefulset.SideCars.Image.Repository == nil {
-		values.Statefulset.SideCars.Image.Repository = &r.OperatorImage.Repository
+	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository == nil {
+		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository = &r.OperatorImage.Repository
 	}
 
-	// The pods are being annotated with the cluster config version so that they
-	// are restarted on any change to the cluster config.
-	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
-		if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
-			if values.Statefulset.PodTemplate == nil {
-				values.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
-			}
-			if values.Statefulset.PodTemplate.Annotations == nil {
-				values.Statefulset.PodTemplate.Annotations = map[string]string{}
-			}
-			values.Statefulset.PodTemplate.Annotations[ClusterConfigNeedRestartHashKey] = c.Message
-		}
-	}
-
-	objs, err := redpanda.Chart.Render(r.KubeConfig, helmette.Release{
-		Namespace: rp.Namespace,
-		Name:      rp.GetHelmReleaseName(),
-		Service:   "Helm",
-		IsUpgrade: true,
-	}, values)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	// set for tracking which objects are expected to exist in this reconciliation run.
-	created := make(map[gvkKey]struct{}, len(objs))
-	for _, obj := range objs {
-		// Namespace is inconsistently set across all our charts. Set it
-		// explicitly here to be safe.
-		obj.SetNamespace(rp.Namespace)
-		obj.SetOwnerReferences([]metav1.OwnerReference{rp.OwnerShipRefObj()})
-
-		labels := obj.GetLabels()
-		if labels == nil {
-			labels = map[string]string{}
-		}
-
-		annos := obj.GetAnnotations()
-		if annos == nil {
-			annos = map[string]string{}
-		}
-
-		// Needed for interop with flux.
-		// Without these the flux controller will refuse to take ownership.
-		annos["meta.helm.sh/release-name"] = rp.GetHelmReleaseName()
-		annos["meta.helm.sh/release-namespace"] = rp.Namespace
-
-		labels["helm.toolkit.fluxcd.io/name"] = rp.GetHelmReleaseName()
-		labels["helm.toolkit.fluxcd.io/namespace"] = rp.Namespace
-
-		obj.SetLabels(labels)
-		obj.SetAnnotations(annos)
-
-		if _, ok := annos["helm.sh/hook"]; ok {
-			log.V(logger.TraceLevel).Info(fmt.Sprintf("skipping helm hook %T: %q", obj, obj.GetName()))
-			continue
-		}
-
-		// TODO: how to handle immutable issues?
-		if err := r.apply(ctx, obj); err != nil {
-			return errors.Wrapf(err, "deploying %T: %q", obj, obj.GetName())
-		}
-
-		log.V(logger.TraceLevel).Info(fmt.Sprintf("deployed %T: %q", obj, obj.GetName()))
-
-		// Record creation
-		created[gvkKey{
-			Key: client.ObjectKeyFromObject(obj),
-			GVK: obj.GetObjectKind().GroupVersionKind(),
-		}] = struct{}{}
-	}
-
-	// If our ObservedGeneration is up to date, .Spec hasn't changed since the
-	// last successful reconciliation so everything that we'd do here is likely
-	// to be a no-op.
-	// This check could likely be hoisted above the deployment loop as well.
-	if rp.Generation == rp.Status.ObservedGeneration && rp.Generation != 0 {
-		log.V(logger.TraceLevel).Info("observed generation is up to date. skipping garbage collection", "generation", rp.Generation, "observedGeneration", rp.Status.ObservedGeneration)
-		return nil
-	}
-
-	// Garbage collect any objects that are no longer needed.
-	if err := r.reconcileGC(ctx, rp, created); err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return r.LifecycleClient.SyncAll(ctx, cloned)
 }
 
-func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *redpandav1alpha2.Redpanda, conditionType string) bool {
-	log := ctrl.LoggerFrom(ctx)
+// reconcilePools is the meat of the controller. It handles creation and scale up/scale down
+// of the given cluster pools. All scale up and update routines can happen concurrently, but
+// every scale down happens a single broker at a time, ending reconciliation early and requeueing
+// the cluster if a decommissioning operation/scale down is currently in progress.
+func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda, pools *lifecycle.PoolTracker) (*rpadmin.AdminAPI, bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcilePools", *cluster))
 
-	redpandaReady := apimeta.IsStatusConditionTrue(rp.Status.Conditions, redpandav1alpha2.ReadyCondition)
-
-	if !(rp.GenerationObserved() || redpandaReady) {
-		log.V(logger.TraceLevel).Info(fmt.Sprintf("redpanda not yet ready. skipping %s reconciliation.", conditionType))
-		apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-			Type:               conditionType,
-			Status:             metav1.ConditionUnknown,
-			ObservedGeneration: rp.Generation,
-			Reason:             "RedpandaNotReady",
-			Message:            "redpanda cluster is not yet ready or up to date",
-		})
-
-		// NB: Redpanda becoming ready and/or observing it's generation will
-		// trigger a re-queue for us.
-		return true
+	if !pools.CheckScale() {
+		logger.V(TraceLevel).Info("scale operation currently underway")
+		// we're not yet ready to scale, so just requeue
+		return nil, true, nil
 	}
 
-	cond := apimeta.FindStatusCondition(rp.Status.Conditions, conditionType)
-	if cond == nil {
-		cond = &metav1.Condition{
-			Type:   conditionType,
-			Status: metav1.ConditionUnknown,
+	logger.V(TraceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
+
+	// first create any pools that don't currently exists
+	for _, set := range pools.ToCreate() {
+		logger.V(TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+
+		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("creating statefulset: %w", err)
 		}
 	}
 
-	recheck := time.Since(cond.LastTransitionTime.Time) > time.Minute
-	previouslySynced := cond.Status == metav1.ConditionTrue
-	generationChanged := cond.ObservedGeneration != 0 && cond.ObservedGeneration < rp.Generation
+	// next scale up any under-provisioned pools and patch them to use the new spec
+	for _, set := range pools.ToScaleUp() {
+		logger.V(TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-	// NB: This controller re-queues fairly frequently as is (Watching STS
-	// which watches Pods), so we're largely relying on that to ensure we eventually run our rechecks.
-	return previouslySynced && !(generationChanged || recheck)
+		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
+		}
+	}
+
+	// now make sure all of the patch any sets that might have changed without affecting the cluster size
+	// here we can just wholesale patch everything
+	for _, set := range pools.RequiresUpdate() {
+		logger.V(TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
+			return nil, false, fmt.Errorf("updating statefulset: %w", err)
+		}
+	}
+
+	admin, health, err := r.fetchClusterHealth(ctx, cluster)
+	if err != nil {
+		return nil, false, fmt.Errorf("fetching cluster health: %w", err)
+	}
+
+	brokerMap := map[string]int{}
+	for _, brokerID := range health.AllNodes {
+		broker, err := admin.Broker(ctx, brokerID)
+		if err != nil {
+			admin.Close()
+			return nil, false, fmt.Errorf("fetching broker: %w", err)
+		}
+
+		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
+		brokerMap[brokerTokens[0]] = brokerID
+	}
+
+	// next scale down any over-provisioned pools, patching them to use the new spec
+	// and decommissioning any nodes as needed
+	for _, set := range pools.ToScaleDown() {
+		requeue, err := r.scaleDown(ctx, admin, cluster, set, brokerMap)
+		admin.Close()
+		return nil, requeue, err
+	}
+
+	// at this point any set that needs to be deleted should have 0 replicas
+	// so we can attempt to delete them all in one pass
+	for _, set := range pools.ToDelete() {
+		logger.V(TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		if err := r.Client.Delete(ctx, set); err != nil {
+			admin.Close()
+			return nil, false, fmt.Errorf("deleting statefulset: %w", err)
+		}
+	}
+
+	// finally, we make sure we roll every pod that is not in-sync with its statefulset
+	rollSet := pools.PodsToRoll()
+	rolled := false
+	for _, pod := range rollSet {
+		shouldRoll, continueExecution := false, false
+
+		if _, ok := brokerMap[pod.GetName()]; !ok {
+			// we don't actually have this broker in the cluster
+			// anymore, which means it's always safe to delete
+			// the pod and continue with the next operations
+			shouldRoll, continueExecution = true, true
+		} else if health.IsHealthy {
+			// TODO: don't just check overall cluster health, but use
+			// scoped API endpoints for rolling a broker
+
+			// roll and halt execution
+			shouldRoll, continueExecution = true, false
+		} else {
+			// see if we can at least roll the next pods
+			shouldRoll, continueExecution = false, true
+		}
+
+		if shouldRoll {
+			rolled = true
+			logger.V(TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+
+			if err := r.Client.Delete(ctx, pod); err != nil {
+				admin.Close()
+				return nil, false, fmt.Errorf("deleting pod: %w", err)
+			}
+		}
+
+		if !continueExecution {
+			// requeue since we just rolled a pod
+			// and we want for the system to stabilize
+			admin.Close()
+			return nil, true, nil
+		}
+	}
+
+	if !rolled && len(rollSet) > 0 {
+		// here we're in a state where we can't currently roll any
+		// pods but we need to, therefore we just reschedule rather
+		// than marking the cluster as quiesced.
+		admin.Close()
+		return nil, true, nil
+	}
+
+	return admin, false, nil
 }
 
 func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI) error {
@@ -481,79 +445,41 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterLicenseValid) {
-		return nil
+func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (*redpandav1alpha2.RedpandaLicenseStatus, error) {
+	if err := r.setupLicense(ctx, rp, admin); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
-	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer client.Close()
-
-	if err = r.setupLicense(ctx, rp, client); err != nil {
-		return errors.WithStack(err)
-	}
-
-	features, err := client.GetEnterpriseFeatures(ctx)
+	features, err := admin.GetEnterpriseFeatures(ctx)
 	if err != nil {
 		if internalclient.IsTerminalClientError(err) {
-			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-				Type:               redpandav1alpha2.ClusterLicenseValid,
-				Status:             metav1.ConditionUnknown,
-				ObservedGeneration: rp.Generation,
-				Reason:             "TerminalError",
-				Message:            err.Error(),
-			})
-
-			return nil
+			status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonTerminalError, err.Error())
+		} else {
+			status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonError, err.Error())
 		}
-		return errors.WithStack(err)
+
+		return nil, errors.WithStack(err)
 	}
 
-	licenseInfo, err := client.GetLicenseInfo(ctx)
+	licenseInfo, err := admin.GetLicenseInfo(ctx)
 	if err != nil {
 		if internalclient.IsTerminalClientError(err) {
-			apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-				Type:               redpandav1alpha2.ClusterLicenseValid,
-				Status:             metav1.ConditionUnknown,
-				ObservedGeneration: rp.Generation,
-				Reason:             "TerminalError",
-				Message:            err.Error(),
-			})
-
-			return nil
+			status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonTerminalError, err.Error())
+		} else {
+			status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonError, err.Error())
 		}
-		return errors.WithStack(err)
-	}
 
-	var message string
-	var reason string
-	status := metav1.ConditionUnknown
+		return nil, errors.WithStack(err)
+	}
 
 	switch features.LicenseStatus {
 	case rpadmin.LicenseStatusExpired:
-		status = metav1.ConditionFalse
-		reason = "LicenseExpired"
-		message = "Expired"
+		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired, "Expired")
 	case rpadmin.LicenseStatusNotPresent:
-		status = metav1.ConditionFalse
-		reason = "LicenseNotPresent"
-		message = "Not Present"
+		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent, "Not Present")
 	case rpadmin.LicenseStatusValid:
-		status = metav1.ConditionTrue
-		reason = "LicenseValid"
-		message = "Valid"
+		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonValid)
 	}
-
-	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-		Type:               redpandav1alpha2.ClusterLicenseValid,
-		Status:             status,
-		ObservedGeneration: rp.Generation,
-		Reason:             reason,
-		Message:            message,
-	})
 
 	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
 		inUseFeatures := []string{}
@@ -588,57 +514,50 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 		return status
 	}
 
-	rp.Status.LicenseStatus = licenseStatus()
+	return licenseStatus(), nil
+}
+
+func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI, status *lifecycle.ClusterStatus) error {
+	overview, err := admin.GetHealthOverview(ctx)
+	if err != nil {
+		if internalclient.IsTerminalClientError(err) {
+			status.Status.SetHealthy(statuses.ClusterHealthyReasonTerminalError, err.Error())
+		} else {
+			status.Status.SetHealthy(statuses.ClusterHealthyReasonError, err.Error())
+		}
+
+		return errors.WithStack(err)
+	}
+
+	if overview.IsHealthy {
+		status.Status.SetHealthy(statuses.ClusterHealthyReasonHealthy)
+	} else {
+		// TODO: give more specific message here
+		status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, "Cluster is not healthy")
+	}
 
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterConfigSynced) {
-		return nil
-	}
-
-	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer client.Close()
-
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
 	config, err := r.clusterConfigFor(ctx, rp)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", false, errors.WithStack(err)
 	}
 
 	usersTXT, err := r.usersTXTFor(ctx, rp)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", false, errors.WithStack(err)
 	}
 
-	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
+	syncer := syncclusterconfig.Syncer{Client: admin, Mode: syncclusterconfig.SyncerModeAdditive}
 	configStatus, err := syncer.Sync(ctx, config, usersTXT)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", false, errors.WithStack(err)
 	}
-	// As some configs won't be respected until all brokers have been restarted,
-	// ClusterConfigSynced won't be reported as true until the config has been
-	// synchronized AND no broker restarts are required.
-	// `Reason` will indicate the difference between needing to sync a condition
-	// and waiting for a Broker restarts.
-	condition := metav1.ConditionTrue
-	reason := "ConfigSynced"
-	if configStatus.NeedsRestart {
-		condition = metav1.ConditionFalse
-		reason = "RestartRequired"
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), metav1.Condition{
-		Type:               redpandav1alpha2.ClusterConfigSynced,
-		Status:             condition,
-		ObservedGeneration: rp.Generation,
-		Reason:             reason,
-		Message:            fmt.Sprintf("ClusterConfig with Hash %s", configStatus.PropertiesThatNeedRestartHash),
-	})
 
-	return nil
+	hash := ""
+	return hash, configStatus.NeedsRestart, nil
 }
 
 func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
@@ -704,77 +623,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	return desired, nil
 }
 
-func (r *RedpandaReconciler) reconcileGC(ctx context.Context, rp *redpandav1alpha2.Redpanda, created map[gvkKey]struct{}) error {
-	log := ctrl.LoggerFrom(ctx)
-
-	types, err := allListTypes(r.Client)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	// For all types in the redpanda helm chart,
-	var toDelete []kube.Object
-	for _, typ := range types {
-		// Find all objects that have flux's internal label selector.
-		if err := r.Client.List(ctx, typ, client.InNamespace(rp.Namespace), client.MatchingLabels{
-			"helm.toolkit.fluxcd.io/name":      rp.GetHelmReleaseName(),
-			"helm.toolkit.fluxcd.io/namespace": rp.Namespace,
-		}); err != nil {
-			// Some types from 3rd parties (monitoring, cert-manager) may not
-			// exists. If they don't skip over them without erroring out.
-			if apimeta.IsNoMatchError(err) {
-				log.Info("Skipping unknown GVK", "gvk", fmt.Sprintf("%T", typ))
-				continue
-			}
-			return errors.WithStack(err)
-		}
-
-		if err := apimeta.EachListItem(typ, func(o runtime.Object) error {
-			obj := o.(client.Object)
-
-			gvk, err := r.Client.GroupVersionKindFor(obj)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			key := gvkKey{Key: client.ObjectKeyFromObject(obj), GVK: gvk}
-
-			isOwned := slices.ContainsFunc(obj.GetOwnerReferences(), func(owner metav1.OwnerReference) bool {
-				return owner.UID == rp.UID
-			})
-
-			// If we've just created this object, don't consider it for
-			// deletion.
-			if _, ok := created[key]; ok {
-				return nil
-			}
-
-			// Similarly, if the object isn't owned by `rp`, don't consider it
-			// for deletion.
-			if !isOwned {
-				return nil
-			}
-
-			toDelete = append(toDelete, obj)
-
-			return nil
-		}); err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	log.V(logger.TraceLevel).Info(fmt.Sprintf("identified %d objects to gc", len(toDelete)))
-
-	var errs []error
-	for _, obj := range toDelete {
-		if err := r.Client.Delete(ctx, obj); err != nil {
-			errs = append(errs, errors.Wrapf(err, "gc'ing %T: %s", obj, obj.GetName()))
-		}
-	}
-
-	return errors.Join(errs...)
-}
-
 func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpandav1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
 	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
@@ -799,39 +647,139 @@ func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpanda
 	return len(health.AllNodes) > desiredReplicas, nil
 }
 
-func (r *RedpandaReconciler) reconcileDelete(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	if controllerutil.ContainsFinalizer(rp, FinalizerKey) {
-		controllerutil.RemoveFinalizer(rp, FinalizerKey)
-		if err := r.Client.Update(ctx, rp); err != nil {
-			return errors.WithStack(err)
+// syncStatus updates the status of the Redpanda cluster at the end of reconciliation when
+// no more reconciliation should occur.
+func (r *RedpandaReconciler) syncStatus(ctx context.Context, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
+	return r.syncStatusErr(ctx, nil, status, cluster)
+}
+
+// syncStatus updates the status of the Redpanda cluster when an error has occurred in the
+// reconciliation process and the current loop should be aborted but retried.
+func (r *RedpandaReconciler) syncStatusErr(ctx context.Context, err error, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
+	if r.LifecycleClient.SetClusterStatus(cluster, status) {
+		syncErr := r.Client.Status().Update(ctx, cluster)
+		err = errors.Join(syncErr, err)
+	}
+
+	return ignoreConflict(err)
+}
+
+func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
+	var err error
+	if r.LifecycleClient.SetClusterStatus(cluster, status) {
+		err = r.Client.Status().Update(ctx, cluster)
+	}
+
+	result, err := ignoreConflict(err)
+	result.Requeue = true
+	result.RequeueAfter = requeueTimeout
+
+	return result, err
+}
+
+func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
+	var health rpadmin.ClusterHealthOverview
+
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, cluster)
+	if err != nil {
+		return nil, health, err
+	}
+	health, err = admin.GetHealthOverview(ctx)
+	if err != nil {
+		return nil, health, err
+	}
+
+	return admin, health, nil
+}
+
+// scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
+// decommissioning the broker with the last pod ordinal and then patching the statefulset with
+// a single less replica.
+func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *redpandav1alpha2.Redpanda, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
+	logger.V(TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	brokerID, ok := brokerMap[set.LastPod.GetName()]
+	if ok {
+		// decommission if we have a brokerID, if not
+		// then the node has already been fully removed from
+		// the cluster and we can go ahead and delete the pod
+		// through patching the statefulset
+
+		requeue, err := r.decommissionBroker(ctx, admin, cluster, set, brokerID)
+		if err != nil {
+			return false, err
+		}
+
+		if requeue {
+			return true, nil
 		}
 	}
-	return nil
-}
 
-func (r *RedpandaReconciler) patchRedpandaStatus(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	key := client.ObjectKeyFromObject(rp)
-	latest := &redpandav1alpha2.Redpanda{}
-	if err := r.Client.Get(ctx, key, latest); err != nil {
-		return errors.WithStack(err)
+	logger.V(TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	// now patch the statefulset to remove the pod
+	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
+		return false, fmt.Errorf("scaling down statefulset: %w", err)
 	}
-	// HACK: Disable optimistic locking. Technically, the correct way to do
-	// this is to set both objects' ResourceVersion to "". It's a waste of
-	// resources deep copy rp, so we just copy it over.
-	latest.ResourceVersion = rp.ResourceVersion
-	return r.Client.Status().Patch(ctx, rp, client.MergeFrom(latest))
+	// we only do a statefulset at a time, waiting for them to
+	// become stable first
+	return true, nil
 }
 
-func (r *RedpandaReconciler) apply(ctx context.Context, obj client.Object) error {
-	gvk, err := r.Client.GroupVersionKindFor(obj)
+// decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
+func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *redpandav1alpha2.Redpanda, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].decommissionBroker", *cluster))
+	logger.V(TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 	if err != nil {
-		return errors.WithStack(err)
+		if strings.Contains(err.Error(), "is not decommissioning") {
+			logger.V(TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
+				return false, fmt.Errorf("decommissioning broker: %w", err)
+			}
+
+			return true, nil
+		} else {
+			return false, fmt.Errorf("fetching decommission status: %w", err)
+		}
+	}
+	if !decommissionStatus.Finished {
+		logger.V(TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+		// just requeue since we're still decommissioning
+		return true, nil
 	}
 
-	obj.SetManagedFields(nil)
-	obj.GetObjectKind().SetGroupVersionKind(gvk)
+	// we're finished
+	return false, nil
+}
 
-	return errors.WithStack(r.Client.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("redpanda-operator")))
+// ignoreConflict ignores errors that happen due to optimistic locking
+// checks. This is safe because it means that the client-side cache
+// hasn't yet received the update of the resource from the server, and
+// once it does reconciliation will be retriggered. To be safe, we
+// also explicitly trigger a requeue.
+func ignoreConflict(err error) (ctrl.Result, error) {
+	if apierrors.IsConflict(err) {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{}, err
+}
+
+func validateClusterParameters(rp *redpandav1alpha2.Redpanda) error {
+	// Upgrade checks. Don't reconcile if UseFlux is true or if ChartRef is set.
+	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux {
+		return errors.New("useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
+	}
+
+	if rp.Spec.ChartRef.ChartVersion != "" {
+		return errors.New("Specifying chartVersion is no longer supported. Please downgrade or unset `chartRef.chartVersion`")
+	}
+
+	return nil
 }
 
 func isRedpandaManaged(ctx context.Context, redpandaCluster *redpandav1alpha2.Redpanda) bool {
@@ -843,58 +791,4 @@ func isRedpandaManaged(ctx context.Context, redpandaCluster *redpandav1alpha2.Re
 		return false
 	}
 	return true
-}
-
-func checkDeploymentsStatus(deployments []*appsv1.Deployment) (string, bool) {
-	return checkReplicasForList(func(o *appsv1.Deployment) (int32, int32, int32, int32) {
-		return o.Status.UpdatedReplicas, o.Status.AvailableReplicas, o.Status.ReadyReplicas, ptr.Deref(o.Spec.Replicas, 0)
-	}, deployments, "Deployment")
-}
-
-func checkStatefulSetStatus(ss []*appsv1.StatefulSet) (string, bool) {
-	return checkReplicasForList(func(o *appsv1.StatefulSet) (int32, int32, int32, int32) {
-		return o.Status.UpdatedReplicas, o.Status.AvailableReplicas, o.Status.ReadyReplicas, ptr.Deref(o.Spec.Replicas, 0)
-	}, ss, "StatefulSet")
-}
-
-type replicasExtractor[T client.Object] func(o T) (updated, available, ready, total int32)
-
-func checkReplicasForList[T client.Object](fn replicasExtractor[T], list []T, resource string) (string, bool) {
-	var notReady sort.StringSlice
-	for _, item := range list {
-		updated, available, ready, total := fn(item)
-
-		if updated != total || available != total || ready != total {
-			name := client.ObjectKeyFromObject(item).String()
-			item := fmt.Sprintf("%q (updated/available/ready/total: %d/%d/%d/%d)", name, updated, available, ready, total)
-			notReady = append(notReady, item)
-		}
-	}
-	if len(notReady) > 0 {
-		notReady.Sort()
-
-		return fmt.Sprintf("Not all %s replicas updated, available, and ready for [%s]", resource, strings.Join(notReady, "; ")), false
-	}
-	return "", true
-}
-
-func allListTypes(c client.Client) ([]client.ObjectList, error) {
-	// TODO: iterators would be really cool here.
-	var types []client.ObjectList
-	for _, t := range redpanda.Types() {
-		gvk, err := c.GroupVersionKindFor(t)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		gvk.Kind += "List"
-
-		list, err := c.Scheme().New(gvk)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		types = append(types, list.(client.ObjectList))
-	}
-	return types, nil
 }

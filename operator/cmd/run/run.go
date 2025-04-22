@@ -51,6 +51,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -570,11 +571,11 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:    mgr.GetConfig(),
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("RedpandaReconciler"),
-			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			KubeConfig:      mgr.GetConfig(),
+			Client:          mgr.GetClient(),
+			EventRecorder:   mgr.GetEventRecorderFor("RedpandaReconciler"),
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
+			ClientFactory:   internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
 			OperatorImage: redpandacontrollers.Image{
 				Repository: configuratorBaseImage,
 				Tag:        configuratorTag,

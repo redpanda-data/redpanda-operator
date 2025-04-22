@@ -43,6 +43,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -204,11 +205,11 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:    k8sManager.GetConfig(),
-		Client:        k8sManager.GetClient(),
-		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		Scheme:        k8sManager.GetScheme(),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		KubeConfig:      k8sManager.GetConfig(),
+		Client:          k8sManager.GetClient(),
+		ClientFactory:   internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
+		LifecycleClient: lifecycle.NewResourceClient(k8sManager, lifecycle.V2ResourceManagers),
+		EventRecorder:   k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

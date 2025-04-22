@@ -51,9 +51,15 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpanda
 
 	resources := []client.Object{}
 
-	// filter out the statefulsets
+	// filter out the statefulsets and hooks
 	for _, object := range rendered {
-		if !isNodePool(object) {
+		isHook := false
+		annotations := object.GetAnnotations()
+		if annotations != nil {
+			_, isHook = annotations["helm.sh/hook"]
+		}
+
+		if !isNodePool(object) && !isHook {
 			resources = append(resources, object)
 		}
 	}

@@ -72,6 +72,29 @@ func (p *PoolTracker) ExistingStatefulSets() []string {
 	return sets
 }
 
+// PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
+func (p *PoolTracker) PoolStatuses() []PoolStatus {
+	sets := []PoolStatus{}
+	for nn, pool := range p.existingPools {
+		desiredReplicas := ptr.Deref(pool.set.Spec.Replicas, 0)
+		condemnedReplicas := pool.set.Status.Replicas - desiredReplicas
+		if condemnedReplicas < 0 {
+			condemnedReplicas = 0
+		}
+		sets = append(sets, PoolStatus{
+			Name:              nn.Name,
+			Replicas:          pool.set.Status.Replicas,
+			DesiredReplicas:   desiredReplicas,
+			ReadyReplicas:     pool.set.Status.ReadyReplicas,
+			RunningReplicas:   pool.set.Status.AvailableReplicas,
+			UpToDateReplicas:  pool.set.Status.CurrentReplicas,
+			OutOfDateReplicas: pool.set.Status.Replicas - pool.set.Status.CurrentReplicas,
+			CondemnedReplicas: condemnedReplicas,
+		})
+	}
+	return sets
+}
+
 // DesiredStatefulSets returns a list of the names of the desired StatefulSets tracked by the PoolTracker.
 func (p *PoolTracker) DesiredStatefulSets() []string {
 	sets := []string{}

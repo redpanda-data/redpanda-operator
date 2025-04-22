@@ -46,6 +46,7 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -636,11 +637,11 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			KubeConfig:    mgr.GetConfig(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: s.clientFactory,
+			Client:          mgr.GetClient(),
+			KubeConfig:      mgr.GetConfig(),
+			EventRecorder:   mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory:   s.clientFactory,
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
 			OperatorImage: redpanda.Image{
 				Repository: "localhost/redpanda-operator",
 				Tag:        "dev",
