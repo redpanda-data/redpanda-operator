@@ -14,12 +14,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,7 +113,9 @@ type RedpandaReconciler struct {
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr)
 
-	r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{})
+	if err := r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{}); err != nil {
+		return err
+	}
 
 	return builder.Complete(r)
 }
@@ -556,8 +558,8 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 		return "", false, errors.WithStack(err)
 	}
 
-	hash := ""
-	return hash, configStatus.NeedsRestart, nil
+	// TODO: this needs to be updated when the hashing code lands
+	return strconv.FormatInt(configStatus.Version, 10), configStatus.NeedsRestart, nil
 }
 
 func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
@@ -621,30 +623,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	}
 
 	return desired, nil
-}
-
-func (r *RedpandaReconciler) needsDecommission(ctx context.Context, rp *redpandav1alpha2.Redpanda, stses []*appsv1.StatefulSet) (bool, error) {
-	client, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	defer client.Close()
-
-	health, err := client.GetHealthOverview(ctx)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	desiredReplicas := 0
-	for _, sts := range stses {
-		desiredReplicas += int(ptr.Deref(sts.Spec.Replicas, 0))
-	}
-
-	if len(health.AllNodes) == 0 || desiredReplicas == 0 {
-		return false, nil
-	}
-
-	return len(health.AllNodes) > desiredReplicas, nil
 }
 
 // syncStatus updates the status of the Redpanda cluster at the end of reconciliation when
