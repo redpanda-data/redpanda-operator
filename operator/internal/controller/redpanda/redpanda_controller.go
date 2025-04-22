@@ -384,7 +384,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, values)
+	}, rp.AsValues())
 	if err != nil {
 		return errors.WithStack(err)
 	}
