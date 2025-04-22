@@ -35,15 +35,13 @@
       transient: true
       description: >
         This reason is used when a cluster has only been partially reconciled and we have early returned
-        due to a retryable error occurring prior to applying the desired cluster state. It should only be
-        set on the conditions currently in scope for the current cluster state, any subsequently derived
-        conditions should use "StillReconciling".
+        due to a retryable error occurring prior to applying the desired cluster state. If it is set on
+        any non-final condition, then the condition "Quiesced" will be False with a reason of "SillReconciling".
     - name: TerminalError
       description: >
         This reason is used when a cluster has only been partially reconciled and we have early returned
-        due to a known terminal error occurring prior to applying the desired cluster state. Any conditions
-        not already derived should also receive the "TerminalError" reason. The cluster should also no longer
-        be reconciled until it or an underlying resource is changed.
+        due to a known terminal error occurring prior to applying the desired cluster state. Because the cluster
+        should no longer be reconciled when a terminal error occurs, the "Quiesced" status should be set to True.
   # conditions are all of the conditions that will be added to the struct
   conditions:
     - name: Ready
@@ -75,13 +73,16 @@
         - name: Ready
           message: Cluster ready to service requests
           description: >
-            This reason is used with the "Ready" condition when the condition is True.
+            This reason is used with the "Ready" condition when it evaluates to True because
+            a cluster can service traffic.
         - name: NotReady
           description: >
-            This reason is used with the "Ready" condition when a cluster is not ready.
+            This reason is used with the "Ready" condition when it evaluates to False because
+            a cluster is not ready to service traffic.
     - name: Healthy
       description: >
-        This condition indicates whether a cluster is fully healthy.
+        This condition indicates whether a cluster is healthy as defined by the Redpanda Admin
+        API's cluster health endpoint.
 
         This condition defaults to "Unknown" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
@@ -90,10 +91,12 @@
         - name: Healthy
           message: Cluster is healthy
           description: >
-            This reason is used with the "Healthy" condition when the condition is True.
+            This reason is used with the "Healthy" condition when it evaluates to True because
+            a cluster's health endpoint says the cluster is healthy.
         - name: NotHealthy
           description: >
-            This reason is used with the "Healthy" condition when a cluster is not healthy.
+            This reason is used with the "Healthy" condition when it evaluates to False because
+            a cluster's health endpoint says the cluster is not healthy.
     - name: LicenseValid
       printerColumns:
         - name: License
@@ -108,26 +111,30 @@
         - name: Valid
           message: Cluster has a valid license
           description: >
-            This reason is used with the "LicenseValid" condition when the condition is True.
+            This reason is used with the "LicenseValid" condition when it evaluates to True because
+            a cluster has a valid license.
         - name: Expired
           description: >
-            This reason is used with the "LicenseValid" condition when a cluster has an expired license.
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a cluster has an expired license.
         - name: NotPresent
           description: >
-            This reason is used with the "LicenseValid" condition when a cluster has no license.
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a cluster has no license.
     - name: ResourcesSynced
       description: >
-        This condition indicates whether cluster configuration parameters
-        have currently been applied to a cluster for the given generation.
+        This condition indicates whether the Kubernetes resources for a cluster
+        have been synchronized.
 
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
       reasons:
         - name: Synced
-          message: Cluster configuration successfully applied
+          message: Cluster resources successfully synced
           description: >
-            This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
+            This reason is used with the "ResourcesSynced" condition when it evaluates to True because
+            a cluster has had all of its Kubernetes resources synced.
     - name: ConfigurationApplied
       description: >
         This condition indicates whether cluster configuration parameters
@@ -140,7 +147,8 @@
         - name: Applied
           message: Cluster configuration successfully applied
           description: >
-            This reason is used with the "ClusterConfigurationApplied" condition when the condition is True.
+            This reason is used with the "ConfigurationApplied" condition when it evaluates to True because
+            a cluster has had its cluster configuration parameters applied.
     - name: Quiesced
       # final means that this state basically can only be set when all other standard fields are set, you never
       # have to set it manually and it is always calculated in the internal call to Conditions().
@@ -160,13 +168,15 @@
         - name: Quiesced
           message: Cluster reconciliation finished
           description: >
-            This reason is used with the "Quiesced" condition when the condition is True.
+            This reason is used with the "Quiesced" condition when it evaluates to True because
+            the operator has finished reconciling the cluster at its current generation.
         - name: StillReconciling
           message: Cluster still reconciling
           description: >
-            This reason is used with the "Quiesced" condition when a cluster has only been
-            partially reconciled and we have not fully completed reconciliation. This
-            happens when, for example, we're doing a cluster scaling operation.
+            This reason is used with the "Quiesced" condition when it evaluates to False because
+            the operator has not finished reconciling the cluster at its current generation.
+            This can happen when, for example, we're doing a cluster scaling operation or a non-terminal
+            error has been encountered during reconciliation.
     - name: Stable
       # rollup specifies this condition as a "rolled-up" condition, meaning it's calculated based
       # off of all referenced conditions being true.
@@ -174,7 +184,7 @@
       # Rolled-up conditions are calculated at the very end of our Conditions() call and shouldn't
       # ever reference other rolled-up conditions. Like final conditions, they must have two reason
       # one when the upstream conditions all evaluate to true, one for when they don't.
-      rollup: [ Quiesced, Ready, LicenseValid, ResourcesSynced, ConfigurationApplied ]
+      rollup: [ Quiesced, Ready, ResourcesSynced, ConfigurationApplied ]
       description: >
         This condition is used as a roll-up status for any sort of automation such as
         terraform.
@@ -186,9 +196,10 @@
         - name: Stable
           message: Cluster Stable
           description: >
-            This reason is used with the "Stable" condition when the condition is True.
+            This reason is used with the "Stable" condition when it evaluates to True because
+            all dependent conditions also evaluate to True.
         - name: Unstable
           message: Cluster Unstable
           description: >
-            This reason is used with the "Stable" condition when a cluster has not yet
-            stabilized for automation purposes.
+            This reason is used with the "Stable" condition when it evaluates to True because
+            at least one dependent condition evaluates to False.

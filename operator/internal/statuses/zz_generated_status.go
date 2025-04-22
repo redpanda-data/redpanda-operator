@@ -31,8 +31,8 @@ import (
 // must be set by a controller when it subsequently reconciles a cluster.
 type ClusterReadyCondition string
 
-// ClusterHealthyCondition - This condition indicates whether a cluster is fully
-// healthy.
+// ClusterHealthyCondition - This condition indicates whether a cluster is
+// healthy as defined by the Redpanda Admin API's cluster health endpoint.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a cluster.
@@ -45,9 +45,8 @@ type ClusterHealthyCondition string
 // must be set by a controller when it subsequently reconciles a cluster.
 type ClusterLicenseValidCondition string
 
-// ClusterResourcesSyncedCondition - This condition indicates whether cluster
-// configuration parameters have currently been applied to a cluster for the
-// given generation.
+// ClusterResourcesSyncedCondition - This condition indicates whether the
+// Kubernetes resources for a cluster have been synchronized.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
@@ -85,48 +84,49 @@ const (
 	// must be set by a controller when it subsequently reconciles a cluster.
 	ClusterReady = "Ready"
 	// ClusterReadyReasonReady - This reason is used with the "Ready" condition when
-	// the condition is True.
+	// it evaluates to True because a cluster can service traffic.
 	ClusterReadyReasonReady ClusterReadyCondition = "Ready"
 	// ClusterReadyReasonNotReady - This reason is used with the "Ready" condition
-	// when a cluster is not ready.
+	// when it evaluates to False because a cluster is not ready to service traffic.
 	ClusterReadyReasonNotReady ClusterReadyCondition = "NotReady"
 	// ClusterReadyReasonError - This reason is used when a cluster has only been
 	// partially reconciled and we have early returned due to a retryable error
-	// occurring prior to applying the desired cluster state. It should only be set
-	// on the conditions currently in scope for the current cluster state, any
-	// subsequently derived conditions should use "StillReconciling".
+	// occurring prior to applying the desired cluster state. If it is set on any
+	// non-final condition, then the condition "Quiesced" will be False with a
+	// reason of "SillReconciling".
 	ClusterReadyReasonError ClusterReadyCondition = "Error"
 	// ClusterReadyReasonTerminalError - This reason is used when a cluster has only
 	// been partially reconciled and we have early returned due to a known terminal
-	// error occurring prior to applying the desired cluster state. Any conditions
-	// not already derived should also receive the "TerminalError" reason. The
-	// cluster should also no longer be reconciled until it or an underlying
-	// resource is changed.
+	// error occurring prior to applying the desired cluster state. Because the
+	// cluster should no longer be reconciled when a terminal error occurs, the
+	// "Quiesced" status should be set to True.
 	ClusterReadyReasonTerminalError ClusterReadyCondition = "TerminalError"
 
-	// ClusterHealthy - This condition indicates whether a cluster is fully healthy.
+	// ClusterHealthy - This condition indicates whether a cluster is healthy as
+	// defined by the Redpanda Admin API's cluster health endpoint.
 	//
 	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
 	// must be set by a controller when it subsequently reconciles a cluster.
 	ClusterHealthy = "Healthy"
 	// ClusterHealthyReasonHealthy - This reason is used with the "Healthy"
-	// condition when the condition is True.
+	// condition when it evaluates to True because a cluster's health endpoint says
+	// the cluster is healthy.
 	ClusterHealthyReasonHealthy ClusterHealthyCondition = "Healthy"
 	// ClusterHealthyReasonNotHealthy - This reason is used with the "Healthy"
-	// condition when a cluster is not healthy.
+	// condition when it evaluates to False because a cluster's health endpoint says
+	// the cluster is not healthy.
 	ClusterHealthyReasonNotHealthy ClusterHealthyCondition = "NotHealthy"
 	// ClusterHealthyReasonError - This reason is used when a cluster has only been
 	// partially reconciled and we have early returned due to a retryable error
-	// occurring prior to applying the desired cluster state. It should only be set
-	// on the conditions currently in scope for the current cluster state, any
-	// subsequently derived conditions should use "StillReconciling".
+	// occurring prior to applying the desired cluster state. If it is set on any
+	// non-final condition, then the condition "Quiesced" will be False with a
+	// reason of "SillReconciling".
 	ClusterHealthyReasonError ClusterHealthyCondition = "Error"
 	// ClusterHealthyReasonTerminalError - This reason is used when a cluster has
 	// only been partially reconciled and we have early returned due to a known
-	// terminal error occurring prior to applying the desired cluster state. Any
-	// conditions not already derived should also receive the "TerminalError"
-	// reason. The cluster should also no longer be reconciled until it or an
-	// underlying resource is changed.
+	// terminal error occurring prior to applying the desired cluster state. Because
+	// the cluster should no longer be reconciled when a terminal error occurs, the
+	// "Quiesced" status should be set to True.
 	ClusterHealthyReasonTerminalError ClusterHealthyCondition = "TerminalError"
 
 	// ClusterLicenseValid - This condition indicates whether a cluster has a valid
@@ -136,50 +136,50 @@ const (
 	// must be set by a controller when it subsequently reconciles a cluster.
 	ClusterLicenseValid = "LicenseValid"
 	// ClusterLicenseValidReasonValid - This reason is used with the "LicenseValid"
-	// condition when the condition is True.
+	// condition when it evaluates to True because a cluster has a valid license.
 	ClusterLicenseValidReasonValid ClusterLicenseValidCondition = "Valid"
 	// ClusterLicenseValidReasonExpired - This reason is used with the
-	// "LicenseValid" condition when a cluster has an expired license.
+	// "LicenseValid" condition when it evaluates to False because a cluster has an
+	// expired license.
 	ClusterLicenseValidReasonExpired ClusterLicenseValidCondition = "Expired"
 	// ClusterLicenseValidReasonNotPresent - This reason is used with the
-	// "LicenseValid" condition when a cluster has no license.
+	// "LicenseValid" condition when it evaluates to False because a cluster has no
+	// license.
 	ClusterLicenseValidReasonNotPresent ClusterLicenseValidCondition = "NotPresent"
 	// ClusterLicenseValidReasonError - This reason is used when a cluster has only
 	// been partially reconciled and we have early returned due to a retryable error
-	// occurring prior to applying the desired cluster state. It should only be set
-	// on the conditions currently in scope for the current cluster state, any
-	// subsequently derived conditions should use "StillReconciling".
+	// occurring prior to applying the desired cluster state. If it is set on any
+	// non-final condition, then the condition "Quiesced" will be False with a
+	// reason of "SillReconciling".
 	ClusterLicenseValidReasonError ClusterLicenseValidCondition = "Error"
 	// ClusterLicenseValidReasonTerminalError - This reason is used when a cluster
 	// has only been partially reconciled and we have early returned due to a known
-	// terminal error occurring prior to applying the desired cluster state. Any
-	// conditions not already derived should also receive the "TerminalError"
-	// reason. The cluster should also no longer be reconciled until it or an
-	// underlying resource is changed.
+	// terminal error occurring prior to applying the desired cluster state. Because
+	// the cluster should no longer be reconciled when a terminal error occurs, the
+	// "Quiesced" status should be set to True.
 	ClusterLicenseValidReasonTerminalError ClusterLicenseValidCondition = "TerminalError"
 
-	// ClusterResourcesSynced - This condition indicates whether cluster
-	// configuration parameters have currently been applied to a cluster for the
-	// given generation.
+	// ClusterResourcesSynced - This condition indicates whether the Kubernetes
+	// resources for a cluster have been synchronized.
 	//
 	// This condition defaults to "False" with a reason of "NotReconciled" and must
 	// be set by a controller when it subsequently reconciles a cluster.
 	ClusterResourcesSynced = "ResourcesSynced"
 	// ClusterResourcesSyncedReasonSynced - This reason is used with the
-	// "ClusterConfigurationApplied" condition when the condition is True.
+	// "ResourcesSynced" condition when it evaluates to True because a cluster has
+	// had all of its Kubernetes resources synced.
 	ClusterResourcesSyncedReasonSynced ClusterResourcesSyncedCondition = "Synced"
 	// ClusterResourcesSyncedReasonError - This reason is used when a cluster has
 	// only been partially reconciled and we have early returned due to a retryable
-	// error occurring prior to applying the desired cluster state. It should only
-	// be set on the conditions currently in scope for the current cluster state,
-	// any subsequently derived conditions should use "StillReconciling".
+	// error occurring prior to applying the desired cluster state. If it is set on
+	// any non-final condition, then the condition "Quiesced" will be False with a
+	// reason of "SillReconciling".
 	ClusterResourcesSyncedReasonError ClusterResourcesSyncedCondition = "Error"
 	// ClusterResourcesSyncedReasonTerminalError - This reason is used when a
 	// cluster has only been partially reconciled and we have early returned due to
 	// a known terminal error occurring prior to applying the desired cluster state.
-	// Any conditions not already derived should also receive the "TerminalError"
-	// reason. The cluster should also no longer be reconciled until it or an
-	// underlying resource is changed.
+	// Because the cluster should no longer be reconciled when a terminal error
+	// occurs, the "Quiesced" status should be set to True.
 	ClusterResourcesSyncedReasonTerminalError ClusterResourcesSyncedCondition = "TerminalError"
 
 	// ClusterConfigurationApplied - This condition indicates whether cluster
@@ -190,21 +190,20 @@ const (
 	// be set by a controller when it subsequently reconciles a cluster.
 	ClusterConfigurationApplied = "ConfigurationApplied"
 	// ClusterConfigurationAppliedReasonApplied - This reason is used with the
-	// "ClusterConfigurationApplied" condition when the condition is True.
+	// "ConfigurationApplied" condition when it evaluates to True because a cluster
+	// has had its cluster configuration parameters applied.
 	ClusterConfigurationAppliedReasonApplied ClusterConfigurationAppliedCondition = "Applied"
 	// ClusterConfigurationAppliedReasonError - This reason is used when a cluster
 	// has only been partially reconciled and we have early returned due to a
-	// retryable error occurring prior to applying the desired cluster state. It
-	// should only be set on the conditions currently in scope for the current
-	// cluster state, any subsequently derived conditions should use
-	// "StillReconciling".
+	// retryable error occurring prior to applying the desired cluster state. If it
+	// is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "SillReconciling".
 	ClusterConfigurationAppliedReasonError ClusterConfigurationAppliedCondition = "Error"
 	// ClusterConfigurationAppliedReasonTerminalError - This reason is used when a
 	// cluster has only been partially reconciled and we have early returned due to
 	// a known terminal error occurring prior to applying the desired cluster state.
-	// Any conditions not already derived should also receive the "TerminalError"
-	// reason. The cluster should also no longer be reconciled until it or an
-	// underlying resource is changed.
+	// Because the cluster should no longer be reconciled when a terminal error
+	// occurs, the "Quiesced" status should be set to True.
 	ClusterConfigurationAppliedReasonTerminalError ClusterConfigurationAppliedCondition = "TerminalError"
 
 	// ClusterQuiesced - This condition is used as to indicate that the cluster is
@@ -215,12 +214,14 @@ const (
 	// be set by a controller when it subsequently reconciles a cluster.
 	ClusterQuiesced = "Quiesced"
 	// ClusterQuiescedReasonQuiesced - This reason is used with the "Quiesced"
-	// condition when the condition is True.
+	// condition when it evaluates to True because the operator has finished
+	// reconciling the cluster at its current generation.
 	ClusterQuiescedReasonQuiesced ClusterQuiescedCondition = "Quiesced"
 	// ClusterQuiescedReasonStillReconciling - This reason is used with the
-	// "Quiesced" condition when a cluster has only been partially reconciled and we
-	// have not fully completed reconciliation. This happens when, for example,
-	// we're doing a cluster scaling operation.
+	// "Quiesced" condition when it evaluates to False because the operator has not
+	// finished reconciling the cluster at its current generation. This can happen
+	// when, for example, we're doing a cluster scaling operation or a non-terminal
+	// error has been encountered during reconciliation.
 	ClusterQuiescedReasonStillReconciling ClusterQuiescedCondition = "StillReconciling"
 
 	// ClusterStable - This condition is used as a roll-up status for any sort of
@@ -230,10 +231,12 @@ const (
 	// be set by a controller when it subsequently reconciles a cluster.
 	ClusterStable = "Stable"
 	// ClusterStableReasonStable - This reason is used with the "Stable" condition
-	// when the condition is True.
+	// when it evaluates to True because all dependent conditions also evaluate to
+	// True.
 	ClusterStableReasonStable ClusterStableCondition = "Stable"
 	// ClusterStableReasonUnstable - This reason is used with the "Stable" condition
-	// when a cluster has not yet stabilized for automation purposes.
+	// when it evaluates to True because at least one dependent condition evaluates
+	// to False.
 	ClusterStableReasonUnstable ClusterStableCondition = "Unstable"
 )
 
@@ -444,7 +447,7 @@ func (s *ClusterStatus) SetResourcesSynced(reason ClusterResourcesSyncedConditio
 	switch reason {
 	case ClusterResourcesSyncedReasonSynced:
 		if message == "" {
-			message = "Cluster configuration successfully applied"
+			message = "Cluster resources successfully synced"
 		}
 		status = metav1.ConditionTrue
 	case ClusterResourcesSyncedReasonError:
@@ -531,7 +534,7 @@ func (s *ClusterStatus) getQuiesced() metav1.Condition {
 
 func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Condition {
 	allConditionsFoundAndTrue := true
-	for _, condition := range []string{ClusterQuiesced, ClusterReady, ClusterLicenseValid, ClusterResourcesSynced, ClusterConfigurationApplied} {
+	for _, condition := range []string{ClusterQuiesced, ClusterReady, ClusterResourcesSynced, ClusterConfigurationApplied} {
 		conditionFoundAndTrue := false
 		for _, setCondition := range conditions {
 			if setCondition.Type == condition {

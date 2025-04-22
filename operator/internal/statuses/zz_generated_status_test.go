@@ -366,20 +366,6 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
-		"Rollup Conditions: Stable, False Condition: LicenseValid": {
-			condition:      ClusterStable,
-			trueReason:     string(ClusterStableReasonStable),
-			falseReason:    string(ClusterStableReasonUnstable),
-			falseCondition: func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonTerminalError, "reason") },
-			trueConditions: []setClusterFunc{
-				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
-				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
-				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
-				func(status *ClusterStatus) {
-					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
-				},
-			},
-		},
 		"Rollup Conditions: Stable, False Condition: ResourcesSynced": {
 			condition:   ClusterStable,
 			trueReason:  string(ClusterStableReasonStable),
