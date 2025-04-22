@@ -10,9 +10,6 @@
 package lifecycle
 
 import (
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -27,17 +24,65 @@ func NewV2ClusterStatusUpdater() *V2ClusterStatusUpdater {
 }
 
 // Update updates the given Redpanda v2 cluster with the given cluster status.
-func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.Redpanda, status ClusterStatus) bool {
-	condition := metav1.Condition{
-		Type:               "Quiesced",
-		Status:             metav1.ConditionFalse,
-		Reason:             "Quiesced",
-		ObservedGeneration: cluster.GetGeneration(),
-	}
-	if status.Quiesced {
-		condition.Status = metav1.ConditionTrue
-	}
-	cluster.Status.ObservedGeneration = cluster.Generation
+func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.Redpanda, status *ClusterStatus) bool {
+	dirty := status.Status.UpdateConditions(cluster)
 
-	return apimeta.SetStatusCondition(&cluster.Status.Conditions, condition)
+	for _, pool := range status.Pools {
+		if setAndDirtyCheckPools(&cluster.Status.NodePools, pool) {
+			dirty = true
+		}
+	}
+
+	return dirty
+}
+
+func setAndDirtyCheckPools(pools *[]redpandav1alpha2.NodePoolStatus, updated PoolStatus) bool {
+	dirty := false
+	for _, existing := range *pools {
+		if existing.Name == updated.Name {
+			if setAndDirtyCheck(&existing.Replicas, updated.Replicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.DesiredReplicas, updated.DesiredReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.OutOfDateReplicas, updated.OutOfDateReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.UpToDateReplicas, updated.UpToDateReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.CondemnedReplicas, updated.CondemnedReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.ReadyReplicas, updated.ReadyReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.RunningReplicas, updated.RunningReplicas) {
+				dirty = true
+			}
+
+			return dirty
+		}
+	}
+
+	*pools = append(*pools, redpandav1alpha2.NodePoolStatus{
+		Name:              updated.Name,
+		Replicas:          updated.Replicas,
+		DesiredReplicas:   updated.DesiredReplicas,
+		OutOfDateReplicas: updated.OutOfDateReplicas,
+		UpToDateReplicas:  updated.UpToDateReplicas,
+		CondemnedReplicas: updated.CondemnedReplicas,
+		ReadyReplicas:     updated.ReadyReplicas,
+		RunningReplicas:   updated.RunningReplicas,
+	})
+	return true
+}
+
+func setAndDirtyCheck[T comparable](source *T, value T) bool {
+	if *source != value {
+		*source = value
+		return true
+	}
+	return false
 }

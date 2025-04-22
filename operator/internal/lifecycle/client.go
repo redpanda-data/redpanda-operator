@@ -75,7 +75,7 @@ func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, se
 }
 
 // SetClusterStatus sets the status of the given cluster.
-func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status ClusterStatus) bool {
+func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus) bool {
 	return r.statusUpdater.Update(cluster, status)
 }
 
