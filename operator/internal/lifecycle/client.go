@@ -169,7 +169,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
 		if err != nil {
-			var nomatcherr apimeta.NoKindMatchError
+			nomatcherr := &apimeta.NoKindMatchError{}
 			if !errors.As(err, &nomatcherr) {
 				return err
 			}
@@ -300,7 +300,7 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 
 	mapping, err := getResourceScope(r.mapper, r.scheme, object)
 	if err != nil {
-		var nomatcherr apimeta.NoKindMatchError
+		nomatcherr := &apimeta.NoKindMatchError{}
 		if !errors.As(err, &nomatcherr) {
 			return err
 		}
