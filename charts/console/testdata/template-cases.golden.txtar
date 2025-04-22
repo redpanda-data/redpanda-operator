@@ -132,7 +132,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -379,7 +379,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -620,7 +620,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -873,7 +873,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: hvGoJL
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -1109,7 +1109,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: T50cZi
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -1357,7 +1357,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: xZty
         envFrom:
         - prefix: cfVf
@@ -1752,7 +1752,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console-YMl
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -1955,7 +1955,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: pN
         envFrom: []
         image: 7iw15D/RnJFs0:OQDirE
@@ -2201,7 +2201,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: rzd
         envFrom: []
         image: zT38Q/V:iSGm6MT1
@@ -2419,7 +2419,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: "y"
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -2858,7 +2858,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: l1Bnpx
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -3499,7 +3499,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: hbe
         envFrom:
         - configMapRef:
@@ -3761,7 +3761,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: tmn2Kt
         envFrom:
         - prefix: RyT9JuZ
@@ -4119,7 +4119,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: RttlJN
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -4634,7 +4634,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: 9RweMGWqBs
         envFrom: []
         image: FezgEM/b4CZb:OoX
@@ -5059,7 +5059,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: 6maz
         envFrom: []
         image: PYDGV/HV3:cI8TzaYkws
@@ -5385,7 +5385,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: 9XG3SZW
         envFrom:
         - prefix: oK16T1
@@ -5939,7 +5939,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: ExFU3
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -6284,7 +6284,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: NZ7h9
         envFrom: []
         image: GNXgFQ/W3:2vPed
@@ -6651,7 +6651,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: Om7
         envFrom: []
         image: VPCZungXC/0x6:PXKnRw
@@ -7313,7 +7313,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: GVjeLRc
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -7847,7 +7847,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: fXCb
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -9395,7 +9395,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: odFI2M4
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -9845,7 +9845,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: HK
         envFrom: []
         image: nZ5PG/5q2qCT:z10JAfCu
@@ -13940,7 +13940,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: AumW
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -16227,7 +16227,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: Wq
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -20785,7 +20785,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: 0BIfuN
         - name: REDPANDA_ADMINAPI_PASSWORD
           valueFrom:
@@ -21474,7 +21474,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -21688,7 +21688,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -21911,7 +21911,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom:
         - secretRef:
@@ -22141,7 +22141,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -22821,7 +22821,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: redpandadata/console:my-custom-tag
@@ -23034,7 +23034,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -23247,7 +23247,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -23469,7 +23469,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -23715,7 +23715,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: redpandadata/console:v3.0.0
@@ -23928,7 +23928,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -24377,7 +24377,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -24610,7 +24610,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0
@@ -24825,7 +24825,7 @@ spec:
         - name: AUTHENTICATION_JWTSIGNINGKEY
           valueFrom:
             secretKeyRef:
-              key: authentication-jwt-secret
+              key: authentication-jwt-signingkey
               name: console
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.0.0

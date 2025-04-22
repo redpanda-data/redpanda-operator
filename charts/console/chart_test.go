@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -253,6 +254,78 @@ func TestGoHelmEquivalence(t *testing.T) {
 	}
 }
 
+func TestSecrets(t *testing.T) {
+	values := PartialValues{
+		Tests: &PartialEnableable{
+			Enabled: ptr.To(false),
+		},
+		Secret: &PartialSecretConfig{
+			Create: ptr.To(true),
+			Kafka: &PartialKafkaSecrets{
+				SASLPassword: ptr.To("test-sasl-password"),
+			},
+			SchemaRegistry: &PartialSchemaRegistrySecrets{
+				Password: ptr.To("test-schema-registry-password"),
+			},
+			Authentication: &PartialAuthenticationSecrets{
+				JWTSigningKey: ptr.To("test-jwt-signing-key"),
+			},
+			Redpanda: &PartialRedpandaSecrets{
+				AdminAPI: &PartialRedpandaAdminAPISecrets{
+					Password: ptr.To("test-redpanda-admin-api-password"),
+				},
+			},
+			License: ptr.To("console-license-secret-content"),
+		},
+	}
+
+	goObjs, err := Chart.Render(nil, helmette.Release{
+		Name:      "gotohelm",
+		Namespace: "mynamespace",
+		Service:   "Helm",
+	}, values)
+	require.NoError(t, err)
+
+	secrets := make(map[string]*corev1.Secret)
+	var deploy *appsv1.Deployment
+	for _, obj := range goObjs {
+		switch obj := obj.(type) {
+		case *corev1.Secret:
+			secrets[obj.Name] = obj
+		case *appsv1.Deployment:
+			deploy = obj
+		}
+	}
+
+	consoleSecret, ok := secrets["gotohelm-console"]
+	assert.True(t, ok, "Failed to get console secret")
+	require.NotNil(t, consoleSecret, "Failed to get console secret")
+
+	assert.Equal(t, "test-sasl-password", string(consoleSecret.StringData["kafka-sasl-password"]))
+	assert.Equal(t, "test-schema-registry-password", string(consoleSecret.StringData["schema-registry-password"]))
+	assert.Equal(t, "test-jwt-signing-key", string(consoleSecret.StringData["authentication-jwt-signingkey"]))
+	assert.Equal(t, "test-redpanda-admin-api-password", string(consoleSecret.StringData["redpanda-admin-api-password"]))
+
+	require.NotNil(t, deploy, "Failed to get console deployment")
+
+	for _, container := range deploy.Spec.Template.Spec.Containers {
+		envs := container.Env
+		envMap := make(map[string]string)
+		for _, env := range envs {
+			if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+				assert.Equal(t, "gotohelm-console", env.ValueFrom.SecretKeyRef.Name)
+				envMap[env.Name] = env.ValueFrom.SecretKeyRef.Key
+			}
+		}
+
+		assert.Equal(t, "kafka-sasl-password", envMap["KAFKA_SASL_PASSWORD"])
+		assert.Equal(t, "schema-registry-password", envMap["SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD"])
+		assert.Equal(t, "authentication-jwt-signingkey", envMap["AUTHENTICATION_JWTSIGNINGKEY"])
+		assert.Equal(t, "redpanda-admin-api-password", envMap["REDPANDA_ADMINAPI_PASSWORD"])
+		assert.Equal(t, "license", envMap["LICENSE"])
+	}
+}
+
 func TestAppVersion(t *testing.T) {
 	const project = "charts/console"
 
@@ -281,7 +354,7 @@ func TestIntegrationChart(t *testing.T) {
 		partial := PartialValues{
 			Image: &PartialImage{
 				Repository: ptr.To("redpandadata/console-unstable"),
-				Tag:        ptr.To("master-2bb3af4"),
+				Tag:        ptr.To("master-a4cf9be"),
 			},
 			Config: map[string]any{
 				"kafka": map[string]any{
