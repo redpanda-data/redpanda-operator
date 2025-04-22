@@ -20218,36 +20218,52 @@ spec:
                   - type
                   type: object
                 type: array
+              decommissioningNode:
+                description: |-
+                  ManagedDecommissioningNode indicates that a node is currently being
+                  decommissioned from the cluster and provides its ordinal number.
+                  deprecated
+                format: int32
+                type: integer
               failures:
                 description: |-
                   Failures is the reconciliation failure count against the latest desired
                   state. It is reset after a successful reconciliation.
+                  deprecated
                 format: int64
                 type: integer
               helmRelease:
+                description: deprecated
                 type: string
               helmReleaseReady:
+                description: deprecated
                 type: boolean
               helmRepository:
+                description: deprecated
                 type: string
               helmRepositoryReady:
+                description: deprecated
                 type: boolean
               installFailures:
+                description: deprecated
                 format: int64
                 type: integer
               lastAppliedRevision:
-                description: LastAppliedRevision is the revision of the last successfully
-                  applied source.
+                description: |-
+                  LastAppliedRevision is the revision of the last successfully applied source.
+                  deprecated
                 type: string
               lastAttemptedRevision:
-                description: LastAttemptedRevision is the revision of the last reconciliation
-                  attempt.
+                description: |-
+                  LastAttemptedRevision is the revision of the last reconciliation attempt.
+                  deprecated
                 type: string
               lastHandledReconcileAt:
                 description: |-
                   LastHandledReconcileAt holds the value of the most recent
                   reconcile request value, so a change of the annotation value
                   can be detected.
+                  deprecated
                 type: string
               license:
                 description: |-
@@ -20273,11 +20289,82 @@ spec:
                 - inUseFeatures
                 - violation
                 type: object
+              nodePools:
+                description: |-
+                  NodePools contains information about the node pools associated
+                  with this cluster.
+                items:
+                  description: NodePoolStatus defines the observed state of any node
+                    pools tied to this cluster
+                  properties:
+                    condemnedReplicas:
+                      description: |-
+                        CondemnedReplicas is the number of replicas that will be decommissioned
+                        as part of a scaling down operation.
+                      format: int32
+                      type: integer
+                    desiredReplicas:
+                      description: |-
+                        DesiredReplicas is the number of replicas that ought to be
+                        run for the cluster. It combines the desired replicas across
+                        all node pools.
+                      format: int32
+                      type: integer
+                    name:
+                      description: Name is the name of the pool
+                      type: string
+                    outOfDateReplicas:
+                      description: |-
+                        OutOfDateReplicas is the number of replicas that don't currently
+                        match their node pool definitions. If OutOfDateReplicas is not 0
+                        it should mean that the operator will soon roll this many pods.
+                      format: int32
+                      type: integer
+                    readyReplicas:
+                      description: |-
+                        ReadyReplicas is the number of replicas whose readiness probes are
+                        currently passing.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: |-
+                        Replicas is the number of actual replicas currently across
+                        the node pool. This differs from DesiredReplicas during
+                        a scaling operation, but should be the same once the cluster
+                        has quiesced.
+                      format: int32
+                      type: integer
+                    runningReplicas:
+                      description: |-
+                        RunningReplicas is the number of replicas that are actively in a running
+                        state.
+                      format: int32
+                      type: integer
+                    upToDateReplicas:
+                      description: |-
+                        UpToDateReplicas is the number of replicas that currently match
+                        their node pool definitions.
+                      format: int32
+                      type: integer
+                  required:
+                  - condemnedReplicas
+                  - desiredReplicas
+                  - name
+                  - outOfDateReplicas
+                  - readyReplicas
+                  - replicas
+                  - runningReplicas
+                  - upToDateReplicas
+                  type: object
+                type: array
               observedGeneration:
-                description: Specifies the last observed generation.
+                description: |-
+                  Specifies the last observed generation.
+                  deprecated
                 format: int64
                 type: integer
               upgradeFailures:
+                description: deprecated
                 format: int64
                 type: integer
             type: object
@@ -40491,36 +40578,52 @@ spec:
                   - type
                   type: object
                 type: array
+              decommissioningNode:
+                description: |-
+                  ManagedDecommissioningNode indicates that a node is currently being
+                  decommissioned from the cluster and provides its ordinal number.
+                  deprecated
+                format: int32
+                type: integer
               failures:
                 description: |-
                   Failures is the reconciliation failure count against the latest desired
                   state. It is reset after a successful reconciliation.
+                  deprecated
                 format: int64
                 type: integer
               helmRelease:
+                description: deprecated
                 type: string
               helmReleaseReady:
+                description: deprecated
                 type: boolean
               helmRepository:
+                description: deprecated
                 type: string
               helmRepositoryReady:
+                description: deprecated
                 type: boolean
               installFailures:
+                description: deprecated
                 format: int64
                 type: integer
               lastAppliedRevision:
-                description: LastAppliedRevision is the revision of the last successfully
-                  applied source.
+                description: |-
+                  LastAppliedRevision is the revision of the last successfully applied source.
+                  deprecated
                 type: string
               lastAttemptedRevision:
-                description: LastAttemptedRevision is the revision of the last reconciliation
-                  attempt.
+                description: |-
+                  LastAttemptedRevision is the revision of the last reconciliation attempt.
+                  deprecated
                 type: string
               lastHandledReconcileAt:
                 description: |-
                   LastHandledReconcileAt holds the value of the most recent
                   reconcile request value, so a change of the annotation value
                   can be detected.
+                  deprecated
                 type: string
               license:
                 description: |-
@@ -40546,11 +40649,82 @@ spec:
                 - inUseFeatures
                 - violation
                 type: object
+              nodePools:
+                description: |-
+                  NodePools contains information about the node pools associated
+                  with this cluster.
+                items:
+                  description: NodePoolStatus defines the observed state of any node
+                    pools tied to this cluster
+                  properties:
+                    condemnedReplicas:
+                      description: |-
+                        CondemnedReplicas is the number of replicas that will be decommissioned
+                        as part of a scaling down operation.
+                      format: int32
+                      type: integer
+                    desiredReplicas:
+                      description: |-
+                        DesiredReplicas is the number of replicas that ought to be
+                        run for the cluster. It combines the desired replicas across
+                        all node pools.
+                      format: int32
+                      type: integer
+                    name:
+                      description: Name is the name of the pool
+                      type: string
+                    outOfDateReplicas:
+                      description: |-
+                        OutOfDateReplicas is the number of replicas that don't currently
+                        match their node pool definitions. If OutOfDateReplicas is not 0
+                        it should mean that the operator will soon roll this many pods.
+                      format: int32
+                      type: integer
+                    readyReplicas:
+                      description: |-
+                        ReadyReplicas is the number of replicas whose readiness probes are
+                        currently passing.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: |-
+                        Replicas is the number of actual replicas currently across
+                        the node pool. This differs from DesiredReplicas during
+                        a scaling operation, but should be the same once the cluster
+                        has quiesced.
+                      format: int32
+                      type: integer
+                    runningReplicas:
+                      description: |-
+                        RunningReplicas is the number of replicas that are actively in a running
+                        state.
+                      format: int32
+                      type: integer
+                    upToDateReplicas:
+                      description: |-
+                        UpToDateReplicas is the number of replicas that currently match
+                        their node pool definitions.
+                      format: int32
+                      type: integer
+                  required:
+                  - condemnedReplicas
+                  - desiredReplicas
+                  - name
+                  - outOfDateReplicas
+                  - readyReplicas
+                  - replicas
+                  - runningReplicas
+                  - upToDateReplicas
+                  type: object
+                type: array
               observedGeneration:
-                description: Specifies the last observed generation.
+                description: |-
+                  Specifies the last observed generation.
+                  deprecated
                 format: int64
                 type: integer
               upgradeFailures:
+                description: deprecated
                 format: int64
                 type: integer
             type: object

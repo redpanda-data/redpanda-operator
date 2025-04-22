@@ -1418,6 +1418,45 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus"]
+==== NodePoolStatus
+
+
+
+NodePoolStatus defines the observed state of any node pools tied to this cluster
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is the name of the pool + |  | 
+| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
+the node pool. This differs from DesiredReplicas during +
+a scaling operation, but should be the same once the cluster +
+has quiesced. + |  | 
+| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
+run for the cluster. It combines the desired replicas across +
+all node pools. + |  | 
+| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
+match their node pool definitions. If OutOfDateReplicas is not 0 +
+it should mean that the operator will soon roll this many pods. + |  | 
+| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
+their node pool definitions. + |  | 
+| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
+as part of a scaling down operation. + |  | 
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
+currently passing. + |  | 
+| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
+state. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password"]
 ==== Password
 
@@ -2082,23 +2121,33 @@ RedpandaStatus defines the observed state of Redpanda
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
-| *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +
-reconcile request value, so a change of the annotation value +
-can be detected. + |  | 
-| *`lastAppliedRevision`* __string__ | LastAppliedRevision is the revision of the last successfully applied source. + |  | 
-| *`lastAttemptedRevision`* __string__ | LastAttemptedRevision is the revision of the last reconciliation attempt. + |  | 
-| *`helmRelease`* __string__ |  |  | 
-| *`helmReleaseReady`* __boolean__ |  |  | 
-| *`helmRepository`* __string__ |  |  | 
-| *`helmRepositoryReady`* __boolean__ |  |  | 
-| *`upgradeFailures`* __integer__ |  |  | 
-| *`failures`* __integer__ | Failures is the reconciliation failure count against the latest desired +
-state. It is reset after a successful reconciliation. + |  | 
-| *`installFailures`* __integer__ |  |  | 
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
 installed license in the Redpanda cluster. + |  | 
+| *`nodePools`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$] array__ | NodePools contains information about the node pools associated +
+with this cluster. + |  | 
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. +
+deprecated + |  | 
+| *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +
+reconcile request value, so a change of the annotation value +
+can be detected. +
+deprecated + |  | 
+| *`lastAppliedRevision`* __string__ | LastAppliedRevision is the revision of the last successfully applied source. +
+deprecated + |  | 
+| *`lastAttemptedRevision`* __string__ | LastAttemptedRevision is the revision of the last reconciliation attempt. +
+deprecated + |  | 
+| *`helmRelease`* __string__ | deprecated + |  | 
+| *`helmReleaseReady`* __boolean__ | deprecated + |  | 
+| *`helmRepository`* __string__ | deprecated + |  | 
+| *`helmRepositoryReady`* __boolean__ | deprecated + |  | 
+| *`upgradeFailures`* __integer__ | deprecated + |  | 
+| *`failures`* __integer__ | Failures is the reconciliation failure count against the latest desired +
+state. It is reset after a successful reconciliation. +
+deprecated + |  | 
+| *`installFailures`* __integer__ | deprecated + |  | 
+| *`decommissioningNode`* __integer__ | ManagedDecommissioningNode indicates that a node is currently being +
+decommissioned from the cluster and provides its ordinal number. +
+deprecated + |  | 
 |===
 
 
