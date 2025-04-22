@@ -295,9 +295,19 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 	if err != nil {
 		return err
 	}
+
+	unknownMapping := false
+
 	mapping, err := getResourceScope(r.mapper, r.scheme, object)
 	if err != nil {
-		return err
+		var nomatcherr apimeta.NoKindMatchError
+		if !errors.As(err, &nomatcherr) {
+			return err
+		}
+
+		// we have an unknown mapping so err on the side of not setting
+		// an owner reference
+		unknownMapping = true
 	}
 
 	// This needs to be set explicitly in order for SSA to function properly.
@@ -322,7 +332,7 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 
 	object.SetLabels(labels)
 
-	if mapping.Name() == meta.RESTScopeNamespace.Name() {
+	if !unknownMapping && mapping.Name() == meta.RESTScopeNamespace.Name() {
 		object.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 	}
 
