@@ -153,7 +153,7 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
-	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250417174137-234f93a35ce2 // indirect
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250419175459-064513f9bee4 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect

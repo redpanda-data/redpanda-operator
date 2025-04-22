@@ -179,7 +179,7 @@ run `task generate:third-party-licenses-list`
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
 | github.com/golang-jwt/jwt/v4 | [MIT](https://github.com/golang-jwt/jwt/blob/v4.5.0/LICENSE) |
-| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.2.1/LICENSE) |
+| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.2.2/LICENSE) |
 | github.com/golang/groupcache/lru | [Apache-2.0](https://github.com/golang/groupcache/blob/41bb18bfe9da/LICENSE) |
 | github.com/golang/protobuf/proto | [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.4/LICENSE) |
 | github.com/golang/snappy | [BSD-3-Clause](https://github.com/golang/snappy/blob/v0.0.4/LICENSE) |
