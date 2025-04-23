@@ -132,6 +132,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	rp.ManagedFields = nil // nil out our managed fields
 
 	// TODO: remove this when we delete the managed decommission controller
 	_, ok := rp.GetAnnotations()[resources.ManagedDecommissionAnnotation]
@@ -166,7 +167,6 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return r.syncStatusErr(ctx, err, status, rp)
 		}
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
-			rp.ManagedFields = nil
 			if err := r.Client.Update(ctx, rp); err != nil {
 				log.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
@@ -180,7 +180,6 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// we are not deleting, so add a finalizer first before
 	// allocating any additional resources
 	if controllerutil.AddFinalizer(rp, FinalizerKey) {
-		rp.ManagedFields = nil
 		if err := r.Client.Update(ctx, rp); err != nil {
 			log.Error(err, "updating cluster finalizer")
 			return ignoreConflict(err)
@@ -577,7 +576,6 @@ func (r *RedpandaReconciler) syncStatusErr(ctx context.Context, err error, statu
 func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
 	var err error
 	if r.LifecycleClient.SetClusterStatus(cluster, status) {
-		cluster.ManagedFields = nil
 		err = r.Client.Status().Update(ctx, cluster)
 	}
 

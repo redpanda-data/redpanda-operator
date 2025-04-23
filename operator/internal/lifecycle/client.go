@@ -313,6 +313,11 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 		unknownMapping = true
 	}
 
+	// nil out the managed fields since with some resources that actually do
+	// a fetch (i.e. secrets that are created only once), we get an error trying
+	// to patch a second time
+	object.SetManagedFields(nil)
+
 	// This needs to be set explicitly in order for SSA to function properly.
 	// If an initialized pointer to a concrete CR has not specified its GVK
 	// explicitly, SSA will fail.
