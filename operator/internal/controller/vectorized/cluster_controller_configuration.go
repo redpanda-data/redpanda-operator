@@ -24,6 +24,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
@@ -47,6 +48,7 @@ func (r *ClusterReconciler) configurationReassertionPeriod() time.Duration {
 func (r *ClusterReconciler) reconcileConfiguration(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
+	cfg *clusterconfiguration.CombinedCfg,
 	configMapResource *resources.ConfigMapResource,
 	statefulSetResources []*resources.StatefulSetResource,
 	pki *certmanager.PkiReconciler,
@@ -70,11 +72,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return delay, nil
 	}
 
-	config, err := configMapResource.CreateConfiguration(ctx)
-	if err != nil {
-		return 0, errorWithContext(err, "error while creating the configuration")
-	}
-
 	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer)
 	if err != nil {
 		return 0, errorWithContext(err, "error creating the admin API client")
@@ -85,7 +82,12 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return 0, err
 	}
 
-	lastAppliedCriticalConfigurationHash, err := r.getOrInitLastAppliedCriticalConfiguration(ctx, configMapResource, config, redpandaCluster.Namespace, schema)
+	config, err := cfg.ReifyClusterConfiguration(ctx, schema)
+	if err != nil {
+		return 0, errorWithContext(err, "error while creating the concrete configuration")
+	}
+
+	lastAppliedCriticalConfigurationHash, err := r.getOrInitLastAppliedCriticalConfiguration(ctx, configMapResource, cfg, schema)
 	if err != nil {
 		return 0, errorWithContext(err, "could not load the last applied configuration")
 	}
@@ -118,7 +120,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		if statefulSetResource == nil {
 			continue
 		}
-		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, config, schema, lastAppliedCriticalConfigurationHash, statefulSetResource)
+		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, cfg, schema, lastAppliedCriticalConfigurationHash, statefulSetResource)
 		if err != nil {
 			return 0, err
 		} else if hashChanged {
@@ -131,7 +133,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Now we can mark the new lastAppliedCriticalConfiguration for next update
-	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, redpandaCluster.Namespace)
+	hash, err := cfg.GetCriticalClusterConfigHash(ctx, schema)
 	if err != nil {
 		return 0, errorWithContext(err, "could not concretize critical configuration to store last applied configuration in the cluster")
 	}
@@ -188,8 +190,7 @@ func (r *ClusterReconciler) ratelimitCondition(rp *vectorizedv1alpha1.Cluster, c
 func (r *ClusterReconciler) getOrInitLastAppliedCriticalConfiguration(
 	ctx context.Context,
 	configMapResource *resources.ConfigMapResource,
-	config *configuration.GlobalConfiguration,
-	namespace string,
+	cfg *clusterconfiguration.CombinedCfg,
 	schema rpadmin.ConfigSchema,
 ) (string, error) {
 	lastApplied, cmPresent, err := configMapResource.GetAnnotationFromCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey)
@@ -200,7 +201,7 @@ func (r *ClusterReconciler) getOrInitLastAppliedCriticalConfiguration(
 		return *lastApplied, nil
 	}
 
-	hash, err := config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, namespace)
+	hash, err := cfg.GetCriticalClusterConfigHash(ctx, schema)
 	if err != nil {
 		return "", err
 	}
@@ -214,21 +215,12 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	adminAPI adminutils.AdminAPIClient,
-	cfg *configuration.GlobalConfiguration,
+	config map[string]any,
 	schema rpadmin.ConfigSchema,
 	l logr.Logger,
 ) (success bool, err error) {
 	log := l.WithName("applyPatchIfNeeded")
 	errorWithContext := newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)
-
-	// Massage the clusterConfig into an appropriate set of values.
-	// Because we're going to perform a declarative application, invalid values will either
-	// be overwritten (if they're supplied in the cfg), or removed (if they're not).
-	// No additional handling is needed.
-	properties, err := cfg.ConcreteConfiguration(ctx, r, r.CloudSecretsExpander, redpandaCluster.Namespace, schema)
-	if err != nil {
-		return false, err
-	}
 
 	// Unconditionally apply the update
 	syncer := syncclusterconfig.Syncer{
@@ -239,7 +231,7 @@ func (r *ClusterReconciler) applyPatchIfNeeded(
 		},
 	}
 	// The updated config_version is logged by syncer
-	if _, err := syncer.Sync(ctx, properties, nil); err != nil {
+	if _, err := syncer.Sync(ctx, config, nil); err != nil {
 		var conditionData *vectorizedv1alpha1.ClusterCondition
 		conditionData, err = tryMapErrorToCondition(err)
 		if err != nil {
@@ -322,12 +314,12 @@ func (r *ClusterReconciler) ensureConditionPresent(
 func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
-	config *configuration.GlobalConfiguration,
+	cfg *clusterconfiguration.CombinedCfg,
 	schema rpadmin.ConfigSchema,
 	lastAppliedHash string,
 	statefulSetResource *resources.StatefulSetResource,
 ) (hash string, changed bool, err error) {
-	hash, err = config.GetCentralizedConfigurationHash(ctx, r.Client, r.CloudSecretsExpander, schema, redpandaCluster.Namespace)
+	hash, err = cfg.GetCriticalClusterConfigHash(ctx, schema)
 	if err != nil {
 		return "", false, newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)(err, "could not compute hash of the new configuration")
 	}
