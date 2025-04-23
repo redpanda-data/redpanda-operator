@@ -57,6 +57,24 @@ tasks:
           ./config/rbac/itemized/rpk-debug-bundle.yaml \
           ./config/rbac/itemized/rack-awareness.yaml
 
+      # And once more for the Operator's chart.
+      - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
+      - |
+        yq e \
+          --split-exp '"chart/files/rbac/\( .metadata.name ).\( .kind ).yaml"' \
+          '.' \
+          ./config/rbac/itemized/decommission.yaml \
+          ./config/rbac/itemized/leader-election.yaml \
+          ./config/rbac/itemized/managed-decommission.yaml \
+          ./config/rbac/itemized/node-watcher.yaml \
+          ./config/rbac/itemized/old-decommission.yaml \
+          ./config/rbac/itemized/pvcunbinder.yaml \
+          ./config/rbac/itemized/rack-awareness.yaml \
+          ./config/rbac/itemized/rpk-debug-bundle.yaml \
+          ./config/rbac/itemized/sidecar.yaml \
+          ./config/rbac/itemized/v1-manager.yaml \
+          ./config/rbac/itemized/v2-manager.yaml
+
       # Some integration tests use their RBAC declarations but generally
       # require some additional permissions (e.g. leader election, running
       # multiple controllers)

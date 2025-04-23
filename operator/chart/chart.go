@@ -29,6 +29,7 @@ var (
 	Scheme = runtime.NewScheme()
 
 	//go:embed Chart.yaml
+	//go:embed files/*
 	//go:embed templates/*
 	//go:embed values.schema.json
 	//go:embed values.yaml

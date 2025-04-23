@@ -273,7 +273,7 @@ Role-based Access Control (RBAC) configuration for the Redpanda Operator.
 **Default:**
 
 ```
-{"create":true,"createAdditionalControllerCRs":false,"createRPKBundleCRs":false}
+{"create":true,"createAdditionalControllerCRs":false,"createRPKBundleCRs":true}
 ```
 
 ### [rbac.create](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=rbac.create)
@@ -292,7 +292,7 @@ Creates additional RBAC cluster roles that are needed to run additional controll
 
 Create RBAC cluster roles needed for the Redpanda Helm chart's 'rbac.enabled' feature.
 
-**Default:** `false`
+**Default:** `true`
 
 ### [replicaCount](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=replicaCount)
 
