@@ -45,7 +45,7 @@ func init() {
 	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
 	framework.RegisterStep(`^there should be ACLs in the cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
 
-	// Operator scenario steps
+	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)
 	framework.RegisterStep(`^its metrics endpoint should reject http request with status code "([^"]*)"$`, requestMetricsEndpointPlainHTTP)
 	framework.RegisterStep(`^its metrics endpoint should reject authorization random token request with status code "([^"]*)"$`, requestMetricsEndpointWithTLSAndRandomToken)
@@ -59,4 +59,10 @@ func init() {
 	framework.RegisterStep(`^the StatefulSet "([^"]*)" has an OwnerReference pointing to the Redpanda custom resource "([^"]*)".$`, statefulSetHaveOwnerReference)
 	framework.RegisterStep(`^"([^"]*)" Helm release can be deleted by removing secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the "([^"]*)" cluster is healthy$`, redpandaClusterIsHealthy)
+
+	// Scaling scenario steps
+	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)
+	framework.RegisterStep(`^cluster "([^"]*)" is stable with (\d+) nodes$`, checkClusterStableWithCount)
+	framework.RegisterStep(`^I create a basic cluster "([^"]*)" with (\d+) nodes$`, iCreateABasicClusterWithNodes)
+	framework.RegisterStep(`^I scale "([^"]*)" to (\d+) nodes$`, iScaleToNodes)
 }

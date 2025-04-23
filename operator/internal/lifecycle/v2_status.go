@@ -38,7 +38,7 @@ func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.Redpanda, stat
 
 func setAndDirtyCheckPools(pools *[]redpandav1alpha2.NodePoolStatus, updated PoolStatus) bool {
 	dirty := false
-	for _, existing := range *pools {
+	for i, existing := range *pools {
 		if existing.Name == updated.Name {
 			if setAndDirtyCheck(&existing.Replicas, updated.Replicas) {
 				dirty = true
@@ -62,6 +62,7 @@ func setAndDirtyCheckPools(pools *[]redpandav1alpha2.NodePoolStatus, updated Poo
 				dirty = true
 			}
 
+			(*pools)[i] = existing
 			return dirty
 		}
 	}
