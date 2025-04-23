@@ -179,9 +179,6 @@ tasks:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
       CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
     cmds:
-    - task: charts:kind-cluster
-    - task: test:pull-images
-    - task: test:push-images
     - task: test:unit
       vars:
         GO_TEST_RUNNER:

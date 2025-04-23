@@ -26,9 +26,14 @@ import (
 
 type TagHandler func(ctx context.Context, t TestingT, arguments ...string) context.Context
 
+type Provider = internaltesting.PartialProvider
+type FullProvider = internaltesting.Provider
+
 type TestingT interface {
 	godog.TestingT
 	client.Client
+
+	Provider(ctx context.Context) Provider
 
 	Cleanup(fn func(context.Context))
 	ResourceKey(name string) types.NamespacedName
@@ -46,13 +51,6 @@ type TestingT interface {
 
 	RequireCondition(expected metav1.Condition, conditions []metav1.Condition)
 	HasCondition(expected metav1.Condition, conditions []metav1.Condition) bool
-}
-
-type Provider interface {
-	Initialize() error
-	Setup(ctx context.Context) error
-	Teardown(ctx context.Context) error
-	GetBaseContext() context.Context
 }
 
 func T(ctx context.Context) TestingT {
@@ -75,6 +73,18 @@ func (n *noopProvider) Teardown(ctx context.Context) error {
 	return nil
 }
 
+func (n *noopProvider) LoadImages(ctx context.Context, images []string) error {
+	return nil
+}
+
 func (n *noopProvider) GetBaseContext() context.Context {
 	return context.Background()
+}
+
+func (n *noopProvider) DeleteNode(ctx context.Context, name string) error {
+	return nil
+}
+
+func (n *noopProvider) AddNode(ctx context.Context, name string) error {
+	return nil
 }

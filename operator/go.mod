@@ -341,6 +341,9 @@ replace (
 	// now that operator no longer leverages flux, just reference the local
 	// chart definition for our structs
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
+	// we want to leverage the latest pkg -- all of this should go away when we
+	// reintroduce go.work
+	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
 	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
 	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.
