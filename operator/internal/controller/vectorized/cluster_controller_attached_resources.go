@@ -20,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -171,32 +172,19 @@ func (a *attachedResources) getClusterServiceFQDN() string {
 	return a.getClusterService().ServiceFQDN(a.reconciler.clusterDomain)
 }
 
-func (a *attachedResources) configMap() error {
+func (a *attachedResources) configMap(cfg *clusterconfiguration.CombinedCfg) {
 	// if already initialized, exit immediately
 	if _, ok := a.items[configMap]; ok {
-		return nil
+		return
 	}
 
-	proxySASLUserKey := a.getProxySuperUserKey()
-	schemaRegistrySASLUserKey := a.getSchemaRegistrySuperUserKey()
-
-	err := a.pki()
-	if err != nil {
-		return err
-	}
-	pki := a.items[pki].(*certmanager.PkiReconciler)
-
-	a.items[configMap] = resources.NewConfigMap(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.getHeadlessServiceFQDN(), proxySASLUserKey, schemaRegistrySASLUserKey, pki.BrokerTLSConfigProvider(), a.log)
+	a.items[configMap] = resources.NewConfigMap(a.reconciler.Client, a.cluster, a.reconciler.Scheme, cfg, a.log)
 	a.order = append(a.order, configMap)
-	return nil
 }
 
-func (a *attachedResources) getConfigMap() (*resources.ConfigMapResource, error) {
-	err := a.configMap()
-	if err != nil {
-		return nil, err
-	}
-	return a.items[configMap].(*resources.ConfigMapResource), nil
+func (a *attachedResources) getConfigMap(cfg *clusterconfiguration.CombinedCfg) *resources.ConfigMapResource {
+	a.configMap(cfg)
+	return a.items[configMap].(*resources.ConfigMapResource)
 }
 
 func (a *attachedResources) headlessService() {
@@ -390,12 +378,8 @@ func (a *attachedResources) secret() {
 	a.order = append(a.order, secret)
 }
 
-func (a *attachedResources) statefulSet() error {
+func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) error {
 	pki, err := a.getPKI()
-	if err != nil {
-		return err
-	}
-	cm, err := a.getConfigMap()
 	if err != nil {
 		return err
 	}
@@ -421,8 +405,7 @@ func (a *attachedResources) statefulSet() error {
 			pki.AdminAPIConfigProvider(),
 			a.getServiceAccountName(),
 			a.reconciler.configuratorSettings,
-			cm.GetNodeConfigHash,
-			cm.CreateConfiguration,
+			cfg,
 			a.reconciler.AdminAPIClientFactory,
 			a.reconciler.Dialer,
 			a.reconciler.DecommissionWaitInterval,
@@ -437,8 +420,8 @@ func (a *attachedResources) statefulSet() error {
 	return nil
 }
 
-func (a *attachedResources) getStatefulSet() ([]*resources.StatefulSetResource, error) {
-	if err := a.statefulSet(); err != nil {
+func (a *attachedResources) getStatefulSet(cfg *clusterconfiguration.CombinedCfg) ([]*resources.StatefulSetResource, error) {
+	if err := a.statefulSet(cfg); err != nil {
 		return nil, err
 	}
 	out := make([]*resources.StatefulSetResource, 0)
