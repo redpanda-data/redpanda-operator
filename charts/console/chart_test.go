@@ -359,6 +359,9 @@ func TestIntegrationChart(t *testing.T) {
 			Config: map[string]any{
 				"kafka": map[string]any{
 					"brokers": []string{"some-broker-address:9092"}, // Console and this test does not care whether we have a real broker
+					"startup": map[string]any{
+						"establishConnectionEagerly": false,
+					},
 				},
 			},
 		}
