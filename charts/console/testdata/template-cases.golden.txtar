@@ -42,6 +42,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -289,6 +290,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -530,6 +532,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -773,6 +776,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -1002,6 +1006,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -1264,6 +1269,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -1511,6 +1517,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -1648,6 +1655,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -1883,6 +1891,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -2091,6 +2100,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -2319,6 +2329,7 @@ stringData:
   redpanda-admin-api-tls-ca: QD1x71f
   redpanda-admin-api-tls-cert: 744Ysvi
   redpanda-admin-api-tls-key: 56VaHh
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -2782,6 +2793,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -3322,6 +3334,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -3665,6 +3678,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -4029,6 +4043,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -4329,6 +4344,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -4454,6 +4470,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -4867,6 +4884,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -5267,6 +5285,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -5782,6 +5801,7 @@ stringData:
   redpanda-admin-api-tls-ca: t
   redpanda-admin-api-tls-cert: zttTAvj
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -6165,6 +6185,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -6429,6 +6450,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -6928,6 +6950,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -7089,6 +7112,7 @@ stringData:
   redpanda-admin-api-tls-ca: 7uUgZI
   redpanda-admin-api-tls-cert: "7"
   redpanda-admin-api-tls-key: r8D6l
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -7719,6 +7743,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -9210,6 +9235,7 @@ stringData:
   redpanda-admin-api-tls-ca: dxtnG
   redpanda-admin-api-tls-cert: Rs3rHA8Qdb
   redpanda-admin-api-tls-key: 7hsD
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -9574,6 +9600,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -10195,6 +10222,7 @@ stringData:
   redpanda-admin-api-tls-ca: m5pg
   redpanda-admin-api-tls-cert: yfP
   redpanda-admin-api-tls-key: gzG
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -13524,6 +13552,7 @@ stringData:
   redpanda-admin-api-tls-ca: opQQ
   redpanda-admin-api-tls-cert: PGcfJC3zH
   redpanda-admin-api-tls-key: IhqyTvQn4T
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -15952,6 +15981,7 @@ stringData:
   redpanda-admin-api-tls-ca: 7ORz
   redpanda-admin-api-tls-cert: IT
   redpanda-admin-api-tls-key: KR25cT
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -18534,6 +18564,7 @@ stringData:
   redpanda-admin-api-tls-ca: Eonnpq
   redpanda-admin-api-tls-cert: aPCNgYI
   redpanda-admin-api-tls-key: vlrLQ9I9
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -18705,6 +18736,7 @@ stringData:
   redpanda-admin-api-tls-ca: rNzsp
   redpanda-admin-api-tls-cert: UStA
   redpanda-admin-api-tls-key: 3E
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -20477,6 +20509,7 @@ stringData:
   redpanda-admin-api-tls-ca: CJbHIM
   redpanda-admin-api-tls-cert: uO
   redpanda-admin-api-tls-key: uhB0L
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -21383,6 +21416,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -21597,6 +21631,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -21811,6 +21846,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -22042,6 +22078,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -22731,6 +22768,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -22944,6 +22982,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -23157,6 +23196,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -23379,6 +23419,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -23625,6 +23666,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -23838,6 +23880,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -24287,6 +24330,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -24520,6 +24564,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
@@ -24733,6 +24778,7 @@ stringData:
   redpanda-admin-api-tls-ca: ""
   redpanda-admin-api-tls-cert: ""
   redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
   schema-registry-password: ""
   schemaregistry-tls-ca: ""
   schemaregistry-tls-cert: ""
