@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type contextKey struct{}
+type testingContext struct{}
 
 type TerminationError struct {
 	Message  string
@@ -32,8 +32,8 @@ type TerminationError struct {
 }
 
 var (
-	testingContextKey contextKey = struct{}{}
-	TerminationChan              = make(chan TerminationError)
+	testingContextKey = testingContext{}
+	TerminationChan   = make(chan TerminationError)
 )
 
 type ExitBehavior string
@@ -121,6 +121,10 @@ func T(ctx context.Context) *TestingT {
 
 func (t *TestingT) IntoContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, testingContextKey, t)
+}
+
+func (t *TestingT) Provider(ctx context.Context) PartialProvider {
+	return ctx.Value(providerContextKey).(PartialProvider)
 }
 
 func (t *TestingT) SetMessagePrefix(prefix string) {
@@ -231,6 +235,30 @@ func (t *TestingT) ApplyManifest(ctx context.Context, fileOrDirectory string) {
 // ApplyFixture applies a set of kubernetes manifests via kubectl.
 func (t *TestingT) ApplyFixture(ctx context.Context, fileOrDirectory string) {
 	t.ApplyManifest(ctx, filepath.Join("fixtures", fileOrDirectory))
+}
+
+func (t *TestingT) DeleteNode(ctx context.Context, name string) {
+	provider := t.Provider(ctx)
+
+	t.Logf("Deleting node %q", name)
+	require.NoError(t, provider.DeleteNode(ctx, name))
+
+	t.Cleanup(func(ctx context.Context) {
+		t.Logf("Recreating deleted node %q", name)
+		require.NoError(t, provider.AddNode(ctx, name))
+	})
+}
+
+func (t *TestingT) AddNode(ctx context.Context, name string) {
+	provider := t.Provider(ctx)
+
+	t.Logf("Adding temporary node %q", name)
+	require.NoError(t, provider.AddNode(ctx, name))
+
+	t.Cleanup(func(ctx context.Context) {
+		t.Logf("Deleting temporary node %q", name)
+		require.NoError(t, provider.DeleteNode(ctx, name))
+	})
 }
 
 // ResourceKey returns a types.NamespaceName that can be used with the Kubernetes client,

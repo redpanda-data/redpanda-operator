@@ -22,6 +22,7 @@ import (
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
@@ -44,8 +45,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
-		RegisterProvider("k3d", framework.NoopProvider).
+		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
+		WithImportedImages([]string{
+			"localhost/redpanda-operator:dev",
+			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
+			"quay.io/jetstack/cert-manager-controller:v1.14.2",
+			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
+			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
+			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+		}...).
 		WithSchemeFunctions(redpandav1alpha1.AddToScheme, redpandav1alpha2.AddToScheme).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 			Name:            "cert-manager",

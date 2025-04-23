@@ -45,8 +45,9 @@ type SuiteBuilder struct {
 	output                string
 	opts                  godog.Options
 	registry              *internaltesting.TagRegistry
-	providers             map[string]Provider
+	providers             map[string]FullProvider
 	defaultProvider       string
+	images                []string
 	injectors             []func(context.Context) context.Context
 	crdDirectories        []string
 	helmCharts            []helmChart
@@ -92,7 +93,7 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 		output:      output,
 		opts:        godogOpts,
 		registry:    registry,
-		providers:   make(map[string]Provider),
+		providers:   make(map[string]FullProvider),
 	}
 
 	builder.RegisterTag("isolated", -1000, isolatedTag)
@@ -114,7 +115,7 @@ func (b *SuiteBuilder) RegisterTag(tag string, priority int, handler TagHandler)
 	return b
 }
 
-func (b *SuiteBuilder) RegisterProvider(name string, provider Provider) *SuiteBuilder {
+func (b *SuiteBuilder) RegisterProvider(name string, provider FullProvider) *SuiteBuilder {
 	b.providers[name] = provider
 	return b
 }
@@ -126,6 +127,11 @@ func (b *SuiteBuilder) InjectContext(fn func(context.Context) context.Context) *
 
 func (b *SuiteBuilder) WithSchemeFunctions(fns ...func(s *runtime.Scheme) error) *SuiteBuilder {
 	b.testingOpts.SchemeRegisterers = append(b.testingOpts.SchemeRegisterers, fns...)
+	return b
+}
+
+func (b *SuiteBuilder) WithImportedImages(images ...string) *SuiteBuilder {
+	b.images = images
 	return b
 }
 
@@ -192,49 +198,64 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		return nil, err
 	}
 	ctx := provider.GetBaseContext()
+	ctx = internaltesting.ProviderIntoContext(ctx, provider)
+
 	opts.DefaultContext = ctx
 	opts.Tags = fmt.Sprintf("~@skip:%s", providerName)
 
-	restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	helmClient, err := helm.New(helm.Options{
-		KubeConfig: restConfig,
-	})
-	if err != nil {
-		return nil, err
-	}
-
+	var kubeOptions *internaltesting.KubectlOptions
+	var helmClient *helm.Client
 	return &Suite{
 		output: b.output,
 		suite: &godog.TestSuite{
 			Name: "acceptance",
 			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
 				cleanup := func(ctx context.Context) {
-					// teardown in reverse order from setup
-					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlDelete(ctx, directory, b.testingOpts.KubectlOptions)
-						if err != nil {
-							fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
+					if kubeOptions != nil {
+						// teardown in reverse order from setup
+						for _, directory := range b.crdDirectories {
+							_, err := internaltesting.KubectlDelete(ctx, directory, kubeOptions)
+							if err != nil {
+								fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
+							}
 						}
 					}
-					for _, chart := range b.helmCharts {
-						if err := helmClient.Uninstall(ctx, helm.Release{
-							Namespace: chart.options.Namespace,
-							Name:      chart.options.Name,
-						}); err != nil {
-							fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
+
+					if helmClient != nil {
+						for _, chart := range b.helmCharts {
+							if err := helmClient.Uninstall(ctx, helm.Release{
+								Namespace: chart.options.Namespace,
+								Name:      chart.options.Name,
+							}); err != nil {
+								fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
+							}
 						}
 					}
+
 					if err := provider.Teardown(ctx); err != nil {
 						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
 					}
 				}
 
 				suiteContext.BeforeSuite(func() {
-					err = provider.Setup(ctx)
+					err := provider.Setup(ctx)
+					setupErrorCheck(ctx, err, cleanup)
+
+					if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
+						fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
+						b.testingOpts.KubectlOptions = internaltesting.NewKubectlOptions(provisioned.ConfigPath())
+					}
+					kubeOptions = b.testingOpts.KubectlOptions
+
+					restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
+					setupErrorCheck(ctx, err, cleanup)
+
+					helmClient, err = helm.New(helm.Options{
+						KubeConfig: restConfig,
+					})
+					setupErrorCheck(ctx, err, cleanup)
+
+					err = provider.LoadImages(ctx, b.images)
 					setupErrorCheck(ctx, err, cleanup)
 
 					// now add helm charts
