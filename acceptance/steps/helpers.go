@@ -45,6 +45,19 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
+type delayedLog func() string
+
+func (d *delayedLog) String() string {
+	return (*d)()
+}
+
+// delayLog is used for when you want to defer resolution of an error
+// string for require.Eventually calls based on some value that is
+// derived inside of the function closure
+func delayLog(closure func() string) *delayedLog {
+	return ptr.To(delayedLog(closure))
+}
+
 type clusterClients struct {
 	cluster        string
 	resourceTarget *redpandav1alpha2.User
