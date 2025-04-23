@@ -165,8 +165,6 @@ func TestRBACBindings(t *testing.T) {
 }
 
 func TestHelmControllerGenEquivalence(t *testing.T) {
-	t.Skipf("This test is currently invalid and the chart intentionally generates over provisioned ClusterRoles/Roles.")
-
 	testCases := []struct {
 		name   string
 		paths  []string
@@ -176,6 +174,7 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 			name: "defaults",
 			paths: []string{
 				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/rpk-debug-bundle.yaml",
 				"../config/rbac/itemized/v2-manager.yaml",
 			},
 			values: PartialValues{},
@@ -188,6 +187,7 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 				"../config/rbac/itemized/managed-decommission.yaml",
 				"../config/rbac/itemized/node-watcher.yaml",
 				"../config/rbac/itemized/old-decommission.yaml",
+				"../config/rbac/itemized/rpk-debug-bundle.yaml",
 				"../config/rbac/itemized/v2-manager.yaml",
 			},
 			values: PartialValues{
@@ -197,22 +197,10 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 			},
 		},
 		{
-			name: "rpk-debug-bundle",
-			paths: []string{
-				"../config/rbac/itemized/leader-election.yaml",
-				"../config/rbac/itemized/rpk-debug-bundle.yaml",
-				"../config/rbac/itemized/v2-manager.yaml",
-			},
-			values: PartialValues{
-				RBAC: &PartialRBAC{
-					CreateRPKBundleCRs: ptr.To(true),
-				},
-			},
-		},
-		{
 			name: "cluster-scope",
 			paths: []string{
 				"../config/rbac/itemized/v1-manager.yaml",
+				"../config/rbac/itemized/rpk-debug-bundle.yaml",
 				"../config/rbac/itemized/leader-election.yaml",
 				"../config/rbac/itemized/pvcunbinder.yaml",
 			},
