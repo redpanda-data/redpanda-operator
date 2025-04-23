@@ -15,6 +15,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -33,6 +34,7 @@ type (
 		// rewritten to an EnvVarRef instead, and that variable added to the container environment via the usual k8s
 		// envFrom mechanism. A preferred environment variable name may be specified here.
 		EnvVarRef *string `json:"envVar,omitempty"`
+		Optional  bool    `json:"optional,omitempty"`
 	}
 )
 
@@ -77,6 +79,11 @@ func ExpandForBootstrap(cfg vectorizedv1alpha1.ClusterConfiguration) (map[string
 			// We preserve this verbatim
 			expanded[k] = ClusterConfigTemplateValue{
 				ExternalSecretRef: v.ExternalSecretRef,
+			}
+		case v.ExternalSecretRefSelector != nil:
+			expanded[k] = ClusterConfigTemplateValue{
+				ExternalSecretRef: &v.ExternalSecretRefSelector.Name,
+				Optional:          ptr.Deref(v.ExternalSecretRefSelector.Optional, false),
 			}
 		default:
 			return nil, nil, fmt.Errorf("cluster config %q has no value: %#v", k, v)
@@ -163,6 +170,26 @@ func ExpandForConfiguration(
 				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
 			}
 			properties[k] = value
+		case v.ExternalSecretRefSelector != nil:
+			optional := ptr.Deref(v.ExternalSecretRefSelector.Optional, false)
+			if cloudExpander == nil {
+				if optional {
+					continue
+				}
+				return nil, errors.New(fmt.Sprintf("configuration entry %q: external secret provided but the expander was not configured", k))
+			}
+			expanded, err := cloudExpander.Expand(ctx, v.ExternalSecretRefSelector.Name)
+			if err != nil {
+				if optional {
+					continue
+				}
+				return nil, fmt.Errorf("configuration entry %q: trouble expanding external secret reference: %w", k, err)
+			}
+			value, err := ParseRepresentation(expanded, &metadata)
+			if err != nil {
+				return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			}
+			properties[k] = value
 		default:
 			return nil, fmt.Errorf("unrecognised configuration entry for key %q", k)
 		}
@@ -232,10 +259,16 @@ func ExpandValueForTemplate(ctx context.Context, cloudExpander *pkgsecrets.Cloud
 		return "", fmt.Errorf("referenced environment variable is unset: %s", *v.EnvVarRef)
 	case v.ExternalSecretRef != nil:
 		if cloudExpander == nil {
+			if v.Optional {
+				return "", nil
+			}
 			return "", fmt.Errorf("configuration entry %q: external secret references are unsupported", *v.ExternalSecretRef)
 		}
 		expanded, err := cloudExpander.Expand(ctx, *v.ExternalSecretRef)
 		if err != nil {
+			if v.Optional {
+				return "", nil
+			}
 			return "", fmt.Errorf("configuration entry %q: trouble expanding external secret reference: %w", *v.ExternalSecretRef, err)
 		}
 		return vectorizedv1alpha1.YAMLRepresentation(expanded), nil

@@ -245,8 +245,18 @@ type ClusterConfigValue struct {
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 	// If the value is supplied by an external source, coordinates are embedded here.
 	// Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
-	// TODO: This decision needs finalising and documenting.
-	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
+	// Deprecated: replaced by "externalSecretRefSelector"
+	ExternalSecretRef         *string                    `json:"externalSecretRef,omitempty"`
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRefSelector,omitempty"`
+}
+
+// ExternalSecretSelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name" protobuf:"bytes,2,opt,name=name"`
+	// Specify whether the Secret or its key must be defined
+	// +optional
+	Optional *bool `json:"optional,omitempty" protobuf:"varint,3,opt,name=optional"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:

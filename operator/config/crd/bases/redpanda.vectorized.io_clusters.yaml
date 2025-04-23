@@ -214,7 +214,22 @@ spec:
                       description: |-
                         If the value is supplied by an external source, coordinates are embedded here.
                         Note: we interpret all fetched external secrets as string values and yam-encode them prior to embedding.
+                        Deprecated: replaced by "externalSecretRefSelector"
                       type: string
+                    externalSecretRefSelector:
+                      description: ExternalSecretSelector selects a key of an external
+                        Secret.
+                      properties:
+                        name:
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - name
+                      type: object
+                      x-kubernetes-map-type: atomic
                     repr:
                       description: |-
                         If the value is directly known, its yaml representation can be embedded here.
