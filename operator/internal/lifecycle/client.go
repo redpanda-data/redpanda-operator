@@ -169,8 +169,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
 		if err != nil {
-			nomatcherr := &apimeta.NoKindMatchError{}
-			if !errors.As(err, &nomatcherr) {
+			if !apimeta.IsNoMatchError(err) {
 				return err
 			}
 			// we have a no match error, so just drop the watch altogether
@@ -246,7 +245,12 @@ func (r *ResourceClient[T, U]) listResources(ctx context.Context, object client.
 	}
 
 	if err := r.client.List(ctx, list, opts...); err != nil {
-		return nil, fmt.Errorf("listing resources: %w", err)
+		// no-op list on unregistered resources, this happens when we
+		// don't actually have a CRD installed for some resource type
+		// we're trying to list
+		if !apimeta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("listing resources: %w", err)
+		}
 	}
 
 	converted := []client.Object{}
@@ -300,8 +304,7 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 
 	mapping, err := getResourceScope(r.mapper, r.scheme, object)
 	if err != nil {
-		nomatcherr := &apimeta.NoKindMatchError{}
-		if !errors.As(err, &nomatcherr) {
+		if !apimeta.IsNoMatchError(err) {
 			return err
 		}
 
