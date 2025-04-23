@@ -89,6 +89,7 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=batch,namespace=default,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete;
+// +kubebuilder:rbac:groups=apps,namespace=default,resources=controllerrevisions,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=policy,namespace=default,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cert-manager.io,namespace=default,resources=certificates,verbs=get;create;update;patch;delete;list;watch
@@ -136,6 +137,18 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if !isRedpandaManaged(ctx, rp) {
+		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
+			if err := r.Client.Update(ctx, rp); err != nil {
+				log.Error(err, "updating cluster finalizer")
+				// no need to update the status at this point since the
+				// previous update failed
+				return ignoreConflict(err)
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
@@ -149,16 +162,10 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	status := lifecycle.NewClusterStatus()
 	status.Pools = pools.PoolStatuses()
 
-	if !isRedpandaManaged(ctx, rp) {
-		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
-			if err := r.Client.Update(ctx, rp); err != nil {
-				log.Error(err, "updating cluster finalizer")
-				// no need to update the status at this point since the
-				// previous update failed
-				return ignoreConflict(err)
-			}
-		}
-		return ctrl.Result{}, nil
+	if pools.AnyReady() {
+		status.Status.SetReady(statuses.ClusterReadyReasonReady)
+	} else {
+		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
 	}
 
 	// Examine if the object is under deletion
@@ -168,6 +175,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return r.syncStatusErr(ctx, err, status, rp)
 		}
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
+			rp.ManagedFields = nil
 			if err := r.Client.Update(ctx, rp); err != nil {
 				log.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
@@ -181,6 +189,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// we are not deleting, so add a finalizer first before
 	// allocating any additional resources
 	if controllerutil.AddFinalizer(rp, FinalizerKey) {
+		rp.ManagedFields = nil
 		if err := r.Client.Update(ctx, rp); err != nil {
 			log.Error(err, "updating cluster finalizer")
 			return ignoreConflict(err)
@@ -645,6 +654,7 @@ func (r *RedpandaReconciler) syncStatusErr(ctx context.Context, err error, statu
 func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
 	var err error
 	if r.LifecycleClient.SetClusterStatus(cluster, status) {
+		cluster.ManagedFields = nil
 		err = r.Client.Status().Update(ctx, cluster)
 	}
 

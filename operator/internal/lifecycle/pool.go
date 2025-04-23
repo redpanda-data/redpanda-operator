@@ -72,6 +72,16 @@ func (p *PoolTracker) ExistingStatefulSets() []string {
 	return sets
 }
 
+// AnyReady returns true if any of the existing pools have a ready replica.
+func (p *PoolTracker) AnyReady() bool {
+	for _, pool := range p.existingPools {
+		if pool.set.Status.ReadyReplicas > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
 func (p *PoolTracker) PoolStatuses() []PoolStatus {
 	sets := []PoolStatus{}

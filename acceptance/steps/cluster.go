@@ -29,15 +29,22 @@ func checkClusterAvailability(ctx context.Context, t framework.TestingT, cluster
 	t.Logf("Checking cluster %q is ready", clusterName)
 	require.Eventually(t, func() bool {
 		require.NoError(t, t.Get(ctx, key, &cluster))
-		hasCondition := t.HasCondition(metav1.Condition{
+		hasConditionClusterDeployed := t.HasCondition(metav1.Condition{
 			Type:   "Ready",
 			Status: metav1.ConditionTrue,
 			Reason: "RedpandaClusterDeployed",
 		}, cluster.Status.Conditions)
+		hasConditionReady := t.HasCondition(metav1.Condition{
+			Type:   "Ready",
+			Status: metav1.ConditionTrue,
+			Reason: "Ready",
+		}, cluster.Status.Conditions)
 
-		t.Logf(`Checking cluster resource conditions contains "RedpandaClusterDeployed"? %v`, hasCondition)
+		hasCondition := hasConditionClusterDeployed || hasConditionReady
+
+		t.Logf(`Checking cluster resource conditions contains "RedpandaClusterDeployed" or "Ready"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never contained the condition reason "RedpandaClusterDeployed", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}, 5*time.Minute, 5*time.Second, `Cluster %q never contained the condition reason "RedpandaClusterDeployed" ot "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	t.Logf("Cluster %q is ready!", clusterName)
 }
 
