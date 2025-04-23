@@ -52,7 +52,13 @@ until [ "$retries" -lt 0 ]; do
   echo "$actual"
   echo
   echo Difference:
-  diff -b <(echo "$actual") <(echo "$expected") && exit 0
+  if diff -b <(echo "$actual") <(echo "$expected") ; then
+    echo "Fetching bootstrap from $NAMESPACE/additional-configuration-0"
+    actual=$(kubectl -n "$NAMESPACE" exec additional-configuration-0 -- cat /etc/redpanda/.bootstrap.yaml)
+    echo "Actual bootstrap:"
+    echo "$actual"
+    diff -b <(echo "$actual") <(echo "$expected_bootstrap") && exit 0
+  fi
   echo "Retrying... ({$retries} left)"
   sleep 5
   ((retries = retries - 1))
