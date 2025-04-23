@@ -55,7 +55,7 @@ import (
 
 const (
 	FinalizerKey                    = "operator.redpanda.com/finalizer"
-	ClusterConfigVersionKey         = "operator.redpanda.com/cluster-config-version"
+	ClusterConfigNeedRestartHashKey = "operator.redpanda.com/cluster-config-need-restart-hash"
 	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
 	FluxFinalizerKey                = "finalizers.fluxcd.io"
 
@@ -372,7 +372,7 @@ func (r *RedpandaReconciler) reconcileDefluxed(ctx context.Context, rp *redpanda
 			if values.Statefulset.PodTemplate.Annotations == nil {
 				values.Statefulset.PodTemplate.Annotations = map[string]string{}
 			}
-			values.Statefulset.PodTemplate.Annotations[ClusterConfigVersionKey] = c.Message
+			values.Statefulset.PodTemplate.Annotations[ClusterConfigNeedRestartHashKey] = c.Message
 		}
 	}
 
@@ -656,7 +656,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		Status:             condition,
 		ObservedGeneration: rp.Generation,
 		Reason:             reason,
-		Message:            fmt.Sprintf("ClusterConfig at Version %d", configStatus.Version),
+		Message:            fmt.Sprintf("ClusterConfig with Hash %s", configStatus.PropertiesThatNeedRestartHash),
 	})
 
 	return nil
