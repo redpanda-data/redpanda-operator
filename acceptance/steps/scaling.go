@@ -4,12 +4,13 @@ import (
 	"context"
 	"time"
 
-	framework "github.com/redpanda-data/redpanda-operator/harpoon"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int) {
