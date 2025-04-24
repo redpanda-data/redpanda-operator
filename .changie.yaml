@@ -3,7 +3,9 @@ unreleasedDir: unreleased
 headerPath: header.tpl.md
 changelogPath: CHANGELOG.md
 versionExt: md
-versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+# NB: Changie's BatchData doesn't have a .Project (our git tag) so we have to rip it out of .Changes.
+# Sprig has no urlencoding library but the only unsafe character we have to worry about is /, so replace works fine here.
+versionFormat: '## [{{.Version}}](https://github.com/redpanda-data/redpanda-operator/releases/tag/{{(index .Changes 0).Project | replace "/" "%2F"}}%2F{{.Version}}) - {{.Time.Format "2006-01-02"}}'
 kindFormat: '### {{.Kind}}'
 changeFormat: '* {{.Body}}'
 body:
@@ -37,6 +39,42 @@ projects:
 - label: Redpanda Operator
   key: operator
   changelog: operator/CHANGELOG.md
+  replacements:
+    # Update operator's Chart.yaml
+    - path: operator/chart/Chart.yaml
+      find: '^version: .*$'
+      replace: 'version: {{.Version}}'
+    - path: operator/chart/Chart.yaml
+      find: '^appVersion: .*$'
+      replace: 'appVersion: {{.Version}}'
+    - path: operator/chart/Chart.yaml
+      find: '/redpanda-operator:.*$'
+      replace: '/redpanda-operator:{{.Version}}'
+    # Update golden files of the operator chart itself.
+    - path: operator/chart/testdata/*.golden.txtar
+      find: '/chart: operator-v.*$'
+      replace: '/chart: operator-{{.Version}}'
+    - path: operator/chart/testdata/*.golden.txtar
+      find: '/version: v.*$'
+      replace: '/version: {{.Version}}'
+    # Update references to the operator image in redpanda's values.yaml
+    # The whitespace ensures we update both values without touching the redpanda tag.
+    # It's fragile but all values are checked via unittests.
+    - path: charts/redpanda/values.yaml
+      find: '^      tag: .*$'
+      replace: '      tag: {{.Version}}'
+    - path: charts/redpanda/values.yaml
+      find: '^        tag: .*$'
+      replace: '        tag: {{.Version}}'
+    # Update golden files across the entire repo.
+    # Changie uses go's filepath.Match which doesn't support ** globbing so
+    # there's some repetition here.
+    - path: 'charts/redpanda/testdata/*.golden.txtar'
+      find: 'image: docker.redpanda.com/redpandadata/redpanda-operator:v.*$'
+      replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
+    - path: 'operator/internal/lifecycle/testdata/*.golden.txtar'
+      find: 'image: docker.redpanda.com/redpandadata/redpanda-operator:v.*$'
+      replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
 - label: Redpanda Helm Chart
   key: charts/redpanda
   changelog: charts/redpanda/CHANGELOG.md
