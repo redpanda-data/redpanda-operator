@@ -12,9 +12,12 @@ package framework
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -255,6 +258,9 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 					})
 					setupErrorCheck(ctx, err, cleanup)
 
+					err = pullImages(b.images)
+					setupErrorCheck(ctx, err, cleanup)
+
 					err = provider.LoadImages(ctx, b.images)
 					setupErrorCheck(ctx, err, cleanup)
 
@@ -393,4 +399,15 @@ func writeTestLog(buffer bytes.Buffer, path string) {
 		fmt.Println("Error writing test output log to disk, writing to stdout")
 		fmt.Println(buffer.String())
 	}
+}
+
+func pullImages(images []string) error {
+	for _, image := range images {
+		if !strings.HasPrefix(image, "localhost") {
+			if output, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
+				return errors.New(string(output))
+			}
+		}
+	}
+	return nil
 }
