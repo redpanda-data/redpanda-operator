@@ -145,6 +145,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		_ string,
 		_ types.AdminTLSConfigProvider,
 		_ redpanda.DialContextFunc,
+		_ time.Duration,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
 		api := testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))

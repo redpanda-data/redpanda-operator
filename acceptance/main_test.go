@@ -77,6 +77,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						"tag":        imageTag,
 						"repository": imageRepo,
 					},
+					"additionalCmdFlags": []string{"--cluster-connection-timeout=500ms"},
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")

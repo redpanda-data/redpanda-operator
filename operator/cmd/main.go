@@ -24,12 +24,18 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
 )
 
 var (
-	rootCmd = cobra.Command{
+	outputTimingsOnly bool
+	rootCmd           = cobra.Command{
 		Use: "redpanda-operator",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if outputTimingsOnly {
+				timing.SetupTimingOnlyLogger()
+			}
+
 			// Configure logging consistently for all sub-commands.
 			// NB: If a subcommand relies on outputting to stdout, logging may
 			// cause issues as it's default output it stdout.
@@ -52,6 +58,7 @@ func init() {
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())
+	rootCmd.PersistentFlags().BoolVar(&outputTimingsOnly, "output-timings-only", false, "Set this flag to only log instrumentation timings")
 }
 
 func main() {

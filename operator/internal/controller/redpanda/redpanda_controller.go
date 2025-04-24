@@ -37,6 +37,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
@@ -122,15 +123,9 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 }
 
 func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	start := time.Now()
 	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.Reconcile")
 
-	defer func() {
-		durationMsg := fmt.Sprintf("reconciliation finished in %s", time.Since(start).String())
-		log.V(TraceLevel).Info(durationMsg)
-	}()
-
-	log.V(TraceLevel).Info("Starting reconcile loop")
+	defer timing.Execution(ctx).Stop("reconciling redpanda cluster")
 
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
@@ -260,6 +255,8 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	defer timing.Execution(ctx).Stop("reconciling resources")
+
 	cloned := rp.DeepCopy()
 	if cloned.Spec.ClusterSpec == nil {
 		cloned.Spec.ClusterSpec = &redpandav1alpha2.RedpandaClusterSpec{}
@@ -299,6 +296,8 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 // every scale down happens a single broker at a time, ending reconciliation early and requeueing
 // the cluster if a decommissioning operation/scale down is currently in progress.
 func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda, pools *lifecycle.PoolTracker) (*rpadmin.AdminAPI, bool, error) {
+	defer timing.Execution(ctx).Stop("reconciling pools")
+
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcilePools", *cluster))
 
 	if !pools.CheckScale() {
@@ -456,6 +455,8 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 }
 
 func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (*redpandav1alpha2.RedpandaLicenseStatus, error) {
+	defer timing.Execution(ctx).Stop("reconciling license")
+
 	if err := r.setupLicense(ctx, rp, admin); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -528,6 +529,8 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 }
 
 func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI, status *lifecycle.ClusterStatus) error {
+	defer timing.Execution(ctx).Stop("reconciling cluster health")
+
 	overview, err := admin.GetHealthOverview(ctx)
 	if err != nil {
 		if internalclient.IsTerminalClientError(err) {
@@ -550,6 +553,8 @@ func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *
 }
 
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
+	defer timing.Execution(ctx).Stop("reconciling cluster configuration")
+
 	config, err := r.clusterConfigFor(ctx, rp)
 	if err != nil {
 		return "", false, errors.WithStack(err)
@@ -664,6 +669,8 @@ func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *l
 }
 
 func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, rpadmin.ClusterHealthOverview, error) {
+	defer timing.Execution(ctx).Stop("fetching cluster health")
+
 	var health rpadmin.ClusterHealthOverview
 
 	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, cluster)
