@@ -1,4 +1,4 @@
-project: charts/operator
+project: operator
 kind: Removed
 body: |-
     The [`kube-prometheus-stack`](https://prometheus-community.github.io/helm-charts) subchart has been removed.
