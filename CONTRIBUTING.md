@@ -84,6 +84,16 @@ applying the "no-changelog" label.
 
 ## Releasing
 
+### Release Management
+
+This repository is a mono-repo with long lived release branches. The
+individually releasable pieces are sometimes interconnected and we often find
+ourselves pushing fixes in last minute. In order to prevent context loss and to
+preserve our own sanity releases are coordinated and managed using [Jira
+Releases](https://redpandadata.atlassian.net/projects/K8S?selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page).
+
+### Cutting a Release
+
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
     - If minting a pre-release, specify `-k` to keep the unreleased changes in place for the official release.
