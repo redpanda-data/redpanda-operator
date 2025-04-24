@@ -19,12 +19,26 @@ import (
 type Template[T any] struct {
 	Content T `json:"content,omitempty" yaml:"content,omitempty"`
 
-	Fixups []Fixup `json:"fixups,omitempty"`
+	Fixups   []Fixup `json:"fixups,omitempty"`
+	Warnings []error
 }
 
 type Fixup struct {
 	Field string `json:"field"`
 	CEL   string `json:"cel"`
+}
+
+// Warning is an error type that will not be fatal.
+type Warning struct {
+	cause error
+}
+
+func (w Warning) Error() string {
+	return fmt.Sprintf("warning: %s", w.cause.Error())
+}
+
+func (w Warning) Unwrap() error {
+	return w.cause
 }
 
 type CelFactory func(reflect.Value) (*cel.Env, error)
@@ -62,6 +76,11 @@ func (t *Template[T]) Fixup(engine func(reflect.Value) (*cel.Env, error)) error 
 		}
 		result, _, err := prog.ContextEval(context.Background(), map[string]any{"it": v})
 		if err != nil {
+			var w Warning
+			if errors.As(err, &w) {
+				t.Warnings = append(t.Warnings, err)
+				continue
+			}
 			errs = append(errs, fmt.Errorf("problem running CEL expression for field %q: %w", f.Field, err))
 			continue
 		}
@@ -128,26 +147,37 @@ func fieldByNameOrJSON(v reflect.Value, name string) (reflect.Value, *reflect.Va
 			if f.Name == name {
 				return v.Field(i), nil
 			}
-			jsonTag, ok := f.Tag.Lookup("json")
-			if !ok {
-				continue
+			if jsonTag, ok := f.Tag.Lookup("json"); ok {
+				jsonValues := strings.Split(jsonTag, ",")
+				if len(jsonValues) == 0 {
+					continue
+				}
+				if jsonValues[0] == "" {
+					unnamed = v.Field(i)
+					continue
+				}
+				if jsonValues[0] != name {
+					continue
+				}
+				return v.Field(i), nil
+			} else if yamlTag, ok := f.Tag.Lookup("yaml"); ok {
+				yamlValues := strings.Split(yamlTag, ",")
+				if len(yamlValues) == 0 {
+					continue
+				}
+				if yamlValues[0] == "" {
+					unnamed = v.Field(i)
+					continue
+				}
+				if yamlValues[0] != name {
+					continue
+				}
+				return v.Field(i), nil
 			}
-			jsonValues := strings.Split(jsonTag, ",")
-			if len(jsonValues) == 0 {
-				continue
-			}
-			if jsonValues[0] == "" {
-				unnamed = v.Field(i)
-				continue
-			}
-			if jsonValues[0] != name {
-				continue
-			}
-			return v.Field(i), nil
 		}
 		if unnamed.IsValid() {
 			// Try searching down an inlined json
-			return fieldByNameOrJSON(v, name)
+			return fieldByNameOrJSON(unnamed, name)
 		}
 	case reflect.Pointer:
 		return fieldByNameOrJSON(v.Elem(), name)
