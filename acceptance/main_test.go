@@ -81,7 +81,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						"createAdditionalControllerCRs": true,
 						"createRPKBundleCRs":            true,
 					},
-					"additionalCmdFlags": []string{"--additional-controllers=all", "--enable-helm-controllers=false", "--force-defluxed-mode"},
+					"additionalCmdFlags": []string{"--additional-controllers=all", "--unbind-pvcs-after=5s"},
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")
