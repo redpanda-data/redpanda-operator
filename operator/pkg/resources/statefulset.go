@@ -122,6 +122,7 @@ type StatefulSetResource struct {
 	nodePool          vectorizedv1alpha1.NodePoolSpecWithDeleted
 
 	autoDeletePVCs bool
+	timeout        time.Duration
 	dialer         redpanda.DialContextFunc
 }
 

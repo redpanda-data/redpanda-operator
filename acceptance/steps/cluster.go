@@ -142,7 +142,7 @@ func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterNam
 		require.NoError(t, t.Get(ctx, key, &cluster))
 
 		for _, pool := range cluster.Status.NodePools {
-			actualNodeCount += pool.RunningReplicas
+			actualNodeCount += pool.UpToDateReplicas
 		}
 
 		matchesCount := nodeCount == actualNodeCount
