@@ -40,7 +40,7 @@ func (p *K3DProvider) Initialize() error {
 }
 
 func (p *K3DProvider) Setup(_ context.Context) error {
-	cluster, err := k3d.GetOrCreate("harpoon", k3d.SkipManifestInstallation(), k3d.WithAgents(p.nodes))
+	cluster, err := k3d.GetOrCreate("harpoon", k3d.WithServerNoSchedule(), k3d.SkipManifestInstallation(), k3d.WithAgents(p.nodes))
 	if err != nil {
 		return err
 	}

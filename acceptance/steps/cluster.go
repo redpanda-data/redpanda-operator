@@ -65,7 +65,7 @@ func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster
 }
 
 func checkClusterUnhealthy(ctx context.Context, t framework.TestingT, clusterName string) {
-	checkClusterHealthCondition(ctx, t, clusterName, "Unhealthy", metav1.ConditionFalse)
+	checkClusterHealthCondition(ctx, t, clusterName, "NotHealthy", metav1.ConditionFalse)
 }
 
 func checkClusterHealthy(ctx context.Context, t framework.TestingT, clusterName string) {
@@ -94,7 +94,7 @@ func checkClusterHealthCondition(ctx context.Context, t framework.TestingT, clus
 	t.Logf("Cluster %q contains Healthy reason %q!", clusterName, reason)
 }
 
-func deleteRandomClusterNode(ctx context.Context, t framework.TestingT, clusterName string) {
+func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, clusterName string) {
 	var clusterSet appsv1.StatefulSet
 
 	key := t.ResourceKey(clusterName)
@@ -114,7 +114,20 @@ func deleteRandomClusterNode(ctx context.Context, t framework.TestingT, clusterN
 	index := rand.Intn(len(pods.Items))
 	pod := pods.Items[index]
 
-	t.DeleteNode(ctx, pod.Spec.NodeName)
+	t.ShutdownNode(ctx, pod.Spec.NodeName)
+}
+
+func deleteNotReadyKubernetesNodes(ctx context.Context, t framework.TestingT) {
+	var nodes corev1.NodeList
+	require.NoError(t, t.List(ctx, &nodes))
+	for _, node := range nodes.Items {
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == corev1.NodeReady && (condition.Status == corev1.ConditionFalse || condition.Status == corev1.ConditionUnknown) {
+				t.Logf("Deleting Kubernetes node: %q", node.Name)
+				t.DeleteNode(ctx, node.Name)
+			}
+		}
+	}
 }
 
 func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int32) {

@@ -73,6 +73,7 @@ func init() {
 	// Decommissioning scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" is unhealthy$`, checkClusterUnhealthy)
 	framework.RegisterStep(`^cluster "([^"]*)" should recover$`, checkClusterHealthy)
-	framework.RegisterStep(`^I delete a kubernetes node for cluster "([^"]*)"$`, deleteRandomClusterNode)
+	framework.RegisterStep(`^I physically shutdown a kubernetes node for cluster "([^"]*)"$`, shutdownRandomClusterNode)
+	framework.RegisterStep(`^I prune any kubernetes node that is now in a NotReady status$`, deleteNotReadyKubernetesNodes)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
 }

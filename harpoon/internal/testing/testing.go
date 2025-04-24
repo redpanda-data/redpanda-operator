@@ -239,17 +239,21 @@ func (t *TestingT) ApplyFixture(ctx context.Context, fileOrDirectory string) {
 }
 
 func (t *TestingT) DeleteNode(ctx context.Context, name string) {
-	provider := t.Provider(ctx)
-
-	t.Logf("Deleting node %q", name)
-	require.NoError(t, provider.DeleteNode(ctx, name))
+	t.Logf("Deleting node %q in Kubernetes", name)
 	require.NoError(t, t.Delete(ctx, &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}))
+}
+
+func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
+	provider := t.Provider(ctx)
+
+	t.Logf("Deleting provider node %q", name)
+	require.NoError(t, provider.DeleteNode(ctx, name))
 	t.Cleanup(func(ctx context.Context) {
-		t.Logf("Recreating deleted node %q", name)
+		t.Logf("Recreating deleted provider node %q", name)
 		require.NoError(t, provider.AddNode(ctx, name))
 	})
 }

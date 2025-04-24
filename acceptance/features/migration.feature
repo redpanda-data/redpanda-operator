@@ -10,7 +10,7 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
         """
 
         When I record "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name as "Statefulset-Generation"
-        When I apply the following Redpanda custom resource manifest for migration:
+        And I apply the following Redpanda custom resource manifest for migration:
         """
     # tag::redpanda-custom-resource-manifest[]
         ---
@@ -26,7 +26,7 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
         """
 
         Then the Redpanda custom resource "redpanda-migration-example" becomes Ready.
-        Then the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
-        Then "redpanda-migration-example" helm release can be deleted by removing secret
-        Then "redpanda-migration-example" Redpanda cluster is healthy
-        Then recorded "Statefulset-Generation" has the same value as "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name
+        And the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
+        And "redpanda-migration-example" helm release can be deleted by removing secret
+        And "redpanda-migration-example" Redpanda cluster is healthy
+        And recorded "Statefulset-Generation" has the same value as "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name
