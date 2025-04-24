@@ -78,10 +78,11 @@ func (c clusterOpt) apply(config *clusterConfig) {
 }
 
 type clusterConfig struct {
-	agents        int
-	timeout       time.Duration
-	image         string
-	skipManifests bool
+	agents           int
+	timeout          time.Duration
+	image            string
+	skipManifests    bool
+	serverNoSchedule bool
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -100,6 +101,12 @@ func defaultClusterConfig() *clusterConfig {
 func WithAgents(agents int) clusterOpt {
 	return func(config *clusterConfig) {
 		config.agents = agents
+	}
+}
+
+func WithServerNoSchedule() clusterOpt {
+	return func(config *clusterConfig) {
+		config.serverNoSchedule = true
 	}
 }
 
@@ -181,6 +188,15 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
 		`--verbose`,
+	}
+
+	if config.serverNoSchedule {
+		args = append(args, []string{
+			// This can be useful for tests in which we don't want to accidentally
+			// kill the API server when we delete arbitrary nodes to simulate
+			// hardware failures
+			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
+		}...)
 	}
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()

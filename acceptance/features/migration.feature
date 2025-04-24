@@ -34,6 +34,8 @@ Feature: Helm chart to Redpanda Operator migration
         And the Redpanda custom resource "redpanda-migration-example" becomes Ready.
         And "redpanda-migration-example" Helm release is deleted by removing secret
 
-        Then the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
+        Then the Redpanda custom resource "redpanda-migration-example" becomes Ready.
+        And the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
+        And the "redpanda-migration-example" Helm release can be deleted by removing secret
         And the "redpanda-migration-example" cluster is healthy
-        And the recorded "Statefulset-Generation" matches the current "{.metadata.generation}" field of the "StatefulSet.v1.apps" resource named "name-override"
+        And recorded "Statefulset-Generation" has the same value as "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name

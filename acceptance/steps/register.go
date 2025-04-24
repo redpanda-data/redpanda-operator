@@ -18,7 +18,7 @@ func init() {
 
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
-	framework.RegisterStep(`^I record "([^"]*)" of "([^"]*)" with "([^"]*)" name as "([^"]*)"$`, recordVariable)
+	framework.RegisterStep(`^I record the "([^"]*)" field of the "([^"]*)" resource named "([^"]*)" as "([^"]*)"$`, recordVariable)
 	framework.RegisterStep(`^the recorded "([^"]*)" matches the current "([^"]*)" field of the "([^"]*)" resource named "([^"]*)"$`, assertVariableValue)
 
 	// Schema scenario steps
@@ -57,7 +57,7 @@ func init() {
 	framework.RegisterStep(`^I apply the following Redpanda custom resource manifest for migration:$`, iApplyKubernetesManifest)
 	framework.RegisterStep(`^the Redpanda custom resource "([^"]*)" becomes Ready.$`, checkClusterAvailability)
 	framework.RegisterStep(`^the StatefulSet "([^"]*)" has an OwnerReference pointing to the Redpanda custom resource "([^"]*)".$`, statefulSetHaveOwnerReference)
-	framework.RegisterStep(`^"([^"]*)" Helm release can be deleted by removing secret$`, iDeleteHelmReleaseSecret)
+	framework.RegisterStep(`^the "([^"]*)" Helm release can be deleted by removing secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the "([^"]*)" cluster is healthy$`, redpandaClusterIsHealthy)
 
 	// Scaling scenario steps
@@ -73,6 +73,7 @@ func init() {
 	// Decommissioning scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" is unhealthy$`, checkClusterUnhealthy)
 	framework.RegisterStep(`^cluster "([^"]*)" should recover$`, checkClusterHealthy)
-	framework.RegisterStep(`^I delete a kubernetes node for cluster "([^"]*)"$`, deleteRandomClusterNode)
+	framework.RegisterStep(`^I physically shutdown a kubernetes node for cluster "([^"]*)"$`, shutdownRandomClusterNode)
+	framework.RegisterStep(`^I prune any kubernetes node that is now in a NotReady status$`, deleteNotReadyKubernetesNodes)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
 }

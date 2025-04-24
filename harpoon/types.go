@@ -43,6 +43,7 @@ type TestingT interface {
 	ApplyFixture(ctx context.Context, fileOrDirectory string)
 	ApplyManifest(ctx context.Context, fileOrDirectory string)
 
+	ShutdownNode(ctx context.Context, name string)
 	DeleteNode(ctx context.Context, name string)
 	AddNode(ctx context.Context, name string)
 
