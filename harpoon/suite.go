@@ -404,6 +404,7 @@ func writeTestLog(buffer bytes.Buffer, path string) {
 func pullImages(images []string) error {
 	for _, image := range images {
 		if !strings.HasPrefix(image, "localhost") {
+			//nolint:gosec // this code is for tests
 			if output, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
 				return errors.New(string(output))
 			}
