@@ -69,4 +69,10 @@ func init() {
 	// General cluster scenario steps
 	framework.RegisterStep(`^service "([^"]*)" has named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
 	framework.RegisterStep(`^service "([^"]*)" should have named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
+
+	// Decommissioning scenario steps
+	framework.RegisterStep(`^cluster "([^"]*)" is unhealthy$`, checkClusterUnhealthy)
+	framework.RegisterStep(`^cluster "([^"]*)" should recover$`, checkClusterHealthy)
+	framework.RegisterStep(`^I delete a kubernetes node for cluster "([^"]*)"$`, deleteRandomClusterNode)
+	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
 }

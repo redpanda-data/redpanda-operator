@@ -41,6 +41,9 @@ type TestingT interface {
 	ApplyFixture(ctx context.Context, fileOrDirectory string)
 	ApplyManifest(ctx context.Context, fileOrDirectory string)
 
+	DeleteNode(ctx context.Context, name string)
+	AddNode(ctx context.Context, name string)
+
 	IsolateNamespace(ctx context.Context) string
 
 	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)

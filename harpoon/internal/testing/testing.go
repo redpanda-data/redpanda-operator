@@ -17,6 +17,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -242,7 +243,11 @@ func (t *TestingT) DeleteNode(ctx context.Context, name string) {
 
 	t.Logf("Deleting node %q", name)
 	require.NoError(t, provider.DeleteNode(ctx, name))
-
+	require.NoError(t, t.Delete(ctx, &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}))
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Recreating deleted node %q", name)
 		require.NoError(t, provider.AddNode(ctx, name))
@@ -258,6 +263,11 @@ func (t *TestingT) AddNode(ctx context.Context, name string) {
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Deleting temporary node %q", name)
 		require.NoError(t, provider.DeleteNode(ctx, name))
+		require.NoError(t, t.Delete(ctx, &corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}))
 	})
 }
 
