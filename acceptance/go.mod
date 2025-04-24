@@ -8,12 +8,13 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
-	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250123152815-98530dc8f04d
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.18.0
 	github.com/twmb/franz-go/pkg/kadm v1.12.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.3
@@ -30,12 +31,23 @@ require (
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240715174743-9c0afe867874.2 // indirect
 	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240620104934-3415ce922cfb.1 // indirect
 	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240620104934-3415ce922cfb.2 // indirect
+	cloud.google.com/go/auth v0.9.9 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
+	cloud.google.com/go/compute/metadata v0.5.2 // indirect
+	cloud.google.com/go/iam v1.2.1 // indirect
+	cloud.google.com/go/secretmanager v1.14.2 // indirect
 	connectrpc.com/connect v1.16.2 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	emperror.dev/errors v0.8.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets v0.12.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.7.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -43,7 +55,22 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.32.3 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.28.1 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.42 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.18 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.22 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.22 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.34.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.24.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3 // indirect
+	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
@@ -75,21 +102,22 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fluxcd/helm-controller/api v0.37.2 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.2.0 // indirect
-	github.com/fluxcd/pkg/apis/meta v1.2.0 // indirect
+	github.com/fluxcd/pkg/runtime v0.43.3 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.12 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gonvenience/bunt v1.3.5 // indirect
@@ -99,11 +127,15 @@ require (
 	github.com/gonvenience/wrap v1.2.0 // indirect
 	github.com/gonvenience/ytbx v1.4.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
+	github.com/google/cel-go v0.18.2 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
+	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -132,6 +164,7 @@ require (
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -163,21 +196,27 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2 // indirect
 	github.com/prometheus/client_golang v1.20.4 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
+	github.com/redpanda-data/common-go/secrets v0.1.3 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 // indirect
-	github.com/redpanda-data/redpanda-operator/charts v0.0.0-20250117101058-ffdbfad7bc6b // indirect
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta3 // indirect
+	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
+	github.com/scalalang2/golang-fifo v1.0.2 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/sethgrid/pester v1.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -186,7 +225,11 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.9.0 // indirect
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0 // indirect
 	github.com/twmb/tlscfg v1.2.1 // indirect
@@ -196,6 +239,8 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
+	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
 	go.opentelemetry.io/otel v1.29.0 // indirect
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
@@ -204,7 +249,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
@@ -215,6 +259,7 @@ require (
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
+	google.golang.org/api v0.203.0 // indirect
 	google.golang.org/genproto v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
@@ -240,4 +285,9 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
-replace github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
+replace (
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
+	github.com/redpanda-data/redpanda-operator/operator => ../operator
+	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
+)

@@ -178,8 +178,6 @@ tasks:
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:
-<<<<<<< HEAD
-    - task: charts:kind-cluster
     - task: build:image
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
@@ -187,14 +185,6 @@ tasks:
       RUN: '{{ default `"^TestAcceptance"` .RUN }}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
-    - kind load docker-image localhost/redpanda-operator:dev
-=======
-    - build:image
-    vars:
-      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
-      CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
-    cmds:
->>>>>>> 88a4cd045 (Add k3d test infrastructure)
     - task: test:unit
       vars:
         GO_TEST_RUNNER:

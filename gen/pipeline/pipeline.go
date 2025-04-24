@@ -60,14 +60,6 @@ var suites = []TestSuite{
 		Timeout:      30 * time.Minute,
 		JUnitPattern: ptr.To("work/operator/tests/_e2e_with_flags_artifacts/kuttl-report.xml"),
 	},
-	{
-		Name: "kuttl-v2",
-		// swap this over when https://github.com/redpanda-data/redpanda-operator/pull/546
-		// gets backported, released, and the operator ref to the redpanda chart gets rev'd
-		Required:     false,
-		Timeout:      time.Hour,
-		JUnitPattern: ptr.To("work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml"),
-	},
 }
 
 func Cmd() *cobra.Command {

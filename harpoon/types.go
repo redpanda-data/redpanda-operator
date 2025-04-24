@@ -26,8 +26,10 @@ import (
 
 type TagHandler func(ctx context.Context, t TestingT, arguments ...string) context.Context
 
-type Provider = internaltesting.PartialProvider
-type FullProvider = internaltesting.Provider
+type (
+	Provider     = internaltesting.PartialProvider
+	FullProvider = internaltesting.Provider
+)
 
 type TestingT interface {
 	godog.TestingT
