@@ -17,8 +17,7 @@ import (
 // Instead, all entries are single-line YAML representations of values.
 // We provide custom CEL functions to support both of these.
 type Template[T any] struct {
-	Content T `json:"content,omitempty" yaml:"content,omitempty"`
-
+	Content  T       `json:"content,omitempty" yaml:"content,omitempty"`
 	Fixups   []Fixup `json:"fixups,omitempty"`
 	Warnings []error
 }
