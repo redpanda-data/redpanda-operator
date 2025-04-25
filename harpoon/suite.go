@@ -264,6 +264,8 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 					err = provider.LoadImages(ctx, b.images)
 					setupErrorCheck(ctx, err, cleanup)
 
+					b.testingOpts.Images = b.images
+
 					// now add helm charts
 					for _, chart := range b.helmCharts {
 						err = helmClient.RepoAdd(ctx, chart.repo, chart.url)

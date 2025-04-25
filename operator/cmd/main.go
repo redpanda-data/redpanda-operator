@@ -15,6 +15,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/spf13/cobra"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
@@ -34,12 +35,15 @@ var (
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if outputTimingsOnly {
 				timing.SetupTimingOnlyLogger()
+				return
 			}
 
 			// Configure logging consistently for all sub-commands.
 			// NB: If a subcommand relies on outputting to stdout, logging may
 			// cause issues as it's default output it stdout.
-			ctrl.SetLogger(logger.NewLogger(logOptions))
+			log := logger.NewLogger(logOptions)
+			klog.SetLogger(log)
+			ctrl.SetLogger(log)
 		},
 	}
 
