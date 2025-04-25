@@ -1,0 +1,35 @@
+---
+# NOTE: This apiVersion is intentionally v1alpha1 instead of v1alpha2 to ensure
+# that both schemas function as expected.
+apiVersion: cluster.redpanda.com/v1alpha1
+kind: Redpanda
+metadata:
+  finalizers:
+    - operator.redpanda.com/finalizer
+  name: redpanda-node-deleted
+status:
+  conditions:
+    - message: Redpanda reconciliation succeeded
+      reason: RedpandaClusterDeployed
+      status: "True"
+      type: Ready
+    - type: ClusterLicenseValid
+    - type: ClusterConfigSynced
+  observedGeneration: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redpanda-node-deleted
+status:
+  availableReplicas: 3
+  collisionCount: 0
+  currentReplicas: 3
+  readyReplicas: 3
+  replicas: 3
+  updatedReplicas: 3
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh redpanda ../../_e2e_artifacts_v2
