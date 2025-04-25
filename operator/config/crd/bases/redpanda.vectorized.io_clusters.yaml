@@ -211,10 +211,25 @@ spec:
                       x-kubernetes-map-type: atomic
                     externalSecretRef:
                       description: |-
+                        Deprecated: replaced by "externalSecretRefSelector"; this field should be *REMOVED* ASAP since it's barely
+                        made it into service.
+                      type: string
+                    externalSecretRefSelector:
+                      description: |-
                         If the value is supplied by an external source, coordinates are embedded here.
                         Note: we interpret all fetched external secrets as raw string values by default
                         and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
-                      type: string
+                      properties:
+                        name:
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - name
+                      type: object
+                      x-kubernetes-map-type: atomic
                     repr:
                       description: |-
                         If the value is directly known, its YAML-compatible representation can be embedded here.
