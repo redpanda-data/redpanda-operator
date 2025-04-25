@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -65,6 +66,45 @@ func assertVariableValue(ctx context.Context, t framework.TestingT, variableName
 	currentValue := execJSONPath(ctx, t, jsonPath, groupVersionKind, resourceName)
 	previousValue := ctx.Value(recordedVariable(variableName))
 	require.Equal(t, previousValue, currentValue)
+}
+
+func assertVariableValueIncremented(ctx context.Context, t framework.TestingT, variableName, jsonPath, groupVersionKind, resourceName string) {
+	currentValue := execJSONPath(ctx, t, jsonPath, groupVersionKind, resourceName)
+	previousValue := ctx.Value(recordedVariable(variableName))
+
+	if reflect.TypeOf(previousValue) != reflect.TypeOf(currentValue) {
+		t.Fatalf("unmatched types: %T, %T", previousValue, currentValue)
+		return
+	}
+
+	// check if we're dealing with integer types
+	// NOTE: this verbose switch statement is painful
+	// but there's not a great way of incrementing
+	// a number otherwise via reflection
+	switch value := previousValue.(type) {
+	case int:
+		require.Equal(t, value+1, currentValue)
+	case int8:
+		require.Equal(t, value+1, currentValue)
+	case int16:
+		require.Equal(t, value+1, currentValue)
+	case int32:
+		require.Equal(t, value+1, currentValue)
+	case int64:
+		require.Equal(t, value+1, currentValue)
+	case uint:
+		require.Equal(t, value+1, currentValue)
+	case uint8:
+		require.Equal(t, value+1, currentValue)
+	case uint16:
+		require.Equal(t, value+1, currentValue)
+	case uint32:
+		require.Equal(t, value+1, currentValue)
+	case uint64:
+		require.Equal(t, value+1, currentValue)
+	default:
+		t.Fatalf("unsupported type: %T", previousValue)
+	}
 }
 
 func execJSONPath(ctx context.Context, t framework.TestingT, jsonPath, groupVersionKind, resourceName string) any {
