@@ -251,7 +251,7 @@ func (t *TestingT) DeleteNode(ctx context.Context, name string) {
 }
 
 func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
-	provider := t.Provider(ctx).(Provider)
+	provider := t.Provider(ctx)
 
 	t.Logf("Deleting provider node %q", name)
 	require.NoError(t, provider.DeleteNode(ctx, name))
@@ -263,7 +263,7 @@ func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
 }
 
 func (t *TestingT) AddNode(ctx context.Context, name string) {
-	provider := t.Provider(ctx).(Provider)
+	provider := t.Provider(ctx)
 
 	t.Logf("Adding temporary node %q", name)
 	require.NoError(t, provider.AddNode(ctx, name))

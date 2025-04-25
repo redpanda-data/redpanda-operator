@@ -12,7 +12,6 @@ type Provider interface {
 	Initialize() error
 	Setup(ctx context.Context) error
 	Teardown(ctx context.Context) error
-	LoadImages(ctx context.Context, images []string) error
 	GetBaseContext() context.Context
 }
 
@@ -25,6 +24,7 @@ type ProvisionedProvider interface {
 type PartialProvider interface {
 	DeleteNode(ctx context.Context, name string) error
 	AddNode(ctx context.Context, name string) error
+	LoadImages(ctx context.Context, images []string) error
 }
 
 func ProviderIntoContext(ctx context.Context, provider Provider) context.Context {
