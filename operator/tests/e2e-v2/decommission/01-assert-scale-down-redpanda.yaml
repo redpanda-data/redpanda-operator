@@ -1,0 +1,33 @@
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  finalizers:
+    - operator.redpanda.com/finalizer
+  name: decommission
+status:
+  conditions:
+    - message: Redpanda reconciliation succeeded
+      reason: RedpandaClusterDeployed
+      status: "True"
+      type: Ready
+    - type: ClusterLicenseValid
+    - type: ClusterConfigSynced
+  observedGeneration: 2
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: decommission
+status:
+  availableReplicas: 4
+  collisionCount: 0
+  currentReplicas: 4
+  readyReplicas: 4
+  replicas: 4
+  updatedReplicas: 4
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh redpanda ../../_e2e_artifacts_v2
