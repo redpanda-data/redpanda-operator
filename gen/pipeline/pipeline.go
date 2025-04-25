@@ -36,12 +36,12 @@ var suites = []TestSuite{
 	},
 	{
 		Name:     "integration",
-		Required: false,
+		Required: true,
 		Timeout:  30*time.Minute + time.Hour,
 	},
 	{
 		Name:     "acceptance",
-		Required: false,
+		Required: true,
 		Timeout:  time.Hour,
 	},
 	// kuttl-v1 is currently the slowest and flakiest of our test suites. The
@@ -61,8 +61,8 @@ var suites = []TestSuite{
 	},
 	{
 		Name:         "kuttl-v2",
-		Required:     false,
-		Timeout:      time.Hour,
+		Required:     true,
+		Timeout:      90 * time.Minute,
 		JUnitPattern: ptr.To("work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml"),
 	},
 }
