@@ -137,9 +137,7 @@ tasks:
     generates:
     - ./internal/statuses/*.go
     cmds:
-    # Don't rewrite struct comments for now
-    # - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
-    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml
+    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
     deps:
     - task: :build:gen
 
