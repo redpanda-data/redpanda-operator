@@ -47,6 +47,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -266,7 +267,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				}
 				rp := o.(*redpandav1alpha2.Redpanda)
 				for _, cond := range rp.Status.Conditions {
-					if cond.Type == redpandav1alpha2.ClusterConfigSynced {
+					if cond.Type == statuses.ClusterConfigurationApplied {
 						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
 					}
 				}
@@ -564,7 +565,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			rp := o.(*redpandav1alpha2.Redpanda)
 
 			for _, cond := range rp.Status.Conditions {
-				if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+				if cond.Type == statuses.ClusterLicenseValid {
 					// grab the first non-unknown status
 					if cond.Status != metav1.ConditionUnknown {
 						condition = cond
@@ -810,8 +811,14 @@ func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
-				ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-				upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+				// Check "Quiesced" to make sure we're done reconciling
+				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterQuiesced)
+				if quiesced == nil {
+					return false, nil
+				}
+
+				ready := quiesced.Status == metav1.ConditionTrue
+				upToDate := obj.Generation == quiesced.ObservedGeneration
 				return upToDate && ready, nil
 
 			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,

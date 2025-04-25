@@ -149,7 +149,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp, rp.Status.ConfigVersion)
 	if err != nil {
 		log.Error(err, "fetching pools")
 		return ctrl.Result{}, err
@@ -224,13 +224,16 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
 
-	_, requeue, err = r.reconcileClusterConfig(ctx, admin, rp)
+	version, requeue, err := r.reconcileClusterConfig(ctx, admin, rp)
 	if err != nil {
 		status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
 
 		log.Error(err, "error reconciling cluster config")
 		return r.syncStatusErr(ctx, err, status, rp)
 	}
+
+	status.ConfigVersion = ptr.To(version)
+
 	if requeue {
 		return r.syncStatusAndRequeue(ctx, status, rp)
 	}

@@ -33,6 +33,11 @@ func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.Redpanda, stat
 		}
 	}
 
+	if status.ConfigVersion != nil && cluster.Status.ConfigVersion != *status.ConfigVersion {
+		cluster.Status.ConfigVersion = *status.ConfigVersion
+		dirty = true
+	}
+
 	return dirty
 }
 

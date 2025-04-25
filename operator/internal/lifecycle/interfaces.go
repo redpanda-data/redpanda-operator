@@ -28,6 +28,9 @@ type ClusterStatus struct {
 	Pools []PoolStatus
 	// Status is a generated status conditions container for clusters
 	Status *statuses.ClusterStatus
+	// ConfigVersion is the configuration version from the cluster if one
+	// has been determined this reconciliation loop
+	ConfigVersion *string
 }
 
 type PoolStatus struct {

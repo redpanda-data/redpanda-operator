@@ -2126,6 +2126,8 @@ RedpandaStatus defines the observed state of Redpanda
 installed license in the Redpanda cluster. + |  | 
 | *`nodePools`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$] array__ | NodePools contains information about the node pools associated +
 with this cluster. + |  | 
+| *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
+Redpanda used for restarting broker nodes as necessary. + |  | 
 | *`observedGeneration`* __integer__ | Specifies the last observed generation. +
 deprecated + |  | 
 | *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +

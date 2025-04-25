@@ -144,6 +144,11 @@ type RedpandaStatus struct {
 	// +optional
 	NodePools []NodePoolStatus `json:"nodePools,omitempty"`
 
+	// ConfigVersion contains the configuration version written in
+	// Redpanda used for restarting broker nodes as necessary.
+	// +optional
+	ConfigVersion string `json:"configVersion,omitempty"`
+
 	// everything below here is deprecated and should be removed
 
 	// Specifies the last observed generation.

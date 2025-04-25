@@ -20218,6 +20218,11 @@ spec:
                   - type
                   type: object
                 type: array
+              configVersion:
+                description: |-
+                  ConfigVersion contains the configuration version written in
+                  Redpanda used for restarting broker nodes as necessary.
+                type: string
               decommissioningNode:
                 description: |-
                   ManagedDecommissioningNode indicates that a node is currently being
@@ -40578,6 +40583,11 @@ spec:
                   - type
                   type: object
                 type: array
+              configVersion:
+                description: |-
+                  ConfigVersion contains the configuration version written in
+                  Redpanda used for restarting broker nodes as necessary.
+                type: string
               decommissioningNode:
                 description: |-
                   ManagedDecommissioningNode indicates that a node is currently being
