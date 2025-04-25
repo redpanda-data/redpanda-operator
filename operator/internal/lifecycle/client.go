@@ -146,6 +146,11 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 		return nil, fmt.Errorf("constructing desired pools: %w", err)
 	}
 
+	// ensure we have and OnDelete type for our statefulset
+	for _, set := range desired {
+		set.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+	}
+
 	// normalize the config version label
 	if configVersion != "" {
 		for _, set := range desired {
