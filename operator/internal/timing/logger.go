@@ -34,6 +34,13 @@ func (t *timingOnlyCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zap
 	return ce
 }
 
+// SetupTimingOnlyLogger changes the logging paradigm
+// for our controller such that only lines instrumented
+// with timing.Execution(ctx).Stop(...) will be output
+// this is particularly useful when you want to get
+// a set of timings for profiling how long is spent in
+// different parts of an execution trace, primarily
+// during local development.
 func SetupTimingOnlyLogger() {
 	logger := zapLogger(nil)
 	klog.SetLogger(logger)

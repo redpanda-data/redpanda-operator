@@ -64,6 +64,8 @@ type TestingOptions struct {
 	SchemeRegisterers []func(s *runtime.Scheme) error
 	// ExitBehavior tells the test what to do if a test fails
 	ExitBehavior ExitBehavior
+	// Images says the base images to import any time a new node comes up
+	Images []string
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -75,6 +77,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		Provider:          o.Provider,
 		SchemeRegisterers: o.SchemeRegisterers,
 		ExitBehavior:      o.ExitBehavior,
+		Images:            o.Images,
 	}
 }
 
@@ -248,21 +251,23 @@ func (t *TestingT) DeleteNode(ctx context.Context, name string) {
 }
 
 func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
-	provider := t.Provider(ctx)
+	provider := t.Provider(ctx).(Provider)
 
 	t.Logf("Deleting provider node %q", name)
 	require.NoError(t, provider.DeleteNode(ctx, name))
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Recreating deleted provider node %q", name)
 		require.NoError(t, provider.AddNode(ctx, name))
+		require.NoError(t, provider.LoadImages(ctx, t.options.Images))
 	})
 }
 
 func (t *TestingT) AddNode(ctx context.Context, name string) {
-	provider := t.Provider(ctx)
+	provider := t.Provider(ctx).(Provider)
 
 	t.Logf("Adding temporary node %q", name)
 	require.NoError(t, provider.AddNode(ctx, name))
+	require.NoError(t, provider.LoadImages(ctx, t.options.Images))
 
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Deleting temporary node %q", name)
