@@ -53,7 +53,7 @@ func AppendValue[T any](c *clusterCfg, k string, v T) error {
 	entry, found := c.cfg[k]
 	if found {
 		// Ensure this only has a representation thus far, no other references
-		if entry.ConfigMapKeyRef != nil || entry.SecretKeyRef != nil || entry.ExternalSecretRef != nil {
+		if entry.ConfigMapKeyRef != nil || entry.SecretKeyRef != nil || entry.ExternalSecretRef != nil || entry.ExternalSecretRefSelector != nil { // nolint:staticcheck // ignore deprecation for now
 			err := fmt.Errorf("cannot append value to mixed-type cluster configuration attribute %q", k)
 			c.err = errors.Join(c.err, err)
 			return err
@@ -160,17 +160,25 @@ func (c *clusterCfg) finalize(parent *CombinedCfg) error {
 			} else {
 				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
 			}
-		case v.ExternalSecretRef != nil:
-			c.templated[k] = `""`
+		case v.ExternalSecretRef != nil: // nolint:staticcheck // ignore deprecation for now
+			v.ExternalSecretRefSelector = &vectorizedv1alpha1.ExternalSecretKeySelector{
+				Name: *v.ExternalSecretRef, // nolint:staticcheck // ignore deprecation for now
+			}
+			fallthrough
+		case v.ExternalSecretRefSelector != nil:
 			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
 			// insertion into a bootstrap template.
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
-			if v.UseRawValue {
-				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, *v.ExternalSecretRef))
-			} else {
-				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, *v.ExternalSecretRef))
+			// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
+			fixup := fmt.Sprintf(`%s("%s")`, CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
+			if !v.UseRawValue {
+				fixup = fmt.Sprintf(`%s(%s)`, CELRepr, fixup)
 			}
+			if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
+				fixup = fmt.Sprintf(`%s(%s)`, CELErrorToWarning, fixup)
+			}
+			c.AddFixup(k, fixup)
 		}
 	}
 	return nil

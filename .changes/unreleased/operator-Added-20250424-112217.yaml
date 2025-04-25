@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'v1 operator: ExternalSecretRefSelector is now provided for referring to external secrets in `clusterConfiguration`. This has an `optional` flag which is honoured if present - it turns errors into warnings if the secret can''t be looked up.'
+time: 2025-04-24T11:22:17.192917+01:00
