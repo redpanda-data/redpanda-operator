@@ -219,6 +219,7 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
 	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
+
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
 		SASL: &redpandav1alpha2.SASL{
@@ -487,7 +488,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.3.1-rc4",
 		},
 		license:  false,
-		expected: "Expired",
+		expected: "Cluster license has expired",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -501,7 +502,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.3.1-rc8",
 		},
 		license:  true,
-		expected: "Valid",
+		expected: "Cluster has a valid license",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -517,7 +518,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.2.9",
 		},
 		license:  false,
-		expected: "Not Present",
+		expected: "No cluster license is present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -528,7 +529,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.2.9",
 		},
 		license:  true,
-		expected: "Not Present",
+		expected: "No cluster license is present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -730,7 +731,7 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
-			Annotations: map[string]string{},
+			Annotations: make(map[string]string),
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			// Any empty structs are to make setting them more ergonomic

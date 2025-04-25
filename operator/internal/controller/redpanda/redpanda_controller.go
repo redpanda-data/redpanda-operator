@@ -44,9 +44,7 @@ import (
 
 const (
 	FinalizerKey                    = "operator.redpanda.com/finalizer"
-	ClusterConfigNeedRestartHashKey = "operator.redpanda.com/cluster-config-need-restart-hash"
 	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
-	FluxFinalizerKey                = "finalizers.fluxcd.io"
 
 	NotManaged = "false"
 
@@ -149,7 +147,11 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp, rp.Status.ConfigVersion)
+	injectedConfigVersion := ""
+	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
+		injectedConfigVersion = rp.Status.ConfigVersion
+	}
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp, injectedConfigVersion)
 	if err != nil {
 		log.Error(err, "fetching pools")
 		return ctrl.Result{}, err
@@ -488,9 +490,9 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 
 	switch features.LicenseStatus {
 	case rpadmin.LicenseStatusExpired:
-		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired, "Expired")
+		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired)
 	case rpadmin.LicenseStatusNotPresent:
-		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent, "Not Present")
+		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent)
 	case rpadmin.LicenseStatusValid:
 		status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonValid)
 	}

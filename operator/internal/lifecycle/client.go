@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -282,9 +283,32 @@ func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner 
 		}
 		filtered := []client.Object{}
 		for i := range matching {
+			object := matching[i]
+
+			// filter out unowned resources
+			mapping, err := getResourceScope(r.mapper, r.scheme, object)
+			if err != nil {
+				if !apimeta.IsNoMatchError(err) {
+					return nil, err
+				}
+
+				// we have an unknown mapping so just ignore this
+				continue
+			}
+
+			// isOwner defaults to true here because we don't set
+			// owner refs on ClusterScoped resources. We only check
+			// for ownership if it's namespace scoped.
+			isOwner := true
+			if mapping.Name() == apimeta.RESTScopeNameNamespace {
+				isOwner = slices.ContainsFunc(object.GetOwnerReferences(), func(ref metav1.OwnerReference) bool {
+					return ref.UID == owner.GetUID()
+				})
+			}
+
 			// special case the node pools
-			if includeNodePools || !r.nodePoolRenderer.IsNodePool(matching[i]) {
-				filtered = append(filtered, matching[i])
+			if (includeNodePools || !r.nodePoolRenderer.IsNodePool(object)) && isOwner {
+				filtered = append(filtered, object)
 			}
 		}
 		resources = append(resources, filtered...)
