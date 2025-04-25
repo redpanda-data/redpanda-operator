@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -322,6 +323,8 @@ func TestClientDeleteAll(t *testing.T) {
 			defer cancel()
 
 			for _, resource := range tt.InitialResources() {
+				// we need to set an owner ref since making sure those are present on namespace-scoped resources
+				require.NoError(t, controllerutil.SetOwnerReference(cluster, resource, instances.manager.GetScheme()))
 				require.NoError(t, instances.k8sClient.Create(ctx, resource))
 			}
 
