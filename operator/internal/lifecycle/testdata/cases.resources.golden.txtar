@@ -1253,7 +1253,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0
+      app.kubernetes.io/version: v3.1.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -1270,7 +1270,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0
+      app.kubernetes.io/version: v3.1.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -1289,7 +1289,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 06cfff1a362dc4aa1e0d137e03063cdf68a1fb6449796e17e4b9d08071cb5464
+          checksum-redpanda-chart/config: af7df62c29ad0792550764de79d227d1b22b80a6438075a4d3a00751f32a4a2e
           checksum/config: 3cfe51f0baef37d1fe24fbb98752c49da32c608bf8265bab411251ad63faa913
         creationTimestamp: null
         labels:
@@ -1301,7 +1301,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.0.0
+          image: docker.redpanda.com/redpandadata/console:v3.1.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -1357,7 +1357,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0
+      app.kubernetes.io/version: v3.1.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -1374,7 +1374,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.0.0
+      app.kubernetes.io/version: v3.1.0
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
