@@ -293,7 +293,7 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 }
 
 func (in *Redpanda) GetValues() (redpandachart.Values, error) {
-	values, err := redpandachart.Chart.LoadValues(in)
+	values, err := redpandachart.Chart.LoadValues(in.Spec.ClusterSpec)
 	if err != nil {
 		return redpandachart.Values{}, errors.WithStack(err)
 	}
