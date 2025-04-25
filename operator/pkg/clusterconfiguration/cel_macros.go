@@ -3,6 +3,7 @@ package clusterconfiguration
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -20,6 +21,7 @@ const (
 	CELRepr                  = "repr"
 	CELAppendYamlStringArray = "appendYamlStringArray"
 	CELExternalSecretRef     = "externalSecretRef"
+	CELErrorToWarning        = "errorToWarning"
 )
 
 func StdLibFactory(ctx context.Context, environ map[string]string, cloudExpander *pkgsecrets.CloudExpander) CelFactory {
@@ -31,8 +33,24 @@ func StdLibFactory(ctx context.Context, environ map[string]string, cloudExpander
 			wrapStringToString(CELRepr, repr),
 			wrapStringStringToString(CELAppendYamlStringArray, appendYamlStringArray),
 			wrapStringToString(CELExternalSecretRef, externalSecretRef(ctx, cloudExpander)),
+			wrapStringToString("makeError", makeError),
+			errorToWarning(),
 		)
 	}
+}
+
+func errorToWarning() cel.EnvOption {
+	return cel.Function(CELErrorToWarning,
+		cel.Overload(fmt.Sprintf("%s_any", CELErrorToWarning), []*cel.Type{cel.AnyType}, cel.AnyType,
+			cel.UnaryBinding(func(arg1 ref.Val) ref.Val {
+				if err, isErr := arg1.(*types.Err); isErr {
+					return types.WrapErr(Warning{err})
+				}
+				return arg1
+			}),
+			cel.OverloadIsNonStrict(),
+		),
+	)
 }
 
 func wrapStringToString(name string, f func(string) (string, error)) cel.EnvOption {
@@ -129,4 +147,9 @@ func externalSecretRef(ctx context.Context, cloudExpander *pkgsecrets.CloudExpan
 		}
 		return expanded, nil
 	}
+}
+
+// makeError is an internal macro that's used for testing to generate errors
+func makeError(errMsg string) (string, error) {
+	return "", errors.New(errMsg)
 }

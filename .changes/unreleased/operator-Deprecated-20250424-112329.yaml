@@ -1,0 +1,4 @@
+project: operator
+kind: Deprecated
+body: 'v1 operator: the `clusterConfiguration` field `ExternalSecretRef` is deprecated in favour of `ExternalSecretRefSelector`. Since this field was extremely new, it will be removed in the very near future.'
+time: 2025-04-24T11:23:29.774882+01:00
