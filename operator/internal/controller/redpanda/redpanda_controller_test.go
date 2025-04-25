@@ -436,6 +436,13 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 			config, err := adminClient.Config(s.ctx, false)
 			s.Require().NoError(err)
+
+			arr := config["superusers"].([]any)
+
+			sort.Slice(arr, func(i, j int) bool {
+				return arr[i].(string) < arr[j].(string)
+			})
+
 			// Only assert that c.Expected is a subset of the set config.
 			// The chart/operator injects a bunch of "useful" values by default.
 			s.Subset(config, c.Expected)
