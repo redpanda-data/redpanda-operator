@@ -78,8 +78,12 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	config, err := cfg.ReifyClusterConfiguration(ctx, schema)
+	statusErr := r.synchronizeConfigIssuesWithCluster(ctx, redpandaCluster, cfg)
 	if err != nil {
 		return 0, errorWithContext(err, "error while creating the concrete configuration")
+	}
+	if statusErr != nil {
+		return 0, errorWithContext(statusErr, "error while updating the Cluster resource with configuration status")
 	}
 
 	lastAppliedCriticalConfigurationHash, err := r.getOrInitLastAppliedCriticalConfiguration(ctx, configMapResource, cfg, schema)
@@ -331,6 +335,19 @@ func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
 	}
 
 	return hash, hash != oldHash, nil
+}
+
+func (r *ClusterReconciler) synchronizeConfigIssuesWithCluster(
+	ctx context.Context,
+	redpandaCluster *vectorizedv1alpha1.Cluster,
+	cfg *clusterconfiguration.CombinedCfg,
+) error {
+	errs, warnings := cfg.Cluster.ReportableIssues()
+	redpandaCluster.Status.ClusterConfiguration = &vectorizedv1alpha1.ClusterConfigurationStatus{
+		Errors:   errs,
+		Warnings: warnings,
+	}
+	return r.Status().Update(ctx, redpandaCluster)
 }
 
 func (r *ClusterReconciler) synchronizeStatusWithCluster(

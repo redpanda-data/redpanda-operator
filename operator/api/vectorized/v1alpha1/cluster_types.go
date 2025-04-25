@@ -555,6 +555,16 @@ type ClusterStatus struct {
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 	// Every NodePool has its own status.
 	NodePools map[string]NodePoolStatus `json:"nodePools,omitempty"`
+	// Provide more detailed feedback about the configuration state of the cluster
+	// +optional
+	ClusterConfiguration *ClusterConfigurationStatus `json:"clusterConfiguration,omitempty"`
+}
+
+type ClusterConfigurationStatus struct {
+	// Problems that prevent the configuration from being realized
+	Errors []string `json:"errors,omitempty"`
+	// Non-fatal warnings arising during cluster configuration
+	Warnings []string `json:"warnings,omitEmpty"`
 }
 
 // ClusterCondition contains details for the current conditions of the cluster

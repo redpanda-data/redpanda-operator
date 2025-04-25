@@ -1886,6 +1886,24 @@ spec:
           status:
             description: ClusterStatus defines the observed state of Cluster
             properties:
+              clusterConfiguration:
+                description: Provide more detailed feedback about the configuration
+                  state of the cluster
+                properties:
+                  errors:
+                    description: Problems that prevent the configuration from being
+                      realized
+                    items:
+                      type: string
+                    type: array
+                  warnings:
+                    description: Non-fatal warnings arising during cluster configuration
+                    items:
+                      type: string
+                    type: array
+                required:
+                - warnings
+                type: object
               conditions:
                 description: Current state of the cluster.
                 items:
