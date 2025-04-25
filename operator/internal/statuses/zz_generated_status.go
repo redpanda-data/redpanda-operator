@@ -408,8 +408,14 @@ func (s *ClusterStatus) SetLicenseValid(reason ClusterLicenseValidCondition, mes
 		}
 		status = metav1.ConditionTrue
 	case ClusterLicenseValidReasonExpired:
+		if message == "" {
+			message = "Cluster license has expired"
+		}
 		status = metav1.ConditionFalse
 	case ClusterLicenseValidReasonNotPresent:
+		if message == "" {
+			message = "No cluster license is present"
+		}
 		status = metav1.ConditionFalse
 	case ClusterLicenseValidReasonError:
 		s.isLicenseValidTransientError = true
