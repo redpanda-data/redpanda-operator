@@ -1,8 +1,8 @@
-Feature: operator can migrate/adopt Redpanda helm base deployment
+Feature: Helm chart to Redpanda Operator migration
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Adopt or migrate from stand alone helm chart release to Redpanda custom resource
-        Given a Helm release named "redpanda-migration-example" of local Redpanda Helm Chart with values:
+  Scenario: Migrate from a Helm chart release to a Redpanda custom resource
+        Given a Helm release named "redpanda-migration-example" of the "redpanda/redpanda" helm chart with the values:
         """
     # tag::helm-values[]
         fullnameOverride: name-override
@@ -10,7 +10,7 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
         """
 
         When I record "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name as "Statefulset-Generation"
-        When I apply the following Redpanda custom resource manifest for migration:
+        And I apply the following Redpanda custom resource manifest for migration:
         """
     # tag::redpanda-custom-resource-manifest[]
         ---
@@ -19,14 +19,14 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
         metadata:
           name: redpanda-migration-example
         spec:
-          # This manifest is a copy of Redpanda release helm values
+          # This manifest is a copy of Redpanda release Helm values
           clusterSpec:
             fullnameOverride: name-override
     # end::redpanda-custom-resource-manifest[]
         """
+        And the Redpanda custom resource "redpanda-migration-example" becomes Ready.
+        And "redpanda-migration-example" Helm release is deleted by removing secret
 
-        Then the Redpanda custom resource "redpanda-migration-example" becomes Ready.
         Then the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
-        Then "redpanda-migration-example" helm release can be deleted by removing secret
-        Then "redpanda-migration-example" Redpanda cluster is healthy
-        Then recorded "Statefulset-Generation" has the same value as "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name
+        And the "redpanda-migration-example" cluster is healthy
+        And the recorded "Statefulset-Generation" matches the current "{.metadata.generation}" field of the "StatefulSet.v1.apps" resource named "name-override"

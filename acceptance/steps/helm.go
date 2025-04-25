@@ -15,7 +15,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
-func iInstallHelmRelease(ctx context.Context, t framework.TestingT, helmReleaseName string, values *godog.DocString) {
+// The unused parameter is meant to specify a Helm chart place (remote or local in the file system).
+func iInstallHelmRelease(ctx context.Context, t framework.TestingT, helmReleaseName, _ string, values *godog.DocString) {
 	var valuesMap map[string]any
 	require.NoError(t, yaml.Unmarshal([]byte(values.Content), &valuesMap))
 
