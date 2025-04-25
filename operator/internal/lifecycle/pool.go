@@ -188,11 +188,19 @@ func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn, existing := range p.existingPools {
+		desired, ok := p.desiredPools[nn]
+		if !ok {
+			continue
+		}
+
 		labels := existing.set.Labels
 		if labels == nil {
 			continue
 		}
-		if desired, ok := p.desiredPools[nn]; ok && labels[generationLabel] != generation {
+
+		outOfDateGeneration := labels[generationLabel] != generation
+		outOfDateConfigVersion := labels[configVersionLabel] != desired.set.Labels[configVersionLabel]
+		if outOfDateGeneration || outOfDateConfigVersion {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 

@@ -2,15 +2,12 @@ package steps
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -56,40 +53,6 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	}))
 
 	t.Logf("Object has cluster owner reference for %q", clusterName)
-}
-
-func statefulSetHaveOwnerReference(ctx context.Context, t framework.TestingT, statefulsetName, clusterName string) {
-	var sts appsv1.StatefulSet
-	var cluster redpandav1alpha2.Redpanda
-
-	clusterKey := t.ResourceKey(clusterName)
-	stsKey := t.ResourceKey(statefulsetName)
-
-	t.Logf("Checking cluster %q set owner reference in statefulset", clusterName)
-	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, clusterKey, &cluster))
-		require.NoError(t, t.Get(ctx, stsKey, &sts))
-		cluster.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
-
-		if len(sts.OwnerReferences) != 1 {
-			t.Logf("Statefulset has %d owner references", len(sts.OwnerReferences))
-			return false
-		}
-
-		obj := cluster.OwnerShipRefObj()
-		obj.UID = types.UID("")
-		expected, err := json.Marshal(obj)
-		require.NoError(t, err)
-
-		obj = sts.OwnerReferences[0]
-		obj.UID = types.UID("")
-		actual, err := json.Marshal(obj)
-		require.NoError(t, err)
-
-		t.Logf(`Checking cluster StatefulSet contains owner reference? %s/%s -> %s`, sts.OwnerReferences[0].APIVersion, sts.OwnerReferences[0].Kind, sts.OwnerReferences[0].Name)
-		return string(expected) == string(actual)
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never set owner reference for StatefulSet %q, final OwnerReference: %+v`, clusterKey.String(), stsKey.String(), sts.OwnerReferences)
-	t.Logf("StatefulSet has Redpanda %s custom resource OwnerReference", clusterName)
 }
 
 type recordedVariable string

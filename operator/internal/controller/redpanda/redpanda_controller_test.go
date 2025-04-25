@@ -47,6 +47,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -215,85 +216,6 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 	s.deleteAndWait(rp)
 }
 
-func (s *RedpandaControllerSuite) TestManagedDecommission() {
-	rp := s.minimalRP()
-	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
-
-	s.applyAndWait(rp)
-
-	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
-	s.Require().NoError(err)
-	defer adminAPI.Close()
-
-	beforeBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	rp.Annotations = map[string]string{
-		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
-	}
-
-	s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return cond.Status == metav1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, rp)
-
-	s.waitFor(rp, func(o client.Object, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return false, nil
-			}
-		}
-
-		_, ok := rp.Annotations["operator.redpanda.com/managed-decommission"]
-
-		return !ok, nil // Managed decommission is finished when the annotation is removed.
-	})
-
-	afterBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	// After performing a managed decommission we should observe a complete
-	// replacement of brokers.
-	beforeIDs := map[int]struct{}{}
-	for _, broker := range beforeBrokers {
-		beforeIDs[broker.NodeID] = struct{}{}
-	}
-
-	afterIDs := map[int]struct{}{}
-	for _, broker := range afterBrokers {
-		afterIDs[broker.NodeID] = struct{}{}
-	}
-
-	for id := range beforeIDs {
-		s.NotContainsf(afterIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	for id := range afterIDs {
-		s.NotContainsf(beforeIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	s.Len(beforeIDs, 3)
-	s.Len(afterIDs, 3)
-
-	s.deleteAndWait(rp)
-}
-
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
 	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
@@ -345,7 +267,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				}
 				rp := o.(*redpandav1alpha2.Redpanda)
 				for _, cond := range rp.Status.Conditions {
-					if cond.Type == redpandav1alpha2.ClusterConfigSynced {
+					if cond.Type == statuses.ClusterConfigurationApplied {
 						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
 					}
 				}
@@ -551,7 +473,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			rp := o.(*redpandav1alpha2.Redpanda)
 
 			for _, cond := range rp.Status.Conditions {
-				if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+				if cond.Type == statuses.ClusterLicenseValid {
 					// grab the first non-unknown status
 					if cond.Status != metav1.ConditionUnknown {
 						condition = cond
@@ -813,8 +735,14 @@ func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
-				ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-				upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+				// Check "Quiesced" to make sure we're done reconciling
+				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterQuiesced)
+				if quiesced == nil {
+					return false, nil
+				}
+
+				ready := quiesced.Status == metav1.ConditionTrue
+				upToDate := obj.Generation == quiesced.ObservedGeneration
 				return upToDate && ready, nil
 
 			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,

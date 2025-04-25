@@ -132,7 +132,7 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
 // a tracker that can be used for determining necessary operations on the pools.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U) (*PoolTracker, error) {
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 
 	existingPools, err := r.fetchExistingPools(ctx, cluster)
@@ -143,6 +143,14 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 	desired, err := r.nodePoolRenderer.Render(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("constructing desired pools: %w", err)
+	}
+
+	// normalize the config version label
+	if configVersion != "" {
+		for _, set := range desired {
+			set.Labels = setConfigVersionLabels(set.Labels, configVersion)
+			set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
+		}
 	}
 
 	pools.addExisting(existingPools...)
@@ -408,4 +416,15 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 
 	return existing, nil
+}
+
+func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {
+	if labels == nil {
+		return map[string]string{
+			configVersionLabel: configVersion,
+		}
+	}
+
+	labels[configVersionLabel] = configVersion
+	return labels
 }
