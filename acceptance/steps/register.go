@@ -13,13 +13,11 @@ import framework "github.com/redpanda-data/redpanda-operator/harpoon"
 
 func init() {
 	// General scenario steps
-
 	framework.RegisterStep(`^cluster "([^"]*)" is available$`, checkClusterAvailability)
-
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
-	framework.RegisterStep(`^I record the "([^"]*)" field of the "([^"]*)" resource named "([^"]*)" as "([^"]*)"$`, recordVariable)
-	framework.RegisterStep(`^the recorded "([^"]*)" matches the current "([^"]*)" field of the "([^"]*)" resource named "([^"]*)"$`, assertVariableValue)
+	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
+	framework.RegisterStep(`^the recorded value "([^"]*)" has the same value as "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValue)
 
 	// Schema scenario steps
 	framework.RegisterStep(`^there is no schema "([^"]*)" in cluster "([^"]*)"$`, thereIsNoSchema)
@@ -53,12 +51,10 @@ func init() {
 	framework.RegisterStep(`^its metrics endpoint should accept https request with "([^"]*)" service account token$`, acceptServiceAccountMetricsRequest)
 
 	// Helm migration scenario steps
-	framework.RegisterStep(`^a Helm release named "([^"]*)" of the "([^"]*)" Helm chart with the values:$`, iInstallHelmRelease)
-	framework.RegisterStep(`^I apply the following Redpanda custom resource manifest for migration:$`, iApplyKubernetesManifest)
-	framework.RegisterStep(`^the Redpanda custom resource "([^"]*)" becomes Ready.$`, checkClusterAvailability)
-	framework.RegisterStep(`^the StatefulSet "([^"]*)" has an OwnerReference pointing to the Redpanda custom resource "([^"]*)".$`, statefulSetHaveOwnerReference)
-	framework.RegisterStep(`^the "([^"]*)" Helm release can be deleted by removing secret$`, iDeleteHelmReleaseSecret)
-	framework.RegisterStep(`^the "([^"]*)" cluster is healthy$`, redpandaClusterIsHealthy)
+	framework.RegisterStep(`^I install a local Redpanda Helm Chart release named "([^"]*)" with values:$`, iInstallHelmRelease)
+	framework.RegisterStep(`^the Kubernetes object of type "([^"]*)" with name "([^"]*)" has an OwnerReference pointing to the cluster "([^"]*)"$`, kubernetesObjectHasClusterOwner)
+	framework.RegisterStep(`^the helm release for "([^"]*)" can be deleted by removing its stored secret$`, iDeleteHelmReleaseSecret)
+	framework.RegisterStep(`^the cluster "([^"]*)" is healthy$`, redpandaClusterIsHealthy)
 
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)
