@@ -416,3 +416,22 @@ func TestNoMarkdownLinks(t *testing.T) {
 		t.Errorf("public CRD docs use Ascii doc but found markdown link: %s\nDid you mean: %s[%s]\n(Or do you need to run task generate?)", match[0], match[2], match[1])
 	}
 }
+
+func TestGetValues(t *testing.T) {
+	rp := redpandav1alpha2.Redpanda{
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Auth: &redpandav1alpha2.Auth{
+					SASL: &redpandav1alpha2.SASL{
+						Enabled: ptr.To(true),
+					},
+				},
+			},
+		},
+	}
+
+	values, err := rp.GetValues()
+	require.NoError(t, err)
+
+	require.Equal(t, values.Auth.SASL.Enabled, true)
+}
