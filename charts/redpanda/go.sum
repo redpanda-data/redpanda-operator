@@ -432,8 +432,8 @@ github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe
 github.com/quasilyte/go-ruleguard/dsl v0.3.22/go.mod h1:KeCP03KrjuSO0H1kTuZQCWlQPulDV6YMIXmpQss17rU=
 github.com/redpanda-data/common-go/net v0.1.0 h1:JnJioRJuL961r1QXiJQ1tW9+yEaJfu8FpXnUmvQbwNM=
 github.com/redpanda-data/common-go/net v0.1.0/go.mod h1:iOdNkjxM7a1T8F3cYHTaKIPFCHzzp/ia6TN+Z+7Tt5w=
-github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95 h1:TmbXxlIHlKEF2wO5z82sQz98Su/WSgs+bC0k8s26Lsg=
-github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
+github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e h1:0kdPPgbSCZ8XX6K/51x61/9cas2/sXj8UgdoiLJnOqQ=
+github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
 github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 h1:6jvBn+Xr1+62BEFSHoKxayRM/Xt9hp6O5nhnE368ge4=
 github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0/go.mod h1:y/8tR/cBC11uDPvjosxT8DAxnuSlPWtEzVYeCAqa4K4=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
