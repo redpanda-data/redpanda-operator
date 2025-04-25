@@ -120,7 +120,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 		auth = &rpadmin.NopAuth{}
 	}
 
-	client, err := rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer)
+	client, err := rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}

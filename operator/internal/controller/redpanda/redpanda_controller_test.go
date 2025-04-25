@@ -46,6 +46,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -296,6 +298,7 @@ func (s *RedpandaControllerSuite) TestManagedDecommission() {
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
 	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
+
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
 		SASL: &redpandav1alpha2.SASL{
@@ -344,7 +347,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				}
 				rp := o.(*redpandav1alpha2.Redpanda)
 				for _, cond := range rp.Status.Conditions {
-					if cond.Type == redpandav1alpha2.ClusterConfigSynced {
+					if cond.Type == statuses.ClusterConfigurationApplied {
 						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
 					}
 				}
@@ -472,7 +475,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.3.1-rc4",
 		},
 		license:  false,
-		expected: "Expired",
+		expected: "Cluster license has expired",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -486,7 +489,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.3.1-rc8",
 		},
 		license:  true,
-		expected: "Valid",
+		expected: "Cluster has a valid license",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -502,7 +505,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.2.9",
 		},
 		license:  false,
-		expected: "Not Present",
+		expected: "No cluster license is present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -513,7 +516,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			tag:        "v24.2.9",
 		},
 		license:  true,
-		expected: "Not Present",
+		expected: "No cluster license is present",
 		expectedLicenseStatus: &redpandav1alpha2.RedpandaLicenseStatus{
 			Violation:     false,
 			InUseFeatures: []string{},
@@ -550,7 +553,7 @@ func (s *RedpandaControllerSuite) TestLicense() {
 			rp := o.(*redpandav1alpha2.Redpanda)
 
 			for _, cond := range rp.Status.Conditions {
-				if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+				if cond.Type == statuses.ClusterLicenseValid {
 					// grab the first non-unknown status
 					if cond.Status != metav1.ConditionUnknown {
 						condition = cond
@@ -623,11 +626,11 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		// TODO should probably run other reconcilers here.
 		if err := (&redpanda.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			KubeConfig:    mgr.GetConfig(),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: s.clientFactory,
+			Client:          mgr.GetClient(),
+			KubeConfig:      mgr.GetConfig(),
+			EventRecorder:   mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory:   s.clientFactory,
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
 		}).SetupWithManager(s.ctx, mgr); err != nil {
 			return err
 		}
@@ -719,7 +722,7 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 	return &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
-			Annotations: map[string]string{},
+			Annotations: make(map[string]string),
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			// Any empty structs are to make setting them more ergonomic
@@ -812,8 +815,14 @@ func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
-				ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
-				upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
+				// Check "Quiesced" to make sure we're done reconciling
+				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterQuiesced)
+				if quiesced == nil {
+					return false, nil
+				}
+
+				ready := quiesced.Status == metav1.ConditionTrue
+				upToDate := obj.Generation == quiesced.ObservedGeneration
 				return upToDate && ready, nil
 
 			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,

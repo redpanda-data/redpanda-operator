@@ -51,7 +51,7 @@ tasks:
 
   kind-cluster:
     cmds:
-      - kind create cluster --config operator/kind.yaml
+      - kind create cluster --config operator/kind-for-v2.yaml
 
   # Below this line are internal helper tasks that configuring caching for generation tasks.
 

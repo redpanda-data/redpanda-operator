@@ -13,19 +13,15 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"slices"
 
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 type clientList[T client.Object] interface {
@@ -43,14 +39,6 @@ func registerClusterSourceIndex[T client.Object, U clientList[T]](ctx context.Co
 		return nil, err
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
-}
-
-func registerHelmReferencedIndex[T client.Object](ctx context.Context, mgr ctrl.Manager, name string, o T) error {
-	indexName := clusterReferenceIndexName(name)
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexHelmManagedObjectCluster); err != nil {
-		return err
-	}
-	return nil
 }
 
 func indexByClusterSource(o client.Object) []string {
@@ -97,94 +85,4 @@ func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager
 		}
 		return requests
 	})
-}
-
-func clusterForHelmManagedObject(o client.Object) (types.NamespacedName, bool) {
-	labels := o.GetLabels()
-	clusterName := labels["app.kubernetes.io/instance"]
-	if clusterName == "" {
-		return types.NamespacedName{}, false
-	}
-
-	role := labels["app.kubernetes.io/name"]
-	if !slices.Contains([]string{"redpanda", "console", "connectors"}, role) {
-		return types.NamespacedName{}, false
-	}
-
-	if _, ok := labels["batch.kubernetes.io/job-name"]; ok {
-		return types.NamespacedName{}, false
-	}
-
-	return types.NamespacedName{
-		Namespace: o.GetNamespace(),
-		Name:      clusterName,
-	}, true
-}
-
-func enqueueClusterFromHelmManagedObject() handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		if nn, found := clusterForHelmManagedObject(o); found {
-			return []reconcile.Request{{NamespacedName: nn}}
-		}
-		return nil
-	})
-}
-
-func indexHelmManagedObjectCluster(o client.Object) []string {
-	nn, found := clusterForHelmManagedObject(o)
-	if !found {
-		return nil
-	}
-	role := o.GetLabels()["app.kubernetes.io/name"]
-
-	// we add two cache keys:
-	// 1. namespace/name of the cluster
-	// 2. namespace/name/role to identify if this is a console or redpanda component
-
-	baseID := nn.String()
-	roleID := baseID + "/" + role
-
-	return []string{baseID, roleID}
-}
-
-func consoleDeploymentsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.Deployment, error) {
-	key := client.ObjectKeyFromObject(cluster).String() + "/console"
-
-	deploymentList := &appsv1.DeploymentList{}
-	err := c.List(ctx, deploymentList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("deployment"), key),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return functional.MapFn(ptr.To, deploymentList.Items), nil
-}
-
-func connectorsDeploymentsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.Deployment, error) {
-	key := client.ObjectKeyFromObject(cluster).String() + "/connectors"
-
-	deploymentList := &appsv1.DeploymentList{}
-	err := c.List(ctx, deploymentList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("deployment"), key),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return functional.MapFn(ptr.To, deploymentList.Items), nil
-}
-
-func redpandaStatefulSetsForCluster(ctx context.Context, c client.Client, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
-	key := client.ObjectKeyFromObject(cluster).String() + "/redpanda"
-
-	ssList := &appsv1.StatefulSetList{}
-	err := c.List(ctx, ssList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName("statefulset"), key),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return functional.MapFn(ptr.To, ssList.Items), nil
 }

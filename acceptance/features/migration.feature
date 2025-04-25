@@ -2,15 +2,14 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Adopt or migrate from stand alone helm chart release to Redpanda custom resource
-        Given a Helm release named "redpanda-migration-example" of local Redpanda Helm Chart with values:
+        Given I install a local Redpanda Helm Chart release named "redpanda-migration-example" with values:
         """
     # tag::helm-values[]
         fullnameOverride: name-override
     # end::helm-values[]
         """
-
-        When I record "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name as "Statefulset-Generation"
-        When I apply the following Redpanda custom resource manifest for migration:
+        And I store "{.metadata.generation}" of Kubernetes object with type "StatefulSet.v1.apps" and name "name-override" as "generation"
+        When I apply Kubernetes manifest:
         """
     # tag::redpanda-custom-resource-manifest[]
         ---
@@ -24,9 +23,9 @@ Feature: operator can migrate/adopt Redpanda helm base deployment
             fullnameOverride: name-override
     # end::redpanda-custom-resource-manifest[]
         """
-
-        Then the Redpanda custom resource "redpanda-migration-example" becomes Ready.
-        Then the StatefulSet "name-override" has an OwnerReference pointing to the Redpanda custom resource "redpanda-migration-example".
-        Then "redpanda-migration-example" helm release can be deleted by removing secret
-        Then "redpanda-migration-example" Redpanda cluster is healthy
-        Then recorded "Statefulset-Generation" has the same value as "{.metadata.generation}" of "StatefulSet.v1.apps" with "name-override" name
+        Then cluster "redpanda-migration-example" is available
+        And the Kubernetes object of type "StatefulSet.v1.apps" with name "name-override" has an OwnerReference pointing to the cluster "redpanda-migration-example"
+        And the helm release for "redpanda-migration-example" can be deleted by removing its stored secret
+        And the cluster "redpanda-migration-example" is healthy
+        # this winds up being incremented due to us forcibly swapping the cluster's StatefulSets to leverage OnDelete semantics
+        And the recorded value "generation" is one less than "{.metadata.generation}" of the Kubernetes object with type "StatefulSet.v1.apps" and name "name-override"

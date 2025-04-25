@@ -72,6 +72,39 @@ func (p *PoolTracker) ExistingStatefulSets() []string {
 	return sets
 }
 
+// AnyReady returns true if any of the existing pools have a ready replica.
+func (p *PoolTracker) AnyReady() bool {
+	for _, pool := range p.existingPools {
+		if pool.set.Status.ReadyReplicas > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
+func (p *PoolTracker) PoolStatuses() []PoolStatus {
+	sets := []PoolStatus{}
+	for nn, pool := range p.existingPools {
+		desiredReplicas := ptr.Deref(pool.set.Spec.Replicas, 0)
+		condemnedReplicas := pool.set.Status.Replicas - desiredReplicas
+		if condemnedReplicas < 0 {
+			condemnedReplicas = 0
+		}
+		sets = append(sets, PoolStatus{
+			Name:              nn.Name,
+			Replicas:          pool.set.Status.Replicas,
+			DesiredReplicas:   desiredReplicas,
+			ReadyReplicas:     pool.set.Status.ReadyReplicas,
+			RunningReplicas:   pool.set.Status.AvailableReplicas,
+			UpToDateReplicas:  pool.set.Status.CurrentReplicas,
+			OutOfDateReplicas: pool.set.Status.Replicas - pool.set.Status.CurrentReplicas,
+			CondemnedReplicas: condemnedReplicas,
+		})
+	}
+	return sets
+}
+
 // DesiredStatefulSets returns a list of the names of the desired StatefulSets tracked by the PoolTracker.
 func (p *PoolTracker) DesiredStatefulSets() []string {
 	sets := []string{}
@@ -155,11 +188,19 @@ func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn, existing := range p.existingPools {
+		desired, ok := p.desiredPools[nn]
+		if !ok {
+			continue
+		}
+
 		labels := existing.set.Labels
 		if labels == nil {
 			continue
 		}
-		if desired, ok := p.desiredPools[nn]; ok && labels[generationLabel] != generation {
+
+		outOfDateGeneration := labels[generationLabel] != generation
+		outOfDateConfigVersion := labels[configVersionLabel] != desired.set.Labels[configVersionLabel]
+		if outOfDateGeneration || outOfDateConfigVersion {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 

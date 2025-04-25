@@ -25,10 +25,9 @@ require (
 	github.com/prometheus/client_golang v1.20.4
 	github.com/prometheus/common v0.55.0
 	github.com/redpanda-data/common-go/net v0.1.0
-	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
+	github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e
 	github.com/redpanda-data/common-go/secrets v0.1.3
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17
@@ -59,6 +58,7 @@ require (
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.3
 	k8s.io/component-helpers v0.30.3
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.30.3
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	pgregory.net/rapid v1.1.0
@@ -309,7 +309,6 @@ require (
 	k8s.io/apiserver v0.30.3 // indirect
 	k8s.io/cli-runtime v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
-	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
@@ -341,6 +340,9 @@ replace (
 	// now that operator no longer leverages flux, just reference the local
 	// chart definition for our structs
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
+	// we want to leverage the latest pkg -- all of this should go away when we
+	// reintroduce go.work
+	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
 	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
 	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.

@@ -11,6 +11,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -32,12 +33,14 @@ func checkClusterAvailability(ctx context.Context, t framework.TestingT, cluster
 		hasCondition := t.HasCondition(metav1.Condition{
 			Type:   "Ready",
 			Status: metav1.ConditionTrue,
-			Reason: "RedpandaClusterDeployed",
+			Reason: "Ready",
 		}, cluster.Status.Conditions)
 
-		t.Logf(`Checking cluster resource conditions contains "RedpandaClusterDeployed"? %v`, hasCondition)
+		t.Logf(`Checking cluster resource conditions contains "Ready"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never contained the condition reason "RedpandaClusterDeployed", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}))
 	t.Logf("Cluster %q is ready!", clusterName)
 }
 

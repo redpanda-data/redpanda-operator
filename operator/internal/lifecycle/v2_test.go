@@ -34,16 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-func TestV2ResourceClientStatus(t *testing.T) {
-	updater := NewV2ClusterStatusUpdater()
-
-	for _, quiesced := range []bool{true, false} {
-		cluster := &redpandav1alpha2.Redpanda{}
-		require.True(t, updater.Update(cluster, ClusterStatus{Quiesced: quiesced}))
-		require.False(t, updater.Update(cluster, ClusterStatus{Quiesced: quiesced}))
-	}
-}
-
 func TestV2ResourceClient(t *testing.T) {
 	log.SetLogger(logr.Discard())
 

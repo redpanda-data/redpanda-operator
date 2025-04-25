@@ -411,8 +411,6 @@ github.com/aliyun/credentials-go v1.3.2/go.mod h1:tlpz4uys4Rn7Ik4/piGRrTbXy2uLKv
 github.com/andybalholm/brotli v1.0.5 h1:8uQZIdzKmjc/iuPu7O2ioW48L81FgatrcpfFmiq/cCs=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0 h1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=
-github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
-github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/apache/arrow/go/v15 v15.0.2/go.mod h1:DGXsR3ajT524njufqf95822i+KTh+yea1jass9YXgjA=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e h1:QEF07wC0T1rKkctt1RINW/+RMTVmiwxETico2l3gxJA=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da h1:8GUt8eRujhVEGZFFEjBj46YV4rDjvGrNxb0KMWYkL2I=
@@ -597,8 +595,10 @@ github.com/flosch/pongo2/v4 v4.0.2/go.mod h1:B5ObFANs/36VwxxlgKpdchIJHMvHB562PW+
 github.com/fluxcd/cli-utils v0.36.0-flux.2 h1:7nlXfAJ7iaDF34IdbyId+wBf7beL2qvzDBLmVBJSDVo=
 github.com/fluxcd/cli-utils v0.36.0-flux.2/go.mod h1:TQtgRf9OjQBzE5FJ9UDV6WNz9Po3pzAtk3NQmQEN5l8=
 github.com/fluxcd/helm-controller v0.37.2/go.mod h1:FBzfkIulsaD6e/PUz3zns4JQ2s4RRiWaOaLIWZkT9yI=
+github.com/fluxcd/pkg/apis/acl v0.1.0/go.mod h1:zfEZzz169Oap034EsDhmCAGgnWlcWmIObZjYMusoXS8=
 github.com/fluxcd/pkg/apis/event v0.6.0 h1:AUaeee1CGWb65BLqVximHXG8Gcu6vWuYONIq6tVpjgo=
 github.com/fluxcd/pkg/apis/event v0.6.0/go.mod h1:OEzWcX/oPbMmkCvC9QGoK27JXFvUZgBhLD+zgxZe47A=
+github.com/fluxcd/pkg/apis/meta v1.2.0/go.mod h1:fU/Az9AoVyIxC0oI4ihG0NVMNnvrcCzdEym3wxjIQsc=
 github.com/fluxcd/pkg/git v0.16.0/go.mod h1:ZsaxXDBHIUjNeRf+3qDGyHD22KpqbjuNPCbHy2Xid5U=
 github.com/fluxcd/pkg/git/gogit v0.16.1/go.mod h1:nx3PumOFe5e3fMsh2HPLSlAeOk2wC+jVg7H9BTRKEmg=
 github.com/fluxcd/pkg/lockedfile v0.1.0/go.mod h1:EJLan8t9MiOcgTs8+puDjbE6I/KAfHbdvIy9VUgIjm8=
@@ -804,6 +804,7 @@ github.com/grpc-ecosystem/go-grpc-middleware v1.3.0/go.mod h1:z0ButlSOZa5vEBq9m2
 github.com/grpc-ecosystem/go-grpc-middleware v1.4.0/go.mod h1:g5qyo/la0ALbONm6Vbp88Yd8NsDy6rZz+RcrMPxvld8=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 h1:Ovs26xHkKqVztRpIrF/92BcuyuQ/YW4NSIpoGtfXNho=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99/go.mod h1:3bDW6wMZJB7tiONtC/1Xpicra6Wp5GgbTbQWCbI5fkc=
+github.com/grpc-ecosystem/grpc-gateway v1.16.0 h1:gmcG1KaJ57LophUzW0Hy8NmPhnMZb4M0+kPpLofRdBo=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0/go.mod h1:YN5jB8ie0yfIUg6VvR9Kz84aCaG7AsGZnLjhHbUqwPg=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0/go.mod h1:qmOFXW2epJhM0qSnUUYpldc7gVz2KMQwJ/QYCDIa7XU=
 github.com/hamba/avro/v2 v2.23.0 h1:DYWz6UqNCi21JflaZlcwNfW+rK+D/CwnrWWJtfmO4vw=
@@ -1047,11 +1048,14 @@ github.com/prometheus/procfs v0.12.0/go.mod h1:pcuDEFsWDnvcgNzo4EEweacyhjeA9Zk3c
 github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 h1:MkV+77GLUNo5oJ0jf870itWm3D0Sjh7+Za9gazKc5LQ=
 github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/redis/go-redis/v9 v9.6.1/go.mod h1:0C0c6ycQsdpVNQpxb1njEQIqkx5UcsM8FJCQLgE9+RA=
+github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e h1:0kdPPgbSCZ8XX6K/51x61/9cas2/sXj8UgdoiLJnOqQ=
+github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
 github.com/redpanda-data/common-go/secrets v0.1.2 h1:UCDLN/yL8yjSIYhS5MB+2Am1Jy4XZMZPtuuCRL/82Rw=
 github.com/redpanda-data/common-go/secrets v0.1.2/go.mod h1:WjaDI39reE/GPRPHTsaYmiMjhHj+qsSJLe+kHsPKsXk=
 github.com/redpanda-data/flux-controller-shim/helm/shim v0.0.0-20231227162419-a45126310240/go.mod h1:5KLXArOMFOrwb3BihpFaRNiPCyo9AXsXhvMdUmrCdUg=
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19/go.mod h1:T39OECA7eOlhpHZPBSGg+bpuwtt/G4m03fjBkJ821CM=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e/go.mod h1:jF5kbQy3qT/zufL27DE3lecfYTRWeAzSiVmrbDDQwUw=
+github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250324171046-34430507e756/go.mod h1:c9U+W6CCLWHWk9jBEzzUM7Q7ya4ot57FghxtaVdMrNQ=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
 github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 h1:HIkLbEDKeCALHFytZdHfeWYo/9JMa1yh4QlsIlhlsB8=

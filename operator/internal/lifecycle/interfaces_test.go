@@ -392,7 +392,7 @@ func NewMockClusterStatusUpdater() *MockClusterStatusUpdater {
 	return &MockClusterStatusUpdater{}
 }
 
-func (u *MockClusterStatusUpdater) Update(cluster *MockCluster, status ClusterStatus) bool {
+func (u *MockClusterStatusUpdater) Update(cluster *MockCluster, status *ClusterStatus) bool {
 	return false
 }
 

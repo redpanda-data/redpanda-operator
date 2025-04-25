@@ -55,7 +55,7 @@ type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn
 
 // AdminClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
-func AdminClient(dot *helmette.Dot, dialer DialContextFunc) (*rpadmin.AdminAPI, error) {
+func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
 	name := redpanda.Fullname(dot)
 	domain := redpanda.InternalDomain(dot)
@@ -90,7 +90,7 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc) (*rpadmin.AdminAPI, 
 
 	hosts := redpanda.ServerList(values.Statefulset.Replicas, prefix, name, domain, values.Listeners.Admin.Port)
 
-	client, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer)
+	client, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer, opts...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

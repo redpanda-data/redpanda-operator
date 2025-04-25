@@ -2,14 +2,13 @@ package steps
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -17,38 +16,44 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func statefulSetHaveOwnerReference(ctx context.Context, t framework.TestingT, statefulsetName, clusterName string) {
-	var sts appsv1.StatefulSet
+func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
 	var cluster redpandav1alpha2.Redpanda
 
-	clusterKey := t.ResourceKey(clusterName)
-	stsKey := t.ResourceKey(statefulsetName)
+	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	obj, err := t.Scheme().New(*gvk)
+	require.NoError(t, err)
 
-	t.Logf("Checking cluster %q set owner reference in statefulset", clusterName)
+	o := obj.(client.Object)
+
+	require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
+
 	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, clusterKey, &cluster))
-		require.NoError(t, t.Get(ctx, stsKey, &sts))
+		require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
+		require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
 		cluster.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
 
-		if len(sts.OwnerReferences) != 1 {
-			t.Logf("Statefulset has %d owner references", len(sts.OwnerReferences))
+		references := o.GetOwnerReferences()
+		if len(references) != 1 {
+			t.Logf("object has %d owner references", len(references))
 			return false
 		}
 
-		obj := cluster.OwnerShipRefObj()
-		obj.UID = types.UID("")
-		expected, err := json.Marshal(obj)
-		require.NoError(t, err)
+		actual := references[0]
+		expected := cluster.OwnerShipRefObj()
 
-		obj = sts.OwnerReferences[0]
-		obj.UID = types.UID("")
-		actual, err := json.Marshal(obj)
-		require.NoError(t, err)
+		matchesAPIVersion := actual.APIVersion == expected.APIVersion
+		matchesKind := actual.Kind == expected.Kind
+		matchesName := actual.Name == expected.Name
 
-		t.Logf(`Checking cluster StatefulSet contains owner reference? %s/%s -> %s`, sts.OwnerReferences[0].APIVersion, sts.OwnerReferences[0].Kind, sts.OwnerReferences[0].Name)
-		return string(expected) == string(actual)
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never set owner reference for StatefulSet %q, final OwnerReference: %+v`, clusterKey.String(), stsKey.String(), sts.OwnerReferences)
-	t.Logf("StatefulSet has Redpanda %s custom resource OwnerReference", clusterName)
+		matches := matchesAPIVersion && matchesKind && matchesName
+
+		t.Logf(`Checking object contains cluster owner reference? (actual: %s/%s -> %s) (expected: %s/%s -> %s)`, actual.Kind, actual.APIVersion, actual.Name, expected.Kind, expected.APIVersion, expected.Name)
+		return matches
+	}, 5*time.Minute, 5*time.Second, "", delayLog(func() string {
+		return fmt.Sprintf(`Object %q never contained owner reference for cluster %q, final OwnerReference: %+v`, resourceName, clusterName, o.GetOwnerReferences())
+	}))
+
+	t.Logf("Object has cluster owner reference for %q", clusterName)
 }
 
 type recordedVariable string
@@ -61,6 +66,45 @@ func assertVariableValue(ctx context.Context, t framework.TestingT, variableName
 	currentValue := execJSONPath(ctx, t, jsonPath, groupVersionKind, resourceName)
 	previousValue := ctx.Value(recordedVariable(variableName))
 	require.Equal(t, previousValue, currentValue)
+}
+
+func assertVariableValueIncremented(ctx context.Context, t framework.TestingT, variableName, jsonPath, groupVersionKind, resourceName string) {
+	currentValue := execJSONPath(ctx, t, jsonPath, groupVersionKind, resourceName)
+	previousValue := ctx.Value(recordedVariable(variableName))
+
+	if reflect.TypeOf(previousValue) != reflect.TypeOf(currentValue) {
+		t.Fatalf("unmatched types: %T, %T", previousValue, currentValue)
+		return
+	}
+
+	// check if we're dealing with integer types
+	// NOTE: this verbose switch statement is painful
+	// but there's not a great way of incrementing
+	// a number otherwise via reflection
+	switch value := previousValue.(type) {
+	case int:
+		require.Equal(t, value+1, currentValue)
+	case int8:
+		require.Equal(t, value+1, currentValue)
+	case int16:
+		require.Equal(t, value+1, currentValue)
+	case int32:
+		require.Equal(t, value+1, currentValue)
+	case int64:
+		require.Equal(t, value+1, currentValue)
+	case uint:
+		require.Equal(t, value+1, currentValue)
+	case uint8:
+		require.Equal(t, value+1, currentValue)
+	case uint16:
+		require.Equal(t, value+1, currentValue)
+	case uint32:
+		require.Equal(t, value+1, currentValue)
+	case uint64:
+		require.Equal(t, value+1, currentValue)
+	default:
+		t.Fatalf("unsupported type: %T", previousValue)
+	}
 }
 
 func execJSONPath(ctx context.Context, t framework.TestingT, jsonPath, groupVersionKind, resourceName string) any {

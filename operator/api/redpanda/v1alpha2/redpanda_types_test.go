@@ -31,7 +31,6 @@ import (
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/connectors"
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
@@ -250,10 +249,6 @@ func TestHelmValuesCompat(t *testing.T) {
 				from.Storage.Tiered.PersistentVolume.Size = nil
 			}
 		})
-	}))
-
-	t.Run("connectors", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[connectors.PartialValues, redpandav1alpha2.RedpandaConnectors](t, cfg, nil)
 	}))
 
 	t.Run("console", rapid.MakeCheck(func(t *rapid.T) {

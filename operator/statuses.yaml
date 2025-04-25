@@ -114,10 +114,12 @@
             This reason is used with the "LicenseValid" condition when it evaluates to True because
             a cluster has a valid license.
         - name: Expired
+          message: Cluster license has expired
           description: >
             This reason is used with the "LicenseValid" condition when it evaluates to False because
             a cluster has an expired license.
         - name: NotPresent
+          message: No cluster license is present
           description: >
             This reason is used with the "LicenseValid" condition when it evaluates to False because
             a cluster has no license.

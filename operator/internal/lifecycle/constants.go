@@ -17,6 +17,7 @@ const (
 	defaultOperatorLabel  = "cluster.redpanda.com/operator"
 	defaultOwnerLabel     = "cluster.redpanda.com/owner"
 	generationLabel       = "cluster.redpanda.com/generation"
+	configVersionLabel    = "cluster.redpanda.com/configVersion"
 	componentLabel        = "app.kubernetes.io/component"
 	instanceLabel         = "app.kubernetes.io/instance"
 	fluxNameLabel         = "helm.toolkit.fluxcd.io/name"
