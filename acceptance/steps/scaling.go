@@ -59,7 +59,7 @@ func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, cl
 				deleted = true
 			}
 
-			t.Log("checking that Redpanda cluster %q is fully deleted: %v", clusterName, deleted)
+			t.Logf("checking that Redpanda cluster %q is fully deleted: %v", clusterName, deleted)
 
 			return deleted
 		}, 2*time.Minute, 5*time.Second, `Cluster %q still exists`, clusterName)
