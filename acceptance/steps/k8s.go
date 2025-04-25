@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,6 +17,46 @@ import (
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
+
+func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
+	var cluster redpandav1alpha2.Redpanda
+
+	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	obj, err := t.Scheme().New(*gvk)
+	require.NoError(t, err)
+
+	o := obj.(client.Object)
+
+	require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
+
+	require.Eventually(t, func() bool {
+		require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
+		require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
+		cluster.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
+
+		references := o.GetOwnerReferences()
+		if len(references) != 1 {
+			t.Logf("object has %d owner references", len(references))
+			return false
+		}
+
+		actual := references[0]
+		expected := cluster.OwnerShipRefObj()
+
+		matchesAPIVersion := actual.APIVersion == expected.APIVersion
+		matchesKind := actual.Kind == expected.Kind
+		matchesName := actual.Name == expected.Name
+
+		matches := matchesAPIVersion && matchesKind && matchesName
+
+		t.Logf(`Checking object contains cluster owner reference? (actual: %s/%s -> %s) (expected: %s/%s -> %s)`, actual.Kind, actual.APIVersion, actual.Name, expected.Kind, expected.APIVersion, expected.Name)
+		return matches
+	}, 5*time.Minute, 5*time.Second, "", delayLog(func() string {
+		return fmt.Sprintf(`Object %q never contained owner reference for cluster %q, final OwnerReference: %+v`, resourceName, clusterName, o.GetOwnerReferences())
+	}))
+
+	t.Logf("Object has cluster owner reference for %q", clusterName)
+}
 
 func statefulSetHaveOwnerReference(ctx context.Context, t framework.TestingT, statefulsetName, clusterName string) {
 	var sts appsv1.StatefulSet
