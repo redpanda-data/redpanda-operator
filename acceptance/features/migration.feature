@@ -34,4 +34,5 @@ Feature: Helm chart to Redpanda Operator migration
         And the Kubernetes object of type "StatefulSet.v1.apps" with name "name-override" has an OwnerReference pointing to the cluster "redpanda-migration-example"
         And the helm release for "redpanda-migration-example" can be deleted by removing its stored secret
         And the cluster "redpanda-migration-example" is healthy
-        And the recorded value "generation" has the same value as "{.metadata.generation}" of the Kubernetes object with type "StatefulSet.v1.apps" and name "name-override"
+        # this winds up being incremented due to us forcibly swapping the cluster's StatefulSets to leverage OnDelete semantics
+        And the recorded value "generation" is one less than "{.metadata.generation}" of the Kubernetes object with type "StatefulSet.v1.apps" and name "name-override"
