@@ -41,6 +41,8 @@ func applyFixups[T any](ctx context.Context, config T, fn string, cloudExpander 
 		}
 	}
 	factory := clusterconfiguration.StdLibFactory(ctx, env, cloudExpander)
-	err = tpl.Fixup(factory)
-	return tpl.Content, err
+	if err = tpl.Fixup(factory); err != nil {
+		return zero, err
+	}
+	return tpl.Content, nil
 }
