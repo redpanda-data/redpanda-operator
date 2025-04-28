@@ -294,7 +294,7 @@ type PartialSidecars struct {
 		Enabled *bool "json:\"enabled,omitempty\""
 	} "json:\"configWatcher,omitempty\""
 	Controllers *struct {
-		Image              *PartialImage "json:\"image,omitempty\""
+		DeprecatedImage    *PartialImage "json:\"image,omitempty\""
 		Enabled            *bool         "json:\"enabled,omitempty\""
 		CreateRBAC         *bool         "json:\"createRBAC,omitempty\""
 		HealthProbeAddress *string       "json:\"healthProbeAddress,omitempty\""

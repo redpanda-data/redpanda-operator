@@ -31,8 +31,8 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	env := values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(values.Storage.GetTieredStorageConfig())
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Controllers.Image.Repository,
-		values.Statefulset.SideCars.Controllers.Image.Tag,
+		values.Statefulset.SideCars.Image.Repository,
+		values.Statefulset.SideCars.Image.Tag,
 	)
 
 	return corev1.Container{
@@ -78,8 +78,8 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 	}
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Controllers.Image.Repository,
-		values.Statefulset.SideCars.Controllers.Image.Tag,
+		values.Statefulset.SideCars.Image.Repository,
+		values.Statefulset.SideCars.Image.Tag,
 	)
 
 	job := &batchv1.Job{

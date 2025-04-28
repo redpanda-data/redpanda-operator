@@ -919,20 +919,6 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 					Repository: ptr.To("localhost/redpanda-operator"),
 					Tag:        ptr.To("dev"),
 				},
-				Controllers: &struct {
-					Image              *redpanda.PartialImage "json:\"image,omitempty\""
-					Enabled            *bool                  "json:\"enabled,omitempty\""
-					CreateRBAC         *bool                  "json:\"createRBAC,omitempty\""
-					HealthProbeAddress *string                "json:\"healthProbeAddress,omitempty\""
-					MetricsAddress     *string                "json:\"metricsAddress,omitempty\""
-					PprofAddress       *string                "json:\"pprofAddress,omitempty\""
-					Run                []string               "json:\"run,omitempty\""
-				}{
-					Image: &redpanda.PartialImage{
-						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
-					},
-				},
 			},
 		},
 	}
@@ -1056,13 +1042,6 @@ func TestControllersTag(t *testing.T) {
 
 	var values redpanda.Values
 	require.NoError(t, yaml.Unmarshal(valuesYAML, &values))
-
-	require.Equal(
-		t,
-		chart["appVersion"].(string),
-		string(values.Statefulset.SideCars.Controllers.Image.Tag),
-		"the redpanda chart's values.yaml's controllers tag should be equal to the operator chart's appVersion",
-	)
 
 	require.Equal(
 		t,

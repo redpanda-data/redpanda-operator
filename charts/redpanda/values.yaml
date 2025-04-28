@@ -687,9 +687,6 @@ statefulset:
     configWatcher:
       enabled: true
     controllers:
-      image:
-        tag: v25.1.1-beta1
-        repository: docker.redpanda.com/redpandadata/redpanda-operator
       # You must also enable RBAC, `rbac.enabled=true`, to deploy this sidecar
       enabled: false
       healthProbeAddress: ":8085"
