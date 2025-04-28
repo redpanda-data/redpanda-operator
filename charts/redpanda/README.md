@@ -851,18 +851,6 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 **Default:** `":8085"`
 
-### [statefulset.sideCars.controllers.image.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.image.repository)
-
-**Default:**
-
-```
-"docker.redpanda.com/redpandadata/redpanda-operator"
-```
-
-### [statefulset.sideCars.controllers.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.image.tag)
-
-**Default:** `"v25.1.1-beta1"`
-
 ### [statefulset.sideCars.controllers.metricsAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.metricsAddress)
 
 **Default:** `":9082"`

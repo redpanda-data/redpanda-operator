@@ -830,7 +830,7 @@ type Sidecars struct {
 		Enabled bool `json:"enabled"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		Image              Image    `json:"image"`
+		DeprecatedImage    *Image   `json:"image"`
 		Enabled            bool     `json:"enabled"`
 		CreateRBAC         bool     `json:"createRBAC"`
 		HealthProbeAddress string   `json:"healthProbeAddress"`
