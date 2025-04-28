@@ -80,7 +80,11 @@ type RedpandaReconciler struct {
 	Scheme        *runtime.Scheme
 	EventRecorder kuberecorder.EventRecorder
 	ClientFactory internalclient.ClientFactory
-	OperatorImage *Image
+	// OperatorImage is the image to use for any instances of the operator
+	// within redpanda deployments. e.g. StatefulSet.Sidecar.Image. The
+	// redpanda chart ships with it's own default but we want this field to be
+	// controlled by the operator.
+	OperatorImage Image
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -296,21 +300,45 @@ func (r *RedpandaReconciler) reconcileStatus(ctx context.Context, rp *redpandav1
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	helmChartValues := rp.Spec.ClusterSpec.DeepCopy()
+	values := rp.Spec.ClusterSpec.DeepCopy()
+
+	if values.Statefulset == nil {
+		values.Statefulset = &redpandav1alpha2.Statefulset{}
+	}
+
+	if values.Statefulset.SideCars == nil {
+		values.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	}
+
+	if values.Statefulset.SideCars.Image == nil {
+		values.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
+	}
+
+	// If not explicitly specified, set the tag and repository of the sidecar
+	// to the image specified via CLI args rather than relying on the default
+	// of the redpanda chart.
+	// This ensures that custom deployments (e.g.
+	// localhost/redpanda-operator:dev) will use the image they are deployed
+	// with.
+	if values.Statefulset.SideCars.Image.Tag == nil {
+		values.Statefulset.SideCars.Image.Tag = &r.OperatorImage.Tag
+	}
+
+	if values.Statefulset.SideCars.Image.Repository == nil {
+		values.Statefulset.SideCars.Image.Repository = &r.OperatorImage.Repository
+	}
+
 	// The pods are being annotated with the cluster config version so that they
 	// are restarted on any change to the cluster config.
 	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
 		if c := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.ClusterConfigSynced); c != nil {
-			if helmChartValues.Statefulset == nil {
-				helmChartValues.Statefulset = &redpandav1alpha2.Statefulset{}
+			if values.Statefulset.PodTemplate == nil {
+				values.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
 			}
-			if helmChartValues.Statefulset.PodTemplate == nil {
-				helmChartValues.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{}
+			if values.Statefulset.PodTemplate.Annotations == nil {
+				values.Statefulset.PodTemplate.Annotations = map[string]string{}
 			}
-			if helmChartValues.Statefulset.PodTemplate.Annotations == nil {
-				helmChartValues.Statefulset.PodTemplate.Annotations = map[string]string{}
-			}
-			helmChartValues.Statefulset.PodTemplate.Annotations[ClusterConfigNeedRestartHashKey] = c.Message
+			values.Statefulset.PodTemplate.Annotations[ClusterConfigNeedRestartHashKey] = c.Message
 		}
 	}
 
@@ -319,7 +347,7 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 		Name:      rp.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, helmChartValues)
+	}, values)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -61,15 +61,28 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "operator.containerTag" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (not (empty $values.image.tag)) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $values.image.tag) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $dot.Chart.AppVersion) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "operator.containerImage" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $tag := $dot.Chart.AppVersion -}}
-{{- if (not (empty $values.image.tag)) -}}
-{{- $tag = $values.image.tag -}}
-{{- end -}}
+{{- $tag := (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "%s:%s" $values.image.repository $tag)) | toJson -}}
 {{- break -}}
@@ -159,6 +172,25 @@
 {{- end -}}
 {{- if (eq $values.scope "Namespace") -}}
 {{- $args = (concat (default (list) $args) (list (printf "--namespace=%s" $dot.Release.Namespace) (printf "--log-level=%s" $values.logLevel))) -}}
+{{- end -}}
+{{- $hasConfiguratorTag := false -}}
+{{- $hasConfiguratorImage := false -}}
+{{- range $_, $flag := $values.additionalCmdFlags -}}
+{{- if (contains "--configurator-tag" $flag) -}}
+{{- $hasConfiguratorTag = true -}}
+{{- end -}}
+{{- if (contains "--configurator-base-image" $flag) -}}
+{{- $hasConfiguratorImage = true -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- if (not $hasConfiguratorTag) -}}
+{{- $args = (concat (default (list) $args) (list (printf "--configurator-tag=%s" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r")))) -}}
+{{- end -}}
+{{- if (not $hasConfiguratorImage) -}}
+{{- $args = (concat (default (list) $args) (list (printf "--configurator-base-image=%s" $values.image.repository))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (concat (default (list) $args) (default (list) $values.additionalCmdFlags))) | toJson -}}

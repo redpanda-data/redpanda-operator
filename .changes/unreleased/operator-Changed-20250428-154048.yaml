@@ -1,0 +1,12 @@
+project: operator
+kind: Changed
+body: |-
+    The operator will now populate `.Statefulset.SideCars.Image`, if unspecified, with it's own image.
+
+      The image and tag may be controlled with pre-existing
+      `--configurator-base-image` and `--configurator-tag` flags, respectively.
+
+      The previous behavior was to defer to the default of the redpanda chart which
+      could result in out of sync RBAC requirements or regressions of
+      sidecar/initcontainer behavior, if using an older redpanda chart.
+time: 2025-04-28T15:40:48.87623-04:00

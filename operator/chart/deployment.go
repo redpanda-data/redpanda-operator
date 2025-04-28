@@ -187,13 +187,18 @@ func readinessProbe(dot *helmette.Dot, podTerminationGracePeriodSeconds *int64) 
 	}
 }
 
+func containerTag(dot *helmette.Dot) string {
+	values := helmette.Unwrap[Values](dot.Values)
+	if !helmette.Empty(values.Image.Tag) {
+		return *values.Image.Tag
+	}
+	return dot.Chart.AppVersion
+}
+
 func containerImage(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	tag := dot.Chart.AppVersion
-	if !helmette.Empty(values.Image.Tag) {
-		tag = *values.Image.Tag
-	}
+	tag := containerTag(dot)
 
 	return fmt.Sprintf("%s:%s", values.Image.Repository, tag)
 }
@@ -335,6 +340,30 @@ func operatorArguments(dot *helmette.Dot) []string {
 			fmt.Sprintf("--namespace=%s", dot.Release.Namespace),
 			fmt.Sprintf("--log-level=%s", values.LogLevel),
 		)
+	}
+
+	hasConfiguratorTag := false
+	hasConfiguratorImage := false
+	for _, flag := range values.AdditionalCmdFlags {
+		if helmette.Contains("--configurator-tag", flag) {
+			hasConfiguratorTag = true
+		}
+		if helmette.Contains("--configurator-base-image", flag) {
+			hasConfiguratorImage = true
+		}
+	}
+
+	// If --configurator-base-image and --configurator-tag haven't been
+	// specified, set them to the image specified in this chart. This ensures
+	// that the operator deploys the correct version of itself when it's
+	// deploying itself for other purposes, like the sidecar, initcontainer, or
+	// configurator.
+	if !hasConfiguratorTag {
+		args = append(args, fmt.Sprintf("--configurator-tag=%s", containerTag(dot)))
+	}
+
+	if !hasConfiguratorImage {
+		args = append(args, fmt.Sprintf("--configurator-base-image=%s", values.Image.Repository))
 	}
 
 	return append(args, values.AdditionalCmdFlags...)

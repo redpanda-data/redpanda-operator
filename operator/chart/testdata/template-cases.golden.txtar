@@ -1402,6 +1402,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=a35
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -2310,6 +2312,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=TNizkRf0
+        - --configurator-tag=H6X3S
+        - --configurator-base-image=p9Di
         - 3AeeXxo
         - EoLf5
         - "9"
@@ -3212,6 +3216,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Ae
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -4084,6 +4090,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=CcZY
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - 4ApSMU1
         - r
         - BXVuKkMQ
@@ -4982,6 +4990,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=a4SuUdq
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -5885,6 +5895,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=eM
+        - --configurator-tag=IyW
+        - --configurator-base-image=Rr9cCH8
         - sAQJC
         - "72"
         command:
@@ -6780,6 +6792,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=OdrK
+        - --configurator-tag=9JWhXp
+        - --configurator-base-image=eZ6Hz
         command:
         - /manager
         env: []
@@ -7248,6 +7262,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Y
+        - --configurator-tag=E5edBYpa
+        - --configurator-base-image=ISoDbxsE
         command:
         - /manager
         env: []
@@ -8172,6 +8188,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=gT
+        - --configurator-tag=6LBRlD
+        - --configurator-base-image=kw6W
         command:
         - /manager
         env: []
@@ -9057,6 +9075,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=Qgv
+        - --configurator-tag=Fc9SuJ
+        - --configurator-base-image=nkEl
         command:
         - /manager
         env: []
@@ -9973,6 +9993,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=dqEg
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - ""
         - W7
         command:
@@ -10895,6 +10917,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=aWy1AZjYl
+        - --configurator-tag=W0p45uvP8
+        - --configurator-base-image=5grR1QB
         - 6SD9JDbQ7Q
         - YSovMAw
         command:
@@ -11755,6 +11779,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=HhY5pV
+        - --configurator-tag=iRz
+        - --configurator-base-image=DpT1qi9X
         command:
         - /manager
         env: []
@@ -12694,6 +12720,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=DCM8
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -13161,6 +13189,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=6TGvv
+        - --configurator-tag=J18tP9n
+        - --configurator-base-image=AhZ
         - x7K3o
         command:
         - /manager
@@ -14019,6 +14049,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=vOvAQKBh
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -14546,6 +14578,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=mU
+        - --configurator-tag=PGITfvk
+        - --configurator-base-image=4kWMzql
         - YXvYnHoraN
         - 6PWVVeCET
         - D
@@ -15736,6 +15770,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=BpnfO
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -16768,6 +16804,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=pMbmKX
+        - --configurator-tag=UVj2te38
+        - --configurator-base-image=gSveMOQ8Iaw
         - 6gNh
         command:
         - /manager
@@ -17723,6 +17761,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=5ruW
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -18711,6 +18751,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=wt4uT
+        - --configurator-tag=MJp
+        - --configurator-base-image=6ERMjI8
         - vp9WG
         command:
         - /manager
@@ -19672,6 +19714,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=PgU9SwD
+        - --configurator-tag=fK
+        - --configurator-base-image=5T8t
         - aQJ
         - ""
         - DJZ4
@@ -20725,6 +20769,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=zoF
+        - --configurator-tag=GXw
+        - --configurator-base-image=Jlzs9s
         command:
         - /manager
         env: []
@@ -22150,6 +22196,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=S3
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -23209,6 +23257,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=mcE2xz8
+        - --configurator-tag=z7F5fT
+        - --configurator-base-image=4s6FZUA
         - 2MguVfZ
         - 2d4Gz
         command:
@@ -23906,6 +23956,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=NaLO9z
+        - --configurator-tag=Lotm9epAH
+        - --configurator-base-image=g96
         command:
         - /manager
         env: []
@@ -25000,6 +25052,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=xLHAob
+        - --configurator-tag=5yg4G
+        - --configurator-base-image=Bl6b0ql7
         - htV
         - ItRsBL
         command:
@@ -26181,6 +26235,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=GusePZR7AB
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - TvXwul
         command:
         - /manager
@@ -26807,6 +26863,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=EQ
+        - --configurator-tag=S
+        - --configurator-base-image=qO8Q6
         - ufbUW
         command:
         - /manager
@@ -27877,6 +27935,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=hPrI1P
+        - --configurator-tag=Gd0
+        - --configurator-base-image=8mlV
         command:
         - /manager
         env: []
@@ -28706,6 +28766,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=v1480
+        - --configurator-tag=SwdpKv
+        - --configurator-base-image=a2vgH0
         command:
         - /manager
         env: []
@@ -30141,6 +30203,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=XxZ
+        - --configurator-tag=zo
+        - --configurator-base-image=bqtHD7
         - Rlceb
         - pf5
         command:
@@ -30793,6 +30857,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=G3wz
+        - --configurator-tag=RK6Ba96O
+        - --configurator-base-image=16DN2
         - wK
         command:
         - /manager
@@ -32020,6 +32086,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=KMFMJqF
+        - --configurator-tag=NaNHQ74
+        - --configurator-base-image=MhZp
         - SkxA4PXfixGo6H
         - Fa1
         command:
@@ -32774,6 +32842,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=SzbHWgTpbD2
+        - --configurator-tag=jr9
+        - --configurator-base-image=5Q
         - gQcl6Ej6
         command:
         - /manager
@@ -33531,6 +33601,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=iAMFhZ
+        - --configurator-tag=i6Q4sn53d
+        - --configurator-base-image=P9JMlA
         - 8kSamSw9
         command:
         - /manager
@@ -34386,6 +34458,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=W
+        - --configurator-tag=4hS76
+        - --configurator-base-image=dOHS
         - Cz5DsC
         - dk6pMw8X
         command:
@@ -35144,6 +35218,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=GyEj
+        - --configurator-tag=C5
+        - --configurator-base-image=5R2fC0t
         - 0H
         - nCx9L
         command:
@@ -36539,6 +36615,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=WFheHptfh
+        - --configurator-tag=DV
+        - --configurator-base-image=CABd5
         - E9Eu
         - EU
         - nE
@@ -37298,6 +37376,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=
+        - --configurator-tag=95V5Gm
+        - --configurator-base-image=h
         - JFs
         - nNwqWRT
         - ScYwDYt
@@ -37914,6 +37994,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=yGdn
+        - --configurator-tag=YHoj
+        - --configurator-base-image=OjO
         - krIILz
         - "5"
         - cS
@@ -39329,6 +39411,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=K
+        - --configurator-tag=X
+        - --configurator-base-image=Olq
         - jq37e
         command:
         - /manager
@@ -40811,6 +40895,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=10rTK
+        - --configurator-tag=VPI
+        - --configurator-base-image=VX7rtbd
         - Fpr
         - bQ4Xdn
         command:
@@ -41596,6 +41682,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=D3sVjB0WumuG
+        - --configurator-tag=l0yDQ3G
+        - --configurator-base-image=5SfzkB5M1vx
         - J
         - k
         - VRWdl
@@ -42946,6 +43034,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=
+        - --configurator-tag=QiVn05LHP7O
+        - --configurator-base-image=a7e7
         command:
         - /manager
         env: []
@@ -43833,6 +43923,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=YQXlr
+        - --configurator-tag=H
+        - --configurator-base-image=Nt
         - KeFi
         - dfONW9
         - 9znBOn
@@ -44593,6 +44685,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=TwQtVGrOeJf
+        - --configurator-tag=go
+        - --configurator-base-image=MRDUBfo4
         command:
         - /manager
         env: []
@@ -46059,6 +46153,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=EFXhBX
+        - --configurator-tag=pneZv
+        - --configurator-base-image=KbWqGz
         - 5O
         command:
         - /manager
@@ -47263,6 +47359,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=ozF
+        - --configurator-tag=qPbAyXLw
+        - --configurator-base-image=CPQ9Y6
         command:
         - /manager
         env: []
@@ -48636,6 +48734,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=bVWCG
+        - --configurator-tag=CyopzJ
+        - --configurator-base-image=U4heCUyQYeE
         - 6ArBn
         - zve
         command:
@@ -49646,6 +49746,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=WHh
+        - --configurator-base-image=AzmZ3dTJs
         command:
         - /manager
         env: []
@@ -50531,6 +50633,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=K
+        - --configurator-base-image=mM7lGw9fmKx
         - l4dHBtic0cX0cs7
         - ""
         command:
@@ -51430,6 +51534,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -52348,6 +52454,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -53273,6 +53381,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=NnFVx
+        - --configurator-base-image=zCQ
         command:
         - /manager
         env: []
@@ -54184,6 +54294,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - D4rks
         - p7p
         - 1kSb
@@ -54699,6 +54811,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -55208,6 +55322,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=Jug9nLx
+        - --configurator-base-image=ma3F
         - JOd
         - JV6w
         command:
@@ -56203,6 +56319,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=vnJvYTYU8
+        - --configurator-base-image=idWmcYq6IZQH
         command:
         - /manager
         env: []
@@ -57122,6 +57240,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -58233,6 +58353,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=9mw
+        - --configurator-base-image=qbU
         - 8TZ
         - c
         - cpUq
@@ -59167,6 +59289,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=GfYtT
+        - --configurator-base-image=2g
         command:
         - /manager
         env: []
@@ -60306,6 +60430,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -61312,6 +61438,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=vJ7ET
+        - --configurator-base-image=cd7qo
         - r4LII
         - m5622dBz6A
         command:
@@ -62335,6 +62463,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=DF517x
+        - --configurator-base-image=SCN
         - ""
         - QL9X
         command:
@@ -62955,6 +63085,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=1
+        - --configurator-base-image=
         - Q9
         - JLCZc
         - c
@@ -63597,6 +63729,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=47nK
+        - --configurator-base-image=UWHmykY
         command:
         - /manager
         env: []
@@ -64664,6 +64798,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=boxAxRu
+        - --configurator-base-image=kBJV23
         command:
         - /manager
         env: []
@@ -65377,6 +65513,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=HXXm
+        - --configurator-base-image=7wdG0
         - dWzxr3xXRM
         - vEF
         - DAM
@@ -66112,6 +66250,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=Vk
+        - --configurator-base-image=xmIP4HeALlQ8
         - oxdTcKZmy5
         command:
         - /manager
@@ -67411,6 +67551,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=m0a
+        - --configurator-base-image=h9
         - ReK6Upw
         - 7Pu0AA
         - 0yNEqlggmA
@@ -68637,6 +68779,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=TPaa
+        - --configurator-base-image=Zme9w8o
         - LlHz1
         - 4qYzSV
         command:
@@ -69545,6 +69689,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=6E02z0oYQUL
+        - --configurator-base-image=Tzah
         - zTsg
         - Sv
         - 9M23O7X
@@ -70402,6 +70548,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=3ncj
+        - --configurator-base-image=Ozfq
         - 5orCeu
         - v7kr
         command:
@@ -71259,6 +71407,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=8YPjvr
+        - --configurator-base-image=w3qgVe7
         - "n"
         - H7B3A1m
         command:
@@ -72414,6 +72564,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=hk
+        - --configurator-base-image=9kg
         - eyxGhI
         - 9YL
         - 6HEr
@@ -73861,6 +74013,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=McKTb81
+        - --configurator-base-image=D43Nf
         command:
         - /manager
         env: []
@@ -75087,6 +75241,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=Q9Q
+        - --configurator-base-image=M2Q
         command:
         - /manager
         env: []
@@ -76348,6 +76504,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=EQ6C
+        - --configurator-base-image=tczCHr
         - Sb4JTueXASpBtQ
         - og
         - GaoUIcOT
@@ -77201,6 +77359,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=w8Y59
+        - --configurator-base-image=ahO
         command:
         - /manager
         env: []
@@ -78408,6 +78568,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=ZpYBKn
+        - --configurator-base-image=ZMlofIenTW3
         command:
         - /manager
         env: []
@@ -79725,6 +79887,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=okj1Bqm1LHE
+        - --configurator-base-image=YYLGC7
         - Gc3q48w
         - JNFXPzkrj
         - hYzBm
@@ -80453,6 +80617,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=H0aN
+        - --configurator-base-image=kG9n
         command:
         - /manager
         env: []
@@ -81677,6 +81843,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=3BE
+        - --configurator-base-image=BkpCoE
         - QpxE2
         command:
         - /manager
@@ -83017,6 +83185,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=y8Skx9
+        - --configurator-base-image=n74Ca
         - bv4LbFjFG
         - X5vvak7u
         command:
@@ -84174,6 +84344,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=bBlM
+        - --configurator-base-image=ftKlY
         - amoUVan
         command:
         - /manager
@@ -84983,6 +85155,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=wp
+        - --configurator-base-image=AJtD86QQ
         command:
         - /manager
         env: []
@@ -86201,6 +86375,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=1XQEc73
+        - --configurator-base-image=87
         command:
         - /manager
         env: []
@@ -87498,6 +87674,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=y3ROS
+        - --configurator-base-image=I
         command:
         - /manager
         env: []
@@ -88325,6 +88503,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=u
+        - --configurator-base-image=TPAc
         command:
         - /manager
         env: []
@@ -89595,6 +89775,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=tr
+        - --configurator-base-image=MxYHsvk3O
         command:
         - /manager
         env: []
@@ -90957,6 +91139,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=lWf3R8lv
+        - --configurator-base-image=zZLbhNE
         - oMtn
         - Q
         - 3z6Z0vrvjWuC
@@ -91889,6 +92073,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=EyNNr90u1
+        - --configurator-base-image=6C
         - IoP
         - oEPSF
         - w659VcIIlO
@@ -93153,6 +93339,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=wA5XUe
+        - --configurator-base-image=kE0AJ1
         - ""
         - 2BwL4Tf6d
         - LY5cEH
@@ -94402,6 +94590,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=PQfV4
+        - --configurator-base-image=uzG5
         - 7G3Tgu
         - Oh
         command:
@@ -95652,6 +95842,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=ob8Ckc
+        - --configurator-base-image=iqTYWQsJpRK
         command:
         - /manager
         env: []
@@ -96456,6 +96648,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v
+        - --configurator-base-image=xS
         command:
         - /manager
         env: []
@@ -97767,6 +97961,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=3EcYA
+        - --configurator-base-image=HoNUZ89Keda
         - l9a
         - Arx
         - bLHpq0J3
@@ -98666,6 +98862,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=P
+        - --configurator-base-image=h8K
         - P
         - WM7Be
         - JLya
@@ -99978,6 +100176,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=HAScR
+        - --configurator-base-image=C9o
         command:
         - /manager
         env: []
@@ -100996,6 +101196,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -101845,6 +102047,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -102711,6 +102915,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -103560,6 +103766,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -104409,6 +104617,8 @@ spec:
         - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -105275,6 +105485,8 @@ spec:
         - --webhook-enabled=false
         - --namespace=default
         - --log-level=info
+        - --configurator-tag=v25.1.1-beta1
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
