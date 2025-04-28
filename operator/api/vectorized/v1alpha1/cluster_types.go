@@ -243,16 +243,28 @@ type ClusterConfigValue struct {
 	// Should the value be contained in a k8s secret rather than configmap, we can refer
 	// to it here.
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// Deprecated: replaced by "externalSecretRefSelector"; this field should be *REMOVED* ASAP since it's barely
+	// made it into service.
+	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
 	// If the value is supplied by an external source, coordinates are embedded here.
 	// Note: we interpret all fetched external secrets as raw string values by default
 	// and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
-	ExternalSecretRef *string `json:"externalSecretRef,omitempty"`
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRefSelector,omitempty"`
 	// Any referenced value (from kubernetes or external lookup) is typically considered to be a raw string;
 	// by default it'll be quoted as a string after its lookup is resolved. To skip that behaviour,
 	// and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
 	// for use in the bootstrap configuration), set useRawValue to true.
 	// In particular, this value should be set to `true` if your external source contains a numeric value.
 	UseRawValue bool `json:"useRawValue,omitempty"`
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
+	// Specify whether the Secret or its key must be defined
+	// +optional
+	Optional *bool `json:"optional,omitempty"`
 }
 
 // NodePoolSpec defines a NodePool. NodePools have their own:
