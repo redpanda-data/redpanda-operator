@@ -11,6 +11,7 @@
 package redpanda
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -488,6 +489,39 @@ func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *redpand
 	return previouslySynced && !(generationChanged || recheck)
 }
 
+func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI) error {
+	if rp.Spec.ClusterSpec.Enterprise == nil {
+		return nil
+	}
+
+	if literalLicense := ptr.Deref(rp.Spec.ClusterSpec.Enterprise.License, ""); literalLicense != "" {
+		if err := adminClient.SetLicense(ctx, strings.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if secretReference := rp.Spec.ClusterSpec.Enterprise.LicenseSecretRef; secretReference != nil {
+		var licenseSecret corev1.Secret
+
+		name := ptr.Deref(secretReference.Name, "")
+		key := ptr.Deref(secretReference.Key, "")
+		if name == "" || key == "" {
+			return errors.Newf("both name %q and key %q of the secret can not be empty string", name, key)
+		}
+
+		if err := r.Client.Get(ctx, client.ObjectKey{Namespace: rp.Namespace, Name: name}, &licenseSecret); err != nil {
+			return errors.WithStack(err)
+		}
+
+		literalLicense := licenseSecret.Data[key]
+		if err := adminClient.SetLicense(ctx, bytes.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
 func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterLicenseValid) {
 		return nil
@@ -498,6 +532,10 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 		return errors.WithStack(err)
 	}
 	defer client.Close()
+
+	if err = r.setupLicense(ctx, rp, client); err != nil {
+		return errors.WithStack(err)
+	}
 
 	features, err := client.GetEnterpriseFeatures(ctx)
 	if err != nil {
