@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/console/v3
 
-go 1.23.7
+go 1.23.8
 
 require (
 	github.com/google/gofuzz v1.2.0
