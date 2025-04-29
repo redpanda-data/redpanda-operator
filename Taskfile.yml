@@ -163,29 +163,35 @@ tasks:
     deps:
     # The operator image is required to test the configurator and sidecar.
     # In integration tests, the operator itself will be run from the go test process.
-    - build:image
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    vars:
+      RUN: '{{ default `"^TestIntegration"` .RUN }}'
     cmds:
     - task: test:unit
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run "^TestIntegration" -timeout 35m -tags integration'
+        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 35m -tags integration'
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:
-    - build:image
-    vars:
-      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
-      CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'
-    cmds:
     - task: charts:kind-cluster
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    vars:
+      RUN: '{{ default `"^TestAcceptance"` .RUN }}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
     - kind load docker-image localhost/redpanda-operator:dev
     - task: test:unit
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -run "^TestAcceptance" -timeout 35m -tags acceptance'
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 35m -tags acceptance'
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
