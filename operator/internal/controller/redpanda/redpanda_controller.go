@@ -495,6 +495,36 @@ func (r *RedpandaReconciler) ratelimitCondition(ctx context.Context, rp *redpand
 	return previouslySynced && !(generationChanged || recheck)
 }
 
+func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI) error {
+	dot, err := rp.GetDot(r.KubeConfig)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if literalLicense := redpanda.GetLicenseLiteral(dot); literalLicense != "" {
+		if err = adminClient.SetLicense(ctx, strings.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if secretReference := redpanda.GetLicenseSecretReference(dot); secretReference != nil {
+		var licenseSecret corev1.Secret
+
+		key := client.ObjectKey{Namespace: rp.Namespace, Name: secretReference.Name}
+
+		if err = r.Client.Get(ctx, key, &licenseSecret); err != nil {
+			return errors.WithStack(err)
+		}
+
+		literalLicense := string(licenseSecret.Data[secretReference.Key])
+		if err = adminClient.SetLicense(ctx, strings.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
 func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterLicenseValid) {
 		return nil
@@ -505,6 +535,10 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 		return errors.WithStack(err)
 	}
 	defer client.Close()
+
+	if err = r.setupLicense(ctx, rp, client); err != nil {
+		return errors.WithStack(err)
+	}
 
 	features, err := client.GetEnterpriseFeatures(ctx)
 	if err != nil {
