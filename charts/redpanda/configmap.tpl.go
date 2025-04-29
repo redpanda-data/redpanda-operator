@@ -26,6 +26,7 @@ func ConfigMaps(dot *helmette.Dot) []*corev1.ConfigMap {
 }
 
 func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
+	bootstrap, fixups := BootstrapFile(dot)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -37,15 +38,16 @@ func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 			Labels:    FullLabels(dot),
 		},
 		Data: map[string]string{
-			"bootstrap.yaml": BootstrapFile(dot),
-			"redpanda.yaml":  RedpandaConfigFile(dot, true /* includeSeedServer */),
+			".bootstrap.json.in":    bootstrap,
+			"bootstrap.yaml.fixups": fixups,
+			"redpanda.yaml":         RedpandaConfigFile(dot, true /* includeSeedServer */),
 		},
 	}
 }
 
 // BootstrapFile returns contents of `.bootstrap.yaml`. Keys that may be set
 // via environment variables (such as tiered storage secrets) will have
-// placeholders in the form of $ENVVARNAME. An init container is responsible
+// placeholders expressed using fixups for $ENVVARNAME. An init container is responsible
 // for expanding said placeholders.
 //
 // Convention is to name envvars
@@ -54,8 +56,20 @@ func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 //
 // `.bootstrap.yaml` is templated and then read by both the redpanda container
 // and the post install/upgrade job.
-func BootstrapFile(dot *helmette.Dot) string {
+func BootstrapFile(dot *helmette.Dot) (string, string) {
+	template, fixups := BootstrapContents(dot)
+	fixupStr := helmette.ToJSON(fixups)
+	if len(fixups) == 0 {
+		fixupStr = `[]`
+	}
+	return helmette.ToJSON(template), fixupStr
+}
+
+func BootstrapContents(dot *helmette.Dot) (map[string]string, []Fixup) {
 	values := helmette.Unwrap[Values](dot.Values)
+
+	// Accumulate values and fixups
+	fixups := []Fixup{}
 
 	bootstrap := map[string]any{
 		"kafka_enable_authorization": values.Auth.IsSASLEnabled(),
@@ -69,7 +83,9 @@ func BootstrapFile(dot *helmette.Dot) string {
 	bootstrap = helmette.Merge(bootstrap, values.Config.Tunable.Translate())
 	bootstrap = helmette.Merge(bootstrap, values.Config.Cluster.Translate())
 	bootstrap = helmette.Merge(bootstrap, values.Auth.Translate(values.Auth.IsSASLEnabled()))
-	bootstrap = helmette.Merge(bootstrap, values.Storage.GetTieredStorageConfig().Translate(&values.Storage.Tiered.CredentialsSecretRef))
+	attrs, fixes := values.Storage.GetTieredStorageConfig().Translate(&values.Storage.Tiered.CredentialsSecretRef)
+	bootstrap = helmette.Merge(bootstrap, attrs)
+	fixups = append(fixups, fixes...)
 
 	// If default_topic_replications is not set and we have at least 3 Brokers,
 	// upgrade from redpanda's default of 1 to 3 so, when possible, topics are
@@ -85,7 +101,12 @@ func BootstrapFile(dot *helmette.Dot) string {
 		bootstrap["storage_min_free_bytes"] = values.Storage.StorageMinFreeBytes()
 	}
 
-	return helmette.ToYaml(bootstrap)
+	template := map[string]string{}
+	for k, v := range bootstrap {
+		template[k] = helmette.ToJSON(v)
+	}
+
+	return template, fixups
 }
 
 func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string {
