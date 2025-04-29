@@ -14,6 +14,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -373,6 +374,98 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestLicenseReal() {
+	const (
+		LicenseEnvVar             = "REDPANDA_SAMPLE_LICENSE"
+		RedpandaLicenseSecretName = "rp-license"
+		RedpandaLicenseKeyName    = "license"
+	)
+	license := os.Getenv(LicenseEnvVar)
+	if license == "" {
+		s.T().Skipf("License environment variable %q is not provided", LicenseEnvVar)
+	}
+
+	s.apply(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: RedpandaLicenseSecretName,
+		},
+		Data: map[string][]byte{
+			RedpandaLicenseKeyName: []byte(license),
+		},
+	})
+
+	redpandas := map[string]*redpandav1alpha2.Redpanda{}
+
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+			PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+				Containers: []applycorev1.ContainerApplyConfiguration{{
+					Name: ptr.To("redpanda"),
+					Env: []applycorev1.EnvVarApplyConfiguration{
+						*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+					},
+				}},
+			},
+		},
+	}
+	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
+		License: &license,
+	}
+
+	rp.Spec.ClusterSpec.Config.Cluster = s.ConvertToRawExtension(map[string]bool{
+		"core_balancing_continuous": true,
+	})
+
+	redpandas["literal-license"] = rp
+
+	rp = rp.DeepCopy()
+	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
+		License: nil,
+		LicenseSecretRef: &redpandav1alpha2.EnterpriseLicenseSecretRef{
+			Key:  ptr.To(RedpandaLicenseKeyName),
+			Name: ptr.To(RedpandaLicenseSecretName),
+		},
+	}
+
+	redpandas["license-in-secret"] = rp
+
+	for testCaseName, tc := range redpandas {
+		s.T().Run(testCaseName, func(t *testing.T) {
+			var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
+			s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
+				if err != nil {
+					return false, err
+				}
+				rp := o.(*redpandav1alpha2.Redpanda)
+
+				for _, cond := range rp.Status.Conditions {
+					if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+						// grab the first non-unknown status
+						if cond.Status != metav1.ConditionUnknown {
+							licenseStatus = rp.Status.LicenseStatus
+							return true, nil
+						}
+						return false, nil
+					}
+				}
+				return false, nil
+			}, tc)
+
+			s.Require().Equal(&redpandav1alpha2.RedpandaLicenseStatus{
+				Violation:     false,
+				InUseFeatures: []string{"core_balancing_continuous"},
+				Expired:       ptr.To(false),
+				Type:          ptr.To("enterprise"),
+				Organization:  ptr.To("redpanda-testing"),
+				Expiration:    licenseStatus.Expiration,
+			}, licenseStatus)
+
+			s.deleteAndWait(tc)
+		})
+	}
 }
 
 func (s *RedpandaControllerSuite) TestLicense() {
@@ -839,4 +932,11 @@ func pluralize(kind string) string {
 	default:
 		return strings.ToLower(kind) + "s"
 	}
+}
+
+func (s *RedpandaControllerSuite) ConvertToRawExtension(cfg any) *runtime.RawExtension {
+	asJSON, err := json.Marshal(cfg)
+	s.Require().NoError(err)
+
+	return &runtime.RawExtension{Raw: asJSON}
 }

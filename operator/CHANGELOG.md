@@ -66,6 +66,7 @@ operator helm chart. The same ports will continue to serve metrics using kubebui
   kafka, admin and schema registry client. Now deprecated fullNameOverride will be used only
   if correct FullNameOverride is not provided and handled the same way for both
   client creation and render function.
+* The Redpanda license was not set by operator. Now it will be set in the first reconciliation. After initial setup the consequent license re-set will be reconciled after client-go cache resync timeout (default 10h).
 
 ## [v25.1.1-beta2](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta2) - 2025-04-24
 ### Added
