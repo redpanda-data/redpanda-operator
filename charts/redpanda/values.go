@@ -27,6 +27,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 const (
@@ -1609,17 +1610,21 @@ func (c TieredStorageConfig) CloudStorageCacheSize() *resource.Quantity {
 
 // Translate converts TieredStorageConfig into a map suitable for use in
 // an unexpanded `.bootstrap.yaml`.
-func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) map[string]any {
+func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[string]any, []clusterconfiguration.Fixup) {
 	// Clone ourselves as we're making changes.
 	config := helmette.Merge(map[string]any{}, c)
 
 	// For any values that can be specified as secrets and do not have explicit
 	// values, inject placeholders into config which will be replaced with
 	// `envsubst` in an initcontainer.
+	var fixups []clusterconfiguration.Fixup
 	for _, envvar := range creds.AsEnvVars(c) {
 		key := helmette.Lower(envvar.Name[len("REDPANDA_"):])
 		// NB: No string + string support in gotohelm.
-		config[key] = fmt.Sprintf("$%s", envvar.Name)
+		fixups = append(fixups, clusterconfiguration.Fixup{
+			Field: key,
+			CEL:   fmt.Sprintf(`repr(envString("%s"))`, envvar.Name),
+		})
 	}
 
 	// Expand cloud_storage_cache_size, if provided, as it can be specified as
@@ -1628,7 +1633,7 @@ func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) map[stri
 		config["cloud_storage_cache_size"] = size.Value()
 	}
 
-	return config
+	return config, fixups
 }
 
 // +gotohelm:ignore=true
