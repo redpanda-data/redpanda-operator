@@ -17,10 +17,10 @@ import (
 var (
 	// Known/Permitted environment variables pulled from AWS secret store.
 
-	GITHUB_API_TOKEN  = secretEnvVar{SecretID: "sdlc/prod/buildkite/github_api_token"}
-	REDPANDA_LICENSE  = secretEnvVar{SecretID: "sdlc/prod/buildkite/redpanda_sample_license"}
-	REDPANDA_LICENSE2 = secretEnvVar{SecretID: "sdlc/prod/buildkite/redpanda_second_sample_license"}
-	SLACK_VBOT_TOKEN  = secretEnvVar{SecretID: "sdlc/prod/buildkite/slack_vbot_token"}
+	GITHUB_API_TOKEN               = secretEnvVar{SecretID: "sdlc/prod/buildkite/github_api_token"}
+	REDPANDA_SAMPLE_LICENSE        = secretEnvVar{SecretID: "sdlc/prod/buildkite/redpanda_sample_license"}
+	REDPANDA_SECOND_SAMPLE_LICENSE = secretEnvVar{SecretID: "sdlc/prod/buildkite/redpanda_second_sample_license"}
+	SLACK_VBOT_TOKEN               = secretEnvVar{SecretID: "sdlc/prod/buildkite/slack_vbot_token"}
 
 	// Known/Permitted Agent Pools
 

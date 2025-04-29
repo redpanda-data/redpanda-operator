@@ -78,8 +78,8 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
 						GITHUB_API_TOKEN, // Required to clone private GH repos (Flux Shims, buildkite slack).
-						REDPANDA_LICENSE,
-						REDPANDA_LICENSE2,
+						REDPANDA_SAMPLE_LICENSE,
+						REDPANDA_SECOND_SAMPLE_LICENSE,
 						SLACK_VBOT_TOKEN, // Used to notify us of build failures in slack.
 					),
 					// Inform us about failures on main.
