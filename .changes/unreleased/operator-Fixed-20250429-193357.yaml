@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: The Redpanda license was not set by operator. Now it will be set in the first reconciliation. After initial setup the consequent license re-set will be reconciled after client-go cache resync timeout (default 10h).
+time: 2025-04-29T19:33:57.266428+02:00

@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
+	"os"
 	"os/exec"
 	"regexp"
 	"slices"
@@ -382,6 +383,98 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestLicenseReal() {
+	const (
+		LicenseEnvVar             = "REDPANDA_SAMPLE_LICENSE"
+		RedpandaLicenseSecretName = "rp-license"
+		RedpandaLicenseKeyName    = "license"
+	)
+	license := os.Getenv(LicenseEnvVar)
+	if license == "" {
+		s.T().Skipf("License environment variable %q is not provided", LicenseEnvVar)
+	}
+
+	s.apply(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: RedpandaLicenseSecretName,
+		},
+		Data: map[string][]byte{
+			RedpandaLicenseKeyName: []byte(license),
+		},
+	})
+
+	redpandas := map[string]*redpandav1alpha2.Redpanda{}
+
+	rp := s.minimalRP(false)
+	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+			PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+				Containers: []applycorev1.ContainerApplyConfiguration{{
+					Name: ptr.To("redpanda"),
+					Env: []applycorev1.EnvVarApplyConfiguration{
+						*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+					},
+				}},
+			},
+		},
+	}
+	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
+		License: &license,
+	}
+
+	rp.Spec.ClusterSpec.Config.Cluster = s.ConvertToRawExtension(map[string]bool{
+		"core_balancing_continuous": true,
+	})
+
+	redpandas["literal-license"] = rp
+
+	rp = rp.DeepCopy()
+	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
+		License: nil,
+		LicenseSecretRef: &redpandav1alpha2.EnterpriseLicenseSecretRef{
+			Key:  ptr.To(RedpandaLicenseKeyName),
+			Name: ptr.To(RedpandaLicenseSecretName),
+		},
+	}
+
+	redpandas["license-in-secret"] = rp
+
+	for testCaseName, tc := range redpandas {
+		s.T().Run(testCaseName, func(t *testing.T) {
+			var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
+			s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
+				if err != nil {
+					return false, err
+				}
+				rp := o.(*redpandav1alpha2.Redpanda)
+
+				for _, cond := range rp.Status.Conditions {
+					if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+						// grab the first non-unknown status
+						if cond.Status != metav1.ConditionUnknown {
+							licenseStatus = rp.Status.LicenseStatus
+							return true, nil
+						}
+						return false, nil
+					}
+				}
+				return false, nil
+			}, tc)
+
+			s.Require().Equal(&redpandav1alpha2.RedpandaLicenseStatus{
+				Violation:     false,
+				InUseFeatures: []string{"core_balancing_continuous"},
+				Expired:       ptr.To(false),
+				Type:          ptr.To("enterprise"),
+				Organization:  ptr.To("redpanda-testing"),
+				Expiration:    licenseStatus.Expiration,
+			}, licenseStatus)
+
+			s.deleteAndWait(tc)
+		})
+	}
 }
 
 func (s *RedpandaControllerSuite) TestLicense() {
@@ -945,18 +1038,6 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 					// TerminationGracePeriodSeconds as the pre-stop hook
 					// doesn't account for decommissioned nodes.
 					TerminationGracePeriodSeconds: ptr.To(10),
-					SideCars: &redpandav1alpha2.SideCars{
-						Image: &redpandav1alpha2.RedpandaImage{
-							Repository: ptr.To("localhost/redpanda-operator"),
-							Tag:        ptr.To("dev"),
-						},
-						Controllers: &redpandav1alpha2.RPControllers{
-							Image: &redpandav1alpha2.RedpandaImage{
-								Repository: ptr.To("localhost/redpanda-operator"),
-								Tag:        ptr.To("dev"),
-							},
-						},
-					},
 				},
 				Resources: &redpandav1alpha2.Resources{
 					CPU: &redpandav1alpha2.CPU{
@@ -1272,4 +1353,11 @@ func sortedKeyStrings[T any, K ~string](items map[K]T) string {
 	keys.Sort()
 
 	return fmt.Sprintf("[%s]", strings.Join(keys, ", "))
+}
+
+func (s *RedpandaControllerSuite) ConvertToRawExtension(cfg any) *runtime.RawExtension {
+	asJSON, err := json.Marshal(cfg)
+	s.Require().NoError(err)
+
+	return &runtime.RawExtension{Raw: asJSON}
 }
