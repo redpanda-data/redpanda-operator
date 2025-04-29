@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -39,6 +40,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -560,7 +562,12 @@ func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
 	defer timing.Execution(ctx).Stop("reconciling cluster configuration")
 
-	config, err := r.clusterConfigFor(ctx, rp)
+	schema, err := client.ClusterConfigSchema(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	config, err := r.clusterConfigFor(ctx, rp, schema)
 	if err != nil {
 		return "", false, errors.WithStack(err)
 	}
@@ -603,7 +610,7 @@ func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alph
 	return users.Data, nil
 }
 
-func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (_ map[string]any, err error) {
+func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema) (_ map[string]any, err error) {
 	// Parinoided panic catch as we're calling directly into helm functions.
 	defer func() {
 		if r := recover(); r != nil {
@@ -621,22 +628,27 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	// final cluster config and they may be referencing values stored in
 	// configmaps or secrets.
 	job := redpanda.PostInstallUpgradeJob(dot)
-	clusterConfigTemplate := redpanda.BootstrapFile(dot)
-
-	expander := kube.EnvExpander{
-		Client:    r.Client,
-		Namespace: rp.Namespace,
-		Env:       job.Spec.Template.Spec.InitContainers[0].Env,
-		EnvFrom:   job.Spec.Template.Spec.InitContainers[0].EnvFrom,
+	clusterConfigTemplate, fixups := redpanda.BootstrapContents(dot)
+	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
+	for k, v := range clusterConfigTemplate {
+		conf.SetAdditionalConfiguration(k, v)
+	}
+	for _, f := range fixups {
+		conf.AddFixup(f.Field, f.CEL)
+	}
+	for _, e := range job.Spec.Template.Spec.InitContainers[0].Env {
+		if err := conf.EnsureInitEnv(e); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	for _, e := range job.Spec.Template.Spec.InitContainers[0].EnvFrom {
+		if err := conf.EnsureInitEnvFrom(e); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
-	expanded, err := expander.Expand(ctx, clusterConfigTemplate)
+	desired, err := conf.Reify(ctx, r.Client, nil, schema)
 	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	var desired map[string]any
-	if err := yaml.Unmarshal([]byte(expanded), &desired); err != nil {
 		return nil, errors.WithStack(err)
 	}
 

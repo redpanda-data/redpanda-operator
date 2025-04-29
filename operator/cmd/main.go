@@ -18,6 +18,7 @@ import (
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
@@ -53,6 +54,7 @@ var (
 func init() {
 	rootCmd.AddCommand(
 		configurator.Command(),
+		bootstrap.Command(),
 		envsubst.Command(),
 		run.Command(),
 		syncclusterconfig.Command(),
