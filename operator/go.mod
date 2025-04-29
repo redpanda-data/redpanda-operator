@@ -492,6 +492,9 @@ replace (
 	github.com/google/cel-go => github.com/google/cel-go v0.17.8
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
 
+	// Use local chart
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 => ../charts/redpanda
+
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
 	// NB: Due to old flux version which force us to use old version of sigs.k8s.io/controller-runtime. That's why

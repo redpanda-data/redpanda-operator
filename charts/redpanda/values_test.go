@@ -607,7 +607,7 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			envvars := tc.Creds.AsEnvVars(tc.Config)
-			clusterConfig := tc.Config.Translate(&tc.Creds)
+			clusterConfig, _ := tc.Config.Translate(&tc.Creds)
 
 			require.EqualValues(t, tc.Expected, envvars)
 
