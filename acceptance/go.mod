@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/acceptance
 
-go 1.23.7
+go 1.23.8
 
 require (
 	github.com/cucumber/godog v0.14.1

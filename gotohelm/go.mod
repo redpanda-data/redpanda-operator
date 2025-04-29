@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/gotohelm
 
-go 1.23.7
+go 1.23.8
 
 require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
