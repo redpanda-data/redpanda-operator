@@ -22,6 +22,7 @@ import (
 
 	"github.com/gonvenience/ytbx"
 	"github.com/homeport/dyff/pkg/dyff"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
 )
@@ -177,11 +178,11 @@ func assertGolden(t *testing.T, assertionType GoldenAssertion, path string, expe
 
 	switch assertionType {
 	case Text:
-		require.Equal(t, string(expected), string(actual), msg, path)
+		assert.Equal(t, string(expected), string(actual), msg, path)
 	case Bytes:
-		require.Equal(t, expected, actual, msg, path)
+		assert.Equal(t, expected, actual, msg, path)
 	case JSON:
-		require.JSONEq(t, string(expected), string(actual), msg, path)
+		assert.JSONEq(t, string(expected), string(actual), msg, path)
 	case YAML:
 		actualDocuments, err := ytbx.LoadDocuments(actual)
 		require.NoError(t, err)

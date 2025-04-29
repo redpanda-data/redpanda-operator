@@ -1,6 +1,6 @@
 module example.com/example
 
-go 1.23.7
+go 1.23.8
 
 require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
