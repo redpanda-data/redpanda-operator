@@ -61,7 +61,7 @@ steps:
     label: Parse and annotate Unit Tests results
     plugins:
     - github.com/buildkite-plugins/junit-annotate-buildkite-plugin#v2.4.1:
-        artifacts: work/unit-tests-*.xml
+        artifacts: work/unit-tests.xml
         context: unit
         report-slowest: 10
     soft_fail: true
@@ -103,7 +103,7 @@ steps:
     label: Parse and annotate Integration Tests results
     plugins:
     - github.com/buildkite-plugins/junit-annotate-buildkite-plugin#v2.4.1:
-        artifacts: work/integration-tests-*.xml
+        artifacts: work/integration-tests.xml
         context: integration
         report-slowest: 10
     soft_fail: true
@@ -145,7 +145,7 @@ steps:
     label: Parse and annotate Acceptance Tests results
     plugins:
     - github.com/buildkite-plugins/junit-annotate-buildkite-plugin#v2.4.1:
-        artifacts: work/acceptance-tests-*.xml
+        artifacts: work/acceptance-tests.xml
         context: acceptance
         report-slowest: 10
     soft_fail: true
