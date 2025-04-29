@@ -1563,9 +1563,10 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $config := (merge (dict) (dict) $c) -}}
+{{- $fixups := (coalesce nil) -}}
 {{- range $_, $envvar := (get (fromJson (include "redpanda.TieredStorageCredentials.AsEnvVars" (dict "a" (list $creds $c)))) "r") -}}
 {{- $key := (lower (substr ((get (fromJson (include "_shims.len" (dict "a" (list "REDPANDA_")))) "r") | int) -1 $envvar.name)) -}}
-{{- $_ := (set $config $key (printf "$%s" $envvar.name)) -}}
+{{- $fixups = (concat (default (list) $fixups) (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" $key "cel" (printf `repr(envString("%s"))` $envvar.name))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -1575,7 +1576,7 @@
 {{- $_ := (set $config "cloud_storage_cache_size" ((get (fromJson (include "_shims.resource_Value" (dict "a" (list $size_21)))) "r") | int64)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $config) | toJson -}}
+{{- (dict "r" (list $config $fixups)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
