@@ -76,7 +76,7 @@ tasks:
   run-kuttl-tests:
     cmds:
       - defer:
-          task: ci:kuttl-artifact-upload
+          task: kuttl-artifact-upload
           vars:
             KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
       - task: :k8s:run-kuttl-tests
