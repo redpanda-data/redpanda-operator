@@ -95,7 +95,7 @@ tasks:
       - task: generate:third-party-licenses-list
       - task: generate:changelog
       - task: generate:buildkite-pipelines
-      - nix fmt # Ensure flake.nix has been formatted.
+      - nix fmt . # Ensure flake.nix has been formatted.
 
   generate:buildkite-pipelines:
     deps:
