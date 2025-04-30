@@ -22,6 +22,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,6 +47,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 )
 
 const (
@@ -151,19 +155,17 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		Complete(r)
 }
 
-func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (_ ctrl.Result, err error) {
 	ctx, done := context.WithCancel(c)
 	defer done()
 
-	start := time.Now()
-	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.Reconcile")
+	ctx, span := trace.Start(ctx, "Reconcile", trace.WithAttributes(
+		attribute.String("name", req.Name),
+		attribute.String("namespace", req.Namespace),
+	))
+	defer func() { trace.EndSpan(span, err) }()
 
-	defer func() {
-		durationMsg := fmt.Sprintf("reconciliation finished in %s", time.Since(start).String())
-		log.V(logger.TraceLevel).Info(durationMsg)
-	}()
-
-	log.V(logger.TraceLevel).Info("Starting reconcile loop")
+	log.Info(ctx, "Starting reconciliation loop")
 
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
@@ -192,20 +194,20 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		patch := client.MergeFrom(rp.DeepCopy())
 		controllerutil.AddFinalizer(rp, FinalizerKey)
 		if err := r.Client.Patch(ctx, rp, patch); err != nil {
-			log.Error(err, "unable to register finalizer")
+			log.Error(ctx, err, "unable to register finalizer")
 			return ctrl.Result{}, errors.WithStack(err)
 		}
 	}
 
 	// Upgrade checks. Don't reconcile if UseFlux is true or if ChartRef is set.
 	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux {
-		log.Error(nil, "useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
+		log.Error(ctx, nil, "useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
 		return ctrl.Result{}, nil
 	}
 
 	if rp.Spec.ChartRef.ChartVersion != "" {
 		msg := "Specifying chartVersion is no longer supported. Please downgrade or unset `chartRef.chartVersion`"
-		log.Error(nil, msg)
+		log.Error(ctx, nil, msg)
 		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, msg)
 		return ctrl.Result{}, nil
 	}
@@ -232,7 +234,7 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 
 	// Update status after reconciliation.
 	if updateStatusErr := r.patchRedpandaStatus(ctx, rp); updateStatusErr != nil {
-		log.Error(updateStatusErr, "unable to update status after reconciliation")
+		log.Error(ctx, updateStatusErr, "unable to update status after reconciliation")
 		return ctrl.Result{}, updateStatusErr
 	}
 
@@ -593,7 +595,10 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, rp *redpandav
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *redpandav1alpha2.Redpanda) (err error) {
+	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
+	defer func() { trace.EndSpan(span, err) }()
+
 	if r.ratelimitCondition(ctx, rp, redpandav1alpha2.ClusterConfigSynced) {
 		return nil
 	}

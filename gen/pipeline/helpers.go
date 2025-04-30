@@ -80,6 +80,9 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 				Label:           "Run " + prettyName,
 				Command:         "./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:" + strings.ToLower(suite.Name),
 				RemainingFields: remainingFields,
+				// Env: map[string]string{
+				// TODO set OTLP_DIR here.
+				// },
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
 						GITHUB_API_TOKEN, // Required to clone private GH repos (Flux Shims, buildkite slack).
