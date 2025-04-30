@@ -58,6 +58,13 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 				"files/rbac/pvcunbinder.ClusterRole.yaml",
 			},
 		},
+		{
+			Name:    cleanForK8sWithSuffix(Fullname(dot), "compat"),
+			Enabled: values.Scope == Namespace && values.RBAC.Create && values.RBAC.CreateCompatCRs,
+			RuleFiles: []string{
+				"files/rbac/legacypermissions.ClusterRole.yaml",
+			},
+		},
 	}
 
 	clusterRoles := []rbacv1.ClusterRole{
@@ -155,6 +162,13 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 			Enabled: values.RBAC.CreateRPKBundleCRs,
 			RuleFiles: []string{
 				"files/rbac/rpk-debug-bundle.Role.yaml",
+			},
+		},
+		{
+			Name:    cleanForK8sWithSuffix(Fullname(dot), "compat"),
+			Enabled: values.Scope == Namespace && values.RBAC.Create && values.RBAC.CreateCompatCRs,
+			RuleFiles: []string{
+				"files/rbac/legacypermissions.Role.yaml",
 			},
 		},
 	}

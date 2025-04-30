@@ -1038,6 +1038,20 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 					// TerminationGracePeriodSeconds as the pre-stop hook
 					// doesn't account for decommissioned nodes.
 					TerminationGracePeriodSeconds: ptr.To(10),
+					// TODO: Re-enable local tests upon the next chart release. The
+					// current pinned version requires Tag to be a valid semver.
+					// SideCars: &redpandav1alpha2.SideCars{
+					// 	Image: &redpandav1alpha2.RedpandaImage{
+					// 		Repository: ptr.To("localhost/redpanda-operator"),
+					// 		Tag:        ptr.To("dev"),
+					// 	},
+					// 	Controllers: &redpandav1alpha2.RPControllers{
+					// 		Image: &redpandav1alpha2.RedpandaImage{
+					// 			Repository: ptr.To("localhost/redpanda-operator"),
+					// 			Tag:        ptr.To("dev"),
+					// 		},
+					// 	},
+					// },
 				},
 				Resources: &redpandav1alpha2.Resources{
 					CPU: &redpandav1alpha2.CPU{
