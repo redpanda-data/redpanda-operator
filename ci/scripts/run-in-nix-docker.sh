@@ -50,6 +50,7 @@ docker run --rm -it \
 	-e COMMIT \
 	-e BRANCH_NAME \
 	-e TAG_NAME \
+	-e OTLP_DIR \
 	-e PULL_REQUEST \
 	-e PULL_REQUEST_BASE_BRANCH \
 	-e DOCKERHUB_USER \

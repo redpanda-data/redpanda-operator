@@ -36,10 +36,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-func init() {
-	ctrl.SetLogger(logr.Discard()) // Silence the dramatic logger messages.
-}
-
 type Env struct {
 	t         *testing.T
 	ctx       context.Context

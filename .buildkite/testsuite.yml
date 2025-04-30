@@ -29,6 +29,8 @@ steps:
   - agents:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:unit
+    env:
+      OTLP_DIR: /work/artifacts
     key: unit-run
     label: Run Unit Tests
     notify:
@@ -71,6 +73,8 @@ steps:
   - agents:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:integration
+    env:
+      OTLP_DIR: /work/artifacts
     key: integration-run
     label: Run Integration Tests
     notify:
@@ -113,6 +117,8 @@ steps:
   - agents:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:acceptance
+    env:
+      OTLP_DIR: /work/artifacts
     key: acceptance-run
     label: Run Acceptance Tests
     notify:
@@ -155,6 +161,8 @@ steps:
   - agents:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1
+    env:
+      OTLP_DIR: /work/artifacts
     if: build.pull_request.labels includes "run-kuttl-v1"
     key: kuttl-v1-run
     label: Run Kuttl-V1 Tests
@@ -198,6 +206,8 @@ steps:
   - agents:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1-nodepools
+    env:
+      OTLP_DIR: /work/artifacts
     key: kuttl-v1-nodepools-run
     label: Run Kuttl-V1-Nodepools Tests
     notify:

@@ -13,10 +13,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/spf13/cobra"
-	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
@@ -25,29 +22,32 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil"
 )
 
 var (
-	outputTimingsOnly bool
-	rootCmd           = cobra.Command{
+	cleanup func() error
+	rootCmd = cobra.Command{
 		Use: "redpanda-operator",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if outputTimingsOnly {
-				timing.SetupTimingOnlyLogger()
-				return
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			cleanup, err = otelutil.Setup()
+			if err != nil {
+				return err
 			}
 
-			// Configure logging consistently for all sub-commands.
-			// NB: If a subcommand relies on outputting to stdout, logging may
-			// cause issues as it's default output it stdout.
-			log := logger.NewLogger(logOptions)
-			klog.SetLogger(log)
-			ctrl.SetLogger(log)
+			return nil
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			if cleanup != nil {
+				return cleanup()
+			}
+			return nil
 		},
 	}
 
-	logOptions logger.Options
+	// LogEncoding string
+	// LogLevel    string
+	// logOptions logger.Options
 )
 
 func init() {
@@ -61,8 +61,8 @@ func init() {
 		ready.Command(),
 	)
 
-	logOptions.BindFlags(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().BoolVar(&outputTimingsOnly, "output-timings-only", false, "Set this flag to only log instrumentation timings")
+	// logOptions.BindFlags(rootCmd.PersistentFlags())
+	// rootCmd.PersistentFlags().BoolVar(&outputTimingsOnly, "output-timings-only", false, "Set this flag to only log instrumentation timings")
 }
 
 func main() {
