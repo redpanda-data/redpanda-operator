@@ -15995,14 +15995,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -16473,25 +16465,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -22570,14 +22543,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -23043,25 +23008,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -30849,14 +30795,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -31332,25 +31270,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -37459,14 +37378,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -37937,25 +37848,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -40283,14 +40175,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -40756,25 +40640,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -41710,14 +41575,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -42193,25 +42050,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -47146,14 +46984,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -47634,25 +47464,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update
@@ -49886,14 +49697,6 @@ rules:
   verbs:
   - patch
 - apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -50364,25 +50167,6 @@ rules:
   - apps
   resources:
   - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - pods
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
   verbs:
   - patch
   - update

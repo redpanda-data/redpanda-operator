@@ -46,8 +46,7 @@ const (
 	RequeueDuration        = time.Second * 10
 	defaultAdminAPITimeout = time.Second * 2
 
-	ManagedDecommissionAnnotation = "operator.redpanda.com/managed-decommission"
-	ClusterUpdatePodCondition     = corev1.PodConditionType("ClusterUpdate")
+	ClusterUpdatePodCondition = corev1.PodConditionType("ClusterUpdate")
 )
 
 var (
@@ -158,9 +157,6 @@ func (r *StatefulSetResource) runUpdate(
 	log.V(logger.DebugLevel).Info("pod update complete, set Cluster restarting status to false")
 	if err = r.updateRestartingStatus(ctx, false); err != nil {
 		return fmt.Errorf("unable to turn off restarting status in cluster custom resource: %w", err)
-	}
-	if err = r.removeManagedDecommissionAnnotation(ctx); err != nil {
-		return fmt.Errorf("unable to remove managed decommission annotation: %w", err)
 	}
 
 	return nil
@@ -460,29 +456,18 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "waiting for pod to be deleted"}
 	}
 
-	managedDecommission, err := r.IsManagedDecommission()
-	if err != nil {
-		log.Error(err, "not performing a managed decommission")
-	}
-
 	patchResult, err := patch.NewPatchMaker(patch.NewAnnotator(redpandaAnnotatorKey), &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{}).Calculate(pod, artificialPod, opts...)
 	if err != nil {
 		return err
 	}
 
-	if !managedDecommission && patchResult.IsEmpty() {
+	if patchResult.IsEmpty() {
 		podPatch := k8sclient.MergeFrom(pod.DeepCopy())
 		utils.RemoveStatusPodCondition(&pod.Status.Conditions, ClusterUpdatePodCondition)
 		if err = r.Client.Status().Patch(ctx, pod, podPatch); err != nil {
 			return fmt.Errorf("error removing pod update condition: %w", err)
 		}
 		return nil
-	}
-
-	var ordinal int32
-	ordinal, err = utils.GetPodOrdinal(pod.Name, r.pandaCluster.Name)
-	if err != nil {
-		return fmt.Errorf("cluster %s: cannot convert pod name (%s) to ordinal: %w", r.pandaCluster.Name, pod.Name, err)
 	}
 
 	if *r.nodePool.Replicas == 1 {
@@ -494,29 +479,6 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 			return fmt.Errorf("unable to remove Redpanda pod: %w", err)
 		}
 		return nil
-	}
-	if managedDecommission {
-		log.Info("managed decommission is set: decommission broker")
-		var id *int32
-		if id, err = r.getBrokerIDForPod(ctx, ordinal); err != nil {
-			return fmt.Errorf("cannot get broker id for pod: %w", err)
-		}
-		r.pandaCluster.SetDecommissionBrokerID(id)
-
-		if err = r.handleDecommission(ctx, log); err != nil {
-			return err
-		}
-
-		if err = utils.DeletePodPVCs(ctx, r.Client, pod, log); err != nil {
-			return fmt.Errorf(`unable to remove PVCs for pod "%s/%s: %w"`, pod.GetNamespace(), pod.GetName(), err)
-		}
-
-		log.Info("deleting pod")
-		if err = r.Delete(ctx, pod); err != nil {
-			return fmt.Errorf("unable to remove Redpanda pod: %w", err)
-		}
-
-		return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "wait for pod restart"}
 	}
 
 	log.Info("Put broker into maintenance mode", "patch", patchResult.Patch)
@@ -653,14 +615,10 @@ func (r *StatefulSetResource) shouldUpdate(
 	current, modified *appsv1.StatefulSet,
 ) (bool, error) {
 	log := r.logger.WithName("shouldUpdate")
-	managedDecommission, err := r.IsManagedDecommission()
-	if err != nil {
-		log.Error(err, "isManagedDecommission")
-	}
 
 	npStatus := r.getNodePoolStatus()
 
-	if managedDecommission || npStatus.Restarting || r.pandaCluster.Status.Restarting {
+	if npStatus.Restarting || r.pandaCluster.Status.Restarting {
 		return true, nil
 	}
 	prepareResourceForPatch(current, modified)
@@ -706,19 +664,6 @@ func (r *StatefulSetResource) updateRestartingStatus(ctx context.Context, restar
 		}
 	}
 
-	return nil
-}
-
-func (r *StatefulSetResource) removeManagedDecommissionAnnotation(ctx context.Context) error {
-	p := k8sclient.MergeFrom(r.pandaCluster.DeepCopy())
-	for k := range r.pandaCluster.Annotations {
-		if k == ManagedDecommissionAnnotation {
-			delete(r.pandaCluster.Annotations, k)
-		}
-	}
-	if err := r.Patch(ctx, r.pandaCluster, p); err != nil {
-		return fmt.Errorf("unable to remove managed decommission annotation from Cluster %q: %w", r.pandaCluster.Name, err)
-	}
 	return nil
 }
 
