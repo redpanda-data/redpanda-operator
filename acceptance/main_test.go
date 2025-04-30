@@ -18,9 +18,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -28,6 +26,7 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -113,8 +112,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 })
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logr.Discard())
-	os.Exit(m.Run())
+	otelutil.TestMain(m)
 }
 
 func TestAcceptanceSuite(t *testing.T) {
