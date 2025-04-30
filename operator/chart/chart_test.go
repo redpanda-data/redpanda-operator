@@ -174,6 +174,7 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 			name: "defaults",
 			paths: []string{
 				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/legacypermissions.yaml",
 				"../config/rbac/itemized/rpk-debug-bundle.yaml",
 				"../config/rbac/itemized/v2-manager.yaml",
 			},
@@ -181,6 +182,23 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 		},
 		{
 			name: "additional-controllers",
+			paths: []string{
+				"../config/rbac/itemized/decommission.yaml",
+				"../config/rbac/itemized/leader-election.yaml",
+				"../config/rbac/itemized/legacypermissions.yaml",
+				"../config/rbac/itemized/node-watcher.yaml",
+				"../config/rbac/itemized/old-decommission.yaml",
+				"../config/rbac/itemized/rpk-debug-bundle.yaml",
+				"../config/rbac/itemized/v2-manager.yaml",
+			},
+			values: PartialValues{
+				RBAC: &PartialRBAC{
+					CreateAdditionalControllerCRs: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "no-legacy-perms",
 			paths: []string{
 				"../config/rbac/itemized/decommission.yaml",
 				"../config/rbac/itemized/leader-election.yaml",
@@ -192,6 +210,7 @@ func TestHelmControllerGenEquivalence(t *testing.T) {
 			values: PartialValues{
 				RBAC: &PartialRBAC{
 					CreateAdditionalControllerCRs: ptr.To(true),
+					CreateCompatCRs:               ptr.To(false),
 				},
 			},
 		},

@@ -116,6 +116,7 @@ type RBAC struct {
 	Create                        bool `json:"create"`
 	CreateAdditionalControllerCRs bool `json:"createAdditionalControllerCRs"`
 	CreateRPKBundleCRs            bool `json:"createRPKBundleCRs"`
+	CreateCompatCRs               bool `json:"createCompatCRs"`
 }
 
 type Webhook struct {

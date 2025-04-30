@@ -19,6 +19,17 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - endpoints
+  - limitranges
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
   - events
   - secrets
   - serviceaccounts
@@ -283,6 +294,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
