@@ -43,7 +43,6 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -184,12 +183,6 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 			}
 		}
 
-		return ctrl.Result{}, nil
-	}
-
-	_, ok := rp.GetAnnotations()[resources.ManagedDecommissionAnnotation]
-	if ok {
-		log.V(logger.TraceLevel).Info("Managed decommission")
 		return ctrl.Result{}, nil
 	}
 

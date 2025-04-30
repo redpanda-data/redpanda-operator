@@ -2096,8 +2096,6 @@ can be detected. + |  |
 | *`failures`* __integer__ | Failures is the reconciliation failure count against the latest desired +
 state. It is reset after a successful reconciliation. + |  | 
 | *`installFailures`* __integer__ |  |  | 
-| *`decommissioningNode`* __integer__ | ManagedDecommissioningNode indicates that a node is currently being +
-decommissioned from the cluster and provides its ordinal number. + |  | 
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
 installed license in the Redpanda cluster. + |  | 
 |===

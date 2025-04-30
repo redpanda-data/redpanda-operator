@@ -44,7 +44,6 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -210,85 +209,6 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 	for _, c := range sts.Spec.Template.Spec.Containers {
 		s.Contains(c.VolumeMounts, corev1.VolumeMount{Name: "test-extra-volume", MountPath: "/FAKE/LIFECYCLE"})
 	}
-
-	s.deleteAndWait(rp)
-}
-
-func (s *RedpandaControllerSuite) TestManagedDecommission() {
-	rp := s.minimalRP()
-	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
-
-	s.applyAndWait(rp)
-
-	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
-	s.Require().NoError(err)
-	defer adminAPI.Close()
-
-	beforeBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	rp.Annotations = map[string]string{
-		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
-	}
-
-	s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return cond.Status == metav1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, rp)
-
-	s.waitFor(rp, func(o client.Object, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return false, nil
-			}
-		}
-
-		_, ok := rp.Annotations["operator.redpanda.com/managed-decommission"]
-
-		return !ok, nil // Managed decommission is finished when the annotation is removed.
-	})
-
-	afterBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	// After performing a managed decommission we should observe a complete
-	// replacement of brokers.
-	beforeIDs := map[int]struct{}{}
-	for _, broker := range beforeBrokers {
-		beforeIDs[broker.NodeID] = struct{}{}
-	}
-
-	afterIDs := map[int]struct{}{}
-	for _, broker := range afterBrokers {
-		afterIDs[broker.NodeID] = struct{}{}
-	}
-
-	for id := range beforeIDs {
-		s.NotContainsf(afterIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	for id := range afterIDs {
-		s.NotContainsf(beforeIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	s.Len(beforeIDs, 3)
-	s.Len(afterIDs, 3)
 
 	s.deleteAndWait(rp)
 }
@@ -622,7 +542,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		// TODO should probably run other reconcilers here.
-		if err := (&redpanda.RedpandaReconciler{
+		return (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			KubeConfig:    mgr.GetConfig(),
 			Scheme:        mgr.GetScheme(),
@@ -632,15 +552,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				Repository: "localhost/redpanda-operator",
 				Tag:        "dev",
 			},
-		}).SetupWithManager(s.ctx, mgr); err != nil {
-			return err
-		}
-
-		return (&manageddecommission.ManagedDecommissionReconciler{
-			Client:        mgr.GetClient(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: s.clientFactory,
-		}).SetupWithManager(mgr)
+		}).SetupWithManager(s.ctx, mgr)
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
