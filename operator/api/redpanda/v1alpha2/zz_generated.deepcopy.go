@@ -2899,11 +2899,6 @@ func (in *RedpandaStatus) DeepCopyInto(out *RedpandaStatus) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.ManagedDecommissioningNode != nil {
-		in, out := &in.ManagedDecommissioningNode, &out.ManagedDecommissioningNode
-		*out = new(int32)
-		**out = **in
-	}
 	if in.LicenseStatus != nil {
 		in, out := &in.LicenseStatus, &out.LicenseStatus
 		*out = new(RedpandaLicenseStatus)

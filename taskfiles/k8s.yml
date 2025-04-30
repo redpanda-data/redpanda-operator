@@ -23,8 +23,6 @@ tasks:
           PATH: ./internal/controller/nodewatcher
         - NAME: old-decommission
           PATH: ./internal/controller/olddecommission
-        - NAME: managed-decommission
-          PATH: ./internal/controller/manageddecommission
         - NAME: pvcunbinder
           PATH: ./internal/controller/pvcunbinder
         - NAME: v2-manager
@@ -65,7 +63,6 @@ tasks:
           '.' \
           ./config/rbac/itemized/decommission.yaml \
           ./config/rbac/itemized/leader-election.yaml \
-          ./config/rbac/itemized/managed-decommission.yaml \
           ./config/rbac/itemized/node-watcher.yaml \
           ./config/rbac/itemized/old-decommission.yaml \
           ./config/rbac/itemized/pvcunbinder.yaml \
@@ -93,7 +90,6 @@ tasks:
           paths=./internal/controller/redpanda \
           paths=./internal/controller/rackawareness \
           paths=./internal/controller/rpkdebugbundle \
-          paths=./internal/controller/manageddecommission \
           paths=./internal/controller/nodewatcher \
           paths=./internal/controller/olddecommission \
           rbac:roleName=manager \

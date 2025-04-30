@@ -20206,12 +20206,6 @@ spec:
                   - type
                   type: object
                 type: array
-              decommissioningNode:
-                description: |-
-                  ManagedDecommissioningNode indicates that a node is currently being
-                  decommissioned from the cluster and provides its ordinal number.
-                format: int32
-                type: integer
               failures:
                 description: |-
                   Failures is the reconciliation failure count against the latest desired
@@ -40473,12 +40467,6 @@ spec:
                   - type
                   type: object
                 type: array
-              decommissioningNode:
-                description: |-
-                  ManagedDecommissioningNode indicates that a node is currently being
-                  decommissioned from the cluster and provides its ordinal number.
-                format: int32
-                type: integer
               failures:
                 description: |-
                   Failures is the reconciliation failure count against the latest desired
