@@ -149,6 +149,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -164,6 +196,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -270,6 +324,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -475,6 +530,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -537,6 +624,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -1065,6 +1175,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aNfgS0
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: koBY-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -1080,6 +1222,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: koBY
+subjects:
+- kind: ServiceAccount
+  name: S
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aNfgS0
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: koBY-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: koBY-compat
 subjects:
 - kind: ServiceAccount
   name: S
@@ -1186,6 +1350,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -1391,6 +1556,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aNfgS0
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: koBY-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -1453,6 +1650,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: koBY-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: S
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aNfgS0
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: koBY-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: koBY-compat
 subjects:
 - kind: ServiceAccount
   name: S
@@ -2038,6 +2258,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: EbX3hB7N
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: WSGbu-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -2053,6 +2305,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: WSGbu
+subjects:
+- kind: ServiceAccount
+  name: WSGbu
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: EbX3hB7N
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: WSGbu-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: WSGbu-compat
 subjects:
 - kind: ServiceAccount
   name: WSGbu
@@ -2159,6 +2433,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -2364,6 +2639,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: EbX3hB7N
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: WSGbu-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -2426,6 +2733,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: WSGbu-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: WSGbu
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: EbX3hB7N
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: WSGbu-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: WSGbu-compat
 subjects:
 - kind: ServiceAccount
   name: WSGbu
@@ -2968,6 +3298,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    BYFlp: 1ue
+    PW45cS5PlOC: K5ky3WbW
+    Rb: A
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HICN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Dx441G-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -2986,6 +3351,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Dx441G
+subjects:
+- kind: ServiceAccount
+  name: Dx441G
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    BYFlp: 1ue
+    PW45cS5PlOC: K5ky3WbW
+    Rb: A
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HICN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Dx441G-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Dx441G-compat
 subjects:
 - kind: ServiceAccount
   name: Dx441G
@@ -3098,6 +3488,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -3306,6 +3697,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    BYFlp: 1ue
+    PW45cS5PlOC: K5ky3WbW
+    Rb: A
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HICN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Dx441G-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -3377,6 +3803,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: Dx441G-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: Dx441G
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    BYFlp: 1ue
+    PW45cS5PlOC: K5ky3WbW
+    Rb: A
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HICN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Dx441G-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: Dx441G-compat
 subjects:
 - kind: ServiceAccount
   name: Dx441G
@@ -3922,6 +4374,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kzHCtV
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rEba-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -3937,6 +4421,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: rEba
+subjects:
+- kind: ServiceAccount
+  name: rEba
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kzHCtV
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rEba-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rEba-compat
 subjects:
 - kind: ServiceAccount
   name: rEba
@@ -4043,6 +4549,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -4248,6 +4755,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kzHCtV
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rEba-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -4310,6 +4849,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: rEba-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: rEba
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kzHCtV
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rEba-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rEba-compat
 subjects:
 - kind: ServiceAccount
   name: rEba
@@ -4880,6 +5442,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    F0wS: vBToTa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: BRlD
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kdh6Z-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -4896,6 +5491,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: kdh6Z
+subjects:
+- kind: ServiceAccount
+  name: SpE0
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    F0wS: vBToTa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: BRlD
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kdh6Z-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kdh6Z-compat
 subjects:
 - kind: ServiceAccount
   name: SpE0
@@ -5004,6 +5622,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -5210,6 +5829,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    F0wS: vBToTa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: BRlD
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kdh6Z-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -5275,6 +5927,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: kdh6Z-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: SpE0
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    F0wS: vBToTa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: BRlD
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kdh6Z-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kdh6Z-compat
 subjects:
 - kind: ServiceAccount
   name: SpE0
@@ -5826,6 +6502,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "1": Waszk6s
+    AhQJg: sYlEc
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: zejbO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    wU3MsxN: 4Bn0vQj
+  name: WM7nRI7B-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -5844,6 +6555,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: WM7nRI7B
+subjects:
+- kind: ServiceAccount
+  name: WM7nRI7B
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "1": Waszk6s
+    AhQJg: sYlEc
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: zejbO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    wU3MsxN: 4Bn0vQj
+  name: WM7nRI7B-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: WM7nRI7B-compat
 subjects:
 - kind: ServiceAccount
   name: WM7nRI7B
@@ -5956,6 +6692,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -6164,6 +6901,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "1": Waszk6s
+    AhQJg: sYlEc
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: zejbO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    wU3MsxN: 4Bn0vQj
+  name: WM7nRI7B-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -6235,6 +7007,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: WM7nRI7B-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: WM7nRI7B
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "1": Waszk6s
+    AhQJg: sYlEc
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: zejbO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    wU3MsxN: 4Bn0vQj
+  name: WM7nRI7B-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: WM7nRI7B-compat
 subjects:
 - kind: ServiceAccount
   name: WM7nRI7B
@@ -6802,6 +7600,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    CQkNCSKpK8nmJ: B
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: di
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Em-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -6818,6 +7649,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Em
+subjects:
+- kind: ServiceAccount
+  name: Em
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    CQkNCSKpK8nmJ: B
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: di
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Em-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Em-compat
 subjects:
 - kind: ServiceAccount
   name: Em
@@ -6926,6 +7780,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -7132,6 +7987,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    CQkNCSKpK8nmJ: B
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: di
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Em-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -7197,6 +8085,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: Em-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: Em
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    CQkNCSKpK8nmJ: B
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: di
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Em-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: Em-compat
 subjects:
 - kind: ServiceAccount
   name: Em
@@ -8212,6 +9124,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    5mUYOp: Eqc
+    AsH: OAiucz
+    eEDhSFGX: WSL6MXpbA
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: GNbmN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    u: yT9Aqc
+  name: DBMkVbLNvvZn-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -8231,6 +9179,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: DBMkVbLNvvZn
+subjects:
+- kind: ServiceAccount
+  name: q5hs
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    5mUYOp: Eqc
+    AsH: OAiucz
+    eEDhSFGX: WSL6MXpbA
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: GNbmN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    u: yT9Aqc
+  name: DBMkVbLNvvZn-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: DBMkVbLNvvZn-compat
 subjects:
 - kind: ServiceAccount
   name: q5hs
@@ -8345,6 +9319,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -8554,6 +9529,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    5mUYOp: Eqc
+    AsH: OAiucz
+    eEDhSFGX: WSL6MXpbA
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: GNbmN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    u: yT9Aqc
+  name: DBMkVbLNvvZn-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -8628,6 +9639,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: DBMkVbLNvvZn-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: q5hs
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    5mUYOp: Eqc
+    AsH: OAiucz
+    eEDhSFGX: WSL6MXpbA
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: GNbmN
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    u: yT9Aqc
+  name: DBMkVbLNvvZn-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: DBMkVbLNvvZn-compat
 subjects:
 - kind: ServiceAccount
   name: q5hs
@@ -9194,6 +10232,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "": Wyz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 6n9214EY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gLlqKr: m
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kBI8lEs-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -9211,6 +10283,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: kBI8lEs
+subjects:
+- kind: ServiceAccount
+  name: kBI8lEs
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "": Wyz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 6n9214EY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gLlqKr: m
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kBI8lEs-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kBI8lEs-compat
 subjects:
 - kind: ServiceAccount
   name: kBI8lEs
@@ -9321,6 +10417,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -9528,6 +10625,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "": Wyz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 6n9214EY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gLlqKr: m
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kBI8lEs-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -9596,6 +10727,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: kBI8lEs-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: kBI8lEs
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "": Wyz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 6n9214EY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gLlqKr: m
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: kBI8lEs-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kBI8lEs-compat
 subjects:
 - kind: ServiceAccount
   name: kBI8lEs
@@ -10145,6 +11301,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rcE-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -10162,6 +11352,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: rcE
+subjects:
+- kind: ServiceAccount
+  name: rcE
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rcE-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rcE-compat
 subjects:
 - kind: ServiceAccount
   name: rcE
@@ -10272,6 +11486,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -10479,6 +11694,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rcE-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -10547,6 +11796,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: rcE-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: rcE
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    7Kz: 6vhFA
+    hw87: p7dM7cs
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Ubj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: rcE-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rcE-compat
 subjects:
 - kind: ServiceAccount
   name: rcE
@@ -11145,6 +12419,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    VTHH: SaDKhXP
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pP
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    mOxaE: dEuL
+    w49JChsEQqA0: "3"
+  name: 7guti07-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -11163,6 +12472,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 7guti07
+subjects:
+- kind: ServiceAccount
+  name: 7guti07
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    VTHH: SaDKhXP
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pP
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    mOxaE: dEuL
+    w49JChsEQqA0: "3"
+  name: 7guti07-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 7guti07-compat
 subjects:
 - kind: ServiceAccount
   name: 7guti07
@@ -11275,6 +12609,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -11483,6 +12818,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    VTHH: SaDKhXP
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pP
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    mOxaE: dEuL
+    w49JChsEQqA0: "3"
+  name: 7guti07-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -11554,6 +12924,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: 7guti07-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: 7guti07
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    VTHH: SaDKhXP
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pP
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    mOxaE: dEuL
+    w49JChsEQqA0: "3"
+  name: 7guti07-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 7guti07-compat
 subjects:
 - kind: ServiceAccount
   name: 7guti07
@@ -12092,6 +13488,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: E4UR
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: J5MiI-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -12107,6 +13535,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: J5MiI
+subjects:
+- kind: ServiceAccount
+  name: J5MiI
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: E4UR
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: J5MiI-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: J5MiI-compat
 subjects:
 - kind: ServiceAccount
   name: J5MiI
@@ -12213,6 +13663,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -12418,6 +13869,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: E4UR
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: J5MiI-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -12480,6 +13963,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: J5MiI-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: J5MiI
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: E4UR
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: J5MiI-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: J5MiI-compat
 subjects:
 - kind: ServiceAccount
   name: J5MiI
@@ -13070,6 +14576,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    71sOOTU: en8OPZRyg7
+    L2FlwR: TODz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: xALbe0A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: NofaS-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -13087,6 +14627,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: NofaS
+subjects:
+- kind: ServiceAccount
+  name: NofaS
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    71sOOTU: en8OPZRyg7
+    L2FlwR: TODz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: xALbe0A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: NofaS-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: NofaS-compat
 subjects:
 - kind: ServiceAccount
   name: NofaS
@@ -13197,6 +14761,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -13404,6 +14969,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    71sOOTU: en8OPZRyg7
+    L2FlwR: TODz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: xALbe0A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: NofaS-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -13472,6 +15071,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: NofaS-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: NofaS
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    71sOOTU: en8OPZRyg7
+    L2FlwR: TODz
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: xALbe0A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: NofaS-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: NofaS-compat
 subjects:
 - kind: ServiceAccount
   name: NofaS
@@ -14514,6 +16138,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    "": h5TCA9NX
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TCq
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: K9R-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -14530,6 +16187,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: K9R
+subjects:
+- kind: ServiceAccount
+  name: Y7Y8
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    "": h5TCA9NX
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TCq
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: K9R-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: K9R-compat
 subjects:
 - kind: ServiceAccount
   name: Y7Y8
@@ -14638,6 +16318,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -14810,6 +16491,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    "": h5TCA9NX
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TCq
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: K9R-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -14851,6 +16565,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: K9R
+subjects:
+- kind: ServiceAccount
+  name: Y7Y8
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    "": h5TCA9NX
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TCq
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: K9R-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: K9R-compat
 subjects:
 - kind: ServiceAccount
   name: Y7Y8
@@ -16061,6 +17799,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NlE3orKsq9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    bKX: d
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    m2Z8Z: wRw
+  name: DX7O-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -16102,6 +17874,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: DX7O-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: pHzNPjb
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NlE3orKsq9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    bKX: d
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    m2Z8Z: wRw
+  name: DX7O-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: DX7O-compat
 subjects:
 - kind: ServiceAccount
   name: pHzNPjb
@@ -16212,6 +18008,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -16516,6 +18313,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NlE3orKsq9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    bKX: d
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    m2Z8Z: wRw
+  name: DX7O-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -16609,6 +18440,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: DX7O-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: pHzNPjb
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NlE3orKsq9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    bKX: d
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    m2Z8Z: wRw
+  name: DX7O-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: DX7O-compat
 subjects:
 - kind: ServiceAccount
   name: pHzNPjb
@@ -17292,6 +19148,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    bhU: AcTdNUdgDaT
+    iH: X4s
+    ieFAk: TxA0xeci
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "5"
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: x8K24mCZYsnh-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -17310,6 +19201,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: x8K24mCZYsnh
+subjects:
+- kind: ServiceAccount
+  name: x8K24mCZYsnh
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    bhU: AcTdNUdgDaT
+    iH: X4s
+    ieFAk: TxA0xeci
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "5"
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: x8K24mCZYsnh-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: x8K24mCZYsnh-compat
 subjects:
 - kind: ServiceAccount
   name: x8K24mCZYsnh
@@ -17422,6 +19338,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -17630,6 +19547,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    bhU: AcTdNUdgDaT
+    iH: X4s
+    ieFAk: TxA0xeci
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "5"
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: x8K24mCZYsnh-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -17701,6 +19653,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: x8K24mCZYsnh-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: x8K24mCZYsnh
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    bhU: AcTdNUdgDaT
+    iH: X4s
+    ieFAk: TxA0xeci
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "5"
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: x8K24mCZYsnh-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: x8K24mCZYsnh-compat
 subjects:
 - kind: ServiceAccount
   name: x8K24mCZYsnh
@@ -18305,6 +20283,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    8dRB: 5cv
+    EfHk: fBL
+    Nm4maThP4X: v
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Fk
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: UHlKDi-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -18323,6 +20336,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: UHlKDi
+subjects:
+- kind: ServiceAccount
+  name: UHlKDi
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    8dRB: 5cv
+    EfHk: fBL
+    Nm4maThP4X: v
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Fk
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: UHlKDi-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: UHlKDi-compat
 subjects:
 - kind: ServiceAccount
   name: UHlKDi
@@ -18435,6 +20473,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -18643,6 +20682,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    8dRB: 5cv
+    EfHk: fBL
+    Nm4maThP4X: v
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Fk
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: UHlKDi-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -18714,6 +20788,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: UHlKDi-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: UHlKDi
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    8dRB: 5cv
+    EfHk: fBL
+    Nm4maThP4X: v
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Fk
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: UHlKDi-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: UHlKDi-compat
 subjects:
 - kind: ServiceAccount
   name: UHlKDi
@@ -19293,6 +21393,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    NoeniB5: Fc1
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: IC6CHScZj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    ruSHmUUvOj1: h3BuiPAHIC
+  name: wINY4HR-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -19310,6 +21444,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: wINY4HR
+subjects:
+- kind: ServiceAccount
+  name: ft
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    NoeniB5: Fc1
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: IC6CHScZj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    ruSHmUUvOj1: h3BuiPAHIC
+  name: wINY4HR-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: wINY4HR-compat
 subjects:
 - kind: ServiceAccount
   name: ft
@@ -19420,6 +21578,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -19627,6 +21786,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    NoeniB5: Fc1
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: IC6CHScZj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    ruSHmUUvOj1: h3BuiPAHIC
+  name: wINY4HR-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -19695,6 +21888,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: wINY4HR-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: ft
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    NoeniB5: Fc1
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: IC6CHScZj
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    ruSHmUUvOj1: h3BuiPAHIC
+  name: wINY4HR-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: wINY4HR-compat
 subjects:
 - kind: ServiceAccount
   name: ft
@@ -20398,6 +22616,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ZtDuI
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    kxvj1aV: un4v2
+  name: 5-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -20414,6 +22665,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: "5"
+subjects:
+- kind: ServiceAccount
+  name: 12bwUKO
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ZtDuI
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    kxvj1aV: un4v2
+  name: 5-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 5-compat
 subjects:
 - kind: ServiceAccount
   name: 12bwUKO
@@ -20522,6 +22796,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -20728,6 +23003,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ZtDuI
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    kxvj1aV: un4v2
+  name: 5-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -20793,6 +23101,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: 5-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: 12bwUKO
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ZtDuI
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    kxvj1aV: un4v2
+  name: 5-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 5-compat
 subjects:
 - kind: ServiceAccount
   name: 12bwUKO
@@ -21368,6 +23700,43 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gWL: pM
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: sFwgtf-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -21388,6 +23757,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: sFwgtf
+subjects:
+- kind: ServiceAccount
+  name: sFwgtf
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gWL: pM
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: sFwgtf-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sFwgtf-compat
 subjects:
 - kind: ServiceAccount
   name: sFwgtf
@@ -21504,6 +23900,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -21714,6 +24111,43 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gWL: pM
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: sFwgtf-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -21791,6 +24225,34 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: sFwgtf-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: sFwgtf
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    1DvJW: rHStv2tPg
+    nol: gP
+  creationTimestamp: null
+  labels:
+    8BO5: Bd5OIo
+    JnjTVDz: 5xDh
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: NY
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    gWL: pM
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: sFwgtf-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sFwgtf-compat
 subjects:
 - kind: ServiceAccount
   name: sFwgtf
@@ -22609,6 +25071,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 4waX
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    iW8sRg: to
+  name: bi-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -22648,6 +25143,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: bi-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: TWwJQX
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 4waX
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    iW8sRg: to
+  name: bi-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bi-compat
 subjects:
 - kind: ServiceAccount
   name: TWwJQX
@@ -22756,6 +25274,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -23058,6 +25577,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 4waX
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    iW8sRg: to
+  name: bi-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -23147,6 +25699,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: bi-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: TWwJQX
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 4waX
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    iW8sRg: to
+  name: bi-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: bi-compat
 subjects:
 - kind: ServiceAccount
   name: TWwJQX
@@ -23936,6 +26512,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    "": d0zsybqG
+    JuYYWSQr: R3Yk7
+    TtPk6C: ivO8
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: YCs
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-YCs-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -23954,6 +26565,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator-YCs
+subjects:
+- kind: ServiceAccount
+  name: a
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    "": d0zsybqG
+    JuYYWSQr: R3Yk7
+    TtPk6C: ivO8
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: YCs
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-YCs-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-YCs-compat
 subjects:
 - kind: ServiceAccount
   name: a
@@ -24066,6 +26702,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -24274,6 +26911,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    "": d0zsybqG
+    JuYYWSQr: R3Yk7
+    TtPk6C: ivO8
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: YCs
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-YCs-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -24345,6 +27017,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-YCs-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: a
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    "": d0zsybqG
+    JuYYWSQr: R3Yk7
+    TtPk6C: ivO8
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: YCs
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-YCs-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-YCs-compat
 subjects:
 - kind: ServiceAccount
   name: a
@@ -25794,6 +28492,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    Xpmsmk: xwQ7HYnx
+    nht: xpYQ9rPl
+  creationTimestamp: null
+  labels:
+    9Yl4uYdhi: AwRf
+    SX: I
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: VhCMS
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: 2-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -25813,6 +28547,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: "2"
+subjects:
+- kind: ServiceAccount
+  name: blB
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Xpmsmk: xwQ7HYnx
+    nht: xpYQ9rPl
+  creationTimestamp: null
+  labels:
+    9Yl4uYdhi: AwRf
+    SX: I
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: VhCMS
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: 2-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 2-compat
 subjects:
 - kind: ServiceAccount
   name: blB
@@ -25927,6 +28687,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -26136,6 +28897,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    Xpmsmk: xwQ7HYnx
+    nht: xpYQ9rPl
+  creationTimestamp: null
+  labels:
+    9Yl4uYdhi: AwRf
+    SX: I
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: VhCMS
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: 2-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -26210,6 +29007,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: 2-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: blB
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    Xpmsmk: xwQ7HYnx
+    nht: xpYQ9rPl
+  creationTimestamp: null
+  labels:
+    9Yl4uYdhi: AwRf
+    SX: I
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: VhCMS
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: 2-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 2-compat
 subjects:
 - kind: ServiceAccount
   name: blB
@@ -27008,6 +29832,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "9": WiLvS4
+    Fzjuqz0im: "023"
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Qi
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: z7BRO-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -27025,6 +29883,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: z7BRO
+subjects:
+- kind: ServiceAccount
+  name: tIa
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "9": WiLvS4
+    Fzjuqz0im: "023"
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Qi
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: z7BRO-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: z7BRO-compat
 subjects:
 - kind: ServiceAccount
   name: tIa
@@ -27135,6 +30017,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -27307,6 +30190,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "9": WiLvS4
+    Fzjuqz0im: "023"
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Qi
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: z7BRO-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -27350,6 +30267,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: z7BRO
+subjects:
+- kind: ServiceAccount
+  name: tIa
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    "9": WiLvS4
+    Fzjuqz0im: "023"
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Qi
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: z7BRO-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: z7BRO-compat
 subjects:
 - kind: ServiceAccount
   name: tIa
@@ -28866,6 +31808,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: D-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -28884,6 +31861,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: D
+subjects:
+- kind: ServiceAccount
+  name: 40Wt
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: D-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: D-compat
 subjects:
 - kind: ServiceAccount
   name: 40Wt
@@ -28996,6 +31998,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -29204,6 +32207,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: D-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -29275,6 +32313,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: D-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: 40Wt
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    H15A: FR
+    ImNZ2R: 4b11Ajcj71
+    MkV5WTrr: tzjZwG
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aYT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: D-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: D-compat
 subjects:
 - kind: ServiceAccount
   name: 40Wt
@@ -30861,6 +33925,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: tDyp0579ogHIu-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -30904,6 +34003,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: tDyp0579ogHIu-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: Zihc6G
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: tDyp0579ogHIu-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tDyp0579ogHIu-compat
 subjects:
 - kind: ServiceAccount
   name: Zihc6G
@@ -31016,6 +34140,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -31322,6 +34447,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: tDyp0579ogHIu-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -31419,6 +34579,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: tDyp0579ogHIu-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: Zihc6G
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    B11cb: P1mQky
+  creationTimestamp: null
+  labels:
+    Q3Y: wWGGlI
+    ZgcMSFjkA: f0Je
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pnciO
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: tDyp0579ogHIu-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tDyp0579ogHIu-compat
 subjects:
 - kind: ServiceAccount
   name: Zihc6G
@@ -32950,6 +36136,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    uUW: Us
+  name: 6z0k3NX-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -32968,6 +36189,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 6z0k3NX
+subjects:
+- kind: ServiceAccount
+  name: 9xg1jKJ
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    uUW: Us
+  name: 6z0k3NX-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 6z0k3NX-compat
 subjects:
 - kind: ServiceAccount
   name: 9xg1jKJ
@@ -33080,6 +36326,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -33288,6 +36535,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    uUW: Us
+  name: 6z0k3NX-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -33359,6 +36641,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: 6z0k3NX-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: 9xg1jKJ
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    IkOwwd: 37ZfCkM
+    M3fH: xmhoB
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9wjOhT
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    uUW: Us
+  name: 6z0k3NX-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 6z0k3NX-compat
 subjects:
 - kind: ServiceAccount
   name: 9xg1jKJ
@@ -37444,6 +40752,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -37485,6 +40827,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: fjEnE-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: dgtMSpw
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fjEnE-compat
 subjects:
 - kind: ServiceAccount
   name: dgtMSpw
@@ -37595,6 +40961,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -37899,6 +41266,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -37992,6 +41393,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: fjEnE-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: dgtMSpw
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: RYuL
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    oMSwsE1: VOZ
+    x: 4Xx1lbe
+  name: fjEnE-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fjEnE-compat
 subjects:
 - kind: ServiceAccount
   name: dgtMSpw
@@ -40241,6 +43667,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    5M5X: Fi
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ATIdy9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: dLmCJ99UDA-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -40280,6 +43739,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: dLmCJ99UDA-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: ttC
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    5M5X: Fi
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ATIdy9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: dLmCJ99UDA-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dLmCJ99UDA-compat
 subjects:
 - kind: ServiceAccount
   name: ttC
@@ -40388,6 +43870,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -40656,6 +44139,39 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    5M5X: Fi
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ATIdy9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: dLmCJ99UDA-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -40721,6 +44237,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: dLmCJ99UDA-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: ttC
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    5M5X: Fi
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ATIdy9
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: dLmCJ99UDA-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dLmCJ99UDA-compat
 subjects:
 - kind: ServiceAccount
   name: ttC
@@ -41641,6 +45181,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    j: cfo02
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    vAU3IVb: K0a
+    x: c
+  name: I5FRf-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -41684,6 +45259,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: I5FRf-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: jPVwE
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    j: cfo02
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    vAU3IVb: K0a
+    x: c
+  name: I5FRf-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: I5FRf-compat
 subjects:
 - kind: ServiceAccount
   name: jPVwE
@@ -41796,6 +45396,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -42066,6 +45667,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    j: cfo02
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    vAU3IVb: K0a
+    x: c
+  name: I5FRf-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -42137,6 +45773,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: I5FRf-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: jPVwE
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    j: cfo02
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: A
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+    vAU3IVb: K0a
+    x: c
+  name: I5FRf-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: I5FRf-compat
 subjects:
 - kind: ServiceAccount
   name: jPVwE
@@ -43921,6 +47583,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Uu-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -43939,6 +47636,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: Uu
+subjects:
+- kind: ServiceAccount
+  name: 5rSJNtq
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Uu-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Uu-compat
 subjects:
 - kind: ServiceAccount
   name: 5rSJNtq
@@ -44051,6 +47773,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -44259,6 +47982,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Uu-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -44330,6 +48088,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: Uu-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: 5rSJNtq
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    zdPL: 3ZqroY
+  creationTimestamp: null
+  labels:
+    2Q3: 4eG3k4Q
+    3iy: cFa
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 23c
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: Uu-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: Uu-compat
 subjects:
 - kind: ServiceAccount
   name: 5rSJNtq
@@ -47050,6 +50834,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    Ko0pmEw: 59Cu
+    Q: 3fQgP
+  creationTimestamp: null
+  labels:
+    5ga: L6kCMw6j
+    NImdN7q5tNW: UPT
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kF
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: oL1SSfzH9d-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -47095,6 +50915,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: oL1SSfzH9d-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: i7DA
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Ko0pmEw: 59Cu
+    Q: 3fQgP
+  creationTimestamp: null
+  labels:
+    5ga: L6kCMw6j
+    NImdN7q5tNW: UPT
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kF
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: oL1SSfzH9d-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oL1SSfzH9d-compat
 subjects:
 - kind: ServiceAccount
   name: i7DA
@@ -47209,6 +51055,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -47480,6 +51327,42 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    Ko0pmEw: 59Cu
+    Q: 3fQgP
+  creationTimestamp: null
+  labels:
+    5ga: L6kCMw6j
+    NImdN7q5tNW: UPT
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kF
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: oL1SSfzH9d-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -47554,6 +51437,33 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: oL1SSfzH9d-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: i7DA
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    Ko0pmEw: 59Cu
+    Q: 3fQgP
+  creationTimestamp: null
+  labels:
+    5ga: L6kCMw6j
+    NImdN7q5tNW: UPT
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kF
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: oL1SSfzH9d-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: oL1SSfzH9d-compat
 subjects:
 - kind: ServiceAccount
   name: i7DA
@@ -48382,6 +52292,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: qVYvaMYre-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -48400,6 +52345,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: qVYvaMYre
+subjects:
+- kind: ServiceAccount
+  name: Rsep9k
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: qVYvaMYre-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: qVYvaMYre-compat
 subjects:
 - kind: ServiceAccount
   name: Rsep9k
@@ -48512,6 +52482,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -48720,6 +52691,41 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: qVYvaMYre-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -48791,6 +52797,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: qVYvaMYre-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: Rsep9k
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    Hb: p6nsnNym
+    XCiiUj: V9
+    nfDuOzQO: w
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: icwMYEubJ
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: qVYvaMYre-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: qVYvaMYre-compat
 subjects:
 - kind: ServiceAccount
   name: Rsep9k
@@ -49763,6 +53795,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    Tett6RPd3GK0SY: SS0
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: DFwU
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    fuVZ: gcPCqrc0l
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: RxVwZrtkv-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
@@ -49804,6 +53870,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: RxVwZrtkv-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: tSPxL1Cf1HO9FjR
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    Tett6RPd3GK0SY: SS0
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: DFwU
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    fuVZ: gcPCqrc0l
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: RxVwZrtkv-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: RxVwZrtkv-compat
 subjects:
 - kind: ServiceAccount
   name: tSPxL1Cf1HO9FjR
@@ -49914,6 +54004,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -50183,6 +54274,40 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    Tett6RPd3GK0SY: SS0
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: DFwU
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    fuVZ: gcPCqrc0l
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: RxVwZrtkv-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
@@ -50251,6 +54376,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: RxVwZrtkv-additional-controllers
+subjects:
+- kind: ServiceAccount
+  name: tSPxL1Cf1HO9FjR
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    Tett6RPd3GK0SY: SS0
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: DFwU
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    fuVZ: gcPCqrc0l
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: RxVwZrtkv-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: RxVwZrtkv-compat
 subjects:
 - kind: ServiceAccount
   name: tSPxL1Cf1HO9FjR
@@ -102521,6 +106671,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -102536,6 +106718,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -102642,6 +106846,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -102847,6 +107052,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -102909,6 +107146,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -103431,6 +107691,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -103446,6 +107738,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -103552,6 +107866,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -103757,6 +108072,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -103819,6 +108166,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -104358,6 +108728,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -104373,6 +108775,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -104479,6 +108903,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -104684,6 +109109,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -104746,6 +109203,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -105268,6 +109748,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -105283,6 +109795,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -105389,6 +109923,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -105594,6 +110129,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -105656,6 +110223,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -107044,6 +111634,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations: null
@@ -107059,6 +111681,28 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: operator
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator
@@ -107165,6 +111809,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   - statefulsets
   verbs:
   - create
@@ -107370,6 +112015,38 @@ rules:
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations: null
@@ -107432,6 +112109,29 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: operator-rpk-bundle
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: null
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v2.3.8-24.3.6
+    helm.sh/chart: operator-v2.3.8-24.3.6
+  name: operator-compat
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operator-compat
 subjects:
 - kind: ServiceAccount
   name: operator

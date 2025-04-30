@@ -75,6 +75,7 @@ type PartialRBAC struct {
 	Create                        *bool "json:\"create,omitempty\""
 	CreateAdditionalControllerCRs *bool "json:\"createAdditionalControllerCRs,omitempty\""
 	CreateRPKBundleCRs            *bool "json:\"createRPKBundleCRs,omitempty\""
+	CreateCompatCRs               *bool "json:\"createCompatCRs,omitempty\""
 }
 
 type PartialWebhook struct {
