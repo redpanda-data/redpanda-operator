@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-logr/logr/testr"
+	// "github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,6 +51,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -616,16 +617,13 @@ func (s *RedpandaControllerSuite) TestLicense() {
 
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
+	s.ctx = trace.Test(t)
 
-	// TODO SetupManager currently runs with admin permissions on the cluster.
-	// This will allow the operator's ClusterRole and Role to get out of date.
-	// Ideally, we should bind the declared permissions of the operator to the
-	// rest config given to the manager.
-	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
 		Scheme: controller.V2Scheme,
 		CRDs:   crds.All(),
-		Logger: testr.New(t),
+		// Logger: testr.New(t),
+		Logger: ctrl.LoggerFrom(s.ctx),
 		ImportImages: []string{
 			"localhost/redpanda-operator:dev",
 		},
