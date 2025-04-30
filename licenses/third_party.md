@@ -49,7 +49,7 @@ run `task generate:third-party-licenses-list`
 | github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
 | github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
-| github.com/ProtonMail/go-crypto | [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/a7379d079e0e/LICENSE) |
+| github.com/ProtonMail/go-crypto | [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.1.3/LICENSE) |
 | github.com/alibabacloud-go/alibabacloud-gateway-spi/client | [Apache-2.0](https://github.com/alibabacloud-go/alibabacloud-gateway-spi/blob/v0.0.4/LICENSE) |
 | github.com/alibabacloud-go/cr-20160607/client | [Apache-2.0](https://github.com/alibabacloud-go/cr-20160607/blob/master/LICENSE) |
 | github.com/alibabacloud-go/cr-20181201/client | [Apache-2.0](https://github.com/alibabacloud-go/cr-20181201/blob/v1.0.10/LICENSE) |
@@ -156,8 +156,8 @@ run `task generate:third-party-licenses-list`
 | github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.0.12/LICENSE) |
 | github.com/go-errors/errors | [MIT](https://github.com/go-errors/errors/blob/v1.5.1/LICENSE.MIT) |
 | github.com/go-git/gcfg | [BSD-3-Clause](https://github.com/go-git/gcfg/blob/3a3c6141e376/LICENSE) |
-| github.com/go-git/go-billy/v5 | [Apache-2.0](https://github.com/go-git/go-billy/blob/v5.5.0/LICENSE) |
-| github.com/go-git/go-git/v5 | [Apache-2.0](https://github.com/go-git/go-git/blob/v5.11.0/LICENSE) |
+| github.com/go-git/go-billy/v5 | [Apache-2.0](https://github.com/go-git/go-billy/blob/v5.6.0/LICENSE) |
+| github.com/go-git/go-git/v5 | [Apache-2.0](https://github.com/go-git/go-git/blob/v5.13.0/LICENSE) |
 | github.com/go-gorp/gorp/v3 | [MIT](https://github.com/go-gorp/gorp/blob/v3.1.0/LICENSE) |
 | github.com/go-jose/go-jose/v3 | [Apache-2.0](https://github.com/go-jose/go-jose/blob/v3.0.3/LICENSE) |
 | github.com/go-jose/go-jose/v3/json | [BSD-3-Clause](https://github.com/go-jose/go-jose/blob/v3.0.3/json/LICENSE) |
@@ -327,7 +327,7 @@ run `task generate:third-party-licenses-list`
 | github.com/sigstore/sigstore/pkg | [Apache-2.0](https://github.com/sigstore/sigstore/blob/v1.7.6/LICENSE) |
 | github.com/sigstore/timestamp-authority/pkg/verification | [Apache-2.0](https://github.com/sigstore/timestamp-authority/blob/v1.2.0/LICENSE) |
 | github.com/sirupsen/logrus | [MIT](https://github.com/sirupsen/logrus/blob/v1.9.3/LICENSE) |
-| github.com/skeema/knownhosts | [Apache-2.0](https://github.com/skeema/knownhosts/blob/v1.2.1/LICENSE) |
+| github.com/skeema/knownhosts | [Apache-2.0](https://github.com/skeema/knownhosts/blob/v1.3.0/LICENSE) |
 | github.com/skratchdot/open-golang/open | [MIT](https://github.com/skratchdot/open-golang/blob/eef842397966/LICENSE) |
 | github.com/spf13/afero | [Apache-2.0](https://github.com/spf13/afero/blob/v1.11.0/LICENSE.txt) |
 | github.com/spf13/cast | [MIT](https://github.com/spf13/cast/blob/v1.7.0/LICENSE) |
