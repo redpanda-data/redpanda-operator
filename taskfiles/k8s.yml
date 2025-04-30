@@ -35,6 +35,8 @@ tasks:
           PATH: ./cmd/sidecar
         - NAME: leader-election
           PATH: ./cmd/run
+        - NAME: legacypermissions
+          PATH: ./internal/controller/legacypermissions
         cmd: |
           controller-gen \
             object:headerFile="../licenses/boilerplate.go.txt" \
@@ -63,6 +65,7 @@ tasks:
           '.' \
           ./config/rbac/itemized/decommission.yaml \
           ./config/rbac/itemized/leader-election.yaml \
+          ./config/rbac/itemized/legacypermissions.yaml \
           ./config/rbac/itemized/node-watcher.yaml \
           ./config/rbac/itemized/old-decommission.yaml \
           ./config/rbac/itemized/pvcunbinder.yaml \

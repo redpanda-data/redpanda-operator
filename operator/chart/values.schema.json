@@ -5562,6 +5562,9 @@
         "createAdditionalControllerCRs": {
           "type": "boolean"
         },
+        "createCompatCRs": {
+          "type": "boolean"
+        },
         "createRPKBundleCRs": {
           "type": "boolean"
         }
