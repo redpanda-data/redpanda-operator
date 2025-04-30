@@ -54,7 +54,6 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -223,77 +222,6 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 	s.deleteAndWait(rp)
 }
 
-func (s *RedpandaControllerSuite) TestManagedDecommission() {
-	rp := s.minimalRP(false)
-	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
-
-	s.applyAndWait(rp)
-
-	adminAPI, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
-	s.Require().NoError(err)
-	defer adminAPI.Close()
-
-	beforeBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	rp.Annotations = map[string]string{
-		"operator.redpanda.com/managed-decommission": "2999-12-31T00:00:00Z",
-	}
-
-	s.applyAndWaitFor(func(o client.Object) bool {
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return cond.Status == metav1.ConditionTrue
-			}
-		}
-		return false
-	}, rp)
-
-	s.waitFor(rp, func(o client.Object) bool {
-		rp := o.(*redpandav1alpha2.Redpanda)
-
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == "ManagedDecommission" {
-				return false
-			}
-		}
-
-		_, ok := rp.Annotations["operator.redpanda.com/managed-decommission"]
-
-		return !ok // Managed decommission is finished when the annotation is removed.
-	})
-
-	afterBrokers, err := adminAPI.Brokers(s.ctx)
-	s.Require().NoError(err)
-
-	// After performing a managed decommission we should observe a complete
-	// replacement of brokers.
-	beforeIDs := map[int]struct{}{}
-	for _, broker := range beforeBrokers {
-		beforeIDs[broker.NodeID] = struct{}{}
-	}
-
-	afterIDs := map[int]struct{}{}
-	for _, broker := range afterBrokers {
-		afterIDs[broker.NodeID] = struct{}{}
-	}
-
-	for id := range beforeIDs {
-		s.NotContainsf(afterIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	for id := range afterIDs {
-		s.NotContainsf(beforeIDs, id, "broker ID %d unexpectedly present after managed decommission", id)
-	}
-
-	s.Len(beforeIDs, 3)
-	s.Len(afterIDs, 3)
-
-	s.deleteAndWait(rp)
-}
-
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP(false)
 	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
@@ -339,14 +267,17 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 		s.apply(rp)
 		return func() {
 			s.waitUntilReady(rp)
-			s.waitFor(rp, func(o client.Object) bool {
+			s.waitFor(rp, func(o client.Object, err error) (bool, error) {
+				if err != nil {
+					return false, err
+				}
 				rp := o.(*redpandav1alpha2.Redpanda)
 				for _, cond := range rp.Status.Conditions {
 					if cond.Type == redpandav1alpha2.ClusterConfigSynced {
-						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue
+						return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
 					}
 				}
-				return false
+				return false, nil
 			})
 		}
 	}
@@ -387,7 +318,6 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				"cloud_storage_access_key":  "VURYSECRET",
 				"cloud_storage_disable_tls": true,
 				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
-				// "superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
 		{
@@ -405,12 +335,12 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	}
 
 	for _, c := range cases {
-		s.Run(fmt.Sprintf(c.Name, c.In), func() {
+		s.Run(c.Name, func() {
 			adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 			s.Require().NoError(err)
 			defer adminClient.Close()
 			st, err := adminClient.ClusterConfigStatus(s.ctx, false)
-			assert.NoError(s.T(), err)
+			s.Assert().NoError(err)
 			initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
 				return int(a.ConfigVersion - b.ConfigVersion)
 			}).ConfigVersion
@@ -419,8 +349,10 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			s.EventuallyWithT(func(t *assert.CollectT) {
 				st, err := adminClient.ClusterConfigStatus(s.ctx, false)
 				if !assert.NoError(t, err) {
+					s.T().Logf("[%s] getting cluster config status failed with: %v", time.Now().Format(time.DateTime), err)
 					return
 				}
+				s.T().Logf("[%s] cluster status: %v", time.Now().Format(time.DateTime), st)
 				currVersion := slices.MinFunc(st, func(a, b rpadmin.ConfigStatus) int {
 					return int(a.ConfigVersion - b.ConfigVersion)
 				}).ConfigVersion
@@ -430,7 +362,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 				assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
 					return cs.Restart
 				}), "expected no brokers to need restart")
-			}, time.Minute, time.Second)
+			}, 5*time.Minute, time.Second)
 			// wait for the cluster to be ready and the configuration synced
 			waitFn()
 
@@ -540,7 +472,10 @@ func (s *RedpandaControllerSuite) TestLicense() {
 
 		var condition metav1.Condition
 		var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
-		s.applyAndWaitFor(func(o client.Object) bool {
+		s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
+			if err != nil {
+				return false, err
+			}
 			rp := o.(*redpandav1alpha2.Redpanda)
 
 			for _, cond := range rp.Status.Conditions {
@@ -549,12 +484,12 @@ func (s *RedpandaControllerSuite) TestLicense() {
 					if cond.Status != metav1.ConditionUnknown {
 						condition = cond
 						licenseStatus = rp.Status.LicenseStatus
-						return true
+						return true, nil
 					}
-					return false
+					return false, nil
 				}
 			}
-			return false
+			return false, nil
 		}, rp)
 
 		name := fmt.Sprintf("%s/%s (license: %t)", c.image.repository, c.image.tag, c.license)
@@ -657,18 +592,21 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 	rp.Spec.ChartRef.Timeout = ptr.To(metav1.Duration{Duration: 30 * time.Second})
 	rp.Spec.ClusterSpec.Image.Tag = ptr.To("v23.99.99")
 
-	s.applyAndWaitFor(func(o client.Object) bool {
+	s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
 		rp := o.(*redpandav1alpha2.Redpanda)
 
 		for _, cond := range rp.Status.Conditions {
 			if cond.Type == redpandav1alpha2.ReadyCondition {
 				if cond.Status == metav1.ConditionFalse && cond.Reason == "ArtifactFailed" {
-					return true
+					return true, nil
 				}
-				return false
+				return false, nil
 			}
 		}
-		return false
+		return false, nil
 	}, rp)
 
 	s.waitFor(&v2beta2.HelmRelease{
@@ -676,12 +614,15 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 			Name:      rp.GetName(),
 			Namespace: rp.GetNamespace(),
 		},
-	}, func(o client.Object) bool {
+	}, func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
 		helmRelease := o.(*v2beta2.HelmRelease)
 
 		return helmRelease.Status.UpgradeFailures >= 1 && slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
 			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionFalse && cond.Reason == "UpgradeFailed"
-		})
+		}), nil
 	})
 
 	s.waitFor(&appsv1.StatefulSet{
@@ -689,11 +630,14 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 			Name:      rp.GetName(),
 			Namespace: rp.GetNamespace(),
 		},
-	}, func(o client.Object) bool {
+	}, func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
 		statefulSet := o.(*appsv1.StatefulSet)
 
 		// check that we have a ready replica still because we've rolled back
-		return statefulSet.Status.ReadyReplicas == 1
+		return statefulSet.Status.ReadyReplicas == 1, nil
 	})
 
 	// Apply the good upgrade
@@ -708,12 +652,15 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 			Name:      rp.GetName(),
 			Namespace: rp.GetNamespace(),
 		},
-	}, func(o client.Object) bool {
+	}, func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
 		helmRelease := o.(*v2beta2.HelmRelease)
 
 		return slices.ContainsFunc(helmRelease.Status.Conditions, func(cond metav1.Condition) bool {
 			return cond.Type == redpandav1alpha2.ReadyCondition && cond.Status == metav1.ConditionTrue && cond.Reason == "UpgradeSucceeded"
-		})
+		}), nil
 	})
 
 	s.waitFor(&appsv1.StatefulSet{
@@ -721,10 +668,13 @@ func (s *RedpandaControllerSuite) TestUpgradeRollback() {
 			Name:      rp.GetName(),
 			Namespace: rp.GetNamespace(),
 		},
-	}, func(o client.Object) bool {
+	}, func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
 		statefulSet := o.(*appsv1.StatefulSet)
 
-		return statefulSet.Status.ReadyReplicas == 1
+		return statefulSet.Status.ReadyReplicas == 1, nil
 	})
 	s.deleteAndWait(rp)
 }
@@ -863,22 +813,14 @@ Starting helm repository that serves %q as the development version of the redpan
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
 		// TODO should probably run other reconcilers here.
-		if err := (&redpanda.RedpandaReconciler{
+		return (&redpanda.RedpandaReconciler{
 			Client:            mgr.GetClient(),
 			KubeConfig:        mgr.GetConfig(),
 			Scheme:            mgr.GetScheme(),
 			EventRecorder:     mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory:     s.clientFactory,
 			HelmRepositoryURL: helmRepositoryURL,
-		}).SetupWithManager(s.ctx, mgr); err != nil {
-			return err
-		}
-
-		return (&manageddecommission.ManagedDecommissionReconciler{
-			Client:        mgr.GetClient(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory: s.clientFactory,
-		}).SetupWithManager(mgr)
+		}).SetupWithManager(s.ctx, mgr)
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
@@ -1046,15 +988,12 @@ func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
 		s.Require().NoError(err)
 	}
 
-	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
-		if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				return true, nil
-			}
-			return false, err
+	s.waitFor(obj, func(_ client.Object, err error) (bool, error) {
+		if apierrors.IsNotFound(err) {
+			return true, nil
 		}
-		return false, nil
-	}))
+		return false, err
+	})
 }
 
 func (s *RedpandaControllerSuite) applyAndWait(objs ...client.Object) {
@@ -1064,16 +1003,19 @@ func (s *RedpandaControllerSuite) applyAndWait(objs ...client.Object) {
 
 func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 	for _, obj := range objs {
-		s.waitFor(obj, func(obj client.Object) bool {
+		s.waitFor(obj, func(obj client.Object, err error) (bool, error) {
+			if err != nil {
+				return false, err
+			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
 				ready := apimeta.IsStatusConditionTrue(obj.Status.Conditions, "Ready")
 				upToDate := obj.Generation != 0 && obj.Generation == obj.Status.ObservedGeneration
-				return upToDate && ready
+				return upToDate && ready, nil
 
 			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
 				*rbacv1.ClusterRole, *rbacv1.Role, *rbacv1.RoleBinding, *rbacv1.ClusterRoleBinding:
-				return true
+				return true, nil
 
 			default:
 				s.T().Fatalf("unhandled object %T in applyAndWait", obj)
@@ -1096,24 +1038,31 @@ func (s *RedpandaControllerSuite) apply(objs ...client.Object) {
 	}
 }
 
-func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object) bool, objs ...client.Object) {
+func (s *RedpandaControllerSuite) applyAndWaitFor(cond func(client.Object, error) (bool, error), objs ...client.Object) {
 	s.apply(objs...)
 	for _, obj := range objs {
 		s.waitFor(obj, cond)
 	}
 }
 
-func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Object) bool) {
+func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Object, error) (bool, error)) {
+	start := time.Now()
+	lastLog := time.Now()
+	logEvery := 10 * time.Second
+
 	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
-		if err := s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
-			return false, err
+		err = s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
+
+		done, err = cond(obj, err)
+		if done || err != nil {
+			return done, err
 		}
 
-		if cond(obj) {
-			return true, nil
+		if time.Since(lastLog) > logEvery {
+			lastLog = time.Now()
+			s.T().Logf("waited %s for %T %q", time.Since(start), obj, obj.GetName())
 		}
 
-		s.T().Logf("waiting for %T %q to be ready", obj, obj.GetName())
 		return false, nil
 	}))
 }

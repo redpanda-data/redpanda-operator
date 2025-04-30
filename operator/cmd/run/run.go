@@ -48,7 +48,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/flux"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/manageddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
@@ -185,6 +184,7 @@ func Command() *cobra.Command {
 				cloudConfig := pkgsecrets.ExpanderCloudConfiguration{}
 				if cloudSecretsAWSRegion != "" && cloudSecretsAWSRoleARN != "" {
 					cloudConfig.AWSRegion = cloudSecretsAWSRegion
+					// if AWSRoleARN is empty, it uses the assumed role of the pod
 					cloudConfig.AWSRoleARN = cloudSecretsAWSRoleARN
 				} else if cloudSecretsGCPProjectID != "" {
 					cloudConfig.GCPProjectID = cloudSecretsGCPProjectID
@@ -637,15 +637,6 @@ func Run(
 
 		if err = redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Schema")
-			return err
-		}
-
-		if err = (&manageddecommission.ManagedDecommissionReconciler{
-			Client:        mgr.GetClient(),
-			EventRecorder: mgr.GetEventRecorderFor("ManagedDecommissionReconciler"),
-			ClientFactory: internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "ManagedDecommission")
 			return err
 		}
 
