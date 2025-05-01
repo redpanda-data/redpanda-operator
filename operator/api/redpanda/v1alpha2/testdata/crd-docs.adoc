@@ -394,7 +394,7 @@ Certificate configures TLS certificates.
 Only charts in the v5.9.x and v5.10.x series are supported. +
 
 
-If unspecified, defaults to the operator's vendored chart version: `v5.10.1`. +
+If unspecified, defaults to the operator's vendored chart version: `v5.10.2`. +
 
 
 It is recommended to leave this field unspecified. + |  | Pattern: `^v?5\.(9|10)\.` +
@@ -420,7 +420,7 @@ its internal Go-based Helm chart. FluxCD resources are still +
 managed by the operator albeit in a suspended state. +
 
 
-If `false`, `chartVersion` MUST be `v5.10.1` or unspecified. The +
+If `false`, `chartVersion` MUST be `v5.10.2` or unspecified. The +
 operator does not reconcile any Redpanda resources that have `chartVersion` set to +
 another version while `useFlux` is `false. + |  | 
 |===
@@ -1687,6 +1687,7 @@ RBAC configures role-based access control (RBAC).
 | Field | Description | Default | Validation
 | *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the RBAC resources. + |  | 
 | *`enabled`* __boolean__ | Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles. + |  | 
+| *`rpkDebugBundle`* __boolean__ |  |  | 
 |===
 
 
