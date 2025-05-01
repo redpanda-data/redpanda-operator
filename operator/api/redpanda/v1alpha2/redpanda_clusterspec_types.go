@@ -1084,7 +1084,8 @@ type RBAC struct {
 	// Adds custom annotations to the RBAC resources.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled        *bool `json:"enabled,omitempty"`
+	RPKDebugBundle *bool `json:"rpkDebugBundle,omitempty"`
 }
 
 // ServiceAccount configures Service Accounts.
