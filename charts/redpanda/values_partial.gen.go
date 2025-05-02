@@ -236,6 +236,7 @@ type PartialStatefulset struct {
 		Configurator *struct {
 			ExtraVolumeMounts *string        "json:\"extraVolumeMounts,omitempty\""
 			Resources         map[string]any "json:\"resources,omitempty\""
+			AdditionalCLIArgs []string       "json:\"additionalCLIArgs,omitempty\""
 		} "json:\"configurator,omitempty\""
 		FSValidator *struct {
 			Enabled           *bool          "json:\"enabled,omitempty\""
