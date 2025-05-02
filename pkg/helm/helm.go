@@ -304,6 +304,8 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	// fake KubeClient.
 	client := action.NewInstall(c.config)
 
+	client.ChartPathOptions.Version = opts.Version
+
 	// Options taken, more or less, directly from helm. This make the template
 	// command not interact with a Kube APIServer.
 	// https://github.com/helm/helm/blob/51a07e7e78cba05126a84c0d890851d7490d2e20/cmd/helm/template.go#L89-L94
