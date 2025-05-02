@@ -50,6 +50,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -92,6 +93,7 @@ type RedpandaReconciler struct {
 	Scheme             *runtime.Scheme
 	EventRecorder      kuberecorder.EventRecorder
 	ClientFactory      internalclient.ClientFactory
+	CloudSecretsExpander *pkgsecrets.CloudExpander
 	DefaultDisableFlux bool
 	// HelmRepositorySpec.URL points to Redpanda helm repository where the following charts can be located:
 	// * Redpanda
@@ -766,7 +768,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 		}
 	}
 
-	desired, err := conf.Reify(ctx, r.Client, nil, schema)
+	desired, err := conf.Reify(ctx, r.Client, r.CloudSecretsExpander, schema)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

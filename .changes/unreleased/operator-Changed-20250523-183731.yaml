@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Bump helm chart dependency to 5.9.23
+time: 2025-05-23T18:37:31.169572+01:00

@@ -1117,28 +1117,12 @@ github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-
 github.com/redpanda-data/flux-controller-shim/source/shim v0.0.0-20240113100428-5e301ef97b19/go.mod h1:T39OECA7eOlhpHZPBSGg+bpuwtt/G4m03fjBkJ821CM=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e h1:8HB05vSCY+0MwjT2DIVq6gJV5iw7nQNIDfMqcc1NEC8=
 github.com/redpanda-data/helm-controller v0.37.3-0.20240119022335-c90fadbd044e/go.mod h1:jF5kbQy3qT/zufL27DE3lecfYTRWeAzSiVmrbDDQwUw=
-<<<<<<< HEAD
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 h1:aSlJX+HNh9C9NKA0+xp9DfYwfVs1fp4tkFaZS9DUkXM=
 github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
 github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 h1:HIkLbEDKeCALHFytZdHfeWYo/9JMa1yh4QlsIlhlsB8=
 github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:Sof2HY8U+RLesHJInGLoqhUMzN8iN8gUHXALbROsew8=
 github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.2 h1:QwVxjTOezaANv5SzM9RYbpm61rXbKhpE0k5B7k1t3+s=
 github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.2/go.mod h1:Arf7a+9FFUZo//U23B60CRdtbso8Owdly89c2kz6yHc=
-||||||| parent of cf6b5016b (v2: use fixup templating for bootstrap.yaml)
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322 h1:WmLU3VqQQxKa12ejeA0wrGXO5irkm0qiwDwsKzhpoIk=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322 h1:6k08sCRY3vaojlGxnyUfPtJOY/UssPfiX/Dws/nIUOM=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322/go.mod h1:Sof2HY8U+RLesHJInGLoqhUMzN8iN8gUHXALbROsew8=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.22 h1:XZT9/0qxsqeoYa0qSRlgoUL5olDoRTFph4Xg/FTdBMU=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.22/go.mod h1:MO3b//HUBn5YLtQmO9RZjDYkOG6DdVzB4mXG93hB7NU=
-=======
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322 h1:WmLU3VqQQxKa12ejeA0wrGXO5irkm0qiwDwsKzhpoIk=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322 h1:6k08sCRY3vaojlGxnyUfPtJOY/UssPfiX/Dws/nIUOM=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322/go.mod h1:Sof2HY8U+RLesHJInGLoqhUMzN8iN8gUHXALbROsew8=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.23 h1:wR8E3VyR/ByX7wLFEXJD5TESRl7nZG1m0INOCwWiN+s=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.23/go.mod h1:MO3b//HUBn5YLtQmO9RZjDYkOG6DdVzB4mXG93hB7NU=
->>>>>>> cf6b5016b (v2: use fixup templating for bootstrap.yaml)
 github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 h1:IV2Ic66JDKPtCnNU4Kn1naJlzZmhl0izRj17qgTCo20=
 github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0/go.mod h1:usCpPzzzhgtPrRTiUQOzFqGmukce8U0SrzEeX2ONDFE=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=
