@@ -1,73 +1,74 @@
 package clusterconfiguration
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec // this is not encrypting secure info
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
-func newClusterCfg() *clusterCfg {
+func NewClusterCfg(p *PodContext) *clusterCfg {
 	return &clusterCfg{
-		cfg: make(map[string]vectorizedv1alpha1.ClusterConfigValue),
+		PodContext: p,
+		templated:  make(map[string]string),
+		fixups:     []Fixup{},
 	}
 }
 
 type clusterCfg struct {
-	// Required for fixup compi
-	cfg    map[string]vectorizedv1alpha1.ClusterConfigValue
-	fixups []Fixup
-	err    error
+	*PodContext
+	// We compile ClusterConfigValue entries into templates immediately
+	templated map[string]string
+	fixups    []Fixup
+	errs      []error
 
 	// These are created only once, on demand
-	templated map[string]vectorizedv1alpha1.YAMLRepresentation
-	concrete  map[string]any
+	concrete map[string]any
 }
 
 func (c *clusterCfg) Error() error {
-	return c.err
+	return errors.Join(c.errs...)
 }
 
 func (c *clusterCfg) Set(k string, v vectorizedv1alpha1.ClusterConfigValue) {
-	c.cfg[k] = v
+	if v == (vectorizedv1alpha1.ClusterConfigValue{}) {
+		delete(c.templated, k)
+		return
+	}
+	if t := c.compile(k, v); t != nil {
+		c.templated[k] = *t
+	}
 }
 
 // SetAdditionalConfiguration offers legacy support for the additionalConfiguration
 // attribute of the CR.
 func (c *clusterCfg) SetAdditionalConfiguration(k, repr string) {
-	c.cfg[k] = vectorizedv1alpha1.ClusterConfigValue{
+	c.Set(k, vectorizedv1alpha1.ClusterConfigValue{
 		Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(repr)),
-	}
+	})
 }
 
 func AppendValue[T any](c *clusterCfg, k string, v T) error {
 	var values []T
-	entry, found := c.cfg[k]
+	entry, found := c.templated[k]
 	if found {
-		// Ensure this only has a representation thus far, no other references
-		if entry.ConfigMapKeyRef != nil || entry.SecretKeyRef != nil || entry.ExternalSecretRef != nil || entry.ExternalSecretRefSelector != nil { // nolint:staticcheck // ignore deprecation for now
-			err := fmt.Errorf("cannot append value to mixed-type cluster configuration attribute %q", k)
-			c.err = errors.Join(c.err, err)
-			return err
-		}
-		if entry.Repr == nil {
-			err := fmt.Errorf("cannot append value to missing cluster configuration attribute %q", k)
-			c.err = errors.Join(c.err, err)
-			return err
-		}
 		// We use yaml unmarshalling and json marshalling in order to be "liberal in what we accept, and conservative
 		// in what we send" here.
-		if err := yaml.Unmarshal([]byte(*entry.Repr), &values); err != nil {
+		if err := yaml.Unmarshal([]byte(entry), &values); err != nil {
 			err = fmt.Errorf("cannot append value to malformed cluster configuration attribute %q: %w", k, err)
-			c.err = errors.Join(c.err, err)
+			c.errs = append(c.errs, err)
 			return err
 		}
 	}
@@ -75,12 +76,10 @@ func AppendValue[T any](c *clusterCfg, k string, v T) error {
 	buf, err := json.Marshal(values)
 	if err != nil {
 		err = fmt.Errorf("cannot marshal list with append value for cluster configuration attribute %q: %w", k, err)
-		c.err = errors.Join(c.err, err)
+		c.errs = append(c.errs, err)
 		return err
 	}
-	c.cfg[k] = vectorizedv1alpha1.ClusterConfigValue{
-		Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
-	}
+	c.templated[k] = string(buf)
 	return nil
 }
 
@@ -89,12 +88,12 @@ func (c *clusterCfg) SetValue(k string, v any) error {
 	buf, err := json.Marshal(v)
 	if err != nil {
 		err = fmt.Errorf("cannot marshal value for cluster configuration attribute %q: %w", k, err)
-		c.err = errors.Join(c.err, err)
+		c.errs = append(c.errs, err)
 		return err
 	}
-	c.cfg[k] = vectorizedv1alpha1.ClusterConfigValue{
+	c.Set(k, vectorizedv1alpha1.ClusterConfigValue{
 		Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
-	}
+	})
 	return nil
 }
 
@@ -105,81 +104,77 @@ func (c *clusterCfg) AddFixup(field, cel string) {
 	})
 }
 
-func (c *clusterCfg) finalize(parent *CombinedCfg) error {
-	if c.templated != nil {
-		return nil
-	}
-	c.templated = make(map[string]vectorizedv1alpha1.YAMLRepresentation)
+func (c *clusterCfg) compile(k string, v vectorizedv1alpha1.ClusterConfigValue) *string {
 	if c.fixups == nil {
 		c.fixups = []Fixup{}
 	}
 
 	// Ensure any references to k8s contents are env-expandable.
 	// Inject fixups as appropriate.
-	for k, v := range c.cfg {
-		switch {
-		case v.Repr != nil:
-			c.templated[k] = *v.Repr
-		case v.ConfigMapKeyRef != nil:
-			envName := keyToEnvVar(k)
-			if err := parent.EnsureInitEnv(corev1.EnvVar{
-				Name: envName,
-				ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: v.ConfigMapKeyRef,
-				},
-			}); err != nil {
-				return fmt.Errorf("compiling ConfigMapRef %q: %w", k, err)
-			}
-			c.templated[k] = ``
-			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
-			// insertion into a bootstrap template.
-			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
-			// then the user can specify that explicitly.
-			if v.UseRawValue {
-				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
-			} else {
-				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
-			}
-		case v.SecretKeyRef != nil:
-			envName := keyToEnvVar(k)
-			if err := parent.EnsureInitEnv(corev1.EnvVar{
-				Name: envName,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: v.SecretKeyRef,
-				},
-			}); err != nil {
-				return fmt.Errorf("compiling SecretRef %q: %w", k, err)
-			}
-			c.templated[k] = ``
-			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
-			// insertion into a bootstrap template.
-			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
-			// then the user can specify that explicitly.
-			if v.UseRawValue {
-				c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
-			} else {
-				c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
-			}
-		case v.ExternalSecretRef != nil: // nolint:staticcheck // ignore deprecation for now
-			v.ExternalSecretRefSelector = &vectorizedv1alpha1.ExternalSecretKeySelector{
-				Name: *v.ExternalSecretRef, // nolint:staticcheck // ignore deprecation for now
-			}
-			fallthrough
-		case v.ExternalSecretRefSelector != nil:
-			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
-			// insertion into a bootstrap template.
-			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
-			// then the user can specify that explicitly.
-			// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
-			fixup := fmt.Sprintf(`%s("%s")`, CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
-			if !v.UseRawValue {
-				fixup = fmt.Sprintf(`%s(%s)`, CELRepr, fixup)
-			}
-			if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
-				fixup = fmt.Sprintf(`%s(%s)`, CELErrorToWarning, fixup)
-			}
-			c.AddFixup(k, fixup)
+	switch {
+	case v.Repr != nil:
+		return ptr.To(string(*v.Repr))
+	case v.ConfigMapKeyRef != nil:
+		envName := keyToEnvVar(k)
+		if err := c.EnsureInitEnv(corev1.EnvVar{
+			Name: envName,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: v.ConfigMapKeyRef,
+			},
+		}); err != nil {
+			c.errs = append(c.errs, fmt.Errorf("compiling ConfigMapRef %q: %w", k, err))
+			return nil
 		}
+		// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+		// insertion into a bootstrap template.
+		// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+		// then the user can specify that explicitly.
+		if v.UseRawValue {
+			c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+		} else {
+			c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
+		}
+		return ptr.To(``)
+	case v.SecretKeyRef != nil:
+		envName := keyToEnvVar(k)
+		if err := c.EnsureInitEnv(corev1.EnvVar{
+			Name: envName,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: v.SecretKeyRef,
+			},
+		}); err != nil {
+			c.errs = append(c.errs, fmt.Errorf("compiling SecretRef %q: %w", k, err))
+			return nil
+		}
+		// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+		// insertion into a bootstrap template.
+		// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+		// then the user can specify that explicitly.
+		if v.UseRawValue {
+			c.AddFixup(k, fmt.Sprintf(`%s("%s")`, CELEnvString, envName))
+		} else {
+			c.AddFixup(k, fmt.Sprintf(`%s(%s("%s"))`, CELRepr, CELEnvString, envName))
+		}
+		return ptr.To(``)
+	case v.ExternalSecretRef != nil: // nolint:staticcheck // ignore deprecation for now
+		v.ExternalSecretRefSelector = &vectorizedv1alpha1.ExternalSecretKeySelector{
+			Name: *v.ExternalSecretRef, // nolint:staticcheck // ignore deprecation for now
+		}
+		fallthrough
+	case v.ExternalSecretRefSelector != nil:
+		// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+		// insertion into a bootstrap template.
+		// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+		// then the user can specify that explicitly.
+		// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
+		fixup := fmt.Sprintf(`%s("%s")`, CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
+		if !v.UseRawValue {
+			fixup = fmt.Sprintf(`%s(%s)`, CELRepr, fixup)
+		}
+		if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
+			fixup = fmt.Sprintf(`%s(%s)`, CELErrorToWarning, fixup)
+		}
+		c.AddFixup(k, fixup)
 	}
 	return nil
 }
@@ -187,13 +182,10 @@ func (c *clusterCfg) finalize(parent *CombinedCfg) error {
 const (
 	BootstrapTemplateFile = ".bootstrap.json.in"
 	BootstrapFixupFile    = "bootstrap.yaml.fixups"
+	BootstrapTargetFile   = ".bootstrap.yaml"
 )
 
-func (c *clusterCfg) template(parent *CombinedCfg, contents map[string]string) error {
-	if err := c.finalize(parent); err != nil {
-		return err
-	}
-
+func (c *clusterCfg) Template(contents map[string]string) error {
 	// Legacy file; leave it behind for the moment.
 	contents[".bootstrap.yaml"] = ""
 	bootstrapTemplate, err := json.Marshal(c.templated)
@@ -213,26 +205,28 @@ func keyToEnvVar(k string) string {
 	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }
 
-// reify is used to turn a template into a fully-filled structure,
+// Reify is used to turn a template into a fully-filled structure,
 // complete with any secret fixups in place.
-func (c *clusterCfg) reify(engineFactory CelFactory, schema rpadmin.ConfigSchema) (map[string]any, error) {
+func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudExpander *pkgsecrets.CloudExpander, schema rpadmin.ConfigSchema) (map[string]any, error) {
 	if c.concrete != nil {
 		return c.concrete, nil
 	}
 
+	factory, err := c.constructFactory(ctx, reader, cloudExpander)
+	if err != nil {
+		return nil, err
+	}
+
 	// We turn the templated value into a map[string]string to begin with - this is what the
 	// cluster configuration fixups expect.
-	representations := make(map[string]string, len(c.templated))
-	for k, v := range c.templated {
-		representations[k] = string(v)
-	}
+	representations := maps.Clone(c.templated)
 
 	// Now run the cluster configuration fixups
 	t := Template[map[string]string]{
 		Content: representations,
 		Fixups:  c.fixups,
 	}
-	if err := t.Fixup(engineFactory); err != nil {
+	if err := t.Fixup(factory); err != nil {
 		return nil, err
 	}
 
