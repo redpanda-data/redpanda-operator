@@ -32,6 +32,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -164,101 +165,35 @@ func TestRBACBindings(t *testing.T) {
 	}
 }
 
-func TestHelmControllerGenEquivalence(t *testing.T) {
+func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 	testCases := []struct {
-		name   string
-		paths  []string
-		values PartialValues
+		Name           string
+		RedpandaValues redpanda.PartialValues
+		OperatorValues PartialValues
 	}{
 		{
-			name: "defaults",
-			paths: []string{
-				"../config/rbac/itemized/leader-election.yaml",
-				"../config/rbac/itemized/legacypermissions.yaml",
-				"../config/rbac/itemized/rpk-debug-bundle.yaml",
-				"../config/rbac/itemized/v2-manager.yaml",
-			},
-			values: PartialValues{},
+			Name: "defaults",
 		},
-		{
-			name: "additional-controllers",
-			paths: []string{
-				"../config/rbac/itemized/decommission.yaml",
-				"../config/rbac/itemized/leader-election.yaml",
-				"../config/rbac/itemized/legacypermissions.yaml",
-				"../config/rbac/itemized/node-watcher.yaml",
-				"../config/rbac/itemized/old-decommission.yaml",
-				"../config/rbac/itemized/rpk-debug-bundle.yaml",
-				"../config/rbac/itemized/v2-manager.yaml",
-			},
-			values: PartialValues{
-				RBAC: &PartialRBAC{
-					CreateAdditionalControllerCRs: ptr.To(true),
-				},
-			},
-		},
-		{
-			name: "no-legacy-perms",
-			paths: []string{
-				"../config/rbac/itemized/decommission.yaml",
-				"../config/rbac/itemized/leader-election.yaml",
-				"../config/rbac/itemized/node-watcher.yaml",
-				"../config/rbac/itemized/old-decommission.yaml",
-				"../config/rbac/itemized/rpk-debug-bundle.yaml",
-				"../config/rbac/itemized/v2-manager.yaml",
-			},
-			values: PartialValues{
-				RBAC: &PartialRBAC{
-					CreateAdditionalControllerCRs: ptr.To(true),
-					CreateCompatCRs:               ptr.To(false),
-				},
-			},
-		},
-		{
-			name: "cluster-scope",
-			paths: []string{
-				"../config/rbac/itemized/v1-manager.yaml",
-				"../config/rbac/itemized/rpk-debug-bundle.yaml",
-				"../config/rbac/itemized/leader-election.yaml",
-				"../config/rbac/itemized/pvcunbinder.yaml",
-			},
-			values: PartialValues{
-				Scope: ptr.To(Cluster),
-			},
-		},
+		// TODO(chrisseto): Add more test cases once the RBAC conditions in the
+		// redpanda chart have been corrected. They are currently a bit over
+		// aggressive.
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			var controllerGenObjs []kube.Object
-			for _, path := range tc.paths {
-				data, err := os.ReadFile(path)
-				require.NoError(t, err)
-
-				objs, err := kube.DecodeYAML(data, Scheme)
-				require.NoError(t, err)
-
-				controllerGenObjs = append(controllerGenObjs, objs...)
-			}
-
-			chartObjs, err := Chart.Render(nil, helmette.Release{}, tc.values)
+		t.Run(tc.Name, func(t *testing.T) {
+			redpandaObjs, err := redpanda.Chart.Render(nil, helmette.Release{}, tc.RedpandaValues)
 			require.NoError(t, err)
 
-			helmClusterRoleRules, helmRoleRules := ExtractRules(chartObjs)
-			kClusterRoleRules, kRoleRules := ExtractRules(controllerGenObjs)
+			operatorObjs, err := Chart.Render(nil, helmette.Release{}, tc.OperatorValues)
+			require.NoError(t, err)
 
-			assert.JSONEq(t, jsonStr(helmRoleRules), jsonStr(kRoleRules), "difference in Roles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
-			assert.JSONEq(t, jsonStr(helmClusterRoleRules), jsonStr(kClusterRoleRules), "difference in ClusterRoles\n--- Helm / Missing from Kustomize\n+++ Kustomize / Missing from Helm")
+			redpandaClusterRoleRules, redpandaRoleRules := ExtractRules(redpandaObjs)
+			operatorClusterRoleRules, operatorRoleRules := ExtractRules(operatorObjs)
+
+			assertRulesSuperSet(t, operatorRoleRules, redpandaRoleRules)
+			assertRulesSuperSet(t, operatorClusterRoleRules, redpandaClusterRoleRules)
 		})
 	}
-}
-
-func jsonStr(in any) string {
-	out, err := json.Marshal(in)
-	if err != nil {
-		panic(err)
-	}
-	return string(out)
 }
 
 // TestValues asserts that the chart's values.yaml file can be losslessly
@@ -475,4 +410,16 @@ func ExtractRules(objs []kube.Object) (map[string]map[string]struct{}, map[strin
 		}
 	}
 	return CalculateRoleRules(clusterRules), CalculateRoleRules(rules)
+}
+
+func assertRulesSuperSet(t *testing.T, super, inner map[string]map[string]struct{}) {
+	t.Helper()
+
+	for resource, verbs := range inner {
+		for verb := range verbs {
+			if _, ok := super[resource][verb]; !ok {
+				t.Errorf("super missing %q on %q", verb, resource)
+			}
+		}
+	}
 }
