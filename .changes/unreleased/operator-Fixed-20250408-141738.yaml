@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: The operator will restart the redpanda cluster on any change to the cluster configuration
-time: 2025-04-08T14:17:38.134187+02:00
