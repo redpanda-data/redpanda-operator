@@ -733,6 +733,10 @@ Additional labels to be added to statefulset label selector. For example, `my.k8
 
 **Default:** `"latest"`
 
+### [statefulset.initContainers.configurator.additionalCLIArgs](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.configurator.additionalCLIArgs)
+
+**Default:** `[]`
+
 ### [statefulset.initContainers.fsValidator.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.fsValidator.enabled)
 
 **Default:** `false`

@@ -134,6 +134,9 @@ func TestIntegrationChart(t *testing.T) {
 						SetDataDirOwnership *struct {
 							Enabled *bool "json:\"enabled,omitempty\""
 						} "json:\"setDataDirOwnership,omitempty\""
+						Configurator *struct {
+							AdditionalCLIArgs []string "json:\"additionalCLIArgs,omitempty\""
+						} "json:\"configurator,omitempty\""
 					}{
 						SetDataDirOwnership: &struct {
 							Enabled *bool "json:\"enabled,omitempty\""

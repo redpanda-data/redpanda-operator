@@ -767,6 +767,9 @@ type Statefulset struct {
 		SetDataDirOwnership struct {
 			Enabled bool `json:"enabled"`
 		} `json:"setDataDirOwnership"`
+		Configurator struct {
+			AdditionalCLIArgs []string `json:"additionalCLIArgs,omitempty"`
+		} `json:"configurator"`
 	} `json:"initContainers"`
 	InitContainerImage struct {
 		Repository string `json:"repository"`

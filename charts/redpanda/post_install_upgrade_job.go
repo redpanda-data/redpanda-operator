@@ -38,14 +38,14 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	return corev1.Container{
 		Name:  "bootstrap-yaml-envsubst",
 		Image: image,
-		Command: []string{
+		Command: append([]string{
 			"/redpanda-operator",
 			"bootstrap",
 			"--in-dir",
 			"/tmp/base-config",
 			"--out-dir",
 			"/tmp/config",
-		},
+		}, values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
 		Env: env,
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{

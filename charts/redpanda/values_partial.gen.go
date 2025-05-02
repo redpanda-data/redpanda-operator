@@ -194,6 +194,9 @@ type PartialStatefulset struct {
 		SetDataDirOwnership *struct {
 			Enabled *bool "json:\"enabled,omitempty\""
 		} "json:\"setDataDirOwnership,omitempty\""
+		Configurator *struct {
+			AdditionalCLIArgs []string "json:\"additionalCLIArgs,omitempty\""
+		} "json:\"configurator,omitempty\""
 	} "json:\"initContainers,omitempty\""
 	InitContainerImage *struct {
 		Repository *string "json:\"repository,omitempty\""

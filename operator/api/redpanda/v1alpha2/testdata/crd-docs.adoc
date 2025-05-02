@@ -649,6 +649,7 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 | Field | Description | Default | Validation
 | *`extraVolumeMounts`* __string__ |  |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+| *`additionalCLIArgs`* __string array__ |  |  | 
 |===
 
 
