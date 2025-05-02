@@ -1,7 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    [Chart] Added `rbac.createCompatCRs` which intentionally over scopes the operator's RBAC configuration to preserve compatibility with redpanda charts <= v5.10.1 and <=v5.9.22.
-
-      `rbac.createCompatCRs` defaults to `true` to prevent unexpected breakages upon upgrading the operator.
-time: 2025-04-30T13:08:46.767427-04:00

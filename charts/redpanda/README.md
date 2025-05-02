@@ -991,7 +991,7 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 **Default:**
 
 ```
-{"createRBAC":true,"enabled":false,"healthProbeAddress":":8085","image":{"repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":"v2.4.1"},"metricsAddress":":9082","pprofAddress":":9083","resources":{},"run":["all"],"securityContext":{}}
+{"createRBAC":true,"enabled":false,"healthProbeAddress":":8085","image":{"repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":"v2.4.2"},"metricsAddress":":9082","pprofAddress":":9083","resources":{},"run":["all"],"securityContext":{}}
 ```
 
 ### [statefulset.sideCars.controllers.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.resources)
@@ -1014,7 +1014,7 @@ To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limi
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v2.4.1"`
+**Default:** `"v2.4.2"`
 
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
 
