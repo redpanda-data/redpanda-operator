@@ -1,6 +1,7 @@
 package clusterconfiguration
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec // this is not encrypting secure info
 	"encoding/json"
 	"fmt"
@@ -10,15 +11,20 @@ import (
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"gopkg.in/yaml.v3"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
-func newNodeCfg() *nodeCfg {
+func NewNodeCfg(p *PodContext) *nodeCfg {
 	return &nodeCfg{
+		PodContext:   p,
 		RedpandaYaml: config.ProdDefault(),
 	}
 }
 
 type nodeCfg struct {
+	*PodContext
 	*config.RedpandaYaml
 	fixups []Fixup
 
@@ -73,24 +79,12 @@ func (n *nodeCfg) AddFixup(field, cel string) {
 	})
 }
 
-// finalize is used to add any last tweaks to the templated configuration.
-// In the case of node configuration, there isn't any
-func (n *nodeCfg) finalize(cfg *CombinedCfg) error {
-	// There's no additional preparation-work required for the RedpandaYaml templates -
-	// any fixups are supplied by the configurator
-	return nil
-}
-
 const (
 	RedpandaYamlTemplateFile = "redpanda.yaml"
 	RedpandaYamlFixupFile    = "redpanda.yaml.fixups"
 )
 
-func (n *nodeCfg) template(parent *CombinedCfg, contents map[string]string) error {
-	if err := n.finalize(parent); err != nil {
-		return err
-	}
-
+func (n *nodeCfg) Template(contents map[string]string) error {
 	rpConfig, err := yaml.Marshal(n.RedpandaYaml)
 	if err != nil {
 		return fmt.Errorf("could not serialize node config: %w", err)
@@ -107,11 +101,15 @@ func (n *nodeCfg) template(parent *CombinedCfg, contents map[string]string) erro
 	return nil
 }
 
-// reify is used to turn a template into a fully-filled structure,
+// Reify is used to turn a template into a fully-filled structure,
 // complete with any secret fixups in place.
-func (n *nodeCfg) reify(engineFactory CelFactory) (*config.RedpandaYaml, error) {
+func (n *nodeCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudExpander *pkgsecrets.CloudExpander) (*config.RedpandaYaml, error) {
 	if n.concrete != nil {
 		return n.concrete, nil
+	}
+	factory, err := n.constructFactory(ctx, reader, cloudExpander)
+	if err != nil {
+		return nil, err
 	}
 
 	// Clone the template so as to not overwrite it
@@ -123,7 +121,7 @@ func (n *nodeCfg) reify(engineFactory CelFactory) (*config.RedpandaYaml, error) 
 		Content: cfg,
 		Fixups:  n.fixups,
 	}
-	if err := t.Fixup(engineFactory); err != nil {
+	if err := t.Fixup(factory); err != nil {
 		return nil, err
 	}
 	n.concrete = cfg
