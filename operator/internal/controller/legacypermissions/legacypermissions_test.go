@@ -34,10 +34,9 @@ func TestLegacyPermissions(t *testing.T) {
 	require.NoError(t, client.RepoAdd(ctx, "redpanda", "https://charts.redpanda.com"))
 
 	cases := []struct {
-		Name                 string
-		RedpandaChartVersion string
-		RedpandaValues       redpanda.PartialValues
-		OperatorValues       operator.PartialValues
+		Name           string
+		RedpandaValues redpanda.PartialValues
+		OperatorValues operator.PartialValues
 	}{
 		{
 			Name:           "defaults",
@@ -68,7 +67,7 @@ func TestLegacyPermissions(t *testing.T) {
 			t.Run(tc.Name+"-"+version, func(t *testing.T) {
 				out, err := client.Template(ctx, "redpanda/redpanda", helm.TemplateOptions{
 					Name:    "redpanda",
-					Version: tc.RedpandaChartVersion,
+					Version: version,
 					Values:  tc.RedpandaValues,
 				})
 				require.NoError(t, err)

@@ -55,7 +55,6 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -225,7 +224,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:        kube.RestToConfig(k8sManager.GetConfig()),
+		KubeConfig:        k8sManager.GetConfig(),
 		Client:            k8sManager.GetClient(),
 		ClientFactory:     internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
 		Scheme:            k8sManager.GetScheme(),

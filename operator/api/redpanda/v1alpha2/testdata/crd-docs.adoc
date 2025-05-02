@@ -405,7 +405,7 @@ This ties the operator to a specific version of the Go-based Redpanda Helm chart
 ChartRef fields to be ignored. +
 
 
-Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding +
+Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.22` or the corresponding +
 version of the Redpanda chart. +
 
 
@@ -1684,6 +1684,7 @@ RBAC configures role-based access control (RBAC).
 | Field | Description | Default | Validation
 | *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the RBAC resources. + |  | 
 | *`enabled`* __boolean__ | Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles. + |  | 
+| *`rpkDebugBundle`* __boolean__ |  |  | 
 |===
 
 
