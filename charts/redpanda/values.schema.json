@@ -15564,6 +15564,25 @@
         "initContainers": {
           "additionalProperties": false,
           "properties": {
+            "configurator": {
+              "additionalProperties": false,
+              "properties": {
+                "additionalCLIArgs": {
+                  "oneOf": [
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "type": "object"
+            },
             "fsValidator": {
               "additionalProperties": false,
               "properties": {

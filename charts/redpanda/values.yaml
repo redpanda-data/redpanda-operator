@@ -703,6 +703,8 @@ statefulset:
       # -- In environments where root is not allowed, you cannot change the ownership of files and directories.
       # Enable `setDataDirOwnership` when using default minikube cluster configuration.
       enabled: false
+    configurator:
+      additionalCLIArgs: []
   initContainerImage:
     repository: busybox
     tag: latest
