@@ -76,7 +76,8 @@ rbac:
   create: true
   # -- Creates additional RBAC cluster roles that are
   # needed to run additional controllers using `additionalCmdFlags`.
-  createAdditionalControllerCRs: false
+  # WARNING: Disabling this value may prevent the operator from deploying certain configurations of redpanda.
+  createAdditionalControllerCRs: true
   # -- Create ClusterRoles needed for the Redpanda Helm chart's 'rbac.rpkDebugBundle' feature.
   createRPKBundleCRs: true
   # -- Create ClusterRoles needed for compatibility with charts < v5.10.2 or < v5.9.22.
