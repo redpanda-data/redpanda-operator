@@ -28,8 +28,10 @@ type clusterCfg struct {
 	err    error
 
 	// These are created only once, on demand
-	templated map[string]vectorizedv1alpha1.YAMLRepresentation
-	concrete  map[string]any
+	templated        map[string]vectorizedv1alpha1.YAMLRepresentation
+	concrete         map[string]any
+	concreteErrors   []string
+	concreteWarnings []string
 }
 
 func (c *clusterCfg) Error() error {
@@ -232,7 +234,21 @@ func (c *clusterCfg) reify(engineFactory CelFactory, schema rpadmin.ConfigSchema
 		Content: representations,
 		Fixups:  c.fixups,
 	}
-	if err := t.Fixup(engineFactory); err != nil {
+	err := t.Fixup(engineFactory)
+	c.concreteWarnings = make([]string, 0, len(t.Warnings))
+	for _, w := range t.Warnings {
+		c.concreteWarnings = append(c.concreteWarnings, w.Error())
+	}
+	if err != nil {
+		if unw, multiple := err.(interface{ Unwrap() []error }); multiple {
+			errs := unw.Unwrap()
+			c.concreteErrors = make([]string, 0, len(errs))
+			for _, e := range errs {
+				c.concreteErrors = append(c.concreteErrors, e.Error())
+			}
+		} else {
+			c.concreteErrors = []string{err.Error()}
+		}
 		return nil, err
 	}
 
@@ -248,6 +264,10 @@ func (c *clusterCfg) reify(engineFactory CelFactory, schema rpadmin.ConfigSchema
 	}
 	c.concrete = properties
 	return properties, nil
+}
+
+func (c *clusterCfg) ReportableIssues() ([]string, []string) {
+	return c.concreteErrors, c.concreteWarnings
 }
 
 // criticalClusterConfigurationHash is a short-term helper to handle checking of cluster configuration.
