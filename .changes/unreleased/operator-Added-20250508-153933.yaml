@@ -1,0 +1,7 @@
+project: operator
+kind: Added
+body: |-
+    statefulset.initContainers.configurator.additionalCLIArgs is added to the helm values, to enable the init container to construct an external secret evaluator.
+
+    In the v2 operator, this value is defaulted from the operator's settings.
+time: 2025-05-08T15:39:33.388924+01:00

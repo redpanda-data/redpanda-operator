@@ -13724,6 +13724,10 @@ spec:
                         properties:
                           configurator:
                             properties:
+                              additionalCLIArgs:
+                                items:
+                                  type: string
+                                type: array
                               extraVolumeMounts:
                                 type: string
                               resources:
@@ -33987,6 +33991,10 @@ spec:
                         properties:
                           configurator:
                             properties:
+                              additionalCLIArgs:
+                                items:
+                                  type: string
+                                type: array
                               extraVolumeMounts:
                                 type: string
                               resources:

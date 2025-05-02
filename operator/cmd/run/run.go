@@ -608,13 +608,14 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:         mgr.GetConfig(),
-			Client:             mgr.GetClient(),
-			Scheme:             mgr.GetScheme(),
-			EventRecorder:      mgr.GetEventRecorderFor("RedpandaReconciler"),
-			ClientFactory:      internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
-			DefaultDisableFlux: forceDefluxedMode,
-			HelmRepositoryURL:  helmRepositoryURL,
+			KubeConfig:           mgr.GetConfig(),
+			Client:               mgr.GetClient(),
+			Scheme:               mgr.GetScheme(),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			ClientFactory:        internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			CloudSecretsExpander: cloudExpander,
+			DefaultDisableFlux:   forceDefluxedMode,
+			HelmRepositoryURL:    helmRepositoryURL,
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
