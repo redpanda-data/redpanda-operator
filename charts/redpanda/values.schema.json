@@ -14221,6 +14221,19 @@
           "properties": {
             "configurator": {
               "properties": {
+                "additionalCLIArgs": {
+                  "oneOf": [
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "extraVolumeMounts": {
                   "type": "string"
                 },
