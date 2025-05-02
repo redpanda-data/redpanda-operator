@@ -578,11 +578,20 @@ func Run(
 
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:      mgr.GetConfig(),
-			Client:          mgr.GetClient(),
-			EventRecorder:   mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
-			ClientFactory:   factory,
+			KubeConfig:           mgr.GetConfig(),
+			Client:               mgr.GetClient(),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
+			ClientFactory:        factory,
+			CloudSecretsExpander: cloudExpander,
+			CloudSecretsFlags: redpandacontrollers.CloudSecretsFlags{
+				CloudSecretsEnabled:          cloudSecretsEnabled,
+				CloudSecretsPrefix:           cloudSecretsPrefix,
+				CloudSecretsAWSRegion:        cloudSecretsAWSRegion,
+				CloudSecretsAWSRoleARN:       cloudSecretsAWSRoleARN,
+				CloudSecretsGCPProjectID:     cloudSecretsGCPProjectID,
+				CloudSecretsAzureKeyVaultURI: cloudSecretsAzureKeyVaultURI,
+			},
 			OperatorImage: redpandacontrollers.Image{
 				Repository: configuratorBaseImage,
 				Tag:        configuratorTag,
