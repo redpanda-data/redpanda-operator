@@ -10,6 +10,7 @@
 package redpanda
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -18,6 +19,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 func TestListeners_TrustStoreVolumes(t *testing.T) {
@@ -607,15 +610,18 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			envvars := tc.Creds.AsEnvVars(tc.Config)
-			clusterConfig, _ := tc.Config.Translate(&tc.Creds)
+			_, fixups := tc.Config.Translate(&tc.Creds)
 
 			require.EqualValues(t, tc.Expected, envvars)
 
-			// Assert that any envvars have corresponding placeholders at the
+			// Assert that any envvars have corresponding fixups at the
 			// expected keys in the config. See also: [BootstrapFile].
 			for _, envar := range envvars {
 				key := strings.ToLower(envar.Name[len("REDPANDA_"):])
-				require.Equal(t, "$"+envar.Name, clusterConfig[key])
+				require.Contains(t, fixups, clusterconfiguration.Fixup{
+					Field: key,
+					CEL:   fmt.Sprintf(`repr(envString("%s"))`, envar.Name),
+				})
 			}
 		})
 	}

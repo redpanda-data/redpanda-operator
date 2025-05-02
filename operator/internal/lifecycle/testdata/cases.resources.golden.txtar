@@ -203,10 +203,11 @@
         initContainers:
         - command:
           - /redpanda-operator
-          - envsubst
-          - /tmp/base-config/bootstrap.yaml
-          - --output
-          - /tmp/config/.bootstrap.yaml
+          - bootstrap
+          - --in-dir
+          - /tmp/base-config
+          - --out-dir
+          - /tmp/config
           image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta3
           name: bootstrap-yaml-envsubst
           resources:
@@ -248,22 +249,8 @@
   status: {}
 - apiVersion: v1
   data:
-    bootstrap.yaml: |-
-      audit_enabled: false
-      cloud_storage_cache_size: 5368709120
-      cloud_storage_enable_remote_read: true
-      cloud_storage_enable_remote_write: true
-      cloud_storage_enabled: false
-      compacted_log_segment_size: 67108864
-      default_topic_replications: 3
-      enable_rack_awareness: false
-      enable_sasl: false
-      kafka_connection_rate_limit: 1000
-      kafka_enable_authorization: false
-      log_segment_size_max: 268435456
-      log_segment_size_min: 16777216
-      max_compacted_log_segment_size: 536870912
-      storage_min_free_bytes: 1073741824
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
       config_file: /etc/redpanda/redpanda.yaml
       pandaproxy:
