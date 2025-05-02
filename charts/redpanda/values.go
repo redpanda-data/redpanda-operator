@@ -832,6 +832,7 @@ type Statefulset struct {
 		Configurator struct {
 			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 			Resources         map[string]any `json:"resources"`
+			AdditionalCLIArgs []string       `json:"additionalCLIArgs,omitempty"`
 		} `json:"configurator"`
 		FSValidator struct {
 			Enabled           bool           `json:"enabled"`

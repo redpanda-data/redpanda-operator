@@ -764,6 +764,10 @@ DEPRECATED Please use statefulset.podTemplate.annotations. Annotations are used 
 
 **Default:** `"latest"`
 
+### [statefulset.initContainers.configurator.additionalCLIArgs](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.configurator.additionalCLIArgs)
+
+**Default:** `[]`
+
 ### [statefulset.initContainers.configurator.extraVolumeMounts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.configurator.extraVolumeMounts)
 
 **Default:** `""`
