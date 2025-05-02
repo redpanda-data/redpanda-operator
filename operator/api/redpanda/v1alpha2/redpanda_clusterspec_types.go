@@ -1141,6 +1141,7 @@ type FsValidator struct {
 type Configurator struct {
 	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	AdditionalCLIArgs []string                     `json:"additionalCLIArgs,omitempty"`
 }
 
 // SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
