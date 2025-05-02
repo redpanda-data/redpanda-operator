@@ -34,11 +34,11 @@ require (
 	github.com/redpanda-data/common-go/rpadmin v0.1.13-0.20250109154132-12ac78a58f95
 	github.com/redpanda-data/common-go/secrets v0.1.3
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250129114027-a89e202aea86
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.21
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407202713-3127fa24d322
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407202713-3127fa24d322
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.9.22
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250206213012-3bb78bb0f17f
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/scalalang2/golang-fifo v1.0.2
@@ -453,7 +453,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
-	sigs.k8s.io/gateway-api v1.0.0 // indirect
+	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.16.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect
@@ -491,6 +491,8 @@ replace (
 	// k8s.io/apiserver/pkg/cel/library
 	github.com/google/cel-go => github.com/google/cel-go v0.17.8
 	github.com/opencontainers/go-digest => github.com/opencontainers/go-digest v1.0.1-0.20230815154656-802ce17c4f59
+
+	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
 	// NB: Due to old flux version which force us to use old version of sigs.k8s.io/controller-runtime. That's why
 	// otel/sdk is fixed to old 1.28.0 version. The newest version is v1.34.0

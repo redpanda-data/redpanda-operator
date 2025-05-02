@@ -25,9 +25,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/pkg/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 const (
@@ -60,7 +59,7 @@ type ChartRef struct {
 	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
 	// ChartRef fields to be ignored.
 	//
-	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding
+	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.22` or the corresponding
 	// version of the Redpanda chart.
 	//
 	// Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
@@ -298,7 +297,7 @@ func (in *Redpanda) GetValues() (redpandachart.Values, error) {
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 	return redpandachart.Chart.Dot(
-		ptr.To(kube.RestToConfig(restConfig)),
+		restConfig,
 		helmette.Release{
 			Name:      in.GetHelmReleaseName(),
 			Namespace: in.Namespace,
