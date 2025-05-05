@@ -1257,7 +1257,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.0.0
+      helm.sh/chart: console-3.1.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1274,7 +1274,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.0.0
+      helm.sh/chart: console-3.1.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1289,7 +1289,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: af7df62c29ad0792550764de79d227d1b22b80a6438075a4d3a00751f32a4a2e
+          checksum-redpanda-chart/config: 95614d92e730a491d386446dfa4587e418cd315341dca7cd1982535470af7d44
           checksum/config: 3cfe51f0baef37d1fe24fbb98752c49da32c608bf8265bab411251ad63faa913
         creationTimestamp: null
         labels:
@@ -1361,7 +1361,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.0.0
+      helm.sh/chart: console-3.1.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -1378,7 +1378,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.0.0
+      helm.sh/chart: console-3.1.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console

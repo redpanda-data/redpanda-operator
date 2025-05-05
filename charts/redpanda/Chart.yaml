@@ -37,7 +37,7 @@ kubeVersion: ">= 1.25.0-0"
 dependencies:
   - name: console
     condition: console.enabled
-    version: ">=3.0.0-0"
+    version: ">=3.1.0-0"
     repository: file://../console
 
 icon: https://kubernetes-team-bucket-for-artifact-io-logo.s3.us-east-2.amazonaws.com/redpanda-skate.svg
