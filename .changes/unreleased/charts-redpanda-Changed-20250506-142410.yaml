@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Update Console depedency to latest version `v3.1.0`. Please visit Console change-log.
+time: 2025-05-06T14:24:10.593281+02:00
