@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -170,10 +171,15 @@ func (c *CombinedCfg) Templates() (map[string]string, error) {
 
 // AdditionalInitEnvVars will finalise the set of any remaining env variables to add,
 // then return that final list.
+// The list is always sorted by name; this is to ensure that map iteration order when
+// constructing a configuration doesn't trigger a spurious sts restart.
 func (c *CombinedCfg) AdditionalInitEnvVars() ([]corev1.EnvVar, error) {
 	if _, err := c.Templates(); err != nil {
 		return nil, err
 	}
+	sort.Slice(c.initEnvVars, func(i, j int) bool {
+		return c.initEnvVars[i].Name < c.initEnvVars[j].Name
+	})
 	return c.initEnvVars, nil
 }
 
