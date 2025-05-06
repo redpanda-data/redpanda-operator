@@ -1,0 +1,7 @@
+project: operator
+kind: Fixed
+body: |-
+    The operator now unconditionally produces an environment for the initContainer that supports CEL-based patching.
+
+    This is required to ensure that a pre-existing sts can roll over to new configuration correctly.
+time: 2025-05-06T11:14:14.360346+01:00
