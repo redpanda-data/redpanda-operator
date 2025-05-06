@@ -723,37 +723,27 @@ func (r *StatefulSetResource) obj(
 		}
 	}
 
-	okToPatch, err := r.canOverwriteBootstrapForAnyPreexistingResource(ctx, ss)
+	// Bootstrap configuration and node configuration uses templating.
+	// If the operator encounters a STS that does not yet have the additional env
+	// variables it requires defined, then this may cause an STS roll since the
+	// initContainer definition will change to accommodate the new env vars.
+	// This roll should happen only once.
+	ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
+		corev1.EnvVar{
+			Name:  bootstrapTemplateEnvVar,
+			Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
+		},
+		corev1.EnvVar{
+			Name:  bootstrapDestinationEnvVar,
+			Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
+		},
+	)
+	// If the bootstrap template needs additional env vars, inject them here
+	additionalEnv, err := r.cfg.AdditionalInitEnvVars()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
 	}
-	if okToPatch {
-		// Bootstrap configuration is now templated; we don't need to mount the original here
-		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env,
-			corev1.EnvVar{
-				Name:  bootstrapTemplateEnvVar,
-				Value: filepath.Join(configSourceDir, bootstrapTemplateFile),
-			},
-			corev1.EnvVar{
-				Name:  bootstrapDestinationEnvVar,
-				Value: filepath.Join(configDestinationDir, bootstrapConfigFile),
-			},
-		)
-		// If the bootstrap template needs additional env vars, inject them here
-		additionalEnv, err := r.cfg.AdditionalInitEnvVars()
-		if err != nil {
-			return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
-		}
-		ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, additionalEnv...)
-	} else {
-		// TODO: drop this. It'll trigger a restart when the operator moves, but as per discussions that's considered acceptable.
-		// Keep the old .bootstrap.yaml in place.
-		ss.Spec.Template.Spec.Containers[0].VolumeMounts = append(ss.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      "configmap-dir",
-			MountPath: path.Join(configDestinationDir, bootstrapConfigFile),
-			SubPath:   bootstrapConfigFile,
-		})
-	}
+	ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, additionalEnv...)
 
 	setVolumes(ss, r.pandaCluster, r.nodePool.Storage, r.nodePool.CloudCacheStorage)
 
@@ -768,44 +758,6 @@ func (r *StatefulSetResource) obj(
 	}
 
 	return ss, nil
-}
-
-// checkForPreexistingResource will check if the resource already exists.
-// If it does, we may want to avoid patching it to avoid a superfluous restart.
-func (r *StatefulSetResource) canOverwriteBootstrapForAnyPreexistingResource(ctx context.Context, sts *appsv1.StatefulSet) (bool, error) {
-	// Attempt to fetch the resource
-	var oldObj appsv1.StatefulSet
-	err := r.Get(ctx, types.NamespacedName{
-		Namespace: sts.Namespace,
-		Name:      sts.Name,
-	}, &oldObj)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// We should create the object fully patched, since it doesn't exist
-			return true, nil
-		}
-		return false, err
-	}
-	// Check to see if we have the signature env variable in the initContainer;
-	// if so we're good to continue.
-	if len(oldObj.Spec.Template.Spec.InitContainers) > 0 {
-		for _, ev := range oldObj.Spec.Template.Spec.InitContainers[0].Env {
-			if ev.Name == bootstrapTemplateEnvVar {
-				// This already has the hooks; it's fine to patch.
-				return true, nil
-			}
-		}
-		// Check to see if we are changing any images; if so, we can patch.
-		if sts.Spec.Template.Spec.InitContainers[0].Image != r.fullConfiguratorImage() {
-			return true, nil
-		}
-	}
-	if len(sts.Spec.Template.Spec.Containers) > 0 && sts.Spec.Template.Spec.Containers[0].Image != r.pandaCluster.FullImageName() {
-		return true, nil
-	}
-	// Otherwise, we'll leave this untouched for the moment; it's already running,
-	// and so the bootstrap configuration is irrelevant.
-	return false, nil
 }
 
 func (r *StatefulSetResource) getConfiguratorArgs() []string {

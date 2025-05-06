@@ -67,6 +67,12 @@ operator helm chart. The same ports will continue to serve metrics using kubebui
   if correct FullNameOverride is not provided and handled the same way for both
   client creation and render function.
 * The Redpanda license was not set by operator. Now it will be set in the first reconciliation. After initial setup the consequent license re-set will be reconciled after client-go cache resync timeout (default 10h).
+* The operator now unconditionally produces statefulsets that have environment variables available to the initContainer that are used for CEL-based config patching.
+
+Previously it attempted to leave existing sts resources unpatched if it seemed like they had already been bootstrapped. With the adoption of CEL patching for node configuration, that left sts pods unable to restart.
+* The operator now unconditionally produces an environment for the initContainer that supports CEL-based patching.
+
+This is required to ensure that a pre-existing sts can roll over to new configuration correctly.
 
 ## [v25.1.1-beta2](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta2) - 2025-04-24
 ### Added
