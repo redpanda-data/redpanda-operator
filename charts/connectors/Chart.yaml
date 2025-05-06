@@ -32,7 +32,7 @@ appVersion: v1.0.31
 # pre-release. Our "-0" allows pre-releases to be matched.
 kubeVersion: "^1.21.0-0"
 
-icon: https://kubernetes-team-bucket-for-artifact-io-logo.s3.us-east-2.amazonaws.com/redpanda-skate.svg
+icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
 sources:
   - https://github.com/redpanda-data/redpanda-operator/tree/main/charts/connectors
 annotations:
