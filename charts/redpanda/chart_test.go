@@ -60,7 +60,6 @@ func TestChartLock(t *testing.T) {
 	// TODO: Once all charts are split into individual modules, also assert
 	// that the versions reported by runtime/debug.BuildInfo() align with
 	// Chart.lock.
-	t.Skip("skipping until Console 3.1.0 is taged in main")
 	chartLockBytes, err := fs.ReadFile(redpanda.ChartFiles, "Chart.lock")
 	require.NoError(t, err)
 
