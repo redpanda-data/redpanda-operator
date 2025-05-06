@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external
@@ -60,7 +60,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -91,7 +91,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -108,7 +108,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -161,7 +161,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configuration
@@ -435,7 +435,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -476,7 +476,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk
@@ -493,7 +493,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-selfsigned-issuer
@@ -513,7 +513,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-issuer
@@ -534,7 +534,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-selfsigned-issuer
@@ -554,7 +554,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-issuer
@@ -575,7 +575,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-certificate
@@ -605,7 +605,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-certificate
@@ -635,7 +635,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-cert
@@ -676,7 +676,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-cert
@@ -717,7 +717,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-decommission
@@ -768,7 +768,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-pvcunbinder
@@ -796,7 +796,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-rpk-debug-bundle
@@ -831,7 +831,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-sidecar
@@ -861,7 +861,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-decommission
@@ -884,7 +884,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-pvcunbinder
@@ -910,7 +910,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-decommission
@@ -935,7 +935,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-pvcunbinder
@@ -960,7 +960,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-rpk-debug-bundle
@@ -985,7 +985,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: redpanda-sidecar
@@ -1010,7 +1010,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-decommission
@@ -1035,7 +1035,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-pvcunbinder
@@ -1060,7 +1060,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sts-lifecycle
@@ -1156,7 +1156,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-25.1.1-beta2
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configurator
