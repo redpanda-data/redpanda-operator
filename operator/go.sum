@@ -739,8 +739,8 @@ github.com/redpanda-data/common-go/secrets v0.1.3 h1:VRo+OFS4Zgb2UMvwcIuUujdMhAP
 github.com/redpanda-data/common-go/secrets v0.1.3/go.mod h1:WjUU/5saSXwItZx6veFOGbQZUgPQz4MQ65z22y0Ky84=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 h1:+zsE3W1V86k2sjAGWOySIlF0xn5R1aXXQBaIdr80F48=
 github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20/go.mod h1:DC42/3+k5PefSo4IalYbDN3yRZrVFP0b69+gC/NwGd4=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0 h1:S7fmi5TAlj+5GBU8UKhELscg5BpzQBWQynuSDxujPKQ=
-github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.0.0/go.mod h1:AQWidq2TAeQZbwbrGc/1JcdxUK9aAd5B08SVePxRy3I=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 h1:6jvBn+Xr1+62BEFSHoKxayRM/Xt9hp6O5nhnE368ge4=
+github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0/go.mod h1:y/8tR/cBC11uDPvjosxT8DAxnuSlPWtEzVYeCAqa4K4=
 github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta1 h1:SPFF2yD/07BVjYT3IPVtbqUTt9p2g7Lk7m0U7Qdj92A=
 github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta1/go.mod h1:qiUC+un4PwLI+A9kAGJ3I3UPJCXeZItMTeMr0ZF7wd0=
 github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
