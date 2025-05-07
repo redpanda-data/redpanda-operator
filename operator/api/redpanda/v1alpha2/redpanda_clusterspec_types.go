@@ -764,7 +764,7 @@ type Statefulset struct {
 	// Defines readiness probes to determine when a Pod is ready to handle traffic.
 	ReadinessProbe *ReadinessProbe `json:"readinessProbe,omitempty"`
 	// Specifies the number of replicas to determine the desired number of Pods (Redpanda brokers) in the StatefulSet.
-	Replicas *int `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Sets a security context for the Pods to define privilege and access control settings.
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 	// Defines the additional sidecar containers that run alongside the main Redpanda container in the Pod.
