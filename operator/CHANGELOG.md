@@ -74,6 +74,75 @@ Previously it attempted to leave existing sts resources unpatched if it seemed l
 
 This is required to ensure that a pre-existing sts can roll over to new configuration correctly.
 
+## [v25.1.1-beta3](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta3) - 2025-05-07
+### Added
+* Added scheduled sync of ghost broker decommissioner to ensure it's running, even if no watches trigger the reconciler.
+* v1 operator: ExternalSecretRefSelector is now provided for referring to external secrets in `clusterConfiguration`. This has an `optional` flag which is honoured if present - it turns errors into warnings if the secret can't be looked up.
+### Changed
+* [Chart] Moved all template rendering into `entry-point.yaml` to match the redpanda and console charts.
+* `values.schema.json` is now "closed" (`additionalProperties: false`)
+
+  Any unexpected values will result in a validation error,previously they would
+  have been ignored.
+* The redpanda operator's helm chart has been merged into the operator itself.
+
+  Going forward the chart's `version` and `appVersion` will always be equal.
+* `rbac.createRPKBundleCRs` now defaults to `true`.
+* The operator will now populate `.Statefulset.SideCars.Image`, if unspecified, with it's own image.
+
+  The image and tag may be controlled with pre-existing
+  `--configurator-base-image` and `--configurator-tag` flags, respectively.
+
+  The previous behavior was to defer to the default of the redpanda chart which
+  could result in out of sync RBAC requirements or regressions of
+  sidecar/initcontainer behavior, if using an older redpanda chart.
+### Deprecated
+* v1 operator: the `clusterConfiguration` field `ExternalSecretRef` is deprecated in favour of `ExternalSecretRefSelector`. Since this field was extremely new, it will be removed in the very near future.
+### Removed
+* Removed bundled FluxCD controllers, bundled FluxCD CRDs, and support for delegating control to FluxCD.
+
+  Previously reconciled FluxCD resources (`HelmRepository`, `HelmRelease`)
+  will **NOT** be garbage collected upon upgrading. If the operator is
+  coexisting with a FluxCD installation, please take care to manually remove
+  the left over resources.
+
+  `chartRef.useFlux: true` and `chartRef.chartVersion` are no longer
+  supported. The controller will log errors and abort reconcilation until the
+  fields are unset. Ensure that both have been removed from all `Redpanda`
+  resources before upgrading.
+
+  All other `chartRef` fields are deprecated and are no longer referenced.
+
+  `helmRelease`, `helmReleaseReady`, `helmRepository`, `helmRepositoryReady`,
+  and `upgradeFailures` are no longer set on `RedpandaStatus`, similar to their
+  behavior when `useFlux: false` was set.
+* `gcr.io/kubebuilder/kube-rbac-proxy` container is deprecated and has been removed from the Redpanda
+operator helm chart. The same ports will continue to serve metrics using kubebuilder's built in RBAC.
+
+  Any existing prometheus rules don't need to be adjusted.
+
+  For more details see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
+
+* The V1 operator now requires a minimum Redpanda version of 23.2; all feature-gated behaviour that supported older versions is now enabled unconditionally.
+* The [`kube-prometheus-stack`](https://prometheus-community.github.io/helm-charts) subchart has been removed.
+
+  This integration was not being up kept and most use cases will be better served by deploying this chart themselves.
+### Fixed
+* Certificate reloading for webhook and metrics endpoints should now behave correctly.
+* The operator will restart the redpanda cluster on any change to the cluster configuration
+* Expanded the set of rules in both Roles and ClusterRoles to be appropriately in sync with the redpanda helm chart.
+* DeprecatedFullNameOverride was interpreted differently between rendering resources and creating 
+  kafka, admin and schema registry client. Now deprecated fullNameOverride will be used only
+  if correct FullNameOverride is not provided and handled the same way for both
+  client creation and render function.
+* The Redpanda license was not set by operator. Now it will be set in the first reconciliation. After initial setup the consequent license re-set will be reconciled after client-go cache resync timeout (default 10h).
+* The operator now unconditionally produces statefulsets that have environment variables available to the initContainer that are used for CEL-based config patching.
+
+Previously it attempted to leave existing sts resources unpatched if it seemed like they had already been bootstrapped. With the adoption of CEL patching for node configuration, that left sts pods unable to restart.
+* The operator now unconditionally produces an environment for the initContainer that supports CEL-based patching.
+
+This is required to ensure that a pre-existing sts can roll over to new configuration correctly.
+
 ## [v25.1.1-beta2](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta2) - 2025-04-24
 ### Added
 * Added scheduled sync of ghost broker decommissioner to ensure it's running, even if no watches trigger the reconciler.
