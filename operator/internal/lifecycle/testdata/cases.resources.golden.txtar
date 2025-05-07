@@ -187,7 +187,7 @@
           - /tmp/base-config/redpanda.yaml
           - --bootstrap-yaml
           - /tmp/config/.bootstrap.yaml
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta2
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta3
           name: post-install
           resources: {}
           securityContext: {}
@@ -207,7 +207,7 @@
           - /tmp/base-config/bootstrap.yaml
           - --output
           - /tmp/config/.bootstrap.yaml
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta2
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta3
           name: bootstrap-yaml-envsubst
           resources:
             limits:
