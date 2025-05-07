@@ -78,6 +78,11 @@ type gvkKey struct {
 	Key client.ObjectKey
 }
 
+type Image struct {
+	Repository string
+	Tag        string
+}
+
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	// KubeConfig is the [rest.Config] that provides the go helm chart

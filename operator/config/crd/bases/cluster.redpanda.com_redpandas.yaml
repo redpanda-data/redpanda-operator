@@ -19299,6 +19299,23 @@ spec:
                                     type: object
                                 type: object
                             type: object
+                          image:
+                            description: RedpandaImage configures the Redpanda container
+                              image settings in the Helm values.
+                            properties:
+                              pullPolicy:
+                                description: Specifies the strategy used for pulling
+                                  images from the repository. For available values,
+                                  see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy.
+                                type: string
+                              repository:
+                                description: Specifies the image repository to pull
+                                  from.
+                                type: string
+                              tag:
+                                description: Specifies the image tag.
+                                type: string
+                            type: object
                           rpkStatus:
                             description: SideCarObj represents a generic sidecar object.
                               This is a placeholder for now.
@@ -39561,6 +39578,23 @@ spec:
                                         type: string
                                     type: object
                                 type: object
+                            type: object
+                          image:
+                            description: RedpandaImage configures the Redpanda container
+                              image settings in the Helm values.
+                            properties:
+                              pullPolicy:
+                                description: Specifies the strategy used for pulling
+                                  images from the repository. For available values,
+                                  see https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy.
+                                type: string
+                              repository:
+                                description: Specifies the image repository to pull
+                                  from.
+                                type: string
+                              tag:
+                                description: Specifies the image tag.
+                                type: string
                             type: object
                           rpkStatus:
                             description: SideCarObj represents a generic sidecar object.

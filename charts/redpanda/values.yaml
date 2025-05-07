@@ -56,9 +56,6 @@ image:
   # and [all unstable versions](https://hub.docker.com/r/redpandadata/redpanda-unstable/tags).
   # @default -- `Chart.appVersion`.
   tag: ""
-  # -- The imagePullPolicy.
-  # If `image.tag` is 'latest', the default is `Always`.
-  pullPolicy: IfNotPresent
 
 # -- Redpanda Service settings.
 # service:

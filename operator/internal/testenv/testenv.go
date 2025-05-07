@@ -57,11 +57,12 @@ type Env struct {
 }
 
 type Options struct {
-	Name   string
-	Agents int
-	Scheme *runtime.Scheme
-	CRDs   []*apiextensionsv1.CustomResourceDefinition
-	Logger logr.Logger
+	Name         string
+	Agents       int
+	Scheme       *runtime.Scheme
+	CRDs         []*apiextensionsv1.CustomResourceDefinition
+	Logger       logr.Logger
+	ImportImages []string
 }
 
 // New returns a configured [Env] that utilizes an isolated namespace in a
@@ -92,6 +93,10 @@ func New(t *testing.T, options Options) *Env {
 
 	cluster, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
 	require.NoError(t, err)
+
+	for _, image := range options.ImportImages {
+		require.NoError(t, cluster.ImportImage(image))
+	}
 
 	if len(options.CRDs) > 0 {
 		// CRDs are cluster scoped, so there's not a great way for us to safely

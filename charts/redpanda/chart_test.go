@@ -850,7 +850,6 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 }
 
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
-	devTag := redpanda.ImageTag("dev")
 	final := &redpanda.PartialValues{
 		Console: &console.PartialValues{
 			Enabled: ptr.To(false),
@@ -861,18 +860,12 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 				Spec: applycorev1.PodSpec().WithTerminationGracePeriodSeconds(10),
 			},
 			SideCars: &redpanda.PartialSidecars{
-				Image: &struct {
-					Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-					Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-				}{
+				Image: &redpanda.PartialImage{
 					Repository: ptr.To("localhost/redpanda-operator"),
-					Tag:        &devTag,
+					Tag:        ptr.To("dev"),
 				},
 				Controllers: &struct {
-					Image *struct {
-						Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-						Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-					} "json:\"image,omitempty\""
+					Image              *redpanda.PartialImage  "json:\"image,omitempty\""
 					Enabled            *bool                   "json:\"enabled,omitempty\""
 					CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
 					Resources          any                     "json:\"resources,omitempty\""
@@ -882,12 +875,9 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 					PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
 					Run                []string                "json:\"run,omitempty\""
 				}{
-					Image: &struct {
-						Tag        *redpanda.ImageTag "json:\"tag,omitempty\" jsonschema:\"required,default=Chart.appVersion\""
-						Repository *string            "json:\"repository,omitempty\" jsonschema:\"required,default=docker.redpanda.com/redpandadata/redpanda-operator\""
-					}{
+					Image: &redpanda.PartialImage{
 						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        &devTag,
+						Tag:        ptr.To("dev"),
 					},
 				},
 			},
