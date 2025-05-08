@@ -775,7 +775,7 @@ func (r *StatefulSetResource) getConfiguratorArgs() []string {
 			result = append(result, fmt.Sprintf("--cloud-secrets-gcp-project-id=%s", r.configuratorSettings.CloudSecretsGCPProjectID))
 		}
 		if r.configuratorSettings.CloudSecretsAzureKeyVaultURI != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-ur=%s", r.configuratorSettings.CloudSecretsAzureKeyVaultURI))
+			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-uri=%s", r.configuratorSettings.CloudSecretsAzureKeyVaultURI))
 		}
 	}
 	return result
