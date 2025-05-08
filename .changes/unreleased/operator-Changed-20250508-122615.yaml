@@ -1,0 +1,5 @@
+project: operator
+kind: Changed
+body: |
+    Bootstrap expansion in the v2 operator's initContainer now uses CEL-patching for its expansion, much like the v1 operator.
+time: 2025-05-08T12:26:15.344432+01:00

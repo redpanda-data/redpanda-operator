@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
@@ -194,7 +195,7 @@ func run(
 
 	log.Print(c.String())
 
-	p := path.Join(c.configSourceDir, "redpanda.yaml")
+	p := path.Join(c.configSourceDir, clusterconfiguration.RedpandaYamlTemplateFile)
 	cf, err := os.ReadFile(p)
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to read the redpanda configuration file, %q: %w", p, err))
@@ -264,7 +265,7 @@ func run(
 	}
 
 	// Perform optional fixups if required
-	cfg, err = applyFixups(ctx, cfg, path.Join(c.configSourceDir, "redpanda.yaml.fixups"), cloudExpander)
+	cfg, err = applyFixups(ctx, cfg, path.Join(c.configSourceDir, clusterconfiguration.RedpandaYamlFixupFile), cloudExpander)
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to apply fixups to redpanda.yaml: %w", err))
 	}
@@ -280,7 +281,7 @@ func run(
 
 	if c.bootstrapTemplate != "" && c.bootstrapDestination != "" {
 		// Perform the bootstrap templating
-		err := templateBootstrapYaml(ctx, cloudExpander, c.bootstrapTemplate, c.bootstrapDestination, path.Join(c.configSourceDir, "bootstrap.yaml.fixups"))
+		err := TemplateBootstrapYaml(ctx, cloudExpander, c.bootstrapTemplate, c.bootstrapDestination, path.Join(c.configSourceDir, clusterconfiguration.BootstrapFixupFile))
 		if err != nil {
 			log.Fatalf("%s", fmt.Errorf("unable to template the .bootstrap.yaml file: %w", err))
 		}
