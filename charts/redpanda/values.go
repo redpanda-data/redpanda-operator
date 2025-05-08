@@ -27,6 +27,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1beta1"
 )
 
 const (
@@ -69,37 +70,38 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any        `json:"global,omitempty"`
-	NameOverride     string                `json:"nameOverride"`
-	FullnameOverride string                `json:"fullnameOverride"`
-	ClusterDomain    string                `json:"clusterDomain"`
-	CommonLabels     map[string]string     `json:"commonLabels"`
-	Image            Image                 `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service              `json:"service"`
-	LicenseKey       string                `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	AuditLogging     AuditLogging          `json:"auditLogging"`
-	Enterprise       Enterprise            `json:"enterprise"`
-	RackAwareness    RackAwareness         `json:"rackAwareness"`
-	Console          console.PartialValues `json:"console,omitempty"`
-	Auth             Auth                  `json:"auth"`
-	TLS              TLS                   `json:"tls"`
-	External         ExternalConfig        `json:"external"`
-	Logging          Logging               `json:"logging"`
-	Monitoring       Monitoring            `json:"monitoring"`
-	Resources        RedpandaResources     `json:"resources"`
-	Storage          Storage               `json:"storage"`
-	PostInstallJob   PostInstallJob        `json:"post_install_job"`
-	Statefulset      Statefulset           `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg     `json:"serviceAccount"`
-	RBAC             RBAC                  `json:"rbac"`
-	Tuning           Tuning                `json:"tuning"`
-	Listeners        Listeners             `json:"listeners"`
-	Config           Config                `json:"config"`
-	Tests            *struct {
-		Enabled bool `json:"enabled"`
-	} `json:"tests"`
-	Force       bool        `json:"force"`
-	PodTemplate PodTemplate `json:"podTemplate"`
+	Global           map[string]any    `json:"global,omitempty"`
+	NameOverride     string            `json:"nameOverride"`
+	FullnameOverride string            `json:"fullnameOverride"`
+	ClusterDomain    string            `json:"clusterDomain"`
+	CommonLabels     map[string]string `json:"commonLabels"`
+	Image            Image             `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service          `json:"service"`
+	// LicenseKey       string                `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	// AuditLogging     AuditLogging          `json:"auditLogging"`
+	Enterprise v1beta1.Enterprise `json:"enterprise"`
+	// RackAwareness    RackAwareness         `json:"rackAwareness"`
+	// Console          console.PartialValues `json:"console,omitempty"`
+	Auth     Auth           `json:"auth"`
+	TLS      TLS            `json:"tls"`
+	External ExternalConfig `json:"external"`
+	// Logging          Logging               `json:"logging"`
+	// Monitoring       Monitoring            `json:"monitoring"`
+	Resources RedpandaResources `json:"resources"`
+	Storage   Storage           `json:"storage"`
+	// PostInstallJob   PostInstallJob        `json:"post_install_job"`
+	Statefulset    Statefulset       `json:"statefulset"`
+	ServiceAccount ServiceAccountCfg `json:"serviceAccount"`
+	// RBAC should be Chart specific
+	RBAC RBAC `json:"rbac"`
+	// Tuning           Tuning                `json:"tuning"`
+	Listeners Listeners `json:"listeners"`
+	Config    Config    `json:"config"`
+	// Tests            *struct {
+	// 	Enabled bool `json:"enabled"`
+	// } `json:"tests"`
+	// Force       bool        `json:"force"`
+	PodTemplate v1beta1.PodTemplate `json:"podTemplate"`
 }
 
 type Image struct {
@@ -976,12 +978,10 @@ func (l *Listeners) TrustStores(tls *TLS) []*TrustStore {
 }
 
 type Config struct {
-	Cluster              ClusterConfig         `json:"cluster" jsonschema:"required"`
-	Node                 NodeConfig            `json:"node" jsonschema:"required"`
-	RPK                  map[string]any        `json:"rpk"`
-	SchemaRegistryClient *SchemaRegistryClient `json:"schema_registry_client"`
-	PandaProxyClient     *PandaProxyClient     `json:"pandaproxy_client"`
-	Tunable              TunableConfig         `json:"tunable" jsonschema:"required"`
+	Cluster ClusterConfig  `json:"cluster" jsonschema:"required"`
+	Node    NodeConfig     `json:"node" jsonschema:"required"`
+	RPK     map[string]any `json:"rpk"`
+	Tunable TunableConfig  `json:"tunable" jsonschema:"required"`
 }
 
 func (c *Config) CreateRPKConfiguration() map[string]any {
@@ -992,32 +992,6 @@ func (c *Config) CreateRPKConfiguration() map[string]any {
 	}
 
 	return result
-}
-
-type SchemaRegistryClient struct {
-	Retries                     int `json:"retries"`
-	RetryBaseBackoffMS          int `json:"retry_base_backoff_ms"`
-	ProduceBatchRecordCount     int `json:"produce_batch_record_count"`
-	ProduceBatchSizeBytes       int `json:"produce_batch_size_bytes"`
-	ProduceBatchDelayMS         int `json:"produce_batch_delay_ms"`
-	ConsumerRequestTimeoutMS    int `json:"consumer_request_timeout_ms"`
-	ConsumerRequestMaxBytes     int `json:"consumer_request_max_bytes"`
-	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
-	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
-	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
-}
-
-type PandaProxyClient struct {
-	Retries                     int `json:"retries"`
-	RetryBaseBackoffMS          int `json:"retry_base_backoff_ms"`
-	ProduceBatchRecordCount     int `json:"produce_batch_record_count"`
-	ProduceBatchSizeBytes       int `json:"produce_batch_size_bytes"`
-	ProduceBatchDelayMS         int `json:"produce_batch_delay_ms"`
-	ConsumerRequestTimeoutMS    int `json:"consumer_request_timeout_ms"`
-	ConsumerRequestMaxBytes     int `json:"consumer_request_max_bytes"`
-	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
-	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
-	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
 }
 
 type TLSCert struct {
