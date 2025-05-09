@@ -107,6 +107,11 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfigura
 		template[k] = helmette.ToJSON(v)
 	}
 
+	// Fold in any extraClusterConfiguration values
+	extra, fixes, _ := values.Config.ExtraClusterConfiguration.Translate()
+	template = helmette.Merge(template, extra)
+	fixups = append(fixups, fixes...)
+
 	return template, fixups
 }
 

@@ -186,6 +186,63 @@
         "cluster": {
           "type": "object"
         },
+        "extraClusterConfiguration": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "configMapKeyRef": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "optional": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "externalSecretRefSelector": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "optional": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "repr": {
+                "type": "string"
+              },
+              "secretKeyRef": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "optional": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "useRawValue": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
         "node": {
           "type": "object"
         },
