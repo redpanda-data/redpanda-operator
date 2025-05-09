@@ -8,7 +8,7 @@
 // by the Apache License, Version 2.0
 
 // Package bootstrap contains exports a subcommand that configures the
-// .bootstrap.yaml for V2 clusters, using the same teamplate-and-fixup mechanism
+// .bootstrap.yaml for V2 clusters, using the same template-and-fixup mechanism
 // used by the V1 operator.
 package bootstrap
 
