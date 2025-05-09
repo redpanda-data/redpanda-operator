@@ -102,9 +102,14 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []Fixup) {
 	}
 
 	template := map[string]string{}
-	for k, v := range bootstrap {
+	for k, v := range helmette.SortedMap(bootstrap) {
 		template[k] = helmette.ToJSON(v)
 	}
+
+	// Fold in any extraClusterConfiguration values
+	extra, fixes, _ := values.Config.ExtraClusterConfiguration.Translate()
+	template = helmette.Merge(template, extra)
+	fixups = append(fixups, fixes...)
 
 	return template, fixups
 }
