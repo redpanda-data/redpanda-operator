@@ -238,12 +238,13 @@ type PartialListeners struct {
 }
 
 type PartialConfig struct {
-	Cluster              PartialClusterConfig         "json:\"cluster,omitempty\" jsonschema:\"required\""
-	Node                 PartialNodeConfig            "json:\"node,omitempty\" jsonschema:\"required\""
-	RPK                  map[string]any               "json:\"rpk,omitempty\""
-	SchemaRegistryClient *PartialSchemaRegistryClient "json:\"schema_registry_client,omitempty\""
-	PandaProxyClient     *PartialPandaProxyClient     "json:\"pandaproxy_client,omitempty\""
-	Tunable              PartialTunableConfig         "json:\"tunable,omitempty\" jsonschema:\"required\""
+	Cluster                   PartialClusterConfig         "json:\"cluster,omitempty\" jsonschema:\"required\""
+	ExtraClusterConfiguration PartialClusterConfiguration  "json:\"extraClusterConfiguration,omitempty\""
+	Node                      PartialNodeConfig            "json:\"node,omitempty\" jsonschema:\"required\""
+	RPK                       map[string]any               "json:\"rpk,omitempty\""
+	SchemaRegistryClient      *PartialSchemaRegistryClient "json:\"schema_registry_client,omitempty\""
+	PandaProxyClient          *PartialPandaProxyClient     "json:\"pandaproxy_client,omitempty\""
+	Tunable                   PartialTunableConfig         "json:\"tunable,omitempty\" jsonschema:\"required\""
 }
 
 type PartialPodTemplate struct {
@@ -308,6 +309,8 @@ type PartialSidecars struct {
 }
 
 type PartialClusterConfig map[string]any
+
+type PartialClusterConfiguration map[string]PartialClusterConfigValue
 
 type PartialNodeConfig map[string]any
 
@@ -378,6 +381,14 @@ type PartialTieredStorageCredentials struct {
 	SecretKey *PartialSecretRef "json:\"secretKey,omitempty\""
 }
 
+type PartialClusterConfigValue struct {
+	Repr                      *YAMLRepresentation               "json:\"repr,omitempty\""
+	ConfigMapKeyRef           *corev1.ConfigMapKeySelector      "json:\"configMapKeyRef,omitempty\""
+	SecretKeyRef              *corev1.SecretKeySelector         "json:\"secretKeyRef,omitempty\""
+	ExternalSecretRefSelector *PartialExternalSecretKeySelector "json:\"externalSecretRefSelector,omitempty\""
+	UseRawValue               *bool                             "json:\"useRawValue,omitempty\""
+}
+
 type PartialBootstrapUser struct {
 	Name         *string                   "json:\"name,omitempty\""
 	SecretKeyRef *corev1.SecretKeySelector "json:\"secretKeyRef,omitempty\""
@@ -410,6 +421,11 @@ type PartialSecretRef struct {
 	ConfigurationKey *string "json:\"configurationKey,omitempty\""
 	Key              *string "json:\"key,omitempty\""
 	Name             *string "json:\"name,omitempty\""
+}
+
+type PartialExternalSecretKeySelector struct {
+	Name     *string "json:\"name,omitempty\""
+	Optional *bool   "json:\"optional,omitempty\""
 }
 
 type PartialExternalTLS struct {

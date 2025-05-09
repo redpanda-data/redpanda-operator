@@ -29,6 +29,8 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	env := values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(values.Storage.GetTieredStorageConfig())
+	_, _, additionalEnv := values.Config.ExtraClusterConfiguration.Translate()
+	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
 		values.Statefulset.SideCars.Image.Repository,
