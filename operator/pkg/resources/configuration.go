@@ -12,6 +12,8 @@ package resources
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cockroachdb/errors"
@@ -220,7 +222,10 @@ func CreateConfiguration(
 	}
 
 	// Fold in any last overriding attributes. Prefer the new ClusterConfiguration attribute.
-	for k, v := range pandaCluster.Spec.ClusterConfiguration {
+	// These are injected in a stable order to preserve the resulting environment settings
+	// on any initContainer.
+	for _, k := range slices.Sorted(maps.Keys(pandaCluster.Spec.ClusterConfiguration)) {
+		v := pandaCluster.Spec.ClusterConfiguration[k]
 		cfg.Cluster.Set(k, *(v.DeepCopy()))
 	}
 

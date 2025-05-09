@@ -252,10 +252,11 @@
             name: basic-test-configurator
         - command:
           - /redpanda-operator
-          - envsubst
-          - /tmp/base-config/bootstrap.yaml
-          - --output
-          - /tmp/config/.bootstrap.yaml
+          - bootstrap
+          - --in-dir
+          - /tmp/base-config
+          - --out-dir
+          - /tmp/config
           image: docker.redpanda.com/redpandadata/redpanda-operator:v25.1.1-beta3
           name: bootstrap-yaml-envsubst
           resources:

@@ -29,6 +29,8 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	env := values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(values.Storage.GetTieredStorageConfig())
+	_, _, additionalEnv := values.Config.ExtraClusterConfiguration.Translate()
+	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
 		values.Statefulset.SideCars.Image.Repository,
@@ -38,13 +40,14 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	return corev1.Container{
 		Name:  "bootstrap-yaml-envsubst",
 		Image: image,
-		Command: []string{
+		Command: append([]string{
 			"/redpanda-operator",
-			"envsubst",
-			"/tmp/base-config/bootstrap.yaml",
-			"--output",
-			"/tmp/config/.bootstrap.yaml",
-		},
+			"bootstrap",
+			"--in-dir",
+			"/tmp/base-config",
+			"--out-dir",
+			"/tmp/config",
+		}, values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
 		Env: env,
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
