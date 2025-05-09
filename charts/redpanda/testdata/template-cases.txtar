@@ -1537,3 +1537,29 @@ listeners:
               key: ca.crt
         advertisedPorts:
           - 8084
+-- extra-cluster-configuration --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+statefulset:
+  initContainers:
+    configurator:
+      additionalCLIArgs: ["arg1", "arg2"]
+config:
+  extraClusterConfiguration:
+    r:
+      repr: '"hello world"'
+    cm_k8s:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-key
+    sec_k8s:
+      secretKeyRef:
+        name: my-secret
+        key: my-key
+    external:
+      externalSecretRefSelector:
+        name: my-external-secret
+    external_opt:
+      externalSecretRefSelector:
+        name: my-external-secret
+        optional: true

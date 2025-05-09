@@ -77,6 +77,12 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- $_112_extra_fixes__ := (get (fromJson (include "redpanda.ClusterConfiguration.Translate" (dict "a" (list (deepCopy $values.config.extraClusterConfiguration))))) "r") -}}
+{{- $extra := (index $_112_extra_fixes__ 0) -}}
+{{- $fixes := (index $_112_extra_fixes__ 1) -}}
+{{- $_ := (index $_112_extra_fixes__ 2) -}}
+{{- $template = (merge (dict) $template $extra) -}}
+{{- $fixups = (concat (default (list) $fixups) (default (list) $fixes)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list $template $fixups)) | toJson -}}
 {{- break -}}
@@ -153,23 +159,23 @@
 {{- break -}}
 {{- end -}}
 {{- $kafkaTLS := (get (fromJson (include "redpanda.rpkKafkaClientTLSConfiguration" (dict "a" (list $dot)))) "r") -}}
-{{- $_196___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $kafkaTLS "ca_file" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_196___ok_3 0) -}}
-{{- $ok_3 := (index $_196___ok_3 1) -}}
+{{- $_201___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $kafkaTLS "ca_file" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_201___ok_3 0) -}}
+{{- $ok_3 := (index $_201___ok_3 1) -}}
 {{- if $ok_3 -}}
 {{- $_ := (set $kafkaTLS "ca_file" "ca.crt") -}}
 {{- end -}}
 {{- $adminTLS := (get (fromJson (include "redpanda.rpkAdminAPIClientTLSConfiguration" (dict "a" (list $dot)))) "r") -}}
-{{- $_202___ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $adminTLS "ca_file" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_202___ok_4 0) -}}
-{{- $ok_4 := (index $_202___ok_4 1) -}}
+{{- $_207___ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $adminTLS "ca_file" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_207___ok_4 0) -}}
+{{- $ok_4 := (index $_207___ok_4 1) -}}
 {{- if $ok_4 -}}
 {{- $_ := (set $adminTLS "ca_file" "ca.crt") -}}
 {{- end -}}
 {{- $schemaTLS := (get (fromJson (include "redpanda.rpkSchemaRegistryClientTLSConfiguration" (dict "a" (list $dot)))) "r") -}}
-{{- $_208___ok_5 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $schemaTLS "ca_file" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_208___ok_5 0) -}}
-{{- $ok_5 := (index $_208___ok_5 1) -}}
+{{- $_213___ok_5 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $schemaTLS "ca_file" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_213___ok_5 0) -}}
+{{- $ok_5 := (index $_213___ok_5 1) -}}
 {{- if $ok_5 -}}
 {{- $_ := (set $schemaTLS "ca_file" "ca.crt") -}}
 {{- end -}}
@@ -350,10 +356,10 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_8)))) "r") | int) (0 | int)) -}}
 {{- $schemaRegistryTLS = $tls_8 -}}
 {{- end -}}
-{{- $_393_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $values)))) "r") -}}
-{{- $lockMemory := (index $_393_lockMemory_overprovisioned_flags 0) -}}
-{{- $overprovisioned := (index $_393_lockMemory_overprovisioned_flags 1) -}}
-{{- $flags := (index $_393_lockMemory_overprovisioned_flags 2) -}}
+{{- $_398_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $values)))) "r") -}}
+{{- $lockMemory := (index $_398_lockMemory_overprovisioned_flags 0) -}}
+{{- $overprovisioned := (index $_398_lockMemory_overprovisioned_flags 1) -}}
+{{- $flags := (index $_398_lockMemory_overprovisioned_flags 2) -}}
 {{- $result := (dict "additional_start_flags" $flags "enable_memory_locking" $lockMemory "overprovisioned" $overprovisioned "kafka_api" (dict "brokers" $brokerList "tls" $brokerTLS) "admin_api" (dict "addresses" (get (fromJson (include "redpanda.Listeners.AdminList" (dict "a" (list $values.listeners ($values.statefulset.replicas | int) (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $dot)))) "r"))))) "r") "tls" $adminTLS) "schema_registry" (dict "addresses" (get (fromJson (include "redpanda.Listeners.SchemaRegistryList" (dict "a" (list $values.listeners ($values.statefulset.replicas | int) (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $dot)))) "r"))))) "r") "tls" $schemaRegistryTLS)) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Tuning.Translate" (dict "a" (list $values.tuning)))) "r")) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Config.CreateRPKConfiguration" (dict "a" (list $values.config)))) "r")) -}}
@@ -597,17 +603,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_678_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_14 := (index $_678_value_14_ok_15 0) -}}
-{{- $ok_15 := (index $_678_value_14_ok_15 1) -}}
+{{- $_683_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_14 := (index $_683_value_14_ok_15 0) -}}
+{{- $ok_15 := (index $_683_value_14_ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_14) false (hasKey $enabledOptions $value_14)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_685_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_16 := (index $_685_value_16_ok_17 0) -}}
-{{- $ok_17 := (index $_685_value_16_ok_17 1) -}}
+{{- $_690_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_16 := (index $_690_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_690_value_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
