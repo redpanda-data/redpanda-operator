@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"k8s.io/apimachinery/pkg/runtime"
