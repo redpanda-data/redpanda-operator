@@ -77,16 +77,21 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						"tag":        imageTag,
 						"repository": imageRepo,
 					},
-					// This is set to a lower timeout due to the way that our internal
-					// admin client handles retries to brokers that are gone but still
-					// remain in its internal broker list in-memory. Eventually the client
-					// figures out which brokers are still active, but not until a large
-					// chunk of time has past and a connection a no longer existing broker
-					// times out. This makes the timeout substantially faster so that in
-					// tests where brokers might intentionally go away we aren't sitting
-					// for and additional 30+ seconds every reconciliation before the client's
-					// broker list is pruned.
-					"additionalCmdFlags": []string{"--cluster-connection-timeout=500ms"},
+					"additionalCmdFlags": []string{
+						// These are needed for running decommissioning tests.
+						"--additional-controllers=all",
+						"--unbind-pvcs-after=5s",
+						// This is set to a lower timeout due to the way that our internal
+						// admin client handles retries to brokers that are gone but still
+						// remain in its internal broker list in-memory. Eventually the client
+						// figures out which brokers are still active, but not until a large
+						// chunk of time has past and a connection a no longer existing broker
+						// times out. This makes the timeout substantially faster so that in
+						// tests where brokers might intentionally go away we aren't sitting
+						// for and additional 30+ seconds every reconciliation before the client's
+						// broker list is pruned.
+						"--cluster-connection-timeout=500ms",
+					},
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")
