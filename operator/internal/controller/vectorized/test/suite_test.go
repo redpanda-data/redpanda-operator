@@ -21,13 +21,11 @@ import (
 	"testing"
 	"time"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.uber.org/zap/zapcore"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,13 +34,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
-	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -98,21 +96,10 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = scheme.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = vectorizedv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = redpandav1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = certmanagerv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
 	//+kubebuilder:scaffold:scheme
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: controller.UnifiedScheme,
 		Logger: l,
 		Controller: config.Controller{
 			MaxConcurrentReconciles: 2,
@@ -158,6 +145,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		_ string,
 		_ types.AdminTLSConfigProvider,
 		_ redpanda.DialContextFunc,
+		_ time.Duration,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
 		api := testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
@@ -204,11 +192,11 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:    k8sManager.GetConfig(),
-		Client:        k8sManager.GetClient(),
-		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		Scheme:        k8sManager.GetScheme(),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		KubeConfig:      k8sManager.GetConfig(),
+		Client:          k8sManager.GetClient(),
+		ClientFactory:   internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
+		LifecycleClient: lifecycle.NewResourceClient(k8sManager, lifecycle.V2ResourceManagers),
+		EventRecorder:   k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

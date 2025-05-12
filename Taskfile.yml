@@ -178,7 +178,7 @@ tasks:
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:
-    - task: charts:kind-cluster
+    - task: test:pull-images
     - task: build:image
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
@@ -186,12 +186,24 @@ tasks:
       RUN: '{{ default `"^TestAcceptance"` .RUN }}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
-    - kind load docker-image localhost/redpanda-operator:dev
     - task: test:unit
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 35m -tags acceptance'
+
+  test:pull-images:
+    vars:
+      DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
+      DEFAULT_TEST_REDPANDA_VERSION: v25.1.1
+      TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
+      TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
+    cmds:
+      - docker pull quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull docker.redpanda.com/redpandadata/redpanda:{{.TEST_REDPANDA_VERSION}}
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"

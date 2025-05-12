@@ -22,6 +22,7 @@ import (
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
@@ -44,8 +45,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
-		RegisterProvider("k3d", framework.NoopProvider).
+		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
+		WithImportedImages([]string{
+			"localhost/redpanda-operator:dev",
+			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
+			"quay.io/jetstack/cert-manager-controller:v1.14.2",
+			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
+			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
+			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+		}...).
 		WithSchemeFunctions(redpandav1alpha1.AddToScheme, redpandav1alpha2.AddToScheme).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 			Name:            "cert-manager",
@@ -68,6 +77,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						"tag":        imageTag,
 						"repository": imageRepo,
 					},
+					// This is set to a lower timeout due to the way that our internal
+					// admin client handles retries to brokers that are gone but still
+					// remain in its internal broker list in-memory. Eventually the client
+					// figures out which brokers are still active, but not until a large
+					// chunk of time has past and a connection a no longer existing broker
+					// times out. This makes the timeout substantially faster so that in
+					// tests where brokers might intentionally go away we aren't sitting
+					// for and additional 30+ seconds every reconciliation before the client's
+					// broker list is pruned.
+					"additionalCmdFlags": []string{"--cluster-connection-timeout=500ms"},
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")

@@ -60,9 +60,10 @@ var (
 type Cluster struct {
 	Name string
 
-	mu           sync.Mutex
-	restConfig   *kube.RESTConfig
-	agentCounter int32
+	mu            sync.Mutex
+	restConfig    *kube.RESTConfig
+	agentCounter  int32
+	skipManifests bool
 }
 
 type ClusterOpt interface {
@@ -76,9 +77,11 @@ func (c clusterOpt) apply(config *clusterConfig) {
 }
 
 type clusterConfig struct {
-	agents  int
-	timeout time.Duration
-	image   string
+	agents           int
+	timeout          time.Duration
+	image            string
+	skipManifests    bool
+	serverNoSchedule bool
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -97,6 +100,18 @@ func defaultClusterConfig() *clusterConfig {
 func WithAgents(agents int) clusterOpt {
 	return func(config *clusterConfig) {
 		config.agents = agents
+	}
+}
+
+func WithServerNoSchedule() clusterOpt {
+	return func(config *clusterConfig) {
+		config.serverNoSchedule = true
+	}
+}
+
+func SkipManifestInstallation() clusterOpt {
+	return func(config *clusterConfig) {
+		config.skipManifests = true
 	}
 }
 
@@ -174,6 +189,15 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		`--verbose`,
 	}
 
+	if config.serverNoSchedule {
+		args = append(args, []string{
+			// This can be useful for tests in which we don't want to accidentally
+			// kill the API server when we delete arbitrary nodes to simulate
+			// hardware failures
+			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
+		}...)
+	}
+
 	out, err := exec.Command("k3d", args...).CombinedOutput()
 	if err != nil {
 		if bytes.Contains(out, []byte(`because a cluster with that name already exists`)) {
@@ -213,9 +237,10 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	}
 
 	cluster := &Cluster{
-		Name:         name,
-		restConfig:   cfg,
-		agentCounter: int32(config.agents),
+		Name:          name,
+		restConfig:    cfg,
+		agentCounter:  int32(config.agents),
+		skipManifests: config.skipManifests,
 	}
 
 	if err := cluster.waitForJobs(context.Background()); err != nil {
@@ -264,11 +289,15 @@ func (c *Cluster) CreateNode() error {
 
 	c.agentCounter += 1
 
+	return c.CreateNodeWithName(fmt.Sprintf("%s-agent-%d", c.Name, c.agentCounter))
+}
+
+func (c *Cluster) CreateNodeWithName(name string) error {
 	if out, err := exec.Command(
 		"k3d",
 		"node",
 		"create",
-		fmt.Sprintf("k3d-%s-agent-%d", c.Name, c.agentCounter),
+		name,
 		fmt.Sprintf("--cluster=%s", c.Name),
 		"--wait",
 		"--role=agent",
@@ -313,16 +342,18 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		return err
 	}
 
-	// NB: Originally this functionality was achieved via the --volume flag to
-	// k3d but CI runs via a docker in docker setup which makes it unreasonable
-	// to use --volume.
-	// Alternatively, we could make our own k3s images and directly copy in the
-	// manifests in the Dockerfile.
-	for _, obj := range startupManifests() {
-		// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
-		cloned := obj.DeepCopyObject().(client.Object)
-		if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
-			return errors.WithStack(err)
+	if !c.skipManifests {
+		// NB: Originally this functionality was achieved via the --volume flag to
+		// k3d but CI runs via a docker in docker setup which makes it unreasonable
+		// to use --volume.
+		// Alternatively, we could make our own k3s images and directly copy in the
+		// manifests in the Dockerfile.
+		for _, obj := range startupManifests() {
+			// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
+			cloned := obj.DeepCopyObject().(client.Object)
+			if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	}
 

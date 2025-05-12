@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -322,6 +323,8 @@ func TestClientDeleteAll(t *testing.T) {
 			defer cancel()
 
 			for _, resource := range tt.InitialResources() {
+				// we need to set an owner ref since making sure those are present on namespace-scoped resources
+				require.NoError(t, controllerutil.SetOwnerReference(cluster, resource, instances.manager.GetScheme()))
 				require.NoError(t, instances.k8sClient.Create(ctx, resource))
 			}
 
@@ -549,7 +552,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			ctx, cancel := setupContext()
 			defer cancel()
 
-			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster)
+			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version")
 			if tt.nodePoolsRenderError != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, tt.nodePoolsRenderError)
@@ -570,7 +573,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 				require.NoError(t, instances.checkObject(ctx, t, pool))
 			}
 
-			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster)
+			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version")
 			require.NoError(t, err)
 			require.ElementsMatch(t, pools, tracker.ExistingStatefulSets())
 			require.ElementsMatch(t, pools, tracker.DesiredStatefulSets())

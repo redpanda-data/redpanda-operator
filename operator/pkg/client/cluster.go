@@ -31,7 +31,7 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 		return nil, err
 	}
 
-	client, err := redpanda.AdminClient(dot, c.dialer)
+	client, err := redpanda.AdminClient(dot, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (c *Factory) redpandaAdminForV1Cluster(cluster *vectorizedv1alpha1.Cluster)
 	// Assume no TLS. Practically, we don't need to support it in Operator V1.
 	t := &certmanager.ClusterCertificates{}
 
-	a, err := admin.NewNodePoolInternalAdminAPI(ctx, c.Client, cluster, fmt.Sprintf("%s.%s.svc.cluster.local", cluster.Name, cluster.Namespace), t, c.dialer)
+	a, err := admin.NewNodePoolInternalAdminAPI(ctx, c.Client, cluster, fmt.Sprintf("%s.%s.svc.cluster.local", cluster.Name, cluster.Namespace), t, c.dialer, c.adminClientTimeout)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +31,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -823,9 +823,9 @@ var _ = Describe("RedPandaCluster controller", func() {
 			// exists. This verifies that these situations are handled
 			// gracefully and without error
 			r := &vectorized.ClusterReconciler{
-				Client:                   fake.NewClientBuilder().Build(),
+				Client:                   fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build(),
 				Log:                      ctrl.Log,
-				Scheme:                   scheme.Scheme,
+				Scheme:                   controller.UnifiedScheme,
 				AdminAPIClientFactory:    testAdminAPIFactory,
 				DecommissionWaitInterval: 100 * time.Millisecond,
 			}
@@ -842,11 +842,11 @@ var _ = Describe("RedPandaCluster controller", func() {
 		It("Should throw error due to restricted redpanda version", func() {
 			restrictedVersion := "v23.2.2"
 			key, redpandaCluster := getVersionedRedpanda("restricted-redpanda-negative", restrictedVersion)
-			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).Build()
+			fc := fake.NewClientBuilder().WithObjects(redpandaCluster).WithStatusSubresource(redpandaCluster).WithScheme(controller.UnifiedScheme).Build()
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
-				Scheme:                    scheme.Scheme,
+				Scheme:                    controller.UnifiedScheme,
 				AdminAPIClientFactory:     testAdminAPIFactory,
 				DecommissionWaitInterval:  100 * time.Millisecond,
 				RestrictToRedpandaVersion: allowedVersion,
@@ -871,11 +871,11 @@ var _ = Describe("RedPandaCluster controller", func() {
 			for i := range pods {
 				objects = append(objects, pods[i])
 			}
-			fc := fake.NewClientBuilder().WithObjects(objects...).WithStatusSubresource(objects...).Build()
+			fc := fake.NewClientBuilder().WithObjects(objects...).WithScheme(controller.UnifiedScheme).WithStatusSubresource(objects...).Build()
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
-				Scheme:                    scheme.Scheme,
+				Scheme:                    controller.UnifiedScheme,
 				AdminAPIClientFactory:     testAdminAPIFactory,
 				DecommissionWaitInterval:  100 * time.Millisecond,
 				RestrictToRedpandaVersion: allowedVersion,
@@ -893,7 +893,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 
 	DescribeTable("Image pull policy tests table", func(imagePullPolicy string, matcher types2.GomegaMatcher) {
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme: scheme.Scheme,
+			Scheme: controller.UnifiedScheme,
 			Metrics: metricsserver.Options{
 				BindAddress: "0",
 			},
@@ -901,9 +901,9 @@ var _ = Describe("RedPandaCluster controller", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		r := &vectorized.ClusterReconciler{
-			Client:                   fake.NewClientBuilder().Build(),
+			Client:                   fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build(),
 			Log:                      ctrl.Log,
-			Scheme:                   scheme.Scheme,
+			Scheme:                   controller.UnifiedScheme,
 			AdminAPIClientFactory:    testAdminAPIFactory,
 			DecommissionWaitInterval: 100 * time.Millisecond,
 		}

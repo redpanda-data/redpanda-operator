@@ -74,6 +74,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 		_ string,
 		_ types.AdminTLSConfigProvider,
 		_ redpanda.DialContextFunc,
+		_ time.Duration,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
 		if len(pods) == 1 {

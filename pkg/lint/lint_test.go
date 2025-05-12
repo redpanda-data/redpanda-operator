@@ -152,9 +152,16 @@ func TestGoModLint(t *testing.T) {
 	const modPrefix = "github.com/redpanda-data/redpanda-operator/"
 
 	permittedReplaces := map[string][]string{
+		modPrefix + "harpoon": {modPrefix + "pkg"},
+
 		// acceptance is exempt as it's just a runner for the harpoon module.
 		// (harpoon could be moved into acceptance to resolve this).
-		modPrefix + "acceptance": {modPrefix + "harpoon"},
+		modPrefix + "acceptance": {
+			modPrefix + "charts/redpanda/v25",
+			modPrefix + "harpoon",
+			modPrefix + "operator",
+			modPrefix + "pkg",
+		},
 
 		// gotohelm is exempt because it's a very loose wrapper around pkg to
 		// expose ./pkg/gotohelm as CLI. (pkg/gotohelm could be re-homed to
@@ -173,6 +180,7 @@ func TestGoModLint(t *testing.T) {
 
 		modPrefix + "operator": {
 			modPrefix + "charts/redpanda/v25",
+			modPrefix + "pkg",
 		},
 	}
 

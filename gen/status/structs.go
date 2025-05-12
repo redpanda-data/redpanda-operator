@@ -68,7 +68,7 @@ func (s *status) DefaultStatusComment() string {
 	for _, condition := range s.Conditions {
 		defaultStatuses = append(defaultStatuses, condition.defaultStatus())
 	}
-	return fmt.Sprintf("// +kubebuilder:default={conditions: [%s]}", strings.Join(defaultStatuses, ", "))
+	return fmt.Sprintf("// +kubebuilder:default={conditions: {%s}}", strings.Join(defaultStatuses, ", "))
 }
 
 func (s *status) ManualConditions() []*conditionType {
@@ -285,7 +285,7 @@ func (c *conditionType) RollupConditions() []*conditionType {
 }
 
 func (c *conditionType) defaultStatus() string {
-	return fmt.Sprintf(`{type: %q, status: "Unknown", reason: %q, message: %q}`, c.Name, c.defaultReason.Name, c.defaultReason.Message)
+	return fmt.Sprintf(`{type: %q, status: "Unknown", reason: %q, message: %q, lastTransitionTime: "1970-01-01T00:00:00Z"}`, c.Name, c.defaultReason.Name, c.defaultReason.Message)
 }
 
 func (c *conditionType) normalize(status *status) {

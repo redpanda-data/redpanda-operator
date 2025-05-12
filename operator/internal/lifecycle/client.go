@@ -14,11 +14,14 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,6 +50,7 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
 	return &ResourceClient[T, U]{
+		logger:                 mgr.GetLogger().WithName("ResourceClient"),
 		client:                 mgr.GetClient(),
 		scheme:                 mgr.GetScheme(),
 		mapper:                 mgr.GetRESTMapper(),
@@ -61,6 +65,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 // both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
 	client                 client.Client
+	logger                 logr.Logger
 	scheme                 *runtime.Scheme
 	mapper                 meta.RESTMapper
 	ownershipResolver      OwnershipResolver[T, U]
@@ -75,7 +80,7 @@ func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, se
 }
 
 // SetClusterStatus sets the status of the given cluster.
-func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status ClusterStatus) bool {
+func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus) bool {
 	return r.statusUpdater.Update(cluster, status)
 }
 
@@ -131,7 +136,7 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
 // a tracker that can be used for determining necessary operations on the pools.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U) (*PoolTracker, error) {
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 
 	existingPools, err := r.fetchExistingPools(ctx, cluster)
@@ -142,6 +147,19 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 	desired, err := r.nodePoolRenderer.Render(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("constructing desired pools: %w", err)
+	}
+
+	// ensure we have and OnDelete type for our statefulset
+	for _, set := range desired {
+		set.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+	}
+
+	// normalize the config version label
+	if configVersion != "" {
+		for _, set := range desired {
+			set.Labels = setConfigVersionLabels(set.Labels, configVersion)
+			set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
+		}
 	}
 
 	pools.addExisting(existingPools...)
@@ -168,7 +186,14 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
 		if err != nil {
-			return err
+			if !apimeta.IsNoMatchError(err) {
+				return err
+			}
+
+			r.logger.Error(err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
+
+			// we have a no match error, so just drop the watch altogether
+			continue
 		}
 
 		if mapping.Name() == meta.RESTScopeNamespace.Name() {
@@ -240,7 +265,12 @@ func (r *ResourceClient[T, U]) listResources(ctx context.Context, object client.
 	}
 
 	if err := r.client.List(ctx, list, opts...); err != nil {
-		return nil, fmt.Errorf("listing resources: %w", err)
+		// no-op list on unregistered resources, this happens when we
+		// don't actually have a CRD installed for some resource type
+		// we're trying to list
+		if !apimeta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("listing resources: %w", err)
+		}
 	}
 
 	converted := []client.Object{}
@@ -264,9 +294,32 @@ func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner 
 		}
 		filtered := []client.Object{}
 		for i := range matching {
+			object := matching[i]
+
+			// filter out unowned resources
+			mapping, err := getResourceScope(r.mapper, r.scheme, object)
+			if err != nil {
+				if !apimeta.IsNoMatchError(err) {
+					return nil, err
+				}
+
+				// we have an unknown mapping so just ignore this
+				continue
+			}
+
+			// isOwner defaults to true here because we don't set
+			// owner refs on ClusterScoped resources. We only check
+			// for ownership if it's namespace scoped.
+			isOwner := true
+			if mapping.Name() == apimeta.RESTScopeNameNamespace {
+				isOwner = slices.ContainsFunc(object.GetOwnerReferences(), func(ref metav1.OwnerReference) bool {
+					return ref.UID == owner.GetUID()
+				})
+			}
+
 			// special case the node pools
-			if includeNodePools || !r.nodePoolRenderer.IsNodePool(matching[i]) {
-				filtered = append(filtered, matching[i])
+			if (includeNodePools || !r.nodePoolRenderer.IsNodePool(object)) && isOwner {
+				filtered = append(filtered, object)
 			}
 		}
 		resources = append(resources, filtered...)
@@ -289,10 +342,24 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 	if err != nil {
 		return err
 	}
+
+	unknownMapping := false
+
 	mapping, err := getResourceScope(r.mapper, r.scheme, object)
 	if err != nil {
-		return err
+		if !apimeta.IsNoMatchError(err) {
+			return err
+		}
+
+		// we have an unknown mapping so err on the side of not setting
+		// an owner reference
+		unknownMapping = true
 	}
+
+	// nil out the managed fields since with some resources that actually do
+	// a fetch (i.e. secrets that are created only once), we get an error trying
+	// to patch a second time
+	object.SetManagedFields(nil)
 
 	// This needs to be set explicitly in order for SSA to function properly.
 	// If an initialized pointer to a concrete CR has not specified its GVK
@@ -316,7 +383,7 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 
 	object.SetLabels(labels)
 
-	if mapping.Name() == meta.RESTScopeNamespace.Name() {
+	if !unknownMapping && mapping.Name() == meta.RESTScopeNamespace.Name() {
 		object.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 	}
 
@@ -384,4 +451,15 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 
 	return existing, nil
+}
+
+func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {
+	if labels == nil {
+		return map[string]string{
+			configVersionLabel: configVersion,
+		}
+	}
+
+	labels[configVersionLabel] = configVersion
+	return labels
 }
