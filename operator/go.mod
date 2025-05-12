@@ -344,10 +344,6 @@ replace (
 	// reintroduce go.work
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 
-	// Roughly equivalent to redpanda chart version v5.9.19. pkg, connectors, and console are inherited from redpanda.
-	// TODO it may behoove us to split gotohelm into it's own module out of pkg so the operator doesn't have to follow redpanda.
-	// github.com/redpanda-data/redpanda-operator/charts/redpanda => ../charts/redpanda
-
 	// NB: Due to our older version of sigs.k8s.io/controller-runtime. We have
 	// to pin to otel/sdk and cel-go to 1.28.0 and 0.17.8, respectively.
 	// Otherwise we get build errors due to otel and k8s depending on different

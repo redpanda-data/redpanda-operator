@@ -193,12 +193,17 @@ tasks:
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 35m -tags acceptance'
 
   test:pull-images:
+    vars:
+      DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
+      DEFAULT_TEST_REDPANDA_VERSION: v25.1.1
+      TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
+      TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
     cmds:
-      - docker pull quay.io/jetstack/cert-manager-controller:v1.14.2
-      - docker pull quay.io/jetstack/cert-manager-cainjector:v1.14.2
-      - docker pull quay.io/jetstack/cert-manager-startupapicheck:v1.14.2
-      - docker pull quay.io/jetstack/cert-manager-webhook:v1.14.2
-      - docker pull docker.redpanda.com/redpandadata/redpanda:v25.1.1
+      - docker pull quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
+      - docker pull docker.redpanda.com/redpandadata/redpanda:{{.TEST_REDPANDA_VERSION}}
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
