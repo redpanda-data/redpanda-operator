@@ -56,7 +56,7 @@ const (
 	// reqeueueTimeout is the time that the reconciler will
 	// wait before requeueing a cluster to be reconciled when
 	// we've explicitly aborted a reconciliation loop early
-	// due to an in-progress oepration
+	// due to an in-progress operation
 	requeueTimeout = 10 * time.Second
 )
 

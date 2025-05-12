@@ -15,6 +15,7 @@ import (
 	"os"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func NewK3D(nodes int) *K3DProvider {
@@ -50,7 +51,7 @@ func (p *K3DProvider) Setup(_ context.Context) error {
 		return errors.Join(err, cluster.Cleanup())
 	}
 
-	if err := os.WriteFile(configPath.Name(), cluster.RawConfig(), 0o644); err != nil {
+	if err := kube.WriteToFile(kube.RestToConfig(cluster.RESTConfig()), configPath.Name()); err != nil {
 		return errors.Join(err, cluster.Cleanup(), os.RemoveAll(configPath.Name()))
 	}
 

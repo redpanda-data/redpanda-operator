@@ -62,7 +62,6 @@ type Cluster struct {
 
 	mu            sync.Mutex
 	restConfig    *kube.RESTConfig
-	rawConfig     []byte
 	agentCounter  int32
 	skipManifests bool
 }
@@ -240,7 +239,6 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	cluster := &Cluster{
 		Name:          name,
 		restConfig:    cfg,
-		rawConfig:     kubeconfigYAML,
 		agentCounter:  int32(config.agents),
 		skipManifests: config.skipManifests,
 	}
@@ -254,10 +252,6 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 
 func (c *Cluster) RESTConfig() *kube.RESTConfig {
 	return c.restConfig
-}
-
-func (c *Cluster) RawConfig() []byte {
-	return c.rawConfig
 }
 
 func (c *Cluster) ImportImage(image string) error {
