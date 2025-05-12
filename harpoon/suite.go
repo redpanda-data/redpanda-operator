@@ -12,7 +12,6 @@ package framework
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -20,6 +19,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -408,7 +409,7 @@ func pullImages(images []string) error {
 		if !strings.HasPrefix(image, "localhost") {
 			//nolint:gosec // this code is for tests
 			if output, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
-				return errors.New(string(output))
+				return errors.Wrapf(err, "output: %s", output)
 			}
 		}
 	}

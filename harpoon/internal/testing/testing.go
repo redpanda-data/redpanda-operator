@@ -241,6 +241,7 @@ func (t *TestingT) ApplyFixture(ctx context.Context, fileOrDirectory string) {
 	t.ApplyManifest(ctx, filepath.Join("fixtures", fileOrDirectory))
 }
 
+// Delete a node from the Kube API server
 func (t *TestingT) DeleteNode(ctx context.Context, name string) {
 	t.Logf("Deleting node %q in Kubernetes", name)
 	require.NoError(t, t.Delete(ctx, &corev1.Node{
@@ -250,6 +251,7 @@ func (t *TestingT) DeleteNode(ctx context.Context, name string) {
 	}))
 }
 
+// Shutdown a node until the end of a test and then bring it back
 func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
 	provider := t.Provider(ctx)
 
@@ -262,6 +264,8 @@ func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
 	})
 }
 
+// Add a new node to the cluster temporarily until the end of the test
+// when it will be deleted
 func (t *TestingT) AddNode(ctx context.Context, name string) {
 	provider := t.Provider(ctx)
 

@@ -290,14 +290,15 @@ func (c *Cluster) DeleteNode(name string) error {
 }
 
 func (c *Cluster) CreateNode() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.agentCounter += 1
+
 	return c.CreateNodeWithName(fmt.Sprintf("%s-agent-%d", c.Name, c.agentCounter))
 }
 
 func (c *Cluster) CreateNodeWithName(name string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if out, err := exec.Command(
 		"k3d",
 		"node",

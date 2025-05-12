@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"slices"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,6 +50,7 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
 	return &ResourceClient[T, U]{
+		logger:                 mgr.GetLogger().WithName("ResourceClient"),
 		client:                 mgr.GetClient(),
 		scheme:                 mgr.GetScheme(),
 		mapper:                 mgr.GetRESTMapper(),
@@ -63,6 +65,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 // both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
 	client                 client.Client
+	logger                 logr.Logger
 	scheme                 *runtime.Scheme
 	mapper                 meta.RESTMapper
 	ownershipResolver      OwnershipResolver[T, U]
@@ -186,6 +189,9 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 			if !apimeta.IsNoMatchError(err) {
 				return err
 			}
+
+			r.logger.Error(err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
+
 			// we have a no match error, so just drop the watch altogether
 			continue
 		}

@@ -178,6 +178,7 @@ tasks:
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:
+    - task: test:pull-images
     - task: build:image
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
@@ -198,10 +199,6 @@ tasks:
       - docker pull quay.io/jetstack/cert-manager-startupapicheck:v1.14.2
       - docker pull quay.io/jetstack/cert-manager-webhook:v1.14.2
       - docker pull docker.redpanda.com/redpandadata/redpanda:v25.1.1
-
-  test:push-images:
-    cmds:
-      - kind load docker-image localhost/redpanda-operator:dev docker.redpanda.com/redpandadata/redpanda:v25.1.1 quay.io/jetstack/cert-manager-controller:v1.14.2 quay.io/jetstack/cert-manager-cainjector:v1.14.2 quay.io/jetstack/cert-manager-startupapicheck:v1.14.2 quay.io/jetstack/cert-manager-webhook:v1.14.2
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"

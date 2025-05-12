@@ -318,7 +318,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 		logger.V(TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
-			return nil, false, fmt.Errorf("creating statefulset: %w", err)
+			return nil, false, errors.Wrap(err, "creating statefulset")
 		}
 	}
 
@@ -327,7 +327,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 		logger.V(TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
-			return nil, false, fmt.Errorf("scaling up statefulset: %w", err)
+			return nil, false, errors.Wrap(err, "scaling up statefulset")
 		}
 	}
 
@@ -336,13 +336,13 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 	for _, set := range pools.RequiresUpdate() {
 		logger.V(TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
-			return nil, false, fmt.Errorf("updating statefulset: %w", err)
+			return nil, false, errors.Wrap(err, "updating statefulset")
 		}
 	}
 
 	admin, health, err := r.fetchClusterHealth(ctx, cluster)
 	if err != nil {
-		return nil, false, fmt.Errorf("fetching cluster health: %w", err)
+		return nil, false, errors.Wrap(err, "fetching cluster health")
 	}
 
 	brokerMap := map[string]int{}
@@ -350,7 +350,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 		broker, err := admin.Broker(ctx, brokerID)
 		if err != nil {
 			admin.Close()
-			return nil, false, fmt.Errorf("fetching broker: %w", err)
+			return nil, false, errors.Wrap(err, "fetching broker")
 		}
 
 		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
@@ -371,7 +371,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 		logger.V(TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.Client.Delete(ctx, set); err != nil {
 			admin.Close()
-			return nil, false, fmt.Errorf("deleting statefulset: %w", err)
+			return nil, false, errors.Wrap(err, "deleting statefulset")
 		}
 	}
 
@@ -403,7 +403,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 
 			if err := r.Client.Delete(ctx, pod); err != nil {
 				admin.Close()
-				return nil, false, fmt.Errorf("deleting pod: %w", err)
+				return nil, false, errors.Wrap(err, "deleting pod")
 			}
 		}
 
@@ -718,7 +718,7 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 
 	// now patch the statefulset to remove the pod
 	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
-		return false, fmt.Errorf("scaling down statefulset: %w", err)
+		return false, errors.Wrap(err, "scaling down statefulset")
 	}
 	// we only do a statefulset at a time, waiting for them to
 	// become stable first
@@ -736,12 +736,12 @@ func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpad
 			logger.V(TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
-				return false, fmt.Errorf("decommissioning broker: %w", err)
+				return false, errors.Wrap(err, "decommissioning broker")
 			}
 
 			return true, nil
 		} else {
-			return false, fmt.Errorf("fetching decommission status: %w", err)
+			return false, errors.Wrap(err, "fetching decommission status")
 		}
 	}
 	if !decommissionStatus.Finished {
