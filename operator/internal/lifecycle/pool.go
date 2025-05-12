@@ -97,8 +97,8 @@ func (p *PoolTracker) PoolStatuses() []PoolStatus {
 			DesiredReplicas:   desiredReplicas,
 			ReadyReplicas:     pool.set.Status.ReadyReplicas,
 			RunningReplicas:   pool.set.Status.AvailableReplicas,
-			UpToDateReplicas:  pool.set.Status.CurrentReplicas,
-			OutOfDateReplicas: pool.set.Status.Replicas - pool.set.Status.CurrentReplicas,
+			UpToDateReplicas:  pool.set.Status.UpdatedReplicas,
+			OutOfDateReplicas: pool.set.Status.Replicas - pool.set.Status.UpdatedReplicas,
 			CondemnedReplicas: condemnedReplicas,
 		})
 	}
