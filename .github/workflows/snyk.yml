@@ -1,0 +1,24 @@
+name: snyk scanning
+
+on:
+  push:
+    branches: ["main", "release/*"]
+
+  workflow_dispatch:
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install snyk
+        run: npm install -g snyk
+
+      - name: install deps and scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk monitor --all-projects --project-name=${GITHUB_REF#refs/heads/} --remote-repo=redpanda-data/operator --target-reference=redpanda-data/operator .
+        shell: bash
