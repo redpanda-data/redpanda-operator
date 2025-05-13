@@ -20,7 +20,6 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/envsubst"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
@@ -55,7 +54,6 @@ func init() {
 	rootCmd.AddCommand(
 		configurator.Command(),
 		bootstrap.Command(),
-		envsubst.Command(),
 		run.Command(),
 		syncclusterconfig.Command(),
 		version.Command(),
