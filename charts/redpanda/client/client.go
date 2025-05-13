@@ -208,6 +208,20 @@ func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*k
 }
 
 func authFromDot(dot *helmette.Dot) (username string, password string, mechanism string, err error) {
+	// shim in the panic handler from helmette since the call to
+	// redpanda.SecretBootstrapUser can fail if something about the
+	// client connection dies unexpectedly, and, when it fails, due
+	// to the way gotohelm abuses panics, this code will panic
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "fetching bootstrap user failed")
+		default:
+			err = errors.Newf("fetching bootstrap user failed: %#v", r)
+		}
+	}()
+
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
 
 	bootstrapUser := redpanda.SecretBootstrapUser(dot)
