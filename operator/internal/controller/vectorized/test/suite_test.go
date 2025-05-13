@@ -192,11 +192,16 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	// Redpanda Reconciler
 	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:      k8sManager.GetConfig(),
-		Client:          k8sManager.GetClient(),
-		ClientFactory:   internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		LifecycleClient: lifecycle.NewResourceClient(k8sManager, lifecycle.V2ResourceManagers),
-		EventRecorder:   k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		KubeConfig:    k8sManager.GetConfig(),
+		Client:        k8sManager.GetClient(),
+		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
+		LifecycleClient: lifecycle.NewResourceClient(k8sManager, lifecycle.V2ResourceManagers(lifecycle.Image{
+			Repository: "localhost/redpanda-operator",
+			Tag:        "dev",
+		}, lifecycle.CloudSecretsFlags{
+			CloudSecretsEnabled: false,
+		})),
+		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

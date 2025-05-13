@@ -50,7 +50,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
-			"localhost/redpanda-operator:dev",
+			imageRepo + ":" + imageTag,
 			"docker.redpanda.com/redpandadata/redpanda-operator:v2.3.9-24.3.11",
 			"docker.redpanda.com/redpandadata/redpanda:v24.3.11",
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
