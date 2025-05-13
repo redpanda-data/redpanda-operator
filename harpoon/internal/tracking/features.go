@@ -51,12 +51,12 @@ type FeatureHookTracker struct {
 	registry    *internaltesting.TagRegistry
 	opts        *internaltesting.TestingOptions
 
-	onFeatures []func(context.Context, *internaltesting.TestingT)
+	onFeatures []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	features   map[string]*feature
 	mutex      sync.RWMutex
 }
 
-func NewFeatureHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onFeatures, onScenarios []func(context.Context, *internaltesting.TestingT)) *FeatureHookTracker {
+func NewFeatureHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onFeatures, onScenarios []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)) *FeatureHookTracker {
 	return &FeatureHookTracker{
 		scenarios:  newScenarioHookTracker(registry, opts, onScenarios),
 		onFeatures: onFeatures,
@@ -84,13 +84,15 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 		features.Cleaner = cleaner
 		features.t = t
 
+		tags := f.registry.Handlers(features.tags.flatten())
+
 		// we process the configured hooks first and then tags
 		for _, fn := range f.onFeatures {
 			t.SetMessagePrefix("Feature Hook Failure: ")
-			internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn)(ctx, t)
+			internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn)(ctx, t, internaltesting.ParsedTags(tags))
 		}
 
-		for _, fn := range f.registry.Handlers(features.tags.flatten()) {
+		for _, fn := range tags {
 			// iteratively inject tag handler context
 			t.SetMessagePrefix("Feature Tag Failure: ")
 			ctx = internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn.Handler)(ctx, t, fn.Arguments)

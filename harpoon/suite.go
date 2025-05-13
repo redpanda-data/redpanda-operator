@@ -54,8 +54,8 @@ type SuiteBuilder struct {
 	injectors             []func(context.Context) context.Context
 	crdDirectories        []string
 	helmCharts            []helmChart
-	onFeatures            []func(context.Context, *internaltesting.TestingT)
-	onScenarios           []func(context.Context, *internaltesting.TestingT)
+	onFeatures            []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
+	onScenarios           []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	exitOnCleanupFailures bool
 }
 
@@ -138,18 +138,32 @@ func (b *SuiteBuilder) WithImportedImages(images ...string) *SuiteBuilder {
 	return b
 }
 
-func (b *SuiteBuilder) OnFeature(fn func(context.Context, TestingT)) *SuiteBuilder {
-	b.onFeatures = append(b.onFeatures, func(ctx context.Context, tt *internaltesting.TestingT) {
+func (b *SuiteBuilder) OnFeature(fn func(context.Context, TestingT, ...ParsedTag)) *SuiteBuilder {
+	b.onFeatures = append(b.onFeatures, func(ctx context.Context, tt *internaltesting.TestingT, tags []internaltesting.ParsedTag) {
+		parsed := []ParsedTag{}
+		for _, tag := range tags {
+			parsed = append(parsed, ParsedTag{
+				Name:      tag.Name,
+				Arguments: tag.Arguments,
+			})
+		}
 		// wrap since we move into the internal implementation of the interface
-		fn(ctx, tt)
+		fn(ctx, tt, parsed...)
 	})
 	return b
 }
 
-func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT)) *SuiteBuilder {
-	b.onScenarios = append(b.onScenarios, func(ctx context.Context, tt *internaltesting.TestingT) {
+func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT, ...ParsedTag)) *SuiteBuilder {
+	b.onScenarios = append(b.onScenarios, func(ctx context.Context, tt *internaltesting.TestingT, tags []internaltesting.ParsedTag) {
+		parsed := []ParsedTag{}
+		for _, tag := range tags {
+			parsed = append(parsed, ParsedTag{
+				Name:      tag.Name,
+				Arguments: tag.Arguments,
+			})
+		}
 		// wrap since we move into the internal implementation of the interface
-		fn(ctx, tt)
+		fn(ctx, tt, parsed...)
 	})
 	return b
 }
