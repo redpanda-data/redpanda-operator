@@ -162,6 +162,7 @@ func nodeConfigurationHash(redpandaYaml *config.RedpandaYaml) (string, error) {
 // trigger a rolling restart across the nodes.
 func removeFieldsThatShouldNotTriggerRestart(redpandaYaml *config.RedpandaYaml) {
 	redpandaYaml.Redpanda.SeedServers = []config.SeedServer{}
+	redpandaYaml.Rpk = config.RpkNodeConfig{}
 }
 
 const redpandaPropertyPrefix = "redpanda."

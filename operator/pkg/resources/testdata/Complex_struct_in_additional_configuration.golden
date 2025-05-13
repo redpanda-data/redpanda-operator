@@ -25,6 +25,30 @@ redpanda:
         address: 0.0.0.0
         port: 33145
 rpk:
+    kafka_api:
+        brokers:
+            - cluster-0.cluster.local
+            - cluster-first-0.cluster.local
+        tls:
+            key_file: /etc/tls/certs/ca/tls.key
+            cert_file: /etc/tls/certs/ca/tls.crt
+            ca_file: /etc/tls/certs/ca.crt
+    admin_api:
+        addresses:
+            - cluster-0.cluster.local
+            - cluster-first-0.cluster.local
+        tls:
+            key_file: /etc/tls/certs/ca/tls.key
+            cert_file: /etc/tls/certs/ca/tls.crt
+            ca_file: /etc/tls/certs/ca.crt
+    schema_registry:
+        addresses:
+            - cluster-0.cluster.local
+            - cluster-first-0.cluster.local
+        tls:
+            key_file: /etc/tls/certs/ca/tls.key
+            cert_file: /etc/tls/certs/ca/tls.crt
+            ca_file: /etc/tls/certs/ca.crt
     tune_network: true
     tune_disk_scheduler: true
     tune_disk_nomerges: true

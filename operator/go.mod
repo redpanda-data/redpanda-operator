@@ -47,7 +47,6 @@ require (
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 	golang.org/x/sync v0.14.0
 	golang.org/x/tools v0.33.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -294,6 +293,7 @@ require (
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect

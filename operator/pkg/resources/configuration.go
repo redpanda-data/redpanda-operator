@@ -48,6 +48,31 @@ func CreateConfiguration(
 
 	mountPoints := resourcetypes.GetTLSMountPoints()
 
+	addresses, err := generateSeedServer(ctx, pandaCluster, serviceFQDN, client)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	cfg.Node.Rpk.KafkaAPI.Brokers = addresses
+	if tls := tlsConfigProvider.KafkaClientBrokerTLS(mountPoints); tls != nil {
+		cfg.Node.Rpk.KafkaAPI.TLS = &config.TLS{
+			KeyFile:            tls.KeyFile,
+			CertFile:           tls.CertFile,
+			TruststoreFile:     tls.TruststoreFile,
+			InsecureSkipVerify: false,
+		}
+	}
+
+	cfg.Node.Rpk.AdminAPI.Addresses = addresses
+	if tls := tlsConfigProvider.AdminAPIClientTLS(mountPoints); tls != nil {
+		cfg.Node.Rpk.AdminAPI.TLS = tls
+	}
+
+	cfg.Node.Rpk.SR.Addresses = addresses
+	if tls := tlsConfigProvider.SchemaRegistryClientTLS(mountPoints); tls != nil {
+		cfg.Node.Rpk.SR.TLS = tls
+	}
+
 	c := pandaCluster.Spec.Configuration
 	cr := &cfg.Node.Redpanda
 
@@ -179,12 +204,12 @@ func CreateConfiguration(
 		return nil, fmt.Errorf("setting log_segment_size: %w", err)
 	}
 
-	if err := prepareSeedServerList(cfg, serviceFQDN, pandaCluster, client); err != nil {
+	if err := prepareSeedServerList(ctx, cfg, serviceFQDN, pandaCluster, client); err != nil {
 		return nil, fmt.Errorf("preparing seed server list: %w", err)
 	}
 	preparePandaproxy(cfg, pandaCluster)
 	preparePandaproxyTLS(cfg, pandaCluster, mountPoints)
-	err := preparePandaproxyClient(cfg, serviceFQDN, tlsConfigProvider, pandaCluster, pandaproxySASLUser, mountPoints)
+	err = preparePandaproxyClient(cfg, serviceFQDN, tlsConfigProvider, pandaCluster, pandaproxySASLUser, mountPoints)
 	if err != nil {
 		return nil, fmt.Errorf("preparing proxy client: %w", err)
 	}
@@ -530,25 +555,23 @@ func clusterCRPortOrRPKDefault(clusterPort, defaultPort int) int {
 	return clusterPort
 }
 
-// prepareSeedServerList - supports only > 22.3
-func prepareSeedServerList(
-	cfg *clusterconfiguration.CombinedCfg,
-	serviceFQDN string,
+func generateSeedServer(
+	ctx context.Context,
 	pandaCluster *vectorizedv1alpha1.Cluster,
+	serviceFQDN string,
 	reader k8sclient.Reader,
-) error {
+) ([]string, error) {
 	var addresses []string
 
-	// Add addresses based on spec. Since we call GetNodePools, deleted NodePools
-	// are included already, so there's no extra code required here to handle
-	// this case.
 	for i := int32(0); i < ptr.Deref(pandaCluster.Spec.Replicas, 0); i++ {
 		addresses = append(addresses, fmt.Sprintf("%s-%d.%s", pandaCluster.Name, i, serviceFQDN))
 	}
-	nps, err := nodepools.GetNodePools(context.Background(), pandaCluster, reader)
+
+	nps, err := nodepools.GetNodePools(ctx, pandaCluster, reader)
 	if err != nil {
-		return err
+		return []string{}, err
 	}
+
 	for _, np := range nps {
 		if np.Name == vectorizedv1alpha1.DefaultNodePoolName {
 			continue
@@ -557,6 +580,22 @@ func prepareSeedServerList(
 		for i := int32(0); i < ptr.Deref(np.Replicas, 0); i++ {
 			addresses = append(addresses, fmt.Sprintf("%s-%d.%s", prefix, i, serviceFQDN))
 		}
+	}
+
+	return addresses, nil
+}
+
+// prepareSeedServerList - supports only > 22.3
+func prepareSeedServerList(
+	ctx context.Context,
+	cfg *clusterconfiguration.CombinedCfg,
+	serviceFQDN string,
+	pandaCluster *vectorizedv1alpha1.Cluster,
+	reader k8sclient.Reader,
+) error {
+	addresses, err := generateSeedServer(ctx, pandaCluster, serviceFQDN, reader)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	for _, address := range addresses {

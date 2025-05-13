@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Configure rpk section in Redpanda.yaml file, so that rpk can learn explicit AdminAPI and SchemaRegistry configuration in Cluster custom resource.
+time: 2025-05-08T16:08:09.957855+02:00

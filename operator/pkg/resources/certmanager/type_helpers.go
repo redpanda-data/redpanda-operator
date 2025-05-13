@@ -788,3 +788,41 @@ func (cc *ClusterCertificates) KafkaClientBrokerTLS(mountPoints *resourcetypes.T
 	}
 	return &result
 }
+
+// AdminAPIClientTLS returns configuration to connect to Redpanda Admin api with tls
+func (cc *ClusterCertificates) AdminAPIClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	if !cc.adminAPI.internalTLSEnabled {
+		return nil
+	}
+	result := config.TLS{
+		InsecureSkipVerify: false,
+	}
+	if len(cc.adminAPI.clientCertificates) > 0 {
+		result.KeyFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, corev1.TLSPrivateKeyKey)
+		result.CertFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, corev1.TLSCertKey)
+	}
+	if cc.adminAPI.selfSignedNodeCertificate {
+		// we need to also include the node ca since the node cert is self-signed
+		result.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.NodeCertMountDir, cmmetav1.TLSCAKey)
+	}
+	return &result
+}
+
+// SchemaRegistryClientTLS returns configuration to connect to the schema registry api with tls
+func (cc *ClusterCertificates) SchemaRegistryClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	if !cc.schemaRegistryAPI.internalTLSEnabled {
+		return nil
+	}
+	result := config.TLS{
+		InsecureSkipVerify: false,
+	}
+	if len(cc.schemaRegistryAPI.clientCertificates) > 0 {
+		result.KeyFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, corev1.TLSPrivateKeyKey)
+		result.CertFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, corev1.TLSCertKey)
+	}
+	if cc.schemaRegistryAPI.selfSignedNodeCertificate {
+		// we need to also include the node ca since the node cert is self-signed
+		result.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.NodeCertMountDir, cmmetav1.TLSCAKey)
+	}
+	return &result
+}

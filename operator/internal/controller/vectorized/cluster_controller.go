@@ -31,9 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -86,6 +88,7 @@ type ClusterReconciler struct {
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config
 	CloudSecretsExpander *pkgsecrets.CloudExpander
+	skipNameValidation   bool
 }
 
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -362,6 +365,9 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForExternalCASecret),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
+		WithOptions(controller.Options{
+			SkipNameValidation: ptr.To(r.skipNameValidation),
+		}).
 		Complete(r)
 }
 
@@ -661,6 +667,14 @@ func (r *ClusterReconciler) WithConfiguratorSettings(
 	configuratorSettings resources.ConfiguratorSettings,
 ) *ClusterReconciler {
 	r.configuratorSettings = configuratorSettings
+	return r
+}
+
+// WithSkipNameValidation set the skip name validation. It's used in test when multiple ClusterReconcilers are registered in manager
+func (r *ClusterReconciler) WithSkipNameValidation(
+	skipNameValidation bool,
+) *ClusterReconciler {
+	r.skipNameValidation = skipNameValidation
 	return r
 }
 

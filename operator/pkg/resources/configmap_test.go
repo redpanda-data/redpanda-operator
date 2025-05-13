@@ -321,7 +321,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 			name:                    "Primitive object in additional configuration",
 			additionalConfiguration: map[string]string{"redpanda.transactional_id_expiration_ms": "25920000000", "rpk.overprovisioned": "true"},
 			expectedClusterConfig:   map[string]string{"transactional_id_expiration_ms": "25920000000"},
-			expectedHash:            "78b397cdd7924ba28cea07b55e0c8444",
+			expectedHash:            "eeca031541a135f36e7bc30fe01985c6",
 		},
 		{
 			name:                    "Complex struct in additional configuration",
@@ -341,7 +341,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 				"log_segment_size":                              "536870912",
 			},
 			expectedOperatorConfig: map[string]any{"cloud_storage_secret_key": "XXX"},
-			expectedHash:           "a5d7af0c3bafb1488e1d147da992cf11",
+			expectedHash:           "b87080192060f707320a9edba6f491fe",
 		},
 		{
 			name: "shadow index cache directory",
@@ -350,7 +350,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 				//`cloud_storage_cache_size: "10737418240"`,
 			},
 			expectedClusterConfig: map[string]string{"cloud_storage_cache_size": "10737418240"},
-			expectedHash:          "3b8a2186bb99ebb9b3db10452cdfd45a",
+			expectedHash:          "eeca031541a135f36e7bc30fe01985c6",
 		},
 	}
 	for _, tc := range testcases {
@@ -617,5 +617,23 @@ func (TestBrokerTLSConfigProvider) KafkaClientBrokerTLS(mountPoints *resourcetyp
 		CertFile:       "/etc/tls/certs/ca/tls.crt",
 		TruststoreFile: "/etc/tls/certs/ca.crt",
 		Enabled:        true,
+	}
+}
+
+func (p TestBrokerTLSConfigProvider) AdminAPIClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
+	}
+}
+
+func (p TestBrokerTLSConfigProvider) SchemaRegistryClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
 	}
 }
