@@ -232,12 +232,12 @@ func (s *RedpandaControllerSuite) TestExternalSecretInjection() {
 	}
 
 	s.T().Log("Applying secret injected-value")
-	s.applyAndWait(&corev1.Secret{
+	s.applyAndWait(&corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "injected-value",
 		},
-		Data: map[string][]byte{
-			"value-1": []byte("1003"),
+		Data: map[string]string{
+			"value-1": "1003",
 		},
 	})
 	s.applyAndWait(rp)
@@ -247,7 +247,7 @@ func (s *RedpandaControllerSuite) TestExternalSecretInjection() {
 	config, err := adminClient.Config(s.ctx, false)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), "1003", config["segment_appender_flush_timeout_ms"])
+	require.Equal(s.T(), float64(1003), config["segment_appender_flush_timeout_ms"])
 }
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {

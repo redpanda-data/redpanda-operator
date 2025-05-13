@@ -128,7 +128,7 @@ func New(t *testing.T, options Options) *Env {
 	}
 
 	t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
-	t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", ns.Name, cluster.Name())
+	t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", cluster.Name(), cluster.Name())
 
 	t.Cleanup(func() {
 		env.cancel()
