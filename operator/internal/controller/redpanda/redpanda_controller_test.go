@@ -639,15 +639,16 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
-			Client:          mgr.GetClient(),
-			KubeConfig:      mgr.GetConfig(),
-			EventRecorder:   mgr.GetEventRecorderFor("Redpanda"),
-			ClientFactory:   s.clientFactory,
-			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
-			OperatorImage: redpanda.Image{
+			Client:        mgr.GetClient(),
+			KubeConfig:    mgr.GetConfig(),
+			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			ClientFactory: s.clientFactory,
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(lifecycle.Image{
 				Repository: "localhost/redpanda-operator",
 				Tag:        "dev",
-			},
+			}, lifecycle.CloudSecretsFlags{
+				CloudSecretsEnabled: false,
+			})),
 		}).SetupWithManager(s.ctx, mgr)
 	})
 

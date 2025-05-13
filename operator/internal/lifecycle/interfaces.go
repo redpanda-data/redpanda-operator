@@ -127,6 +127,15 @@ type ClusterStatusUpdater[T any, U Cluster[T]] interface {
 	Update(cluster U, status *ClusterStatus) bool
 }
 
+// Image represents a general docker image repo/tag that can be used for setting
+// the default values of things like sidecars and init containers
+type Image struct {
+	// Repository is the repository of the docker image
+	Repository string
+	// Tag is the tag of the docker image
+	Tag string
+}
+
 // ResourceManagerFactory bundles together concrete implementations of OwnershipResolver
 // ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
 // cluster versions.

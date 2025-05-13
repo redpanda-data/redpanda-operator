@@ -48,7 +48,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
-			"localhost/redpanda-operator:dev",
+			imageRepo + ":" + imageTag,
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
 			"quay.io/jetstack/cert-manager-controller:v1.14.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",

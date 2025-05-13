@@ -24,15 +24,19 @@ import (
 
 // V2NodePoolRenderer represents a node pool renderer for v2 clusters.
 type V2NodePoolRenderer struct {
-	kubeConfig *kube.RESTConfig
+	kubeConfig   *kube.RESTConfig
+	image        Image
+	cloudSecrets CloudSecretsFlags
 }
 
 var _ NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2NodePoolRenderer)(nil)
 
 // NewV2NodePoolRenderer returns a V2NodePoolRenderer.
-func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
+func NewV2NodePoolRenderer(mgr ctrl.Manager, image Image, cloudSecrets CloudSecretsFlags) *V2NodePoolRenderer {
 	return &V2NodePoolRenderer{
-		kubeConfig: mgr.GetConfig(),
+		kubeConfig:   mgr.GetConfig(),
+		image:        image,
+		cloudSecrets: cloudSecrets,
 	}
 }
 
@@ -40,12 +44,69 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager) *V2NodePoolRenderer {
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // isn't a node pool.
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
+	spec := cluster.Spec.ClusterSpec.DeepCopy()
+	if spec == nil {
+		spec = &redpandav1alpha2.RedpandaClusterSpec{}
+	}
+
+	if spec.Statefulset == nil {
+		spec.Statefulset = &redpandav1alpha2.Statefulset{}
+	}
+
+	if spec.Statefulset.InitContainerImage == nil {
+		spec.Statefulset.InitContainerImage = &redpandav1alpha2.InitContainerImage{}
+	}
+
+	if spec.Statefulset.SideCars == nil {
+		spec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	}
+
+	if spec.Statefulset.SideCars.Image == nil {
+		spec.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
+	}
+
+	// If not explicitly specified, set the tag and repository of the sidecar
+	// to the image specified via CLI args rather than relying on the default
+	// of the redpanda chart.
+	// This ensures that custom deployments (e.g.
+	// localhost/redpanda-operator:dev) will use the image they are deployed
+	// with.
+	if spec.Statefulset.SideCars.Image.Tag == nil {
+		spec.Statefulset.SideCars.Image.Tag = &m.image.Tag
+	}
+
+	if spec.Statefulset.SideCars.Image.Repository == nil {
+		spec.Statefulset.SideCars.Image.Repository = &m.image.Repository
+	}
+
+	if spec.Statefulset.InitContainerImage.Tag == nil {
+		spec.Statefulset.InitContainerImage.Tag = &m.image.Tag
+	}
+
+	if spec.Statefulset.InitContainerImage.Repository == nil {
+		spec.Statefulset.InitContainerImage.Repository = &m.image.Repository
+	}
+
+	// If not explicitly specified, set the initContainer flags for the bootstrap
+	// templating to instantiate an appropriate CloudExpander
+	if spec.Statefulset.InitContainers == nil {
+		spec.Statefulset.InitContainers = &redpandav1alpha2.InitContainers{}
+	}
+
+	if spec.Statefulset.InitContainers.Configurator == nil {
+		spec.Statefulset.InitContainers.Configurator = &redpandav1alpha2.Configurator{}
+	}
+
+	if len(spec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs) == 0 {
+		spec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs = m.cloudSecrets.AdditionalConfiguratorArgs()
+	}
+
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, cluster.Spec.ClusterSpec.DeepCopy())
+	}, spec)
 	if err != nil {
 		return nil, err
 	}
