@@ -37,7 +37,7 @@ type Cluster struct {
 }
 
 func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
-	ctx, cancel := context.WithTimeoutCause(ctx, time.Minute, errors.New("vCluster creation timed out"))
+	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
 	c, err := client.New(host.RESTConfig(), client.Options{})
