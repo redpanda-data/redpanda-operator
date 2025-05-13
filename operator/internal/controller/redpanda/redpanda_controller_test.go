@@ -43,6 +43,7 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
@@ -214,6 +215,39 @@ func (s *RedpandaControllerSuite) TestTPLValues() {
 	}
 
 	s.deleteAndWait(rp)
+}
+
+func (s *RedpandaControllerSuite) TestExternalSecretInjection() {
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Config.ExtraClusterConfiguration = map[string]vectorizedv1alpha1.ClusterConfigValue{
+		"segment_appender_flush_timeout_ms": {
+			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "injected-value",
+				},
+				Key: "value-1",
+			},
+			UseRawValue: true,
+		},
+	}
+
+	s.T().Log("Applying secret injected-value")
+	s.applyAndWait(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "injected-value",
+		},
+		Data: map[string][]byte{
+			"value-1": []byte("1003"),
+		},
+	})
+	s.applyAndWait(rp)
+
+	adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+	require.NoError(s.T(), err)
+	config, err := adminClient.Config(s.ctx, false)
+	require.NoError(s.T(), err)
+
+	require.Equal(s.T(), "1003", config["segment_appender_flush_timeout_ms"])
 }
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {
