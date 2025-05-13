@@ -12,11 +12,11 @@ package steps
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/rand"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -119,7 +119,7 @@ func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, cluste
 
 	require.Greater(t, len(pods.Items), 0)
 
-	index := rand.Intn(len(pods.Items))
+	index := rand.IntN(len(pods.Items)) // nolint:gosec
 	pod := pods.Items[index]
 
 	t.ShutdownNode(ctx, pod.Spec.NodeName)

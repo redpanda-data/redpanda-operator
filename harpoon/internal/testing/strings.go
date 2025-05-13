@@ -10,13 +10,14 @@
 package testing
 
 import (
+	"math/rand/v2"
 	"time"
-
-	"golang.org/x/exp/rand"
 )
 
+var r *rand.Rand
+
 func init() {
-	rand.Seed(uint64(time.Now().UnixNano()))
+	r = rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()))) // nolint:gosec
 }
 
 var letters = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -24,7 +25,7 @@ var letters = "0123456789abcdefghijklmnopqrstuvwxyz"
 func randomString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[r.IntN(len(letters))]
 	}
 	return string(b)
 }
