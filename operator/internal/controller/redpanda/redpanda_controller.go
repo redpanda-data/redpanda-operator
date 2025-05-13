@@ -60,11 +60,6 @@ const (
 	requeueTimeout = 10 * time.Second
 )
 
-type Image struct {
-	Repository string
-	Tag        string
-}
-
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	// KubeConfig is the [rest.Config] that provides the go helm chart
@@ -75,51 +70,6 @@ type RedpandaReconciler struct {
 	EventRecorder        kuberecorder.EventRecorder
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
-	// CloudSecretsFlags holds the settings required to instantiate a CloudExpander.
-	// This is used to generate the CLI arguments to the bootstrap templater.
-	CloudSecretsFlags CloudSecretsFlags
-
-	// OperatorImage is the image to use for any instances of the operator
-	// within redpanda deployments. e.g. StatefulSet.Sidecar.Image. The
-	// redpanda chart ships with it's own default but we want this field to be
-	// controlled by the operator.
-	OperatorImage Image
-}
-
-// CloudSecretsFlags contains the flags required to generate a default set of
-// CLI arguments to the configurator / bootstrap templater to correctly instantiate
-// a CloudExpander.
-// TODO: find a way to deduplicate this machinery - perhaps move to a standard configuration struct in pkgsecrets
-type CloudSecretsFlags struct {
-	CloudSecretsEnabled          bool
-	CloudSecretsPrefix           string
-	CloudSecretsAWSRegion        string
-	CloudSecretsAWSRoleARN       string
-	CloudSecretsGCPProjectID     string
-	CloudSecretsAzureKeyVaultURI string
-}
-
-// AdditionalConfiguratorArgs constructs a "standard" set of arguments to pass to a
-// configurator (or bootstrap) initContainer, to specify the CloudExpander to instantiate.
-func (c CloudSecretsFlags) AdditionalConfiguratorArgs() []string {
-	var result []string
-	if c.CloudSecretsEnabled {
-		result = append(result, "--enable-cloud-secrets=true")
-		result = append(result, fmt.Sprintf("--cloud-secrets-prefix=%s", c.CloudSecretsPrefix))
-		if c.CloudSecretsAWSRegion != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-aws-region=%s", c.CloudSecretsAWSRegion))
-		}
-		if c.CloudSecretsAWSRoleARN != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-aws-role-arn=%s", c.CloudSecretsAWSRoleARN))
-		}
-		if c.CloudSecretsGCPProjectID != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-gcp-project-id=%s", c.CloudSecretsGCPProjectID))
-		}
-		if c.CloudSecretsAzureKeyVaultURI != "" {
-			result = append(result, fmt.Sprintf("--cloud-secrets-azure-key-vault-uri=%s", c.CloudSecretsAzureKeyVaultURI))
-		}
-	}
-	return result
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -302,53 +252,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	defer timing.Execution(ctx).Stop("reconciling resources")
-
-	cloned := rp.DeepCopy()
-	if cloned.Spec.ClusterSpec == nil {
-		cloned.Spec.ClusterSpec = &redpandav1alpha2.RedpandaClusterSpec{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset == nil {
-		cloned.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
-	}
-
-	// If not explicitly specified, set the tag and repository of the sidecar
-	// to the image specified via CLI args rather than relying on the default
-	// of the redpanda chart.
-	// This ensures that custom deployments (e.g.
-	// localhost/redpanda-operator:dev) will use the image they are deployed
-	// with.
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag = &r.OperatorImage.Tag
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository = &r.OperatorImage.Repository
-	}
-
-	// If not explicitly specified, set the initContainer flags for the bootstrap
-	// templating to instantiate an appropriate CloudExpander
-	if cloned.Spec.ClusterSpec.Statefulset.InitContainers == nil {
-		cloned.Spec.ClusterSpec.Statefulset.InitContainers = &redpandav1alpha2.InitContainers{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.InitContainers.Configurator == nil {
-		cloned.Spec.ClusterSpec.Statefulset.InitContainers.Configurator = &redpandav1alpha2.Configurator{}
-	}
-
-	if len(cloned.Spec.ClusterSpec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs) == 0 {
-		cloned.Spec.ClusterSpec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs = r.CloudSecretsFlags.AdditionalConfiguratorArgs()
-	}
-
-	return r.LifecycleClient.SyncAll(ctx, cloned)
+	return r.LifecycleClient.SyncAll(ctx, rp)
 }
 
 // reconcilePools is the meat of the controller. It handles creation and scale up/scale down
