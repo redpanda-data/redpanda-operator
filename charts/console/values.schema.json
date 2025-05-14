@@ -995,6 +995,9 @@
                       }
                     },
                     "type": "object"
+                  },
+                  "stopSignal": {
+                    "type": "string"
                   }
                 },
                 "type": "object"
@@ -3240,6 +3243,9 @@
         },
         "runAsUser": {
           "type": "integer"
+        },
+        "seLinuxChangePolicy": {
+          "type": "string"
         },
         "seLinuxOptions": {
           "additionalProperties": false,

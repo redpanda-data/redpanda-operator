@@ -384,7 +384,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -399,7 +398,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -566,7 +564,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -581,7 +578,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -746,7 +742,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -761,7 +756,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -928,7 +922,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -943,7 +936,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -3146,7 +3138,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -3161,7 +3152,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -3329,7 +3319,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -3344,7 +3333,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -3510,7 +3498,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -3525,7 +3512,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -3693,7 +3679,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -3708,7 +3693,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -4573,6 +4557,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -5369,6 +5357,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -6169,6 +6161,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -6731,6 +6727,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -6783,6 +6817,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use
@@ -8407,7 +8446,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -8422,7 +8460,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -8590,7 +8627,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -8605,7 +8641,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -8771,7 +8806,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -8786,7 +8820,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -8954,7 +8987,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -8969,7 +9001,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -9191,7 +9222,7 @@ spec:
                           to dynamically configure the job.
                         items:
                           description: EnvFromSource represents the source of a set
-                            of ConfigMaps
+                            of ConfigMaps or Secrets
                           properties:
                             configMapRef:
                               description: The ConfigMap to select from
@@ -9212,8 +9243,8 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             prefix:
-                              description: An optional identifier to prepend to each
-                                key in the ConfigMap. Must be a C_IDENTIFIER.
+                              description: Optional text to prepend to the name of
+                                each environment variable. Must be a C_IDENTIFIER.
                               type: string
                             secretRef:
                               description: The Secret to select from
@@ -10008,6 +10039,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -10804,6 +10839,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -11604,6 +11643,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -12166,6 +12209,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -12218,6 +12299,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use
@@ -14257,7 +14343,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -14272,7 +14357,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -14439,7 +14523,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -14454,7 +14537,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -15324,6 +15406,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -16120,6 +16206,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -16920,6 +17010,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -17482,6 +17576,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -17534,6 +17666,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use
@@ -20903,7 +21040,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -20918,7 +21054,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -21085,7 +21220,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -21100,7 +21234,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -21265,7 +21398,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -21280,7 +21412,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -21447,7 +21578,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -21462,7 +21592,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -23665,7 +23794,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -23680,7 +23808,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -23848,7 +23975,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -23863,7 +23989,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -24029,7 +24154,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -24044,7 +24168,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -24212,7 +24335,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -24227,7 +24349,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -25092,6 +25213,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -25888,6 +26013,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -26688,6 +26817,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -27250,6 +27383,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -27302,6 +27473,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use
@@ -28926,7 +29102,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -28941,7 +29116,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -29109,7 +29283,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -29124,7 +29297,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -29290,7 +29462,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                             Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -29305,7 +29476,6 @@ spec:
                                             pod labels will be ignored. The default value is empty.
                                             The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                             Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                            This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                           items:
                                             type: string
                                           type: array
@@ -29473,7 +29643,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -29488,7 +29657,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -29710,7 +29878,7 @@ spec:
                           to dynamically configure the job.
                         items:
                           description: EnvFromSource represents the source of a set
-                            of ConfigMaps
+                            of ConfigMaps or Secrets
                           properties:
                             configMapRef:
                               description: The ConfigMap to select from
@@ -29731,8 +29899,8 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             prefix:
-                              description: An optional identifier to prepend to each
-                                key in the ConfigMap. Must be a C_IDENTIFIER.
+                              description: Optional text to prepend to the name of
+                                each environment variable. Must be a C_IDENTIFIER.
                               type: string
                             secretRef:
                               description: The Secret to select from
@@ -30527,6 +30695,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -31323,6 +31495,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -32123,6 +32299,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -32685,6 +32865,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -32737,6 +32955,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use
@@ -34776,7 +34999,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                         Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -34791,7 +35013,6 @@ spec:
                                         pod labels will be ignored. The default value is empty.
                                         The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                         Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                        This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                       items:
                                         type: string
                                       type: array
@@ -34958,7 +35179,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -34973,7 +35193,6 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -35843,6 +36062,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -36639,6 +36862,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -37439,6 +37666,10 @@ spec:
                                                   x-kubernetes-int-or-string: true
                                               type: object
                                           type: object
+                                        stopSignal:
+                                          description: Signal defines the stop signal
+                                            of containers
+                                          type: string
                                       type: object
                                     livenessProbe:
                                       description: |-
@@ -38001,6 +38232,44 @@ spec:
                                       type: string
                                   type: object
                                 type: array
+                              resources:
+                                description: |-
+                                  ResourceRequirementsApplyConfiguration represents a declarative configuration of the ResourceRequirements type for use
+                                  with apply.
+                                properties:
+                                  claims:
+                                    items:
+                                      description: |-
+                                        ResourceClaimApplyConfiguration represents a declarative configuration of the ResourceClaim type for use
+                                        with apply.
+                                      properties:
+                                        name:
+                                          type: string
+                                        request:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  limits:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                  requests:
+                                    additionalProperties:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    description: ResourceList is a set of (resource
+                                      name, quantity) pairs.
+                                    type: object
+                                type: object
                               restartPolicy:
                                 description: |-
                                   RestartPolicy describes how the container should be restarted.
@@ -38053,6 +38322,11 @@ spec:
                                   runAsUser:
                                     format: int64
                                     type: integer
+                                  seLinuxChangePolicy:
+                                    description: PodSELinuxChangePolicy defines how
+                                      the container's SELinux label is applied to
+                                      all volumes used by the Pod.
+                                    type: string
                                   seLinuxOptions:
                                     description: |-
                                       SELinuxOptionsApplyConfiguration represents a declarative configuration of the SELinuxOptions type for use

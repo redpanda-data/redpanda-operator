@@ -1278,6 +1278,9 @@
                           }
                         },
                         "type": "object"
+                      },
+                      "stopSignal": {
+                        "type": "string"
                       }
                     },
                     "type": "object"
@@ -3523,6 +3526,9 @@
             },
             "runAsUser": {
               "type": "integer"
+            },
+            "seLinuxChangePolicy": {
+              "type": "string"
             },
             "seLinuxOptions": {
               "additionalProperties": false,
@@ -6324,6 +6330,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -7301,6 +7310,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -8280,6 +8292,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -8962,6 +8977,62 @@
                 }
               ]
             },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "claims": {
+                  "oneOf": [
+                    {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "request": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limits": {
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
             "restartPolicy": {
               "type": "string"
             },
@@ -9023,6 +9094,9 @@
                 },
                 "runAsUser": {
                   "type": "integer"
+                },
+                "seLinuxChangePolicy": {
+                  "type": "string"
                 },
                 "seLinuxOptions": {
                   "additionalProperties": false,
@@ -11311,6 +11385,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -12288,6 +12365,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -13267,6 +13347,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -13949,6 +14032,62 @@
                     }
                   ]
                 },
+                "resources": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "claims": {
+                      "oneOf": [
+                        {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "request": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "limits": {
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "type": "object"
+                    },
+                    "requests": {
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
                 "restartPolicy": {
                   "type": "string"
                 },
@@ -14010,6 +14149,9 @@
                     },
                     "runAsUser": {
                       "type": "integer"
+                    },
+                    "seLinuxChangePolicy": {
+                      "type": "string"
                     },
                     "seLinuxOptions": {
                       "additionalProperties": false,
@@ -16598,6 +16740,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -17575,6 +17720,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -18554,6 +18702,9 @@
                                   }
                                 },
                                 "type": "object"
+                              },
+                              "stopSignal": {
+                                "type": "string"
                               }
                             },
                             "type": "object"
@@ -19236,6 +19387,62 @@
                     }
                   ]
                 },
+                "resources": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "claims": {
+                      "oneOf": [
+                        {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "request": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "limits": {
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "type": "object"
+                    },
+                    "requests": {
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
                 "restartPolicy": {
                   "type": "string"
                 },
@@ -19297,6 +19504,9 @@
                     },
                     "runAsUser": {
                       "type": "integer"
+                    },
+                    "seLinuxChangePolicy": {
+                      "type": "string"
                     },
                     "seLinuxOptions": {
                       "additionalProperties": false,
