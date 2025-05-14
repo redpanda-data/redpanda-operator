@@ -18,6 +18,12 @@ Previously it attempted to leave existing sts resources unpatched if it seemed l
 * The operator now unconditionally produces an environment for the initContainer that supports CEL-based patching.
 
 This is required to ensure that a pre-existing sts can roll over to new configuration correctly.
+* Improved support for multi-STSes (e.g., multiple NodePools) in the ghost broker decommissioning logic.
+
+- Desired replicas were previously fetched from a single STS, leading to incorrect broker count decisions when multiple STSes were present. Now, the logic accounts for all STSes.
+- Fixed incorrect broker map keying: previously used pod ordinal, which is not unique across STSes (e.g., `blue-0` and `green-0` both mapped to `0`). Switched to using the pod name as the key to correctly distinguish brokers.
+- Disabled ordinal-based broker deletion logic in Operator v1 mode, as it doesn't work reliably in a multi-STS setup.
+
 
 ## v2.3.9-24.3.11 - 2025-05-02
 ### Added
