@@ -1264,6 +1264,9 @@
                       "properties": {
                         "name": {
                           "type": "string"
+                        },
+                        "request": {
+                          "type": "string"
                         }
                       },
                       "type": "object"
@@ -2408,6 +2411,18 @@
                 },
                 "type": "object"
               },
+              "image": {
+                "additionalProperties": false,
+                "properties": {
+                  "pullPolicy": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
               "iscsi": {
                 "additionalProperties": false,
                 "properties": {
@@ -3269,6 +3284,9 @@
             }
           ]
         },
+        "supplementalGroupsPolicy": {
+          "type": "string"
+        },
         "sysctls": {
           "oneOf": [
             {
@@ -3449,6 +3467,9 @@
                 "additionalProperties": false,
                 "properties": {
                   "name": {
+                    "type": "string"
+                  },
+                  "request": {
                     "type": "string"
                   }
                 },
