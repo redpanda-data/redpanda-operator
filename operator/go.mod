@@ -74,6 +74,7 @@ require (
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240905175347-86054fc9276a.2 // indirect
 	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240823133854-b83c57715214.1 // indirect
 	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240823133854-b83c57715214.2 // indirect
+	cel.dev/expr v0.19.1 // indirect
 	cloud.google.com/go/auth v0.9.9 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
@@ -97,7 +98,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.32.3 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.28.1 // indirect
