@@ -1114,14 +1114,34 @@ config:
       configMapKeyRef:
         name: my-config-map
         key: my-key
+    cm_k8s_raw:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-key
+      useRawValue: true
     sec_k8s:
       secretKeyRef:
         name: my-secret
         key: my-key
+    sec_k8s_raw:
+      secretKeyRef:
+        name: my-secret
+        key: my-key
+      useRawValue: true
     external:
       externalSecretRefSelector:
         name: my-external-secret
+    external_raw:
+      externalSecretRefSelector:
+        name: my-external-secret
+      # Example: if the external value is already in a serialised form
+      useRawValue: true
     external_opt:
       externalSecretRefSelector:
         name: my-external-secret
         optional: true
+    external_opt_raw:
+      externalSecretRefSelector:
+        name: my-external-secret
+        optional: true
+      useRawValue: true
