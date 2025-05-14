@@ -81,6 +81,18 @@ func filterOwner(ownerNamespace, ownerName string) func(o client.Object) bool {
 	}
 }
 
+func WithDecommisionOnTooHighOrdinal(val bool) Option {
+	return func(decommissioner *StatefulSetDecomissioner) {
+		decommissioner.decommissionOnTooHighOrdinal = val
+	}
+}
+
+func WithDesiredReplicasFetcher(desiredReplicasFetcher func(ctx context.Context, sts *appsv1.StatefulSet) (int32, error)) Option {
+	return func(decommissioner *StatefulSetDecomissioner) {
+		decommissioner.desiredReplicasFetcher = desiredReplicasFetcher
+	}
+}
+
 func WithFilter(filter func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)) Option {
 	return func(decommissioner *StatefulSetDecomissioner) {
 		decommissioner.filter = filter
@@ -136,6 +148,10 @@ type StatefulSetDecomissioner struct {
 	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
 	cleanupPVCs          bool
 	syncPeriod           time.Duration
+
+	// decommissionOnTooHighOrdinal allows the decommissioner to decommission a node, if it has an
+	decommissionOnTooHighOrdinal bool
+	desiredReplicasFetcher       func(ctx context.Context, set *appsv1.StatefulSet) (int32, error)
 }
 
 func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...Option) *StatefulSetDecomissioner {
@@ -151,6 +167,12 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 		delayedCacheMaxCount: defaultDelayedMaxCacheCount,
 		filter:               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) { return true, nil },
 		cleanupPVCs:          true,
+		// By default, just look at the single STS
+		// If multiple nodePools are supported, we can use Cluster CR to the the total desired replicas.
+		desiredReplicasFetcher: func(ctx context.Context, set *appsv1.StatefulSet) (int32, error) {
+			return ptr.Deref(set.Spec.Replicas, 0), nil
+		},
+		decommissionOnTooHighOrdinal: true,
 	}
 
 	for _, opt := range options {
@@ -419,7 +441,11 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	// the counting happens below as a guard for *when we actually do clean
 	// something up*
 
-	requestedNodes := int(ptr.Deref(set.Spec.Replicas, 0))
+	desiredReplicas, err := s.desiredReplicasFetcher(ctx, set)
+	if err != nil {
+		return false, fmt.Errorf("failed to fetch desired replicas: %w", err)
+	}
+	requestedNodes := int(desiredReplicas)
 	if len(health.AllNodes) <= requestedNodes {
 		// we don't need to decommission anything since we're at the proper
 		// capacity, we also clear the cache here because nothing should
@@ -450,8 +476,8 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	downedNodes.Add(health.NodesDown...)
 	healthyNodes := allNodes.LeftDisjoint(downedNodes)
 
-	brokerOrdinalMap := map[int]collections.Set[int]{}
-	brokerMap := map[int]int{}
+	podToBrokerIDs := map[string]collections.Set[int]{}
+	brokerIDToPodName := map[int]string{}
 	for _, brokerID := range health.AllNodes {
 		broker, err := adminClient.Broker(ctx, brokerID)
 		if err != nil {
@@ -459,33 +485,39 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			return false, err
 		}
 
-		// NB: We capture the ordinal here because it gives us the
+		// NB: We capture the pod name. If there is only one StatefulSet, it gives us the
 		// ability to sort and have an extra check to ensure that we're only decommissioning
 		// downed brokers who also have ordinals that are higher than what the stateful set
 		// in its current configuration would actually produce (i.e. we
 		// don't want to accidentally decommission any random unhealthy brokers).
 		//
+		// Even without this ability, the pod name provides us a unique identifier in the k8s world;
+		// multiple brokers in the Redpanda world pointing to the same pod are treated as a Ghost Broker.
+		//
 		// Additionally, any potential ordinal collisions tell us that maybe the node
 		// id has changed but the original pod is actually gone (i.e. like a ghost broker)
 		// when we have an ordinal collision, then we check to make sure we have at least one
 		// healthy node for the given ordinal before decommissioning.
-		ordinal, err := ordinalFromFQDN(broker.InternalRPCAddress)
+		podName, err := podNameFromFQDN(broker.InternalRPCAddress)
 		if err != nil {
 			// continue since we can't tell whether we can decommission this or not
 			// but make a lot of noise about the fact that we can't map this back to
 			// an ordinal
-			log.Error(err, "unexpected error parsing broker pod ordinal", "address", broker.InternalRPCAddress, "broker", broker)
+			log.Error(err, "unexpected error translating broker FQDN to pod name", "address", broker.InternalRPCAddress, "broker", broker)
 			continue
 		}
 
-		if _, ok := brokerOrdinalMap[ordinal]; !ok {
-			brokerOrdinalMap[ordinal] = collections.NewSet[int]()
+		if _, ok := podToBrokerIDs[podName]; !ok {
+			podToBrokerIDs[podName] = collections.NewSet[int]()
 		}
 
 		// NB: here we have potentially multiple brokers that align to the same internal RPC address
 		// if that's the case, then one of them is going to be bad and can be decommissioned
-		brokerOrdinalMap[ordinal].Add(brokerID)
-		brokerMap[brokerID] = ordinal
+
+		// Key should be: full sts prefix, then it is safe
+
+		podToBrokerIDs[podName].Add(brokerID)
+		brokerIDToPodName[brokerID] = podName
 	}
 
 	brokersToDecommission := []int{}
@@ -493,7 +525,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	currentlyDecommissioningBrokers := []int{}
 
 	for _, downedNode := range health.NodesDown {
-		ordinal, ok := brokerMap[downedNode]
+		podName, ok := brokerIDToPodName[downedNode]
 		if !ok {
 			// skip because we can't actually determine whether we should
 			// decommission it or not without its ordinal
@@ -503,13 +535,21 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 		status, err := adminClient.DecommissionBrokerStatus(ctx, downedNode)
 		if err != nil {
 			if strings.Contains(err.Error(), "is not decommissioning") {
-				if ordinal >= requestedNodes {
-					// this broker is old and should be deleted
-					brokersToDecommission = append(brokersToDecommission, downedNode)
-					continue
+				// Only decommissions on high ordinal, if configured.
+				// On Operator v1, we do not want this, because high ordinals are supposed to be handled by
+				// Operator v1's decomissioning handling.
+				if s.decommissionOnTooHighOrdinal {
+					ordinal, err := ordinalFromResourceName(podName)
+					if err == nil {
+						if ordinal >= requestedNodes {
+							// this broker is old and should be deleted
+							brokersToDecommission = append(brokersToDecommission, downedNode)
+							continue
+						}
+					}
 				}
 
-				brokers := brokerOrdinalMap[ordinal]
+				brokers := podToBrokerIDs[podName]
 				if brokers.Size() == 1 {
 					// just ignore the node since it may be down, but it probably
 					// is just having problems
@@ -517,8 +557,8 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 					continue
 				}
 
-				// here we have multiple ordinals that align to different nodes
-				// and we're within our set ordinal range, make sure at least one
+				// here we have multiple pods that align to different nodes,
+				// make sure at least one
 				// other node in the set is healthy and then we can mark this
 				// node for decommission, otherwise, we can't distinguish which
 				// pod is which broker (i.e. they're all down) and whether we
@@ -741,20 +781,17 @@ func (s *StatefulSetDecomissioner) getAdminClient(ctx context.Context, set *apps
 	return s.factory.RedpandaAdminClient(ctx, fetched)
 }
 
-// ordinalFromFQDN takes a hostname and attempt to map the
+// podNameFromFQDN takes a hostname and attempt to map the
 // name back to a stateful set pod ordinal based on the left
 // most DNS segment containing the form SETNAME-ORDINAL.
-func ordinalFromFQDN(fqdn string) (int, error) {
+func podNameFromFQDN(fqdn string) (string, error) {
 	tokens := strings.Split(fqdn, ".")
 	if len(tokens) < 2 {
-		return 0, fmt.Errorf("invalid broker FQDN for ordinal fetching: %s", fqdn)
+		return "", fmt.Errorf("invalid broker FQDN for ordinal fetching: %s", fqdn)
 	}
-
-	return ordinalFromResourceName(tokens[0])
+	return tokens[0], nil
 }
 
-// ordinalFromResourceName takes a ordinal suffixed resource and returns
-// the ordinal at the end.
 func ordinalFromResourceName(name string) (int, error) {
 	resourceTokens := strings.Split(name, "-")
 	if len(resourceTokens) < 2 {
