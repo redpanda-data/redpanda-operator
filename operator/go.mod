@@ -23,7 +23,7 @@ require (
 	github.com/onsi/gomega v1.34.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/prometheus/client_golang v1.20.4
-	github.com/prometheus/common v0.55.0
+	github.com/prometheus/common v0.59.1
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e
 	github.com/redpanda-data/common-go/secrets v0.1.3
@@ -32,7 +32,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta3
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
-	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
+	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20241105204702-3dc87d8b59be
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.11.0
@@ -42,25 +42,25 @@ require (
 	github.com/testcontainers/testcontainers-go v0.33.0
 	github.com/testcontainers/testcontainers-go/modules/redpanda v0.32.0
 	github.com/twmb/franz-go v1.18.0
-	github.com/twmb/franz-go/pkg/kadm v1.12.0
+	github.com/twmb/franz-go/pkg/kadm v1.13.0
 	github.com/twmb/franz-go/pkg/kmsg v1.9.0
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/sync v0.12.0
 	golang.org/x/tools v0.29.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
-	k8s.io/api v0.30.3
+	k8s.io/api v0.31.0
 	k8s.io/apiextensions-apiserver v0.30.3
-	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.3
+	k8s.io/apimachinery v0.31.0
+	k8s.io/client-go v0.31.0
 	k8s.io/component-helpers v0.30.3
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.30.3
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
+	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
 	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.18.5
 	sigs.k8s.io/yaml v1.4.0
@@ -69,11 +69,11 @@ require (
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2 // indirect
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.34.2-20240617172850-a48fcebcf8f1.2 // indirect
-	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.16.2-20240715174738-f694d610cde4.1 // indirect
-	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.34.2-20240715174738-f694d610cde4.2 // indirect
-	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240715174743-9c0afe867874.2 // indirect
-	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240620104934-3415ce922cfb.1 // indirect
-	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240620104934-3415ce922cfb.2 // indirect
+	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.16.2-20240820164511-1d38ab631312.1 // indirect
+	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.34.2-20240820164511-1d38ab631312.2 // indirect
+	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240905175347-86054fc9276a.2 // indirect
+	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240823133854-b83c57715214.1 // indirect
+	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240823133854-b83c57715214.2 // indirect
 	cloud.google.com/go/auth v0.9.9 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
@@ -91,7 +91,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.7.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
@@ -132,7 +132,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/docker/cli v25.0.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.2.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -170,7 +170,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af // indirect
+	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -207,7 +207,7 @@ require (
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.29 // indirect
+	github.com/lestrrat-go/jwx v1.2.30 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -309,7 +309,7 @@ require (
 	k8s.io/apiserver v0.30.3 // indirect
 	k8s.io/cli-runtime v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
-	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
+	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
