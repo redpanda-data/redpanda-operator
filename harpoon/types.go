@@ -48,6 +48,7 @@ type TestingT interface {
 	AddNode(ctx context.Context, name string)
 
 	IsolateNamespace(ctx context.Context) string
+	VCluster(ctx context.Context) string
 
 	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)
 	InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...helm.Dependency)

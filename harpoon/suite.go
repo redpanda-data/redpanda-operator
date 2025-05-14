@@ -100,6 +100,7 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 	}
 
 	builder.RegisterTag("isolated", -1000, isolatedTag)
+	builder.RegisterTag("vcluster", -2000, vclusterTag)
 
 	return builder
 }
