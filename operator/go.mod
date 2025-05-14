@@ -325,46 +325,12 @@ require (
 )
 
 replace (
-	// NB: Due to our older version of sigs.k8s.io/controller-runtime. We have
-	// to pin to otel/sdk and cel-go to 1.28.0 and 0.17.8, respectively.
-	// Otherwise we get build errors due to otel and k8s depending on different
-	// versions of cel-go.
-	//
-	// go mod why go.opentelemetry.io/otel/sdk
-	// # go.opentelemetry.io/otel/sdk
-	// github.com/redpanda-data/redpanda-operator/operator/cmd/run
-	// sigs.k8s.io/controller-runtime/pkg/metrics/filters
-	// k8s.io/apiserver/pkg/authentication/authenticatorfactory
-	// k8s.io/apiserver/plugin/pkg/authenticator/token/webhook
-	// k8s.io/apiserver/pkg/util/webhook
-	// k8s.io/component-base/tracing
-	// go.opentelemetry.io/otel/sdk/resource
-	// go.opentelemetry.io/otel/sdk
-	github.com/google/cel-go => github.com/google/cel-go v0.17.8
-
 	// now that operator no longer leverages flux, just reference the local
 	// chart definition for our structs
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
 	// we want to leverage the latest pkg -- all of this should go away when we
 	// reintroduce go.work
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
-
-	// NB: Due to our older version of sigs.k8s.io/controller-runtime. We have
-	// to pin to otel/sdk and cel-go to 1.28.0 and 0.17.8, respectively.
-	// Otherwise we get build errors due to otel and k8s depending on different
-	// versions of cel-go.
-	//
-	// go mod why go.opentelemetry.io/otel/sdk
-	// # go.opentelemetry.io/otel/sdk
-	// github.com/redpanda-data/redpanda-operator/operator/cmd/run
-	// sigs.k8s.io/controller-runtime/pkg/metrics/filters
-	// k8s.io/apiserver/pkg/authentication/authenticatorfactory
-	// k8s.io/apiserver/plugin/pkg/authenticator/token/webhook
-	// k8s.io/apiserver/pkg/util/webhook
-	// k8s.io/component-base/tracing
-	// go.opentelemetry.io/otel/sdk/resource
-	// go.opentelemetry.io/otel/sdk
-	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.28.0
 
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
