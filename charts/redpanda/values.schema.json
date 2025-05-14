@@ -1547,6 +1547,9 @@
                           "properties": {
                             "name": {
                               "type": "string"
+                            },
+                            "request": {
+                              "type": "string"
                             }
                           },
                           "type": "object"
@@ -2691,6 +2694,18 @@
                     },
                     "type": "object"
                   },
+                  "image": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "pullPolicy": {
+                        "type": "string"
+                      },
+                      "reference": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
                   "iscsi": {
                     "additionalProperties": false,
                     "properties": {
@@ -3552,6 +3567,9 @@
                 }
               ]
             },
+            "supplementalGroupsPolicy": {
+              "type": "string"
+            },
             "sysctls": {
               "oneOf": [
                 {
@@ -3732,6 +3750,9 @@
                     "additionalProperties": false,
                     "properties": {
                       "name": {
+                        "type": "string"
+                      },
+                      "request": {
                         "type": "string"
                       }
                     },
@@ -6572,6 +6593,9 @@
                               "properties": {
                                 "name": {
                                   "type": "string"
+                                },
+                                "request": {
+                                  "type": "string"
                                 }
                               },
                               "type": "object"
@@ -7545,6 +7569,9 @@
                               "additionalProperties": false,
                               "properties": {
                                 "name": {
+                                  "type": "string"
+                                },
+                                "request": {
                                   "type": "string"
                                 }
                               },
@@ -8522,6 +8549,9 @@
                               "properties": {
                                 "name": {
                                   "type": "string"
+                                },
+                                "request": {
+                                  "type": "string"
                                 }
                               },
                               "type": "object"
@@ -8916,17 +8946,11 @@
                       "name": {
                         "type": "string"
                       },
-                      "source": {
-                        "additionalProperties": false,
-                        "properties": {
-                          "resourceClaimName": {
-                            "type": "string"
-                          },
-                          "resourceClaimTemplateName": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
+                      "resourceClaimName": {
+                        "type": "string"
+                      },
+                      "resourceClaimTemplateName": {
+                        "type": "string"
                       }
                     },
                     "type": "object"
@@ -9042,6 +9066,9 @@
                       "type": "null"
                     }
                   ]
+                },
+                "supplementalGroupsPolicy": {
+                  "type": "string"
                 },
                 "sysctls": {
                   "oneOf": [
@@ -9812,6 +9839,18 @@
                             "type": "string"
                           },
                           "type": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "image": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "pullPolicy": {
+                            "type": "string"
+                          },
+                          "reference": {
                             "type": "string"
                           }
                         },
@@ -11541,6 +11580,9 @@
                                   "properties": {
                                     "name": {
                                       "type": "string"
+                                    },
+                                    "request": {
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"
@@ -12514,6 +12556,9 @@
                                   "additionalProperties": false,
                                   "properties": {
                                     "name": {
+                                      "type": "string"
+                                    },
+                                    "request": {
                                       "type": "string"
                                     }
                                   },
@@ -13491,6 +13536,9 @@
                                   "properties": {
                                     "name": {
                                       "type": "string"
+                                    },
+                                    "request": {
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"
@@ -13885,17 +13933,11 @@
                           "name": {
                             "type": "string"
                           },
-                          "source": {
-                            "additionalProperties": false,
-                            "properties": {
-                              "resourceClaimName": {
-                                "type": "string"
-                              },
-                              "resourceClaimTemplateName": {
-                                "type": "string"
-                              }
-                            },
-                            "type": "object"
+                          "resourceClaimName": {
+                            "type": "string"
+                          },
+                          "resourceClaimTemplateName": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -14011,6 +14053,9 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "supplementalGroupsPolicy": {
+                      "type": "string"
                     },
                     "sysctls": {
                       "oneOf": [
@@ -14781,6 +14826,18 @@
                                 "type": "string"
                               },
                               "type": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "image": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "pullPolicy": {
+                                "type": "string"
+                              },
+                              "reference": {
                                 "type": "string"
                               }
                             },
@@ -16810,6 +16867,9 @@
                                   "properties": {
                                     "name": {
                                       "type": "string"
+                                    },
+                                    "request": {
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"
@@ -17783,6 +17843,9 @@
                                   "additionalProperties": false,
                                   "properties": {
                                     "name": {
+                                      "type": "string"
+                                    },
+                                    "request": {
                                       "type": "string"
                                     }
                                   },
@@ -18760,6 +18823,9 @@
                                   "properties": {
                                     "name": {
                                       "type": "string"
+                                    },
+                                    "request": {
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"
@@ -19154,17 +19220,11 @@
                           "name": {
                             "type": "string"
                           },
-                          "source": {
-                            "additionalProperties": false,
-                            "properties": {
-                              "resourceClaimName": {
-                                "type": "string"
-                              },
-                              "resourceClaimTemplateName": {
-                                "type": "string"
-                              }
-                            },
-                            "type": "object"
+                          "resourceClaimName": {
+                            "type": "string"
+                          },
+                          "resourceClaimTemplateName": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -19280,6 +19340,9 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "supplementalGroupsPolicy": {
+                      "type": "string"
                     },
                     "sysctls": {
                       "oneOf": [
@@ -20050,6 +20113,18 @@
                                 "type": "string"
                               },
                               "type": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "image": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "pullPolicy": {
+                                "type": "string"
+                              },
+                              "reference": {
                                 "type": "string"
                               }
                             },
