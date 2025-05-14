@@ -14,6 +14,7 @@ run `task generate:third-party-licenses-list`
 | :----------: | :------------: |
 | buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate | [Apache-2.0](https://github.com/bufbuild/protovalidate/blob/main/LICENSE) |
 | buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go/protoc-gen-openapiv2/options | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/main/LICENSE) |
+| cel.dev/expr | [Apache-2.0](https://github.com/google/cel-spec/blob/v0.19.1/LICENSE) |
 | cloud.google.com/go/auth | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/v0.9.9/auth/LICENSE) |
 | cloud.google.com/go/auth/oauth2adapt | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/oauth2adapt/v0.2.4/auth/oauth2adapt/LICENSE) |
 | cloud.google.com/go/compute/metadata | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/compute/metadata/v0.5.2/compute/metadata/LICENSE) |
@@ -36,7 +37,7 @@ run `task generate:third-party-licenses-list`
 | github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
 | github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
-| github.com/antlr/antlr4/runtime/Go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr/antlr4/blob/8188dc5388df/runtime/Go/antlr/v4/LICENSE) |
+| github.com/antlr4-go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr4-go/antlr/blob/v4.13.0/LICENSE) |
 | github.com/asaskevich/govalidator | [MIT](https://github.com/asaskevich/govalidator/blob/a9d515a09cc2/LICENSE) |
 | github.com/aws/aws-sdk-go-v2 | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/v1.32.3/LICENSE.txt) |
 | github.com/aws/aws-sdk-go-v2/config | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/config/v1.28.1/config/LICENSE.txt) |
@@ -110,7 +111,7 @@ run `task generate:third-party-licenses-list`
 | github.com/gonvenience/wrap | [MIT](https://github.com/gonvenience/wrap/blob/v1.2.0/LICENSE) |
 | github.com/gonvenience/ytbx | [MIT](https://github.com/gonvenience/ytbx/blob/v1.4.4/LICENSE) |
 | github.com/google/btree | [Apache-2.0](https://github.com/google/btree/blob/v1.1.3/LICENSE) |
-| github.com/google/cel-go | [Apache-2.0](https://github.com/google/cel-go/blob/v0.17.8/LICENSE) |
+| github.com/google/cel-go | [Apache-2.0](https://github.com/google/cel-go/blob/v0.23.2/LICENSE) |
 | github.com/google/gnostic-models | [Apache-2.0](https://github.com/google/gnostic-models/blob/v0.6.9/LICENSE) |
 | github.com/google/go-cmp/cmp | [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.7.0/LICENSE) |
 | github.com/google/s2a-go | [Apache-2.0](https://github.com/google/s2a-go/blob/v0.1.8/LICENSE.md) |
@@ -238,7 +239,7 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.33.0/exporters/otlp/otlptrace/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.33.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.33.0/metric/LICENSE) |
-| go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.28.0/sdk/LICENSE) |
+| go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.33.0/sdk/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.33.0/trace/LICENSE) |
 | go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.4.0/otlp/LICENSE) |
 | go.starlark.net | [BSD-3-Clause](https://github.com/google/starlark-go/blob/90ade8b19d09/LICENSE) |
