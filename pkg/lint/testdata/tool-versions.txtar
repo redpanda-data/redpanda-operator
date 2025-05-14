@@ -2,7 +2,7 @@ version.BuildInfo{Version:"v3.17.2", GitCommit:"v3.17.2", GitTreeState:"", GoVer
 
 -- aws --
 # aws --version | cut -d ' ' -f 1-2
-aws-cli/2.26.4 Python/3.12.9
+aws-cli/2.27.2 Python/3.12.10
 
 -- changie --
 # changie --version
@@ -17,7 +17,7 @@ License:	 Apache 2.0
 
 -- go --
 # go version | cut -d ' ' -f 1-3
-go version go1.23.8
+go version go1.24.3
 
 -- goreleaser --
 # goreleaser --version | awk 'NR>2 {print last} {last=$0}'
@@ -25,7 +25,7 @@ sh: line 1: goreleaser: command not found
 
 -- helm --
 # helm version
-version.BuildInfo{Version:"v3.17.3", GitCommit:"v3.17.3", GitTreeState:"", GoVersion:"go1.24.2"}
+version.BuildInfo{Version:"v3.17.3", GitCommit:"v3.17.3", GitTreeState:"", GoVersion:"go1.24.3"}
 
 -- helm-docs --
 # helm-docs -v
@@ -38,12 +38,12 @@ k3s version v1.21.7-k3s1 (default)
 
 -- kind --
 # kind version | cut -d ' ' -f 1-3
-kind v0.27.0 go1.24.2
+kind v0.27.0 go1.24.3
 
 -- kubectl --
 # kubectl version --client=true
-Client Version: v1.32.3
-Kustomize Version: v5.5.0
+Client Version: v1.33.0
+Kustomize Version: v5.6.0
 
 -- kustomize --
 # kustomize version
@@ -55,9 +55,9 @@ KUTTL Version: version.Info{GitVersion:"0.19.0", GitCommit:"733ad16", BuildDate:
 
 -- task --
 # task --version
-3.43.2
+3.43.3
 
 -- yq --
 # yq --version
-yq (https://github.com/mikefarah/yq/) version v4.45.1
+yq (https://github.com/mikefarah/yq/) version v4.45.4
 
