@@ -9,10 +9,10 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.29.0
-	k8s.io/api v0.30.3
-	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.3
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
+	k8s.io/api v0.31.0
+	k8s.io/apimachinery v0.31.0
+	k8s.io/client-go v0.31.0
+	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
 	sigs.k8s.io/controller-runtime v0.18.5
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -21,7 +21,7 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v25.0.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.2.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -55,6 +55,7 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
@@ -114,6 +115,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -127,7 +129,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.20.4 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/common v0.59.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -143,6 +145,7 @@ require (
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -153,7 +156,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
@@ -175,7 +178,7 @@ require (
 	k8s.io/cli-runtime v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
+	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	k8s.io/kubectl v0.30.3 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect

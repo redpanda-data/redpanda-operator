@@ -5,20 +5,20 @@ go 1.24.2
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/go-logr/logr v1.4.2
-	github.com/prometheus/common v0.55.0
+	github.com/prometheus/common v0.59.1
 	github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.18.0
-	github.com/twmb/franz-go/pkg/kadm v1.12.0
+	github.com/twmb/franz-go/pkg/kadm v1.13.0
 	github.com/twmb/franz-go/pkg/sr v1.2.0
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
-	k8s.io/api v0.30.3
-	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.3
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	k8s.io/api v0.31.0
+	k8s.io/apimachinery v0.31.0
+	k8s.io/client-go v0.31.0
+	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
 	sigs.k8s.io/controller-runtime v0.18.5
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -26,11 +26,11 @@ require (
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2 // indirect
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.34.2-20240617172850-a48fcebcf8f1.2 // indirect
-	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.16.2-20240715174738-f694d610cde4.1 // indirect
-	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.34.2-20240715174738-f694d610cde4.2 // indirect
-	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240715174743-9c0afe867874.2 // indirect
-	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240620104934-3415ce922cfb.1 // indirect
-	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240620104934-3415ce922cfb.2 // indirect
+	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.16.2-20240820164511-1d38ab631312.1 // indirect
+	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.34.2-20240820164511-1d38ab631312.2 // indirect
+	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240905175347-86054fc9276a.2 // indirect
+	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240823133854-b83c57715214.1 // indirect
+	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240823133854-b83c57715214.2 // indirect
 	cloud.google.com/go/auth v0.9.9 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.7.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
@@ -92,7 +92,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v25.0.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.2.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -104,6 +104,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fluxcd/pkg/runtime v0.43.3 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.12 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
@@ -210,7 +211,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta3 // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 // indirect
-	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 // indirect
+	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20241105204702-3dc87d8b59be // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
@@ -235,6 +236,7 @@ require (
 	github.com/twmb/tlscfg v1.2.1 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -265,6 +267,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
+	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.7.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -275,7 +278,7 @@ require (
 	k8s.io/cli-runtime v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
+	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	k8s.io/kubectl v0.30.3 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
