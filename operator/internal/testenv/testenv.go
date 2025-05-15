@@ -31,9 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 func init() {
@@ -92,7 +92,7 @@ func New(t *testing.T, options Options) *Env {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cluster, err := vcluster.New(ctx, host)
+	cluster, err := vcluster.New(ctx, host.RESTConfig())
 	require.NoError(t, err)
 
 	if len(options.CRDs) > 0 {

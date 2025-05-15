@@ -12,6 +12,7 @@ package testing
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -23,6 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 type testingContext struct{}
@@ -320,6 +324,52 @@ func (t *TestingT) IsolateNamespace(ctx context.Context) string {
 	})
 
 	return namespace
+}
+
+// VCluster creates a vcluster instance and sets up the test routines to use it.
+func (t *TestingT) VCluster(ctx context.Context) string {
+	cluster, err := vcluster.New(ctx, t.restConfig)
+	require.NoError(t, err)
+
+	configPath, err := os.CreateTemp("", "vcluster.yaml")
+	require.NoError(t, err)
+	// we use background context here so that the proxy doesn't die after the
+	// context changes
+	proxyCtx, proxyCancel := context.WithCancel(context.Background())
+	restConfig, err := cluster.PortForwardedRESTConfig(proxyCtx)
+	require.NoError(t, err)
+	require.NoError(t, kube.WriteToFile(kube.RestToConfig(restConfig), configPath.Name()))
+
+	oldOptions := t.options.KubectlOptions
+	oldClient := t.Client
+
+	newOptions := &KubectlOptions{
+		ConfigPath: configPath.Name(),
+		Namespace:  "default",
+		Env:        make(map[string]string),
+	}
+
+	for k, v := range oldOptions.Env {
+		newOptions.Env[k] = v
+	}
+	newClient, err := kubernetesClient(t.options.SchemeRegisterers, t.options.KubectlOptions)
+	require.NoError(t, err)
+
+	t.options.KubectlOptions = newOptions
+	t.Client = newClient
+
+	t.Logf("Switching to newly created vcluster %q", cluster.Name())
+
+	t.Cleanup(func(ctx context.Context) {
+		proxyCancel()
+		require.NoError(t, cluster.Delete())
+		t.options.KubectlOptions = oldOptions
+		t.Client = oldClient
+		require.NoError(t, os.RemoveAll(configPath.Name()))
+		t.Logf("Switching from vcluster %q", cluster.Name())
+	})
+
+	return cluster.Name()
 }
 
 // RequireCondition expects some condition to be found in an array of object conditions.
