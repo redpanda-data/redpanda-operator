@@ -103,6 +103,24 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 		return nil, fmt.Errorf("creating error stream: %w", err)
 	}
 
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer close(errCh)
+		defer conn.Close()
+
+		data, err := io.ReadAll(errorStream)
+		if err != nil {
+			fmt.Printf("ERROR READING FROM ERROR STREAM:\n\t%#v", err)
+			errCh <- err // TODO shouldn't do this in the long run
+		}
+
+		if len(data) > 0 {
+			fmt.Printf("ERROR FROM ERROR STREAM:\n\t%q", data)
+			errCh <- errors.Newf("FROM ERROR STREAM: %s", data)
+		}
+	}()
+
 	headers.Set(corev1.StreamType, corev1.StreamTypeData)
 	dataStream, err := conn.CreateStream(headers)
 	if err != nil {
@@ -111,11 +129,19 @@ func (p *PodDialer) DialContext(ctx context.Context, network string, address str
 		return nil, fmt.Errorf("creating data stream: %w", err)
 	}
 
-	onClose := func() {
-		conn.Close() //nolint:gosec
+	select {
+	case err := <-errCh:
+		fmt.Printf("IMMEDIATELY GOT ERROR: %#v\n", err)
+		return nil, &net.OpError{
+			Op:  "dial",
+			Net: "tcp",
+			Err: err,
+			// TODO source and addr?
+		}
+	case <-time.After(250 * time.Millisecond):
+		fmt.Printf("CREATED STREAM SUCCESSFULLY\n")
+		return wrapConn(conn, network, address, dataStream, errCh), nil
 	}
-
-	return wrapConn(onClose, network, address, dataStream, errorStream), nil
 }
 
 // parseDNS attempts to determine the intended pod to target, currently the
@@ -216,7 +242,7 @@ func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Conne
 	cfg.NegotiatedSerializer = negotiatedSerializer
 	restClient, err := rest.RESTClientFor(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	req := restClient.Post().
@@ -228,7 +254,7 @@ func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Conne
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
 	conn, protocol, err := dialer.Dial(portForwardProtocolV1Name)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "dialing into Pod %v", pod)
 	}
 
 	if protocol != portForwardProtocolV1Name {
@@ -236,18 +262,19 @@ func (p *PodDialer) connectionForPod(pod types.NamespacedName) (httpstream.Conne
 			conn.Close() //nolint:gosec
 		}
 
-		return nil, fmt.Errorf("unable to negotiate protocol: client supports %q, server returned %q", portForwardProtocolV1Name, protocol)
+		return nil, errors.Newf("unable to negotiate protocol: client supports %q, server returned %q", portForwardProtocolV1Name, protocol)
 	}
 
 	return conn, nil
 }
 
 type conn struct {
-	dataStream  httpstream.Stream
-	errorStream httpstream.Stream
-	network     string
-	remote      string
-	onClose     func()
+	conn       httpstream.Connection
+	dataStream httpstream.Stream
+	// errorStream httpstream.Stream
+
+	network string
+	remote  string
 
 	errCh  chan error
 	closed atomic.Bool
@@ -255,109 +282,152 @@ type conn struct {
 
 var _ net.Conn = (*conn)(nil)
 
-func wrapConn(onClose func(), network, remote string, s, err httpstream.Stream) *conn {
+func wrapConn(cn httpstream.Connection, network, remote string, s httpstream.Stream, errCh chan error) *conn {
 	c := &conn{
-		dataStream:  s,
-		errorStream: err,
-		network:     network,
-		remote:      remote,
-		onClose:     onClose,
-		errCh:       make(chan error, 1),
+		conn:       cn,
+		dataStream: s,
+		network:    network,
+		remote:     remote,
+		errCh:      errCh,
 	}
 
-	go c.pollErrors()
+	// go c.pollErrors()
 
 	return c
 }
 
-func (c *conn) pollErrors() {
-	defer c.Close()
+// func (c *conn) pollErrors() {
+// 	// defer c.Close()
+// 	defer close(c.errCh)
+// 	defer c.conn.Close()
+//
+// 	data, err := io.ReadAll(c.errorStream)
+// 	if err != nil {
+// 		fmt.Printf("ERROR READING FROM ERROR STREAM %d:\n\n%s\n\n", c.errorStream.Identifier(), data)
+// 		select {
+// 		case <-c.conn.CloseChan():
+// 		case c.errCh <- errors.WithStack(err):
+// 		}
+// 	}
+//
+// 	if len(data) != 0 {
+// 		fmt.Printf("ERROR FROM ERROR STREAM:\n\n%s\n\n", data)
+// 		select {
+// 		case <-c.conn.CloseChan():
+// 		case c.errCh <- errors.Newf("received error message from error stream: %s", string(data)):
+// 		}
+// 		// c.writeError(
+// 		// return
+// 	}
+// }
 
-	data, err := io.ReadAll(c.errorStream)
-	if err != nil {
-		c.writeError(err)
-		return
-	}
+// func (c *conn) writeError(err error) {
+// 	select {
+// 	case c.errCh <- err:
+// 	default:
+// 	}
+// }
 
-	if len(data) != 0 {
-		c.writeError(fmt.Errorf("received error message from error stream: %s", string(data)))
-		return
-	}
-}
-
-func (c *conn) writeError(err error) {
-	select {
-	case c.errCh <- err:
-	default:
-	}
-}
-
-func (c *conn) checkError() error {
-	select {
-	case err := <-c.errCh:
-		return err
-	default:
-		if c.closed.Load() {
-			return net.ErrClosed
-		}
-		return nil
-	}
-}
+// func (c *conn) checkError() error {
+// 	select {
+// 	case err := <-c.errCh:
+// 		return err
+// 	default:
+// 		if c.closed.Load() {
+// 			return net.ErrClosed
+// 		}
+// 		return nil
+// 	}
+// }
 
 func (c *conn) Read(data []byte) (int, error) {
-	if err := c.checkError(); err != nil {
-		return 0, err
-	}
+	// if _, ok := <-c.conn.CloseChan(); ok {
+	// 	return 0, errors.New("EOF")
+	// }
 
 	n, err := c.dataStream.Read(data)
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		return n, err
+	if err != nil {
+		fmt.Printf("ERROR FROM READ DATA STREAM:\n\n%s\n\n", err)
+		select {
+		case errStreamErr := <-c.errCh:
+			return n, errors.Join(err, errStreamErr)
+		default:
+			return n, err
+		}
 	}
-	return n, err
+	return n, nil
+
+	// if err := c.checkError(); err != nil {
+	// 	return 0, err
+	// }
+	//
+	// n, err := c.dataStream.Read(data)
+	//
+	// // prioritize any sort of checks propagated on
+	// // the error stream
+	// if err := c.checkError(); err != nil {
+	// 	return n, err
+	// }
+	// return n, err
 }
 
 func (c *conn) Write(b []byte) (int, error) {
-	if err := c.checkError(); err != nil {
-		return 0, err
-	}
-
+	// if _, ok := <-c.conn.CloseChan(); ok {
+	// 	return 0, net.ErrClosed
+	// }
+	// if err := c.checkError(); err != nil {
+	// 	return 0, err
+	// }
+	//
+	// n, err :=
 	n, err := c.dataStream.Write(b)
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		return n, err
+	if err != nil {
+		fmt.Printf("ERROR FROM WRITE DATA STREAM:\n\n%s\n\n", err)
+		select {
+		case errStreamErr := <-c.errCh:
+			return n, errors.Join(err, errStreamErr)
+		default:
+			return n, err
+		}
 	}
-	return n, err
+	return n, nil
+
+	// // prioritize any sort of checks propagated on
+	// // the error stream
+	// if err := c.checkError(); err != nil {
+	// 	return n, err
+	// }
+	// return n, err
 }
 
 func (c *conn) Close() error {
-	// make Close idempotent since we may close off
-	// the stream when a context is canceled but also
-	// may have had Close called manually
-	if !c.closed.CompareAndSwap(false, true) {
-		return nil
-	}
-
-	// call our onClose cleanup handler
-	defer c.onClose()
-
-	// closing the underlying connection should cause
-	// our error stream reading routine to stop
-	_ = c.errorStream.Reset()
-	closeErr := c.dataStream.Reset()
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		if !errors.Is(err, net.ErrClosed) {
-			return err
-		}
-	}
-	return closeErr
+	return c.conn.Close()
+	// // make Close idempotent since we may close off
+	// // the stream when a context is canceled but also
+	// // may have had Close called manually
+	// if !c.closed.CompareAndSwap(false, true) {
+	// 	return nil
+	// }
+	//
+	// // call our onClose cleanup handler
+	// defer c.onClose()
+	//
+	// // closing the underlying connection should cause
+	// // our error stream reading routine to stop
+	// _ = c.errorStream.Reset()
+	// if err := c.dataStream.Reset(); err != nil {
+	// 	return err
+	// }
+	//
+	// return errors.WithStack(<-c.errCh)
+	// // prioritize any sort of checks propagated on
+	// // the error stream
+	// // if err := c.checkError(); err != nil {
+	// // 	if !errors.Is(err, net.ErrClosed) {
+	// // 		return err
+	// // 	}
+	// // }
+	// // return closeErr
 }
 
 func (c *conn) SetDeadline(t time.Time) error {

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/k3s"
 	corev1 "k8s.io/api/core/v1"
@@ -29,10 +30,13 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestDialer(t *testing.T) {
+	logger := testr.New(t)
+	klog.SetLogger(logger) // TODO how to set verbosity?
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -194,6 +198,12 @@ func TestDialer(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("error propagation", func(t *testing.T) {
+		// A port that's not accepting connections
+		_, err := dialer.DialContext(ctx, "tcp", "name.default:12345")
+		require.Error(t, err)
+	})
 
 	t.Run("roundTripperFor", func(t *testing.T) {
 		const canary = "You've used the customized dialer!"
