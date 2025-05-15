@@ -24,7 +24,7 @@ Kubernetes: `>= 1.25.0-0`
 
 ### [additionalCmdFlags](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=additionalCmdFlags)
 
-Passes additional flags to the Redpanda Operator at startup. Additional flags include:  - `--additional-controllers`: Additional controllers to deploy. Valid values are nodeWatcher or decommission. For more information about the Nodewatcher controller, see [Install the Nodewatcher controller](https://docs.redpanda.com/current/manage/kubernetes/k-scale-redpanda/#node-pvc). For more information about the Decommission controller, see [Use the Decommission controller](https://docs.redpanda.com/current/manage/kubernetes/k-decommission-brokers/#Automated).
+Passes additional flags to the Redpanda Operator at startup.
 
 **Default:** `[]`
 

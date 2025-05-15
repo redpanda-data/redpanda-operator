@@ -7,6 +7,7 @@
 !.buildkite
 /dbuild
 bin
+artifacts/
 _e2e_artifacts/
 _e2e_with_flags_artifacts/
 _e2e_unstable_artifacts/
