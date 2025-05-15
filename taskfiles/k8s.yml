@@ -20,10 +20,6 @@ tasks:
           PATH: ./internal/controller/rpkdebugbundle
         - NAME: rack-awareness
           PATH: ./internal/controller/rackawareness
-        - NAME: node-watcher
-          PATH: ./internal/controller/nodewatcher
-        - NAME: old-decommission
-          PATH: ./internal/controller/olddecommission
         - NAME: pvcunbinder
           PATH: ./internal/controller/pvcunbinder
         - NAME: v2-manager
@@ -64,8 +60,6 @@ tasks:
           '.' \
           ./config/rbac/itemized/decommission.yaml \
           ./config/rbac/itemized/leader-election.yaml \
-          ./config/rbac/itemized/node-watcher.yaml \
-          ./config/rbac/itemized/old-decommission.yaml \
           ./config/rbac/itemized/pvcunbinder.yaml \
           ./config/rbac/itemized/rack-awareness.yaml \
           ./config/rbac/itemized/rpk-debug-bundle.yaml \
@@ -91,8 +85,6 @@ tasks:
           paths=./internal/controller/redpanda \
           paths=./internal/controller/rackawareness \
           paths=./internal/controller/rpkdebugbundle \
-          paths=./internal/controller/nodewatcher \
-          paths=./internal/controller/olddecommission \
           rbac:roleName=manager \
           output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
 

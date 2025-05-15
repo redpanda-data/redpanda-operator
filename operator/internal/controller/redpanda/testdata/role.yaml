@@ -7,24 +7,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
   - nodes
-  - secrets
   verbs:
   - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -122,6 +107,7 @@ rules:
   resources:
   - endpoints
   - limitranges
+  - persistentvolumeclaims
   - pods/log
   - replicationcontrollers
   - resourcequotas
@@ -137,17 +123,6 @@ rules:
   - get
   - list
   - patch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - apps
   resources:
@@ -169,13 +144,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets/status
-  verbs:
-  - patch
-  - update
 - apiGroups:
   - autoscaling
   resources:

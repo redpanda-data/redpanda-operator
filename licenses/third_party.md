@@ -279,7 +279,6 @@ run `task generate:third-party-licenses-list`
 | k8s.io/client-go | [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.30.3/LICENSE) |
 | k8s.io/client-go/third_party/forked/golang/template | [BSD-3-Clause](https://github.com/kubernetes/client-go/blob/v0.30.3/third_party/forked/golang/LICENSE) |
 | k8s.io/component-base | [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.30.3/LICENSE) |
-| k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.30.3/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/3c01b740850f/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/3c01b740850f/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
