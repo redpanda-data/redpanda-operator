@@ -11,8 +11,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 
@@ -49,6 +51,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			"localhost/redpanda-operator:dev",
+			"docker.redpanda.com/redpandadata/redpanda-operator:v2.3.9-24.3.11",
+			"docker.redpanda.com/redpandadata/redpanda:v24.3.11",
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
 			"quay.io/jetstack/cert-manager-controller:v1.14.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
@@ -66,11 +70,17 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			},
 		}).
 		WithCRDDirectory("../operator/config/crd/bases").
-		OnFeature(func(ctx context.Context, t framework.TestingT) {
-			t.Log("Installing Redpanda operator chart")
+		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
+			// this actually switches namespaces, run it first
+			namespace := t.IsolateNamespace(ctx)
+
+			if slices.ContainsFunc(tags, shouldSkipOperatorInstall) {
+				return
+			}
+			t.Log("Installing default Redpanda operator chart")
 			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
-				Namespace: t.IsolateNamespace(ctx),
+				Namespace: namespace,
 				Values: map[string]any{
 					"logLevel": "trace",
 					"image": map[string]any{
@@ -96,7 +106,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			})
 			t.Log("Successfully installed Redpanda operator chart")
 		}).
-		RegisterTag("cluster", 1, ClusterTag).
+		RegisterTag("operator", 1, OperatorTag).
+		RegisterTag("cluster", 2, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
 })
@@ -121,4 +132,26 @@ func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) conte
 	t.Logf("Finished installing cluster %q", name)
 
 	return ctx
+}
+
+func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
+	require.Greater(t, len(args), 0, "operator tags can only be used with additional arguments")
+	name := args[0]
+	if name == "none" {
+		t.Log("Skipping Redpanda operator installation")
+		return ctx
+	}
+
+	t.Logf("Installing Redpanda operator chart: %q", name)
+	t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+		Name:       "redpanda-operator",
+		Namespace:  t.Namespace(),
+		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
+	})
+
+	return ctx
+}
+
+func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
+	return tag.Name == "operator"
 }

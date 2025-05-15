@@ -52,7 +52,7 @@ func init() {
 	framework.RegisterStep(`^its metrics endpoint should accept https request with "([^"]*)" service account token$`, acceptServiceAccountMetricsRequest)
 
 	// Helm migration scenario steps
-	framework.RegisterStep(`^a Helm release named "([^"]*)" of the "([^"]*)" Helm chart with the values:$`, iInstallHelmRelease)
+	framework.RegisterStep(`^a Helm release named "([^"]*)" of the "([^"]*)" helm chart with the values:$`, iInstallHelmRelease)
 	framework.RegisterStep(`^the Kubernetes object of type "([^"]*)" with name "([^"]*)" has an OwnerReference pointing to the cluster "([^"]*)"$`, kubernetesObjectHasClusterOwner)
 	framework.RegisterStep(`^the helm release for "([^"]*)" can be deleted by removing its stored secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the cluster "([^"]*)" is healthy$`, redpandaClusterIsHealthy)
@@ -73,4 +73,8 @@ func init() {
 	framework.RegisterStep(`^I physically shutdown a kubernetes node for cluster "([^"]*)"$`, shutdownRandomClusterNode)
 	framework.RegisterStep(`^I prune any kubernetes node that is now in a NotReady status$`, deleteNotReadyKubernetesNodes)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
+
+	// Operator upgrade scenario steps
+	framework.RegisterStep(`^I can upgrade to the latest operator with the values:$`, iCanUpgradeToTheLatestOperatorWithTheValues)
+	framework.RegisterStep(`^I install redpanda helm chart version "([^"]*)" with the values:$`, iInstallRedpandaHelmChartVersionWithTheValues)
 }

@@ -42,6 +42,18 @@ func (t *TestingT) InstallHelmChart(ctx context.Context, url, repo, chart string
 	})
 }
 
+func (t *TestingT) UpgradeHelmChart(ctx context.Context, repo, chart, release string, options helm.UpgradeOptions) {
+	helmClient, err := helm.New(helm.Options{
+		KubeConfig: rest.CopyConfig(t.restConfig),
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, "", options.Namespace, "namespace must not be blank")
+
+	t.Logf("upgrading chart %q", repo+"/"+chart)
+	_, err = helmClient.Upgrade(ctx, release, repo+"/"+chart, options)
+	require.NoError(t, err)
+}
+
 func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...helm.Dependency) {
 	helmClient, err := helm.New(helm.Options{
 		KubeConfig: rest.CopyConfig(t.restConfig),
@@ -69,4 +81,16 @@ func (t *TestingT) InstallLocalHelmChart(ctx context.Context, path string, optio
 			Namespace: options.Namespace,
 		}))
 	})
+}
+
+func (t *TestingT) UpgradeLocalHelmChart(ctx context.Context, path, release string, options helm.UpgradeOptions) {
+	helmClient, err := helm.New(helm.Options{
+		KubeConfig: rest.CopyConfig(t.restConfig),
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, "", options.Namespace, "namespace must not be blank")
+
+	t.Logf("upgrading local chart %q", path)
+	_, err = helmClient.Upgrade(ctx, release, path, options)
+	require.NoError(t, err)
 }
