@@ -1,0 +1,38 @@
+---
+name: snyk
+on:
+  push:
+    branches:
+    - main
+    - 'release/**'
+    paths:
+      - '**/go.mod'
+      - '**/go.sum'
+      - '.github/workflows/snyk.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  snyk-scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snyk/actions/setup@master
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.RP_AWS_CRED_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
+      - uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          secret-ids: |
+            ,sdlc/prod/github/snyk_token
+          parse-json-secrets: true
+      - name: Run Snyk
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        # We only scan the operator's go.mod as it's the only piece of software in this repository that's actually distributed to end users.
+        run: |
+          snyk monitor --org-id=ba2af6ec-49b4-4d42-af99-589d6b1ebbc3 --project-name=redpanda-operator/operator --target-reference=${GITHUB_REF#refs/heads/} --remote-repo=redpanda-data/operator ./operator
+        shell: bash
