@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $mapping := (dict "files/sidecar.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/pvcunbinder.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/decommission.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/rpk-debug-bundle.Role.yaml" (and $values.rbac.enabled $values.rbac.rpkDebugBundle)) -}}
+{{- $mapping := (dict "files/rpk-debug-bundle.Role.yaml" (and $values.rbac.enabled $values.rbac.rpkDebugBundle) "files/sidecar.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/pvcunbinder.Role.yaml" (and (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) $values.statefulset.sideCars.pvcUnbinder.enabled) "files/decommission.Role.yaml" (and (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) $values.statefulset.sideCars.brokerDecommissioner.enabled)) -}}
 {{- $roles := (coalesce nil) -}}
 {{- range $file, $enabled := $mapping -}}
 {{- if (not $enabled) -}}
@@ -32,7 +32,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $mapping := (dict "files/pvcunbinder.ClusterRole.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/decommission.ClusterRole.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/rack-awareness.ClusterRole.yaml" (and $values.rbac.enabled $values.rackAwareness.enabled)) -}}
+{{- $mapping := (dict "files/pvcunbinder.ClusterRole.yaml" (and (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) $values.statefulset.sideCars.pvcUnbinder.enabled) "files/decommission.ClusterRole.yaml" (and (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) $values.statefulset.sideCars.brokerDecommissioner.enabled) "files/rack-awareness.ClusterRole.yaml" (and $values.rbac.enabled $values.rackAwareness.enabled)) -}}
 {{- $clusterRoles := (coalesce nil) -}}
 {{- range $file, $enabled := $mapping -}}
 {{- if (not $enabled) -}}

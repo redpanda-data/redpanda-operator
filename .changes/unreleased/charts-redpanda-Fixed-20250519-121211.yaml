@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: '`.statefulset.sideCars.pvcunbinder.enabled` and `.statefulset.sideCars.brokerDecommissioner` are now respected when generating rules for the chart''s Roles and ClusterRoles.'
+time: 2025-05-19T12:12:11.708413-04:00
