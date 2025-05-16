@@ -1189,6 +1189,113 @@ spec:
                           https://docs.redpanda.com/current/reference/cluster-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      extraClusterConfiguration:
+                        additionalProperties:
+                          description: |-
+                            ClusterConfigValue represents a value of arbitrary type T. Values are string-encoded according to
+                            YAML rules in order to preserve numerical fidelity.
+                            Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+                            which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+                            throughout. The octet sequence of a representation will be inserted into a bootstrap template
+                            verbatim.
+                          properties:
+                            configMapKeyRef:
+                              description: |-
+                                If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                For target values, the string value fetched from the source will be treated as
+                                a raw string (and appropriately quoted for use in the bootstrap file) unless `useRawValue` is set.
+                              properties:
+                                key:
+                                  description: The key to select.
+                                  type: string
+                                name:
+                                  default: ""
+                                  description: |-
+                                    Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  type: string
+                                optional:
+                                  description: Specify whether the ConfigMap or its
+                                    key must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            externalSecretRef:
+                              description: |-
+                                Deprecated: replaced by "externalSecretRefSelector"; this field should be *REMOVED* ASAP since it's barely
+                                made it into service.
+                              type: string
+                            externalSecretRefSelector:
+                              description: |-
+                                If the value is supplied by an external source, coordinates are embedded here.
+                                Note: we interpret all fetched external secrets as raw string values by default
+                                and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - name
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            repr:
+                              description: |-
+                                If the value is directly known, its YAML-compatible representation can be embedded here.
+                                Use the string representation of a serialised value in order to preserve accuracy.
+                                Prefer JSON-encoding for values that have multi-line representations in YAML.
+                                Example:
+                                The string "foo" should be the five octets "\"foo\""
+                                A true value should be the four octets "true".
+                                The number -123456 should be a seven-octet sequence, "-123456".
+                              type: string
+                            secretKeyRef:
+                              description: |-
+                                Should the value be contained in a k8s secret rather than configmap, we can refer
+                                to it here.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  default: ""
+                                  description: |-
+                                    Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            useRawValue:
+                              description: |-
+                                Any referenced value (from kubernetes or external lookup) is typically considered to be a raw string;
+                                by default it'll be quoted as a string after its lookup is resolved. To skip that behaviour,
+                                and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
+                                for use in the bootstrap configuration), set useRawValue to true.
+                                In particular, this value should be set to `true` if your external source contains a numeric value.
+                              type: boolean
+                          type: object
+                        description: |-
+                          Holds values (or references to values) that should be used to configure the cluster; these
+                          are resolved late in order to avoid embedding secrets directly into bootstrap configurations
+                          exposed as Kubernetes configmaps.
+                        type: object
                       node:
                         description: Specifies broker configuration properties. See
                           https://docs.redpanda.com/current/reference/node-properties/.
@@ -13717,6 +13824,10 @@ spec:
                         properties:
                           configurator:
                             properties:
+                              additionalCLIArgs:
+                                items:
+                                  type: string
+                                type: array
                               extraVolumeMounts:
                                 type: string
                               resources:
@@ -21591,6 +21702,113 @@ spec:
                           https://docs.redpanda.com/current/reference/cluster-properties/.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
+                      extraClusterConfiguration:
+                        additionalProperties:
+                          description: |-
+                            ClusterConfigValue represents a value of arbitrary type T. Values are string-encoded according to
+                            YAML rules in order to preserve numerical fidelity.
+                            Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+                            which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+                            throughout. The octet sequence of a representation will be inserted into a bootstrap template
+                            verbatim.
+                          properties:
+                            configMapKeyRef:
+                              description: |-
+                                If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                For target values, the string value fetched from the source will be treated as
+                                a raw string (and appropriately quoted for use in the bootstrap file) unless `useRawValue` is set.
+                              properties:
+                                key:
+                                  description: The key to select.
+                                  type: string
+                                name:
+                                  default: ""
+                                  description: |-
+                                    Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  type: string
+                                optional:
+                                  description: Specify whether the ConfigMap or its
+                                    key must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            externalSecretRef:
+                              description: |-
+                                Deprecated: replaced by "externalSecretRefSelector"; this field should be *REMOVED* ASAP since it's barely
+                                made it into service.
+                              type: string
+                            externalSecretRefSelector:
+                              description: |-
+                                If the value is supplied by an external source, coordinates are embedded here.
+                                Note: we interpret all fetched external secrets as raw string values by default
+                                and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - name
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            repr:
+                              description: |-
+                                If the value is directly known, its YAML-compatible representation can be embedded here.
+                                Use the string representation of a serialised value in order to preserve accuracy.
+                                Prefer JSON-encoding for values that have multi-line representations in YAML.
+                                Example:
+                                The string "foo" should be the five octets "\"foo\""
+                                A true value should be the four octets "true".
+                                The number -123456 should be a seven-octet sequence, "-123456".
+                              type: string
+                            secretKeyRef:
+                              description: |-
+                                Should the value be contained in a k8s secret rather than configmap, we can refer
+                                to it here.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  default: ""
+                                  description: |-
+                                    Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            useRawValue:
+                              description: |-
+                                Any referenced value (from kubernetes or external lookup) is typically considered to be a raw string;
+                                by default it'll be quoted as a string after its lookup is resolved. To skip that behaviour,
+                                and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
+                                for use in the bootstrap configuration), set useRawValue to true.
+                                In particular, this value should be set to `true` if your external source contains a numeric value.
+                              type: boolean
+                          type: object
+                        description: |-
+                          Holds values (or references to values) that should be used to configure the cluster; these
+                          are resolved late in order to avoid embedding secrets directly into bootstrap configurations
+                          exposed as Kubernetes configmaps.
+                        type: object
                       node:
                         description: Specifies broker configuration properties. See
                           https://docs.redpanda.com/current/reference/node-properties/.
@@ -34119,6 +34337,10 @@ spec:
                         properties:
                           configurator:
                             properties:
+                              additionalCLIArgs:
+                                items:
+                                  type: string
+                                type: array
                               extraVolumeMounts:
                                 type: string
                               resources:

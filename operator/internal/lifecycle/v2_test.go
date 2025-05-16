@@ -95,7 +95,15 @@ func TestV2ResourceClient(t *testing.T) {
 	goldenPools := testutil.NewTxTar(t, "testdata/cases.pools.golden.txtar")
 	goldenResources := testutil.NewTxTar(t, "testdata/cases.resources.golden.txtar")
 
-	resourceClient := NewResourceClient(manager, V2ResourceManagers)
+	cloudSecrets := CloudSecretsFlags{
+		CloudSecretsEnabled: false,
+	}
+	redpandaImage := Image{
+		Repository: "localhost/redpanda-operator",
+		Tag:        "dev",
+	}
+
+	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, cloudSecrets))
 
 	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 

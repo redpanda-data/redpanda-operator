@@ -420,6 +420,22 @@ References: +
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterconfiguration"]
+==== ClusterConfiguration
+
+_Underlying type:_ _ClusterConfiguration_
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-config[$$Config$$]
+****
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref"]
 ==== ClusterRef
 
@@ -532,6 +548,9 @@ Config configures Redpanda config properties supported by Redpanda that may not 
 | Field | Description | Default | Validation
 | *`rpk`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/. + |  | 
 | *`cluster`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/. + |  | 
+| *`extraClusterConfiguration`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterconfiguration[$$ClusterConfiguration$$]__ | Holds values (or references to values) that should be used to configure the cluster; these +
+are resolved late in order to avoid embedding secrets directly into bootstrap configurations +
+exposed as Kubernetes configmaps. + |  | 
 | *`node`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies broker configuration properties. See https://docs.redpanda.com/current/reference/node-properties/. + |  | 
 | *`tunable`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/. + |  | 
 | *`schema_registry_client`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies tunable configuration properties. See https://docs.redpanda.com/current/reference/tunable-properties/. + |  | 
@@ -649,6 +668,7 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 | Field | Description | Default | Validation
 | *`extraVolumeMounts`* __string__ |  |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+| *`additionalCLIArgs`* __string array__ |  |  | 
 |===
 
 

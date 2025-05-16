@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"fmt"
+	"strings"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/invopop/jsonschema"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 const (
@@ -766,6 +768,9 @@ type Statefulset struct {
 		SetDataDirOwnership struct {
 			Enabled bool `json:"enabled"`
 		} `json:"setDataDirOwnership"`
+		Configurator struct {
+			AdditionalCLIArgs []string `json:"additionalCLIArgs,omitempty"`
+		} `json:"configurator"`
 	} `json:"initContainers"`
 	InitContainerImage struct {
 		Repository string `json:"repository"`
@@ -976,12 +981,13 @@ func (l *Listeners) TrustStores(tls *TLS) []*TrustStore {
 }
 
 type Config struct {
-	Cluster              ClusterConfig         `json:"cluster" jsonschema:"required"`
-	Node                 NodeConfig            `json:"node" jsonschema:"required"`
-	RPK                  map[string]any        `json:"rpk"`
-	SchemaRegistryClient *SchemaRegistryClient `json:"schema_registry_client"`
-	PandaProxyClient     *PandaProxyClient     `json:"pandaproxy_client"`
-	Tunable              TunableConfig         `json:"tunable" jsonschema:"required"`
+	Cluster                   ClusterConfig         `json:"cluster" jsonschema:"required"`
+	ExtraClusterConfiguration ClusterConfiguration  `json:"extraClusterConfiguration"`
+	Node                      NodeConfig            `json:"node" jsonschema:"required"`
+	RPK                       map[string]any        `json:"rpk"`
+	SchemaRegistryClient      *SchemaRegistryClient `json:"schema_registry_client"`
+	PandaProxyClient          *PandaProxyClient     `json:"pandaproxy_client"`
+	Tunable                   TunableConfig         `json:"tunable" jsonschema:"required"`
 }
 
 func (c *Config) CreateRPKConfiguration() map[string]any {
@@ -992,6 +998,135 @@ func (c *Config) CreateRPKConfiguration() map[string]any {
 	}
 
 	return result
+}
+
+// ClusterConfiguration holds values (or references to values) that should be used
+// to configure the cluster. Where the cluster schema defines a non-string type for a
+// given key, the corresponding values here should be string-encoded (according to yaml
+// rules)
+type ClusterConfiguration map[string]ClusterConfigValue
+
+// YAMLRepresentation holds a serialised form of a concrete value. We need this for
+// a couple of reasons: firstly, "stringifying" numbers avoids loss of accuracy and
+// rendering issues where intermediate values are represented as f64 values by
+// external tooling. Secondly, the initial configuration of a bootstrap file has
+// no running cluster - and therefore no online schema - available. Instead we use
+// representations that can be inserted verbatim into a YAML document.
+// Ideally, these will be JSON-encoded into a single line representation. They are
+// decoded using YAML deserialisation (which has a little more flexibility around
+// the representation of unambiguous string values).
+type YAMLRepresentation string
+
+// ClusterConfigValue represents a value of arbitrary type T. Values are string-encoded according to
+// YAML rules in order to preserve numerical fidelity.
+// Because these values must be embedded in a `.bootstrap.yaml` file - during the processing of
+// which, the AdminAPI's schema is unavailable - we endeavour to use yaml-compatible representations
+// throughout. The octet sequence of a representation will be inserted into a bootstrap template
+// verbatim.
+type ClusterConfigValue struct {
+	// If the value is directly known, its YAML-compatible representation can be embedded here.
+	// Use the string representation of a serialised value in order to preserve accuracy.
+	// Prefer JSON-encoding for values that have multi-line representations in YAML.
+	// Example:
+	// The string "foo" should be the five octets "\"foo\""
+	// A true value should be the four octets "true".
+	// The number -123456 should be a seven-octet sequence, "-123456".
+	Repr *YAMLRepresentation `json:"repr,omitempty"`
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a raw string (and appropriately quoted for use in the bootstrap file) unless `useRawValue` is set.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as raw string values by default
+	// and yam-encode them prior to embedding. To disable that behaviour, set `useRawValue`.
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRefSelector,omitempty"`
+	// Any referenced value (from kubernetes or external lookup) is typically considered to be a raw string;
+	// by default it'll be quoted as a string after its lookup is resolved. To skip that behaviour,
+	// and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
+	// for use in the bootstrap configuration), set useRawValue to true.
+	// In particular, this value should be set to `true` if your external source contains a numeric value.
+	UseRawValue bool `json:"useRawValue,omitempty"`
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
+	// Specify whether the Secret or its key must be defined
+	// +optional
+	Optional *bool `json:"optional,omitempty"`
+}
+
+// Translate will take a ClusterConfiguration and extract its contributions to the cluster's configuration.
+// This produces *serialised* values, suitable for injection into a bootstrap.yaml template.
+func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfiguration.Fixup, []corev1.EnvVar) {
+	// Handle all keys in order, so that any resulting EnvVar definitions are stable.
+	template := map[string]string{}
+	fixups := []clusterconfiguration.Fixup{}
+	envVars := []corev1.EnvVar{}
+	for k, v := range helmette.SortedMap(c) {
+		// This is lifted directly from operator/pkg/clusterconfiguration.
+		// Ideally we'd be able to recast it in terms of the facilities in that module.
+		if v.Repr != nil {
+			template[k] = string(*v.Repr)
+		} else if v.ConfigMapKeyRef != nil {
+			envName := keyToEnvVar(k)
+			envVars = append(envVars, corev1.EnvVar{
+				Name: envName,
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: v.ConfigMapKeyRef,
+				},
+			})
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			if v.UseRawValue {
+				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
+			} else {
+				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
+			}
+		} else if v.SecretKeyRef != nil {
+			envName := keyToEnvVar(k)
+			envVars = append(envVars, corev1.EnvVar{
+				Name: envName,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: v.SecretKeyRef,
+				},
+			})
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			if v.UseRawValue {
+				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
+			} else {
+				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
+			}
+		} else if v.ExternalSecretRefSelector != nil {
+			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
+			// insertion into a bootstrap template.
+			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
+			// then the user can specify that explicitly.
+			// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
+			fixup := fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
+			if !v.UseRawValue {
+				fixup = fmt.Sprintf(`%s(%s)`, clusterconfiguration.CELRepr, fixup)
+			}
+			if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
+				fixup = fmt.Sprintf(`%s(%s)`, clusterconfiguration.CELErrorToWarning, fixup)
+			}
+			fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fixup})
+		}
+	}
+	return template, fixups, envVars
+}
+
+func keyToEnvVar(k string) string {
+	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }
 
 type SchemaRegistryClient struct {
@@ -1609,17 +1744,21 @@ func (c TieredStorageConfig) CloudStorageCacheSize() *resource.Quantity {
 
 // Translate converts TieredStorageConfig into a map suitable for use in
 // an unexpanded `.bootstrap.yaml`.
-func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) map[string]any {
+func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[string]any, []clusterconfiguration.Fixup) {
 	// Clone ourselves as we're making changes.
 	config := helmette.Merge(map[string]any{}, c)
 
 	// For any values that can be specified as secrets and do not have explicit
 	// values, inject placeholders into config which will be replaced with
 	// `envsubst` in an initcontainer.
+	var fixups []clusterconfiguration.Fixup
 	for _, envvar := range creds.AsEnvVars(c) {
 		key := helmette.Lower(envvar.Name[len("REDPANDA_"):])
 		// NB: No string + string support in gotohelm.
-		config[key] = fmt.Sprintf("$%s", envvar.Name)
+		fixups = append(fixups, clusterconfiguration.Fixup{
+			Field: key,
+			CEL:   fmt.Sprintf(`repr(envString("%s"))`, envvar.Name),
+		})
 	}
 
 	// Expand cloud_storage_cache_size, if provided, as it can be specified as
@@ -1628,7 +1767,7 @@ func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) map[stri
 		config["cloud_storage_cache_size"] = size.Value()
 	}
 
-	return config
+	return config, fixups
 }
 
 // +gotohelm:ignore=true

@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -39,7 +38,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
 const (
@@ -60,25 +60,16 @@ const (
 	requeueTimeout = 10 * time.Second
 )
 
-type Image struct {
-	Repository string
-	Tag        string
-}
-
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
 	// KubeConfig is the [rest.Config] that provides the go helm chart
 	// Kubernetes access. It should be the same config used to create client.
-	KubeConfig      *rest.Config
-	Client          client.Client
-	LifecycleClient *lifecycle.ResourceClient[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda]
-	EventRecorder   kuberecorder.EventRecorder
-	ClientFactory   internalclient.ClientFactory
-	// OperatorImage is the image to use for any instances of the operator
-	// within redpanda deployments. e.g. StatefulSet.Sidecar.Image. The
-	// redpanda chart ships with it's own default but we want this field to be
-	// controlled by the operator.
-	OperatorImage Image
+	KubeConfig           *rest.Config
+	Client               client.Client
+	LifecycleClient      *lifecycle.ResourceClient[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda]
+	EventRecorder        kuberecorder.EventRecorder
+	ClientFactory        internalclient.ClientFactory
+	CloudSecretsExpander *pkgsecrets.CloudExpander
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -261,39 +252,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
 	defer timing.Execution(ctx).Stop("reconciling resources")
-
-	cloned := rp.DeepCopy()
-	if cloned.Spec.ClusterSpec == nil {
-		cloned.Spec.ClusterSpec = &redpandav1alpha2.RedpandaClusterSpec{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset == nil {
-		cloned.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
-	}
-
-	// If not explicitly specified, set the tag and repository of the sidecar
-	// to the image specified via CLI args rather than relying on the default
-	// of the redpanda chart.
-	// This ensures that custom deployments (e.g.
-	// localhost/redpanda-operator:dev) will use the image they are deployed
-	// with.
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Tag = &r.OperatorImage.Tag
-	}
-
-	if cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository == nil {
-		cloned.Spec.ClusterSpec.Statefulset.SideCars.Image.Repository = &r.OperatorImage.Repository
-	}
-
-	return r.LifecycleClient.SyncAll(ctx, cloned)
+	return r.LifecycleClient.SyncAll(ctx, rp)
 }
 
 // reconcilePools is the meat of the controller. It handles creation and scale up/scale down
@@ -560,7 +519,12 @@ func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
 	defer timing.Execution(ctx).Stop("reconciling cluster configuration")
 
-	config, err := r.clusterConfigFor(ctx, rp)
+	schema, err := admin.ClusterConfigSchema(ctx)
+	if err != nil {
+		return "", false, errors.WithStack(err)
+	}
+
+	config, err := r.clusterConfigFor(ctx, rp, schema)
 	if err != nil {
 		return "", false, errors.WithStack(err)
 	}
@@ -603,7 +567,7 @@ func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alph
 	return users.Data, nil
 }
 
-func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (_ map[string]any, err error) {
+func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema) (_ map[string]any, err error) {
 	// Parinoided panic catch as we're calling directly into helm functions.
 	defer func() {
 		if r := recover(); r != nil {
@@ -621,22 +585,27 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	// final cluster config and they may be referencing values stored in
 	// configmaps or secrets.
 	job := redpanda.PostInstallUpgradeJob(dot)
-	clusterConfigTemplate := redpanda.BootstrapFile(dot)
-
-	expander := kube.EnvExpander{
-		Client:    r.Client,
-		Namespace: rp.Namespace,
-		Env:       job.Spec.Template.Spec.InitContainers[0].Env,
-		EnvFrom:   job.Spec.Template.Spec.InitContainers[0].EnvFrom,
+	clusterConfigTemplate, fixups := redpanda.BootstrapContents(dot)
+	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
+	for k, v := range clusterConfigTemplate {
+		conf.SetAdditionalConfiguration(k, v)
+	}
+	for _, f := range fixups {
+		conf.AddFixup(f.Field, f.CEL)
+	}
+	for _, e := range job.Spec.Template.Spec.InitContainers[0].Env {
+		if err := conf.EnsureInitEnv(e); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	for _, e := range job.Spec.Template.Spec.InitContainers[0].EnvFrom {
+		if err := conf.EnsureInitEnvFrom(e); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
-	expanded, err := expander.Expand(ctx, clusterConfigTemplate)
+	desired, err := conf.Reify(ctx, r.Client, r.CloudSecretsExpander, schema)
 	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	var desired map[string]any
-	if err := yaml.Unmarshal([]byte(expanded), &desired); err != nil {
 		return nil, errors.WithStack(err)
 	}
 

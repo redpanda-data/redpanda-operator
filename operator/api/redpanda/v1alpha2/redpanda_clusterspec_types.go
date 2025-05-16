@@ -20,6 +20,7 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 // MarshalJSON changes marshalling due to json.Marshal default behavior where
@@ -1012,6 +1013,10 @@ type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/.
 	Cluster *runtime.RawExtension `json:"cluster,omitempty"`
+	// Holds values (or references to values) that should be used to configure the cluster; these
+	// are resolved late in order to avoid embedding secrets directly into bootstrap configurations
+	// exposed as Kubernetes configmaps.
+	ExtraClusterConfiguration ClusterConfiguration `json:"extraClusterConfiguration,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Specifies broker configuration properties. See https://docs.redpanda.com/current/reference/node-properties/.
 	Node *runtime.RawExtension `json:"node,omitempty"`
@@ -1026,6 +1031,8 @@ type Config struct {
 	PandaProxyClient *runtime.RawExtension `json:"pandaproxy_client,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 }
+
+type ClusterConfiguration vectorizedv1alpha1.ClusterConfiguration
 
 // SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
 type SideCars struct {
@@ -1154,6 +1161,7 @@ type FsValidator struct {
 type Configurator struct {
 	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	AdditionalCLIArgs []string                     `json:"additionalCLIArgs,omitempty"`
 }
 
 // SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.

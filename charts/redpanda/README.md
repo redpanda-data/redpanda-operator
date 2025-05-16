@@ -165,7 +165,7 @@ This section contains various settings supported by Redpanda that may not work c
 **Default:**
 
 ```
-{"cluster":{},"node":{"crash_loop_limit":5},"pandaproxy_client":{},"rpk":{},"schema_registry_client":{},"tunable":{"compacted_log_segment_size":67108864,"kafka_connection_rate_limit":1000,"log_segment_size_max":268435456,"log_segment_size_min":16777216,"max_compacted_log_segment_size":536870912}}
+{"cluster":{},"extraClusterConfiguration":{},"node":{"crash_loop_limit":5},"pandaproxy_client":{},"rpk":{},"schema_registry_client":{},"tunable":{"compacted_log_segment_size":67108864,"kafka_connection_rate_limit":1000,"log_segment_size_max":268435456,"log_segment_size_min":16777216,"max_compacted_log_segment_size":536870912}}
 ```
 
 ### [config.cluster](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=config.cluster)
@@ -732,6 +732,10 @@ Additional labels to be added to statefulset label selector. For example, `my.k8
 ### [statefulset.initContainerImage.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainerImage.tag)
 
 **Default:** `"latest"`
+
+### [statefulset.initContainers.configurator.additionalCLIArgs](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.configurator.additionalCLIArgs)
+
+**Default:** `[]`
 
 ### [statefulset.initContainers.fsValidator.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.fsValidator.enabled)
 

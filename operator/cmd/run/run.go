@@ -576,17 +576,27 @@ func Run(
 
 		factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(rpClientTimeout)
 
+		cloudSecrets := lifecycle.CloudSecretsFlags{
+			CloudSecretsEnabled:          cloudSecretsEnabled,
+			CloudSecretsPrefix:           cloudSecretsPrefix,
+			CloudSecretsAWSRegion:        cloudSecretsAWSRegion,
+			CloudSecretsAWSRoleARN:       cloudSecretsAWSRoleARN,
+			CloudSecretsGCPProjectID:     cloudSecretsGCPProjectID,
+			CloudSecretsAzureKeyVaultURI: cloudSecretsAzureKeyVaultURI,
+		}
+		redpandaImage := lifecycle.Image{
+			Repository: configuratorBaseImage,
+			Tag:        configuratorTag,
+		}
+
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:      mgr.GetConfig(),
-			Client:          mgr.GetClient(),
-			EventRecorder:   mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers),
-			ClientFactory:   factory,
-			OperatorImage: redpandacontrollers.Image{
-				Repository: configuratorBaseImage,
-				Tag:        configuratorTag,
-			},
+			KubeConfig:           mgr.GetConfig(),
+			Client:               mgr.GetClient(),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
+			ClientFactory:        factory,
+			CloudSecretsExpander: cloudExpander,
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
