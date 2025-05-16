@@ -18,6 +18,7 @@ package rapidutil
 import (
 	"reflect"
 	"time"
+	"unicode"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -54,15 +55,26 @@ var (
 		}
 	})
 
+	Time = rapid.Custom(func(t *rapid.T) metav1.Time {
+		// As metav1.Time will unmarshal 0 into "null", we need to ensure that
+		// we never generate a 0 time here otherwise JSON serialization will be
+		// non-idempotent and break out tests.
+		nsec := rapid.Int64Min(1).Draw(t, "Time")
+		return metav1.Time{Time: time.Unix(0, nsec)}
+	})
+
 	KubernetesTypes = rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[int64]():              rapid.Int64Range(-99999, 99999).AsAny(),
-			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
 			reflect.TypeFor[*metav1.FieldsV1]():   rapid.Just[any](nil), // Return nil for K8s accounting fields.
 			reflect.TypeFor[*resource.Quantity](): Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
-			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
+			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
 			reflect.TypeFor[corev1.Probe]():       Probe.AsAny(),
+			reflect.TypeFor[int64]():              rapid.Int64Range(-99999, 99999).AsAny(),
+			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
+			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
+			reflect.TypeFor[metav1.Time]():        Time.AsAny(),
+			// Unicode Control characters can cause YAML marshaling failures. We're not fuzzing with rapid in this configuration, so we limit strings to ASCII.
+			reflect.TypeFor[string](): rapid.StringOf(rapid.RuneFrom([]rune{}, unicode.ASCII_Hex_Digit)).AsAny(),
 		},
 	}
 )
