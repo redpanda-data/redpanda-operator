@@ -159,8 +159,8 @@ func (r *ClusterReconciler) Reconcile(
 				log.Info("Changing OperatorQuiescent condition after reconciliation", "status", cond.Status, "reason", cond.Reason, "message", cond.Message)
 			}
 
-			// Only set observedGeneration if there's no error.
-			if err == nil {
+			// Only set observedGeneration if there's no error and there's nothing left to do.
+			if err == nil && cond.Status == corev1.ConditionTrue {
 				cluster.Status.ObservedGeneration = vectorizedCluster.Generation
 			}
 		})
@@ -1207,7 +1207,6 @@ func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectoriz
 	}
 
 	for npName, np := range redpandaCluster.Status.NodePools {
-
 		idx := slices.IndexFunc(redpandaCluster.Spec.NodePools, func(npSpec vectorizedv1alpha1.NodePoolSpec) bool {
 			return npSpec.Name == npName
 		})
@@ -1248,6 +1247,15 @@ func getQuiescentCondition(redpandaCluster *vectorizedv1alpha1.Cluster) vectoriz
 		condition.Status = corev1.ConditionFalse
 		condition.Reason = "UpgradeInProgress"
 		condition.Message = fmt.Sprintf("Upgrade from %s to %s in progress", redpandaCluster.Spec.Version, redpandaCluster.Status.Version)
+		return condition
+	}
+
+	// If the cluster is not fully configured, then we are not quiescent
+	cfgCond := redpandaCluster.Status.GetCondition(vectorizedv1alpha1.ClusterConfiguredConditionType)
+	if cfgCond == nil || cfgCond.Status != corev1.ConditionTrue {
+		condition.Status = corev1.ConditionFalse
+		condition.Reason = "ConfigurationNotApplied"
+		condition.Message = "Configuration for is not applied"
 		return condition
 	}
 

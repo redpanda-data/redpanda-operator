@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    It is not the case that the OperatorQuiescent condition for the v1 operator cannot be True unless the ClusterConfigured condition is also True.
+
+    The status.observedGeneration will only update when the cluster reaches the OperatorQuiescent state.
+time: 2025-05-19T12:19:20.692725+01:00
