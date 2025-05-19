@@ -33,6 +33,9 @@ In the v2 operator, this value is defaulted from the operator's settings.
   sidecar/initcontainer behavior, if using an older redpanda chart.
 * Bootstrap expansion in the v2 operator's initContainer now uses CEL-patching for its expansion, much like the v1 operator.
 
+* It is not the case that the OperatorQuiescent condition for the v1 operator cannot be True unless the ClusterConfigured condition is also True.
+
+The status.observedGeneration will only update when the cluster reaches the OperatorQuiescent state.
 ### Deprecated
 * v1 operator: the `clusterConfiguration` field `ExternalSecretRef` is deprecated in favour of `ExternalSecretRefSelector`. Since this field was extremely new, it will be removed in the very near future.
 ### Removed
