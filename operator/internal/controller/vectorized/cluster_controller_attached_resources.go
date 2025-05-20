@@ -50,6 +50,7 @@ const (
 	podDisruptionBudget     = "PodDisruptionBudget"
 	proxySuperuser          = "ProxySuperuser"
 	schemaRegistrySuperUser = "SchemaRegistrySuperUser"
+	rpkSuperUser            = "RpkSuperUser"
 	serviceAccount          = "ServiceAccount"
 	secret                  = "Secret"
 	statefulSet             = "StatefulSet"
@@ -345,6 +346,32 @@ func (a *attachedResources) getSchemaRegistrySuperUserKey() types.NamespacedName
 		return types.NamespacedName{}
 	}
 	return a.getSchemaRegistrySuperUser().Key()
+}
+
+func (a *attachedResources) rpkSuperUser() {
+	// if already initialized, exit immediately
+	if _, ok := a.items[rpkSuperUser]; ok {
+		return
+	}
+
+	var rpkSASLUser *resources.SuperUsersResource
+	a.items[rpkSuperUser] = rpkSASLUser
+	if a.cluster.IsSASLOnInternalEnabled() {
+		a.items[rpkSuperUser] = resources.NewSuperUsers(a.reconciler.Client, a.cluster, a.reconciler.Scheme, resources.ScramRPKUsername, resources.RPKSuffix, a.log)
+	}
+	a.order = append(a.order, rpkSuperUser)
+}
+
+func (a *attachedResources) getRPKSuperUser() *resources.SuperUsersResource {
+	a.rpkSuperUser()
+	return a.items[rpkSuperUser].(*resources.SuperUsersResource)
+}
+
+func (a *attachedResources) getRPKSuperUserKey() types.NamespacedName {
+	if a.getRPKSuperUser() == nil {
+		return types.NamespacedName{}
+	}
+	return a.getRPKSuperUser().Key()
 }
 
 func (a *attachedResources) serviceAccount() {

@@ -6,7 +6,7 @@ spec:
   image: "vectorized/redpanda"
   version: "latest"
   replicas: 1
-  enableSasl: true
+  kafkaEnableAuthorization: true
   superUsers:
     - username: admin
   resources:
@@ -21,6 +21,7 @@ spec:
       port: 33145
     kafkaApi:
      - port: 9092
+       authenticationMethod: sasl
     pandaproxyApi:
      - port: 8082
     adminApi:

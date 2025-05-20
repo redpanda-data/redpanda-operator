@@ -1,0 +1,75 @@
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: centralized-configuration
+status:
+  restarting: false
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/centralized-configuration --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-0 -- rpk profile print
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-0 -- rpk redpanda admin brokers list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-0 -- rpk registry schema list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-0 -- rpk topic list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-1 -- rpk profile print
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-1 -- rpk redpanda admin brokers list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-1 -- rpk registry schema list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl exec -ti --namespace $NAMESPACE pod/centralized-configuration-1 -- rpk topic list
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh
