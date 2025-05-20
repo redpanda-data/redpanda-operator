@@ -14,6 +14,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"path/filepath"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -633,8 +634,8 @@ func (cc *ClusterCertificates) Volumes() (
 		mountPoints.SchemaRegistryAPI.NodeCertMountDir,
 		schemaRegistryClientCAVolName,
 		mountPoints.SchemaRegistryAPI.ClientCAMountDir,
-		false,
-		false,
+		true,
+		true,
 	)
 	vols = append(vols, vol...)
 	mounts = append(mounts, mount...)
@@ -775,16 +776,64 @@ func (cc *ClusterCertificates) KafkaClientBrokerTLS(mountPoints *resourcetypes.T
 	if !cc.kafkaAPI.internalTLSEnabled {
 		return nil
 	}
+
 	result := config.ServerTLS{
 		Enabled: true,
 	}
+
 	if len(cc.kafkaAPI.clientCertificates) > 0 {
 		result.KeyFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.ClientCAMountDir, corev1.TLSPrivateKeyKey)
 		result.CertFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.ClientCAMountDir, corev1.TLSCertKey)
 	}
+
 	if cc.kafkaAPI.selfSignedNodeCertificate {
 		// we need to also include the node ca since the node cert is self-signed
 		result.TruststoreFile = fmt.Sprintf("%s/%s", mountPoints.KafkaAPI.NodeCertMountDir, cmmetav1.TLSCAKey)
 	}
+
+	return &result
+}
+
+// AdminAPIClientTLS returns configuration to connect to Redpanda Admin api with tls
+func (cc *ClusterCertificates) AdminAPIClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	if !cc.adminAPI.internalTLSEnabled {
+		return nil
+	}
+
+	result := config.TLS{
+		InsecureSkipVerify: false,
+	}
+
+	if len(cc.adminAPI.clientCertificates) > 0 {
+		result.KeyFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, corev1.TLSPrivateKeyKey)
+		result.CertFile = fmt.Sprintf("%s/%s", mountPoints.AdminAPI.ClientCAMountDir, corev1.TLSCertKey)
+	}
+
+	if cc.adminAPI.selfSignedNodeCertificate {
+		result.TruststoreFile = filepath.Join(mountPoints.AdminAPI.NodeCertMountDir, cmmetav1.TLSCAKey)
+	}
+
+	return &result
+}
+
+// SchemaRegistryClientTLS returns configuration to connect to the schema registry api with tls
+func (cc *ClusterCertificates) SchemaRegistryClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	if !cc.schemaRegistryAPI.internalTLSEnabled {
+		return nil
+	}
+
+	result := config.TLS{
+		InsecureSkipVerify: false,
+	}
+
+	if len(cc.schemaRegistryAPI.clientCertificates) > 0 {
+		result.KeyFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, corev1.TLSPrivateKeyKey)
+		result.CertFile = fmt.Sprintf("%s/%s", mountPoints.SchemaRegistryAPI.ClientCAMountDir, corev1.TLSCertKey)
+	}
+
+	if cc.schemaRegistryAPI.selfSignedNodeCertificate {
+		result.TruststoreFile = filepath.Join(mountPoints.SchemaRegistryAPI.NodeCertMountDir, cmmetav1.TLSCAKey)
+	}
+
 	return &result
 }

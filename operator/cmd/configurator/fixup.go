@@ -22,11 +22,11 @@ func applyFixups[T any](ctx context.Context, config T, fn string, cloudExpander 
 		return config, nil
 	}
 	if err != nil {
-		return zero, fmt.Errorf("cannot load fixup file %q: %w", fn, err)
+		return zero, fmt.Errorf("cannot load fixups file %q: %w", fn, err)
 	}
 	var fs []clusterconfiguration.Fixup
 	if err := yaml.Unmarshal(fixupContent, &fs); err != nil {
-		return zero, fmt.Errorf("cannot unmarshal fixup file %q: %w", fn, err)
+		return zero, fmt.Errorf("cannot unmarshal fixups file %q: %w", fn, err)
 	}
 	tpl := clusterconfiguration.Template[T]{
 		Content: config,

@@ -21,8 +21,9 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -443,7 +444,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-node"},
-			1, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
+			1, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
 		},
 		{
 			"schematregistry api mutual tls", &vectorizedv1alpha1.Cluster{
@@ -460,7 +461,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-node", "test-schema-registry-client"},
-			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
+			2, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
 		},
 		{
 			"schematregistry with tls, nodesecretref and without requireClientAuth", &vectorizedv1alpha1.Cluster{
@@ -481,7 +482,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer"},
-			1, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
+			1, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
 		},
 		{
 			"kafka and schematregistry with nodesecretref", &vectorizedv1alpha1.Cluster{
@@ -514,7 +515,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-kafka-selfsigned-issuer", "test-kafka-root-certificate", "test-kafka-root-issuer", "test-operator-client", "test-user-client", "test-admin-client", "test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-client"},
-			4, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), &config.ServerTLS{
+			4, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), &config.ServerTLS{
 				Enabled:        true,
 				KeyFile:        "/etc/tls/certs/ca/tls.key",
 				CertFile:       "/etc/tls/certs/ca/tls.crt",
@@ -539,7 +540,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-trusted-client-ca", "test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-node", "test-schema-registry-client"},
-			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
+			2, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
 		},
 		{
 			"schematregistry api mutual tls with external ca provided by customer and external node issuer", &vectorizedv1alpha1.Cluster{
@@ -563,16 +564,19 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-trusted-client-ca", "test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-node", "test-schema-registry-client"},
-			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
+			2, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			require.NoError(t, certmanagerv1.AddToScheme(scheme))
+			require.NoError(t, clientgoscheme.AddToScheme(scheme))
 			cc, err := certmanager.NewClusterCertificates(context.TODO(), tt.pandaCluster,
 				types.NamespacedName{
 					Name:      "test",
 					Namespace: "test",
-				}, fake.NewClientBuilder().WithRuntimeObjects(&secret, &issuer).Build(), "cluster.local", "cluster2.local", scheme.Scheme, logr.Discard())
+				}, fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(&secret, &issuer).Build(), "cluster.local", "cluster2.local", scheme, logr.Discard())
 			require.NoError(t, err)
 			resources, err := cc.Resources(context.TODO())
 			require.NoError(t, err)

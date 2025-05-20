@@ -232,6 +232,7 @@ func (r *ClusterReconciler) Reconcile(
 	ar.podDisruptionBudget()
 	ar.proxySuperuser()
 	ar.schemaRegistrySuperUser()
+	ar.rpkSuperUser()
 	ar.serviceAccount()
 	ar.secret()
 
@@ -242,9 +243,12 @@ func (r *ClusterReconciler) Reconcile(
 	if ar.getSchemaRegistrySuperUser() != nil {
 		secrets = append(secrets, ar.getSchemaRegistrySuperUserKey())
 	}
+	if ar.getRPKSuperUser() != nil {
+		secrets = append(secrets, ar.getRPKSuperUserKey())
+	}
 
 	// Construct a configuration
-	cfg, err := resources.CreateConfiguration(ctx, r.Client, r.CloudSecretsExpander, &vectorizedCluster, ar.getHeadlessServiceFQDN(), ar.getProxySuperUserKey(), ar.getSchemaRegistrySuperUserKey(), pki.BrokerTLSConfigProvider())
+	cfg, err := resources.CreateConfiguration(ctx, r.Client, r.CloudSecretsExpander, &vectorizedCluster, ar.getHeadlessServiceFQDN(), ar.getProxySuperUserKey(), ar.getSchemaRegistrySuperUserKey(), ar.getRPKSuperUserKey(), pki.BrokerTLSConfigProvider())
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("creating configuration: %w", err)
 	}
