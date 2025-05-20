@@ -1,0 +1,2 @@
+SUBJECT      VERSION  ID    TYPE  ERROR
+Kafka-value  2        1     AVRO

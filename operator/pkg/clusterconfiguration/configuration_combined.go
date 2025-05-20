@@ -3,12 +3,12 @@ package clusterconfiguration
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +27,7 @@ func NewConfig(namespace string, reader k8sclient.Reader, cloudExpander *pkgsecr
 		PodContext: p,
 		Node:       NewNodeCfg(p),
 		Cluster:    NewClusterCfg(p),
+		RPK:        NewRPKCfg(p),
 
 		reader:        reader,
 		cloudExpander: cloudExpander,
@@ -70,6 +71,7 @@ type CombinedCfg struct {
 	*PodContext
 	Node    *nodeCfg
 	Cluster *clusterCfg
+	RPK     *rpkCfg
 
 	// We expand templates only once
 	templates map[string]string
@@ -166,6 +168,9 @@ func (c *CombinedCfg) Templates() (map[string]string, error) {
 	if err := c.Cluster.Template(c.templates); err != nil {
 		return nil, fmt.Errorf("cannot template bootstrap.yaml: %w", err)
 	}
+	if err := c.RPK.Template(c.templates); err != nil {
+		return nil, fmt.Errorf("cannot template rpk.yaml: %w", err)
+	}
 	return c.templates, c.Error()
 }
 
@@ -204,7 +209,7 @@ func (p *PodContext) constructEnv(ctx context.Context, reader k8sclient.Reader) 
 				Namespace: p.namespace,
 				Name:      e.ValueFrom.ConfigMapKeyRef.Name,
 			}, &cm); err != nil {
-				return nil, fmt.Errorf("resolving ConfigMapKeyRef for %q: %w", e.Name, err)
+				return nil, errors.WithStack(fmt.Errorf("resolving ConfigMapKeyRef for %q: %w", e.Name, err))
 			}
 			env[e.Name] = cm.Data[e.ValueFrom.ConfigMapKeyRef.Key]
 		case e.ValueFrom.SecretKeyRef != nil:
@@ -213,7 +218,7 @@ func (p *PodContext) constructEnv(ctx context.Context, reader k8sclient.Reader) 
 				Namespace: p.namespace,
 				Name:      e.ValueFrom.SecretKeyRef.Name,
 			}, &cm); err != nil {
-				return nil, fmt.Errorf("resolving SecretKeyRef for %q: %w", e.Name, err)
+				return nil, errors.WithStack(fmt.Errorf("resolving SecretKeyRef for %q: %w", e.Name, err))
 			}
 			env[e.Name] = string(cm.Data[e.ValueFrom.SecretKeyRef.Key])
 		default:
@@ -263,7 +268,7 @@ func (p *PodContext) constructEnv(ctx context.Context, reader k8sclient.Reader) 
 func (p *PodContext) constructFactory(ctx context.Context, reader k8sclient.Reader, cloudExpander *pkgsecrets.CloudExpander) (CelFactory, error) {
 	environ, err := p.constructEnv(ctx, reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return StdLibFactory(ctx, environ, cloudExpander), nil
 }
@@ -288,7 +293,7 @@ func (c *CombinedCfg) GetNodeConfigHash(
 	// a useless sts restart, and return the resulting hash.
 	redpandaYaml, err := c.ReifyNodeConfiguration(ctx)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return nodeConfigurationHash(redpandaYaml)
 }
@@ -316,7 +321,7 @@ func (c *CombinedCfg) GetCriticalClusterConfigHash(
 	// a useless sts restart, and return the resulting hash.
 	clusterConfig, err := c.ReifyClusterConfiguration(ctx, schema)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return criticalClusterConfigurationHash(clusterConfig, schema)
 }

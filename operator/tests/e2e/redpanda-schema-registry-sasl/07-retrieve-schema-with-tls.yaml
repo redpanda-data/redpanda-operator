@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-schema-with-tls-rp-sasl
+  name: retrieve-schema-with-tls-rp-sasl
 spec:
   template:
     spec:
@@ -33,9 +33,8 @@ spec:
             - -c
           args:
             - >
-              curl -vv --silent --cacert /etc/tls/certs/schema-registry/ca.crt -u
-              "$SCRAM_USERNAME:$SCRAM_PASSWORD" -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json"
-              --data '{"schema": "{\"type\": \"string\"}" }' https://schema-registry-sasl-cluster.$POD_NAMESPACE.svc.cluster.local.:8081/subjects/Kafka-value/versions
+              curl -vv -f --cacert /etc/tls/certs/schema-registry/ca.crt -X
+              GET -u "$SCRAM_USERNAME:$SCRAM_PASSWORD" https://schema-registry-sasl-cluster.$POD_NAMESPACE.svc.cluster.local.:8081/subjects/Kafka-value/versions/2
           volumeMounts:
             - mountPath: /etc/tls/certs/schema-registry
               name: tlscert
