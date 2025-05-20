@@ -144,5 +144,5 @@ type ValueSource struct {
 // CEL Expr for more complex values
 // Examples:
 // - rack awareness: Expr(node_annotation('k8s.io/failure-domain')),
-// - addresses: Expr(srv_addres('tcp', 'admin', 'redpanda.redpanda.cluster.svc.cluster.local'))
+// - addresses: Expr(srv_address('tcp', 'admin', 'redpanda.redpanda.cluster.svc.cluster.local'))
 type Expr string
