@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/md5" //nolint:gosec // this is not encrypting secure info
 	"encoding/json"
-	"errors"
 	"fmt"
 	"maps"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -214,7 +214,7 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 
 	factory, err := c.constructFactory(ctx, reader, cloudExpander)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// We turn the templated value into a map[string]string to begin with - this is what the
@@ -227,7 +227,7 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 		Fixups:  c.fixups,
 	}
 	if err := t.Fixup(factory); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Finally, use the schema to turn those representations into concrete values
@@ -236,7 +236,7 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 		metadata := schema[k]
 		value, err := ParseRepresentation(v, &metadata)
 		if err != nil {
-			return nil, fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err)
+			return nil, errors.WithStack(fmt.Errorf("trouble converting configuration entry %q to value: %w", k, err))
 		}
 		properties[k] = value
 	}

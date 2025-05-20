@@ -1,0 +1,3 @@
+ID HOST
+0 centralized-configuration-0.centralized-configuration.redpanda-system.svc.cluster.local.
+1 centralized-configuration-1.centralized-configuration.redpanda-system.svc.cluster.local.

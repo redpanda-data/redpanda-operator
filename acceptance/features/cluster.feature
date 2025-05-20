@@ -23,6 +23,7 @@ Feature: Basic cluster tests
     """
     And cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" has named port "admin-default" with value 9645
+    And rpk is configured correctly in "upgrade" cluster
     When I apply Kubernetes manifest:
     """
     ---
@@ -42,3 +43,4 @@ Feature: Basic cluster tests
     """
     Then cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" should have named port "admin-default" with value 9640
+    And rpk is configured correctly in "upgrade" cluster

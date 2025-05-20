@@ -1,12 +1,12 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  name: retrieve-schema-with-client-tls-rp-sasl
+  name: schema-registry-sasl-schema-registry-client
 status:
   conditions:
-    - status: "True"
-      type: Complete
-  succeeded: 1
+    - reason: Ready
+      status: "True"
+      type: Ready
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Compare rpk profile"
+actualProfile=$(kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk profile print)
+expectedProfile=$(cat rpk-profile-$1.txt)
+diff -b <(echo "$actualProfile") <(echo "$expectedProfile")
+
+echo "Compare broker list"
+actualBrokerList=$(kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk redpanda admin brokers list | awk '{print $1, $2}')
+expectedBrokerList=$(cat broker-list.txt)
+diff -b <(echo "$actualBrokerList") <(echo "$expectedBrokerList")
+
+echo "Compare schema list"
+actualSchemaList=$(kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk registry schema list)
+expectedSchemaList=$(cat schema-list-$1.txt)
+diff -b <(echo "$actualSchemaList") <(echo "$expectedSchemaList")
+
+echo "Compare topic list"
+kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk topic create test
+actualTopicList=$(kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk topic list)
+kubectl exec --namespace $NAMESPACE pod/schema-registry-sasl-0 -- rpk topic delete test
+expectedTopicList=$(cat topic-list.txt)
+diff -b <(echo "$actualTopicList") <(echo "$expectedTopicList")

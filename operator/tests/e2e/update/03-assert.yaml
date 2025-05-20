@@ -12,6 +12,8 @@ spec:
           name: configmap-dir
         - emptyDir: {}
           name: config-dir
+        - emptyDir: {}
+          name: rpk-profile
         - secret:
             defaultMode: 365
             secretName: update-cluster-lifecycle
@@ -19,6 +21,13 @@ spec:
         - name: tlscert
           secret:
             defaultMode: 420
+            items:
+            - key: tls.key
+              path: tls.key
+            - key: tls.crt
+              path: tls.crt
+            - key: ca.crt
+              path: ca.crt
             secretName: update-cluster-redpanda
         - name: datadir
           persistentVolumeClaim:
