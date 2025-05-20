@@ -847,14 +847,14 @@ func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
-				// Check "Quiesced" to make sure we're done reconciling
-				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterQuiesced)
-				if quiesced == nil {
+				// Check "Stable" to make sure we're both done reconciling and we have a healthy cluster
+				stable := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterStable)
+				if stable == nil {
 					return false, nil
 				}
 
-				ready := quiesced.Status == metav1.ConditionTrue
-				upToDate := obj.Generation == quiesced.ObservedGeneration
+				ready := stable.Status == metav1.ConditionTrue
+				upToDate := obj.Generation == stable.ObservedGeneration
 				return upToDate && ready, nil
 
 			case *corev1.Secret, *corev1.ConfigMap, *corev1.ServiceAccount,
