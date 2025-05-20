@@ -25,6 +25,7 @@ func TestCRDS(t *testing.T) {
 		"schemas.cluster.redpanda.com":    {},
 		"topics.cluster.redpanda.com":     {},
 		"users.cluster.redpanda.com":      {},
+		"nodepools.cluster.redpanda.com":  {},
 	}
 
 	foundNames := map[string]struct{}{}
@@ -37,4 +38,6 @@ func TestCRDS(t *testing.T) {
 	require.Equal(t, "redpandas.cluster.redpanda.com", crds.Redpanda().Name)
 	require.Equal(t, "topics.cluster.redpanda.com", crds.Topic().Name)
 	require.Equal(t, "users.cluster.redpanda.com", crds.User().Name)
+	require.Equal(t, "nodepools.cluster.redpanda.com", crds.NodePool().Name)
+	require.Equal(t, "schemas.cluster.redpanda.com", crds.Schema().Name)
 }
