@@ -167,6 +167,7 @@ func TestEnsure(t *testing.T) {
 				"cluster.local",
 				types.NamespacedName{},
 				types.NamespacedName{},
+				types.NamespacedName{},
 				TestBrokerTLSConfigProvider{},
 			)
 			require.NoError(t, err)
@@ -664,6 +665,7 @@ func TestCurrentVersion(t *testing.T) {
 				nil,
 				cluster,
 				"cluster.local",
+				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				types.NamespacedName{Name: "test", Namespace: "test"},
 				TestBrokerTLSConfigProvider{},

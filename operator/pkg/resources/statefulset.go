@@ -199,7 +199,7 @@ func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 
 	obj, err := r.obj(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to construct StatefulSet object: %w", err)
+		return errors.WithStack(fmt.Errorf("unable to construct StatefulSet object: %w", err))
 	}
 
 	created, err := CreateIfNotExists(ctx, r, obj, r.logger)
@@ -334,7 +334,7 @@ func (r *StatefulSetResource) obj(
 	}
 	configMapHash, err := r.cfg.GetNodeConfigHash(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	annotations[ConfigMapHashAnnotationKey] = configMapHash
 
@@ -414,7 +414,7 @@ func (r *StatefulSetResource) obj(
 			LabelSelector: clusterLabels.AsClientSelector(),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("unable to list pods: %w", err)
+			return nil, errors.WithStack(fmt.Errorf("unable to list pods: %w", err))
 		}
 
 		var atLeastOnePodMissingNodePoolKey bool
@@ -437,7 +437,7 @@ func (r *StatefulSetResource) obj(
 
 	nodePoolSpecJSON, err := json.Marshal(r.nodePool.NodePoolSpec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal NodePoolSpec as JSON: %w", err)
+		return nil, errors.WithStack(fmt.Errorf("failed to marshal NodePoolSpec as JSON: %w", err))
 	}
 
 	ss := &appsv1.StatefulSet{
@@ -493,6 +493,12 @@ func (r *StatefulSetResource) obj(
 							},
 						},
 						{
+							Name: "rpk-profile",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
 							Name: "hook-scripts-dir",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
@@ -526,6 +532,10 @@ func (r *StatefulSetResource) obj(
 								{
 									Name:  "CONFIG_DESTINATION",
 									Value: filepath.Join(configDestinationDir, configFile),
+								},
+								{
+									Name:  "RPK_PROFILE_DESTINATION",
+									Value: "/var/lib/redpanda/.config/rpk/rpk.yaml",
 								},
 								{
 									Name:  "REDPANDA_RPC_PORT",
@@ -591,6 +601,10 @@ func (r *StatefulSetResource) obj(
 								{
 									Name:      "config-dir",
 									MountPath: configDestinationDir,
+								},
+								{
+									Name:      "rpk-profile",
+									MountPath: "/var/lib/redpanda/.config/rpk",
 								},
 								{
 									Name:      "configmap-dir",
@@ -674,6 +688,10 @@ func (r *StatefulSetResource) obj(
 									Name:      "hook-scripts-dir",
 									MountPath: scriptMountPath,
 								},
+								{
+									Name:      "rpk-profile",
+									MountPath: "/var/lib/redpanda/.config/rpk",
+								},
 							}, tlsVolumeMounts...),
 						},
 					},
@@ -742,7 +760,7 @@ func (r *StatefulSetResource) obj(
 	// If the bootstrap template needs additional env vars, inject them here
 	additionalEnv, err := r.cfg.AdditionalInitEnvVars()
 	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve the configuration to extract environment variables: %w", err)
+		return nil, errors.Wrap(err, "cannot retrieve the configuration to extract environment variables")
 	}
 	ss.Spec.Template.Spec.InitContainers[0].Env = append(ss.Spec.Template.Spec.InitContainers[0].Env, additionalEnv...)
 
@@ -755,7 +773,7 @@ func (r *StatefulSetResource) obj(
 
 	err = controllerutil.SetControllerReference(r.pandaCluster, ss, r.scheme)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return ss, nil
