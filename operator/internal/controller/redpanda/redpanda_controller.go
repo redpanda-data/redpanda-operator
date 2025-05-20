@@ -356,7 +356,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster 
 
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].reconcileDecommission", *cluster))
 
-	health, err := r.fetchClusterHealth(ctx, admin, cluster)
+	health, err := r.fetchClusterHealth(ctx, admin)
 	if err != nil {
 		return health, false, errors.Wrap(err, "fetching cluster health")
 	}
@@ -543,30 +543,6 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 	return licenseStatus(), nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI, status *lifecycle.ClusterStatus) error {
-	defer timing.Execution(ctx).Stop("reconciling cluster health")
-
-	overview, err := admin.GetHealthOverview(ctx)
-	if err != nil {
-		if internalclient.IsTerminalClientError(err) {
-			status.Status.SetHealthy(statuses.ClusterHealthyReasonTerminalError, err.Error())
-		} else {
-			status.Status.SetHealthy(statuses.ClusterHealthyReasonError, err.Error())
-		}
-
-		return errors.WithStack(err)
-	}
-
-	if overview.IsHealthy {
-		status.Status.SetHealthy(statuses.ClusterHealthyReasonHealthy)
-	} else {
-		// TODO: give more specific message here
-		status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, "Cluster is not healthy")
-	}
-
-	return nil
-}
-
 func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
 	defer timing.Execution(ctx).Stop("reconciling cluster configuration")
 
@@ -693,7 +669,7 @@ func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *l
 	return result, err
 }
 
-func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI, cluster *redpandav1alpha2.Redpanda) (rpadmin.ClusterHealthOverview, error) {
+func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (rpadmin.ClusterHealthOverview, error) {
 	defer timing.Execution(ctx).Stop("fetching cluster health")
 
 	var health rpadmin.ClusterHealthOverview
