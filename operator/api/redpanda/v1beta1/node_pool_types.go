@@ -16,6 +16,11 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
+func init() {
+	SchemeBuilder.Register(&NodePool{}, &NodePoolList{})
+}
+
+// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=nodepools
