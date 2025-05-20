@@ -13,7 +13,7 @@ package {{ $.Package }}
 
 import (
 	"strings"
-    "time"
+	"time"
 
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
