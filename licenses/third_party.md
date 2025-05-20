@@ -111,7 +111,6 @@ run `task generate:third-party-licenses-list`
 | github.com/gonvenience/ytbx | [MIT](https://github.com/gonvenience/ytbx/blob/v1.4.4/LICENSE) |
 | github.com/google/btree | [Apache-2.0](https://github.com/google/btree/blob/v1.1.3/LICENSE) |
 | github.com/google/cel-go | [Apache-2.0](https://github.com/google/cel-go/blob/v0.17.8/LICENSE) |
-| github.com/google/cel-go | [BSD-3-Clause](https://github.com/google/cel-go/blob/v0.17.8/LICENSE) |
 | github.com/google/gnostic-models | [Apache-2.0](https://github.com/google/gnostic-models/blob/v0.6.9/LICENSE) |
 | github.com/google/go-cmp/cmp | [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.6.0/LICENSE) |
 | github.com/google/gofuzz | [Apache-2.0](https://github.com/google/gofuzz/blob/v1.2.0/LICENSE) |
@@ -142,9 +141,7 @@ run `task generate:third-party-licenses-list`
 | github.com/josharian/intern | [MIT](https://github.com/josharian/intern/blob/v1.0.0/license.md) |
 | github.com/json-iterator/go | [MIT](https://github.com/json-iterator/go/blob/v1.1.12/LICENSE) |
 | github.com/kballard/go-shellquote | [MIT](https://github.com/kballard/go-shellquote/blob/95032a82bc51/LICENSE) |
-| github.com/klauspost/compress | [MIT](https://github.com/klauspost/compress/blob/v1.17.9/LICENSE) |
 | github.com/klauspost/compress | [Apache-2.0](https://github.com/klauspost/compress/blob/v1.17.9/LICENSE) |
-| github.com/klauspost/compress | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.17.9/LICENSE) |
 | github.com/klauspost/compress/internal/snapref | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.17.9/internal/snapref/LICENSE) |
 | github.com/klauspost/compress/s2 | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.17.9/s2/LICENSE) |
 | github.com/klauspost/compress/zstd/internal/xxhash | [MIT](https://github.com/klauspost/compress/blob/v1.17.9/zstd/internal/xxhash/LICENSE.txt) |
@@ -292,14 +289,11 @@ run `task generate:third-party-licenses-list`
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.18.5/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.1.0/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/cfa47c3a1cc8/LICENSE) |
-| sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/cfa47c3a1cc8/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.16.0/api/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.17.2/kyaml/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml/internal/forked/github.com/qri-io/starlib/util | [MIT](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.17.2/kyaml/internal/forked/github.com/qri-io/starlib/util/LICENSE) |
 | sigs.k8s.io/structured-merge-diff/v4 | [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v4.4.1/LICENSE) |
-| sigs.k8s.io/yaml | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/LICENSE) |
 | sigs.k8s.io/yaml | [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/LICENSE) |
-| sigs.k8s.io/yaml | [BSD-3-Clause](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/LICENSE) |
 | sigs.k8s.io/yaml/goyaml.v2 | [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/goyaml.v2/LICENSE) |
 | sigs.k8s.io/yaml/goyaml.v3 | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.4.0/goyaml.v3/LICENSE) |
 
