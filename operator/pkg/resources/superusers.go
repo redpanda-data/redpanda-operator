@@ -30,6 +30,8 @@ const (
 	ScramPandaproxyUsername = "pandaproxy_client"
 	// ScramSchemaRegistryUsername is the username for schema registry
 	ScramSchemaRegistryUsername = "schemaregistry_client"
+	// ScramRPKUsername is the username for rpk cli
+	ScramRPKUsername = "rpk_client"
 	// ScramConsoleUsername is the username for console
 	ScramConsoleUsername = "console_client"
 
@@ -41,6 +43,10 @@ const (
 	// where sasl credentials (username and password) for schema
 	// registry client is held
 	SchemaRegistrySuffix = "schema-registry-sasl"
+	// RPKSuffix is the suffix for the kubernetes secret
+	// where sasl credentials (username and password) for rpk client
+	// is held
+	RPKSuffix = "rpk-sasl"
 	// ConsoleSuffix is the suffix for the kubernetes secret
 	// where sasl credentials (username and password) for
 	// console client is held

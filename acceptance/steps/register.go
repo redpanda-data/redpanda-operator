@@ -66,6 +66,7 @@ func init() {
 	// General cluster scenario steps
 	framework.RegisterStep(`^service "([^"]*)" has named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
 	framework.RegisterStep(`^service "([^"]*)" should have named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
+	framework.RegisterStep(`^rpk is configured correctly in "([^"]*)" cluster$`, checkRPKCommands)
 
 	// Decommissioning scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" is unhealthy$`, checkClusterUnhealthy)

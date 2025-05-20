@@ -20,18 +20,13 @@ spec:
                   name: schema-registry-sasl-schema-registry-sasl
                   key: password
           command:
-            - curl
+            - /bin/bash
+            - -c
           args:
-            - --silent
-            - -X
-            - POST
-            - -H
-            - 'Content-Type: application/vnd.schemaregistry.v1+json'
-            - -u
-            - $SCRAM_USERNAME:$SCRAM_PASSWORD
-            - --data
-            - '{"schema": "{\"type\": \"string\"}" }'
-            - http://schema-registry-sasl-cluster:8081/subjects/Kafka-value/versions
+            - >
+              curl -vv -f -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json"
+              -u "$SCRAM_USERNAME:$SCRAM_PASSWORD" --data '{"schema": "{\"type\": \"string\"}" }'
+              http://schema-registry-sasl-cluster:8081/subjects/Kafka-value/versions
       restartPolicy: Never
   backoffLimit: 6
   parallelism: 1

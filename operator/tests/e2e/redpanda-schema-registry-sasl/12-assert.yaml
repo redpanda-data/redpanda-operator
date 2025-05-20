@@ -1,3 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: retrieve-schema-with-client-tls-rp-sasl
+status:
+  conditions:
+    - status: "True"
+      type: Complete
+  succeeded: 1
+---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:

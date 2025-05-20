@@ -1,16 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: retrieve-schema-with-client-tls-rp-sasl
+  name: create-schema-with-tls-rp-sasl
 spec:
   template:
     spec:
       volumes:
         - name: tlscert
-          secret:
-            defaultMode: 420
-            secretName: schema-registry-sasl-schema-registry-client
-        - name: tlscertca
           secret:
             defaultMode: 420
             secretName: schema-registry-sasl-schema-registry-node
@@ -37,14 +33,12 @@ spec:
             - -c
           args:
             - >
-              curl -vv --silent  --cacert /etc/tls/certs/schema-registry/ca.crt --cert
-              /etc/tls/certs/schema-registry/tls.crt  --key /etc/tls/certs/schema-registry/tls.key
-              -u "$SCRAM_USERNAME:$SCRAM_PASSWORD" -X GET https://schema-registry-sasl-cluster.$POD_NAMESPACE.svc.cluster.local.:8081/subjects/Kafka-value/versions/1
+              curl -vv -f --cacert /etc/tls/certs/schema-registry/ca.crt -u
+              "$SCRAM_USERNAME:$SCRAM_PASSWORD" -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json"
+              --data '{"schema": "{\"type\": \"string\"}" }' https://schema-registry-sasl-cluster.$POD_NAMESPACE.svc.cluster.local.:8081/subjects/Kafka-value/versions
           volumeMounts:
             - mountPath: /etc/tls/certs/schema-registry
               name: tlscert
-            - mountPath: /etc/tls/certs/schema-registry/ca
-              name: tlscertca
       restartPolicy: Never
   backoffLimit: 6
   parallelism: 1

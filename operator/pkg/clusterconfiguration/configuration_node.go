@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"gopkg.in/yaml.v3"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -109,20 +110,20 @@ func (n *nodeCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudExpan
 	}
 	factory, err := n.constructFactory(ctx, reader, cloudExpander)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Clone the template so as to not overwrite it
 	cfg, err := clone(n.RedpandaYaml)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	t := Template[*config.RedpandaYaml]{
 		Content: cfg,
 		Fixups:  n.fixups,
 	}
 	if err := t.Fixup(factory); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	n.concrete = cfg
 	return n.concrete, nil

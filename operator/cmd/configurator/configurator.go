@@ -43,6 +43,7 @@ import (
 
 const (
 	configDestinationEnvVar                              = "CONFIG_DESTINATION"
+	rpkProfileDestinationEnvVar                          = "RPK_PROFILE_DESTINATION"
 	configSourceDirEnvVar                                = "CONFIG_SOURCE_DIR"
 	externalConnectivityAddressTypeEnvVar                = "EXTERNAL_CONNECTIVITY_ADDRESS_TYPE"
 	externalConnectivityEnvVar                           = "EXTERNAL_CONNECTIVITY"
@@ -69,6 +70,7 @@ type brokerID int
 
 type configuratorConfig struct {
 	configDestination                              string
+	rpkProfileDestination                          string
 	configSourceDir                                string
 	externalConnectivity                           bool
 	externalConnectivityAddressType                corev1.NodeAddressType
@@ -97,6 +99,7 @@ func (c *configuratorConfig) String() string {
 		"svcFQDN: %s\n"+
 		"configSourceDir: %s\n"+
 		"configDestination: %s\n"+
+		"rpkProfileDestination: %s\n"+
 		"nodeName: %s\n"+
 		"externalConnectivity: %t\n"+
 		"externalConnectivitySubdomain: %s\n"+
@@ -113,6 +116,7 @@ func (c *configuratorConfig) String() string {
 		c.svcFQDN,
 		c.configSourceDir,
 		c.configDestination,
+		c.rpkProfileDestination,
 		c.nodeName,
 		c.externalConnectivity,
 		c.subdomain,
@@ -194,6 +198,10 @@ func run(
 	}
 
 	log.Print(c.String())
+
+	if err = TemplateRPKProfileYaml(ctx, filepath.Join(c.configSourceDir, "rpk.yaml"), c.rpkProfileDestination, filepath.Join(c.configSourceDir, "rpk.yaml.fixups")); err != nil {
+		log.Fatalf("%s", fmt.Errorf("unable to template rpk profile from %q to %q with %q fixup: %w", filepath.Join(c.configSourceDir, "rpk.yaml"), c.rpkProfileDestination, filepath.Join(c.configSourceDir, "rpk.yaml.fixup"), err))
+	}
 
 	p := path.Join(c.configSourceDir, clusterconfiguration.RedpandaYamlTemplateFile)
 	cf, err := os.ReadFile(p)
@@ -532,6 +540,10 @@ func checkEnvVars() (configuratorConfig, error) {
 		{
 			value: &c.configDestination,
 			name:  configDestinationEnvVar,
+		},
+		{
+			value: &c.rpkProfileDestination,
+			name:  rpkProfileDestinationEnvVar,
 		},
 		{
 			value: &c.nodeName,
