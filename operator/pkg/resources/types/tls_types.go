@@ -29,6 +29,8 @@ type StatefulsetTLSVolumeProvider interface {
 // BrokerTLSConfigProvider provides broker client config for kafka api
 type BrokerTLSConfigProvider interface {
 	KafkaClientBrokerTLS(mountPoints *TLSMountPoints) *config.ServerTLS
+	AdminAPIClientTLS(mountPoints *TLSMountPoints) *config.TLS
+	SchemaRegistryClientTLS(mountPoints *TLSMountPoints) *config.TLS
 }
 
 // AdminTLSConfigProvider returns TLS config for admin API

@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -43,6 +44,7 @@ import (
 
 const (
 	configDestinationEnvVar                              = "CONFIG_DESTINATION"
+	rpkProfileDestinationEnvVar                          = "RPK_PROFILE_DESTINATION"
 	configSourceDirEnvVar                                = "CONFIG_SOURCE_DIR"
 	externalConnectivityAddressTypeEnvVar                = "EXTERNAL_CONNECTIVITY_ADDRESS_TYPE"
 	externalConnectivityEnvVar                           = "EXTERNAL_CONNECTIVITY"
@@ -69,6 +71,7 @@ type brokerID int
 
 type configuratorConfig struct {
 	configDestination                              string
+	rpkProfileDestination                          string
 	configSourceDir                                string
 	externalConnectivity                           bool
 	externalConnectivityAddressType                corev1.NodeAddressType
@@ -97,6 +100,7 @@ func (c *configuratorConfig) String() string {
 		"svcFQDN: %s\n"+
 		"configSourceDir: %s\n"+
 		"configDestination: %s\n"+
+		"rpkProfileDestination: %s\n"+
 		"nodeName: %s\n"+
 		"externalConnectivity: %t\n"+
 		"externalConnectivitySubdomain: %s\n"+
@@ -113,6 +117,7 @@ func (c *configuratorConfig) String() string {
 		c.svcFQDN,
 		c.configSourceDir,
 		c.configDestination,
+		c.rpkProfileDestination,
 		c.nodeName,
 		c.externalConnectivity,
 		c.subdomain,
@@ -194,6 +199,10 @@ func run(
 	}
 
 	log.Print(c.String())
+
+	if err = copyFile(filepath.Join(c.configSourceDir, "rpk.yaml"), c.rpkProfileDestination); err != nil {
+		log.Fatalf("%s", fmt.Errorf("unable to copy rpk profile from %q to %q: %w", filepath.Join(c.configSourceDir, "rpk.yaml"), c.rpkProfileDestination, err))
+	}
 
 	p := path.Join(c.configSourceDir, clusterconfiguration.RedpandaYamlTemplateFile)
 	cf, err := os.ReadFile(p)
@@ -288,6 +297,27 @@ func run(
 	}
 
 	log.Printf("Configuration saved to: %s", c.configDestination)
+}
+
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dst, 0o777)
 }
 
 func validateMountedVolume(cfg *config.RedpandaYaml, validate bool) error {
@@ -532,6 +562,10 @@ func checkEnvVars() (configuratorConfig, error) {
 		{
 			value: &c.configDestination,
 			name:  configDestinationEnvVar,
+		},
+		{
+			value: &c.rpkProfileDestination,
+			name:  rpkProfileDestinationEnvVar,
 		},
 		{
 			value: &c.nodeName,
