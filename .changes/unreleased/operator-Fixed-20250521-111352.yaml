@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Setting `serviceAccount.create` to `false` no longer prevents the Kubernetes ServiceAccountToken volume from being mounted to the operator Pod.
+time: 2025-05-21T11:13:52.428703-04:00
