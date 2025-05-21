@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/fluxcd/pkg/runtime/client"
+	fluxclient "github.com/fluxcd/pkg/runtime/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	helmkube "helm.sh/helm/v3/pkg/kube"
@@ -90,8 +90,8 @@ const (
 )
 
 var (
-	clientOptions  client.Options
-	kubeConfigOpts client.KubeConfigOptions
+	clientOptions  fluxclient.Options
+	kubeConfigOpts fluxclient.KubeConfigOptions
 
 	availableControllers = []string{
 		NodeController.toString(),
