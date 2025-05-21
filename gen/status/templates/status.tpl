@@ -13,6 +13,7 @@ package {{ $.Package }}
 
 import (
 	"strings"
+	"time"
 
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +83,7 @@ func (s *{{ $status.GoName }}) UpdateConditions(o client.Object) bool {
 
     updated := false
     for _, condition := range s.getConditions(o.GetGeneration()) {
-        if apimeta.SetStatusCondition(conditions, condition) {
+        if setStatusCondition(conditions, condition) {
             updated = true
         }
     }
@@ -126,6 +127,16 @@ func (s *{{ $status.GoName }}) getConditions(generation int64) []metav1.Conditio
 }
 
 {{- range $condition := $status.ManualConditions }}{{/* ManualConditions */}}
+// Set{{ $condition.Name }}FromCurrent sets the underlying condition based on an existing object.
+func (s *{{ $status.GoName }}) Set{{ $condition.Name }}FromCurrent(o client.Object) {
+    condition := apimeta.FindStatusCondition(GetConditions(o), {{ $condition.GoName }})
+    if condition == nil {
+        return
+    }
+
+    s.Set{{ $condition.Name }}({{ $condition.GoConditionName }}(condition.Reason), condition.Message)
+}
+
 // Set{{ $condition.Name }} sets the underlying condition to the given reason.
 func (s *{{ $status.GoName }}) Set{{ $condition.Name }}(reason {{ $condition.GoConditionName }}, messages ...string) {
     if s.is{{ $condition.Name }}Set {
@@ -232,3 +243,82 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Cond
 }
 {{- end }}{{/* Rollup Conditions */}}
 {{ end }}{{/* Status Structure */}}
+
+// HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
+// within the given time period.
+func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
+    condition := apimeta.FindStatusCondition(GetConditions(o), string(conditionType))
+    if condition == nil {
+        return false
+    }
+
+	recent := time.Since(condition.LastTransitionTime.Time) > period
+    matchedCondition := condition.Status == value
+    generationChanged := condition.ObservedGeneration != 0 && condition.ObservedGeneration < o.GetGeneration()
+
+    return matchedCondition && !(generationChanged || recent)
+}
+
+// GetConditions returns the conditions for a given object.
+func GetConditions(o client.Object) []metav1.Condition {
+    switch kind := o.(type) {
+        {{- range $status := $.Statuses -}}
+        {{- range $kind := $status.ImportedKinds }}
+    case {{ $kind }}:
+        return kind.Status.Conditions
+        {{- end }}
+        {{- end }}
+    default:
+        panic("unsupported kind")
+    }
+}
+
+// setStatusCondition is a copy of the apimeta.SetStatusCondition with one primary change. Rather
+// than only change the .LastTransitionTime if the .Status field of the condition changes, it
+// sets it if .Status, .Reason, .Message, or .ObservedGeneration changes, which works nicely with our recent check leveraged
+// for rate limiting above. It also normalizes this to be the same as what utils.StatusConditionConfigs does
+func setStatusCondition(conditions *[]metav1.Condition, newCondition metav1.Condition) (changed bool) {
+	if conditions == nil {
+		return false
+	}
+	existingCondition := apimeta.FindStatusCondition(*conditions, newCondition.Type)
+	if existingCondition == nil {
+		if newCondition.LastTransitionTime.IsZero() {
+			newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+		}
+		*conditions = append(*conditions, newCondition)
+		return true
+	}
+
+    setTransitionTime := func() {
+		if !newCondition.LastTransitionTime.IsZero() {
+			existingCondition.LastTransitionTime = newCondition.LastTransitionTime
+		} else {
+			existingCondition.LastTransitionTime = metav1.NewTime(time.Now())
+		}
+    }
+    
+	if existingCondition.Status != newCondition.Status {
+		existingCondition.Status = newCondition.Status
+		setTransitionTime()
+		changed = true
+	}
+
+	if existingCondition.Reason != newCondition.Reason {
+		existingCondition.Reason = newCondition.Reason
+		setTransitionTime()
+		changed = true
+	}
+	if existingCondition.Message != newCondition.Message {
+		existingCondition.Message = newCondition.Message
+		setTransitionTime()
+		changed = true
+	}
+	if existingCondition.ObservedGeneration != newCondition.ObservedGeneration {
+		existingCondition.ObservedGeneration = newCondition.ObservedGeneration
+		setTransitionTime()
+		changed = true
+	}
+
+	return changed
+}

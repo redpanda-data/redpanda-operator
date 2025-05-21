@@ -13,6 +13,7 @@ package statuses
 
 import (
 	"strings"
+	"time"
 
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -273,7 +274,7 @@ func (s *ClusterStatus) UpdateConditions(o client.Object) bool {
 
 	updated := false
 	for _, condition := range s.getConditions(o.GetGeneration()) {
-		if apimeta.SetStatusCondition(conditions, condition) {
+		if setStatusCondition(conditions, condition) {
 			updated = true
 		}
 	}
@@ -306,6 +307,16 @@ func (s *ClusterStatus) getConditions(generation int64) []metav1.Condition {
 	}
 
 	return conditions
+}
+
+// SetReadyFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetReadyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterReady)
+	if condition == nil {
+		return
+	}
+
+	s.SetReady(ClusterReadyCondition(condition.Reason), condition.Message)
 }
 
 // SetReady sets the underlying condition to the given reason.
@@ -349,6 +360,16 @@ func (s *ClusterStatus) SetReady(reason ClusterReadyCondition, messages ...strin
 	})
 }
 
+// SetHealthyFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetHealthyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterHealthy)
+	if condition == nil {
+		return
+	}
+
+	s.SetHealthy(ClusterHealthyCondition(condition.Reason), condition.Message)
+}
+
 // SetHealthy sets the underlying condition to the given reason.
 func (s *ClusterStatus) SetHealthy(reason ClusterHealthyCondition, messages ...string) {
 	if s.isHealthySet {
@@ -388,6 +409,16 @@ func (s *ClusterStatus) SetHealthy(reason ClusterHealthyCondition, messages ...s
 		Reason:  string(reason),
 		Message: message,
 	})
+}
+
+// SetLicenseValidFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetLicenseValidFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterLicenseValid)
+	if condition == nil {
+		return
+	}
+
+	s.SetLicenseValid(ClusterLicenseValidCondition(condition.Reason), condition.Message)
 }
 
 // SetLicenseValid sets the underlying condition to the given reason.
@@ -439,6 +470,16 @@ func (s *ClusterStatus) SetLicenseValid(reason ClusterLicenseValidCondition, mes
 	})
 }
 
+// SetResourcesSyncedFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetResourcesSyncedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterResourcesSynced)
+	if condition == nil {
+		return
+	}
+
+	s.SetResourcesSynced(ClusterResourcesSyncedCondition(condition.Reason), condition.Message)
+}
+
 // SetResourcesSynced sets the underlying condition to the given reason.
 func (s *ClusterStatus) SetResourcesSynced(reason ClusterResourcesSyncedCondition, messages ...string) {
 	if s.isResourcesSyncedSet {
@@ -476,6 +517,16 @@ func (s *ClusterStatus) SetResourcesSynced(reason ClusterResourcesSyncedConditio
 		Reason:  string(reason),
 		Message: message,
 	})
+}
+
+// SetConfigurationAppliedFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetConfigurationAppliedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterConfigurationApplied)
+	if condition == nil {
+		return
+	}
+
+	s.SetConfigurationApplied(ClusterConfigurationAppliedCondition(condition.Reason), condition.Message)
 }
 
 // SetConfigurationApplied sets the underlying condition to the given reason.
@@ -569,4 +620,79 @@ func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Conditio
 		Reason:  string(ClusterStableReasonUnstable),
 		Message: "Cluster Unstable",
 	}
+}
+
+// HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
+// within the given time period.
+func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
+	condition := apimeta.FindStatusCondition(GetConditions(o), string(conditionType))
+	if condition == nil {
+		return false
+	}
+
+	recent := time.Since(condition.LastTransitionTime.Time) > period
+	matchedCondition := condition.Status == value
+	generationChanged := condition.ObservedGeneration != 0 && condition.ObservedGeneration < o.GetGeneration()
+
+	return matchedCondition && !(generationChanged || recent)
+}
+
+// GetConditions returns the conditions for a given object.
+func GetConditions(o client.Object) []metav1.Condition {
+	switch kind := o.(type) {
+	case *redpandav1alpha2.Redpanda:
+		return kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+}
+
+// setStatusCondition is a copy of the apimeta.SetStatusCondition with one primary change. Rather
+// than only change the .LastTransitionTime if the .Status field of the condition changes, it
+// sets it if .Status, .Reason, .Message, or .ObservedGeneration changes, which works nicely with our recent check leveraged
+// for rate limiting above. It also normalizes this to be the same as what utils.StatusConditionConfigs does
+func setStatusCondition(conditions *[]metav1.Condition, newCondition metav1.Condition) (changed bool) {
+	if conditions == nil {
+		return false
+	}
+	existingCondition := apimeta.FindStatusCondition(*conditions, newCondition.Type)
+	if existingCondition == nil {
+		if newCondition.LastTransitionTime.IsZero() {
+			newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+		}
+		*conditions = append(*conditions, newCondition)
+		return true
+	}
+
+	setTransitionTime := func() {
+		if !newCondition.LastTransitionTime.IsZero() {
+			existingCondition.LastTransitionTime = newCondition.LastTransitionTime
+		} else {
+			existingCondition.LastTransitionTime = metav1.NewTime(time.Now())
+		}
+	}
+
+	if existingCondition.Status != newCondition.Status {
+		existingCondition.Status = newCondition.Status
+		setTransitionTime()
+		changed = true
+	}
+
+	if existingCondition.Reason != newCondition.Reason {
+		existingCondition.Reason = newCondition.Reason
+		setTransitionTime()
+		changed = true
+	}
+	if existingCondition.Message != newCondition.Message {
+		existingCondition.Message = newCondition.Message
+		setTransitionTime()
+		changed = true
+	}
+	if existingCondition.ObservedGeneration != newCondition.ObservedGeneration {
+		existingCondition.ObservedGeneration = newCondition.ObservedGeneration
+		setTransitionTime()
+		changed = true
+	}
+
+	return changed
 }
