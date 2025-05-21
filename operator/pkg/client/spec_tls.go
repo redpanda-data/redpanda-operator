@@ -17,10 +17,9 @@ import (
 	"fmt"
 	"net"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 func wrapTLSDialer(dialer redpanda.DialContextFunc, config *tls.Config) redpanda.DialContextFunc {

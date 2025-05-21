@@ -6,6 +6,7 @@
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    otel-tui.url = "github:ymtdzzz/otel-tui";
   };
 
   outputs =
@@ -13,6 +14,7 @@
     , devshell
     , flake-parts
     , nixpkgs
+    , otel-tui
     }: flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "x86_64-linux" "aarch64-linux" ];
 
@@ -78,10 +80,12 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.openssl
+              pkgs.otel-desktop-viewer
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.vcluster
               pkgs.yq-go
-            ] ++ lib.optionals pkgs.stdenv.isLinux [
+              otel-tui.defaultPackage.${system}
+            ]  ++ lib.optionals pkgs.stdenv.isLinux [
               pkgs.sysctl # Used to adjust ulimits on linux systems (Namely, CI).
             ];
           };

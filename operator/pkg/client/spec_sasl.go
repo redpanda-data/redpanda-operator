@@ -25,9 +25,9 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 func (c *Factory) configureAdminSpecSASL(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (username, password, token string, err error) {
@@ -114,12 +114,12 @@ func (c *Factory) configureKafkaSpecSASL(ctx context.Context, namespace string, 
 		}
 
 		if spec.SASL.Mechanism == config.SASLMechanismScramSHA256 {
-			logger.V(traceLevel).Info("configuring SCRAM-SHA-256 mechanism")
+			logger.V(log.TraceLevel).Info("configuring SCRAM-SHA-256 mechanism")
 			mechanism = scramAuth.AsSha256Mechanism()
 		}
 
 		if spec.SASL.Mechanism == config.SASLMechanismScramSHA512 {
-			logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
+			logger.V(log.TraceLevel).Info("configuring SCRAM-SHA-512 mechanism")
 			mechanism = scramAuth.AsSha512Mechanism()
 		}
 
@@ -138,7 +138,7 @@ func (c *Factory) configureKafkaSpecSASL(ctx context.Context, namespace string, 
 
 	// Kerberos
 	case config.SASLMechanismGSSAPI:
-		logger.V(traceLevel).Info("configuring SCRAM-SHA-512 mechanism")
+		logger.V(log.TraceLevel).Info("configuring SCRAM-SHA-512 mechanism")
 		var krbClient *krbclient.Client
 
 		kerbCfg, err := krbconfig.Load(spec.SASL.GSSAPIConfig.KerberosConfigPath)

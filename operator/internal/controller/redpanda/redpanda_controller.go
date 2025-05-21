@@ -36,7 +36,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/timing"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
@@ -304,8 +303,9 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	return r.syncStatus(ctx, status, rp)
 }
 
-func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
-	defer timing.Execution(ctx).Stop("reconciling resources")
+func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) (err error) {
+	ctx, span := trace.Start(ctx, "reconcileResources")
+	defer func() { trace.EndSpan(span, err) }()
 	return r.LifecycleClient.SyncAll(ctx, rp)
 }
 
@@ -314,7 +314,7 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 // every scale down happens a single broker at a time, ending reconciliation early and requeueing
 // the cluster if a decommissioning operation/scale down is currently in progress.
 func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda, pools *lifecycle.PoolTracker) (_ bool, err error) {
-	ctx, span := trace.Start(ctx, fmt.Sprintf("ClusterReconciler[%T].reconcilePools", cluster))
+	ctx, span := trace.Start(ctx, "reconcilePools")
 	defer func() { trace.EndSpan(span, err) }()
 
 	if !pools.CheckScale() {
@@ -356,7 +356,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 }
 
 func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster *redpandav1alpha2.Redpanda, admin *rpadmin.AdminAPI, pools *lifecycle.PoolTracker) (_ rpadmin.ClusterHealthOverview, _ bool, err error) {
-	ctx, span := trace.Start(ctx, fmt.Sprintf("ClusterReconciler[%T].reconcileDecommission", cluster))
+	ctx, span := trace.Start(ctx, "reconcileDecommission")
 	defer func() { trace.EndSpan(span, err) }()
 
 	health, err := r.fetchClusterHealth(ctx, admin)
@@ -472,8 +472,9 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (*redpandav1alpha2.RedpandaLicenseStatus, error) {
-	defer timing.Execution(ctx).Stop("reconciling license")
+func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (_ *redpandav1alpha2.RedpandaLicenseStatus, err error) {
+	ctx, span := trace.Start(ctx, "reconcileLicense")
+	defer func() { trace.EndSpan(span, err) }()
 
 	if err := r.setupLicense(ctx, rp, admin); err != nil {
 		return nil, errors.WithStack(err)
@@ -546,8 +547,9 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 	return licenseStatus(), nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
-	defer timing.Execution(ctx).Stop("reconciling cluster configuration")
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, _ bool, err error) {
+	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
+	defer func() { trace.EndSpan(span, err) }()
 
 	schema, err := admin.ClusterConfigSchema(ctx)
 	if err != nil {
@@ -672,12 +674,13 @@ func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *l
 	return result, err
 }
 
-func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (rpadmin.ClusterHealthOverview, error) {
-	defer timing.Execution(ctx).Stop("fetching cluster health")
+func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (_ rpadmin.ClusterHealthOverview, err error) {
+	ctx, span := trace.Start(ctx, "reconcileResources")
+	defer func() { trace.EndSpan(span, err) }()
 
 	var health rpadmin.ClusterHealthOverview
 
-	health, err := admin.GetHealthOverview(ctx)
+	health, err = admin.GetHealthOverview(ctx)
 	if err != nil {
 		return health, err
 	}
@@ -690,7 +693,7 @@ func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpad
 // a single less replica.
 func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *redpandav1alpha2.Redpanda, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
-	logger.V(TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	brokerID, ok := brokerMap[set.LastPod.GetName()]
 	if ok {
@@ -709,7 +712,7 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 		}
 	}
 
-	logger.V(TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
 	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
@@ -723,12 +726,12 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 // decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *redpandav1alpha2.Redpanda, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].decommissionBroker", *cluster))
-	logger.V(TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "is not decommissioning") {
-			logger.V(TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+			logger.V(log.TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
 				return false, errors.Wrap(err, "decommissioning broker")
@@ -740,7 +743,7 @@ func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpad
 		}
 	}
 	if !decommissionStatus.Finished {
-		logger.V(TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+		logger.V(log.TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 		// just requeue since we're still decommissioning
 		return true, nil

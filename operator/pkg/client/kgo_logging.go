@@ -11,14 +11,8 @@ package client
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kgo"
-)
-
-const (
-	verboseLevel = 4
-	traceLevel   = 2
-	debugLevel   = 1
-	infoLevel    = 0
 )
 
 // Reference implementation https://github.com/redpanda-data/console/blob/0ba44b236b6ddd7191da015f44a9302fc13665ec/backend/pkg/kafka/config_helper.go#L44
@@ -40,9 +34,9 @@ func (k kgoZapLogger) Log(level kgo.LogLevel, msg string, keyvals ...interface{}
 	case kgo.LogLevelNone:
 		// Don't log anything.
 	case kgo.LogLevelDebug:
-		k.logger.V(traceLevel).Info(msg, keyvals...)
+		k.logger.V(log.DebugLevel).Info(msg, keyvals...)
 	case kgo.LogLevelInfo:
-		k.logger.V(debugLevel).Info(msg, keyvals...)
+		k.logger.V(log.InfoLevel).Info(msg, keyvals...)
 	case kgo.LogLevelWarn:
 		k.logger.Info(msg, keyvals...)
 	case kgo.LogLevelError:

@@ -18,6 +18,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -29,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -38,14 +38,6 @@ import (
 
 const (
 	NoneConstantString = "none"
-)
-
-// These are for convenience when doing log.V(...) to log at a particular level. They correspond to the logr
-// equivalents of the zap levels above.
-const (
-	TraceLevel = 2
-	DebugLevel = 1
-	InfoLevel  = 0
 )
 
 var (
@@ -111,7 +103,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	l.Info(durationMsg, "result", result)
 
 	if err != nil {
-		l.V(DebugLevel).Error(err, "failed to reconcile", "topic", topic)
+		l.V(log.DebugLevel).Error(err, "failed to reconcile", "topic", topic)
 	} else if !topic.DeletionTimestamp.IsZero() {
 		patch := client.MergeFrom(topic.DeepCopy())
 		controllerutil.RemoveFinalizer(topic, FinalizerKey)
@@ -142,7 +134,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2
 	if topic.Status.ObservedGeneration != topic.Generation {
 		topic.Status.ObservedGeneration = topic.Generation
 		topic = redpandav1alpha2.TopicProgressing(topic)
-		l.V(TraceLevel).Info("bump observed generation", "observed generation", topic.Generation)
+		l.V(log.TraceLevel).Info("bump observed generation", "observed generation", topic.Generation)
 	}
 
 	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
@@ -162,7 +154,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2
 
 	// Examine if the object is under deletion
 	if !topic.ObjectMeta.DeletionTimestamp.IsZero() {
-		l.V(DebugLevel).Info("delete topic", "topic-name", topic.GetTopicName())
+		l.V(log.DebugLevel).Info("delete topic", "topic-name", topic.GetTopicName())
 		err = r.deleteTopic(ctx, topic, kafkaClient)
 		if err != nil {
 			return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, fmt.Errorf("unable to delete topic: %w", err)
@@ -175,7 +167,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2
 		if err != nil && !errors.Is(err, kerr.TopicAlreadyExists) {
 			return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
 		}
-		l.V(DebugLevel).Info("topic created",
+		l.V(log.DebugLevel).Info("topic created",
 			"topic-name", topic.GetTopicName(),
 			"topic-configuration", topic.Spec.AdditionalConfig,
 			"topic-partition", partition,
@@ -188,14 +180,14 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2
 		r.reportStatusTopicConfiguration(ctx, topic, kafkaClient)
 	}()
 
-	l.V(DebugLevel).Info("reconcile partition count", "partition", partition)
+	l.V(log.DebugLevel).Info("reconcile partition count", "partition", partition)
 	var numReplicas int16
 	numReplicas, err = r.reconcilePartition(ctx, topic, kafkaClient, int(partition))
 	if err != nil {
 		return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
 	}
 
-	l.V(DebugLevel).Info("topic configuration synchronization", "topic-configuration", topic.Spec.AdditionalConfig)
+	l.V(log.DebugLevel).Info("topic configuration synchronization", "topic-configuration", topic.Spec.AdditionalConfig)
 	resp, err := r.describeTopic(ctx, topic, kafkaClient)
 	if err != nil {
 		return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
@@ -364,7 +356,7 @@ func (r *TopicReconciler) alterTopicConfiguration(ctx context.Context, topic *re
 	reqTopic.Configs = configs
 	reqAltConfig.Resources = append(reqAltConfig.Resources, reqTopic)
 
-	l.V(TraceLevel).Info("alter topic configuration", "topic-name", topic.GetTopicName(), "configs", configs)
+	l.V(log.TraceLevel).Info("alter topic configuration", "topic-name", topic.GetTopicName(), "configs", configs)
 	respAltConfig, err := reqAltConfig.RequestWith(ctx, kafkaClient)
 	if err != nil {
 		return r.recordErrorEvent(err, topic, redpandav1alpha2.EventTopicConfigurationAlteringFailure, "alter topic configuration (%s) library error", topic.GetTopicName())
@@ -491,7 +483,7 @@ func (r *TopicReconciler) patchTopicStatus(ctx context.Context, topic *redpandav
 	patch := client.MergeFrom(latest)
 	b, err := patch.Data(topic)
 	if err == nil && len(b) != 0 {
-		l.V(TraceLevel).Info("patch topic status", "patch-type", patch.Type(), "patch-body", string(b))
+		l.V(log.TraceLevel).Info("patch topic status", "patch-type", patch.Type(), "patch-body", string(b))
 	}
 
 	return r.Client.Status().Patch(ctx, topic, patch)
