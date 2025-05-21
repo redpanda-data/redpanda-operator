@@ -63,7 +63,9 @@ func (s *MultiSink) Enabled(level int) bool {
 
 func (s *MultiSink) Info(level int, msg string, keysAndValues ...any) {
 	for _, sink := range s.Sinks {
-		sink.Info(level, msg, keysAndValues...)
+		if sink.Enabled(level) {
+			sink.Info(level, msg, keysAndValues...)
+		}
 	}
 }
 

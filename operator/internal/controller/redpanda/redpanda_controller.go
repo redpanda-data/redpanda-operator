@@ -114,6 +114,8 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 }
 
 func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, err error) {
+	logger := log.FromContext(ctx)
+
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -129,7 +131,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	if !isRedpandaManaged(ctx, rp) {
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := r.Client.Update(ctx, rp); err != nil {
-				log.Error(ctx, err, "updating cluster finalizer")
+				logger.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
 				// previous update failed
 				return ignoreConflict(err)
@@ -148,7 +150,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	}
 	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rp, injectedConfigVersion)
 	if err != nil {
-		log.Error(ctx, err, "fetching pools")
+		logger.Error(err, "fetching pools")
 		return ctrl.Result{}, err
 	}
 
@@ -169,7 +171,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 		}
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := r.Client.Update(ctx, rp); err != nil {
-				log.Error(ctx, err, "updating cluster finalizer")
+				logger.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
 				// previous update failed
 				return ignoreConflict(err)
@@ -182,7 +184,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	// allocating any additional resources
 	if controllerutil.AddFinalizer(rp, FinalizerKey) {
 		if err := r.Client.Update(ctx, rp); err != nil {
-			log.Error(ctx, err, "updating cluster finalizer")
+			logger.Error(err, "updating cluster finalizer")
 			return ignoreConflict(err)
 		}
 		return ctrl.Result{}, nil
@@ -192,7 +194,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	if err := validateClusterParameters(rp); err != nil {
 		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
 
-		log.Error(ctx, err, "validating cluster parameters")
+		logger.Error(err, "validating cluster parameters")
 		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, err.Error())
 		return r.syncStatus(ctx, status, rp)
 	}
@@ -202,7 +204,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	if err := r.reconcileResources(ctx, rp); err != nil {
 		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
 
-		log.Error(ctx, err, "error reconciling resources")
+		logger.Error(err, "error reconciling resources")
 		return r.syncStatusErr(ctx, err, status, rp)
 	}
 
@@ -211,7 +213,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	if err != nil {
 		status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
 
-		log.Error(ctx, err, "error reconciling pools")
+		logger.Error(err, "error reconciling pools")
 		return r.syncStatusErr(ctx, err, status, rp)
 	}
 	if requeue || !pools.AnyReady() {
@@ -222,7 +224,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 
 	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, rp)
 	if err != nil {
-		log.Error(ctx, err, "error fetching redpanda admin client")
+		logger.Error(err, "error fetching redpanda admin client")
 		return r.syncStatusErr(ctx, err, status, rp)
 	}
 	defer admin.Close()
@@ -241,7 +243,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 			}
 		}
 
-		log.Error(ctx, err, "error decommissioning brokers")
+		logger.Error(err, "error decommissioning brokers")
 		return r.syncStatusErr(ctx, err, status, rp)
 	}
 	if requeue {
@@ -272,7 +274,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 		if err != nil {
 			status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
 
-			log.Error(ctx, err, "error reconciling cluster config")
+			logger.Error(err, "error reconciling cluster config")
 			return r.syncStatusErr(ctx, err, status, rp)
 		}
 
@@ -289,7 +291,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	if !statuses.HasRecentCondition(rp, statuses.ClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
 		license, err := r.reconcileLicense(ctx, admin, rp, status)
 		if err != nil {
-			log.Error(ctx, err, "error reconciling license")
+			logger.Error(err, "error reconciling license")
 			return r.syncStatusErr(ctx, err, status, rp)
 		}
 		if license != nil {
@@ -317,17 +319,19 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 	ctx, span := trace.Start(ctx, "reconcilePools")
 	defer func() { trace.EndSpan(span, err) }()
 
+	logger := log.FromContext(ctx)
+
 	if !pools.CheckScale() {
-		log.Info(ctx, "scale operation currently underway")
+		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return true, nil
 	}
 
-	log.Info(ctx, "ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
+	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", pools.ExistingStatefulSets(), "desired", pools.DesiredStatefulSets())
 
 	// first create any pools that don't currently exists
 	for _, set := range pools.ToCreate() {
-		log.Info(ctx, "creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return false, errors.Wrap(err, "creating statefulset")
@@ -336,7 +340,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 
 	// next scale up any under-provisioned pools and patch them to use the new spec
 	for _, set := range pools.ToScaleUp() {
-		log.Info(ctx, "scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return false, errors.Wrap(err, "scaling up statefulset")
@@ -346,7 +350,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 	// now make sure all of the patch any sets that might have changed without affecting the cluster size
 	// here we can just wholesale patch everything
 	for _, set := range pools.RequiresUpdate() {
-		log.Info(ctx, "updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set); err != nil {
 			return false, errors.Wrap(err, "updating statefulset")
 		}
@@ -358,6 +362,8 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster *redpandav1alpha2.Redpanda, admin *rpadmin.AdminAPI, pools *lifecycle.PoolTracker) (_ rpadmin.ClusterHealthOverview, _ bool, err error) {
 	ctx, span := trace.Start(ctx, "reconcileDecommission")
 	defer func() { trace.EndSpan(span, err) }()
+
+	logger := log.FromContext(ctx)
 
 	health, err := r.fetchClusterHealth(ctx, admin)
 	if err != nil {
@@ -385,7 +391,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster 
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range pools.ToDelete() {
-		log.Info(ctx, "deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.Client.Delete(ctx, set); err != nil {
 			return health, false, errors.Wrap(err, "deleting statefulset")
 		}
@@ -415,7 +421,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster 
 
 		if shouldRoll {
 			rolled = true
-			log.Info(ctx, "rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
 			if err := r.Client.Delete(ctx, pod); err != nil {
 				return health, false, errors.Wrap(err, "deleting pod")
@@ -779,11 +785,11 @@ func validateClusterParameters(rp *redpandav1alpha2.Redpanda) error {
 }
 
 func isRedpandaManaged(ctx context.Context, redpandaCluster *redpandav1alpha2.Redpanda) bool {
-	log := ctrl.LoggerFrom(ctx).WithName("RedpandaReconciler.isRedpandaManaged")
+	logger := log.FromContext(ctx)
 
 	managedAnnotationKey := redpandav1alpha2.GroupVersion.Group + managedPath
 	if managed, exists := redpandaCluster.Annotations[managedAnnotationKey]; exists && managed == NotManaged {
-		log.Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it", managedAnnotationKey))
+		logger.V(log.TraceLevel).Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it", managedAnnotationKey))
 		return false
 	}
 	return true

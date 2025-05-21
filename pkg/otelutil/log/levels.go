@@ -6,56 +6,99 @@ import (
 
 // These are for convenience when doing log.V(...) to log at a particular level.
 const (
+	// Verbose is the level at which all logs will be shown, only set this level
+	// if you want to output with the most verbose of any logs
 	VerboseLevel = 4
-	TimingLevel  = 3
-	TraceLevel   = 2
-	DebugLevel   = 1
-	InfoLevel    = 0
+	// Timing shows any additional logs related to timing, one level above trace
+	// logs
+	TimingLevel = 3
+	// Trace is for detailed execution flow
+	TraceLevel = 2
+	// Debug is used when information is helpful, but not necessary normally
+	DebugLevel = 1
+	// Info is the default log level
+	InfoLevel = 0
 )
 
-func LogrLevelFromString(level string) int {
-	switch level {
-	case "verbose":
-		return VerboseLevel
-	case "timing":
-		return TimingLevel
-	case "trace":
-		return TraceLevel
-	case "debug":
-		return DebugLevel
-	default:
-		return InfoLevel
+type TypedLevel struct {
+	Name      string
+	LogrLevel int
+	OTELLevel otellog.Severity
+}
+
+var (
+	levelStrings map[string]TypedLevel
+	levelOTEL    map[otellog.Severity]TypedLevel
+	levelLogr    map[int]TypedLevel
+	DefaultLevel = TypedLevel{
+		Name:      "info",
+		LogrLevel: InfoLevel,
+		OTELLevel: otellog.SeverityInfo,
+	}
+	levels = []TypedLevel{
+		{
+			Name:      "verbose",
+			LogrLevel: VerboseLevel,
+			OTELLevel: otellog.SeverityTrace3,
+		},
+		{
+			Name:      "timing",
+			LogrLevel: TimingLevel,
+			OTELLevel: otellog.SeverityTrace2,
+		},
+		{
+			Name:      "trace",
+			LogrLevel: TraceLevel,
+			OTELLevel: otellog.SeverityTrace,
+		},
+		{
+			Name:      "debug",
+			LogrLevel: DebugLevel,
+			OTELLevel: otellog.SeverityDebug,
+		},
+		DefaultLevel,
+	}
+)
+
+func init() {
+	levelStrings = make(map[string]TypedLevel)
+	levelOTEL = make(map[otellog.Severity]TypedLevel)
+	levelLogr = make(map[int]TypedLevel)
+
+	for _, level := range levels {
+		levelStrings[level.Name] = level
+		levelOTEL[level.OTELLevel] = level
+		levelLogr[level.LogrLevel] = level
 	}
 }
 
-func OTELLevelFromString(level string) otellog.Severity {
-	switch level {
-	case "verbose":
-		return otellog.SeverityTrace3
-	case "timing":
-		return otellog.SeverityTrace2
-	case "trace":
-		return otellog.SeverityTrace
-	case "debug":
-		return otellog.SeverityDebug
-	default:
-		return otellog.SeverityInfo
+func LevelFromString(level string) TypedLevel {
+	if l, ok := levelStrings[level]; ok {
+		return l
 	}
+	return levelStrings[DefaultLevel.Name]
 }
 
-func ShouldLogOTEL(level, logLevel otellog.Severity) bool {
-	switch logLevel {
-	// special case our additional trace levels since otel doesn't have increasing
-	// numbers for their log levels
-	case otellog.SeverityTrace3:
-		if level == otellog.SeverityTrace2 || level == otellog.SeverityTrace {
-			return true
-		}
-	case otellog.SeverityTrace2:
-		if level == otellog.SeverityTrace {
-			return true
-		}
+func LevelFromLogr(level int) TypedLevel {
+	if l, ok := levelLogr[level]; ok {
+		return l
 	}
+	return levelLogr[DefaultLevel.LogrLevel]
+}
 
-	return logLevel >= level
+func LevelFromOTEL(level otellog.Severity) TypedLevel {
+	if l, ok := levelOTEL[level]; ok {
+		return l
+	}
+	return levelOTEL[DefaultLevel.OTELLevel]
+}
+
+func shouldLog(loggerLevel, messageLevel TypedLevel) bool {
+	// we always use the logr representation to compare since it
+	// assumes we're always increasing
+	return loggerLevel.LogrLevel >= messageLevel.LogrLevel
+}
+
+func shouldLogOTEL(loggerLevel, messageLevel otellog.Severity) bool {
+	return shouldLog(LevelFromOTEL(loggerLevel), LevelFromOTEL(messageLevel))
 }

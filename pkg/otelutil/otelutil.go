@@ -9,12 +9,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"go.opentelemetry.io/contrib/bridges/otellogr"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -74,7 +72,7 @@ func TestMain(m TestingM) {
 //
 // See [optionsFromEnv] for more details.
 func Setup() (shutdown func() error, err error) {
-	logOpts, traceOpts, logrLevel, err := optionsFromEnv()
+	logOpts, traceOpts, logLevel, err := optionsFromEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +88,7 @@ func Setup() (shutdown func() error, err error) {
 	))
 
 	log.SetGlobals(
-		logr.New(otellogr.NewLogSink("log")).V(logrLevel),
+		logr.New(log.NewOTELLogrSink("log").WithTimestamps()).V(logLevel.LogrLevel),
 	)
 
 	return func() error {
@@ -108,22 +106,20 @@ func Setup() (shutdown func() error, err error) {
 	}, nil
 }
 
-func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, level int, err error) {
-	logrLevel := log.InfoLevel
-	otelLogLevel := otellog.SeverityInfo
+func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, level log.TypedLevel, err error) {
+	logLevel := log.DefaultLevel
 	if level, ok := os.LookupEnv("LOG_LEVEL"); ok {
-		logrLevel = log.LogrLevelFromString(level)
-		otelLogLevel = log.OTELLevelFromString(level)
+		logLevel = log.LevelFromString(level)
 	}
 
 	if dir, ok := os.LookupEnv("OTLP_DIR"); ok {
 		path := filepath.Join(dir, fmt.Sprintf("%s-%s.jsonnl", binaryName(), time.Now().Format(time.RFC3339)))
 		file, err := otlpfile.Open(path)
 		if err != nil {
-			return nil, nil, logrLevel, err
+			return nil, nil, logLevel, err
 		}
 
-		loggerOptions = append(loggerOptions, sdklog.WithProcessor(&filteringProcessor{BatchProcessor: sdklog.NewBatchProcessor(file.LogExporter()), severity: otelLogLevel}))
+		loggerOptions = append(loggerOptions, sdklog.WithProcessor(log.NewBatchProcessor(file.LogExporter(), logLevel.OTELLevel)))
 		tracerOptions = append(tracerOptions, sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(file.SpanExporter())))
 	}
 
@@ -132,19 +128,19 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 
 		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint))
 		if err != nil {
-			return nil, nil, logrLevel, err
+			return nil, nil, logLevel, err
 		}
 
 		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
 			otlptracegrpc.WithEndpoint(endpoint),
 		))
 		if err != nil {
-			return nil, nil, logrLevel, err
+			return nil, nil, logLevel, err
 		}
 
 		loggerOptions = append(
 			loggerOptions,
-			sdklog.WithProcessor(sdklog.NewBatchProcessor(grpcLogExporter)),
+			sdklog.WithProcessor(log.NewBatchProcessor(grpcLogExporter, logLevel.OTELLevel)),
 		)
 
 		tracerOptions = append(
@@ -153,18 +149,9 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 		)
 	}
 
-	return loggerOptions, tracerOptions, logrLevel, nil
+	return loggerOptions, tracerOptions, logLevel, nil
 }
 
 func binaryName() string {
 	return filepath.Base(os.Args[0])
-}
-
-type filteringProcessor struct {
-	*sdklog.BatchProcessor
-	severity otellog.Severity
-}
-
-func (f *filteringProcessor) Enabled(ctx context.Context, param sdklog.EnabledParameters) bool {
-	return log.ShouldLogOTEL(f.severity, param.Severity)
 }
