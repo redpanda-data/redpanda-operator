@@ -13538,7 +13538,25 @@ spec:
         nodeTaintsPolicy: Ąʟ/鍽A瘠Iʥ淧BĜ,Ü杵姽4u
         topologyKey: T6H
         whenUnsatisfiable: 禳鯋龖鱯筁İ赠ƄǪ|杮ɗ吻űU纕聓z序
-      volumes: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
 -- testdata/case-016.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -17783,6 +17801,24 @@ spec:
         topologyKey: uPOu8jgVXuK
         whenUnsatisfiable: ñA鿔[vǬɊTûg
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: ""
       - name: CM
 -- testdata/case-021.yaml.golden --
@@ -20896,6 +20932,24 @@ spec:
         operator: Ʀ猥喞ȼȦ槮VěnX
         value: y1LkLkU
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: dZEjjoa
 -- testdata/case-024.yaml.golden --
 ---
@@ -24900,7 +24954,25 @@ spec:
         nodeTaintsPolicy: Łļǻ軀折TŜ崵駿Sã8ō'ɷ嵡
         topologyKey: R
         whenUnsatisfiable: Es織ŸgÉw5-颒辰gÝ
-      volumes: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: monitoring.coreos.com/v1
@@ -25970,6 +26042,24 @@ spec:
         topologyKey: hnK
         whenUnsatisfiable: G蹃
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: 2vvwzU
       - name: KiD
       - name: ZxdGol15G
@@ -29130,6 +29220,24 @@ spec:
         topologyKey: 3vd
         whenUnsatisfiable: ȶ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: Y4eYBG
       - name: wtbsGN
 -- testdata/case-034.yaml.golden --
@@ -30722,6 +30830,24 @@ spec:
         topologyKey: y3F2Ss
         whenUnsatisfiable: 奂閙ɏiģpȝůƤĮĶ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: ORR
       - name: jh435G
 ---
@@ -31244,6 +31370,24 @@ spec:
         topologyKey: dnKKLwixm
         whenUnsatisfiable: pb>ʯ僙ȴō
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: ""
 ---
 # Source: operator/templates/entry-point.yaml
@@ -32887,6 +33031,24 @@ spec:
         topologyKey: O9NaFa
         whenUnsatisfiable: 缌睩氜栢ʦ是Ǉ廬茞^Žȟ塖
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: A2B8
       - name: G
       - name: ZtPPBy
@@ -34374,7 +34536,25 @@ spec:
         operator: ŕ瓹ƖbƟvŃ3"ť'嶮õ§苰f5顗
         tolerationSeconds: 3452689405398166000
         value: uC3s
-      volumes: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: monitoring.coreos.com/v1
@@ -35651,6 +35831,24 @@ spec:
         topologyKey: D
         whenUnsatisfiable: 紒_尘LɼO槆
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: noEL0
       - name: v
 ---
@@ -37322,6 +37520,24 @@ spec:
         topologyKey: T4wz
         whenUnsatisfiable: Œ1
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: 7wEL0
       - name: EeMIH
       - name: iQoV
@@ -39610,6 +39826,24 @@ spec:
         tolerationSeconds: 3316644788216531500
         value: A
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: W9
       - name: xuaa0
 -- testdata/case-048.yaml.golden --
@@ -40591,6 +40825,24 @@ spec:
         tolerationSeconds: -8913348716878803000
         value: 7o
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: ""
       - name: "1"
       - name: zEJeXFitCdV
@@ -52187,6 +52439,24 @@ spec:
         tolerationSeconds: 2796595789192197000
         value: AUvS2
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -53546,6 +53816,24 @@ spec:
         topologyKey: WP4QXxrf
         whenUnsatisfiable: ǋČI蒓2Ċ檗毦I_\鶚5柴ŨhȖ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -54976,6 +55264,24 @@ spec:
         topologyKey: nk
         whenUnsatisfiable: éɘ.R5鏝àå=澕
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -55566,6 +55872,24 @@ spec:
         topologyKey: IPa5T
         whenUnsatisfiable: nČ俪辨u'Ł9Yė°竣]ć擯>b屠ƕ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -57296,6 +57620,24 @@ spec:
         topologyKey: QJ1wtpuk
         whenUnsatisfiable: /
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -58361,6 +58703,24 @@ spec:
         topologyKey: 1BnA
         whenUnsatisfiable: '}|ǗȳȽ抧ǎŤĿ仇恹'
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -59106,6 +59466,24 @@ spec:
         topologyKey: ybGWO0YEF1
         whenUnsatisfiable: KƿĻ觮ȑmvǯ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -60546,6 +60924,24 @@ spec:
         topologyKey: "Y"
         whenUnsatisfiable: ""
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -62804,6 +63200,24 @@ spec:
         tolerationSeconds: -8265045332720818000
         value: e0JnkTa
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -68553,6 +68967,24 @@ spec:
         topologyKey: "y"
         whenUnsatisfiable: ǩ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -69646,6 +70078,24 @@ spec:
         topologyKey: vZ
         whenUnsatisfiable: mUƚ;ʗƷ嶑铻
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -71830,6 +72280,24 @@ spec:
         topologyKey: h3hAibfhYC
         whenUnsatisfiable: 攻/yʢH鄹謞膭筎
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -73505,6 +73973,24 @@ spec:
         tolerationSeconds: -4336237698479852500
         value: Mv
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -74678,6 +75164,24 @@ spec:
         topologyKey: dTqiO
         whenUnsatisfiable: ȍ
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -80674,6 +81178,24 @@ spec:
         topologyKey: 8LMG23
         whenUnsatisfiable: ' 褼ƶÎa'
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
@@ -83626,6 +84148,24 @@ spec:
         topologyKey: WGNmR
         whenUnsatisfiable: ȇ]漞ɜ煔C!rFÚ[ù&'
       volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
       - name: cert
         secret:
           defaultMode: 420
