@@ -310,13 +310,7 @@ func (c *conn) Read(data []byte) (int, error) {
 	}
 
 	n, err := c.dataStream.Read(data)
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		return n, err
-	}
-	return n, err
+	return n, errors.Join(c.checkError(), err)
 }
 
 func (c *conn) Write(b []byte) (int, error) {
@@ -325,13 +319,7 @@ func (c *conn) Write(b []byte) (int, error) {
 	}
 
 	n, err := c.dataStream.Write(b)
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		return n, err
-	}
-	return n, err
+	return n, errors.Join(c.checkError(), err)
 }
 
 func (c *conn) Close() error {
@@ -339,7 +327,7 @@ func (c *conn) Close() error {
 	// the stream when a context is canceled but also
 	// may have had Close called manually
 	if !c.closed.CompareAndSwap(false, true) {
-		return nil
+		return net.ErrClosed
 	}
 
 	// call our onClose cleanup handler
@@ -347,17 +335,7 @@ func (c *conn) Close() error {
 
 	// closing the underlying connection should cause
 	// our error stream reading routine to stop
-	_ = c.errorStream.Reset()
-	closeErr := c.dataStream.Reset()
-
-	// prioritize any sort of checks propagated on
-	// the error stream
-	if err := c.checkError(); err != nil {
-		if !errors.Is(err, net.ErrClosed) {
-			return err
-		}
-	}
-	return closeErr
+	return errors.Join(c.errorStream.Reset(), c.dataStream.Reset(), c.checkError())
 }
 
 func (c *conn) SetDeadline(t time.Time) error {
