@@ -847,8 +847,8 @@ func (s *RedpandaControllerSuite) waitUntilReady(objs ...client.Object) {
 			}
 			switch obj := obj.(type) {
 			case *redpandav1alpha2.Redpanda:
-				// Check "Quiesced" to make sure we're done reconciling
-				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterQuiesced)
+				// Check "Stable" to make sure we're done reconciling and that the cluster is healthy.
+				quiesced := apimeta.FindStatusCondition(obj.Status.Conditions, statuses.ClusterStable)
 				if quiesced == nil {
 					return false, nil
 				}

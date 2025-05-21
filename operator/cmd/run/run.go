@@ -18,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -48,8 +47,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
@@ -63,20 +60,10 @@ import (
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 )
 
-type RedpandaController string
-
 type OperatorState string
-
-func (r RedpandaController) toString() string {
-	return string(r)
-}
 
 const (
 	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
-
-	AllControllers         = RedpandaController("all")
-	NodeController         = RedpandaController("nodeWatcher")
-	DecommissionController = RedpandaController("decommission")
 
 	OperatorV1Mode          = OperatorState("Clustered-v1")
 	OperatorV2Mode          = OperatorState("Namespaced-v2")
@@ -84,11 +71,6 @@ const (
 
 	controllerName = "redpanda-controller"
 )
-
-var availableControllers = []string{
-	NodeController.toString(),
-	DecommissionController.toString(),
-}
 
 type LabelSelectorValue struct {
 	Selector labels.Selector
@@ -260,7 +242,6 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&namespace, "namespace", "", "If namespace is set to not empty value, it changes scope of Redpanda operator to work in single namespace")
 	cmd.Flags().BoolVar(&ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
-	cmd.Flags().StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	cmd.Flags().BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().Var(&unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
@@ -288,6 +269,7 @@ func Command() *cobra.Command {
 	cmd.Flags().Bool("enable-helm-controllers", false, "A deprecated and unused flag")
 	cmd.Flags().String("helm-repository-url", "https://charts.redpanda.com/", "A deprecated and unused flag")
 	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
+	cmd.Flags().StringSlice("additional-controllers", []string{""}, "A deprecated and unused flag")
 
 	return cmd
 }
@@ -625,27 +607,6 @@ func Run(
 			return err
 		}
 
-		if runThisController(NodeController, additionalControllers) {
-			if err = (&nodewatcher.RedpandaNodePVCReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: operatorMode,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				return err
-			}
-		}
-
-		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&olddecommission.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             operatorMode,
-				DecommissionWaitInterval: decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				return err
-			}
-		}
-
 		if webhookEnabled {
 			setupLog.Info("Setup Redpanda conversion webhook")
 			if err = (&redpandav1alpha2.Redpanda{}).SetupWebhookWithManager(mgr); err != nil {
@@ -656,26 +617,7 @@ func Run(
 
 	case NamespaceControllerMode:
 		ctrl.Log.Info("running as a namespace controller", "mode", NamespaceControllerMode, "namespace", namespace)
-		if runThisController(NodeController, additionalControllers) {
-			if err = (&nodewatcher.RedpandaNodePVCReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: operatorMode,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				return err
-			}
-		}
 
-		if runThisController(DecommissionController, additionalControllers) {
-			if err = (&olddecommission.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             operatorMode,
-				DecommissionWaitInterval: decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				return err
-			}
-		}
 	default:
 		err := errors.New("unable to run operator without specifying an operator state")
 		setupLog.Error(err, "shutting down")
@@ -848,17 +790,4 @@ func Run(
 	}
 
 	return nil
-}
-
-func runThisController(rc RedpandaController, controllers []string) bool {
-	if len(controllers) == 0 {
-		return false
-	}
-
-	for _, c := range controllers {
-		if RedpandaController(c) == AllControllers || RedpandaController(c) == rc {
-			return true
-		}
-	}
-	return false
 }

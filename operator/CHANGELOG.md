@@ -67,6 +67,11 @@ operator helm chart. The same ports will continue to serve metrics using kubebui
 * The [`kube-prometheus-stack`](https://prometheus-community.github.io/helm-charts) subchart has been removed.
 
   This integration was not being up kept and most use cases will be better served by deploying this chart themselves.
+* Removed both the node-watcher and "old" decommissioner controllers which were enabled by the `--additional-controllers` flag.
+
+  The `--additional-controllers` flag is still accepted by the CLI but is no longer used.
+
+  These controllers have been replaced by the pvcunbinder and decommissioner controllers, respectively.
 ### Fixed
 * Certificate reloading for webhook and metrics endpoints should now behave correctly.
 * The operator will restart the redpanda cluster on any change to the cluster configuration

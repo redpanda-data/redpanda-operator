@@ -53,8 +53,6 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			Enabled: values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs,
 			RuleFiles: []string{
 				"files/rbac/decommission.ClusterRole.yaml",
-				"files/rbac/node-watcher.ClusterRole.yaml",     // Deprecated but not yet removed.
-				"files/rbac/old-decommission.ClusterRole.yaml", // Deprecated but not yet removed.
 				"files/rbac/pvcunbinder.ClusterRole.yaml",
 			},
 		},
@@ -145,8 +143,6 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 			Enabled: values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs,
 			RuleFiles: []string{
 				"files/rbac/decommission.Role.yaml",
-				"files/rbac/node-watcher.Role.yaml",     // Deprecated but not yet removed.
-				"files/rbac/old-decommission.Role.yaml", // Deprecated but not yet removed.
 				"files/rbac/pvcunbinder.Role.yaml",
 			},
 		},

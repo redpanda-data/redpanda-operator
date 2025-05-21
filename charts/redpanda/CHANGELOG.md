@@ -133,6 +133,7 @@ of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
   now respect `listeners.kafka.tls.trustStore`, when provided.
   See also [helm-chart 1573 issue](https://github.com/redpanda-data/helm-charts/issues/1573).
 
+* `.statefulset.sideCars.pvcunbinder.enabled` and `.statefulset.sideCars.brokerDecommissioner` are now respected when generating rules for the chart's Roles and ClusterRoles.
 
 ## [v25.1.1-beta3](https://github.com/redpanda-data/redpanda-operator/releases/tag/charts%2Fredpanda%2Fv25.1.1-beta3) - 2025-05-06
 ### Added

@@ -36,8 +36,6 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -203,18 +201,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		})),
 		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
 	}).SetupWithManager(ctx, k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&olddecommission.DecommissionReconciler{
-		Client:       k8sManager.GetClient(),
-		OperatorMode: false,
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&nodewatcher.RedpandaNodePVCReconciler{
-		Client:       k8sManager.GetClient(),
-		OperatorMode: false,
-	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

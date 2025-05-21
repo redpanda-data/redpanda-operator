@@ -1,0 +1,9 @@
+project: operator
+kind: Removed
+body: |-
+    Removed both the node-watcher and "old" decommissioner controllers which were enabled by the `--additional-controllers` flag.
+
+      The `--additional-controllers` flag is still accepted by the CLI but is no longer used.
+
+      These controllers have been replaced by the pvcunbinder and decommissioner controllers, respectively.
+time: 2025-05-15T13:39:06.47157-04:00
