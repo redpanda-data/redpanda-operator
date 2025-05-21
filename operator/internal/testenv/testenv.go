@@ -94,30 +94,20 @@ func New(t *testing.T, options Options) *Env {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var cluster *vcluster.Cluster
-	var config *rest.Config
+	config := host.RESTConfig()
+
 	if !options.SkipVCluster {
 		cluster, err = vcluster.New(ctx, host)
 		require.NoError(t, err)
-
-		if len(options.CRDs) > 0 {
-			crds, err := envtest.InstallCRDs(cluster.RESTConfig(), envtest.CRDInstallOptions{
-				CRDs: options.CRDs,
-			})
-			require.NoError(t, err)
-			require.Equal(t, len(options.CRDs), len(crds))
-		}
-
 		config = cluster.RESTConfig()
-	} else {
-		if len(options.CRDs) > 0 {
-			crds, err := envtest.InstallCRDs(host.RESTConfig(), envtest.CRDInstallOptions{
-				CRDs: dupCRDs(options.CRDs),
-			})
-			require.NoError(t, err)
-			require.Equal(t, len(options.CRDs), len(crds))
-		}
+	}
 
-		config = host.RESTConfig()
+	if len(options.CRDs) > 0 {
+		crds, err := envtest.InstallCRDs(config, envtest.CRDInstallOptions{
+			CRDs: options.CRDs,
+		})
+		require.NoError(t, err)
+		require.Equal(t, len(options.CRDs), len(crds))
 	}
 
 	c, err := client.New(config, client.Options{Scheme: options.Scheme})
