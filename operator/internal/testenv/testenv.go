@@ -135,7 +135,7 @@ func New(t *testing.T, options Options) *Env {
 
 	if !options.SkipVCluster {
 		t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
-		t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", ns.Name, cluster.Name())
+		t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", cluster.Name(), cluster.Name())
 	} else {
 		t.Logf("Executing in namespace '%s'", ns.Name)
 	}
