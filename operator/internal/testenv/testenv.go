@@ -104,7 +104,7 @@ func New(t *testing.T, options Options) *Env {
 
 	if len(options.CRDs) > 0 {
 		crds, err := envtest.InstallCRDs(config, envtest.CRDInstallOptions{
-			CRDs: options.CRDs,
+			CRDs: dupCRDs(options.CRDs),
 		})
 		require.NoError(t, err)
 		require.Equal(t, len(options.CRDs), len(crds))
