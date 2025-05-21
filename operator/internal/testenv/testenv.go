@@ -34,7 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 

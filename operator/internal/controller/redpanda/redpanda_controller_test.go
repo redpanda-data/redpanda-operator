@@ -78,8 +78,10 @@ type RedpandaControllerSuite struct {
 	clientFactory internalclient.ClientFactory
 }
 
-var _ suite.SetupAllSuite = (*RedpandaControllerSuite)(nil)
-var _ suite.SetupTestSuite = (*RedpandaControllerSuite)(nil)
+var (
+	_ suite.SetupAllSuite  = (*RedpandaControllerSuite)(nil)
+	_ suite.SetupTestSuite = (*RedpandaControllerSuite)(nil)
+)
 
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	rp := s.minimalRP()

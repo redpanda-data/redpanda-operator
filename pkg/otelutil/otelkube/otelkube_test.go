@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -13,6 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 )
 
 func TestPropagation(t *testing.T) {
