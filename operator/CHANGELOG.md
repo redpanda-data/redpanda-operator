@@ -24,6 +24,7 @@ This is required to ensure that a pre-existing sts can roll over to new configur
 - Fixed incorrect broker map keying: previously used pod ordinal, which is not unique across STSes (e.g., `blue-0` and `green-0` both mapped to `0`). Switched to using the pod name as the key to correctly distinguish brokers.
 - Disabled ordinal-based broker deletion logic in Operator v1 mode, as it doesn't work reliably in a multi-STS setup.
 
+* Setting `serviceAccount.create` to `false` no longer prevents the Kubernetes ServiceAccountToken volume from being mounted to the operator Pod.
 
 ## v2.3.9-24.3.11 - 2025-05-02
 ### Added

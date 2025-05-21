@@ -207,10 +207,8 @@ func isWebhookEnabled(dot *helmette.Dot) bool {
 func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	vol := []corev1.Volume{}
-
-	if values.ServiceAccount.Create {
-		vol = append(vol, kubeTokenAPIVolume(ServiceAccountVolumeName))
+	vol := []corev1.Volume{
+		kubeTokenAPIVolume(ServiceAccountVolumeName),
 	}
 
 	if !isWebhookEnabled(dot) {
