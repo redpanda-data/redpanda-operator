@@ -49,10 +49,7 @@ type Env struct {
 	scheme    *runtime.Scheme
 	group     *errgroup.Group
 	host      *k3d.Cluster
-
-	vclusterEnabled bool
-	crds            []*apiextensionsv1.CustomResourceDefinition
-	config          *rest.Config
+	config    *rest.Config
 }
 
 type Options struct {
@@ -135,17 +132,15 @@ func New(t *testing.T, options Options) *Env {
 	require.NoError(t, c.Create(ctx, ns))
 
 	env := &Env{
-		t:               t,
-		scheme:          options.Scheme,
-		logger:          options.Logger,
-		namespace:       ns,
-		group:           g,
-		ctx:             ctx,
-		cancel:          cancel,
-		host:            host,
-		config:          config,
-		crds:            options.CRDs,
-		vclusterEnabled: !options.SkipVCluster,
+		t:         t,
+		scheme:    options.Scheme,
+		logger:    options.Logger,
+		namespace: ns,
+		group:     g,
+		ctx:       ctx,
+		cancel:    cancel,
+		host:      host,
+		config:    config,
 	}
 
 	if !options.SkipVCluster {
@@ -229,32 +224,6 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	// No Without leader election enabled, this is just a wait for the manager
 	// to start up.
 	<-manager.Elected()
-}
-
-func (e *Env) InVCluster(ctx context.Context, t *testing.T, fn func(vcluster *vcluster.Cluster, client client.Client)) {
-	require.False(t, e.vclusterEnabled, "Cannot use InVCluster if the environment is already setup to run in a VCluster")
-
-	cluster, err := vcluster.New(ctx, e.host)
-	require.NoError(t, err)
-
-	if len(e.crds) > 0 {
-		crds, err := envtest.InstallCRDs(cluster.RESTConfig(), envtest.CRDInstallOptions{
-			CRDs: dupCRDs(e.crds),
-		})
-		require.NoError(t, err)
-		require.Equal(t, len(e.crds), len(crds))
-	}
-
-	client, err := cluster.Client(client.Options{
-		Scheme: e.scheme,
-	})
-	require.NoError(t, err)
-
-	fn(cluster, client)
-
-	if !testutil.Retain() {
-		require.NoError(t, cluster.Delete())
-	}
 }
 
 func RandString(length int) string {
