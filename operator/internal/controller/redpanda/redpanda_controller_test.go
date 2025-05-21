@@ -657,9 +657,10 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	// rest config given to the manager.
 	s.ctx = context.Background()
 	s.env = testenv.New(t, testenv.Options{
-		Scheme: controller.V2Scheme,
-		CRDs:   crds.All(),
-		Logger: testr.New(t),
+		Scheme:       controller.V2Scheme,
+		CRDs:         crds.All(),
+		Logger:       testr.New(t),
+		SkipVCluster: true,
 		ImportImages: []string{
 			"localhost/redpanda-operator:dev",
 		},

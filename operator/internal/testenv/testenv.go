@@ -49,12 +49,16 @@ type Env struct {
 	scheme    *runtime.Scheme
 	group     *errgroup.Group
 	host      *k3d.Cluster
-	cluster   *vcluster.Cluster
+
+	vclusterEnabled bool
+	crds            []*apiextensionsv1.CustomResourceDefinition
+	config          *rest.Config
 }
 
 type Options struct {
 	Name         string
 	Agents       int
+	SkipVCluster bool
 	Scheme       *runtime.Scheme
 	CRDs         []*apiextensionsv1.CustomResourceDefinition
 	Logger       logr.Logger
@@ -92,20 +96,35 @@ func New(t *testing.T, options Options) *Env {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cluster, err := vcluster.New(ctx, host)
-	require.NoError(t, err)
-
-	if len(options.CRDs) > 0 {
-		crds, err := envtest.InstallCRDs(cluster.RESTConfig(), envtest.CRDInstallOptions{
-			CRDs: options.CRDs,
-		})
+	var cluster *vcluster.Cluster
+	var config *rest.Config
+	if !options.SkipVCluster {
+		cluster, err = vcluster.New(ctx, host)
 		require.NoError(t, err)
-		require.Equal(t, len(options.CRDs), len(crds))
+
+		if len(options.CRDs) > 0 {
+			crds, err := envtest.InstallCRDs(cluster.RESTConfig(), envtest.CRDInstallOptions{
+				CRDs: options.CRDs,
+			})
+			require.NoError(t, err)
+			require.Equal(t, len(options.CRDs), len(crds))
+		}
+
+		config = cluster.RESTConfig()
+	} else {
+		if len(options.CRDs) > 0 {
+			crds, err := envtest.InstallCRDs(host.RESTConfig(), envtest.CRDInstallOptions{
+				CRDs: dupCRDs(options.CRDs),
+			})
+			require.NoError(t, err)
+			require.Equal(t, len(options.CRDs), len(crds))
+		}
+
+		config = host.RESTConfig()
 	}
 
-	c, err := cluster.Client(client.Options{Scheme: options.Scheme})
+	c, err := client.New(config, client.Options{Scheme: options.Scheme})
 	require.NoError(t, err)
-
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Create a unique Namespace to perform tests within.
@@ -116,26 +135,34 @@ func New(t *testing.T, options Options) *Env {
 	require.NoError(t, c.Create(ctx, ns))
 
 	env := &Env{
-		t:         t,
-		scheme:    options.Scheme,
-		logger:    options.Logger,
-		namespace: ns,
-		group:     g,
-		ctx:       ctx,
-		cancel:    cancel,
-		host:      host,
-		cluster:   cluster,
+		t:               t,
+		scheme:          options.Scheme,
+		logger:          options.Logger,
+		namespace:       ns,
+		group:           g,
+		ctx:             ctx,
+		cancel:          cancel,
+		host:            host,
+		config:          config,
+		crds:            options.CRDs,
+		vclusterEnabled: !options.SkipVCluster,
 	}
 
-	t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
-	t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", cluster.Name(), cluster.Name())
+	if !options.SkipVCluster {
+		t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
+		t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", ns.Name, cluster.Name())
+	} else {
+		t.Logf("Executing in namespace '%s'", ns.Name)
+	}
 
 	t.Cleanup(func() {
 		env.cancel()
 		assert.NoError(env.t, env.group.Wait())
 
 		if !testutil.Retain() {
-			require.NoError(t, cluster.Delete())
+			if !options.SkipVCluster {
+				require.NoError(t, cluster.Delete())
+			}
 
 			// Clean up any clusters that aren't shared.
 			if env.host.Name != k3d.SharedClusterName {
@@ -148,7 +175,7 @@ func New(t *testing.T, options Options) *Env {
 }
 
 func (e *Env) Client() client.Client {
-	c, err := e.cluster.Client(client.Options{
+	c, err := client.New(e.config, client.Options{
 		Scheme: e.scheme,
 	})
 	require.NoError(e.t, err)
@@ -163,8 +190,10 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	// Bind the managers base config to a ServiceAccount via the "Impersonate"
 	// feature. This ensures that any permissions/RBAC issues get caught by
 	// theses tests as e.config has Admin permissions.
-	config := rest.CopyConfig(e.cluster.RESTConfig())
-	config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
+	config := rest.CopyConfig(e.config)
+	if serviceAccount != "" {
+		config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
+	}
 
 	// TODO: Webhooks likely aren't going to place nicely with this method of
 	// testing. The Kube API server will have to dial out of the cluster to the
@@ -202,6 +231,32 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	<-manager.Elected()
 }
 
+func (e *Env) InVCluster(ctx context.Context, t *testing.T, fn func(vcluster *vcluster.Cluster, client client.Client)) {
+	require.False(t, e.vclusterEnabled, "Cannot use InVCluster if the environment is already setup to run in a VCluster")
+
+	cluster, err := vcluster.New(ctx, e.host)
+	require.NoError(t, err)
+
+	if len(e.crds) > 0 {
+		crds, err := envtest.InstallCRDs(cluster.RESTConfig(), envtest.CRDInstallOptions{
+			CRDs: dupCRDs(e.crds),
+		})
+		require.NoError(t, err)
+		require.Equal(t, len(e.crds), len(crds))
+	}
+
+	client, err := cluster.Client(client.Options{
+		Scheme: e.scheme,
+	})
+	require.NoError(t, err)
+
+	fn(cluster, client)
+
+	if !testutil.Retain() {
+		require.NoError(t, cluster.Delete())
+	}
+}
+
 func RandString(length int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -212,4 +267,12 @@ func RandString(length int) string {
 	}
 
 	return name
+}
+
+func dupCRDs(crds []*apiextensionsv1.CustomResourceDefinition) []*apiextensionsv1.CustomResourceDefinition {
+	cloned := []*apiextensionsv1.CustomResourceDefinition{}
+	for _, crd := range crds {
+		cloned = append(cloned, crd.DeepCopy())
+	}
+	return cloned
 }
