@@ -10,4 +10,5 @@
   kuttl = pkgs.callPackage ./kuttl.nix { };
   setup-envtest = pkgs.callPackage ./setup-envtest.nix { };
   vcluster = pkgs.callPackage ./vcluster.nix { };
+  bk = pkgs.callPackage ./bk.nix { };
 })
