@@ -11,16 +11,20 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
@@ -135,16 +139,23 @@ func (c *config) file() string {
 	return path.Join(c.directory, fmt.Sprintf("%s-%s.jsonnl", c.name, time.Now().Format(time.RFC3339)))
 }
 
-func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, err error) {
+func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, metricOptions []sdkmetric.Option, tracerOptions []sdktrace.TracerProviderOption, err error) {
 	if c.hasFile() {
 		fmt.Printf("outputting traces to: %q\n", c.file())
 		file, err := otlpfile.Open(c.file())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		loggerOptions = append(loggerOptions, sdklog.WithProcessor(log.NewBatchProcessor(file.LogExporter(), c.logLevel.OTELLevel)))
 		tracerOptions = append(tracerOptions, sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(file.SpanExporter())))
+		metricOptions = append(metricOptions, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(
+			file.MetricExporter(),
+			sdkmetric.WithInterval(c.metricsInterval),
+			sdkmetric.WithProducer(prometheus.NewMetricProducer(
+				prometheus.WithGatherer(metrics.Registry),
+			)),
+		)))
 	}
 
 	if c.hasGRPC() {
@@ -152,14 +163,19 @@ func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerO
 
 		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(c.endpoint))
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
 			otlptracegrpc.WithEndpoint(c.endpoint),
 		))
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
+		}
+
+		grpcMetricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithEndpoint(c.endpoint))
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		loggerOptions = append(
@@ -171,9 +187,20 @@ func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerO
 			tracerOptions,
 			sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(grpcSpanExporter)),
 		)
+
+		metricOptions = append(
+			metricOptions,
+			sdkmetric.WithReader(sdkmetric.NewPeriodicReader(
+				grpcMetricExporter,
+				sdkmetric.WithInterval(c.metricsInterval),
+				sdkmetric.WithProducer(prometheus.NewMetricProducer(
+					prometheus.WithGatherer(metrics.Registry),
+				)),
+			)),
+		)
 	}
 
-	return loggerOptions, tracerOptions, nil
+	return loggerOptions, metricOptions, tracerOptions, nil
 }
 
 type Option func(c config) config
@@ -243,7 +270,7 @@ func WithTraceOutputDirectory(name string) Option {
 // See [config.fromEnv] for more details.
 func Setup(options ...Option) (shutdown func() error, err error) {
 	config := defaultConfig().normalize(options...)
-	logOpts, traceOpts, err := config.options()
+	logOpts, metricOpts, traceOpts, err := config.options()
 	if err != nil {
 		return nil, err
 	}
@@ -263,11 +290,14 @@ func Setup(options ...Option) (shutdown func() error, err error) {
 	}
 	logOpts = append(logOpts, sdklog.WithResource(baseResource))
 	traceOpts = append(traceOpts, sdktrace.WithResource(baseResource))
+	metricOpts = append(metricOpts, sdkmetric.WithResource(baseResource))
 
 	lp := sdklog.NewLoggerProvider(logOpts...)
 	tp := sdktrace.NewTracerProvider(traceOpts...)
+	mp := sdkmetric.NewMeterProvider(metricOpts...)
 
 	otel.SetTracerProvider(tp)
+	otel.SetMeterProvider(mp)
 	global.SetLoggerProvider(lp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
@@ -289,6 +319,7 @@ func Setup(options ...Option) (shutdown func() error, err error) {
 		return errors.Join(
 			lp.Shutdown(ctx),
 			tp.Shutdown(ctx),
+			mp.Shutdown(ctx),
 		)
 	}, nil
 }
