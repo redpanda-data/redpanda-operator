@@ -9,16 +9,20 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
@@ -74,7 +78,7 @@ func TestMain(m TestingM) {
 //
 // See [optionsFromEnv] for more details.
 func Setup() (shutdown func() error, err error) {
-	logOpts, traceOpts, logLevel, err := optionsFromEnv()
+	logOpts, traceOpts, metricOpts, logLevel, err := optionsFromEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -94,11 +98,14 @@ func Setup() (shutdown func() error, err error) {
 	}
 	logOpts = append(logOpts, sdklog.WithResource(baseResource))
 	traceOpts = append(traceOpts, sdktrace.WithResource(baseResource))
+	metricOpts = append(metricOpts, sdkmetric.WithResource(baseResource))
 
 	lp := sdklog.NewLoggerProvider(logOpts...)
 	tp := sdktrace.NewTracerProvider(traceOpts...)
+	mp := sdkmetric.NewMeterProvider(metricOpts...)
 
 	otel.SetTracerProvider(tp)
+	otel.SetMeterProvider(mp)
 	global.SetLoggerProvider(lp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
@@ -120,25 +127,42 @@ func Setup() (shutdown func() error, err error) {
 		return errors.Join(
 			lp.Shutdown(ctx),
 			tp.Shutdown(ctx),
+			mp.Shutdown(ctx),
 		)
 	}, nil
 }
 
-func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, level log.TypedLevel, err error) {
+func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, metricOptions []sdkmetric.Option, level log.TypedLevel, err error) {
 	logLevel := log.DefaultLevel
 	if level, ok := os.LookupEnv("LOG_LEVEL"); ok {
 		logLevel = log.LevelFromString(level)
+	}
+
+	metricInterval := time.Minute
+	if interval, ok := os.LookupEnv("OTLP_METRIC_INTERVAL"); ok {
+		duration, err := time.ParseDuration(interval)
+		if err != nil {
+			return nil, nil, nil, logLevel, err
+		}
+		metricInterval = duration
 	}
 
 	if dir, ok := os.LookupEnv("OTLP_DIR"); ok {
 		path := filepath.Join(dir, fmt.Sprintf("%s-%s.jsonnl", binaryName(), time.Now().Format(time.RFC3339)))
 		file, err := otlpfile.Open(path)
 		if err != nil {
-			return nil, nil, logLevel, err
+			return nil, nil, nil, logLevel, err
 		}
 
 		loggerOptions = append(loggerOptions, sdklog.WithProcessor(log.NewBatchProcessor(file.LogExporter(), logLevel.OTELLevel)))
 		tracerOptions = append(tracerOptions, sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(file.SpanExporter())))
+		metricOptions = append(metricOptions, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(
+			file.MetricExporter(),
+			sdkmetric.WithInterval(metricInterval),
+			sdkmetric.WithProducer(prometheus.NewMetricProducer(
+				prometheus.WithGatherer(metrics.Registry),
+			)),
+		)))
 	}
 
 	if endpoint, ok := os.LookupEnv("OTLP_GRPC"); ok {
@@ -146,14 +170,19 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 
 		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint))
 		if err != nil {
-			return nil, nil, logLevel, err
+			return nil, nil, nil, logLevel, err
 		}
 
 		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
 			otlptracegrpc.WithEndpoint(endpoint),
 		))
 		if err != nil {
-			return nil, nil, logLevel, err
+			return nil, nil, nil, logLevel, err
+		}
+
+		grpcMetricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithEndpoint(endpoint))
+		if err != nil {
+			return nil, nil, nil, logLevel, err
 		}
 
 		loggerOptions = append(
@@ -165,9 +194,20 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 			tracerOptions,
 			sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(grpcSpanExporter)),
 		)
+
+		metricOptions = append(
+			metricOptions,
+			sdkmetric.WithReader(sdkmetric.NewPeriodicReader(
+				grpcMetricExporter,
+				sdkmetric.WithInterval(metricInterval),
+				sdkmetric.WithProducer(prometheus.NewMetricProducer(
+					prometheus.WithGatherer(metrics.Registry),
+				)),
+			)),
+		)
 	}
 
-	return loggerOptions, tracerOptions, logLevel, nil
+	return loggerOptions, tracerOptions, metricOptions, logLevel, nil
 }
 
 func binaryName() string {
