@@ -25,7 +25,7 @@ var (
 	// Known/Permitted Agent Pools
 
 	AgentsPipeLineUploader = map[string]any{"queue": "pipeline-uploader"}
-	AgentsLarge            = map[string]any{"queue": "k8s-m6id12xlarge"}
+	AgentsLarge            = map[string]any{"queue": "k8s-m6id12xlarge-next"}
 )
 
 var suites = []TestSuite{

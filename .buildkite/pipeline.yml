@@ -46,7 +46,7 @@ steps:
     label: ":gandalf: Nightly Releases"
     timeout_in_minutes: 10
     agents:
-      queue: k8s-m6id12xlarge
+      queue: k8s-m6id12xlarge-next
     commands:
       - |
         ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-nightly-artifacts
@@ -96,7 +96,7 @@ steps:
       build.branch == build.tag
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
     agents:
-      queue: k8s-m6id12xlarge
+      queue: k8s-m6id12xlarge-next
     plugins:
       - seek-oss/aws-sm#v2.3.2:
           json-to-env:
