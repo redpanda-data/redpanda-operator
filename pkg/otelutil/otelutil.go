@@ -6,8 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -51,8 +49,8 @@ type TestingM interface {
 //	func TestMain(m *testing.M) {
 //		otelutil.TestMain(m)
 //	}
-func TestMain(m TestingM) {
-	cleanup, err := Setup(WithPackageName(callerPackage(1)))
+func TestMain(m TestingM, name string) {
+	cleanup, err := Setup(WithBinaryName(name))
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +66,6 @@ type config struct {
 	serviceName     string
 	name            string
 	directory       string
-	packageName     string
 	endpoint        string
 	logLevel        log.TypedLevel
 	metricsInterval time.Duration
@@ -117,10 +114,7 @@ func (c *config) hasGRPC() bool {
 }
 
 func (c *config) file() string {
-	if c.packageName == "" {
-		return path.Join(c.directory, fmt.Sprintf("%s-%s.jsonnl", c.name, time.Now().Format(time.RFC3339)))
-	}
-	return path.Join(c.directory, fmt.Sprintf("%s-%s-%s.jsonnl", c.name, c.packageName, time.Now().Format(time.RFC3339)))
+	return path.Join(c.directory, fmt.Sprintf("%s-%s.jsonnl", c.name, time.Now().Format(time.RFC3339)))
 }
 
 func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, err error) {
@@ -183,13 +177,6 @@ func WithBinaryName(name string) Option {
 func WithGRPCEndpoint(endpoint string) Option {
 	return func(c config) config {
 		c.endpoint = endpoint
-		return c
-	}
-}
-
-func WithPackageName(name string) Option {
-	return func(c config) config {
-		c.packageName = name
 		return c
 	}
 }
@@ -281,15 +268,4 @@ func Setup(options ...Option) (shutdown func() error, err error) {
 
 func binaryName() string {
 	return filepath.Base(os.Args[0])
-}
-
-func callerPackage(skip int) string {
-	_, file, _, _ := runtime.Caller(skip + 1)
-	return fileToPackage(file)
-}
-
-func fileToPackage(file string) string {
-	pidx := strings.Index(file, "redpanda-operator/")
-	fidx := strings.LastIndex(file, "/")
-	return strings.ReplaceAll(strings.TrimPrefix(file[pidx:fidx], "redpanda-operator/"), "/", "__")
 }
