@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -131,7 +133,11 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 	}
 
 	if dir, ok := os.LookupEnv("OTLP_DIR"); ok {
-		path := filepath.Join(dir, fmt.Sprintf("%s-%s.jsonnl", binaryName(), time.Now().Format(time.RFC3339)))
+		// at this point the only thing that uses OTLP_DIR should be tests, which should all use `TestMain`, so the stack
+		// level should be the 4th entry, this is brittle, but it'll work for now
+		pkg := callerPackage(3)
+
+		path := filepath.Join(dir, fmt.Sprintf("%s-%s-%s.jsonnl", binaryName(), pkg, time.Now().Format(time.RFC3339)))
 		file, err := otlpfile.Open(path)
 		if err != nil {
 			return nil, nil, logLevel, err
@@ -172,4 +178,15 @@ func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOption
 
 func binaryName() string {
 	return filepath.Base(os.Args[0])
+}
+
+func callerPackage(skip int) string {
+	_, file, _, _ := runtime.Caller(skip + 1)
+	return fileToPackage(file)
+}
+
+func fileToPackage(file string) string {
+	pidx := strings.Index(file, "redpanda-operator/")
+	fidx := strings.LastIndex(file, "/")
+	return strings.ReplaceAll(strings.TrimPrefix(file[pidx:fidx], "redpanda-operator/"), "/", "__")
 }
