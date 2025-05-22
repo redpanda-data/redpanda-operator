@@ -63,9 +63,11 @@ func (l *LogSink) Error(err error, msg string, keysAndValues ...any) {
 	record.SetSeverity(log.SeverityError)
 	record.SetSeverityText("error")
 
-	record.AddAttributes(
-		log.String(string(semconv.ExceptionMessageKey), err.Error()),
-	)
+	if err != nil {
+		record.AddAttributes(
+			log.String(string(semconv.ExceptionMessageKey), err.Error()),
+		)
+	}
 
 	if l.useTimestamps {
 		record.SetTimestamp(time.Now())

@@ -33,7 +33,7 @@ tasks:
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=integration-tests.xml --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
