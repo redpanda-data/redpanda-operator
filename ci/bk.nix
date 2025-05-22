@@ -12,7 +12,7 @@ buildGoModule rec {
   };
 
   cgo_enabled = false;
-  
+
   ldflags = [
     "-s"
     "-w"
