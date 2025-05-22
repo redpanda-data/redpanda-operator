@@ -84,6 +84,11 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 					// /work is the working dir of the nix docker container
 					// our CI is run within.
 					"OTLP_DIR": "/work/artifacts",
+					// make sure we export metrics at a regular interval so
+					// they're actually useful in short-lived tests
+					"OTLP_METRIC_INTERVAL": "5s",
+					// log things much more verbosely than the default
+					"LOG_LEVEL": "trace",
 				},
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
