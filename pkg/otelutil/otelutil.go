@@ -16,7 +16,9 @@ import (
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
@@ -76,6 +78,22 @@ func Setup() (shutdown func() error, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	serviceResource, err := resource.New(context.Background(), resource.WithAttributes(
+		semconv.ServiceName("redpanda-operator"),
+	))
+	if err != nil {
+		return nil, err
+	}
+	baseResource, err := resource.Merge(
+		resource.Default(),
+		serviceResource,
+	)
+	if err != nil {
+		return nil, err
+	}
+	logOpts = append(logOpts, sdklog.WithResource(baseResource))
+	traceOpts = append(traceOpts, sdktrace.WithResource(baseResource))
 
 	lp := sdklog.NewLoggerProvider(logOpts...)
 	tp := sdktrace.NewTracerProvider(traceOpts...)

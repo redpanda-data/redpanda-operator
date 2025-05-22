@@ -31,6 +31,13 @@ func FromContext(ctx context.Context, keysAndValues ...any) logr.Logger {
 // logging libraries that may be used by 3rd party dependencies.
 func SetGlobals(l logr.Logger) {
 	// TODO set "log" global?
+
+	// if this isn't an OTEL log sink, filter out the "ctx" parameter when logging
+	// out values
+	if _, ok := l.GetSink().(*LogSink); !ok {
+		l = l.WithSink(ContextFree(l.GetSink()))
+	}
+
 	log.SetLogger(l)
 	klog.SetLogger(l)
 	slog.SetDefault(

@@ -117,9 +117,9 @@ func (l LogSink) WithName(name string) logr.LogSink {
 }
 
 // WithTimestamps uses timestamps on each log record
-func (l LogSink) WithTimestamps() logr.LogSink {
+func (l *LogSink) WithTimestamps() *LogSink {
 	l.useTimestamps = true
-	return &l
+	return l
 }
 
 // WithValues returns a new LogSink with additional key/value pairs.

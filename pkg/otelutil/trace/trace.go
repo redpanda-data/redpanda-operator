@@ -75,7 +75,7 @@ func Test(t TestingT) context.Context {
 	ctx = log.IntoContext(ctx, logr.New(&log.MultiSink{
 		Sinks: []logr.LogSink{
 			log.FromContext(ctx).GetSink(),
-			&testrWrapper{testr.NewWithInterface(t, testr.Options{}).GetSink()},
+			log.ContextFree(testr.NewWithInterface(t, testr.Options{}).GetSink()),
 		},
 	}))
 
@@ -108,38 +108,4 @@ func fileToPackage(file string) string {
 	}
 
 	return "github.com/redpanda-data/redpanda-operator/" + file[pidx:fidx]
-}
-
-type testrWrapper struct {
-	logr.LogSink
-}
-
-func (l testrWrapper) WithValues(kvList ...any) logr.LogSink {
-	return l.LogSink.WithValues(filterContexts(kvList)...)
-}
-
-func (l testrWrapper) Info(level int, msg string, kvList ...any) {
-	l.LogSink.Info(level, msg, filterContexts(kvList)...)
-}
-
-func (l testrWrapper) Error(err error, msg string, kvList ...any) {
-	l.LogSink.Error(err, msg, filterContexts(kvList)...)
-}
-
-func filterContexts(kvList []any) []any {
-	filtered := []any{}
-	if len(kvList)%2 != 0 {
-		kvList = append(kvList, nil)
-	}
-	for i := 0; i < len(kvList); i += 2 {
-		name := kvList[i]
-		if name == "ctx" {
-			continue
-		}
-		if _, ok := kvList[i+1].(context.Context); !ok {
-			filtered = append(filtered, kvList[i], kvList[i+1])
-		}
-	}
-
-	return filtered
 }
