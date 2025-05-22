@@ -68,10 +68,11 @@ run `task generate:third-party-licenses-list`
 | github.com/cockroachdb/errors | [Apache-2.0](https://github.com/cockroachdb/errors/blob/v1.11.3/LICENSE) |
 | github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/21c54148d20b/LICENSE) |
 | github.com/cockroachdb/redact | [Apache-2.0](https://github.com/cockroachdb/redact/blob/v1.1.5/LICENSE) |
-| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.18/LICENSE) |
-| github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v0.1.0/LICENSE) |
+| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.24/LICENSE) |
+| github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v0.3.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
-| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.2.4/LICENSE) |
+| github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
+| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.3.6/LICENSE) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/distribution/reference | [Apache-2.0](https://github.com/distribution/reference/blob/v0.6.0/LICENSE) |
 | github.com/docker/cli/cli/config | [Apache-2.0](https://github.com/docker/cli/blob/v25.0.1/LICENSE) |
@@ -138,7 +139,7 @@ run `task generate:third-party-licenses-list`
 | github.com/jcmturner/gofork | [BSD-3-Clause](https://github.com/jcmturner/gofork/blob/v1.7.6/LICENSE) |
 | github.com/jcmturner/gokrb5/v8 | [Apache-2.0](https://github.com/jcmturner/gokrb5/blob/v8.4.4/v8/LICENSE) |
 | github.com/jcmturner/rpc/v2 | [Apache-2.0](https://github.com/jcmturner/rpc/blob/v2.0.3/v2/LICENSE) |
-| github.com/jmoiron/sqlx | [MIT](https://github.com/jmoiron/sqlx/blob/v1.3.5/LICENSE) |
+| github.com/jmoiron/sqlx | [MIT](https://github.com/jmoiron/sqlx/blob/v1.4.0/LICENSE) |
 | github.com/josharian/intern | [MIT](https://github.com/josharian/intern/blob/v1.0.0/license.md) |
 | github.com/json-iterator/go | [MIT](https://github.com/json-iterator/go/blob/v1.1.12/LICENSE) |
 | github.com/kballard/go-shellquote | [MIT](https://github.com/kballard/go-shellquote/blob/95032a82bc51/LICENSE) |
@@ -202,8 +203,8 @@ run `task generate:third-party-licenses-list`
 | github.com/quasilyte/go-ruleguard/dsl | [BSD-3-Clause](https://github.com/quasilyte/go-ruleguard/blob/dsl/v0.3.22/dsl/LICENSE) |
 | github.com/rivo/uniseg | [MIT](https://github.com/rivo/uniseg/blob/v0.4.7/LICENSE.txt) |
 | github.com/rogpeppe/go-internal/fmtsort | [BSD-3-Clause](https://github.com/rogpeppe/go-internal/blob/v1.13.1/LICENSE) |
-| github.com/rubenv/sql-migrate | [MIT](https://github.com/rubenv/sql-migrate/blob/v1.5.2/LICENSE) |
-| github.com/rubenv/sql-migrate/sqlparse | [MIT](https://github.com/rubenv/sql-migrate/blob/v1.5.2/sqlparse/LICENSE) |
+| github.com/rubenv/sql-migrate | [MIT](https://github.com/rubenv/sql-migrate/blob/v1.7.1/LICENSE) |
+| github.com/rubenv/sql-migrate/sqlparse | [MIT](https://github.com/rubenv/sql-migrate/blob/v1.7.1/sqlparse/LICENSE) |
 | github.com/russross/blackfriday/v2 | [BSD-2-Clause](https://github.com/russross/blackfriday/blob/v2.1.0/LICENSE.txt) |
 | github.com/santhosh-tekuri/jsonschema/v5 | [Apache-2.0](https://github.com/santhosh-tekuri/jsonschema/blob/v5.3.1/LICENSE) |
 | github.com/scalalang2/golang-fifo | [MIT](https://github.com/scalalang2/golang-fifo/blob/v1.0.2/LICENSE) |
@@ -272,7 +273,7 @@ run `task generate:third-party-licenses-list`
 | gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
 | gopkg.in/yaml.v2 | [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
 | gopkg.in/yaml.v3 | [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE) |
-| helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.14.4/LICENSE) |
+| helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.17.3/LICENSE) |
 | k8s.io/api | [Apache-2.0](https://github.com/kubernetes/api/blob/v0.33.1/LICENSE) |
 | k8s.io/apiextensions-apiserver/pkg | [Apache-2.0](https://github.com/kubernetes/apiextensions-apiserver/blob/v0.33.1/LICENSE) |
 | k8s.io/apimachinery/pkg | [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.33.1/LICENSE) |
