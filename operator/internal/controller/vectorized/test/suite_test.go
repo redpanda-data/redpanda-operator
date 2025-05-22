@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
@@ -47,6 +46,7 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -75,7 +75,7 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	l := zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true), zap.Level(zapcore.DebugLevel))
-	logf.SetLogger(l)
+	log.SetGlobals(l)
 
 	By("bootstrapping test environment")
 	testEnv = &testutils.RedpandaTestEnv{}

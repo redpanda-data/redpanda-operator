@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/twmb/franz-go/pkg/kgo"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 var ( // interface checks to ensure we implement the hooks properly
@@ -78,7 +80,7 @@ func newClientHooks(logger logr.Logger, metricsNamespace string) *clientHooks {
 	})
 
 	return &clientHooks{
-		logger: logger.V(verboseLevel),
+		logger: logger.V(log.VerboseLevel),
 
 		requestSentCount: promRequestSent,
 		bytesSent:        promBytesSent,

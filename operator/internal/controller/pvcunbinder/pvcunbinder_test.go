@@ -25,12 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -136,7 +136,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 	defer cancel()
 
 	logger := testr.New(t).V(0)
-	log.SetLogger(logger)
+	log.SetGlobals(logger)
 	ctx = log.IntoContext(ctx, logger)
 
 	cluster, err := k3d.NewCluster(t.Name())

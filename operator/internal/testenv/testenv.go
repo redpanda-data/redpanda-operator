@@ -33,12 +33,9 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
-
-func init() {
-	ctrl.SetLogger(logr.Discard()) // Silence the dramatic logger messages.
-}
 
 type Env struct {
 	t         *testing.T
@@ -164,7 +161,8 @@ func (e *Env) Client() client.Client {
 		Scheme: e.scheme,
 	})
 	require.NoError(e.t, err)
-	return client.NewNamespacedClient(c, e.namespace.Name)
+
+	return otelkube.NewClient(client.NewNamespacedClient(c, e.namespace.Name))
 }
 
 func (e *Env) Namespace() string {

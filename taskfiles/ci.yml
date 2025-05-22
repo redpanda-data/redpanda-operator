@@ -10,6 +10,7 @@ tasks:
     - task: set-inotify-watches
     - task: set-inotify-instances
     - task: configure-git-private-repo
+    - cmd: "mkdir -p {{.SRC_DIR}}/artifacts"
 
   lint:
     cmds:
@@ -20,28 +21,28 @@ tasks:
 
   test:unit:
     cmds:
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
       - task: :test:unit
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=unit-tests.xml --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
     cmds:
       - defer: 'kind delete clusters --all'
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=integration-tests.xml --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
     cmds:
       - defer: 'kind delete clusters --all'
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests.xml"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
       - task: :test:acceptance
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=acceptance-tests.xml --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:kuttl-v1:
