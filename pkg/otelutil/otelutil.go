@@ -53,7 +53,12 @@ type TestingM interface {
 //		otelutil.TestMain(m, "integration-some-package-here")
 //	}
 func TestMain(m TestingM, name string, onTypes ...testutil.TestType) {
-	shouldSetupLogger := slices.Contains(onTypes, testutil.Type()) || len(onTypes) == 0
+	if len(onTypes) == 0 {
+		// default to setting up logging on integration and unit tests if unspecified
+		onTypes = []testutil.TestType{testutil.TestTypeUnit, testutil.TestTypeIntegration}
+	}
+
+	shouldSetupLogger := slices.Contains(onTypes, testutil.Type())
 	if !shouldSetupLogger {
 		os.Exit(m.Run())
 	}

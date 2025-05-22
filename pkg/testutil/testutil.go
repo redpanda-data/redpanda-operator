@@ -66,7 +66,7 @@ func Type() TestType {
 	return TestTypeUnit
 }
 
-// IsAcceptance returns true if this is a unit test
+// IsAcceptance returns true if this is an acceptance test
 func IsAcceptance() bool {
 	return skipAcceptanceTests == false
 }
