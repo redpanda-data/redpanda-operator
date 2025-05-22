@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestingM abstracts *testing.M so it can be passed into TestMain for setup.
@@ -50,8 +52,18 @@ type TestingM interface {
 //	func TestMain(m *testing.M) {
 //		otelutil.TestMain(m, "integration-some-package-here")
 //	}
-func TestMain(m TestingM, name string) {
-	cleanup, err := Setup(WithBinaryName(name))
+func TestMain(m TestingM, name string, onTypes ...testutil.TestType) {
+	shouldSetupLogger := slices.Contains(onTypes, testutil.Type()) || len(onTypes) == 0
+	if !shouldSetupLogger {
+		os.Exit(m.Run())
+	}
+
+	normalizedName := name
+	if len(onTypes) != 1 {
+		normalizedName = testutil.Type().String() + "-" + name
+	}
+
+	cleanup, err := Setup(WithBinaryName(normalizedName))
 	if err != nil {
 		panic(err)
 	}

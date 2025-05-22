@@ -111,7 +111,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 })
 
 func TestMain(m *testing.M) {
-	otelutil.TestMain(m, "acceptance")
+	otelutil.TestMain(m, "acceptance", testutil.TestTypeAcceptance)
 }
 
 func TestAcceptanceSuite(t *testing.T) {

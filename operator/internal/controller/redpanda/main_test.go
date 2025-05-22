@@ -16,5 +16,5 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	otelutil.TestMain(m, "integration-controller-redpanda")
+	otelutil.TestMain(m, "controller-redpanda")
 }
