@@ -40,8 +40,8 @@ fi
 mkdir -p artifacts
 BUILD=$(bk build view $BRANCH_ARG 2> /dev/null)
 LATEST_BUILD=$(echo $BUILD | head -n 1 | xargs | cut -d' ' -f2 | sed 's/^.//')
-echo "Downloading OTEL artifacts for ${BRANCH_DESCRIPTION}, Build: ${LATEST_BUILD}, Matching: ${ARTIFACTS}"
-bk api /pipelines/redpanda-operator/builds/${LATEST_BUILD}/artifacts | jq ".[] | select((.filename | startswith(\"${ARTIFACTS}.test-\")) and (.file_size != 0)) | .download_url" -r |
+echo "Downloading OTEL artifacts for ${BRANCH_DESCRIPTION}, Build: ${LATEST_BUILD}, Matching Prefix: ${ARTIFACTS}"
+bk api /pipelines/redpanda-operator/builds/${LATEST_BUILD}/artifacts | jq ".[] | select((.filename | startswith(\"${ARTIFACTS}\")) and (.filename | endswith(\".jsonnl\")) and (.file_size != 0)) | .download_url" -r |
 while read -r line
 do
     FIRST_REDIRECT=$(curl -s -H "Authorization: Bearer $TOKEN" $line | jq .url -r)

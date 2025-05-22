@@ -35,7 +35,7 @@ tasks:
     vars:
       BRANCH: '{{default "" .BRANCH}}'
     cmds:
-      - ./ci/scripts/download-otel-artifacts.sh "{{.BRANCH}}" redpanda
+      - ./ci/scripts/download-otel-artifacts.sh "{{.BRANCH}}" integration
 
   create-buildx-builder:
     cmds:
