@@ -114,8 +114,6 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 }
 
 func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, err error) {
-	logger := log.FromContext(ctx)
-
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -127,6 +125,8 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 		attribute.String("namespace", req.Namespace),
 	))
 	defer func() { trace.EndSpan(span, err) }()
+
+	logger := log.FromContext(ctx)
 
 	if !isRedpandaManaged(ctx, rp) {
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {

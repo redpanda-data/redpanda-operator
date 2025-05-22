@@ -18,7 +18,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
-var kgoError = errors.New("kgo client error")
+var errKgo = errors.New("kgo client error")
 
 // Reference implementation https://github.com/redpanda-data/console/blob/0ba44b236b6ddd7191da015f44a9302fc13665ec/backend/pkg/kafka/config_helper.go#L44
 
@@ -45,7 +45,7 @@ func (k kgoLogger) Log(level kgo.LogLevel, msg string, keyvals ...interface{}) {
 	case kgo.LogLevelWarn:
 		k.logger.Info(msg, keyvals...)
 	case kgo.LogLevelError:
-		k.logger.Error(kgoError, msg, keyvals...)
+		k.logger.Error(errKgo, msg, keyvals...)
 	}
 }
 
