@@ -100,12 +100,14 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	kclient = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(&Cluster{}).
+		WithValidator(&Cluster{}).
 		Complete()
 }
 
 //+kubebuilder:webhook:path=/mutate-redpanda-vectorized-io-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Defaulter = &Cluster{}
+var _ webhook.CustomDefaulter = &Cluster{}
 
 func redpandaResourceFields(c *Cluster) []redpandaResourceField {
 	var result []redpandaResourceField
@@ -133,42 +135,53 @@ func sidecarResourceFields(c *Cluster) []resourceField {
 
 // Default implements defaulting webhook logic - all defaults that should be
 // applied to cluster CRD after user submits it should be put in here
-func (r *Cluster) Default() {
+func (r *Cluster) Default(_ context.Context, obj runtime.Object) error {
 	log := ctrl.Log.WithName("Cluster.Default").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("defaulting")
-	if r.Spec.Configuration.SchemaRegistry != nil && r.Spec.Configuration.SchemaRegistry.Port == 0 {
-		r.Spec.Configuration.SchemaRegistry.Port = defaultSchemaRegistryPort
+
+	if obj == nil {
+		return nil
 	}
 
-	if r.Spec.CloudStorage.Enabled && r.Spec.CloudStorage.CacheStorage != nil && r.Spec.CloudStorage.CacheStorage.Capacity.Value() == 0 {
-		r.Spec.CloudStorage.CacheStorage.Capacity = resource.MustParse("20G")
+	cl, ok := obj.(*Cluster)
+	if !ok {
+		return fmt.Errorf("expected a Cluster but got a %T", obj)
 	}
 
-	r.setDefaultAdditionalConfiguration()
-	if r.Spec.PodDisruptionBudget == nil {
+	if cl.Spec.Configuration.SchemaRegistry != nil && cl.Spec.Configuration.SchemaRegistry.Port == 0 {
+		cl.Spec.Configuration.SchemaRegistry.Port = defaultSchemaRegistryPort
+	}
+
+	if cl.Spec.CloudStorage.Enabled && cl.Spec.CloudStorage.CacheStorage != nil && cl.Spec.CloudStorage.CacheStorage.Capacity.Value() == 0 {
+		cl.Spec.CloudStorage.CacheStorage.Capacity = resource.MustParse("20G")
+	}
+
+	cl.setDefaultAdditionalConfiguration()
+	if cl.Spec.PodDisruptionBudget == nil {
 		defaultMaxUnavailable := intstr.FromInt(1)
-		r.Spec.PodDisruptionBudget = &PDBConfig{
+		cl.Spec.PodDisruptionBudget = &PDBConfig{
 			Enabled:        true,
 			MaxUnavailable: &defaultMaxUnavailable,
 		}
 	}
 
-	if r.Spec.LicenseRef != nil && r.Spec.LicenseRef.Key == "" {
-		r.Spec.LicenseRef.Key = DefaultLicenseSecretKey
+	if cl.Spec.LicenseRef != nil && cl.Spec.LicenseRef.Key == "" {
+		cl.Spec.LicenseRef.Key = DefaultLicenseSecretKey
 	}
 
-	for i := range r.Spec.Configuration.KafkaAPI {
-		if r.Spec.Configuration.KafkaAPI[i].AuthenticationMethod == "" {
-			r.Spec.Configuration.KafkaAPI[i].AuthenticationMethod = noneAuthorizationMechanism
+	for i := range cl.Spec.Configuration.KafkaAPI {
+		if cl.Spec.Configuration.KafkaAPI[i].AuthenticationMethod == "" {
+			cl.Spec.Configuration.KafkaAPI[i].AuthenticationMethod = noneAuthorizationMechanism
 		}
 	}
 
-	if r.Spec.RestartConfig == nil {
-		r.Spec.RestartConfig = &RestartConfig{
+	if cl.Spec.RestartConfig == nil {
+		cl.Spec.RestartConfig = &RestartConfig{
 			DisableMaintenanceModeHooks:       nil,
 			UnderReplicatedPartitionThreshold: 0,
 		}
 	}
+	return nil
 }
 
 func (r *Cluster) getDefaultAdditionalConfiguration() map[string]int {
@@ -198,64 +211,90 @@ func (r *Cluster) setDefaultAdditionalConfiguration() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-redpanda-vectorized-io-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &Cluster{}
+var _ webhook.CustomValidator = &Cluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateCreate() (admission.Warnings, error) {
+func (r *Cluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	log := ctrl.Log.WithName("Cluster.ValidateCreate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating create")
 
-	allErrs := r.validateCommon(log)
+	if obj == nil {
+		return nil, nil
+	}
+
+	cl, ok := obj.(*Cluster)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cluster but got a %T", obj)
+	}
+
+	allErrs := cl.validateCommon(ctx, log)
 
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
 
 	return nil, apierrors.NewInvalid(
-		r.GroupVersionKind().GroupKind(),
-		r.Name, allErrs)
+		cl.GroupVersionKind().GroupKind(),
+		cl.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+func (r *Cluster) ValidateUpdate(ctx context.Context, old runtime.Object, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	log := ctrl.Log.WithName("Cluster.ValidateUpdate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating update")
+
+	if old == nil {
+		return nil, nil
+	}
+
+	oldCluster, ok := old.(*Cluster)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cluster but got a %T", old)
+	}
+
+	if newObj == nil {
+		return nil, nil
+	}
+
+	cl, ok := newObj.(*Cluster)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cluster but got a %T", newObj)
+	}
 
 	// Don't validate if the cluster is being deleted.
 	// After receiving delete, the controller will update the cluster CR to remove the finalzer.
 	// If we validated in this scenario, some of the validations will fail, such that
 	// the clientCACertRef can fail with secret not found if the referenced secret
 	// has already been deleted as part of the cluster deletion.
-	if !r.GetDeletionTimestamp().IsZero() {
+	if !cl.GetDeletionTimestamp().IsZero() {
 		return nil, nil
 	}
 
-	oldCluster := old.(*Cluster)
-	allErrs := r.validateCommon(log)
+	allErrs := cl.validateCommon(ctx, log)
 
-	allErrs = append(allErrs, r.validateDownscaling(oldCluster)...)
+	allErrs = append(allErrs, cl.validateDownscaling(oldCluster)...)
 
-	allErrs = append(allErrs, r.validateRedpandaCoreChanges(oldCluster)...)
+	allErrs = append(allErrs, cl.validateRedpandaCoreChanges(oldCluster)...)
 
-	allErrs = append(allErrs, r.validateLicense(oldCluster)...)
+	allErrs = append(allErrs, cl.validateLicense(ctx, oldCluster)...)
 
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
 
 	return nil, apierrors.NewInvalid(
-		r.GroupVersionKind().GroupKind(),
-		r.Name, allErrs)
+		cl.GroupVersionKind().GroupKind(),
+		cl.Name, allErrs)
 }
 
-func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
+func (r *Cluster) validateCommon(ctx context.Context, log logr.Logger) field.ErrorList {
 	vcLog := log.WithName("validateCommon")
 	var allErrs field.ErrorList
 	allErrs = append(allErrs, r.validateScaling()...)
-	allErrs = append(allErrs, r.validateKafkaListeners(vcLog)...)
-	allErrs = append(allErrs, r.validateAdminListeners()...)
-	allErrs = append(allErrs, r.validatePandaproxyListeners(vcLog)...)
-	allErrs = append(allErrs, r.validateSchemaRegistryListeners()...)
+	allErrs = append(allErrs, r.validateKafkaListeners(ctx, vcLog)...)
+	allErrs = append(allErrs, r.validateAdminListeners(ctx)...)
+	allErrs = append(allErrs, r.validatePandaproxyListeners(ctx, vcLog)...)
+	allErrs = append(allErrs, r.validateSchemaRegistryListeners(ctx)...)
 	allErrs = append(allErrs, r.checkCollidingPorts()...)
 	allErrs = append(allErrs, r.validateRedpandaMemory()...)
 	for _, rf := range sidecarResourceFields(r) {
@@ -267,7 +306,7 @@ func (r *Cluster) validateCommon(log logr.Logger) field.ErrorList {
 	allErrs = append(allErrs, r.validateArchivalStorage()...)
 	allErrs = append(allErrs, r.validatePodDisruptionBudget()...)
 	allErrs = append(allErrs, r.validateAdditionalConfiguration()...)
-	allErrs = append(allErrs, r.validatePriorityClassName()...)
+	allErrs = append(allErrs, r.validatePriorityClassName(ctx)...)
 	return allErrs
 }
 
@@ -285,14 +324,14 @@ func (r *Cluster) validateScaling() field.ErrorList {
 	return allErrs
 }
 
-func (r *Cluster) validatePriorityClassName() field.ErrorList {
+func (r *Cluster) validatePriorityClassName(ctx context.Context) field.ErrorList {
 	var allErrs field.ErrorList
 	if r.Spec.PriorityClassName == "" {
 		return allErrs
 	}
 
 	pc := &schedulingv1.PriorityClass{}
-	err := kclient.Get(context.TODO(), types.NamespacedName{Name: r.Spec.PriorityClassName}, pc)
+	err := kclient.Get(ctx, types.NamespacedName{Name: r.Spec.PriorityClassName}, pc)
 	if err != nil {
 		allErrs = append(allErrs,
 			field.Invalid(
@@ -315,7 +354,7 @@ func (r *Cluster) validateDownscaling(old *Cluster) field.ErrorList {
 	return allErrs
 }
 
-func (r *Cluster) validateAdminListeners() field.ErrorList {
+func (r *Cluster) validateAdminListeners(ctx context.Context) field.ErrorList {
 	var allErrs field.ErrorList
 	externalAdmin := r.AdminAPIExternal()
 	targetAdminCount := 1
@@ -367,6 +406,7 @@ func (r *Cluster) validateAdminListeners() field.ErrorList {
 			foundListenerWithTLS = true
 		}
 		allErrs = append(allErrs, validateListener(
+			ctx,
 			p.TLS.Enabled,
 			p.TLS.RequireClientAuth,
 			p.TLS.IssuerRef,
@@ -382,7 +422,7 @@ func (r *Cluster) validateAdminListeners() field.ErrorList {
 	return allErrs
 }
 
-func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
+func (r *Cluster) validateKafkaListeners(ctx context.Context, l logr.Logger) field.ErrorList {
 	log := l.WithName("validateKafkaListeners")
 	var allErrs field.ErrorList
 	if len(r.Spec.Configuration.KafkaAPI) == 0 {
@@ -406,6 +446,7 @@ func (r *Cluster) validateKafkaListeners(l logr.Logger) field.ErrorList {
 			indices[p.Name] = i
 		}
 		tlsErrs := validateListener(
+			ctx,
 			p.TLS.Enabled,
 			p.TLS.RequireClientAuth,
 			p.TLS.IssuerRef,
@@ -488,7 +529,7 @@ func checkValidEndpointTemplate(tmpl string) error {
 }
 
 //nolint:funlen,gocyclo // it's a sequence of checks
-func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
+func (r *Cluster) validatePandaproxyListeners(ctx context.Context, l logr.Logger) field.ErrorList {
 	var allErrs field.ErrorList
 	proxyExternals := []*PandaproxyAPI{}
 	indices := make(map[string]int)
@@ -574,6 +615,7 @@ func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 	// for now only one listener can have TLS to be backward compatible with v1alpha1 API
 	for i := range r.Spec.Configuration.PandaproxyAPI {
 		tlsErrs := validateListener(
+			ctx,
 			p[i].TLS.Enabled,
 			p[i].TLS.RequireClientAuth,
 			p[i].TLS.IssuerRef,
@@ -604,7 +646,7 @@ func (r *Cluster) validatePandaproxyListeners(l logr.Logger) field.ErrorList {
 	return allErrs
 }
 
-func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
+func (r *Cluster) validateSchemaRegistryListeners(ctx context.Context) field.ErrorList {
 	var allErrs field.ErrorList
 	sr := r.Spec.Configuration.SchemaRegistry
 	if sr == nil {
@@ -622,6 +664,7 @@ func (r *Cluster) validateSchemaRegistryListeners() field.ErrorList {
 		indices[schemaRegistry.Name] = i
 		if schemaRegistry.TLS != nil {
 			tlsErrs := validateListener(
+				ctx,
 				schemaRegistry.TLS.Enabled,
 				schemaRegistry.TLS.RequireClientAuth,
 				schemaRegistry.TLS.IssuerRef,
@@ -735,14 +778,14 @@ func (r *Cluster) validateRedpandaResources(
 	return allErrs
 }
 
-func (r *Cluster) validateLicense(old *Cluster) field.ErrorList {
+func (r *Cluster) validateLicense(ctx context.Context, old *Cluster) field.ErrorList {
 	var allErrs field.ErrorList
 	// Cluster has finalizers now, no validation if it is deleting
 	if r.GetDeletionTimestamp() != nil {
 		return allErrs
 	}
 	if l := r.Spec.LicenseRef; l != nil {
-		secret, err := l.GetSecret(context.Background(), kclient)
+		secret, err := l.GetSecret(ctx, kclient)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("licenseRef"), r.Spec.LicenseRef, err.Error()))
 		}
@@ -936,6 +979,7 @@ func hasDifferentNodeSecret(listener1, listener2 KafkaAPITLS) bool {
 }
 
 func validateListener(
+	ctx context.Context,
 	tlsEnabled, requireClientAuth bool,
 	issuerRef *cmmetav1.ObjectReference,
 	nodeSecretRef *corev1.ObjectReference,
@@ -971,10 +1015,11 @@ func validateListener(
 		return allErrs
 	}
 
-	return append(allErrs, validateExternalCA(requireClientAuth, clientCACertRef, path, clusterNamespace)...)
+	return append(allErrs, validateExternalCA(ctx, requireClientAuth, clientCACertRef, path, clusterNamespace)...)
 }
 
 func validateExternalCA(
+	ctx context.Context,
 	requireClientAuth bool,
 	clientCACertRef *corev1.TypedLocalObjectReference,
 	path *field.Path,
@@ -1011,7 +1056,7 @@ func validateExternalCA(
 	}
 
 	secret := &corev1.Secret{}
-	err := kclient.Get(context.TODO(), types.NamespacedName{Name: clientCACertRef.Name, Namespace: clusterNamespace}, secret)
+	err := kclient.Get(ctx, types.NamespacedName{Name: clientCACertRef.Name, Namespace: clusterNamespace}, secret)
 	if err != nil {
 		allErrs = append(allErrs,
 			field.Invalid(
@@ -1180,7 +1225,7 @@ func (r *Cluster) validateAdditionalConfiguration() field.ErrorList {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateDelete() (admission.Warnings, error) {
+func (r *Cluster) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	// this is a stub to implement the interface. We do not validate on delete.
 	return nil, nil
 }

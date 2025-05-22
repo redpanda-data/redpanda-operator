@@ -18,6 +18,7 @@ import (
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +36,7 @@ var fakeK8sClient = fake.NewClientBuilder().Build()
 
 //nolint:funlen // this is ok for a test
 func TestDefault(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
 	type test struct {
 		name                                string
 		replicas                            int32
@@ -79,7 +81,7 @@ func TestDefault(t *testing.T) {
 					redpandaCluster.Spec.AdditionalConfiguration[field] = "111"
 				}
 
-				redpandaCluster.Default()
+				require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 				val, exist := redpandaCluster.Spec.AdditionalConfiguration[field]
 				if (exist && val == "3") != tt.additionalConfigurationSetByWebhook {
 					t.Fail()
@@ -108,7 +110,7 @@ func TestDefault(t *testing.T) {
 			},
 		}
 
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.Nil(t, redpandaCluster.Spec.Configuration.SchemaRegistry)
 	})
 	t.Run("if schema registry exist, but the port is 0 the default is set", func(t *testing.T) {
@@ -133,7 +135,7 @@ func TestDefault(t *testing.T) {
 			},
 		}
 
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.Equal(t, 8081, redpandaCluster.Spec.Configuration.SchemaRegistry.Port)
 	})
 	t.Run("if schema registry exist and port have not zero value the default will not be used", func(t *testing.T) {
@@ -160,7 +162,7 @@ func TestDefault(t *testing.T) {
 			},
 		}
 
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.Equal(t, 999, redpandaCluster.Spec.Configuration.SchemaRegistry.Port)
 	})
 	t.Run("if schema registry is defined as rest of external listeners the default port is used", func(t *testing.T) {
@@ -189,7 +191,7 @@ func TestDefault(t *testing.T) {
 			},
 		}
 
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.Equal(t, 8081, redpandaCluster.Spec.Configuration.SchemaRegistry.Port)
 	})
 	t.Run("pod disruption budget", func(t *testing.T) {
@@ -202,7 +204,7 @@ func TestDefault(t *testing.T) {
 				Replicas: ptr.To(int32(1)),
 			},
 		}
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.True(t, redpandaCluster.Spec.PodDisruptionBudget.Enabled)
 		assert.Equal(t, intstr.FromInt(1), *redpandaCluster.Spec.PodDisruptionBudget.MaxUnavailable)
 	})
@@ -220,7 +222,7 @@ func TestDefault(t *testing.T) {
 				},
 			},
 		}
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.Equal(t, vectorizedv1alpha1.DefaultLicenseSecretKey, redpandaCluster.Spec.LicenseRef.Key)
 	})
 
@@ -232,13 +234,15 @@ func TestDefault(t *testing.T) {
 			},
 			Spec: vectorizedv1alpha1.ClusterSpec{},
 		}
-		redpandaCluster.Default()
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
 		assert.NotNil(t, redpandaCluster.Spec.RestartConfig)
 		assert.Equal(t, 0, redpandaCluster.Spec.RestartConfig.UnderReplicatedPartitionThreshold)
 	})
 }
 
 func TestValidateUpdate(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	var replicas0 int32
 	var replicas3 int32 = 3
 
@@ -283,7 +287,7 @@ func TestValidateUpdate(t *testing.T) {
 		},
 	}
 
-	_, err := updatedCluster.ValidateUpdate(redpandaCluster)
+	_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatedCluster)
 	if err == nil {
 		t.Fatalf("expecting validation error but got none")
 	}
@@ -313,6 +317,8 @@ func TestValidateUpdate(t *testing.T) {
 
 //nolint:funlen // this is ok for a test
 func TestValidateUpdate_NoError(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	var replicas2 int32 = 2
 
 	redpandaCluster := &vectorizedv1alpha1.Cluster{
@@ -347,7 +353,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 	}
 
 	t.Run("same object updated", func(t *testing.T) {
-		_, err := redpandaCluster.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, redpandaCluster)
 		assert.NoError(t, err)
 	})
 
@@ -355,7 +361,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		scaleUp := *redpandaCluster.Spec.NodePools[0].Replicas + 1
 		updatedScaleUp := redpandaCluster.DeepCopy()
 		updatedScaleUp.Spec.Replicas = &scaleUp
-		_, err := updatedScaleUp.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatedScaleUp)
 		assert.NoError(t, err)
 	})
 
@@ -363,7 +369,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatedImage := redpandaCluster.DeepCopy()
 		updatedImage.Spec.Image = "differentimage"
 		updatedImage.Spec.Version = "111"
-		_, err := updatedImage.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatedImage)
 		assert.NoError(t, err)
 	})
 
@@ -374,7 +380,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort.Spec.Configuration.RPCServer.Port = 200
 		updatePort.Spec.Configuration.SchemaRegistry.Port = 200
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -387,7 +393,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort.Spec.Configuration.PandaproxyAPI = append(updatePort.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}}})
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -402,7 +408,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
 		}
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.NoError(t, err)
 	})
 
@@ -414,7 +420,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort.Spec.Configuration.AdminAPI[0].Port = 300
 		updatePort.Spec.Configuration.RPCServer.Port = 201
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -427,7 +433,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort.Spec.Configuration.AdminAPI[0].External.Enabled = true
 		updatePort.Spec.Configuration.RPCServer.Port = 301
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -435,7 +441,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort := redpandaCluster.DeepCopy()
 		updatePort.Spec.Configuration.SchemaRegistry.Port = updatePort.Spec.Configuration.PandaproxyAPI[0].Port
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -448,7 +454,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		updatePort.Spec.Configuration.AdminAPI[0].Port = 200
 		updatePort.Spec.Configuration.RPCServer.Port = 300
 
-		_, err := updatePort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, updatePort)
 		assert.Error(t, err)
 	})
 
@@ -457,7 +463,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		tls.Spec.Configuration.KafkaAPI[0].TLS.RequireClientAuth = true
 		tls.Spec.Configuration.KafkaAPI[0].TLS.Enabled = true
 
-		_, err := tls.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, tls)
 		assert.NoError(t, err)
 	})
 
@@ -466,7 +472,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		exPort.Spec.Configuration.KafkaAPI[0].External.Enabled = true
 		exPort.Spec.Configuration.KafkaAPI = append(exPort.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{Port: 123, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}})
-		_, err := exPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, exPort)
 
 		assert.Error(t, err)
 	})
@@ -475,7 +481,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.KafkaAPI = append(multiPort.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{Port: 123})
-		_, err := multiPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, multiPort)
 
 		assert.Error(t, err)
 	})
@@ -483,7 +489,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 	t.Run("external listener cannot have port specified", func(t *testing.T) {
 		exPort := redpandaCluster.DeepCopy()
 		exPort.Spec.Configuration.KafkaAPI[0].External.Enabled = true
-		_, err := exPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, exPort)
 
 		assert.Error(t, err)
 	})
@@ -492,7 +498,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		noPort := redpandaCluster.DeepCopy()
 		noPort.Spec.Configuration.AdminAPI = []vectorizedv1alpha1.AdminAPI{}
 
-		_, err := noPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, noPort)
 		assert.Error(t, err)
 	})
 
@@ -500,7 +506,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.AdminAPI = append(multiPort.Spec.Configuration.AdminAPI,
 			vectorizedv1alpha1.AdminAPI{Port: 123})
-		_, err := multiPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, multiPort)
 
 		assert.Error(t, err)
 	})
@@ -514,7 +520,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 				External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
 				TLS:      vectorizedv1alpha1.AdminAPITLS{Enabled: true},
 			})
-		_, err := multiPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, multiPort)
 
 		assert.Error(t, err)
 	})
@@ -523,7 +529,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.AdminAPI[0].TLS.RequireClientAuth = true
 		multiPort.Spec.Configuration.AdminAPI[0].TLS.Enabled = false
-		_, err := multiPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, multiPort)
 
 		assert.Error(t, err)
 	})
@@ -536,7 +542,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 				External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Subdomain: "subdomain"}},
 			},
 		}
-		_, err := withSub.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, withSub)
 
 		assert.Error(t, err)
 	})
@@ -545,7 +551,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.PandaproxyAPI = append(multiPort.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{Port: 123}, vectorizedv1alpha1.PandaproxyAPI{Port: 321})
-		_, err := multiPort.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, multiPort)
 
 		assert.Error(t, err)
 	})
@@ -554,7 +560,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		noInternal := redpandaCluster.DeepCopy()
 		noInternal.Spec.Configuration.PandaproxyAPI = append(noInternal.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}}, Port: 123})
-		_, err := noInternal.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, noInternal)
 
 		assert.Error(t, err)
 	})
@@ -572,7 +578,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			TLS: vectorizedv1alpha1.PandaproxyAPITLS{Enabled: false, RequireClientAuth: true},
 		})
 
-		_, err := tls.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, tls)
 		assert.Error(t, err)
 	})
 
@@ -589,7 +595,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			TLS: vectorizedv1alpha1.PandaproxyAPITLS{Enabled: true, IssuerRef: &cmmetav1.ObjectReference{}, NodeSecretRef: &corev1.ObjectReference{}},
 		})
 
-		_, err := tls.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, tls)
 		assert.Error(t, err)
 	})
 
@@ -607,7 +613,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			TLS: vectorizedv1alpha1.PandaproxyAPITLS{Enabled: true, IssuerRef: &cmmetav1.ObjectReference{}},
 		})
 
-		_, err := tls.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, tls)
 		assert.NoError(t, err)
 	})
 
@@ -623,7 +629,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		cluster := redpandaCluster.DeepCopy()
 		cluster.Spec.PriorityClassName = pcName
 
-		_, err = cluster.ValidateUpdate(redpandaCluster)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, cluster)
 		assert.NoError(t, err)
 	})
 
@@ -633,7 +639,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		cluster := redpandaCluster.DeepCopy()
 		cluster.Spec.PriorityClassName = pcName
 
-		_, err := cluster.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, cluster)
 		assert.Error(t, err)
 	})
 
@@ -650,7 +656,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		one := int32(1)
 		c.Spec.Replicas = &one
 
-		_, err := c.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, c)
 		assert.Error(t, err)
 	})
 
@@ -672,7 +678,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 			},
 		}
 
-		_, err := c.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, c)
 		assert.Error(t, err)
 	})
 
@@ -684,7 +690,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 		now := metav1.Now()
 		license.SetDeletionTimestamp(&now)
 
-		_, err := license.ValidateUpdate(redpandaCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, license)
 		assert.NoError(t, err)
 	})
 
@@ -735,7 +741,7 @@ func TestValidateUpdate_NoError(t *testing.T) {
 				corev1.ResourceCPU:    resource.MustParse(tc.target),
 			}
 
-			_, err := newCluster.ValidateUpdate(oldCluster)
+			_, err := webhook.ValidateUpdate(context.Background(), oldCluster, newCluster)
 			if tc.error {
 				assert.Error(t, err)
 				if err != nil && tc.lowerBound != "" {
@@ -752,13 +758,15 @@ func TestValidateUpdate_NoError(t *testing.T) {
 
 //nolint:funlen // this is ok for a test
 func TestCreation(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	redpandaCluster := validRedpandaCluster()
 
 	t.Run("no collision in the port", func(t *testing.T) {
 		newPort := redpandaCluster.DeepCopy()
 		newPort.Spec.Configuration.KafkaAPI[0].Port = 200
 
-		_, err := newPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newPort)
 		assert.NoError(t, err)
 	})
 
@@ -769,7 +777,7 @@ func TestCreation(t *testing.T) {
 		newPort.Spec.Configuration.RPCServer.Port = 200
 		newPort.Spec.Configuration.SchemaRegistry.Port = 200
 
-		_, err := newPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newPort)
 		assert.Error(t, err)
 	})
 
@@ -783,7 +791,7 @@ func TestCreation(t *testing.T) {
 		newPort.Spec.Configuration.PandaproxyAPI = append(newPort.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}}})
 
-		_, err := newPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newPort)
 		assert.Error(t, err)
 	})
 
@@ -798,7 +806,7 @@ func TestCreation(t *testing.T) {
 			ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
 		}
 
-		_, err := newPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newPort)
 		assert.NoError(t, err)
 	})
 
@@ -806,7 +814,7 @@ func TestCreation(t *testing.T) {
 		newPort := redpandaCluster.DeepCopy()
 		newPort.Spec.Configuration.SchemaRegistry.Port = newPort.Spec.Configuration.PandaproxyAPI[0].Port
 
-		_, err := newPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newPort)
 		assert.Error(t, err)
 	})
 
@@ -814,7 +822,7 @@ func TestCreation(t *testing.T) {
 		noPort := redpandaCluster.DeepCopy()
 		noPort.Spec.Configuration.KafkaAPI = []vectorizedv1alpha1.KafkaAPI{}
 
-		_, err := noPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), noPort)
 		assert.Error(t, err)
 	})
 
@@ -822,7 +830,7 @@ func TestCreation(t *testing.T) {
 		noPort := redpandaCluster.DeepCopy()
 		noPort.Spec.Configuration.AdminAPI = []vectorizedv1alpha1.AdminAPI{}
 
-		_, err := noPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), noPort)
 		assert.Error(t, err)
 	})
 
@@ -830,7 +838,7 @@ func TestCreation(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.AdminAPI = append(multiPort.Spec.Configuration.AdminAPI,
 			vectorizedv1alpha1.AdminAPI{Port: 123})
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -847,7 +855,7 @@ func TestCreation(t *testing.T) {
 			Redpanda: nil,
 		}
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.Error(t, err)
 	})
 
@@ -864,7 +872,7 @@ func TestCreation(t *testing.T) {
 		}
 		memory.Spec.Configuration.DeveloperMode = true
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.NoError(t, err)
 	})
 
@@ -883,7 +891,7 @@ func TestCreation(t *testing.T) {
 			},
 		}
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.Error(t, err)
 	})
 
@@ -907,7 +915,7 @@ func TestCreation(t *testing.T) {
 			},
 		}
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.Error(t, err)
 	})
 
@@ -931,7 +939,7 @@ func TestCreation(t *testing.T) {
 			},
 		}
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.NoError(t, err)
 	})
 
@@ -955,7 +963,7 @@ func TestCreation(t *testing.T) {
 			},
 		}
 
-		_, err := memory.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), memory)
 		assert.NoError(t, err)
 	})
 
@@ -964,7 +972,7 @@ func TestCreation(t *testing.T) {
 		tls.Spec.Configuration.KafkaAPI[0].TLS.Enabled = true
 		tls.Spec.Configuration.KafkaAPI[0].TLS.RequireClientAuth = true
 
-		_, err := tls.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), tls)
 		assert.NoError(t, err)
 	})
 
@@ -973,7 +981,7 @@ func TestCreation(t *testing.T) {
 		tls.Spec.Configuration.KafkaAPI[0].TLS.Enabled = false
 		tls.Spec.Configuration.KafkaAPI[0].TLS.RequireClientAuth = true
 
-		_, err := tls.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), tls)
 		assert.Error(t, err)
 	})
 
@@ -982,7 +990,7 @@ func TestCreation(t *testing.T) {
 		exPort.Spec.Configuration.KafkaAPI[0].External.Enabled = true
 		exPort.Spec.Configuration.KafkaAPI = append(exPort.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{Port: 123, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}})
-		_, err := exPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), exPort)
 
 		assert.Error(t, err)
 	})
@@ -991,7 +999,7 @@ func TestCreation(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.KafkaAPI = append(multiPort.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{Port: 123})
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -999,7 +1007,7 @@ func TestCreation(t *testing.T) {
 	t.Run("external listener with port", func(t *testing.T) {
 		exPort := redpandaCluster.DeepCopy()
 		exPort.Spec.Configuration.KafkaAPI[0].External.Enabled = true
-		_, err := exPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), exPort)
 
 		assert.Error(t, err)
 	})
@@ -1013,7 +1021,7 @@ func TestCreation(t *testing.T) {
 				External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
 				TLS:      vectorizedv1alpha1.AdminAPITLS{Enabled: true},
 			})
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -1022,7 +1030,7 @@ func TestCreation(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.AdminAPI[0].TLS.RequireClientAuth = true
 		multiPort.Spec.Configuration.AdminAPI[0].TLS.Enabled = false
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -1035,7 +1043,7 @@ func TestCreation(t *testing.T) {
 				External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Subdomain: "subdomain"}},
 			},
 		}
-		_, err := withSub.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), withSub)
 
 		assert.Error(t, err)
 	})
@@ -1044,7 +1052,7 @@ func TestCreation(t *testing.T) {
 		multiPort := redpandaCluster.DeepCopy()
 		multiPort.Spec.Configuration.PandaproxyAPI = append(multiPort.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{Port: 123}, vectorizedv1alpha1.PandaproxyAPI{Port: 321})
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -1053,7 +1061,7 @@ func TestCreation(t *testing.T) {
 		noInternal := redpandaCluster.DeepCopy()
 		noInternal.Spec.Configuration.PandaproxyAPI = append(noInternal.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}}, Port: 123})
-		_, err := noInternal.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), noInternal)
 
 		assert.Error(t, err)
 	})
@@ -1063,7 +1071,7 @@ func TestCreation(t *testing.T) {
 		multiPort.Spec.Configuration.PandaproxyAPI = append(multiPort.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}}, Port: 123},
 			vectorizedv1alpha1.PandaproxyAPI{Port: 321})
-		_, err := multiPort.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), multiPort)
 
 		assert.Error(t, err)
 	})
@@ -1073,7 +1081,7 @@ func TestCreation(t *testing.T) {
 		tls.Spec.Configuration.PandaproxyAPI = append(tls.Spec.Configuration.PandaproxyAPI,
 			vectorizedv1alpha1.PandaproxyAPI{TLS: vectorizedv1alpha1.PandaproxyAPITLS{Enabled: false, RequireClientAuth: true}})
 
-		_, err := tls.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), tls)
 		assert.Error(t, err)
 	})
 
@@ -1089,7 +1097,7 @@ func TestCreation(t *testing.T) {
 
 		cluster := redpandaCluster.DeepCopy()
 		cluster.Spec.PriorityClassName = pcName
-		_, err = cluster.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), cluster)
 		assert.NoError(t, err)
 	})
 
@@ -1098,7 +1106,7 @@ func TestCreation(t *testing.T) {
 
 		cluster := redpandaCluster.DeepCopy()
 		cluster.Spec.PriorityClassName = "my-priority-class-not-exist"
-		_, err := cluster.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), cluster)
 		assert.Error(t, err)
 	})
 
@@ -1130,7 +1138,7 @@ func TestCreation(t *testing.T) {
 				},
 			},
 		}
-		_, err = tls.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), tls)
 		assert.NoError(t, err)
 	})
 
@@ -1161,7 +1169,7 @@ func TestCreation(t *testing.T) {
 			},
 		}
 
-		_, err = tls.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), tls)
 		assert.Error(t, err)
 	})
 
@@ -1169,7 +1177,7 @@ func TestCreation(t *testing.T) {
 		rp := redpandaCluster.DeepCopy()
 		rp.Spec.Configuration.KafkaAPI = append(rp.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{Port: 123, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, PreferredAddressType: "preferred", Subdomain: "subdomain"}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	// No support for IP-based TLS certs (#2256)
@@ -1182,14 +1190,14 @@ func TestCreation(t *testing.T) {
 				},
 				Port: 123, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, PreferredAddressType: "InternalIP"},
 			})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("bootstrap loadbalancer for kafka api needs a port", func(t *testing.T) {
 		rp := redpandaCluster.DeepCopy()
 		rp.Spec.Configuration.KafkaAPI = append(rp.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Bootstrap: &vectorizedv1alpha1.LoadBalancerConfig{}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("bootstrap loadbalancer not allowed for admin", func(t *testing.T) {
@@ -1198,7 +1206,7 @@ func TestCreation(t *testing.T) {
 			vectorizedv1alpha1.AdminAPI{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Bootstrap: &vectorizedv1alpha1.LoadBalancerConfig{
 				Port: 123,
 			}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("bootstrap loadbalancer not allowed for pandaproxy", func(t *testing.T) {
@@ -1207,7 +1215,7 @@ func TestCreation(t *testing.T) {
 			vectorizedv1alpha1.PandaproxyAPI{External: vectorizedv1alpha1.PandaproxyExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Bootstrap: &vectorizedv1alpha1.LoadBalancerConfig{
 				Port: 123,
 			}}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("bootstrap loadbalancer not allowed for schemaregistry", func(t *testing.T) {
@@ -1219,7 +1227,7 @@ func TestCreation(t *testing.T) {
 				},
 			},
 		}}
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	//nolint:dupl // not really a duplicate
@@ -1238,7 +1246,7 @@ func TestCreation(t *testing.T) {
 				EndpointTemplate: "xxx",
 			},
 		}}
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("endpoint allowed for schemaregistry", func(t *testing.T) {
@@ -1259,7 +1267,7 @@ func TestCreation(t *testing.T) {
 			},
 			Endpoint: "xxx",
 		}}
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.NoError(t, err)
 	})
 	//nolint:dupl // not really a duplicate
@@ -1278,7 +1286,7 @@ func TestCreation(t *testing.T) {
 			},
 			Endpoint: "xx.xx",
 		}}
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("endpoint template not allowed for adminapi", func(t *testing.T) {
@@ -1294,7 +1302,7 @@ func TestCreation(t *testing.T) {
 			Subdomain:        commonDomain,
 			EndpointTemplate: "xxx",
 		}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("endpoint template without subdomain is not allowed in kafka API", func(t *testing.T) {
@@ -1304,7 +1312,7 @@ func TestCreation(t *testing.T) {
 			Enabled:          true,
 			EndpointTemplate: "xxx",
 		}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("endpoint template without subdomain is not allowed in pandaproxy API", func(t *testing.T) {
@@ -1317,7 +1325,7 @@ func TestCreation(t *testing.T) {
 			Enabled:          true,
 			EndpointTemplate: "xxx",
 		}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("invalid endpoint template in kafka API", func(t *testing.T) {
@@ -1328,7 +1336,7 @@ func TestCreation(t *testing.T) {
 			Subdomain:        "example.com",
 			EndpointTemplate: "{{.Inexistent}}",
 		}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("valid endpoint template in kafka API", func(t *testing.T) {
@@ -1342,7 +1350,7 @@ func TestCreation(t *testing.T) {
 				EndpointTemplate: "{{.Index}}-broker",
 			},
 		})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.NoError(t, err)
 	})
 	t.Run("invalid endpoint template in pandaproxy API", func(t *testing.T) {
@@ -1358,7 +1366,7 @@ func TestCreation(t *testing.T) {
 			Subdomain:        commonDomain,
 			EndpointTemplate: "{{.Index | nonexistent }}",
 		}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.Error(t, err)
 	})
 	t.Run("valid endpoint template in pandaproxy API", func(t *testing.T) {
@@ -1377,7 +1385,7 @@ func TestCreation(t *testing.T) {
 			Subdomain:        commonDomain,
 			EndpointTemplate: "{{.Index}}-pp",
 		}}})
-		_, err := rp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rp)
 		assert.NoError(t, err)
 	})
 	t.Run("valid ingress configuration in pandaproxy API", func(t *testing.T) {
@@ -1420,7 +1428,7 @@ func TestCreation(t *testing.T) {
 		}
 		for _, c := range cases {
 			rp.Spec.Configuration.PandaproxyAPI[len(rp.Spec.Configuration.PandaproxyAPI)-1].External.Ingress.Endpoint = c.endpoint
-			_, err := rp.ValidateCreate()
+			_, err := webhook.ValidateCreate(context.Background(), rp)
 			if c.error {
 				assert.Error(t, err)
 			} else {
@@ -1431,6 +1439,8 @@ func TestCreation(t *testing.T) {
 }
 
 func TestSchemaRegistryValidations(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	redpandaCluster := validRedpandaCluster()
 
 	t.Run("if schema registry externally available, kafka external listener is required", func(t *testing.T) {
@@ -1442,7 +1452,7 @@ func TestSchemaRegistryValidations(t *testing.T) {
 		}
 		schemaReg.Spec.Configuration.KafkaAPI[0].External.Enabled = false
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
 	})
 	t.Run("schema registry externally available is valid when it has the same subdomain as kafka external listener", func(t *testing.T) {
@@ -1455,7 +1465,7 @@ func TestSchemaRegistryValidations(t *testing.T) {
 		schemaReg.Spec.Configuration.KafkaAPI = append(schemaReg.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{AuthenticationMethod: "none", External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Subdomain: "test.com"}})
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.NoError(t, err)
 	})
 	//nolint:dupl // the tests are not duplicates
@@ -1469,7 +1479,7 @@ func TestSchemaRegistryValidations(t *testing.T) {
 		schemaReg.Spec.Configuration.KafkaAPI = append(schemaReg.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Subdomain: "other.com"}})
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
 	})
 	//nolint:dupl // the tests are not duplicates
@@ -1483,7 +1493,7 @@ func TestSchemaRegistryValidations(t *testing.T) {
 		schemaReg.Spec.Configuration.KafkaAPI = append(schemaReg.Spec.Configuration.KafkaAPI,
 			vectorizedv1alpha1.KafkaAPI{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true, Subdomain: ""}})
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1496,7 +1506,7 @@ func TestSchemaRegistryValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.NoError(t, err)
 	})
 
@@ -1509,12 +1519,14 @@ func TestSchemaRegistryValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
 	})
 }
 
 func TestSchemaRegistryTLSExternalCAConfigValidations(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	redpandaCluster := validRedpandaCluster()
 
 	t.Run("if schema registry mTLS enabled and clientCACertRef is set, name must be provided in clientCACertRef", func(t *testing.T) {
@@ -1527,9 +1539,9 @@ func TestSchemaRegistryTLSExternalCAConfigValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1546,9 +1558,9 @@ func TestSchemaRegistryTLSExternalCAConfigValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1566,9 +1578,9 @@ func TestSchemaRegistryTLSExternalCAConfigValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1588,12 +1600,14 @@ func TestSchemaRegistryTLSExternalCAConfigValidations(t *testing.T) {
 			},
 		}
 
-		_, err := schemaReg.ValidateUpdate(schemaReg)
+		_, err := webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.NoError(t, err)
 	})
 }
 
 func TestSchemaRegistryTLSExternalCACertValidations(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	redpandaCluster := validRedpandaCluster()
 
 	t.Run("if schema registry mTLS enabled and clientCACertRef is set, the CA certificate secret must provide ca.crt", func(t *testing.T) {
@@ -1617,9 +1631,9 @@ func TestSchemaRegistryTLSExternalCACertValidations(t *testing.T) {
 			},
 		}
 
-		_, err = schemaReg.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1645,9 +1659,9 @@ func TestSchemaRegistryTLSExternalCACertValidations(t *testing.T) {
 			},
 		}
 
-		_, err = schemaReg.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 
@@ -1677,14 +1691,16 @@ func TestSchemaRegistryTLSExternalCACertValidations(t *testing.T) {
 			},
 		}
 
-		_, err = schemaReg.ValidateCreate()
+		_, err = webhook.ValidateCreate(context.Background(), schemaReg)
 		assert.Error(t, err)
-		_, err = schemaReg.ValidateUpdate(schemaReg)
+		_, err = webhook.ValidateUpdate(context.Background(), redpandaCluster, schemaReg)
 		assert.Error(t, err)
 	})
 }
 
 func TestAdminAPITLSExternalCA(t *testing.T) { //nolint:funlen // better packing related tests together
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	cases := []struct {
 		name        string
 		adminAPI    []vectorizedv1alpha1.AdminAPI
@@ -1933,14 +1949,14 @@ func TestAdminAPITLSExternalCA(t *testing.T) { //nolint:funlen // better packing
 				tc.clusterFn(adminCluster)
 			}
 			if !tc.skipCreate {
-				_, err := adminCluster.ValidateCreate()
+				_, err := webhook.ValidateCreate(context.Background(), adminCluster)
 				if tc.createError {
 					assert.Error(t, err)
 				} else {
 					assert.NoError(t, err)
 				}
 			}
-			_, err := adminCluster.ValidateUpdate(adminCluster)
+			_, err := webhook.ValidateUpdate(context.Background(), validRedpandaCluster(), adminCluster)
 			if tc.updateError {
 				assert.Error(t, err)
 			} else {
@@ -1985,6 +2001,8 @@ func validRedpandaCluster() *vectorizedv1alpha1.Cluster {
 }
 
 func TestPodDisruptionBudget(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	rpCluster := validRedpandaCluster()
 	value := intstr.FromInt(1)
 
@@ -1994,7 +2012,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 			Enabled: false,
 		}
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.NoError(t, err)
 	})
 
@@ -2005,7 +2023,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 			MaxUnavailable: &value,
 		}
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.NoError(t, err)
 	})
 
@@ -2016,7 +2034,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 			MinAvailable: &value,
 		}
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.NoError(t, err)
 	})
 
@@ -2028,7 +2046,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 			MaxUnavailable: &value,
 		}
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.Error(t, err)
 	})
 
@@ -2039,7 +2057,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 			MinAvailable: &value,
 		}
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.Error(t, err)
 	})
 
@@ -2048,13 +2066,15 @@ func TestPodDisruptionBudget(t *testing.T) {
 		rpc := rpCluster.DeepCopy()
 		rpc.Spec.PodDisruptionBudget = nil
 
-		_, err := rpc.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), rpc)
 		assert.NoError(t, err)
 	})
 }
 
 //nolint:funlen // matrix test has many cases
 func TestRangesAndCollisions(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	cases := []struct {
 		name                   string
 		kafkaInternal          int
@@ -2192,7 +2212,7 @@ func TestRangesAndCollisions(t *testing.T) {
 				}}
 			}
 
-			_, err := c.ValidateUpdate(rpCluster)
+			_, err := webhook.ValidateUpdate(context.Background(), rpCluster, c)
 			if tc.error {
 				assert.Error(t, err)
 			} else {
@@ -2204,6 +2224,8 @@ func TestRangesAndCollisions(t *testing.T) {
 
 //nolint:funlen // this is ok for a test
 func TestKafkaTLSRules(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	rpCluster := validRedpandaCluster()
 
 	//nolint:dupl // the tests are not duplicates
@@ -2225,7 +2247,7 @@ func TestKafkaTLSRules(t *testing.T) {
 				},
 			}})
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.Error(t, err)
 	})
 
@@ -2253,7 +2275,7 @@ func TestKafkaTLSRules(t *testing.T) {
 				},
 			})
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 
@@ -2276,7 +2298,7 @@ func TestKafkaTLSRules(t *testing.T) {
 				},
 			}})
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.Error(t, err)
 	})
 
@@ -2306,12 +2328,14 @@ func TestKafkaTLSRules(t *testing.T) {
 				},
 			})
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 }
 
 func TestKafkaAuthenticationMethod(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	rpCluster := validRedpandaCluster()
 
 	t.Run("no authentication method provided", func(t *testing.T) {
@@ -2326,10 +2350,10 @@ func TestKafkaAuthenticationMethod(t *testing.T) {
 				},
 			})
 
-		_, err := newRp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newRp)
 		assert.Error(t, err)
 
-		_, err = newRp.ValidateUpdate(rpCluster)
+		_, err = webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.Error(t, err)
 	})
 
@@ -2345,10 +2369,10 @@ func TestKafkaAuthenticationMethod(t *testing.T) {
 				},
 			})
 
-		_, err := newRp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newRp)
 		assert.NoError(t, err)
 
-		_, err = newRp.ValidateUpdate(rpCluster)
+		_, err = webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 
@@ -2364,15 +2388,17 @@ func TestKafkaAuthenticationMethod(t *testing.T) {
 				},
 			})
 
-		_, err := newRp.ValidateCreate()
+		_, err := webhook.ValidateCreate(context.Background(), newRp)
 		assert.NoError(t, err)
 
-		_, err = newRp.ValidateUpdate(rpCluster)
+		_, err = webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 }
 
 func TestCloudStorage(t *testing.T) {
+	webhook := &vectorizedv1alpha1.Cluster{}
+
 	rpCluster := validRedpandaCluster()
 
 	const (
@@ -2392,7 +2418,7 @@ func TestCloudStorage(t *testing.T) {
 		newRp.Spec.CloudStorage.SecretKeyRef.Name = secretKey
 		newRp.Spec.CloudStorage.SecretKeyRef.Namespace = namespace
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 
@@ -2404,7 +2430,7 @@ func TestCloudStorage(t *testing.T) {
 		newRp.Spec.CloudStorage.SecretKeyRef.Name = secretKey
 		newRp.Spec.CloudStorage.SecretKeyRef.Namespace = namespace
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.Error(t, err)
 	})
 
@@ -2416,7 +2442,7 @@ func TestCloudStorage(t *testing.T) {
 		newRp.Spec.CloudStorage.Region = region
 		newRp.Spec.CloudStorage.AccessKey = accessKey
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.Error(t, err)
 	})
 
@@ -2427,7 +2453,7 @@ func TestCloudStorage(t *testing.T) {
 		newRp.Spec.CloudStorage.Bucket = bucket
 		newRp.Spec.CloudStorage.Region = region
 
-		_, err := newRp.ValidateUpdate(rpCluster)
+		_, err := webhook.ValidateUpdate(context.Background(), rpCluster, newRp)
 		assert.NoError(t, err)
 	})
 }

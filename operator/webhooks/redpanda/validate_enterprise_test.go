@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,7 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	webhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 type mockKafkaAdmin struct{}
@@ -56,6 +58,9 @@ func (m *mockKafkaAdmin) DeleteACLs(
 
 //nolint:funlen // Test using testEnv needs to be long
 func TestDoNotValidateWhenDeleted(t *testing.T) {
+	logger := testr.New(t).V(0)
+	log.SetGlobals(logger)
+
 	scheme := controller.UnifiedScheme
 
 	testEnv := &testutils.RedpandaTestEnv{}
@@ -110,7 +115,6 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 
 	err = (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr)
 	require.NoError(t, err)
-	hookServer := mgr.GetWebhookServer()
 
 	err = (&vectorizedcontrollers.ConsoleReconciler{
 		Client:                  mgr.GetClient(),
@@ -123,13 +127,13 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 	}).WithClusterDomain("").SetupWithManager(mgr)
 	require.NoError(t, err)
 
-	hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
+	webhookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 		Handler: &webhooks.ConsoleDefaulter{
 			Client:  mgr.GetClient(),
 			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
 	})
-	hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
+	webhookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
 		Handler: &webhooks.ConsoleValidator{
 			Client:  mgr.GetClient(),
 			Decoder: admission.NewDecoder(mgr.GetScheme()),

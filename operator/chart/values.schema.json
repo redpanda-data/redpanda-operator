@@ -1802,6 +1802,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -2070,6 +2073,9 @@
                               "additionalProperties": false,
                               "properties": {
                                 "name": {
+                                  "type": "string"
+                                },
+                                "request": {
                                   "type": "string"
                                 }
                               },
@@ -2776,6 +2782,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -3044,6 +3053,9 @@
                               "additionalProperties": false,
                               "properties": {
                                 "name": {
+                                  "type": "string"
+                                },
+                                "request": {
                                   "type": "string"
                                 }
                               },
@@ -3752,6 +3764,9 @@
                               }
                             },
                             "type": "object"
+                          },
+                          "stopSignal": {
+                            "type": "string"
                           }
                         },
                         "type": "object"
@@ -4020,6 +4035,9 @@
                               "additionalProperties": false,
                               "properties": {
                                 "name": {
+                                  "type": "string"
+                                },
+                                "request": {
                                   "type": "string"
                                 }
                               },
@@ -4415,17 +4433,11 @@
                       "name": {
                         "type": "string"
                       },
-                      "source": {
-                        "additionalProperties": false,
-                        "properties": {
-                          "resourceClaimName": {
-                            "type": "string"
-                          },
-                          "resourceClaimTemplateName": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
+                      "resourceClaimName": {
+                        "type": "string"
+                      },
+                      "resourceClaimTemplateName": {
+                        "type": "string"
                       }
                     },
                     "type": "object"
@@ -4436,6 +4448,62 @@
                   "type": "null"
                 }
               ]
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "claims": {
+                  "oneOf": [
+                    {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "request": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limits": {
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "pattern": "^[0-9]+(\\.[0-9]){0,1}(m|k|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
             },
             "restartPolicy": {
               "type": "string"
@@ -4499,6 +4567,9 @@
                 "runAsUser": {
                   "type": "integer"
                 },
+                "seLinuxChangePolicy": {
+                  "type": "string"
+                },
                 "seLinuxOptions": {
                   "additionalProperties": false,
                   "properties": {
@@ -4541,6 +4612,9 @@
                       "type": "null"
                     }
                   ]
+                },
+                "supplementalGroupsPolicy": {
+                  "type": "string"
                 },
                 "sysctls": {
                   "oneOf": [
@@ -5353,6 +5427,18 @@
                         },
                         "type": "object"
                       },
+                      "image": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "pullPolicy": {
+                            "type": "string"
+                          },
+                          "reference": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
                       "iscsi": {
                         "additionalProperties": false,
                         "properties": {
@@ -6009,6 +6095,9 @@
                 "additionalProperties": false,
                 "properties": {
                   "name": {
+                    "type": "string"
+                  },
+                  "request": {
                     "type": "string"
                   }
                 },
