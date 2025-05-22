@@ -105,7 +105,7 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-redpanda-vectorized-io-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Defaulter = &Cluster{}
+var _ webhook.CustomDefaulter = &Cluster{}
 
 func redpandaResourceFields(c *Cluster) []redpandaResourceField {
 	var result []redpandaResourceField
@@ -133,7 +133,7 @@ func sidecarResourceFields(c *Cluster) []resourceField {
 
 // Default implements defaulting webhook logic - all defaults that should be
 // applied to cluster CRD after user submits it should be put in here
-func (r *Cluster) Default() {
+func (r *Cluster) Default(_ context.Context, _ runtime.Object) error {
 	log := ctrl.Log.WithName("Cluster.Default").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("defaulting")
 	if r.Spec.Configuration.SchemaRegistry != nil && r.Spec.Configuration.SchemaRegistry.Port == 0 {
@@ -169,6 +169,7 @@ func (r *Cluster) Default() {
 			UnderReplicatedPartitionThreshold: 0,
 		}
 	}
+	return nil
 }
 
 func (r *Cluster) getDefaultAdditionalConfiguration() map[string]int {
@@ -198,10 +199,10 @@ func (r *Cluster) setDefaultAdditionalConfiguration() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-redpanda-vectorized-io-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &Cluster{}
+var _ webhook.CustomValidator = &Cluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateCreate() (admission.Warnings, error) {
+func (r *Cluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	log := ctrl.Log.WithName("Cluster.ValidateCreate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating create")
 
@@ -217,7 +218,7 @@ func (r *Cluster) ValidateCreate() (admission.Warnings, error) {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+func (r *Cluster) ValidateUpdate(ctx context.Context, old runtime.Object, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	log := ctrl.Log.WithName("Cluster.ValidateUpdate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating update")
 
@@ -1180,7 +1181,7 @@ func (r *Cluster) validateAdditionalConfiguration() field.ErrorList {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateDelete() (admission.Warnings, error) {
+func (r *Cluster) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	// this is a stub to implement the interface. We do not validate on delete.
 	return nil, nil
 }
