@@ -9,12 +9,17 @@ import (
 	_ "unsafe" // Required for go:linkname.
 
 	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp" // imported to ensure internal/transform.ResourceLogs get's included in our binary.
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"       // imported to ensure internal/transform.ResourceLogs get's included in our binary.
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp" // imported to ensure internal/transform.ResourceMetrics get's included in our binary.
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
+	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/protobuf/proto"
 )
@@ -49,6 +54,10 @@ func (f *File) SpanExporter() sdktrace.SpanExporter {
 
 func (f *File) LogExporter() sdklog.Exporter {
 	return NewLogExporter(f.file.AddWriter())
+}
+
+func (f *File) MetricExporter() sdkmetric.Exporter {
+	return NewMetricExporter(f.file.AddWriter())
 }
 
 type Client struct {
@@ -204,3 +213,72 @@ func (w *syncWriter) Close() error {
 	}
 	return w.WriteCloser.Close()
 }
+
+type MetricExporter struct {
+	writer       io.WriteCloser
+	jsonEncoder  pmetric.Marshaler
+	protoDecoder pmetric.Unmarshaler
+	temporality  sdkmetric.TemporalitySelector
+	aggregation  sdkmetric.AggregationSelector
+}
+
+func NewMetricExporter(writer io.WriteCloser) *MetricExporter {
+	return &MetricExporter{
+		writer:       writer,
+		temporality:  sdkmetric.DefaultTemporalitySelector,
+		aggregation:  sdkmetric.DefaultAggregationSelector,
+		jsonEncoder:  &pmetric.JSONMarshaler{},
+		protoDecoder: &pmetric.ProtoUnmarshaler{},
+	}
+}
+
+var _ sdkmetric.Exporter = &MetricExporter{}
+
+func (e *MetricExporter) Temporality(k sdkmetric.InstrumentKind) metricdata.Temporality {
+	return e.temporality(k)
+}
+
+func (e *MetricExporter) Aggregation(k sdkmetric.InstrumentKind) sdkmetric.Aggregation {
+	return e.aggregation(k)
+}
+
+func (e *MetricExporter) ForceFlush(ctx context.Context) error { return nil }
+func (e *MetricExporter) Shutdown(ctx context.Context) error   { return e.writer.Close() }
+
+func (e *MetricExporter) Export(ctx context.Context, metrics *metricdata.ResourceMetrics) error {
+	resourceMetrics, err := transformResourceMetrics(metrics)
+	if err != nil {
+		return err
+	}
+
+	protobytes, err := proto.Marshal(&metricspb.MetricsData{ResourceMetrics: []*metricspb.ResourceMetrics{resourceMetrics}})
+	if err != nil {
+		return err
+	}
+
+	traces, err := e.protoDecoder.UnmarshalMetrics(protobytes)
+	if err != nil {
+		return err
+	}
+
+	data, err := e.jsonEncoder.MarshalMetrics(traces)
+	if err != nil {
+		return err
+	}
+
+	data = append(data, '\n')
+
+	n, err := e.writer.Write(data)
+	if err != nil {
+		return err
+	}
+
+	if n != len(data) {
+		return io.ErrShortWrite
+	}
+
+	return nil
+}
+
+//go:linkname transformResourceMetrics go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp/internal/transform.ResourceMetrics
+func transformResourceMetrics(rm *metricdata.ResourceMetrics) (*metricspb.ResourceMetrics, error)
