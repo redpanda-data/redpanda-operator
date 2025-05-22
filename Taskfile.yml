@@ -216,3 +216,13 @@ tasks:
     silent: true
     cmds:
       - ./.github/workflows/scripts/pending-prs terminal redpanda-data/redpanda-operator
+
+  jaeger-up:
+    silent: true
+    cmds:
+      - docker-compose -f ./ci/docker/tracing/jaeger.docker-compose.yaml up -d
+
+  jaeger-down:
+    silent: true
+    cmds:
+      - docker-compose -f ./ci/docker/tracing/jaeger.docker-compose.yaml down

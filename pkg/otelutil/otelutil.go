@@ -110,7 +110,7 @@ func (c *config) fromEnv() {
 	if level, ok := os.LookupEnv("LOG_LEVEL"); ok {
 		c.logLevel = log.LevelFromString(level)
 	}
-	if endpoint, ok := os.LookupEnv("OTLP_GRPC"); ok {
+	if endpoint, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); ok {
 		c.endpoint = endpoint
 	}
 	if directory, ok := os.LookupEnv("OTLP_DIR"); ok {
@@ -148,16 +148,15 @@ func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerO
 	}
 
 	if c.hasGRPC() {
+		fmt.Printf("sending traces to: %q", c.endpoint)
 		ctx := context.Background()
 
-		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(c.endpoint))
+		grpcLogExporter, err := otlploggrpc.New(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
-			otlptracegrpc.WithEndpoint(c.endpoint),
-		))
+		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -235,7 +234,7 @@ func WithTraceOutputDirectory(name string) Option {
 // If `OTLP_DIR` is set, traces and logs will be written to a jsonnl file in the
 // specified directory. (Paths are relative to the binary's working dir)
 //
-// if `OTLP_GRPC` is set, traces and logs will be sent via the OTLP gRPC
+// if `OTEL_EXPORTER_OTLP_ENDPOINT` is set, traces and logs will be sent via the OTLP gRPC
 // exporter to the specified endpoint.
 //
 // Configuration options can also be passed via With* helpers.
