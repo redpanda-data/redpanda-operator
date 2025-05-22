@@ -167,6 +167,10 @@ func convertKVs(ctx context.Context, keysAndValues ...any) (context.Context, []l
 	return ctx, kvs
 }
 
+type stringer interface {
+	String() string
+}
+
 // convertValue converts various types to log.Value.
 func convertValue(v any) log.Value {
 	// Handling the most common types without reflect is a small perf win.
@@ -254,6 +258,10 @@ func convertValue(v any) log.Value {
 			return log.Value{}
 		}
 		return convertValue(val.Elem().Interface())
+	}
+
+	if s, ok := v.(stringer); ok {
+		return log.StringValue(s.String())
 	}
 
 	// Try to handle this as gracefully as possible.

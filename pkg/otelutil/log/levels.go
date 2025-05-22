@@ -35,12 +35,13 @@ var (
 		LogrLevel: InfoLevel,
 		OTELLevel: otellog.SeverityInfo,
 	}
+	CatchAllLevel = TypedLevel{
+		Name:      "verbose",
+		LogrLevel: VerboseLevel,
+		OTELLevel: otellog.SeverityTrace3,
+	}
 	levels = []TypedLevel{
-		{
-			Name:      "verbose",
-			LogrLevel: VerboseLevel,
-			OTELLevel: otellog.SeverityTrace3,
-		},
+		CatchAllLevel,
 		{
 			Name:      "timing",
 			LogrLevel: TimingLevel,
@@ -76,21 +77,21 @@ func LevelFromString(level string) TypedLevel {
 	if l, ok := levelStrings[level]; ok {
 		return l
 	}
-	return levelStrings[DefaultLevel.Name]
+	return levelStrings[CatchAllLevel.Name]
 }
 
 func LevelFromLogr(level int) TypedLevel {
 	if l, ok := levelLogr[level]; ok {
 		return l
 	}
-	return levelLogr[DefaultLevel.LogrLevel]
+	return levelLogr[CatchAllLevel.LogrLevel]
 }
 
 func LevelFromOTEL(level otellog.Severity) TypedLevel {
 	if l, ok := levelOTEL[level]; ok {
 		return l
 	}
-	return levelOTEL[DefaultLevel.OTELLevel]
+	return levelOTEL[CatchAllLevel.OTELLevel]
 }
 
 func shouldLog(loggerLevel, messageLevel TypedLevel) bool {
