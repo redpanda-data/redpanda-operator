@@ -493,6 +493,12 @@ func (r *StatefulSetResource) obj(
 							},
 						},
 						{
+							Name: "rpk-profile",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
 							Name: "hook-scripts-dir",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
@@ -526,6 +532,10 @@ func (r *StatefulSetResource) obj(
 								{
 									Name:  "CONFIG_DESTINATION",
 									Value: filepath.Join(configDestinationDir, configFile),
+								},
+								{
+									Name:  "RPK_PROFILE_DESTINATION",
+									Value: "/var/lib/redpanda/.config/rpk/rpk.yaml",
 								},
 								{
 									Name:  "REDPANDA_RPC_PORT",
@@ -591,6 +601,10 @@ func (r *StatefulSetResource) obj(
 								{
 									Name:      "config-dir",
 									MountPath: configDestinationDir,
+								},
+								{
+									Name:      "rpk-profile",
+									MountPath: "/var/lib/redpanda/.config/rpk",
 								},
 								{
 									Name:      "configmap-dir",
@@ -673,6 +687,10 @@ func (r *StatefulSetResource) obj(
 								{
 									Name:      "hook-scripts-dir",
 									MountPath: scriptMountPath,
+								},
+								{
+									Name:      "rpk-profile",
+									MountPath: "/var/lib/redpanda/.config/rpk",
 								},
 							}, tlsVolumeMounts...),
 						},

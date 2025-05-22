@@ -619,3 +619,21 @@ func (TestBrokerTLSConfigProvider) KafkaClientBrokerTLS(mountPoints *resourcetyp
 		Enabled:        true,
 	}
 }
+
+func (p TestBrokerTLSConfigProvider) AdminAPIClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
+	}
+}
+
+func (p TestBrokerTLSConfigProvider) SchemaRegistryClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
+	}
+}

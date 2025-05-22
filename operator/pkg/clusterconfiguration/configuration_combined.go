@@ -27,6 +27,7 @@ func NewConfig(namespace string, reader k8sclient.Reader, cloudExpander *pkgsecr
 		PodContext: p,
 		Node:       NewNodeCfg(p),
 		Cluster:    NewClusterCfg(p),
+		RPK:        NewRPKCfg(p),
 
 		reader:        reader,
 		cloudExpander: cloudExpander,
@@ -70,6 +71,7 @@ type CombinedCfg struct {
 	*PodContext
 	Node    *nodeCfg
 	Cluster *clusterCfg
+	RPK     *rpkCfg
 
 	// We expand templates only once
 	templates map[string]string
@@ -165,6 +167,9 @@ func (c *CombinedCfg) Templates() (map[string]string, error) {
 	}
 	if err := c.Cluster.Template(c.templates); err != nil {
 		return nil, fmt.Errorf("cannot template bootstrap.yaml: %w", err)
+	}
+	if err := c.RPK.Template(c.templates); err != nil {
+		return nil, fmt.Errorf("cannot template rpk.yaml: %w", err)
 	}
 	return c.templates, c.Error()
 }
