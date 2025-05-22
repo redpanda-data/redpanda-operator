@@ -481,8 +481,6 @@ go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJyS
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/collector/pdata v1.32.0 h1:hBzlJV1rujr1UdD2CBy2gmaIKtC15ysg/z+x8F3McQA=
 go.opentelemetry.io/collector/pdata v1.32.0/go.mod h1:m41io9nWpy7aCm/uD1L9QcKiZwOP0ldj83JEA34dmlk=
-go.opentelemetry.io/contrib/bridges/otellogr v0.10.0 h1:kqOkeDRV3PHQSMSiT76fs4cx1ycBg+5Cf20FXmwtuaA=
-go.opentelemetry.io/contrib/bridges/otellogr v0.10.0/go.mod h1:RMXRO0PCuwaVFgG1B77SS/fOAmaBOiwShihR3ogzq74=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0 h1:DheMAlT6POBP+gh8RUH19EOTnQIor5QE0uSRPtzCpSw=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0/go.mod h1:wZcGmeVO9nzP67aYSLDqXNWK87EZWhi7JWj1v7ZXf94=
 go.opentelemetry.io/otel v1.35.0 h1:xKWKPxrxB6OtMCbmMY021CqC45J+3Onta9MqjhnusiQ=

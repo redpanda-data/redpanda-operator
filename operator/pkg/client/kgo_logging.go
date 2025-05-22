@@ -11,8 +11,9 @@ package client
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kgo"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // Reference implementation https://github.com/redpanda-data/console/blob/0ba44b236b6ddd7191da015f44a9302fc13665ec/backend/pkg/kafka/config_helper.go#L44

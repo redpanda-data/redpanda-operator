@@ -240,8 +240,10 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/v1.35.0/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.35.0/exporters/otlp/otlptrace/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.35.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.11.0/log/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.35.0/metric/LICENSE) |
 | go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.35.0/sdk/LICENSE) |
+| go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.11.0/sdk/log/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.35.0/trace/LICENSE) |
 | go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.5.0/otlp/LICENSE) |
 | go.starlark.net | [BSD-3-Clause](https://github.com/google/starlark-go/blob/90ade8b19d09/LICENSE) |

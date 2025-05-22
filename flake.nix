@@ -85,7 +85,7 @@
               pkgs.vcluster
               pkgs.yq-go
               otel-tui.defaultPackage.${system}
-            ]  ++ lib.optionals pkgs.stdenv.isLinux [
+            ] ++ lib.optionals pkgs.stdenv.isLinux [
               pkgs.sysctl # Used to adjust ulimits on linux systems (Namely, CI).
             ];
           };

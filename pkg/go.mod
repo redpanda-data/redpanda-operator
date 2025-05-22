@@ -16,7 +16,6 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.32.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/collector/pdata v1.32.0
-	go.opentelemetry.io/contrib/bridges/otellogr v0.10.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.11.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.11.0

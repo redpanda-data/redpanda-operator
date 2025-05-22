@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-
 	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"

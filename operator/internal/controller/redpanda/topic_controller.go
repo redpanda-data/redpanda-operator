@@ -18,7 +18,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -34,6 +33,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 const (
