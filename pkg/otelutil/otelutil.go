@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -22,15 +24,17 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
+// TestingM abstracts *testing.M so it can be passed into TestMain for setup.
 type TestingM interface {
 	Run() int
 }
 
 // TestMain is a helper for configuring telemetry for the tests of a given
 // package. Once configured, logs and traces can be directed to either a file
-// or gRPC endpoint with the OTLP_DIR and OTLP_GRPC environment variables,
+// or gRPC endpoint via the OTLP_DIR and OTLP_GRPC environment variables,
 // respectively.
 //
 // Traces can be viewed with any OTLP compatible tooling.
@@ -46,10 +50,25 @@ type TestingM interface {
 //	)
 //
 //	func TestMain(m *testing.M) {
-//		otelutil.TestMain(m)
+//		otelutil.TestMain(m, "integration-some-package-here")
 //	}
-func TestMain(m TestingM) {
-	cleanup, err := Setup()
+func TestMain(m TestingM, name string, onTypes ...testutil.TestType) {
+	if len(onTypes) == 0 {
+		// default to setting up logging on integration and unit tests if unspecified
+		onTypes = []testutil.TestType{testutil.TestTypeUnit, testutil.TestTypeIntegration}
+	}
+
+	shouldSetupLogger := slices.Contains(onTypes, testutil.Type())
+	if !shouldSetupLogger {
+		os.Exit(m.Run())
+	}
+
+	normalizedName := name
+	if len(onTypes) != 1 {
+		normalizedName = testutil.Type().String() + "-" + name
+	}
+
+	cleanup, err := Setup(WithBinaryName(normalizedName))
 	if err != nil {
 		panic(err)
 	}
@@ -61,8 +80,155 @@ func TestMain(m TestingM) {
 	os.Exit(code)
 }
 
-// Setup configures both logging and tracing otel configurations, including
-// setting the global instances of tracing and logging providers. Setup should be called exactly once at startup
+type config struct {
+	serviceName     string
+	name            string
+	directory       string
+	endpoint        string
+	logLevel        log.TypedLevel
+	metricsInterval time.Duration
+}
+
+func defaultConfig() *config {
+	return &config{
+		serviceName: "redpanda-operator",
+		name:        filepath.Base(os.Args[0]),
+		logLevel:    log.DefaultLevel,
+	}
+}
+
+func (c *config) normalize(options ...Option) *config {
+	c.fromEnv()
+
+	for _, option := range options {
+		*c = option(*c)
+	}
+	return c
+}
+
+func (c *config) fromEnv() {
+	if level, ok := os.LookupEnv("LOG_LEVEL"); ok {
+		c.logLevel = log.LevelFromString(level)
+	}
+	if endpoint, ok := os.LookupEnv("OTLP_GRPC"); ok {
+		c.endpoint = endpoint
+	}
+	if directory, ok := os.LookupEnv("OTLP_DIR"); ok {
+		c.directory = directory
+	}
+	if interval, ok := os.LookupEnv("OTLP_METRIC_INTERVAL"); ok {
+		if parsed, err := time.ParseDuration(interval); err == nil {
+			c.metricsInterval = parsed
+		}
+	}
+}
+
+func (c *config) hasFile() bool {
+	return c.directory != ""
+}
+
+func (c *config) hasGRPC() bool {
+	return c.endpoint != ""
+}
+
+func (c *config) file() string {
+	return path.Join(c.directory, fmt.Sprintf("%s-%s.jsonnl", c.name, time.Now().Format(time.RFC3339)))
+}
+
+func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, err error) {
+	if c.hasFile() {
+		fmt.Printf("outputting traces to: %q\n", c.file())
+		file, err := otlpfile.Open(c.file())
+		if err != nil {
+			return nil, nil, err
+		}
+
+		loggerOptions = append(loggerOptions, sdklog.WithProcessor(log.NewBatchProcessor(file.LogExporter(), c.logLevel.OTELLevel)))
+		tracerOptions = append(tracerOptions, sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(file.SpanExporter())))
+	}
+
+	if c.hasGRPC() {
+		ctx := context.Background()
+
+		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(c.endpoint))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
+			otlptracegrpc.WithEndpoint(c.endpoint),
+		))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		loggerOptions = append(
+			loggerOptions,
+			sdklog.WithProcessor(log.NewBatchProcessor(grpcLogExporter, c.logLevel.OTELLevel)),
+		)
+
+		tracerOptions = append(
+			tracerOptions,
+			sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(grpcSpanExporter)),
+		)
+	}
+
+	return loggerOptions, tracerOptions, nil
+}
+
+type Option func(c config) config
+
+// WithServiceName sets the OTEL service name for logs, traces, and metrics.
+func WithServiceName(name string) Option {
+	return func(c config) config {
+		c.serviceName = name
+		return c
+	}
+}
+
+// WithBinaryName sets the binary name used for file output naming.
+func WithBinaryName(name string) Option {
+	return func(c config) config {
+		c.name = name
+		return c
+	}
+}
+
+// WithGRPCEndpoint sets the OTLP gRPC endpoint.
+func WithGRPCEndpoint(endpoint string) Option {
+	return func(c config) config {
+		c.endpoint = endpoint
+		return c
+	}
+}
+
+// WithLogLevel sets the logging level.
+func WithLogLevel(level log.TypedLevel) Option {
+	return func(c config) config {
+		c.logLevel = level
+		return c
+	}
+}
+
+// WithMetricsInterval sets the interval for metric collection/export.
+func WithMetricsInterval(interval time.Duration) Option {
+	return func(c config) config {
+		c.metricsInterval = interval
+		return c
+	}
+}
+
+// WithTraceOutputDirectory sets the directory where logs, traces, and metrics are written.
+func WithTraceOutputDirectory(name string) Option {
+	return func(c config) config {
+		c.directory = name
+		return c
+	}
+}
+
+// Setup configures logging, tracing, and metrics otel configurations, including
+// setting the global instances of logging, tracing, and metrics providers.
+// Setup should be called exactly once at startup.
 //
 // By default traces are ignored and logs are simply forwarded to stdout.
 //
@@ -72,15 +238,18 @@ func TestMain(m TestingM) {
 // if `OTLP_GRPC` is set, traces and logs will be sent via the OTLP gRPC
 // exporter to the specified endpoint.
 //
-// See [optionsFromEnv] for more details.
-func Setup() (shutdown func() error, err error) {
-	logOpts, traceOpts, logLevel, err := optionsFromEnv()
+// Configuration options can also be passed via With* helpers.
+//
+// See [config.fromEnv] for more details.
+func Setup(options ...Option) (shutdown func() error, err error) {
+	config := defaultConfig().normalize(options...)
+	logOpts, traceOpts, err := config.options()
 	if err != nil {
 		return nil, err
 	}
 
 	serviceResource, err := resource.New(context.Background(), resource.WithAttributes(
-		semconv.ServiceName("redpanda-operator"),
+		semconv.ServiceName(config.serviceName),
 	))
 	if err != nil {
 		return nil, err
@@ -106,7 +275,7 @@ func Setup() (shutdown func() error, err error) {
 	))
 
 	log.SetGlobals(
-		logr.New(log.NewOTELLogrSink("log").WithTimestamps()).V(logLevel.LogrLevel),
+		logr.New(log.NewOTELLogrSink("log").WithTimestamps()).V(config.logLevel.LogrLevel),
 	)
 
 	return func() error {
@@ -122,54 +291,4 @@ func Setup() (shutdown func() error, err error) {
 			tp.Shutdown(ctx),
 		)
 	}, nil
-}
-
-func optionsFromEnv() (loggerOptions []sdklog.LoggerProviderOption, tracerOptions []sdktrace.TracerProviderOption, level log.TypedLevel, err error) {
-	logLevel := log.DefaultLevel
-	if level, ok := os.LookupEnv("LOG_LEVEL"); ok {
-		logLevel = log.LevelFromString(level)
-	}
-
-	if dir, ok := os.LookupEnv("OTLP_DIR"); ok {
-		path := filepath.Join(dir, fmt.Sprintf("%s-%s.jsonnl", binaryName(), time.Now().Format(time.RFC3339)))
-		file, err := otlpfile.Open(path)
-		if err != nil {
-			return nil, nil, logLevel, err
-		}
-
-		loggerOptions = append(loggerOptions, sdklog.WithProcessor(log.NewBatchProcessor(file.LogExporter(), logLevel.OTELLevel)))
-		tracerOptions = append(tracerOptions, sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(file.SpanExporter())))
-	}
-
-	if endpoint, ok := os.LookupEnv("OTLP_GRPC"); ok {
-		ctx := context.Background()
-
-		grpcLogExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint))
-		if err != nil {
-			return nil, nil, logLevel, err
-		}
-
-		grpcSpanExporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(
-			otlptracegrpc.WithEndpoint(endpoint),
-		))
-		if err != nil {
-			return nil, nil, logLevel, err
-		}
-
-		loggerOptions = append(
-			loggerOptions,
-			sdklog.WithProcessor(log.NewBatchProcessor(grpcLogExporter, logLevel.OTELLevel)),
-		)
-
-		tracerOptions = append(
-			tracerOptions,
-			sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(grpcSpanExporter)),
-		)
-	}
-
-	return loggerOptions, tracerOptions, logLevel, nil
-}
-
-func binaryName() string {
-	return filepath.Base(os.Args[0])
 }

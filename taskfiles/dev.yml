@@ -30,6 +30,13 @@ tasks:
     preconditions:
       - test -n '{{.TASK}}'
 
+  download-integration-artifacts:
+    silent: true
+    vars:
+      BRANCH: '{{default "" .BRANCH}}'
+    cmds:
+      - ./ci/scripts/download-otel-artifacts.sh "{{.BRANCH}}" integration
+
   create-buildx-builder:
     cmds:
       - task: :dev:retry-task

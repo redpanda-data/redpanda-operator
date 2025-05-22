@@ -53,6 +53,7 @@
               pkgs.applyconfiguration-gen
               pkgs.awscli2
               pkgs.backport
+              pkgs.bk
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
               pkgs.controller-gen
