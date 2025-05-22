@@ -40,7 +40,7 @@
             env = [
               { name = "GOPRIVATE"; value = "github.com/redpanda-data/flux-controller-shim"; }
               { name = "GOROOT"; value = "${pkgs.go_1_24}/share/go"; }
-              { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.29.x)"; }
+              { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
               { name = "TEST_REDPANDA_VERSION"; eval = "v25.1.1"; }
