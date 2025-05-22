@@ -995,6 +995,9 @@
                       }
                     },
                     "type": "object"
+                  },
+                  "stopSignal": {
+                    "type": "string"
                   }
                 },
                 "type": "object"
@@ -1263,6 +1266,9 @@
                       "additionalProperties": false,
                       "properties": {
                         "name": {
+                          "type": "string"
+                        },
+                        "request": {
                           "type": "string"
                         }
                       },
@@ -2408,6 +2414,18 @@
                 },
                 "type": "object"
               },
+              "image": {
+                "additionalProperties": false,
+                "properties": {
+                  "pullPolicy": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
               "iscsi": {
                 "additionalProperties": false,
                 "properties": {
@@ -3226,6 +3244,9 @@
         "runAsUser": {
           "type": "integer"
         },
+        "seLinuxChangePolicy": {
+          "type": "string"
+        },
         "seLinuxOptions": {
           "additionalProperties": false,
           "properties": {
@@ -3268,6 +3289,9 @@
               "type": "null"
             }
           ]
+        },
+        "supplementalGroupsPolicy": {
+          "type": "string"
         },
         "sysctls": {
           "oneOf": [
@@ -3449,6 +3473,9 @@
                 "additionalProperties": false,
                 "properties": {
                   "name": {
+                    "type": "string"
+                  },
+                  "request": {
                     "type": "string"
                   }
                 },
