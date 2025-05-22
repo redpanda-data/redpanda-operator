@@ -25,13 +25,14 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otlpfile"
 )
 
+// TestingM abstracts *testing.M so it can be passed into TestMain for setup.
 type TestingM interface {
 	Run() int
 }
 
 // TestMain is a helper for configuring telemetry for the tests of a given
 // package. Once configured, logs and traces can be directed to either a file
-// or gRPC endpoint with the OTLP_DIR and OTLP_GRPC environment variables,
+// or gRPC endpoint via the OTLP_DIR and OTLP_GRPC environment variables,
 // respectively.
 //
 // Traces can be viewed with any OTLP compatible tooling.
@@ -47,7 +48,7 @@ type TestingM interface {
 //	)
 //
 //	func TestMain(m *testing.M) {
-//		otelutil.TestMain(m)
+//		otelutil.TestMain(m, "integration-some-package-here")
 //	}
 func TestMain(m TestingM, name string) {
 	cleanup, err := Setup(WithBinaryName(name))
@@ -74,7 +75,7 @@ type config struct {
 func defaultConfig() *config {
 	return &config{
 		serviceName: "redpanda-operator",
-		name:        binaryName(),
+		name:        filepath.Base(os.Args[0]),
 		logLevel:    log.DefaultLevel,
 	}
 }
@@ -160,6 +161,7 @@ func (c *config) options() (loggerOptions []sdklog.LoggerProviderOption, tracerO
 
 type Option func(c config) config
 
+// WithServiceName sets the OTEL service name for logs, traces, and metrics.
 func WithServiceName(name string) Option {
 	return func(c config) config {
 		c.serviceName = name
@@ -167,6 +169,7 @@ func WithServiceName(name string) Option {
 	}
 }
 
+// WithBinaryName sets the binary name used for file output naming.
 func WithBinaryName(name string) Option {
 	return func(c config) config {
 		c.name = name
@@ -174,6 +177,7 @@ func WithBinaryName(name string) Option {
 	}
 }
 
+// WithGRPCEndpoint sets the OTLP gRPC endpoint.
 func WithGRPCEndpoint(endpoint string) Option {
 	return func(c config) config {
 		c.endpoint = endpoint
@@ -181,6 +185,7 @@ func WithGRPCEndpoint(endpoint string) Option {
 	}
 }
 
+// WithLogLevel sets the logging level.
 func WithLogLevel(level log.TypedLevel) Option {
 	return func(c config) config {
 		c.logLevel = level
@@ -188,6 +193,7 @@ func WithLogLevel(level log.TypedLevel) Option {
 	}
 }
 
+// WithMetricsInterval sets the interval for metric collection/export.
 func WithMetricsInterval(interval time.Duration) Option {
 	return func(c config) config {
 		c.metricsInterval = interval
@@ -195,6 +201,7 @@ func WithMetricsInterval(interval time.Duration) Option {
 	}
 }
 
+// WithTraceOutputDirectory sets the directory where logs, traces, and metrics are written.
 func WithTraceOutputDirectory(name string) Option {
 	return func(c config) config {
 		c.directory = name
@@ -202,8 +209,9 @@ func WithTraceOutputDirectory(name string) Option {
 	}
 }
 
-// Setup configures both logging and tracing otel configurations, including
-// setting the global instances of tracing and logging providers. Setup should be called exactly once at startup
+// Setup configures logging, tracing, and metrics otel configurations, including
+// setting the global instances of logging, tracing, and metrics providers.
+// Setup should be called exactly once at startup.
 //
 // By default traces are ignored and logs are simply forwarded to stdout.
 //
@@ -213,7 +221,9 @@ func WithTraceOutputDirectory(name string) Option {
 // if `OTLP_GRPC` is set, traces and logs will be sent via the OTLP gRPC
 // exporter to the specified endpoint.
 //
-// See [optionsFromEnv] for more details.
+// Configuration options can also be passed via With* helpers.
+//
+// See [config.fromEnv] for more details.
 func Setup(options ...Option) (shutdown func() error, err error) {
 	config := defaultConfig().normalize(options...)
 	logOpts, traceOpts, err := config.options()
@@ -264,8 +274,4 @@ func Setup(options ...Option) (shutdown func() error, err error) {
 			tp.Shutdown(ctx),
 		)
 	}, nil
-}
-
-func binaryName() string {
-	return filepath.Base(os.Args[0])
 }
