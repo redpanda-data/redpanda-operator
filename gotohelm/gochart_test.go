@@ -28,6 +28,7 @@ import (
 
 	"github.com/gonvenience/ytbx"
 	"github.com/homeport/dyff/pkg/dyff"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -194,19 +195,29 @@ func TestWriteArchive(t *testing.T) {
 	var goArchive bytes.Buffer
 	require.NoError(t, root.WriteArchive(&goArchive))
 
-	helmFiles := map[string][]byte{}
-	for header, content := range tarGzFiles(t, bytes.NewReader(helmArchive)) {
-		helmFiles[header.Name] = content
-	}
-
 	goFiles := map[string][]byte{}
 	for header, content := range tarGzFiles(t, &goArchive) {
 		goFiles[header.Name] = content
 	}
 
+	helmFiles := map[string][]byte{}
+	for header, content := range tarGzFiles(t, bytes.NewReader(helmArchive)) {
+		helmFiles[header.Name] = content
+	}
+
 	// Assert that the inflated outputs of `helm package` and `WriteArchive` are
 	// identical.
-	require.Equal(t, goFiles, helmFiles)
+	for fileName, goContent := range goFiles {
+		helmContent, ok := helmFiles[fileName]
+		assert.True(t, ok, "file %s not found in helm archive", fileName)
+		assert.Equal(t, goContent, helmContent)
+	}
+	// cross-check that the files in the helm archive are the same as the files in the go archive.
+	for fileName, helmContent := range helmFiles {
+		goContent, ok := goFiles[fileName]
+		assert.True(t, ok, "file %s not found in helm archive", fileName)
+		assert.Equal(t, helmContent, goContent)
+	}
 }
 
 func tarGzFiles(t *testing.T, reader io.Reader) iter.Seq2[*tar.Header, []byte] {
@@ -220,6 +231,9 @@ func tarGzFiles(t *testing.T, reader io.Reader) iter.Seq2[*tar.Header, []byte] {
 			header, err := tarReader.Next()
 			if err == io.EOF {
 				return
+			}
+			if header.Typeflag != tar.TypeReg {
+				continue
 			}
 
 			require.NoError(t, err)

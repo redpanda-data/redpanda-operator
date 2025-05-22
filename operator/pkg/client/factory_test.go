@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -221,7 +222,8 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 	restcfg := cluster.RESTConfig()
 
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
+	restcfg.WarningHandler = rest.NoWarnings{}
+	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 
 	helmClient, err := helm.New(helm.Options{
@@ -373,7 +375,8 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 
 	restcfg := cluster.RESTConfig()
 
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
+	restcfg.WarningHandler = rest.NoWarnings{}
+	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 
 	helmClient, err := helm.New(helm.Options{
