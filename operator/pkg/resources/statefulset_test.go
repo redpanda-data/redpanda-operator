@@ -33,7 +33,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -43,6 +42,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 const (
@@ -64,8 +64,7 @@ func (NopReader) List(ctx context.Context, list client.ObjectList, opts ...clien
 //nolint:funlen // Test function can have more than 100 lines
 func TestEnsure(t *testing.T) {
 	testEnv := &testutils.RedpandaTestEnv{}
-	logf := testr.New(t)
-	log.SetLogger(logf)
+	log.SetGlobals(testr.New(t))
 
 	cfg, err := testEnv.StartRedpandaTestEnv(false)
 	assert.NoError(t, err)
