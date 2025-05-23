@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandav5 "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
@@ -335,17 +335,17 @@ func (in *Redpanda) OwnerShipRefObj() metav1.OwnerReference {
 	}
 }
 
-func (in *Redpanda) GetValues() (redpandachart.Values, error) {
-	values, err := redpandachart.Chart.LoadValues(in.Spec.ClusterSpec)
+func (in *Redpanda) GetValues() (redpandav5.Values, error) {
+	values, err := redpandav5.Chart.LoadValues(in.Spec.ClusterSpec)
 	if err != nil {
-		return redpandachart.Values{}, errors.WithStack(err)
+		return redpandav5.Values{}, errors.WithStack(err)
 	}
 
-	return helmette.Unwrap[redpandachart.Values](values), nil
+	return helmette.Unwrap[redpandav5.Values](values), nil
 }
 
 func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
-	return redpandachart.Chart.Dot(
+	return redpandav5.Chart.Dot(
 		restConfig,
 		helmette.Release{
 			Name:      in.GetHelmReleaseName(),

@@ -11,6 +11,8 @@ tasks:
     - task: set-inotify-instances
     - task: configure-git-private-repo
     - cmd: "mkdir -p {{.SRC_DIR}}/artifacts"
+    # Fetch the release branches for our git based linters.
+    - cmd: git fetch origin release/v2.4.x
 
   lint:
     cmds:

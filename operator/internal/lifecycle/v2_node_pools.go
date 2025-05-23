@@ -16,7 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -61,6 +61,14 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 		spec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
 	}
 
+	if spec.Statefulset.SideCars.Controllers == nil {
+		spec.Statefulset.SideCars.Controllers = &redpandav1alpha2.RPControllers{}
+	}
+
+	if spec.Statefulset.SideCars.Controllers.Image == nil {
+		spec.Statefulset.SideCars.Controllers.Image = &redpandav1alpha2.RedpandaImage{}
+	}
+
 	if spec.Statefulset.SideCars.Image == nil {
 		spec.Statefulset.SideCars.Image = &redpandav1alpha2.RedpandaImage{}
 	}
@@ -77,6 +85,14 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 
 	if spec.Statefulset.SideCars.Image.Repository == nil {
 		spec.Statefulset.SideCars.Image.Repository = &m.image.Repository
+	}
+
+	if spec.Statefulset.SideCars.Controllers.Image.Tag == nil {
+		spec.Statefulset.SideCars.Controllers.Image.Tag = &m.image.Tag
+	}
+
+	if spec.Statefulset.SideCars.Controllers.Image.Repository == nil {
+		spec.Statefulset.SideCars.Controllers.Image.Repository = &m.image.Repository
 	}
 
 	if spec.Statefulset.InitContainerImage.Tag == nil {
@@ -101,6 +117,8 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 		spec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs = m.cloudSecrets.AdditionalConfiguratorArgs()
 	}
 
+	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
+	// v1alpha2 to it's values here.
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),

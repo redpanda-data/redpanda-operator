@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -187,12 +187,6 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 // cluster spec is byte of byte compatible with the values that the helm chart
 // accepts.
 func TestHelmValuesCompat(t *testing.T) {
-	t.Skip(`
-	Tbis is currently skipped due to the mismatch with the CRD and the
-	movement in the Helm chart to leveraging a top-level PodTemplate. Please unskip
-	the test once CRD marshaling takes into account the top-level PodTemplate, which
-	should happen before 25.1.1 is marked as a GA.
-	`)
 	cfg := rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
 			reflect.TypeFor[intstr.IntOrString]():        IntOrString.AsAny(),
@@ -238,6 +232,12 @@ func TestHelmValuesCompat(t *testing.T) {
 			},
 			reflect.TypeFor[redpanda.PartialServiceAccountCfg](): {
 				"AutomountServiceAccountToken": rapid.Just[any](nil),
+			},
+			reflect.TypeFor[redpanda.PartialClusterConfigValue](): {
+				// Work around for divergences in the omitempty behavior of bool vs *bool.
+				"UseRawValue": rapid.Just(ptr.To(true)).AsAny(),
+				// Work around for a type that we do not control.
+				"ExternalSecretRefSelector": rapid.Just[any](nil),
 			},
 		},
 	}

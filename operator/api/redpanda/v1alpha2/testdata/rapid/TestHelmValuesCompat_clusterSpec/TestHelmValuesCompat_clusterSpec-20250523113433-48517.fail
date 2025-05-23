@@ -1,0 +1,64 @@
+# 2025/05/23 11:34:33.487473 [TestHelmValuesCompat/clusterSpec] [rapid] draw from: redpanda.PartialValues{NameOverride:(*string)(nil), FullnameOverride:(*string)(nil), ClusterDomain:(*string)(nil), CommonLabels:map[string]string{}, NodeSelector:map[string]string{}, Affinity:(*v1.Affinity)(nil), Tolerations:[]v1.Toleration{}, Image:(*redpanda.PartialImage)(nil), Service:(*redpanda.PartialService)(nil), ImagePullSecrets:[]v1.LocalObjectReference{}, LicenseKey:(*string)(nil), LicenseSecretRef:(*redpanda.PartialLicenseSecretRef)(nil), AuditLogging:(*redpanda.PartialAuditLogging)(nil), Enterprise:(*redpanda.PartialEnterprise)(nil), RackAwareness:(*redpanda.PartialRackAwareness)(nil), Console:(*console.PartialValues)(nil), Connectors:(*connectors.PartialValues)(nil), Auth:(*redpanda.PartialAuth)(nil), TLS:(*redpanda.PartialTLS)(nil), External:(*redpanda.PartialExternalConfig)(nil), Logging:(*redpanda.PartialLogging)(nil), Monitoring:(*redpanda.PartialMonitoring)(nil), Resources:(*redpanda.PartialRedpandaResources)(nil), Storage:(*redpanda.PartialStorage)(nil), PostInstallJob:(*redpanda.PartialPostInstallJob)(nil), Statefulset:(*redpanda.PartialStatefulset)(nil), ServiceAccount:(*redpanda.PartialServiceAccountCfg)(nil), RBAC:(*redpanda.PartialRBAC)(0x14003569398), Tuning:(*redpanda.PartialTuning)(nil), Listeners:(*redpanda.PartialListeners)(nil), Config:(*redpanda.PartialConfig)(nil), Tests:(*struct { Enabled *bool "json:\"enabled,omitempty\"" })(nil), Force:(*bool)(nil)}
+# 2025/05/23 11:34:33.487511 [TestHelmValuesCompat/clusterSpec] 
+# 	Error Trace:	/Users/chrisseto/Documents/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/redpanda_types_test.go:322
+# 	            				/Users/chrisseto/Documents/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/redpanda_types_test.go:240
+# 	            				/Users/chrisseto/go/pkg/mod/github.com/chrisseto/rapid@v0.0.0-20250521184210-5cd1ae592754/engine.go:368
+# 	            				/Users/chrisseto/go/pkg/mod/github.com/chrisseto/rapid@v0.0.0-20250521184210-5cd1ae592754/engine.go:377
+# 	            				/Users/chrisseto/go/pkg/mod/github.com/chrisseto/rapid@v0.0.0-20250521184210-5cd1ae592754/engine.go:203
+# 	            				/Users/chrisseto/go/pkg/mod/github.com/chrisseto/rapid@v0.0.0-20250521184210-5cd1ae592754/engine.go:138
+# 	Error:      	Not equal: 
+# 	            	expected: map[string]interface {}{"rbac":map[string]interface {}{"rpkDebugBundle":false}}
+# 	            	actual  : map[string]interface {}{"rbac":map[string]interface {}{}}
+# 	            	
+# 	            	Diff:
+# 	            	--- Expected
+# 	            	+++ Actual
+# 	            	@@ -1,4 +1,3 @@
+# 	            	 (map[string]interface {}) (len=1) {
+# 	            	- (string) (len=4) "rbac": (map[string]interface {}) (len=1) {
+# 	            	-  (string) (len=14) "rpkDebugBundle": (bool) false
+# 	            	+ (string) (len=4) "rbac": (map[string]interface {}) {
+# 	            	  }
+# 	Test:       	TestHelmValuesCompat/clusterSpec
+# 	Messages:   	{"rbac":{}} (v1alpha2.RedpandaClusterSpec) should have serialized to {"rbac":{"rpkDebugBundle":false}} (redpanda.PartialValues)
+# 
+v0.4.8#18324904203498559585
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x10000000000000
+0x0
+0x10000000000000
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0

@@ -39,7 +39,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -86,9 +86,6 @@ var (
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(true)
-	rp.Spec.ClusterSpec.Connectors = &redpandav1alpha2.RedpandaConnectors{
-		Enabled: ptr.To(true),
-	}
 
 	s.applyAndWait(rp)
 
