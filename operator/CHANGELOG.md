@@ -24,6 +24,7 @@ This is required to ensure that a pre-existing sts can roll over to new configur
 - Disabled ordinal-based broker deletion logic in Operator v1 mode, as it doesn't work reliably in a multi-STS setup.
 
 * Setting `serviceAccount.create` to `false` no longer prevents the Kubernetes ServiceAccountToken volume from being mounted to the operator Pod.
+* updated operator v1 to ignore "cluster.redpanda.com/node-pool-spec" annotation for pod rolls. previously, under certain conditions, the operator started rolling pods if this annotation changed - but there is no need to do so.
 
 ## v2.4.2 - 2025-05-02
 ### Added
