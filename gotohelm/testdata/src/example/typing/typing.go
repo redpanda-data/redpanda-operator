@@ -20,9 +20,33 @@ func Typing(dot *helmette.Dot) map[string]any {
 		"numbers":           numbers(),
 		"embedding":         embedding(dot),
 		"compileMe":         compileMe(),
+		"typeAliases":       typeAliases(),
 		"typeTesting":       typeTesting(dot),
 		"typeAssertions":    typeSwitching(dot),
 		"typeSwitching":     typeSwitching(dot),
 		"nestedFieldAccess": nestedFieldAccess(),
+	}
+}
+
+type Base struct {
+	X int
+}
+
+type MyAlias Base
+
+type OtherAlias = Base
+
+func typeAliases() []Base {
+
+	a := Base{X: 1}
+	b := MyAlias{X: 2}
+	c := OtherAlias{X: 3}
+
+	return []Base{
+		a,
+		Base(MyAlias(a)),
+		Base(OtherAlias(a)),
+		Base(b),
+		Base(c),
 	}
 }

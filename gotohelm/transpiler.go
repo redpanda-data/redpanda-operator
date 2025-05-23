@@ -1431,6 +1431,15 @@ func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {
 		if typ.Empty() {
 			return node
 		}
+	case *types.Struct:
+		// If we're casting from an alias to the aliased type, do
+		// nothing. e.g.:
+		// type MySpecialType SomeOtherStruct
+		// var x MySpecialType
+		// SomeOtherStruct(x)
+		if types.ConvertibleTo(from, to) {
+			return node
+		}
 	}
 
 	panic(&Unsupported{
