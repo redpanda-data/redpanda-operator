@@ -1,0 +1,11 @@
+project: gotohelm
+kind: Added
+body: |-
+    Added support for casting to and from aliased struct types.
+
+      ```go
+      type MySpecialType SomeOtherStruct
+      var x MySpecialType
+      SomeOtherStruct(x)
+      ```
+time: 2025-05-23T12:19:51.613924-04:00
