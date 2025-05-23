@@ -799,6 +799,7 @@ statefulset:
       # * For every container in the Pod, the CPU limit must equal the CPU request.
       resources: {}
       extraVolumeMounts: |-
+      additionalCLIArgs: []
     ## Additional init containers
     extraInitContainers: |-
 #      - name: "test-init-container"
