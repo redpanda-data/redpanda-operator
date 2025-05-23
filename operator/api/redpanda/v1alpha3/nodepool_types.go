@@ -10,11 +10,8 @@
 package v1alpha3
 
 import (
-	"encoding/json"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 func init() {
@@ -42,6 +39,8 @@ type NodePoolList struct {
 }
 
 type NodePoolStatus struct {
+	// Name is the name of the pool
+	Name string `json:"name"`
 	// Replicas is the number of actual replicas currently across
 	// the node pool. This differs from DesiredReplicas during
 	// a scaling operation, but should be the same once the cluster
@@ -84,33 +83,20 @@ type BrokerTemplate struct {
 	Resources corev1.ResourceRequirements `json:"resources"`
 	// Arguments to be passed to rpk tune
 	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
-	Tuning                    []string                       `json:"tuning"`
-	Config                    map[string]ValueSource         `json:"config"`
-	SetDataDirectoryOwnership bool                           `json:"setDataDirectoryOwnership"`
-	ValidateFilesystem        bool                           `json:"validateFilesystem"`
-	VolumeClaimTemplates      []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates"`
-	PodTemplate               *PodTemplate                   `json:"podTemplate"`
-}
+	Tuning                    []string               `json:"tuning"`
+	NodeConfig                map[string]ValueSource `json:"nodeConfig"`
+	RPKConfig                 map[string]ValueSource `json:"rpkConfig"`
+	SetDataDirectoryOwnership bool                   `json:"setDataDirectoryOwnership"`
+	ValidateFilesystem        bool                   `json:"validateFilesystem"`
 
-type PodTemplate struct {
-	*applycorev1.PodTemplateApplyConfiguration `json:",inline"`
-}
+	// Require volumes with special names to be provided.
+	// datadir = required
+	// ts-cache = optional tiered storage cache
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates"`
+	PodTemplate          *PodTemplate                   `json:"podTemplate"`
 
-func (t *PodTemplate) DeepCopy() *PodTemplate {
-	// For some inexplicable reason, apply configs don't have deepcopy
-	// generated for them.
-	//
-	// DeepCopyInto can be generated with just DeepCopy implemented. Sadly, the
-	// easiest way to implement DeepCopy is to run this type through JSON. It's
-	// highly unlikely that we'll hit a panic but it is possible to do so with
-	// invalid values for resource.Quantity and the like.
-	out := new(PodTemplate)
-	data, err := json.Marshal(t)
-	if err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal(data, out); err != nil {
-		panic(err)
-	}
-	return out
+	// TODO flags??
+	// Likely to be merged into NodeConfig w/ CEL functions.
+	// rack: Expr(node_annotation('k8s.io/failure-domain')),
+	// TODO deprecate and move me into CEL functions.
 }

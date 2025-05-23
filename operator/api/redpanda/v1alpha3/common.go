@@ -10,7 +10,10 @@
 package v1alpha3
 
 import (
+	"encoding/json"
+
 	corev1 "k8s.io/api/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 // ClusterRef represents a reference to a cluster that is being targeted.
@@ -36,6 +39,29 @@ type ValueSource struct {
 
 // CEL Expr for more complex values
 // Examples:
-// - rack awareness: Expr(node_annotation('k8s.io/failure-domain')),
+// - rack: Expr(node_annotation('k8s.io/failure-domain')),
 // - addresses: Expr(srv_address('tcp', 'admin', 'redpanda.redpanda.cluster.svc.cluster.local'))
 type Expr string
+
+type PodTemplate struct {
+	*applycorev1.PodApplyConfiguration `json:",inline"`
+}
+
+func (t *PodTemplate) DeepCopy() *PodTemplate {
+	// For some inexplicable reason, apply configs don't have deepcopy
+	// generated for them.
+	//
+	// DeepCopyInto can be generated with just DeepCopy implemented. Sadly, the
+	// easiest way to implement DeepCopy is to run this type through JSON. It's
+	// highly unlikely that we'll hit a panic but it is possible to do so with
+	// invalid values for resource.Quantity and the like.
+	out := new(PodTemplate)
+	data, err := json.Marshal(t)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(data, out); err != nil {
+		panic(err)
+	}
+	return out
+}

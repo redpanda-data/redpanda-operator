@@ -21,7 +21,8 @@ type BrokerTemplateApplyConfiguration struct {
 	Image                     *string                                  `json:"image,omitempty"`
 	Resources                 *v1.ResourceRequirements                 `json:"resources,omitempty"`
 	Tuning                    []string                                 `json:"tuning,omitempty"`
-	Config                    map[string]ValueSourceApplyConfiguration `json:"config,omitempty"`
+	NodeConfig                map[string]ValueSourceApplyConfiguration `json:"nodeConfig,omitempty"`
+	RPKConfig                 map[string]ValueSourceApplyConfiguration `json:"rpkConfig,omitempty"`
 	SetDataDirectoryOwnership *bool                                    `json:"setDataDirectoryOwnership,omitempty"`
 	ValidateFilesystem        *bool                                    `json:"validateFilesystem,omitempty"`
 	VolumeClaimTemplates      []v1.PersistentVolumeClaim               `json:"volumeClaimTemplates,omitempty"`
@@ -60,16 +61,30 @@ func (b *BrokerTemplateApplyConfiguration) WithTuning(values ...string) *BrokerT
 	return b
 }
 
-// WithConfig puts the entries into the Config field in the declarative configuration
+// WithNodeConfig puts the entries into the NodeConfig field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, the entries provided by each call will be put on the Config field,
-// overwriting an existing map entries in Config field with the same key.
-func (b *BrokerTemplateApplyConfiguration) WithConfig(entries map[string]ValueSourceApplyConfiguration) *BrokerTemplateApplyConfiguration {
-	if b.Config == nil && len(entries) > 0 {
-		b.Config = make(map[string]ValueSourceApplyConfiguration, len(entries))
+// If called multiple times, the entries provided by each call will be put on the NodeConfig field,
+// overwriting an existing map entries in NodeConfig field with the same key.
+func (b *BrokerTemplateApplyConfiguration) WithNodeConfig(entries map[string]ValueSourceApplyConfiguration) *BrokerTemplateApplyConfiguration {
+	if b.NodeConfig == nil && len(entries) > 0 {
+		b.NodeConfig = make(map[string]ValueSourceApplyConfiguration, len(entries))
 	}
 	for k, v := range entries {
-		b.Config[k] = v
+		b.NodeConfig[k] = v
+	}
+	return b
+}
+
+// WithRPKConfig puts the entries into the RPKConfig field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the RPKConfig field,
+// overwriting an existing map entries in RPKConfig field with the same key.
+func (b *BrokerTemplateApplyConfiguration) WithRPKConfig(entries map[string]ValueSourceApplyConfiguration) *BrokerTemplateApplyConfiguration {
+	if b.RPKConfig == nil && len(entries) > 0 {
+		b.RPKConfig = make(map[string]ValueSourceApplyConfiguration, len(entries))
+	}
+	for k, v := range entries {
+		b.RPKConfig[k] = v
 	}
 	return b
 }
