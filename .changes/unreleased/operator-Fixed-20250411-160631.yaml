@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: Fields with embedded structs, such as `auth.sasl.bootstrapUser.secretKeyRef` and `listeners.internal.tls.truststore.configMapKeyRef`, are no longer discarded during rendering of resources.
-time: 2025-04-11T16:06:31.650995-04:00
