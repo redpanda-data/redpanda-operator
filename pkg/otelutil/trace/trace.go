@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
@@ -15,9 +16,22 @@ import (
 )
 
 var WithAttributes = trace.WithAttributes
+var WithStackTrace = trace.WithStackTrace
 
 func Start(ctx context.Context, name string, options ...trace.SpanStartOption) (context.Context, trace.Span) {
 	return otel.GetTracerProvider().Tracer(callerPackage(0)).Start(ctx, name, options...)
+}
+
+type wrappedSpan struct {
+	trace.Span
+}
+
+func (s *wrappedSpan) AddEvent(name string, options ...trace.EventOption) {
+	s.Span.AddEvent(name, append(options, trace.WithTimestamp(time.Now()))...)
+}
+
+func SpanFromContext(ctx context.Context) trace.Span {
+	return &wrappedSpan{trace.SpanFromContext(ctx)}
 }
 
 // EndSpan is a helper to end a span and annotate it with an error, if an error

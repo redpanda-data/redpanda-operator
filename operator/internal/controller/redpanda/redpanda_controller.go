@@ -305,9 +305,10 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	return r.syncStatus(ctx, status, rp)
 }
 
-func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) (err error) {
-	ctx, span := trace.Start(ctx, "reconcileResources")
-	defer func() { trace.EndSpan(span, err) }()
+func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpandav1alpha2.Redpanda) error {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("ResourcesStart")
+	defer span.AddEvent("ResourcesFinish")
 	return r.LifecycleClient.SyncAll(ctx, rp)
 }
 
@@ -315,9 +316,10 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, rp *redpand
 // of the given cluster pools. All scale up and update routines can happen concurrently, but
 // every scale down happens a single broker at a time, ending reconciliation early and requeueing
 // the cluster if a decommissioning operation/scale down is currently in progress.
-func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda, pools *lifecycle.PoolTracker) (_ bool, err error) {
-	ctx, span := trace.Start(ctx, "reconcilePools")
-	defer func() { trace.EndSpan(span, err) }()
+func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpandav1alpha2.Redpanda, pools *lifecycle.PoolTracker) (bool, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("PoolsStart")
+	defer span.AddEvent("PoolsFinish")
 
 	logger := log.FromContext(ctx)
 
@@ -359,9 +361,10 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, cluster *redpan
 	return false, nil
 }
 
-func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster *redpandav1alpha2.Redpanda, admin *rpadmin.AdminAPI, pools *lifecycle.PoolTracker) (_ rpadmin.ClusterHealthOverview, _ bool, err error) {
-	ctx, span := trace.Start(ctx, "reconcileDecommission")
-	defer func() { trace.EndSpan(span, err) }()
+func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster *redpandav1alpha2.Redpanda, admin *rpadmin.AdminAPI, pools *lifecycle.PoolTracker) (rpadmin.ClusterHealthOverview, bool, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("DecommissionStart")
+	defer span.AddEvent("DecommissionFinish")
 
 	logger := log.FromContext(ctx)
 
@@ -446,6 +449,10 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster 
 }
 
 func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI) error {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("SetupLicenseStart")
+	defer span.AddEvent("SetupLicenseFinish")
+
 	if rp.Spec.ClusterSpec.Enterprise == nil {
 		return nil
 	}
@@ -478,9 +485,10 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 	return nil
 }
 
-func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (_ *redpandav1alpha2.RedpandaLicenseStatus, err error) {
-	ctx, span := trace.Start(ctx, "reconcileLicense")
-	defer func() { trace.EndSpan(span, err) }()
+func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda, status *lifecycle.ClusterStatus) (*redpandav1alpha2.RedpandaLicenseStatus, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("LicenseStart")
+	defer span.AddEvent("LicenseFinish")
 
 	if err := r.setupLicense(ctx, rp, admin); err != nil {
 		return nil, errors.WithStack(err)
@@ -553,9 +561,10 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 	return licenseStatus(), nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, _ bool, err error) {
-	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
-	defer func() { trace.EndSpan(span, err) }()
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (string, bool, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("ClusterConfigStart")
+	defer span.AddEvent("ClusterConfigFinish")
 
 	schema, err := admin.ClusterConfigSchema(ctx)
 	if err != nil {
@@ -659,30 +668,54 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, status *lifecycle.C
 // syncStatus updates the status of the Redpanda cluster when an error has occurred in the
 // reconciliation process and the current loop should be aborted but retried.
 func (r *RedpandaReconciler) syncStatusErr(ctx context.Context, err error, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("SyncStatusStart")
+
 	if r.LifecycleClient.SetClusterStatus(cluster, status) {
 		syncErr := r.Client.Status().Update(ctx, cluster)
 		err = errors.Join(syncErr, err)
 	}
 
+	if err == nil {
+		span.AddEvent("Finished")
+	} else {
+		if apierrors.IsConflict(err) {
+			span.AddEvent("Conflict", trace.WithAttributes(attribute.String("error", err.Error())))
+		} else {
+			span.AddEvent("Error", trace.WithAttributes(attribute.String("error", err.Error())))
+		}
+	}
 	return ignoreConflict(err)
 }
 
 func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *lifecycle.ClusterStatus, cluster *redpandav1alpha2.Redpanda) (ctrl.Result, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("SyncStatusStart")
+
 	var err error
 	if r.LifecycleClient.SetClusterStatus(cluster, status) {
 		err = r.Client.Status().Update(ctx, cluster)
 	}
 
 	result, err := ignoreConflict(err)
-	result.Requeue = true
-	result.RequeueAfter = requeueTimeout
-
+	if err == nil {
+		result.Requeue = true
+		result.RequeueAfter = requeueTimeout
+		span.AddEvent("Requeue")
+	} else {
+		if apierrors.IsConflict(err) {
+			span.AddEvent("Conflict", trace.WithAttributes(attribute.String("error", err.Error())))
+		} else {
+			span.AddEvent("Error", trace.WithAttributes(attribute.String("error", err.Error())))
+		}
+	}
 	return result, err
 }
 
 func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (_ rpadmin.ClusterHealthOverview, err error) {
-	ctx, span := trace.Start(ctx, "reconcileResources")
-	defer func() { trace.EndSpan(span, err) }()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("ClusterHealthFetchStart")
+	defer span.AddEvent("ClusterHealthFetchFinish")
 
 	var health rpadmin.ClusterHealthOverview
 

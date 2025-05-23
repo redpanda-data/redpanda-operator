@@ -217,12 +217,27 @@ tasks:
     cmds:
       - ./.github/workflows/scripts/pending-prs terminal redpanda-data/redpanda-operator
 
-  jaeger-up:
+  tracing-up:
     silent: true
     cmds:
-      - docker-compose -f ./ci/docker/tracing/jaeger.docker-compose.yaml up -d
+      - docker-compose -f ./ci/docker/tracing/docker-compose.yaml up -d
 
-  jaeger-down:
+  tracing-down:
     silent: true
     cmds:
-      - docker-compose -f ./ci/docker/tracing/jaeger.docker-compose.yaml down
+      - docker-compose -f ./ci/docker/tracing/docker-compose.yaml down
+
+  tracing-logs:
+    silent: true
+    cmds:
+      - docker-compose -f ./ci/docker/tracing/docker-compose.yaml logs -f
+
+  tracing-tempo:
+    silent: true
+    cmds:
+      - docker-compose -f ./ci/docker/tracing/docker-compose.yaml logs -f tempo
+
+  tracing-collector:
+    silent: true
+    cmds:
+      - docker-compose -f ./ci/docker/tracing/docker-compose.yaml logs -f collector

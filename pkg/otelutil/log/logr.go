@@ -229,6 +229,8 @@ func convertValue(v any) log.Value {
 	}
 	val := reflect.ValueOf(v)
 	switch t.Kind() {
+	case reflect.String:
+		return log.StringValue(fmt.Sprintf("%v", v))
 	case reflect.Struct:
 		return log.StringValue(fmt.Sprintf("%+v", v))
 	case reflect.Slice, reflect.Array:

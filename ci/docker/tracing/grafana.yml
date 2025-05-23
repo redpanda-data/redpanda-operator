@@ -1,0 +1,46 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    editable: true
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      timeout: 60
+      maxLines: 1000
+      derivedFields:
+      - datasourceName: Tempo
+        datasourceUid: tempo
+        matcherType: label
+        matcherRegex: span_id
+        name: Span
+        url: '{span:id = "$${__value.raw}"}'
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      httpMethod: GET
+      streamingEnabled:
+        search: true
+      tracesToLogsV2:
+        datasourceUid: 'loki'
+        filterByTraceID: true
+        filterBySpanID: false
+        customQuery: true
+        query: '{service_name="redpanda-operator"} | label_format trace_id="$${__trace.traceId}"'
+      nodeGraph:
+        enabled: true

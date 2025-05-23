@@ -1,0 +1,68 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: collector
+    networks:
+      - backend
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    volumes:
+      - ./otel.yml:/etc/otelcol-config.yaml
+    command: ["--config=/etc/otelcol-config.yaml"]
+
+  loki:
+    container_name: loki
+    networks:
+      - backend
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+      - "9096:9096"
+    volumes:
+      - ./loki.yml:/etc/loki/loki-config.yaml
+
+  prometheus:
+    container_name: prometheus
+    networks:
+      - backend
+    image: prom/prometheus:v3.3.1
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - "./grafana.yml:/etc/grafana/provisioning/datasources/datasource.yml"
+      - "./dashboards.yml:/etc/grafana/provisioning/dashboards/main.yml"
+      - "./dashboards:/var/lib/grafana/dashboards"
+    environment:
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    ports:
+      - "3200:3200"
+      - "55680:55680"
+      - "55681:55681"
+      - "14250:14250"
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - "./tempo.yml:/etc/tempo.yaml"
+    networks:
+      - backend
+
+networks:
+  backend:
