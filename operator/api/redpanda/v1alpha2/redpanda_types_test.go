@@ -321,6 +321,17 @@ func TestHelmValuesCompat(t *testing.T) {
 				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
 				from.Storage.Tiered.PersistentVolume.Size = nil
 			}
+			// Issues round-tripping externalSecretRefSelector - zero values for useRawValue are serialised;
+			// this is harmless
+			if from.Config != nil {
+				for k, v := range from.Config.ExtraClusterConfiguration {
+					v.UseRawValue = ptr.To(true)
+					if v.ExternalSecretRefSelector != nil && ptr.Deref(v.ExternalSecretRefSelector.Name, "") == "" {
+						v.ExternalSecretRefSelector.Name = ptr.To("some_name")
+					}
+					from.Config.ExtraClusterConfiguration[k] = v
+				}
+			}
 		})
 	}))
 
