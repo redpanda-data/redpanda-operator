@@ -13768,6 +13768,8 @@ spec:
                           rbac.createRPKBundleCRs=true` flag to give it the required
                           ClusterRoles.
                         type: boolean
+                      rpkDebugBundle:
+                        type: boolean
                     type: object
                   resources:
                     description: Defines container resource settings.
@@ -34534,6 +34536,8 @@ spec:
                           use the Redpanda Operator, you must deploy it with the `--set
                           rbac.createRPKBundleCRs=true` flag to give it the required
                           ClusterRoles.
+                        type: boolean
+                      rpkDebugBundle:
                         type: boolean
                     type: object
                   resources:

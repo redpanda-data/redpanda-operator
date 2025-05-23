@@ -198,7 +198,7 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
 	github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.3 // indirect
-	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 // indirect
+	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect

@@ -22,7 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch;
@@ -75,7 +75,7 @@ func (r *RedpandaNodePVCReconciler) reconcile(ctx context.Context, req ctrl.Requ
 	redpandaNameList := make([]string, 0)
 	if r.OperatorMode {
 		opts := &client.ListOptions{Namespace: req.Namespace}
-		redpandaList := &redpandav1alpha1.RedpandaList{}
+		redpandaList := &redpandav1alpha2.RedpandaList{}
 		if errList := r.Client.List(ctx, redpandaList, opts); errList != nil {
 			return ctrl.Result{}, fmt.Errorf("could not GET list of Redpandas in namespace: %w", errList)
 		}

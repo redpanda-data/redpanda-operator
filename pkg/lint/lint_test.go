@@ -297,7 +297,7 @@ func assertPresentInMainOrRelease(t *testing.T, modFile *modfile.File, version m
 		return
 	}
 
-	if !presentInMainOrRelease(spl[2]) {
+	if !presentInMainOrRelease(t, spl[2]) {
 		t.Errorf(`
 Dependencies on commits from github.com/redpanda-data/redpanda-operator modules MUST be present in main, release/*, or be a git tag.
 
@@ -309,10 +309,24 @@ Dependencies on commits from github.com/redpanda-data/redpanda-operator modules 
 	}
 }
 
-func presentInMainOrRelease(shortSha string) bool {
+func presentInMainOrRelease(t *testing.T, shortSha string) bool {
 	isAncestor := func(ancestor, commitish string) bool {
-		err := exec.Command("git", "merge-base", "--is-ancestor", ancestor, commitish).Run()
-		return err == nil
+		output, err := exec.Command("git", "merge-base", "--is-ancestor", ancestor, commitish).CombinedOutput()
+		switch err := err.(type) {
+		case nil:
+			return true // Success!
+		case *exec.ExitError:
+			// merge-base exits 1 if everything worked and the result is
+			// "no".
+			if err.ExitCode() == 1 {
+				return false
+			}
+			t.Fatalf("`git merge-base --is-ancestor %s %s` failed with unexpected code: %d\noutput: %s", ancestor, commitish, err.ExitCode(), output)
+			panic("unreachable")
+		default:
+			require.NoError(t, err)
+			panic("unreachable")
+		}
 	}
-	return isAncestor(shortSha, "main") // TODO include release branches
+	return isAncestor(shortSha, "main") || isAncestor(shortSha, "origin/release/v2.4.x")
 }

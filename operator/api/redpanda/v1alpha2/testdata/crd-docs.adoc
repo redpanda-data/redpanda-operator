@@ -1716,6 +1716,7 @@ RBAC configures role-based access control (RBAC).
 | Field | Description | Default | Validation
 | *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the RBAC resources. + |  | 
 | *`enabled`* __boolean__ | Whether RBAC is enabled. Enable for features that need extra privileges, such as rack awareness. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles. + |  | 
+| *`rpkDebugBundle`* __boolean__ |  |  | 
 |===
 
 
