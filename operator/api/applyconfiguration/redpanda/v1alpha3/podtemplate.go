@@ -18,7 +18,7 @@ import (
 // PodTemplateApplyConfiguration represents an declarative configuration of the PodTemplate type for use
 // with apply.
 type PodTemplateApplyConfiguration struct {
-	v1.PodTemplateApplyConfiguration `json:",inline"`
+	v1.PodApplyConfiguration `json:",inline"`
 }
 
 // PodTemplateApplyConfiguration constructs an declarative configuration of the PodTemplate type for use with

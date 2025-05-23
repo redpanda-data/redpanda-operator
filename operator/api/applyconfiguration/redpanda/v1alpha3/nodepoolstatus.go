@@ -14,19 +14,28 @@ package v1alpha3
 // NodePoolStatusApplyConfiguration represents an declarative configuration of the NodePoolStatus type for use
 // with apply.
 type NodePoolStatusApplyConfiguration struct {
-	Replicas          *int32 `json:"replicas,omitempty"`
-	DesiredReplicas   *int32 `json:"desiredReplicas,omitempty"`
-	OutOfDateReplicas *int32 `json:"outOfDateReplicas,omitempty"`
-	UpToDateReplicas  *int32 `json:"upToDateReplicas,omitempty"`
-	CondemnedReplicas *int32 `json:"condemnedReplicas,omitempty"`
-	ReadyReplicas     *int32 `json:"readyReplicas,omitempty"`
-	RunningReplicas   *int32 `json:"runningReplicas,omitempty"`
+	Name              *string `json:"name,omitempty"`
+	Replicas          *int32  `json:"replicas,omitempty"`
+	DesiredReplicas   *int32  `json:"desiredReplicas,omitempty"`
+	OutOfDateReplicas *int32  `json:"outOfDateReplicas,omitempty"`
+	UpToDateReplicas  *int32  `json:"upToDateReplicas,omitempty"`
+	CondemnedReplicas *int32  `json:"condemnedReplicas,omitempty"`
+	ReadyReplicas     *int32  `json:"readyReplicas,omitempty"`
+	RunningReplicas   *int32  `json:"runningReplicas,omitempty"`
 }
 
 // NodePoolStatusApplyConfiguration constructs an declarative configuration of the NodePoolStatus type for use with
 // apply.
 func NodePoolStatus() *NodePoolStatusApplyConfiguration {
 	return &NodePoolStatusApplyConfiguration{}
+}
+
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *NodePoolStatusApplyConfiguration) WithName(value string) *NodePoolStatusApplyConfiguration {
+	b.Name = &value
+	return b
 }
 
 // WithReplicas sets the Replicas field in the declarative configuration to the given value
