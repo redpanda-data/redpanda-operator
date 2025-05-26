@@ -910,7 +910,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 
 		Expect(r.WithConfiguratorSettings(res.ConfiguratorSettings{
 			ImagePullPolicy: corev1.PullPolicy(imagePullPolicy),
-		}).SetupWithManager(k8sManager)).To(matcher)
+		}).WithSkipNameValidation(true).SetupWithManager(k8sManager)).To(matcher)
 	},
 		Entry("Always image pull policy", "Always", Succeed()),
 		Entry("IfNotPresent image pull policy", "IfNotPresent", Succeed()),

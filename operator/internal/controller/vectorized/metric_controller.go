@@ -15,8 +15,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -141,5 +143,6 @@ func (r *ClusterMetricController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&vectorizedv1alpha1.Cluster{}).
 		Owns(&corev1.Pod{}).
+		WithOptions(controller.Options{SkipNameValidation: ptr.To(true)}).
 		Complete(r)
 }
