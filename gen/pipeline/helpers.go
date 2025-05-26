@@ -54,7 +54,7 @@ func (suite *TestSuite) junitPattern() string {
 	if suite.JUnitPattern != nil {
 		return *suite.JUnitPattern
 	}
-	return fmt.Sprintf("work/%s-tests.xml", strings.ToLower(suite.Name))
+	return fmt.Sprintf("work/artifacts/%s-tests.xml", strings.ToLower(suite.Name))
 }
 
 func (suite *TestSuite) ToStep() pipeline.Step {
