@@ -30,7 +30,9 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:unit
     env:
+      LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
+      OTLP_METRIC_INTERVAL: 5s
     key: unit-run
     label: Run Unit Tests
     notify:
@@ -74,7 +76,9 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:integration
     env:
+      LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
+      OTLP_METRIC_INTERVAL: 5s
     key: integration-run
     label: Run Integration Tests
     notify:
@@ -118,7 +122,9 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:acceptance
     env:
+      LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
+      OTLP_METRIC_INTERVAL: 5s
     key: acceptance-run
     label: Run Acceptance Tests
     notify:
@@ -162,7 +168,9 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1
     env:
+      LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
+      OTLP_METRIC_INTERVAL: 5s
     if: build.pull_request.labels includes "run-kuttl-v1"
     key: kuttl-v1-run
     label: Run Kuttl-V1 Tests
@@ -207,7 +215,9 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1-nodepools
     env:
+      LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
+      OTLP_METRIC_INTERVAL: 5s
     key: kuttl-v1-nodepools-run
     label: Run Kuttl-V1-Nodepools Tests
     notify:
