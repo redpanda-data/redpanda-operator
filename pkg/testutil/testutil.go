@@ -32,6 +32,55 @@ var (
 	update = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
 )
 
+// TestType represents the type of test being run, i.e. unit, integration, or acceptance
+type TestType int
+
+const (
+	TestTypeUnit TestType = iota
+	TestTypeIntegration
+	TestTypeAcceptance
+)
+
+// String returns the human readable name of the test type.
+func (t TestType) String() string {
+	switch t {
+	case TestTypeUnit:
+		return "unit"
+	case TestTypeIntegration:
+		return "integration"
+	case TestTypeAcceptance:
+		return "acceptance"
+	default:
+		return "unknown"
+	}
+}
+
+// Type returns the type of test being run.
+func Type() TestType {
+	if IsAcceptance() {
+		return TestTypeAcceptance
+	}
+	if IsIntegration() {
+		return TestTypeIntegration
+	}
+	return TestTypeUnit
+}
+
+// IsAcceptance returns true if this is an acceptance test
+func IsAcceptance() bool {
+	return skipAcceptanceTests == false
+}
+
+// IsIntegration returns true if this is an integration test
+func IsIntegration() bool {
+	return skipIntegrationTests == false
+}
+
+// IsUnit returns true if this is a unit test
+func IsUnit() bool {
+	return skipIntegrationTests == true && skipAcceptanceTests == true
+}
+
 // Retain returns the value of the -retain CLI flag. A value of true indicates
 // that cleanup actions should be SKIPPED.
 func Retain() bool {

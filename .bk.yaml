@@ -1,0 +1,3 @@
+pipelines:
+    - redpanda-operator
+selected_org: redpanda
