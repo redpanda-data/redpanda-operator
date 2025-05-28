@@ -19,11 +19,12 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
-func Secrets(dot *helmette.Dot) []*corev1.Secret {
+func Secrets(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.Secret {
 	var secrets []*corev1.Secret
 	secrets = append(secrets, SecretSTSLifecycle(dot))
 	if saslUsers := SecretSASLUsers(dot); saslUsers != nil {

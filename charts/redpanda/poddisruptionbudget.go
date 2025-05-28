@@ -18,9 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func PodDisruptionBudget(dot *helmette.Dot) *policyv1.PodDisruptionBudget {
+func PodDisruptionBudget(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) *policyv1.PodDisruptionBudget {
 	values := helmette.Unwrap[Values](dot.Values)
 	budget := values.Statefulset.Budget.MaxUnavailable
 

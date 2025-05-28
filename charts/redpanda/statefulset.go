@@ -21,6 +21,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 const (
@@ -920,7 +921,7 @@ func bootstrapEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVa
 	return envVars
 }
 
-func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
+func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*appsv1.StatefulSet {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !RedpandaAtLeast_22_2_0(dot) && !values.Force {
@@ -981,7 +982,7 @@ func StatefulSet(dot *helmette.Dot) *appsv1.StatefulSet {
 		}
 	}
 
-	return ss
+	return []*appsv1.StatefulSet{ss}
 }
 
 func semver(dot *helmette.Dot) string {

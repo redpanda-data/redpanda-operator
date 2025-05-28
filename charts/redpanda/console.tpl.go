@@ -18,13 +18,14 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // consoleChartIntegration plumbs redpanda connection information into the console subchart.
 // It does this by calculating Kafka, Schema registry, Redpanda Admin API configuration
 // from Redpanda chart values.
-func consoleChartIntegration(dot *helmette.Dot) []kube.Object {
+func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []kube.Object {
 	values := helmette.UnmarshalInto[Values](dot.Values)
 
 	if !ptr.Deref(values.Console.Enabled, true) {

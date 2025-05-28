@@ -14,9 +14,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if $dot.Release.IsUpgrade -}}
-{{- $_87_existing_1_ok_2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $dot.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r"))))) "r") -}}
-{{- $existing_1 := (index $_87_existing_1_ok_2 0) -}}
-{{- $ok_2 := (index $_87_existing_1_ok_2 1) -}}
+{{- $_88_existing_1_ok_2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $dot.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r"))))) "r") -}}
+{{- $existing_1 := (index $_88_existing_1_ok_2 0) -}}
+{{- $ok_2 := (index $_88_existing_1_ok_2 1) -}}
 {{- if (and $ok_2 (gt ((get (fromJson (include "_shims.len" (dict "a" (list $existing_1.spec.selector.matchLabels)))) "r") | int) (0 | int))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $existing_1.spec.selector.matchLabels) | toJson -}}
@@ -41,9 +41,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if $dot.Release.IsUpgrade -}}
-{{- $_118_existing_3_ok_4 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $dot.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r"))))) "r") -}}
-{{- $existing_3 := (index $_118_existing_3_ok_4 0) -}}
-{{- $ok_4 := (index $_118_existing_3_ok_4 1) -}}
+{{- $_119_existing_3_ok_4 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $dot.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r"))))) "r") -}}
+{{- $existing_3 := (index $_119_existing_3_ok_4 0) -}}
+{{- $ok_4 := (index $_119_existing_3_ok_4 1) -}}
 {{- if (and $ok_4 (gt ((get (fromJson (include "_shims.len" (dict "a" (list $existing_3.spec.template.metadata.labels)))) "r") | int) (0 | int))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $existing_3.spec.template.metadata.labels) | toJson -}}
@@ -215,9 +215,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_403_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_403_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_403_uid_gid 1) | int64) -}}
+{{- $_404_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_404_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_404_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -230,12 +230,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $_431_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_431_gid_uid 0) -}}
-{{- $uid := (index $_431_gid_uid 1) -}}
-{{- $_432_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_432_sgid_suid 0) -}}
-{{- $suid := (index $_432_sgid_suid 1) -}}
+{{- $_432_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_432_gid_uid 0) -}}
+{{- $uid := (index $_432_gid_uid 1) -}}
+{{- $_433_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_433_sgid_suid 0) -}}
+{{- $suid := (index $_433_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -312,9 +312,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_515_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_515_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_515_uid_gid 1) | int64) -}}
+{{- $_516_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_516_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_516_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $values.storage $dot)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
@@ -512,8 +512,9 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.StatefulSet" -}}
+{{- define "redpanda.StatefulSets" -}}
 {{- $dot := (index .a 0) -}}
+{{- $_pools := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
@@ -533,7 +534,7 @@
 {{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $ss) | toJson -}}
+{{- (dict "r" (list $ss)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

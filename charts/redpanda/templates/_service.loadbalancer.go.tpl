@@ -2,6 +2,7 @@
 
 {{- define "redpanda.LoadBalancerServices" -}}
 {{- $dot := (index .a 0) -}}
+{{- $_pools := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}

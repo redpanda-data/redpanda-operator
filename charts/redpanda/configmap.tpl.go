@@ -18,10 +18,11 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
-func ConfigMaps(dot *helmette.Dot) []*corev1.ConfigMap {
+func ConfigMaps(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.ConfigMap {
 	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot), RPKProfile(dot)}
 	return cms
 }

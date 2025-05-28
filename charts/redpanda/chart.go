@@ -28,6 +28,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -95,13 +96,25 @@ func must(err error) {
 // In go, this function should be call by executing [Chart.Render], which will
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func render(dot *helmette.Dot) []kube.Object {
+	manifests := renderResources(dot, nil)
+
+	for _, obj := range StatefulSets(dot, nil) {
+		manifests = append(manifests, obj)
+	}
+
+	// NB: This slice may contain nil interfaces!
+	// Filtering happens elsewhere, don't call this function directly if you
+	// can avoid it.
+	return manifests
+}
+
+func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []kube.Object {
 	manifests := []kube.Object{
 		NodePortService(dot),
-		PodDisruptionBudget(dot),
+		PodDisruptionBudget(dot, pools),
 		ServiceAccount(dot),
 		ServiceInternal(dot),
 		ServiceMonitor(dot),
-		StatefulSet(dot),
 		PostInstallUpgradeJob(dot),
 	}
 
@@ -111,7 +124,7 @@ func render(dot *helmette.Dot) []kube.Object {
 	// Instead, it's easiest (though painful to read and write) to iterate over
 	// all functions that return slices and append them one at a time.
 
-	for _, obj := range ConfigMaps(dot) {
+	for _, obj := range ConfigMaps(dot, pools) {
 		manifests = append(manifests, obj)
 	}
 
@@ -143,15 +156,15 @@ func render(dot *helmette.Dot) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range LoadBalancerServices(dot) {
+	for _, obj := range LoadBalancerServices(dot, pools) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Secrets(dot) {
+	for _, obj := range Secrets(dot, pools) {
 		manifests = append(manifests, obj)
 	}
 
-	manifests = append(manifests, consoleChartIntegration(dot)...)
+	manifests = append(manifests, consoleChartIntegration(dot, pools)...)
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
