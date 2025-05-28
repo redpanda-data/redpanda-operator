@@ -2,6 +2,7 @@
 
 {{- define "redpanda.Secrets" -}}
 {{- $dot := (index .a 0) -}}
+{{- $pools := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $secrets := (coalesce nil) -}}
@@ -94,9 +95,9 @@
 {{- break -}}
 {{- end -}}
 {{- $secretName := (printf "%s-bootstrap-user" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")) -}}
-{{- $_206_existing_4_ok_5 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $dot.Release.Namespace $secretName)))) "r") -}}
-{{- $existing_4 := (index $_206_existing_4_ok_5 0) -}}
-{{- $ok_5 := (index $_206_existing_4_ok_5 1) -}}
+{{- $_207_existing_4_ok_5 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $dot.Release.Namespace $secretName)))) "r") -}}
+{{- $existing_4 := (index $_207_existing_4_ok_5 0) -}}
+{{- $ok_5 := (index $_207_existing_4_ok_5 1) -}}
 {{- if $ok_5 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $existing_4) | toJson -}}

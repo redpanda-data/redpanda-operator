@@ -2,6 +2,7 @@
 
 {{- define "redpanda.consoleChartIntegration" -}}
 {{- $dot := (index .a 0) -}}
+{{- $_pools := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values -}}
@@ -65,9 +66,9 @@
 {{- end -}}
 {{- $visitedCert := (dict) -}}
 {{- range $_, $tlsCfg := (list $values.listeners.kafka.tls $values.listeners.schemaRegistry.tls $values.listeners.admin.tls) -}}
-{{- $_131___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
-{{- $_ := (index $_131___visited 0) -}}
-{{- $visited := (index $_131___visited 1) -}}
+{{- $_132___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
+{{- $_ := (index $_132___visited 0) -}}
+{{- $visited := (index $_132___visited 1) -}}
 {{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $tlsCfg $values.tls)))) "r")) $visited) -}}
 {{- continue -}}
 {{- end -}}
@@ -99,9 +100,9 @@
 {{- end -}}
 {{- $visitedCert := (dict) -}}
 {{- range $_, $tlsCfg := (list $values.listeners.kafka.tls $values.listeners.schemaRegistry.tls $values.listeners.admin.tls) -}}
-{{- $_172___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
-{{- $_ := (index $_172___visited 0) -}}
-{{- $visited := (index $_172___visited 1) -}}
+{{- $_173___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
+{{- $_ := (index $_173___visited 0) -}}
+{{- $visited := (index $_173___visited 1) -}}
 {{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $tlsCfg $values.tls)))) "r")) $visited) -}}
 {{- continue -}}
 {{- end -}}

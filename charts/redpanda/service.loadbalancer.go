@@ -18,9 +18,10 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func LoadBalancerServices(dot *helmette.Dot) []*corev1.Service {
+func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	// This is technically a divergence from previous behavior but this matches
