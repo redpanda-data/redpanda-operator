@@ -10,6 +10,8 @@
 package redpanda
 
 import (
+	"fmt"
+
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -79,5 +81,16 @@ func RenderNodePoolsFromCRD(cfg *kube.RESTConfig, release helmette.Release, clus
 		return nil, err
 	}
 
+	checkVersion(dot)
+
 	return StatefulSets(dot, pools), nil
+}
+
+func checkVersion(dot *helmette.Dot) {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	if !RedpandaAtLeast_22_2_0(dot) && !values.Force {
+		sv := semver(dot)
+		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
+	}
 }

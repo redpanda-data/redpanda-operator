@@ -924,11 +924,6 @@ func bootstrapEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVa
 func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*appsv1.StatefulSet {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !RedpandaAtLeast_22_2_0(dot) && !values.Force {
-		sv := semver(dot)
-		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
-	}
-
 	ss := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",

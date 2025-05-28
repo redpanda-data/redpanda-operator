@@ -22,6 +22,7 @@
 {{- $pools := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- $_ := (get (fromJson (include "redpanda.checkVersion" (dict "a" (list $dot)))) "r") -}}
 {{- $manifests := (list (get (fromJson (include "redpanda.NodePortService" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.PodDisruptionBudget" (dict "a" (list $dot $pools)))) "r") (get (fromJson (include "redpanda.ServiceAccount" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.ServiceInternal" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.ServiceMonitor" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.PostInstallUpgradeJob" (dict "a" (list $dot)))) "r")) -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.ConfigMaps" (dict "a" (list $dot $pools)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}

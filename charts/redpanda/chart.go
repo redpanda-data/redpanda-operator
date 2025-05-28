@@ -109,6 +109,8 @@ func render(dot *helmette.Dot) []kube.Object {
 }
 
 func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []kube.Object {
+	checkVersion(dot)
+
 	manifests := []kube.Object{
 		NodePortService(dot),
 		PodDisruptionBudget(dot, pools),
