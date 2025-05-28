@@ -1,7 +1,0 @@
-project: operator
-kind: Changed
-body: |-
-    The v2 operator now uses a templated bootstrap.yaml file, like v1.
-
-    For the 2.3.* release only, the statefulset.initContainers.configurator.additionalCLIArgs entry on the CR is *not* populated by the operator; this must be done manually to resolve external secrets.
-time: 2025-05-23T18:39:01.115807+01:00
