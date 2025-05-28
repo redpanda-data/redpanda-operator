@@ -19945,7 +19945,10 @@ spec:
             memory: "13"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsPolicy: 禉ȎÝ汱
       ephemeralContainers: null
       hostAliases:
@@ -26060,7 +26063,10 @@ spec:
             memory: "628"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - QXyBi4x
@@ -30498,7 +30504,10 @@ spec:
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - uFFDQ
@@ -36207,7 +36216,10 @@ spec:
             memory: "826"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - 9uF4n
@@ -37714,7 +37726,10 @@ spec:
             memory: "396"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - bnxKu
@@ -42216,7 +42231,10 @@ spec:
             memory: "183"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - Nr
@@ -44600,7 +44618,10 @@ spec:
             memory: "961"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         searches:
         - ""
@@ -45376,7 +45397,10 @@ spec:
             memory: "579"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - YISghsOm
@@ -47701,7 +47725,10 @@ spec:
             memory: "462"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         searches:
         - 1M9d
@@ -49896,7 +49923,10 @@ spec:
             memory: "494"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - "34"
@@ -51553,7 +51583,10 @@ spec:
             memory: "65"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - g9
@@ -53887,7 +53920,10 @@ spec:
             memory: "670"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - fjX4eE
@@ -57179,7 +57215,10 @@ spec:
             memory: "133"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - XQQvkKFB7z
@@ -58583,7 +58622,10 @@ spec:
             memory: "805"
         securityContext:
           allowPrivilegeEscalation: false
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
       dnsConfig:
         nameservers:
         - OKrRLUXo1z
@@ -72805,6 +72847,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -74467,6 +74512,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -76191,6 +76239,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -76925,6 +76976,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -78977,6 +79031,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -80220,6 +80277,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -81147,6 +81207,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -82878,6 +82941,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -85496,6 +85562,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -92106,6 +92175,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -93349,6 +93421,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -95864,6 +95939,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -97908,6 +97986,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -99223,6 +99304,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -106147,6 +106231,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -109531,6 +109618,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
