@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: updated operator v1 to ignore "cluster.redpanda.com/node-pool-spec" annotation for pod rolls. previously, under certain conditions, the operator started rolling pods if this annotation changed - but there is no need to do so.
-time: 2025-05-21T21:02:38.412528108+02:00
