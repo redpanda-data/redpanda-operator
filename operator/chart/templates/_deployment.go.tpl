@@ -132,9 +132,7 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
 {{- $volMount := (list) -}}
-{{- if $values.serviceAccount.create -}}
 {{- $mountName := "kube-api-access" -}}
 {{- range $_, $vol := (get (fromJson (include "operator.operatorPodVolumes" (dict "a" (list $dot)))) "r") -}}
 {{- if (hasPrefix $vol.name (printf "%s%s" "kube-api-access" "-")) -}}
@@ -145,7 +143,6 @@
 {{- break -}}
 {{- end -}}
 {{- $volMount = (concat (default (list) $volMount) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" $mountName "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount")))) -}}
-{{- end -}}
 {{- if (not (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volMount) | toJson -}}

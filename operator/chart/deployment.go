@@ -284,24 +284,20 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 }
 
 func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
-	values := helmette.Unwrap[Values](dot.Values)
-
 	volMount := []corev1.VolumeMount{}
 
-	if values.ServiceAccount.Create {
-		mountName := ServiceAccountVolumeName
-		for _, vol := range operatorPodVolumes(dot) {
-			if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
-				mountName = vol.Name
-			}
+	mountName := ServiceAccountVolumeName
+	for _, vol := range operatorPodVolumes(dot) {
+		if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
+			mountName = vol.Name
 		}
-
-		volMount = append(volMount, corev1.VolumeMount{
-			Name:      mountName,
-			ReadOnly:  true,
-			MountPath: DefaultAPITokenMountPath,
-		})
 	}
+
+	volMount = append(volMount, corev1.VolumeMount{
+		Name:      mountName,
+		ReadOnly:  true,
+		MountPath: DefaultAPITokenMountPath,
+	})
 
 	if !isWebhookEnabled(dot) {
 		return volMount
