@@ -107,12 +107,13 @@ func TestV2ResourceClient(t *testing.T) {
 		t.Run(file.Name, func(t *testing.T) {
 			t.Parallel()
 
-			cluster := &redpandav1alpha2.Redpanda{}
-			require.NoError(t, yaml.Unmarshal(file.Data, cluster))
+			redpanda := &redpandav1alpha2.Redpanda{}
+			require.NoError(t, yaml.Unmarshal(file.Data, redpanda))
 
 			// override name and namespace to make it unique
-			cluster.Name = file.Name
-			cluster.Namespace = file.Name
+			redpanda.Name = file.Name
+			redpanda.Namespace = file.Name
+			cluster := NewClusterWithPools(redpanda)
 
 			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
 

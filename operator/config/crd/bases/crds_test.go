@@ -25,6 +25,7 @@ func TestCRDS(t *testing.T) {
 		"schemas.cluster.redpanda.com":    {},
 		"topics.cluster.redpanda.com":     {},
 		"users.cluster.redpanda.com":      {},
+		"nodepools.cluster.redpanda.com":  {},
 	}
 
 	foundNames := map[string]struct{}{}

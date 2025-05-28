@@ -17,7 +17,6 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -26,7 +25,7 @@ type V2SimpleResourceRenderer struct {
 	kubeConfig *kube.RESTConfig
 }
 
-var _ SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2SimpleResourceRenderer)(nil)
+var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleResourceRenderer)(nil)
 
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
 func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
@@ -38,7 +37,7 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 // Render returns a list of simple resources for the given Redpanda v2 cluster. It does this by
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // should be considered a node pool.
-func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]client.Object, error) {
+func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]client.Object, error) {
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),

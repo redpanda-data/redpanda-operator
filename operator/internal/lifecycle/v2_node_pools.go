@@ -29,7 +29,7 @@ type V2NodePoolRenderer struct {
 	cloudSecrets CloudSecretsFlags
 }
 
-var _ NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2NodePoolRenderer)(nil)
+var _ NodePoolRenderer[ClusterWithPools, *ClusterWithPools] = (*V2NodePoolRenderer)(nil)
 
 // NewV2NodePoolRenderer returns a V2NodePoolRenderer.
 func NewV2NodePoolRenderer(mgr ctrl.Manager, image Image, cloudSecrets CloudSecretsFlags) *V2NodePoolRenderer {
@@ -43,7 +43,7 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager, image Image, cloudSecrets CloudSecr
 // Render returns a list of StatefulSets for the given Redpanda v2 cluster. It does this by
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // isn't a node pool.
-func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *redpandav1alpha2.Redpanda) ([]*appsv1.StatefulSet, error) {
+func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]*appsv1.StatefulSet, error) {
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 	if spec == nil {
 		spec = &redpandav1alpha2.RedpandaClusterSpec{}
