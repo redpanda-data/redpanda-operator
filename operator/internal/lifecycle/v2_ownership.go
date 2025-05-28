@@ -23,7 +23,7 @@ type V2OwnershipResolver struct {
 	namespaceLabel string
 }
 
-var _ OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda] = (*V2OwnershipResolver)(nil)
+var _ OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools] = (*V2OwnershipResolver)(nil)
 
 // NewV2OwnershipResolver returns a V2OwnershipResolver.
 func NewV2OwnershipResolver() *V2OwnershipResolver {
@@ -36,7 +36,7 @@ func NewV2OwnershipResolver() *V2OwnershipResolver {
 
 // AddLabels returns the labels to add to all resources associated with a
 // v2 cluster.
-func (m *V2OwnershipResolver) AddLabels(cluster *redpandav1alpha2.Redpanda) map[string]string {
+func (m *V2OwnershipResolver) AddLabels(cluster *redpandav1alpha2.ClusterWithPools) map[string]string {
 	return map[string]string{
 		m.namespaceLabel: cluster.GetNamespace(),
 		m.ownerLabel:     cluster.GetName(),
@@ -49,7 +49,7 @@ func (m *V2OwnershipResolver) AddLabels(cluster *redpandav1alpha2.Redpanda) map[
 
 // GetOwnerLabels returns the labels that can identify a resource belonging
 // to a given cluster.
-func (m *V2OwnershipResolver) GetOwnerLabels(cluster *redpandav1alpha2.Redpanda) map[string]string {
+func (m *V2OwnershipResolver) GetOwnerLabels(cluster *redpandav1alpha2.ClusterWithPools) map[string]string {
 	return map[string]string{
 		fluxNameLabel:      cluster.Name,
 		fluxNamespaceLabel: cluster.Namespace,

@@ -20,7 +20,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,7 +66,7 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	client                 client.Client
 	logger                 logr.Logger
 	scheme                 *runtime.Scheme
-	mapper                 meta.RESTMapper
+	mapper                 apimeta.RESTMapper
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -176,7 +175,7 @@ type Builder interface {
 }
 
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
-func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error {
+func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object) error {
 	// set that this is for the cluster
 	builder.For(cluster)
 
@@ -196,7 +195,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster U) error 
 			continue
 		}
 
-		if mapping.Name() == meta.RESTScopeNamespace.Name() {
+		if mapping.Name() == apimeta.RESTScopeNamespace.Name() {
 			// we're working with a namespace scoped resource, so we can work with ownership
 			builder.Owns(resourceType)
 			continue
@@ -383,7 +382,7 @@ func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLab
 
 	object.SetLabels(labels)
 
-	if !unknownMapping && mapping.Name() == meta.RESTScopeNamespace.Name() {
+	if !unknownMapping && mapping.Name() == apimeta.RESTScopeNamespace.Name() {
 		object.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 	}
 

@@ -17,16 +17,16 @@ import (
 
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
 func V2ResourceManagers(image Image, cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
-	OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	ClusterStatusUpdater[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-	SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
+	OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+	ClusterStatusUpdater[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+	NodePoolRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+	SimpleResourceRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
 ) {
 	return func(mgr ctrl.Manager) (
-		OwnershipResolver[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-		ClusterStatusUpdater[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-		NodePoolRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
-		SimpleResourceRenderer[redpandav1alpha2.Redpanda, *redpandav1alpha2.Redpanda],
+		OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+		ClusterStatusUpdater[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+		NodePoolRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+		SimpleResourceRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
 	) {
 		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, image, cloudSecrets), NewV2SimpleResourceRenderer(mgr)
 	}
