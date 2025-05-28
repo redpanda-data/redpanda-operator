@@ -16,7 +16,7 @@ import (
 // V2ClusterStatusUpdater represents a status updater for v2 clusters.
 type V2ClusterStatusUpdater struct{}
 
-var _ ClusterStatusUpdater[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools] = (*V2ClusterStatusUpdater)(nil)
+var _ ClusterStatusUpdater[ClusterWithPools, *ClusterWithPools] = (*V2ClusterStatusUpdater)(nil)
 
 // NewV2ClusterStatusUpdater returns a V2ClusterStatusUpdater.
 func NewV2ClusterStatusUpdater() *V2ClusterStatusUpdater {
@@ -24,7 +24,7 @@ func NewV2ClusterStatusUpdater() *V2ClusterStatusUpdater {
 }
 
 // Update updates the given Redpanda v2 cluster with the given cluster status.
-func (m *V2ClusterStatusUpdater) Update(cluster *redpandav1alpha2.ClusterWithPools, status *ClusterStatus) bool {
+func (m *V2ClusterStatusUpdater) Update(cluster *ClusterWithPools, status *ClusterStatus) bool {
 	dirty := status.Status.UpdateConditions(cluster.Redpanda)
 
 	for _, pool := range status.Pools {

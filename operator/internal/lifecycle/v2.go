@@ -13,20 +13,34 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
+
+// ClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
+type ClusterWithPools struct {
+	*redpandav1alpha2.Redpanda
+	NodePools []*redpandav1alpha3.NodePool
+}
+
+func NewClusterWithPools(cluster *redpandav1alpha2.Redpanda, pools ...*redpandav1alpha3.NodePool) *ClusterWithPools {
+	return &ClusterWithPools{
+		Redpanda:  cluster,
+		NodePools: pools,
+	}
+}
 
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
 func V2ResourceManagers(image Image, cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
-	OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-	ClusterStatusUpdater[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-	NodePoolRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-	SimpleResourceRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+	OwnershipResolver[ClusterWithPools, *ClusterWithPools],
+	ClusterStatusUpdater[ClusterWithPools, *ClusterWithPools],
+	NodePoolRenderer[ClusterWithPools, *ClusterWithPools],
+	SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools],
 ) {
 	return func(mgr ctrl.Manager) (
-		OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-		ClusterStatusUpdater[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-		NodePoolRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
-		SimpleResourceRenderer[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools],
+		OwnershipResolver[ClusterWithPools, *ClusterWithPools],
+		ClusterStatusUpdater[ClusterWithPools, *ClusterWithPools],
+		NodePoolRenderer[ClusterWithPools, *ClusterWithPools],
+		SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools],
 	) {
 		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, image, cloudSecrets), NewV2SimpleResourceRenderer(mgr)
 	}

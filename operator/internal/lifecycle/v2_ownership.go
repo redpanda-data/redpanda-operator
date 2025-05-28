@@ -12,8 +12,6 @@ package lifecycle
 import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // V2OwnershipResolver represents an ownership resolver for v2 clusters.
@@ -23,7 +21,7 @@ type V2OwnershipResolver struct {
 	namespaceLabel string
 }
 
-var _ OwnershipResolver[redpandav1alpha2.ClusterWithPools, *redpandav1alpha2.ClusterWithPools] = (*V2OwnershipResolver)(nil)
+var _ OwnershipResolver[ClusterWithPools, *ClusterWithPools] = (*V2OwnershipResolver)(nil)
 
 // NewV2OwnershipResolver returns a V2OwnershipResolver.
 func NewV2OwnershipResolver() *V2OwnershipResolver {
@@ -36,7 +34,7 @@ func NewV2OwnershipResolver() *V2OwnershipResolver {
 
 // AddLabels returns the labels to add to all resources associated with a
 // v2 cluster.
-func (m *V2OwnershipResolver) AddLabels(cluster *redpandav1alpha2.ClusterWithPools) map[string]string {
+func (m *V2OwnershipResolver) AddLabels(cluster *ClusterWithPools) map[string]string {
 	return map[string]string{
 		m.namespaceLabel: cluster.GetNamespace(),
 		m.ownerLabel:     cluster.GetName(),
@@ -49,7 +47,7 @@ func (m *V2OwnershipResolver) AddLabels(cluster *redpandav1alpha2.ClusterWithPoo
 
 // GetOwnerLabels returns the labels that can identify a resource belonging
 // to a given cluster.
-func (m *V2OwnershipResolver) GetOwnerLabels(cluster *redpandav1alpha2.ClusterWithPools) map[string]string {
+func (m *V2OwnershipResolver) GetOwnerLabels(cluster *ClusterWithPools) map[string]string {
 	return map[string]string{
 		fluxNameLabel:      cluster.Name,
 		fluxNamespaceLabel: cluster.Namespace,

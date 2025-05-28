@@ -486,8 +486,6 @@ This takes precedence over StaticConfigurationSource. + |  |
 |===
 
 
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls"]
 ==== CommonTLS
 
@@ -1829,10 +1827,7 @@ Redpanda defines the CRD for Redpanda clusters.
 
 
 
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterwithpools[$$ClusterWithPools$$]
-****
+
 
 [cols="20a,50a,15a,15a", options="header"]
 |===

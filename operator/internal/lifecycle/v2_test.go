@@ -113,7 +113,7 @@ func TestV2ResourceClient(t *testing.T) {
 			// override name and namespace to make it unique
 			redpanda.Name = file.Name
 			redpanda.Namespace = file.Name
-			cluster := redpandav1alpha2.NewClusterWithPools(redpanda)
+			cluster := NewClusterWithPools(redpanda)
 
 			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
 
