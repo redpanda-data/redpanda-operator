@@ -26,6 +26,7 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
+	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
@@ -359,7 +360,7 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 
 type ClusterWithPools struct {
 	*Redpanda
-	NodePools []*v1alpha3.NodePool
+	NodePools []*redpandav1alpha3.NodePool
 }
 
 func NewClusterWithPools(cluster *Redpanda, pools ...*v1alpha3.NodePool) *ClusterWithPools {
