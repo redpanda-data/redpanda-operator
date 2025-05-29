@@ -1660,7 +1660,7 @@ PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being sc
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration"]
 ==== PodSpecApplyConfiguration
 
-
+_Underlying type:_ _PodSpecApplyConfiguration_
 
 PodSpecApplyConfiguration is a wrapper around
 [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
@@ -1672,6 +1672,49 @@ PodSpecApplyConfiguration is a wrapper around
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]
 ****
 
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`volumes`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-volumeapplyconfiguration[$$VolumeApplyConfiguration$$] array__ |  |  | 
+| *`initContainers`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-containerapplyconfiguration[$$ContainerApplyConfiguration$$] array__ |  |  | 
+| *`containers`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-containerapplyconfiguration[$$ContainerApplyConfiguration$$] array__ |  |  | 
+| *`ephemeralContainers`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-ephemeralcontainerapplyconfiguration[$$EphemeralContainerApplyConfiguration$$] array__ |  |  | 
+| *`restartPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#restartpolicy-v1-core[$$RestartPolicy$$]__ |  |  | 
+| *`terminationGracePeriodSeconds`* __integer__ |  |  | 
+| *`activeDeadlineSeconds`* __integer__ |  |  | 
+| *`dnsPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#dnspolicy-v1-core[$$DNSPolicy$$]__ |  |  | 
+| *`nodeSelector`* __object (keys:string, values:string)__ |  |  | 
+| *`serviceAccountName`* __string__ |  |  | 
+| *`serviceAccount`* __string__ |  |  | 
+| *`automountServiceAccountToken`* __boolean__ |  |  | 
+| *`nodeName`* __string__ |  |  | 
+| *`hostNetwork`* __boolean__ |  |  | 
+| *`hostPID`* __boolean__ |  |  | 
+| *`hostIPC`* __boolean__ |  |  | 
+| *`shareProcessNamespace`* __boolean__ |  |  | 
+| *`securityContext`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podsecuritycontextapplyconfiguration[$$PodSecurityContextApplyConfiguration$$]__ |  |  | 
+| *`imagePullSecrets`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-localobjectreferenceapplyconfiguration[$$LocalObjectReferenceApplyConfiguration$$] array__ |  |  | 
+| *`hostname`* __string__ |  |  | 
+| *`subdomain`* __string__ |  |  | 
+| *`affinity`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-affinityapplyconfiguration[$$AffinityApplyConfiguration$$]__ |  |  | 
+| *`schedulerName`* __string__ |  |  | 
+| *`tolerations`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-tolerationapplyconfiguration[$$TolerationApplyConfiguration$$] array__ |  |  | 
+| *`hostAliases`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-hostaliasapplyconfiguration[$$HostAliasApplyConfiguration$$] array__ |  |  | 
+| *`priorityClassName`* __string__ |  |  | 
+| *`priority`* __integer__ |  |  | 
+| *`dnsConfig`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-poddnsconfigapplyconfiguration[$$PodDNSConfigApplyConfiguration$$]__ |  |  | 
+| *`readinessGates`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podreadinessgateapplyconfiguration[$$PodReadinessGateApplyConfiguration$$] array__ |  |  | 
+| *`runtimeClassName`* __string__ |  |  | 
+| *`enableServiceLinks`* __boolean__ |  |  | 
+| *`preemptionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#preemptionpolicy-v1-core[$$PreemptionPolicy$$]__ |  |  | 
+| *`topologySpreadConstraints`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-topologyspreadconstraintapplyconfiguration[$$TopologySpreadConstraintApplyConfiguration$$] array__ |  |  | 
+| *`setHostnameAsFQDN`* __boolean__ |  |  | 
+| *`os`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podosapplyconfiguration[$$PodOSApplyConfiguration$$]__ |  |  | 
+| *`hostUsers`* __boolean__ |  |  | 
+| *`schedulingGates`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podschedulinggateapplyconfiguration[$$PodSchedulingGateApplyConfiguration$$] array__ |  |  | 
+| *`resourceClaims`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podresourceclaimapplyconfiguration[$$PodResourceClaimApplyConfiguration$$] array__ |  |  | 
+| *`resources`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-resourcerequirementsapplyconfiguration[$$ResourceRequirementsApplyConfiguration$$]__ |  |  | 
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate"]
