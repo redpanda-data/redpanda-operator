@@ -8,6 +8,16 @@ scope: Cluster
 webhook:
   enabled: true
 
+-- crd-installation --
+
+crds:
+  install: true
+
+-- crd-installation-experimental --
+
+crds:
+  experimental: true
+
 -- operator-namespaced-scoped-with-secuirty-context --
 
 podTemplate:

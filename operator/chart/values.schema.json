@@ -668,6 +668,18 @@
       },
       "type": "object"
     },
+    "crds": {
+      "additionalProperties": false,
+      "properties": {
+        "experimental": {
+          "type": "boolean"
+        },
+        "install": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "fullnameOverride": {
       "type": "string"
     },

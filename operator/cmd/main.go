@@ -18,6 +18,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
@@ -49,6 +50,7 @@ func init() {
 		version.Command(),
 		sidecar.Command(),
 		ready.Command(),
+		crd.Command(),
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())

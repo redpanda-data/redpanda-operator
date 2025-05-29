@@ -46,6 +46,7 @@ type PartialValues struct {
 	LivenessProbe      *corev1.Probe                 "json:\"livenessProbe,omitempty\""
 	ReadinessProbe     *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	Scope              *OperatorScope                "json:\"scope,omitempty\" jsonschema:\"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator.\""
+	CRDs               *PartialCRDs                  "json:\"crds,omitempty\""
 }
 
 type PartialImage struct {
@@ -82,6 +83,11 @@ type PartialServiceAccountConfig struct {
 
 type PartialMonitoringConfig struct {
 	Enabled *bool "json:\"enabled,omitempty\""
+}
+
+type PartialCRDs struct {
+	Install      *bool "json:\"install,omitempty\""
+	Experimental *bool "json:\"experimental,omitempty\""
 }
 
 type PartialPodTemplateSpec struct {

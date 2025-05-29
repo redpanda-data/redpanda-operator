@@ -89,14 +89,24 @@ func Redpanda() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("redpandas.cluster.redpanda.com"))
 }
 
-// Topic returns the Redpanda CustomResourceDefinition.
+// Topic returns the Topic CustomResourceDefinition.
 func Topic() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("topics.cluster.redpanda.com"))
 }
 
-// Topic returns the Redpanda CustomResourceDefinition.
+// User returns the User CustomResourceDefinition.
 func User() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("users.cluster.redpanda.com"))
+}
+
+// Schema returns the Schema CustomResourceDefinition.
+func Schema() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("schemas.cluster.redpanda.com"))
+}
+
+// NodePool returns the NodePool CustomResourceDefinition.
+func NodePool() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("nodepools.cluster.redpanda.com"))
 }
 
 func mustT[T any](r T, err error) T {

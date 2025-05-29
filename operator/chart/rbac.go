@@ -30,6 +30,14 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 		return nil
 	}
 
+	managerFiles := []string{
+		"files/rbac/leader-election.ClusterRole.yaml",
+		"files/rbac/v2-manager.ClusterRole.yaml",
+	}
+	if values.CRDs.Install || values.CRDs.Experimental {
+		managerFiles = append(managerFiles, "files/rbac/crd-installation.ClusterRole.yaml")
+	}
+
 	bundles := []RBACBundle{
 		{
 			Name:    Fullname(dot),
@@ -41,12 +49,9 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			},
 		},
 		{
-			Name:    Fullname(dot),
-			Enabled: values.Scope == Namespace,
-			RuleFiles: []string{
-				"files/rbac/leader-election.ClusterRole.yaml",
-				"files/rbac/v2-manager.ClusterRole.yaml",
-			},
+			Name:      Fullname(dot),
+			Enabled:   values.Scope == Namespace,
+			RuleFiles: managerFiles,
 		},
 		{
 			Name:    cleanForK8sWithSuffix(Fullname(dot), "additional-controllers"),
