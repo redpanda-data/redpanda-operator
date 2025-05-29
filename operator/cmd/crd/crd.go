@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"log"
 
-	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/spf13/cobra"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +25,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 )
 
 var (
@@ -47,9 +48,7 @@ var (
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;create;update;patch
 
 func Command() *cobra.Command {
-	var (
-		experimental bool
-	)
+	var experimental bool
 	cmd := &cobra.Command{
 		Use:   "crd",
 		Short: "Install CRDs into the cluster",
