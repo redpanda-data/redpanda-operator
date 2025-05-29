@@ -26,7 +26,7 @@ import (
 func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.CRDs.Install && !values.CRDs.Experimental {
+	if !values.CRDs.Enabled && !values.CRDs.Experimental {
 		return nil
 	}
 

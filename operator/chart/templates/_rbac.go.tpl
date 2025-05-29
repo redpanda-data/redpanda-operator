@@ -11,7 +11,7 @@
 {{- break -}}
 {{- end -}}
 {{- $managerFiles := (list "files/rbac/leader-election.ClusterRole.yaml" "files/rbac/v2-manager.ClusterRole.yaml") -}}
-{{- if (or $values.crds.install $values.crds.experimental) -}}
+{{- if (or $values.crds.enabled $values.crds.experimental) -}}
 {{- $managerFiles = (concat (default (list) $managerFiles) (list "files/rbac/crd-installation.ClusterRole.yaml")) -}}
 {{- end -}}
 {{- $bundles := (list (mustMergeOverwrite (dict "Enabled" false "RuleFiles" (coalesce nil) "Name" "") (dict "Name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "Enabled" (eq $values.scope "Cluster") "RuleFiles" (list "files/rbac/leader-election.ClusterRole.yaml" "files/rbac/pvcunbinder.ClusterRole.yaml" "files/rbac/v1-manager.ClusterRole.yaml"))) (mustMergeOverwrite (dict "Enabled" false "RuleFiles" (coalesce nil) "Name" "") (dict "Name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "Enabled" (eq $values.scope "Namespace") "RuleFiles" $managerFiles)) (mustMergeOverwrite (dict "Enabled" false "RuleFiles" (coalesce nil) "Name" "") (dict "Name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "additional-controllers")))) "r") "Enabled" (and (eq $values.scope "Namespace") $values.rbac.createAdditionalControllerCRs) "RuleFiles" (list "files/rbac/decommission.ClusterRole.yaml" "files/rbac/node-watcher.ClusterRole.yaml" "files/rbac/old-decommission.ClusterRole.yaml" "files/rbac/pvcunbinder.ClusterRole.yaml")))) -}}

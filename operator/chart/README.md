@@ -129,18 +129,18 @@ Flags to control CRD installation.
 **Default:**
 
 ```
-{"experimental":false,"install":false}
+{"enabled":false,"experimental":false}
 ```
+
+### [crds.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.enabled)
+
+Specifies whether to install stable CRDs
+
+**Default:** `false`
 
 ### [crds.experimental](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.experimental)
 
 Specifies whether to install experimental CRDs. If this is true both experimental and stable CRDs will be installed.
-
-**Default:** `false`
-
-### [crds.install](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.install)
-
-Specifies whether to install stable CRDs
 
 **Default:** `false`
 

@@ -86,7 +86,7 @@ serviceAccount:
 # -- Flags to control CRD installation.
 crds:
   # -- Specifies whether to install stable CRDs
-  install: false
+  enabled: false
   # -- Specifies whether to install experimental CRDs. If this is true both experimental and stable CRDs will be installed.
   experimental: false
 

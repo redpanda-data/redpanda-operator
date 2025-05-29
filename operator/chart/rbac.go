@@ -34,7 +34,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 		"files/rbac/leader-election.ClusterRole.yaml",
 		"files/rbac/v2-manager.ClusterRole.yaml",
 	}
-	if values.CRDs.Install || values.CRDs.Experimental {
+	if values.CRDs.Enabled || values.CRDs.Experimental {
 		managerFiles = append(managerFiles, "files/rbac/crd-installation.ClusterRole.yaml")
 	}
 

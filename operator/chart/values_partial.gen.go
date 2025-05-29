@@ -86,7 +86,7 @@ type PartialMonitoringConfig struct {
 }
 
 type PartialCRDs struct {
-	Install      *bool "json:\"install,omitempty\""
+	Enabled      *bool "json:\"enabled,omitempty\""
 	Experimental *bool "json:\"experimental,omitempty\""
 }
 

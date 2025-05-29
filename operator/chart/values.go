@@ -62,7 +62,7 @@ type Values struct {
 }
 
 type CRDs struct {
-	Install      bool `json:"install"`
+	Enabled      bool `json:"enabled"`
 	Experimental bool `json:"experimental"`
 }
 

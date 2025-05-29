@@ -671,10 +671,10 @@
     "crds": {
       "additionalProperties": false,
       "properties": {
-        "experimental": {
+        "enabled": {
           "type": "boolean"
         },
-        "install": {
+        "experimental": {
           "type": "boolean"
         }
       },

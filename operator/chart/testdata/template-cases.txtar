@@ -11,7 +11,7 @@ webhook:
 -- crd-installation --
 
 crds:
-  install: true
+  enabled: true
 
 -- crd-installation-experimental --
 
