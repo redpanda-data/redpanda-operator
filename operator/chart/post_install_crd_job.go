@@ -30,7 +30,7 @@ func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 		return nil
 	}
 
-	job := &batchv1.Job{
+	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "batch/v1",
 			Kind:       "Job",
@@ -67,8 +67,6 @@ func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 			},
 		},
 	}
-
-	return job
 }
 
 func crdJobContainers(dot *helmette.Dot) []corev1.Container {

@@ -71,7 +71,12 @@ func run(
 	ctx context.Context,
 	experimental bool,
 ) {
-	log.Print("Expanding bootstrap template file")
+	crdType := "stable"
+	if experimental {
+		crdType = "experimental"
+	}
+
+	log.Printf("Installing %s CRDs", crdType)
 
 	scheme := runtime.NewScheme()
 
