@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: The operator will try stripping off a layer of quotation from configuration values when interpreting numeric and boolean values. These may be accidentally introduced upstream of the CR, but where the intent is obvious we don't need to be strict about it.
+time: 2025-05-29T11:04:28.672769+01:00
