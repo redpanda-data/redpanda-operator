@@ -2643,6 +2643,7 @@ spec:
                           port:
                             description: Specifies the container port number for the
                               internal listener.
+                            format: int32
                             type: integer
                           tls:
                             description: Configures TLS settings for the internal
@@ -18954,6 +18955,7 @@ spec:
                       replicas:
                         description: Specifies the number of replicas to determine
                           the desired number of Pods (Redpanda brokers) in the StatefulSet.
+                        format: int32
                         type: integer
                       securityContext:
                         description: Sets a security context for the Pods to define
@@ -23481,6 +23483,7 @@ spec:
                           port:
                             description: Specifies the container port number for the
                               internal listener.
+                            format: int32
                             type: integer
                           tls:
                             description: Configures TLS settings for the internal
@@ -39792,6 +39795,7 @@ spec:
                       replicas:
                         description: Specifies the number of replicas to determine
                           the desired number of Pods (Redpanda brokers) in the StatefulSet.
+                        format: int32
                         type: integer
                       securityContext:
                         description: Sets a security context for the Pods to define

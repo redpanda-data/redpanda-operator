@@ -765,7 +765,7 @@ type Statefulset struct {
 	// Defines readiness probes to determine when a Pod is ready to handle traffic.
 	ReadinessProbe *ReadinessProbe `json:"readinessProbe,omitempty"`
 	// Specifies the number of replicas to determine the desired number of Pods (Redpanda brokers) in the StatefulSet.
-	Replicas *int `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Sets a security context for the Pods to define privilege and access control settings.
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 	// Defines the additional sidecar containers that run alongside the main Redpanda container in the Pod.
@@ -793,9 +793,7 @@ type PodTemplate struct {
 
 // PodSpecApplyConfiguration is a wrapper around
 // [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
-type PodSpecApplyConfiguration struct {
-	*applycorev1.PodSpecApplyConfiguration `json:",inline"`
-}
+type PodSpecApplyConfiguration applycorev1.PodSpecApplyConfiguration
 
 func (ac *PodSpecApplyConfiguration) DeepCopy() *PodSpecApplyConfiguration {
 	// For some inexplicable reason, apply configs don't have deepcopy
@@ -924,7 +922,7 @@ type Listeners struct {
 // RPC configures settings for the RPC API listeners.
 type RPC struct {
 	// Specifies the container port number for the internal listener.
-	Port *int `json:"port,omitempty"`
+	Port *int32 `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
 	TLS *ListenerTLS `json:"tls,omitempty"`
 }

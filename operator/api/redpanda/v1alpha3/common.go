@@ -23,6 +23,8 @@ type ClusterRef struct {
 	Name string `json:"name"`
 }
 
+type YAMLRepresentation string
+
 // ValueSource is a generic "value" type that permits sourcing the actual
 // (runtime) value from a variety of sources.
 // In most cases, this should always output a CEL expression that's resolved at runtime.
@@ -31,10 +33,16 @@ type ClusterRef struct {
 // - NodeConfig e.g. Dynamic advertised_host
 // - RPKConfig e.g. Runtime resolved listing of broker addresses via SRV records.
 type ValueSource struct {
-	Value           string                       `json:"value,omitempty"`
+	Value           *YAMLRepresentation          `json:"value,omitempty"`
 	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
 	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef,omitempty"`
-	Expr            Expr                         `json:"expr,omitempty"`
+
+	// TODO: Renable once support is added
+	// Expr            Expr                         `json:"expr,omitempty"`
+
+	// TODO this is just to make conversions between ClusterConfigValue and this type work for now.
+	// Ideally we'd shove things into the Expr field and parse it as need be.
+	UseRawValue bool `json:"useRawValue,omitempty"`
 }
 
 // CEL Expr for more complex values
@@ -43,8 +51,25 @@ type ValueSource struct {
 // - addresses: Expr(srv_address('tcp', 'admin', 'redpanda.redpanda.cluster.svc.cluster.local'))
 type Expr string
 
+type ObjectMeta struct {
+	// Labels is a map of string keys and values that can be used to organize and categorize
+	// (scope and select) objects. May match selectors of replication controllers
+	// and services.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,11,rep,name=labels"`
+
+	// Annotations is an unstructured key value map stored with a resource that may be
+	// set by external tools to store and retrieve arbitrary metadata. They are not
+	// queryable and should be preserved when modifying objects.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty" protobuf:"bytes,12,rep,name=annotations"`
+}
+
 type PodTemplate struct {
-	*applycorev1.PodApplyConfiguration `json:",inline"`
+	ObjectMeta `json:"metadata,omitempty"`
+	Spec       *applycorev1.PodSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
 func (t *PodTemplate) DeepCopy() *PodTemplate {

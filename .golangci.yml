@@ -20,7 +20,7 @@ linters:
   default: none
   enable:
   - depguard
-#  - errcheck
+  - exhaustruct
   - gosec
   - govet
   - importas
@@ -51,6 +51,17 @@ linters:
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
+
+    exhaustruct:
+      # The default is to include all structs. We're currently only leveraging
+      # this linter for CRDs conversions and therefore limit it to packages
+      # containing CRDs that also have conversion routines.
+      # See conversions for other filters on this linter as we don't want this
+      # to apply codebase wide.
+      include:
+      - '^github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3\..*'
+      - '^github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2\..*'
+      exclude: []
 
     gosec:
       excludes:
@@ -104,3 +115,9 @@ linters:
       - gosec
       - wrapcheck
       path: '(.+)_test\.go'
+    # We're primarily concerned about conversion routines supplying a value for each possible field.
+    # The linter doesn't support selective enablement so we're simply ignoring
+    # all reports outside of conversion code.
+    - linters:
+      - exhaustruct
+      path-except: '_conversion\.go'

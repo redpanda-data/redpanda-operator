@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-var _ conversion.Hub = &Redpanda{}
+var _ conversion.Hub = (*Redpanda)(nil)
 
 func (*Redpanda) Hub() {}
 

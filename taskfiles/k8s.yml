@@ -8,9 +8,6 @@ tasks:
     - generate-controller-code
     - generate-manifests
     cmds:
-      - task: generate:crd-docs
-      - task: generate:statuses
-
       # For each controller (or really itemizable RBAC source), generate an
       # isolated rbac bundle. These are used by the helm charts to check
       # whether or not permissions are correctly in sync. As we allow VERY
@@ -127,6 +124,12 @@ tasks:
         ./api/redpanda/v1alpha3
       - find ./api/applyconfiguration/redpanda/v1alpha3 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+
+      # These need to happen after running controller-gen as out of
+      # sync deepcopy implementations could cause them to fail.
+      - task: generate:crd-docs
+      - task: generate:statuses
+
 
   generate:crd-docs:
     desc: Generates an example ascii doc from our crd-ref-docs configuration.
