@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package crd contains a pre-install job that installs our CRDs into
+// Package crd contains a post-install/post-upgrade job that installs our CRDs into
 // a cluster.
 package crd
 
