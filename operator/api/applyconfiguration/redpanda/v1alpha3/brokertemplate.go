@@ -20,12 +20,10 @@ import (
 type BrokerTemplateApplyConfiguration struct {
 	Image                     *string                                  `json:"image,omitempty"`
 	Resources                 *v1.ResourceRequirements                 `json:"resources,omitempty"`
-	Tuning                    []string                                 `json:"tuning,omitempty"`
 	NodeConfig                map[string]ValueSourceApplyConfiguration `json:"nodeConfig,omitempty"`
 	RPKConfig                 map[string]ValueSourceApplyConfiguration `json:"rpkConfig,omitempty"`
 	SetDataDirectoryOwnership *bool                                    `json:"setDataDirectoryOwnership,omitempty"`
 	ValidateFilesystem        *bool                                    `json:"validateFilesystem,omitempty"`
-	VolumeClaimTemplates      []v1.PersistentVolumeClaim               `json:"volumeClaimTemplates,omitempty"`
 	PodTemplate               *PodTemplateApplyConfiguration           `json:"podTemplate,omitempty"`
 }
 
@@ -48,16 +46,6 @@ func (b *BrokerTemplateApplyConfiguration) WithImage(value string) *BrokerTempla
 // If called multiple times, the Resources field is set to the value of the last call.
 func (b *BrokerTemplateApplyConfiguration) WithResources(value v1.ResourceRequirements) *BrokerTemplateApplyConfiguration {
 	b.Resources = &value
-	return b
-}
-
-// WithTuning adds the given value to the Tuning field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Tuning field.
-func (b *BrokerTemplateApplyConfiguration) WithTuning(values ...string) *BrokerTemplateApplyConfiguration {
-	for i := range values {
-		b.Tuning = append(b.Tuning, values[i])
-	}
 	return b
 }
 
@@ -102,16 +90,6 @@ func (b *BrokerTemplateApplyConfiguration) WithSetDataDirectoryOwnership(value b
 // If called multiple times, the ValidateFilesystem field is set to the value of the last call.
 func (b *BrokerTemplateApplyConfiguration) WithValidateFilesystem(value bool) *BrokerTemplateApplyConfiguration {
 	b.ValidateFilesystem = &value
-	return b
-}
-
-// WithVolumeClaimTemplates adds the given value to the VolumeClaimTemplates field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the VolumeClaimTemplates field.
-func (b *BrokerTemplateApplyConfiguration) WithVolumeClaimTemplates(values ...v1.PersistentVolumeClaim) *BrokerTemplateApplyConfiguration {
-	for i := range values {
-		b.VolumeClaimTemplates = append(b.VolumeClaimTemplates, values[i])
-	}
 	return b
 }
 

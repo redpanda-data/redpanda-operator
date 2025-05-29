@@ -2177,6 +2177,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -2411,6 +2413,8 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -2643,6 +2647,7 @@ spec:
                           port:
                             description: Specifies the container port number for the
                               internal listener.
+                            format: int32
                             type: integer
                           tls:
                             description: Configures TLS settings for the internal
@@ -2728,6 +2733,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -18954,6 +18961,7 @@ spec:
                       replicas:
                         description: Specifies the number of replicas to determine
                           the desired number of Pods (Redpanda brokers) in the StatefulSet.
+                        format: int32
                         type: integer
                       securityContext:
                         description: Sets a security context for the Pods to define
@@ -23015,6 +23023,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -23249,6 +23259,8 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -23481,6 +23493,7 @@ spec:
                           port:
                             description: Specifies the container port number for the
                               internal listener.
+                            format: int32
                             type: integer
                           tls:
                             description: Configures TLS settings for the internal
@@ -23566,6 +23579,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -39792,6 +39807,7 @@ spec:
                       replicas:
                         description: Specifies the number of replicas to determine
                           the desired number of Pods (Redpanda brokers) in the StatefulSet.
+                        format: int32
                         type: integer
                       securityContext:
                         description: Sets a security context for the Pods to define

@@ -439,14 +439,12 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
 		Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
-			PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
-				Containers: []applycorev1.ContainerApplyConfiguration{{
-					Name: ptr.To("redpanda"),
-					Env: []applycorev1.EnvVarApplyConfiguration{
-						*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
-					},
-				}},
-			},
+			Containers: []applycorev1.ContainerApplyConfiguration{{
+				Name: ptr.To("redpanda"),
+				Env: []applycorev1.EnvVarApplyConfiguration{
+					*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+				},
+			}},
 		},
 	}
 	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
@@ -580,14 +578,12 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		if !c.license {
 			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
 				Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
-					PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
-						Containers: []applycorev1.ContainerApplyConfiguration{{
-							Name: ptr.To("redpanda"),
-							Env: []applycorev1.EnvVarApplyConfiguration{
-								*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
-							},
-						}},
-					},
+					Containers: []applycorev1.ContainerApplyConfiguration{{
+						Name: ptr.To("redpanda"),
+						Env: []applycorev1.EnvVarApplyConfiguration{
+							*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+						},
+					}},
 				},
 			}
 		}
@@ -791,7 +787,7 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
 				},
 				Statefulset: &redpandav1alpha2.Statefulset{
-					Replicas: ptr.To(1), // Speed up tests ever so slightly.
+					Replicas: ptr.To(int32(1)), // Speed up tests ever so slightly.
 					PodAntiAffinity: &redpandav1alpha2.PodAntiAffinity{
 						// Disable the default "hard" affinity so we can
 						// schedule multiple redpanda Pods on a single
