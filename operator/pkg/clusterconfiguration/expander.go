@@ -14,6 +14,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ParseRepresentation still has to handle the situation where non-string values are passed
+// through to configuration in string form.
+// We try to strip a single layer of quotes if parsing the raw representation fails.
 func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) (any, error) {
 	if metadata.Nullable && repr == "null" {
 		return nil, nil
@@ -25,11 +28,26 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 		err := yaml.Unmarshal([]byte(repr), &s)
 		return s, err
 	case "number":
-		return strconv.ParseFloat(strings.Trim(repr, "\n"), 64)
+		repr = strings.Trim(repr, "\n")
+		val, err := strconv.ParseFloat(repr, 64)
+		if err == nil {
+			return val, err
+		}
+		return strconv.ParseFloat(unquote(repr), 64)
 	case "integer":
-		return strconv.ParseInt(strings.Trim(repr, "\n"), 10, 64)
+		repr = strings.Trim(repr, "\n")
+		val, err := strconv.ParseInt(repr, 10, 64)
+		if err == nil {
+			return val, err
+		}
+		return strconv.ParseInt(unquote(repr), 10, 64)
 	case "boolean":
-		return strconv.ParseBool(strings.Trim(repr, "\n"))
+		repr = strings.Trim(repr, "\n")
+		val, err := strconv.ParseBool(repr)
+		if err == nil {
+			return val, err
+		}
+		return strconv.ParseBool(unquote(repr))
 	case "array":
 		return convertStringToStringArray(repr)
 	default:
@@ -41,6 +59,10 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 		// Strict alternative:
 		// return nil, fmt.Errorf("unrecognised configuration type: %s", metadata.Type)
 	}
+}
+
+func unquote(repr string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(repr, `"`), `"`)
 }
 
 // convertStringToStringArray duplicates the v1 string->[string] processing
