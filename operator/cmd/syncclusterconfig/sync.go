@@ -298,7 +298,10 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	}
 	logger := log.FromContext(ctx)
 
-	s.maybeMergeSuperusers(ctx, desired, usersTXT)
+	err := s.maybeMergeSuperusers(ctx, desired, usersTXT)
+	if err != nil {
+		return nil, err
+	}
 
 	current, err := s.Client.Config(ctx, false)
 	if err != nil {
@@ -397,7 +400,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	}, nil
 }
 
-func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, usersTXT map[string][]byte) {
+func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, usersTXT map[string][]byte) error {
 	logger := log.FromContext(ctx)
 
 	if len(usersTXT) == 0 {
@@ -413,16 +416,17 @@ func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any
 	if !ok {
 		// we have no superusers configuration, so don't do anything
 		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
-		return
+		return nil
 	}
 
-	superusersAny, ok := superusersConfig.([]any)
+	superusersAny, ok := superusersConfig.([]string)
 	if !ok {
 		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
-		return
+		return fmt.Errorf("expected superusers entry to be an array of strings, got %T", superusersConfig)
 	}
 
 	config[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
+	return nil
 }
 
 // hashConfigsThatNeedRestart returns a hash of the config that needs the
