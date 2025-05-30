@@ -921,66 +921,6 @@ type Listeners struct {
 	SchemaRegistry *SchemaRegistry `json:"schemaRegistry,omitempty"`
 }
 
-// ExternalListener configures settings for the external listeners.
-type ExternalListener struct {
-	Enabled *bool `json:"enabled,omitempty"`
-	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
-	// Specifies the container port number for the external listener.
-	Port *int `json:"port,omitempty"`
-	// Configures TLS settings for the external listener.
-	TLS *ListenerTLS `json:"tls,omitempty"`
-	// Specifies the network port that the external Service listens on.
-	AdvertisedPorts []int `json:"advertisedPorts,omitempty"`
-	// Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number.
-	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
-
-	NodePort *int32 `json:"nodePort,omitempty"`
-}
-
-// Admin configures settings for the Admin API listeners.
-type Admin struct {
-	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
-	// Specifies the container port number for the internal listener.
-	Port *int `json:"port,omitempty"`
-	// Configures TLS settings for the internal listener.
-	TLS         *ListenerTLS `json:"tls,omitempty"`
-	AppProtocol *string      `json:"appProtocol,omitempty"`
-}
-
-// HTTP configures settings for the HTTP Proxy listeners.
-type HTTP struct {
-	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
-	// Specifies whether the HTTP Proxy is enabled.
-	Enabled *bool `json:"enabled,omitempty"`
-	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
-	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
-	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
-	// Specifies the container port number for the internal listener.
-	Port *int `json:"port,omitempty"`
-	// Configures TLS settings for the internal listener.
-	TLS *ListenerTLS `json:"tls,omitempty"`
-	// Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number.
-	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
-}
-
-// Kafka configures settings for the Kafka API listeners.
-type Kafka struct {
-	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
-	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
-	// Specifies the container port number for the internal listener.
-	Port *int `json:"port,omitempty"`
-	// Configures TLS settings for the internal listener.
-	TLS *ListenerTLS `json:"tls,omitempty"`
-	// Specifies the template used for generating the advertised addresses of Services. This field accepts a string template that dynamically constructs Service addresses based on various parameters such as Service name and port number.
-	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
-}
-
 // RPC configures settings for the RPC API listeners.
 type RPC struct {
 	// Specifies the container port number for the internal listener.
@@ -989,20 +929,71 @@ type RPC struct {
 	TLS *ListenerTLS `json:"tls,omitempty"`
 }
 
-// SchemaRegistry configures settings for the Schema Registry listeners.
-type SchemaRegistry struct {
-	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
-	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
-	// Specifies whether the Schema Registry is enabled.
+type Listener struct {
+	// Specifies whether this Listener is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Defines settings for the external listener.
-	External map[string]*ExternalListener `json:"external,omitempty"`
-	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
-	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
-	// Specifies the container port number for the internal listener.
-	Port *int `json:"port,omitempty"`
+	// Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`.
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	// Specifies the container port number for this listener.
+	Port *int32 `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
 	TLS *ListenerTLS `json:"tls,omitempty"`
+	// Specifies the template used for generating the advertised addresses of
+	// Services. This field accepts a string template that dynamically
+	// constructs Service addresses based on various parameters such as Service
+	// name and port number.
+	// For historical backwards compatibility, this field is present on both
+	// internal and external listeners. However, it is ignored when specified
+	// on internal listeners.
+	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
+}
+
+// ExternalListener configures settings for the external listeners.
+type ExternalListener struct {
+	Listener `json:",inline"`
+
+	// Specifies the network port that the external Service listens on.
+	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
+	NodePort        *int32  `json:"nodePort,omitempty"`
+}
+
+// Admin configures settings for the Admin API listeners.
+type Admin struct {
+	Listener `json:",inline"`
+
+	// Defines settings for the external listeners.
+	External    map[string]*ExternalListener `json:"external,omitempty"`
+	AppProtocol *string                      `json:"appProtocol,omitempty"`
+}
+
+// HTTP configures settings for the HTTP Proxy listeners.
+type HTTP struct {
+	Listener `json:",inline"`
+
+	// Defines settings for the external listeners.
+	External map[string]*ExternalListener `json:"external,omitempty"`
+	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+	// deprecated and not respected.
+	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
+}
+
+// Kafka configures settings for the Kafka API listeners.
+type Kafka struct {
+	Listener `json:",inline"`
+
+	// Defines settings for the external listeners.
+	External map[string]*ExternalListener `json:"external,omitempty"`
+}
+
+// SchemaRegistry configures settings for the Schema Registry listeners.
+type SchemaRegistry struct {
+	Listener `json:",inline"`
+
+	// Defines settings for the external listeners.
+	External map[string]*ExternalListener `json:"external,omitempty"`
+	// Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+	// deprecated and not respected.
+	KafkaEndpoint *string `json:"kafkaEndpoint,omitempty"`
 }
 
 // Config configures Redpanda config properties supported by Redpanda that may not work correctly in a Kubernetes cluster. Changing these values from the defaults comes with some risk. Use these properties to customize various Redpanda configurations that are not available in the `RedpandaClusterSpec`. These values have no impact on the configuration or behavior of the Kubernetes objects deployed by Helm, and therefore should not be modified for the purpose of configuring those objects. Instead, these settings get passed directly to the Redpanda binary at startup.

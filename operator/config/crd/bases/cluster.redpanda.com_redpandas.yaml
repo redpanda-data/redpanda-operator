@@ -1948,6 +1948,13 @@ spec:
                         properties:
                           appProtocol:
                             type: string
+                          authenticationMethod:
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
+                            type: string
+                          enabled:
+                            description: Specifies whether this Listener is enabled.
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -1957,31 +1964,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -2062,12 +2076,23 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
@@ -2153,11 +2178,11 @@ spec:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
                           enabled:
-                            description: Specifies whether the HTTP Proxy is enabled.
+                            description: Specifies whether this Listener is enabled.
                             type: boolean
                           external:
                             additionalProperties:
@@ -2168,31 +2193,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -2273,22 +2305,27 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           kafkaEndpoint:
-                            description: Configures the listener to use for HTTP connections.
-                              For example `default` for the internal listener.
+                            description: |-
+                              Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+                              deprecated and not respected.
                             type: string
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
                           prefixTemplate:
-                            description: Specifies the template used for generating
-                              the advertised addresses of Services. This field accepts
-                              a string template that dynamically constructs Service
-                              addresses based on various parameters such as Service
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
                               name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
                             type: string
                           tls:
                             description: Configures TLS settings for the internal
@@ -2375,9 +2412,12 @@ spec:
                         description: Configures settings for the Kafka API listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
+                          enabled:
+                            description: Specifies whether this Listener is enabled.
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -2387,31 +2427,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -2492,18 +2539,22 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
                           prefixTemplate:
-                            description: Specifies the template used for generating
-                              the advertised addresses of Services. This field accepts
-                              a string template that dynamically constructs Service
-                              addresses based on various parameters such as Service
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
                               name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
                             type: string
                           tls:
                             description: Configures TLS settings for the internal
@@ -2678,12 +2729,11 @@ spec:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
                           enabled:
-                            description: Specifies whether the Schema Registry is
-                              enabled.
+                            description: Specifies whether this Listener is enabled.
                             type: boolean
                           external:
                             additionalProperties:
@@ -2694,31 +2744,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -2799,16 +2856,28 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           kafkaEndpoint:
-                            description: Configures the listener to use for HTTP connections.
-                              For example `default` for the internal listener.
+                            description: |-
+                              Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+                              deprecated and not respected.
                             type: string
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
@@ -22717,6 +22786,13 @@ spec:
                         properties:
                           appProtocol:
                             type: string
+                          authenticationMethod:
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
+                            type: string
+                          enabled:
+                            description: Specifies whether this Listener is enabled.
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -22726,31 +22802,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -22831,12 +22914,23 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
@@ -22922,11 +23016,11 @@ spec:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
                           enabled:
-                            description: Specifies whether the HTTP Proxy is enabled.
+                            description: Specifies whether this Listener is enabled.
                             type: boolean
                           external:
                             additionalProperties:
@@ -22937,31 +23031,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -23042,22 +23143,27 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           kafkaEndpoint:
-                            description: Configures the listener to use for HTTP connections.
-                              For example `default` for the internal listener.
+                            description: |-
+                              Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+                              deprecated and not respected.
                             type: string
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
                           prefixTemplate:
-                            description: Specifies the template used for generating
-                              the advertised addresses of Services. This field accepts
-                              a string template that dynamically constructs Service
-                              addresses based on various parameters such as Service
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
                               name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
                             type: string
                           tls:
                             description: Configures TLS settings for the internal
@@ -23144,9 +23250,12 @@ spec:
                         description: Configures settings for the Kafka API listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
+                          enabled:
+                            description: Specifies whether this Listener is enabled.
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -23156,31 +23265,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -23261,18 +23377,22 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
                           prefixTemplate:
-                            description: Specifies the template used for generating
-                              the advertised addresses of Services. This field accepts
-                              a string template that dynamically constructs Service
-                              addresses based on various parameters such as Service
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
                               name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
                             type: string
                           tls:
                             description: Configures TLS settings for the internal
@@ -23447,12 +23567,11 @@ spec:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
                           authenticationMethod:
-                            description: Specifies the authentication method for the
-                              external listener. For example, 'mtls_identity' or `sasl`.
+                            description: Specifies the authentication method for this
+                              listener. For example, 'mtls_identity', `sasl` or `http_basic`.
                             type: string
                           enabled:
-                            description: Specifies whether the Schema Registry is
-                              enabled.
+                            description: Specifies whether this Listener is enabled.
                             type: boolean
                           external:
                             additionalProperties:
@@ -23463,31 +23582,38 @@ spec:
                                   description: Specifies the network port that the
                                     external Service listens on.
                                   items:
+                                    format: int32
                                     type: integer
                                   type: array
                                 authenticationMethod:
                                   description: Specifies the authentication method
-                                    for the external listener. For example, 'mtls_identity'
-                                    or `sasl`.
+                                    for this listener. For example, 'mtls_identity',
+                                    `sasl` or `http_basic`.
                                   type: string
                                 enabled:
+                                  description: Specifies whether this Listener is
+                                    enabled.
                                   type: boolean
                                 nodePort:
                                   format: int32
                                   type: integer
                                 port:
                                   description: Specifies the container port number
-                                    for the external listener.
+                                    for this listener.
+                                  format: int32
                                   type: integer
                                 prefixTemplate:
-                                  description: Specifies the template used for generating
-                                    the advertised addresses of Services. This field
-                                    accepts a string template that dynamically constructs
-                                    Service addresses based on various parameters
-                                    such as Service name and port number.
+                                  description: |-
+                                    Specifies the template used for generating the advertised addresses of
+                                    Services. This field accepts a string template that dynamically
+                                    constructs Service addresses based on various parameters such as Service
+                                    name and port number.
+                                    For historical backwards compatibility, this field is present on both
+                                    internal and external listeners. However, it is ignored when specified
+                                    on internal listeners.
                                   type: string
                                 tls:
-                                  description: Configures TLS settings for the external
+                                  description: Configures TLS settings for the internal
                                     listener.
                                   properties:
                                     cert:
@@ -23568,16 +23694,28 @@ spec:
                                       type: object
                                   type: object
                               type: object
-                            description: Defines settings for the external listener.
+                            description: Defines settings for the external listeners.
                             type: object
                           kafkaEndpoint:
-                            description: Configures the listener to use for HTTP connections.
-                              For example `default` for the internal listener.
+                            description: |-
+                              Configures the listener to use for HTTP connections. For example `default` for the internal listener.
+                              deprecated and not respected.
                             type: string
                           port:
-                            description: Specifies the container port number for the
-                              internal listener.
+                            description: Specifies the container port number for this
+                              listener.
+                            format: int32
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                              For historical backwards compatibility, this field is present on both
+                              internal and external listeners. However, it is ignored when specified
+                              on internal listeners.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
