@@ -90,15 +90,7 @@ func TestEnsureConfigMap(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(context.TODO(), &secret))
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				&tc.cluster,
-				"cluster.local",
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, &tc.cluster, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Namespace: "test", Name: "test"}, TestBrokerTLSConfigProvider{})
 			require.NoError(t, err)
 			cfgRes := resources.NewConfigMap(
 				c,
@@ -257,15 +249,7 @@ func TestMultiExternalListenersConfigMap(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(ctx, &secret))
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				&tc.cluster,
-				"cluster.local",
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, &tc.cluster, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Namespace: "test", Name: "test"}, TestBrokerTLSConfigProvider{})
 			require.NoError(t, err)
 			cfgRes := resources.NewConfigMap(
 				c,
@@ -368,15 +352,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 				},
 			}
 			require.NoError(t, c.Create(context.TODO(), &secret))
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				panda,
-				"cluster.local",
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, panda, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Namespace: "test", Name: "test"}, TestBrokerTLSConfigProvider{})
 			require.NoError(t, err)
 			cfgRes := resources.NewConfigMap(
 				c,
@@ -527,15 +503,7 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 				},
 			}
 
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				p,
-				tt.clusterFQDN,
-				types.NamespacedName{Namespace: "namespace", Name: "internal"},
-				types.NamespacedName{Namespace: "namespace", Name: "external"},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, p, tt.clusterFQDN, types.NamespacedName{Namespace: "namespace", Name: "internal"}, types.NamespacedName{Namespace: "namespace", Name: "external"}, types.NamespacedName{Namespace: "namespace", Name: "rpk"}, TestBrokerTLSConfigProvider{})
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -577,15 +545,7 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 		},
 	}
 	require.NoError(t, c.Create(context.TODO(), &secret))
-	cfg, err := resources.CreateConfiguration(context.TODO(),
-		c,
-		nil,
-		panda,
-		"cluster.local",
-		types.NamespacedName{Namespace: "namespace", Name: "internal"},
-		types.NamespacedName{Namespace: "namespace", Name: "external"},
-		TestBrokerTLSConfigProvider{},
-	)
+	cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, panda, "cluster.local", types.NamespacedName{Namespace: "namespace", Name: "internal"}, types.NamespacedName{Namespace: "namespace", Name: "external"}, types.NamespacedName{Namespace: "namespace", Name: "rpk"}, TestBrokerTLSConfigProvider{})
 	require.NoError(t, err)
 	cfgRes := resources.NewConfigMap(
 		c,
@@ -617,5 +577,23 @@ func (TestBrokerTLSConfigProvider) KafkaClientBrokerTLS(mountPoints *resourcetyp
 		CertFile:       "/etc/tls/certs/ca/tls.crt",
 		TruststoreFile: "/etc/tls/certs/ca.crt",
 		Enabled:        true,
+	}
+}
+
+func (p TestBrokerTLSConfigProvider) AdminAPIClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
+	}
+}
+
+func (p TestBrokerTLSConfigProvider) SchemaRegistryClientTLS(mountPoints *resourcetypes.TLSMountPoints) *config.TLS {
+	return &config.TLS{
+		InsecureSkipVerify: false,
+		KeyFile:            "/etc/tls/certs/ca/tls.key",
+		CertFile:           "/etc/tls/certs/ca/tls.crt",
+		TruststoreFile:     "/etc/tls/certs/ca.crt",
 	}
 }

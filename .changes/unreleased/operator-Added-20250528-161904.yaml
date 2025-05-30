@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add rpk profile to default home location in official Redpanda container. With that change any command in rpk that reaches Kafka, Admin API or Schema registry listener should just work.
+time: 2025-05-28T16:19:04.508051+02:00

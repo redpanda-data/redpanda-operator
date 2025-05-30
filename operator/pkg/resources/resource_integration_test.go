@@ -95,15 +95,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 	err := c.Create(context.Background(), cluster)
 	require.NoError(t, err)
 
-	cfg, err := res.CreateConfiguration(context.TODO(),
-		c,
-		nil,
-		cluster,
-		"cluster.local",
-		types.NamespacedName{Name: "test", Namespace: "test"},
-		types.NamespacedName{Name: "test", Namespace: "test"},
-		TestBrokerTLSConfigProvider{},
-	)
+	cfg, err := res.CreateConfiguration(context.TODO(), c, nil, cluster, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, TestBrokerTLSConfigProvider{})
 	require.NoError(t, err)
 	sts := res.NewStatefulSet(
 		c,
@@ -158,15 +150,7 @@ func TestEnsure_ConfigMap(t *testing.T) {
 	mustCfgAndCm := func() *res.ConfigMapResource {
 		// CombinedCfg is immutable once it's been templated,
 		// so we have to create new values here.
-		cfg, err := res.CreateConfiguration(context.TODO(),
-			c,
-			nil,
-			cluster,
-			"cluster.local",
-			types.NamespacedName{Name: "test", Namespace: "test"},
-			types.NamespacedName{Name: "test", Namespace: "test"},
-			TestBrokerTLSConfigProvider{},
-		)
+		cfg, err := res.CreateConfiguration(context.TODO(), c, nil, cluster, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Namespace: "namespace", Name: "test"}, TestBrokerTLSConfigProvider{})
 		require.NoError(t, err)
 		cm := res.NewConfigMap(
 			c,

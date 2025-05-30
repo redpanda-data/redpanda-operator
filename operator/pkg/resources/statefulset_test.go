@@ -160,15 +160,7 @@ func TestEnsure(t *testing.T) {
 				return np.Name == tt.nodePoolName
 			})
 			assert.NotEqual(t, -1, npIndex, "could not find nodePool")
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				tt.pandaCluster,
-				"cluster.local",
-				types.NamespacedName{},
-				types.NamespacedName{},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, tt.pandaCluster, "cluster.local", types.NamespacedName{}, types.NamespacedName{}, types.NamespacedName{}, TestBrokerTLSConfigProvider{})
 			require.NoError(t, err)
 			sts := resources.NewStatefulSet(
 				c,
@@ -659,15 +651,7 @@ func TestCurrentVersion(t *testing.T) {
 				pod.Labels = labels.ForCluster(cluster).WithNodePool(cluster.Spec.NodePools[0].Name)
 				assert.NoError(t, c.Create(context.TODO(), &pod))
 			}
-			cfg, err := resources.CreateConfiguration(context.TODO(),
-				c,
-				nil,
-				cluster,
-				"cluster.local",
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				types.NamespacedName{Name: "test", Namespace: "test"},
-				TestBrokerTLSConfigProvider{},
-			)
+			cfg, err := resources.CreateConfiguration(context.TODO(), c, nil, cluster, "cluster.local", types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, types.NamespacedName{Name: "test", Namespace: "test"}, TestBrokerTLSConfigProvider{})
 			require.NoError(t, err)
 			sts := resources.NewStatefulSet(c, cluster, scheme.Scheme,
 				"cluster.local",
