@@ -58,6 +58,12 @@ type Values struct {
 	LivenessProbe      *corev1.Probe                 `json:"livenessProbe,omitempty"`
 	ReadinessProbe     *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	Scope              OperatorScope                 `json:"scope" jsonschema:"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator."`
+	CRDs               CRDs                          `json:"crds"`
+}
+
+type CRDs struct {
+	Enabled      bool `json:"enabled"`
+	Experimental bool `json:"experimental"`
 }
 
 type PodTemplateSpec struct {

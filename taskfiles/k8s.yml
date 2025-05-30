@@ -36,6 +36,8 @@ tasks:
           PATH: ./cmd/sidecar
         - NAME: leader-election
           PATH: ./cmd/run
+        - NAME: crd-installation
+          PATH: ./cmd/crd
         cmd: |
           controller-gen \
             object:headerFile="../licenses/boilerplate.go.txt" \
@@ -70,6 +72,7 @@ tasks:
           ./config/rbac/itemized/rack-awareness.yaml \
           ./config/rbac/itemized/rpk-debug-bundle.yaml \
           ./config/rbac/itemized/sidecar.yaml \
+          ./config/rbac/itemized/crd-installation.yaml \
           ./config/rbac/itemized/v1-manager.yaml \
           ./config/rbac/itemized/v2-manager.yaml
 

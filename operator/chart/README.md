@@ -122,6 +122,28 @@ Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
 
+### [crds](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds)
+
+Flags to control CRD installation.
+
+**Default:**
+
+```
+{"enabled":false,"experimental":false}
+```
+
+### [crds.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.enabled)
+
+Specifies whether to install stable CRDs
+
+**Default:** `false`
+
+### [crds.experimental](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.experimental)
+
+Specifies whether to install experimental CRDs. If this is true both experimental and stable CRDs will be installed.
+
+**Default:** `false`
+
 ### [fullnameOverride](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=fullnameOverride)
 
 Overrides the `redpanda-operator.fullname` template.
