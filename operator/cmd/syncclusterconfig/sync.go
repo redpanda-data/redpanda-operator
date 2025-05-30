@@ -33,7 +33,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	rpkadminapi "github.com/redpanda-data/redpanda/src/go/rpk/pkg/adminapi"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
@@ -231,21 +230,6 @@ func normalizeSuperusers(entries []string) []string {
 	return sorted
 }
 
-func mapConvertibleTo[T any](logger logr.Logger, array []any) []T {
-	var v T
-
-	converted := []T{}
-	for _, value := range array {
-		if cast, ok := value.(T); ok {
-			converted = append(converted, cast)
-		} else {
-			logger.Info("Unable to cast value from %T to %T, skipping.", value, v)
-		}
-	}
-
-	return converted
-}
-
 type SyncerMode int
 
 const (
@@ -402,6 +386,7 @@ func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any
 
 	if len(usersTXT) == 0 {
 		logger.Info("usersTXT not specified or empty. Skipping superusers merge.")
+		return
 	}
 
 	superusers := []string{}
@@ -416,13 +401,24 @@ func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any
 		return
 	}
 
-	superusersAny, ok := superusersConfig.([]any)
-	if !ok {
-		logger.Info(fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
+	switch su := superusersConfig.(type) {
+	case []string:
+		superusers = append(superusers, su...)
+	case []any:
+		for _, s := range su {
+			if cast, ok := s.(string); ok {
+				superusers = append(superusers, cast)
+			} else {
+				logger.Info("Unable to cast value from %T to string, skipping.", s)
+			}
+		}
+	default:
+		err := fmt.Errorf("expected superusers entry to be an array of strings, got %T", superusersConfig)
+		logger.Error(err, fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
 		return
 	}
 
-	config[superusersEntry] = normalizeSuperusers(append(superusers, mapConvertibleTo[string](logger, superusersAny)...))
+	config[superusersEntry] = normalizeSuperusers(superusers)
 }
 
 // hashConfigsThatNeedRestart returns a hash of the config that needs the
