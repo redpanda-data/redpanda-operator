@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/google/cel-go/cel"
@@ -188,6 +189,14 @@ func fieldByNameOrJSON(v reflect.Value, name string) (reflect.Value, *reflect.Va
 		// Make a new zero entry
 		zero := reflect.New(v.Type().Elem())
 		return zero.Elem(), &v
+	case reflect.Slice, reflect.Array:
+		idx, err := strconv.ParseInt(name, 10, 64)
+		if err == nil {
+			return v.Index(int(idx)), nil
+		}
+	case reflect.Interface:
+		// Work out what the unterlying thing is and use that
+		return fieldByNameOrJSON(v.Elem(), name)
 	default:
 		// The user's specified a path to a structure element we can't handle.
 		// Common causes here include using `redpanda.` prefixes on clusterConfiguration.
