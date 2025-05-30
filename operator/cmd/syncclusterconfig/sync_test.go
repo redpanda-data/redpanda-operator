@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
@@ -337,4 +339,48 @@ func requireJSONEq[T any](t *testing.T, expected, actual T) {
 	require.NoError(t, err)
 
 	require.JSONEq(t, string(expectedBytes), string(actualBytes))
+}
+
+func TestSyncSuperusers(t *testing.T) {
+	// Check that the syncer works with alternative values for config["superusers"]
+	s := Syncer{}
+
+	for _, tc := range []struct {
+		name        string
+		config      map[string]any
+		suTxt       string
+		expectArray bool
+	}{
+		{
+			name:   "no superusers",
+			config: map[string]any{},
+			suTxt:  "a::\nb::",
+			// TODO: this should probably insert `a` and `b` as superusers; we don't hit this in v2 at present.
+		},
+		{
+			name:        "[]any superusers",
+			config:      map[string]any{superusersEntry: []any{"b", "c"}},
+			suTxt:       "a::\nb::",
+			expectArray: true,
+		},
+		{
+			name:        "[]string superusers",
+			config:      map[string]any{superusersEntry: []string{"b", "c"}},
+			suTxt:       "a::\nb::",
+			expectArray: true,
+		},
+		{
+			name:   "bad superusers",
+			config: map[string]any{superusersEntry: "broken"},
+			suTxt:  "a::\nb::",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := maps.Clone(tc.config)
+			s.maybeMergeSuperusers(context.TODO(), c, map[string][]byte{"x": []byte(tc.suTxt)})
+			if tc.expectArray {
+				assert.Equal(t, []string{"a", "b", "c"}, c[superusersEntry])
+			}
+		})
+	}
 }
