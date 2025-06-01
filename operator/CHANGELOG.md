@@ -93,6 +93,7 @@ This is required to ensure that a pre-existing sts can roll over to new configur
 
 * Setting `serviceAccount.create` to `false` no longer prevents the Kubernetes ServiceAccountToken volume from being mounted to the operator Pod.
 * updated operator v1 to ignore "cluster.redpanda.com/node-pool-spec" annotation for pod rolls. previously, under certain conditions, the operator started rolling pods if this annotation changed - but there is no need to do so.
+* Added the missing `https` port to the operator Pod that was referenced by the [`ServiceMonitor`](https://github.com/redpanda-data/redpanda-operator/blob/4e34c5ea79b00fa0caeda64955e3291666194274/operator/chart/servicemonitor.go#L42)
 * Empty Redpanda specs (i.e. `clusterSpec: null` or otherwise unspecified) no longer causes the operator to panic
 
 ## [v25.1.1-beta3](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta3) - 2025-05-07
