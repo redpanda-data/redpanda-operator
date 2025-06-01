@@ -38,6 +38,9 @@ In the v2 operator, this value is defaulted from the operator's settings.
 
 The status.observedGeneration will only update when the cluster reaches the OperatorQuiescent state.
 * The operator will try stripping off a layer of quotation from configuration values when interpreting numeric and boolean values. These may be accidentally introduced upstream of the CR, but where the intent is obvious we don't need to be strict about it.
+* operator chart missing 'https' named port from deployment.
+
+* https named port should be defined.
 ### Deprecated
 * v1 operator: the `clusterConfiguration` field `ExternalSecretRef` is deprecated in favour of `ExternalSecretRefSelector`. Since this field was extremely new, it will be removed in the very near future.
 ### Removed
