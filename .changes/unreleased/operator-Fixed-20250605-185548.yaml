@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Added the missing `https` port to the operator Pod that was referenced by the [`ServiceMonitor`](https://github.com/redpanda-data/redpanda-operator/blob/4e34c5ea79b00fa0caeda64955e3291666194274/operator/chart/servicemonitor.go#L42)
+time: 2025-06-05T18:55:48.103615+02:00
