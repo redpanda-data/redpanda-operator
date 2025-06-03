@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
@@ -107,11 +108,19 @@ func Unwrap[T any](from Values) T {
 		Squash:          true,
 		SquashTagOption: "inline",
 		DecodeHook: mapstructure.DecodeHookFuncType(func(from, to reflect.Type, val interface{}) (interface{}, error) {
+			// NB: to is always a pointer to the target type regardless of the
+			// type on the struct being decode.
 			switch reflect.New(to).Interface().(type) {
 			case *resource.Quantity:
 				return valuesutil.UnmarshalInto[*resource.Quantity](val)
 			case *corev1.Volume:
 				return valuesutil.UnmarshalInto[*corev1.Volume](val)
+			case *intstr.IntOrString:
+				return valuesutil.UnmarshalInto[*intstr.IntOrString](val)
+			case *metav1.Time:
+				return valuesutil.UnmarshalInto[*metav1.Time](val)
+			case *metav1.Duration:
+				return valuesutil.UnmarshalInto[*metav1.Duration](val)
 			}
 			return val, nil
 		}),
