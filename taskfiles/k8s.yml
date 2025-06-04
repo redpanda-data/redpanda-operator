@@ -8,8 +8,23 @@ tasks:
     - generate-controller-code
     - generate-manifests
     cmds:
-      - task: generate:crd-docs
+      # Generates SchemaBuilders and automatically registers CRs with it.
+      - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
+
+      # Generate the full RBAC bundle for kustomize and the operator chart, CRD
+      # manifests, and deep copy methods.
+      - |
+        controller-gen \
+          object:headerFile="../licenses/boilerplate.go.txt" \
+          paths='./...' \
+          crd \
+          webhook \
+          rbac:roleName=manager-role \
+          output:crd:artifacts:config=config/crd/bases \
+          output:rbac:artifacts:config=config/rbac/bases/operator
+
       - task: generate:statuses
+      - task: generate:crd-docs
 
       # For each controller (or really itemizable RBAC source), generate an
       # isolated rbac bundle. These are used by the helm charts to check
@@ -40,7 +55,6 @@ tasks:
           PATH: ./cmd/crd
         cmd: |
           controller-gen \
-            object:headerFile="../licenses/boilerplate.go.txt" \
             paths={{ .ITEM.PATH }} \
             rbac:roleName={{ .ITEM.NAME }} \
             output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
@@ -81,7 +95,6 @@ tasks:
       # multiple controllers)
       - |
         controller-gen \
-          object:headerFile="../licenses/boilerplate.go.txt" \
           paths=./cmd/run \
           paths=./internal/controller/decommissioning \
           rbac:roleName=decommissioning \
@@ -89,7 +102,6 @@ tasks:
 
       - |
         controller-gen \
-          object:headerFile="../licenses/boilerplate.go.txt" \
           paths=./cmd/run \
           paths=./internal/controller/redpanda \
           paths=./internal/controller/rackawareness \
@@ -98,17 +110,6 @@ tasks:
           paths=./internal/controller/olddecommission \
           rbac:roleName=manager \
           output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
-
-      # Generate the full bundle for kustomize and the operator chart.
-      - |
-        controller-gen \
-          object:headerFile="../licenses/boilerplate.go.txt" \
-          paths='./...' \
-          crd \
-          webhook \
-          rbac:roleName=manager-role \
-          output:crd:artifacts:config=config/crd/bases \
-          output:rbac:artifacts:config=config/rbac/bases/operator
 
       - |
         applyconfiguration-gen \

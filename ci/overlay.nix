@@ -1,6 +1,6 @@
 { pkgs
 }: (final: prev: {
-  applyconfiguration-gen = pkgs.callPackage ./applyconfiguration-gen.nix { };
+  code-generator = pkgs.callPackage ./code-generator.nix { };
   backport = pkgs.callPackage ./backport.nix { };
   controller-gen = pkgs.callPackage ./controller-gen.nix { };
   crd-ref-docs = pkgs.callPackage ./crd-ref-docs.nix { };

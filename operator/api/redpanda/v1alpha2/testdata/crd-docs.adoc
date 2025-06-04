@@ -11,7 +11,6 @@
 [id="{anchor_prefix}-cluster-redpanda-com-v1alpha2"]
 === cluster.redpanda.com/v1alpha2
 
-Package v1alpha2 defines the v1alpha2 schema for the Redpanda API. It is part of an evolving API architecture, representing an initial stage that may be subject to change based on user feedback and further development.
 
 .Resource Types
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]

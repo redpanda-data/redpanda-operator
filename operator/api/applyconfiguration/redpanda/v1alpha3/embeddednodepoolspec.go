@@ -11,14 +11,14 @@
 
 package v1alpha3
 
-// EmbeddedNodePoolSpecApplyConfiguration represents an declarative configuration of the EmbeddedNodePoolSpec type for use
+// EmbeddedNodePoolSpecApplyConfiguration represents a declarative configuration of the EmbeddedNodePoolSpec type for use
 // with apply.
 type EmbeddedNodePoolSpecApplyConfiguration struct {
 	Replicas       *int32                            `json:"replicas,omitempty"`
 	BrokerTemplate *BrokerTemplateApplyConfiguration `json:"brokerTemplate,omitempty"`
 }
 
-// EmbeddedNodePoolSpecApplyConfiguration constructs an declarative configuration of the EmbeddedNodePoolSpec type for use with
+// EmbeddedNodePoolSpecApplyConfiguration constructs a declarative configuration of the EmbeddedNodePoolSpec type for use with
 // apply.
 func EmbeddedNodePoolSpec() *EmbeddedNodePoolSpecApplyConfiguration {
 	return &EmbeddedNodePoolSpecApplyConfiguration{}
