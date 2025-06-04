@@ -19,18 +19,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
 func TestKafkaAPIWithMultipleTLSListeners(t *testing.T) {
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
-	require.NoError(t, certmanagerv1.AddToScheme(scheme.Scheme))
 	clusterWithMultipleTLS := pandaCluster().DeepCopy()
 	clusterWithMultipleTLS.Spec.Configuration.KafkaAPI[0].TLS = vectorizedv1alpha1.KafkaAPITLS{Enabled: true, RequireClientAuth: true}
 	clusterWithMultipleTLS.Spec.Configuration.KafkaAPI = append(clusterWithMultipleTLS.Spec.Configuration.KafkaAPI, vectorizedv1alpha1.KafkaAPI{Port: 30001, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}, TLS: vectorizedv1alpha1.KafkaAPITLS{Enabled: true}})
@@ -48,14 +46,14 @@ func TestKafkaAPIWithMultipleTLSListeners(t *testing.T) {
 	}
 	for i, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			c := fake.NewClientBuilder().Build()
+			c := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build()
 			pkiRes, err := certmanager.NewPki(
 				context.TODO(),
 				c,
 				&testcases[i].cluster,
 				"cluster.local1",
 				"cluster.local",
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, err)
 			require.NoError(t, pkiRes.Ensure(context.TODO()))

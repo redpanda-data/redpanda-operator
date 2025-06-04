@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// SchemaReferenceApplyConfiguration represents an declarative configuration of the SchemaReference type for use
+// SchemaReferenceApplyConfiguration represents a declarative configuration of the SchemaReference type for use
 // with apply.
 type SchemaReferenceApplyConfiguration struct {
 	Name    *string `json:"name,omitempty"`
@@ -19,7 +19,7 @@ type SchemaReferenceApplyConfiguration struct {
 	Version *int    `json:"version,omitempty"`
 }
 
-// SchemaReferenceApplyConfiguration constructs an declarative configuration of the SchemaReference type for use with
+// SchemaReferenceApplyConfiguration constructs a declarative configuration of the SchemaReference type for use with
 // apply.
 func SchemaReference() *SchemaReferenceApplyConfiguration {
 	return &SchemaReferenceApplyConfiguration{}

@@ -12,6 +12,7 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -23,12 +24,12 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
@@ -68,7 +69,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		_ = testEnv.Stop()
 	})
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
+	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:"+os.Getenv("TEST_REDPANDA_VERSION"),
 		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
@@ -90,10 +91,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	schemaRegistry, err := container.SchemaRegistryAddress(ctx)
 	require.NoError(t, err)
 
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
@@ -265,7 +263,7 @@ func (r *testReconciler) FinalizerPatch(request ResourceRequest[*testObject]) cl
 	request.object.Finalizers = []string{FinalizerKey}
 	request.object.TypeMeta = metav1.TypeMeta{
 		Kind:       "testObject",
-		APIVersion: redpandav1alpha2.GroupVersion.Identifier(),
+		APIVersion: redpandav1alpha2.GroupVersion.String(),
 	}
 	return client.Apply
 }
@@ -284,10 +282,10 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
-	require.NoError(t, apiextensionsv1.AddToScheme(scheme.Scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(controller.UnifiedScheme))
+	controller.UnifiedScheme.AddKnownTypes(redpandav1alpha2.SchemeGroupVersion, &testObject{})
 
 	reconciler := &testReconciler{}
-	redpandav1alpha2.SchemeBuilder.Register(&testObject{})
 	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
 
 	crd := &apiextensionsv1.CustomResourceDefinition{

@@ -11,13 +11,13 @@
 
 package v1alpha2
 
-// ClusterRefApplyConfiguration represents an declarative configuration of the ClusterRef type for use
+// ClusterRefApplyConfiguration represents a declarative configuration of the ClusterRef type for use
 // with apply.
 type ClusterRefApplyConfiguration struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// ClusterRefApplyConfiguration constructs an declarative configuration of the ClusterRef type for use with
+// ClusterRefApplyConfiguration constructs a declarative configuration of the ClusterRef type for use with
 // apply.
 func ClusterRef() *ClusterRefApplyConfiguration {
 	return &ClusterRefApplyConfiguration{}

@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +35,7 @@ import (
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -71,7 +71,7 @@ func TestEnsure(t *testing.T) {
 	assert.NotNil(t, cfg)
 
 	// We need one secret in place for all of these
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -136,10 +136,7 @@ func TestEnsure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err = vectorizedv1alpha1.AddToScheme(scheme.Scheme)
-			assert.NoError(t, err, tt.name)
-
-			c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+			c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 			assert.NoError(t, err, tt.name)
 			assert.NotNil(t, c, tt.name)
 
@@ -174,7 +171,7 @@ func TestEnsure(t *testing.T) {
 			sts := resources.NewStatefulSet(
 				c,
 				tt.pandaCluster,
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				"cluster.local",
 				"servicename",
 				types.NamespacedName{Name: "test", Namespace: "test"},
@@ -671,7 +668,7 @@ func TestCurrentVersion(t *testing.T) {
 				TestBrokerTLSConfigProvider{},
 			)
 			require.NoError(t, err)
-			sts := resources.NewStatefulSet(c, cluster, scheme.Scheme,
+			sts := resources.NewStatefulSet(c, cluster, controller.UnifiedScheme,
 				"cluster.local",
 				"servicename",
 				types.NamespacedName{Name: "test", Namespace: "test"},

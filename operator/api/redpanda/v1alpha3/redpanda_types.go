@@ -5,10 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
-}
-
 // Redpanda defines the CRD for Redpanda clusters.
 // +kubebuilder:skipversion
 // +kubebuilder:object:root=true

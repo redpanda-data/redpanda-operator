@@ -265,10 +265,6 @@ type RedpandaList struct {
 	Items []Redpanda `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
-}
-
 func (in *Redpanda) GetHelmReleaseName() string {
 	return in.Name
 }
