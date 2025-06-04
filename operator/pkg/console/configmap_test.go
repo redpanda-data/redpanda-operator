@@ -10,15 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 )
 
 func TestGenerateConsoleConfig_EmptyScopes(t *testing.T) {
-	scheme := runtime.NewScheme()
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme))
 	client := fake.NewClientBuilder().Build()
 
 	// Create console object with empty scopes in SecretStore
@@ -81,7 +79,7 @@ func TestGenerateConsoleConfig_EmptyScopes(t *testing.T) {
 	require.NoError(t, err)
 
 	// Use NewConfigMap from console package
-	cm := NewConfigMap(client, scheme, console, cluster, logr.Discard())
+	cm := NewConfigMap(client, controller.UnifiedScheme, console, cluster, logr.Discard())
 	// Generate the console config
 	configYaml, err := cm.generateConsoleConfig(context.Background(), "test-user")
 	require.NoError(t, err)

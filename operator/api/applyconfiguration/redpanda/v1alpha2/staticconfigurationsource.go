@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// StaticConfigurationSourceApplyConfiguration represents an declarative configuration of the StaticConfigurationSource type for use
+// StaticConfigurationSourceApplyConfiguration represents a declarative configuration of the StaticConfigurationSource type for use
 // with apply.
 type StaticConfigurationSourceApplyConfiguration struct {
 	Kafka          *KafkaAPISpecApplyConfiguration       `json:"kafka,omitempty"`
@@ -19,7 +19,7 @@ type StaticConfigurationSourceApplyConfiguration struct {
 	SchemaRegistry *SchemaRegistrySpecApplyConfiguration `json:"schemaRegistry,omitempty"`
 }
 
-// StaticConfigurationSourceApplyConfiguration constructs an declarative configuration of the StaticConfigurationSource type for use with
+// StaticConfigurationSourceApplyConfiguration constructs a declarative configuration of the StaticConfigurationSource type for use with
 // apply.
 func StaticConfigurationSource() *StaticConfigurationSourceApplyConfiguration {
 	return &StaticConfigurationSourceApplyConfiguration{}

@@ -11,7 +11,7 @@
 
 package v1alpha3
 
-// NodePoolStatusApplyConfiguration represents an declarative configuration of the NodePoolStatus type for use
+// NodePoolStatusApplyConfiguration represents a declarative configuration of the NodePoolStatus type for use
 // with apply.
 type NodePoolStatusApplyConfiguration struct {
 	Name              *string `json:"name,omitempty"`
@@ -24,7 +24,7 @@ type NodePoolStatusApplyConfiguration struct {
 	RunningReplicas   *int32  `json:"runningReplicas,omitempty"`
 }
 
-// NodePoolStatusApplyConfiguration constructs an declarative configuration of the NodePoolStatus type for use with
+// NodePoolStatusApplyConfiguration constructs a declarative configuration of the NodePoolStatus type for use with
 // apply.
 func NodePoolStatus() *NodePoolStatusApplyConfiguration {
 	return &NodePoolStatusApplyConfiguration{}

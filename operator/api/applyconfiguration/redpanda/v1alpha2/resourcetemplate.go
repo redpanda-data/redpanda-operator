@@ -11,13 +11,13 @@
 
 package v1alpha2
 
-// ResourceTemplateApplyConfiguration represents an declarative configuration of the ResourceTemplate type for use
+// ResourceTemplateApplyConfiguration represents a declarative configuration of the ResourceTemplate type for use
 // with apply.
 type ResourceTemplateApplyConfiguration struct {
 	Metadata *MetadataTemplateApplyConfiguration `json:"metadata,omitempty"`
 }
 
-// ResourceTemplateApplyConfiguration constructs an declarative configuration of the ResourceTemplate type for use with
+// ResourceTemplateApplyConfiguration constructs a declarative configuration of the ResourceTemplate type for use with
 // apply.
 func ResourceTemplate() *ResourceTemplateApplyConfiguration {
 	return &ResourceTemplateApplyConfiguration{}

@@ -12,17 +12,17 @@
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// UserAuthenticationSpecApplyConfiguration represents an declarative configuration of the UserAuthenticationSpec type for use
+// UserAuthenticationSpecApplyConfiguration represents a declarative configuration of the UserAuthenticationSpec type for use
 // with apply.
 type UserAuthenticationSpecApplyConfiguration struct {
-	Type     *v1alpha2.SASLMechanism     `json:"type,omitempty"`
-	Password *PasswordApplyConfiguration `json:"password,omitempty"`
+	Type     *redpandav1alpha2.SASLMechanism `json:"type,omitempty"`
+	Password *PasswordApplyConfiguration     `json:"password,omitempty"`
 }
 
-// UserAuthenticationSpecApplyConfiguration constructs an declarative configuration of the UserAuthenticationSpec type for use with
+// UserAuthenticationSpecApplyConfiguration constructs a declarative configuration of the UserAuthenticationSpec type for use with
 // apply.
 func UserAuthenticationSpec() *UserAuthenticationSpecApplyConfiguration {
 	return &UserAuthenticationSpecApplyConfiguration{}
@@ -31,7 +31,7 @@ func UserAuthenticationSpec() *UserAuthenticationSpecApplyConfiguration {
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *UserAuthenticationSpecApplyConfiguration) WithType(value v1alpha2.SASLMechanism) *UserAuthenticationSpecApplyConfiguration {
+func (b *UserAuthenticationSpecApplyConfiguration) WithType(value redpandav1alpha2.SASLMechanism) *UserAuthenticationSpecApplyConfiguration {
 	b.Type = &value
 	return b
 }

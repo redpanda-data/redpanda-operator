@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// PasswordApplyConfiguration represents an declarative configuration of the Password type for use
+// PasswordApplyConfiguration represents a declarative configuration of the Password type for use
 // with apply.
 type PasswordApplyConfiguration struct {
 	Value      *string                           `json:"value,omitempty"`
@@ -19,7 +19,7 @@ type PasswordApplyConfiguration struct {
 	NoGenerate *bool                             `json:"noGenerate,omitempty"`
 }
 
-// PasswordApplyConfiguration constructs an declarative configuration of the Password type for use with
+// PasswordApplyConfiguration constructs a declarative configuration of the Password type for use with
 // apply.
 func Password() *PasswordApplyConfiguration {
 	return &PasswordApplyConfiguration{}
