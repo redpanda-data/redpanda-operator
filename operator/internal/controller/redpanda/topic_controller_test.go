@@ -24,12 +24,12 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
@@ -43,10 +43,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
@@ -90,7 +87,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	tr := TopicReconciler{
 		Client:  c,
 		Factory: factory,
-		Scheme:  scheme.Scheme,
+		Scheme:  controller.UnifiedScheme,
 	}
 
 	t.Run("create_topic", func(t *testing.T) {

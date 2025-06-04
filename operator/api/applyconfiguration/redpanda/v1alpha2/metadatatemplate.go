@@ -11,14 +11,14 @@
 
 package v1alpha2
 
-// MetadataTemplateApplyConfiguration represents an declarative configuration of the MetadataTemplate type for use
+// MetadataTemplateApplyConfiguration represents a declarative configuration of the MetadataTemplate type for use
 // with apply.
 type MetadataTemplateApplyConfiguration struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-// MetadataTemplateApplyConfiguration constructs an declarative configuration of the MetadataTemplate type for use with
+// MetadataTemplateApplyConfiguration constructs a declarative configuration of the MetadataTemplate type for use with
 // apply.
 func MetadataTemplate() *MetadataTemplateApplyConfiguration {
 	return &MetadataTemplateApplyConfiguration{}

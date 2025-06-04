@@ -15,7 +15,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// KafkaSASLApplyConfiguration represents an declarative configuration of the KafkaSASL type for use
+// KafkaSASLApplyConfiguration represents a declarative configuration of the KafkaSASL type for use
 // with apply.
 type KafkaSASLApplyConfiguration struct {
 	Username     *string                                 `json:"username,omitempty"`
@@ -26,7 +26,7 @@ type KafkaSASLApplyConfiguration struct {
 	AWSMskIam    *KafkaSASLAWSMskIamApplyConfiguration   `json:"awsMskIam,omitempty"`
 }
 
-// KafkaSASLApplyConfiguration constructs an declarative configuration of the KafkaSASL type for use with
+// KafkaSASLApplyConfiguration constructs a declarative configuration of the KafkaSASL type for use with
 // apply.
 func KafkaSASL() *KafkaSASLApplyConfiguration {
 	return &KafkaSASLApplyConfiguration{}

@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// KafkaSASLGSSAPIApplyConfiguration represents an declarative configuration of the KafkaSASLGSSAPI type for use
+// KafkaSASLGSSAPIApplyConfiguration represents a declarative configuration of the KafkaSASLGSSAPI type for use
 // with apply.
 type KafkaSASLGSSAPIApplyConfiguration struct {
 	AuthType           *string                         `json:"authType,omitempty"`
@@ -24,7 +24,7 @@ type KafkaSASLGSSAPIApplyConfiguration struct {
 	EnableFast         *bool                           `json:"enableFast,omitempty"`
 }
 
-// KafkaSASLGSSAPIApplyConfiguration constructs an declarative configuration of the KafkaSASLGSSAPI type for use with
+// KafkaSASLGSSAPIApplyConfiguration constructs a declarative configuration of the KafkaSASLGSSAPI type for use with
 // apply.
 func KafkaSASLGSSAPI() *KafkaSASLGSSAPIApplyConfiguration {
 	return &KafkaSASLGSSAPIApplyConfiguration{}

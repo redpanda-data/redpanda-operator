@@ -11,13 +11,13 @@
 
 package v1alpha2
 
-// KafkaSASLOAuthBearerApplyConfiguration represents an declarative configuration of the KafkaSASLOAuthBearer type for use
+// KafkaSASLOAuthBearerApplyConfiguration represents a declarative configuration of the KafkaSASLOAuthBearer type for use
 // with apply.
 type KafkaSASLOAuthBearerApplyConfiguration struct {
 	Token *SecretKeyRefApplyConfiguration `json:"tokenSecretRef,omitempty"`
 }
 
-// KafkaSASLOAuthBearerApplyConfiguration constructs an declarative configuration of the KafkaSASLOAuthBearer type for use with
+// KafkaSASLOAuthBearerApplyConfiguration constructs a declarative configuration of the KafkaSASLOAuthBearer type for use with
 // apply.
 func KafkaSASLOAuthBearer() *KafkaSASLOAuthBearerApplyConfiguration {
 	return &KafkaSASLOAuthBearerApplyConfiguration{}

@@ -26,12 +26,12 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
@@ -50,16 +50,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	err = scheme.AddToScheme(scheme.Scheme)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = vectorizedv1alpha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	clientOptions := client.Options{Scheme: scheme.Scheme}
+	clientOptions := client.Options{Scheme: controller.UnifiedScheme}
 
 	c, err = client.New(cfg, clientOptions)
 	if err != nil {
@@ -100,7 +91,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 	sts := res.NewStatefulSet(
 		c,
 		cluster,
-		scheme.Scheme,
+		controller.UnifiedScheme,
 		"cluster.local",
 		"servicename",
 		types.NamespacedName{Name: "test", Namespace: "test"},
@@ -155,7 +146,7 @@ func TestEnsure_ConfigMap(t *testing.T) {
 		cm := res.NewConfigMap(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			cfg,
 			ctrl.Log.WithName("test"))
 
@@ -215,7 +206,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc := res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 123},
 			},
@@ -237,7 +228,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc := res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 123},
 			},
@@ -266,7 +257,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc := res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 123},
 			},
@@ -283,7 +274,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc = res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 1111},
 			},
@@ -306,7 +297,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc := res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 123},
 			},
@@ -325,7 +316,7 @@ func TestEnsure_HeadlessService(t *testing.T) {
 		hsvc := res.NewHeadlessService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Port: 123},
 			},
@@ -346,7 +337,7 @@ func TestEnsure_NodePortService(t *testing.T) {
 	npsvc := res.NewNodePortService(
 		c,
 		cluster,
-		scheme.Scheme,
+		controller.UnifiedScheme,
 		[]res.NamedServiceNodePort{
 			{NamedServicePort: res.NamedServicePort{Port: 123}, GenerateNodePort: true},
 		},
@@ -378,7 +369,7 @@ func TestEnsure_NodePortService(t *testing.T) {
 	npsvc = res.NewNodePortService(
 		c,
 		cluster,
-		scheme.Scheme,
+		controller.UnifiedScheme,
 		[]res.NamedServiceNodePort{
 			{NamedServicePort: res.NamedServicePort{Port: 1111}, GenerateNodePort: true},
 		},
@@ -422,7 +413,7 @@ func TestEnsure_LoadbalancerService(t *testing.T) {
 		lb := res.NewLoadBalancerService(
 			c,
 			cluster,
-			scheme.Scheme,
+			controller.UnifiedScheme,
 			[]res.NamedServicePort{
 				{Name: "kafka-external-bootstrap", Port: 2222, TargetPort: 1112},
 			},
@@ -620,7 +611,7 @@ func TestEnsure_Ingress(t *testing.T) {
 				ingress = res.NewIngress(
 					c,
 					cluster,
-					scheme.Scheme,
+					controller.UnifiedScheme,
 					subdomain,
 					"svcname",
 					"svcport",

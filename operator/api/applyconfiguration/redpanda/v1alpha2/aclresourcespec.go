@@ -12,18 +12,18 @@
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// ACLResourceSpecApplyConfiguration represents an declarative configuration of the ACLResourceSpec type for use
+// ACLResourceSpecApplyConfiguration represents a declarative configuration of the ACLResourceSpec type for use
 // with apply.
 type ACLResourceSpecApplyConfiguration struct {
-	Type        *v1alpha2.ResourceType `json:"type,omitempty"`
-	Name        *string                `json:"name,omitempty"`
-	PatternType *v1alpha2.PatternType  `json:"patternType,omitempty"`
+	Type        *redpandav1alpha2.ResourceType `json:"type,omitempty"`
+	Name        *string                        `json:"name,omitempty"`
+	PatternType *redpandav1alpha2.PatternType  `json:"patternType,omitempty"`
 }
 
-// ACLResourceSpecApplyConfiguration constructs an declarative configuration of the ACLResourceSpec type for use with
+// ACLResourceSpecApplyConfiguration constructs a declarative configuration of the ACLResourceSpec type for use with
 // apply.
 func ACLResourceSpec() *ACLResourceSpecApplyConfiguration {
 	return &ACLResourceSpecApplyConfiguration{}
@@ -32,7 +32,7 @@ func ACLResourceSpec() *ACLResourceSpecApplyConfiguration {
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *ACLResourceSpecApplyConfiguration) WithType(value v1alpha2.ResourceType) *ACLResourceSpecApplyConfiguration {
+func (b *ACLResourceSpecApplyConfiguration) WithType(value redpandav1alpha2.ResourceType) *ACLResourceSpecApplyConfiguration {
 	b.Type = &value
 	return b
 }
@@ -48,7 +48,7 @@ func (b *ACLResourceSpecApplyConfiguration) WithName(value string) *ACLResourceS
 // WithPatternType sets the PatternType field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PatternType field is set to the value of the last call.
-func (b *ACLResourceSpecApplyConfiguration) WithPatternType(value v1alpha2.PatternType) *ACLResourceSpecApplyConfiguration {
+func (b *ACLResourceSpecApplyConfiguration) WithPatternType(value redpandav1alpha2.PatternType) *ACLResourceSpecApplyConfiguration {
 	b.PatternType = &value
 	return b
 }

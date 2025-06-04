@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// CommonTLSApplyConfiguration represents an declarative configuration of the CommonTLS type for use
+// CommonTLSApplyConfiguration represents a declarative configuration of the CommonTLS type for use
 // with apply.
 type CommonTLSApplyConfiguration struct {
 	CaCert                *SecretKeyRefApplyConfiguration `json:"caCertSecretRef,omitempty"`
@@ -20,7 +20,7 @@ type CommonTLSApplyConfiguration struct {
 	InsecureSkipTLSVerify *bool                           `json:"insecureSkipTlsVerify,omitempty"`
 }
 
-// CommonTLSApplyConfiguration constructs an declarative configuration of the CommonTLS type for use with
+// CommonTLSApplyConfiguration constructs a declarative configuration of the CommonTLS type for use with
 // apply.
 func CommonTLS() *CommonTLSApplyConfiguration {
 	return &CommonTLSApplyConfiguration{}

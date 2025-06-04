@@ -15,7 +15,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// UserStatusApplyConfiguration represents an declarative configuration of the UserStatus type for use
+// UserStatusApplyConfiguration represents a declarative configuration of the UserStatus type for use
 // with apply.
 type UserStatusApplyConfiguration struct {
 	ObservedGeneration *int64                           `json:"observedGeneration,omitempty"`
@@ -24,7 +24,7 @@ type UserStatusApplyConfiguration struct {
 	ManagedUser        *bool                            `json:"managedUser,omitempty"`
 }
 
-// UserStatusApplyConfiguration constructs an declarative configuration of the UserStatus type for use with
+// UserStatusApplyConfiguration constructs a declarative configuration of the UserStatus type for use with
 // apply.
 func UserStatus() *UserStatusApplyConfiguration {
 	return &UserStatusApplyConfiguration{}

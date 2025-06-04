@@ -1017,10 +1017,6 @@ const (
 	RedpandaMemoryAllocationRatio = 0.9
 )
 
-func init() {
-	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
-}
-
 // FullImageName returns image name including version
 func (r *Cluster) FullImageName() string {
 	if r == nil {

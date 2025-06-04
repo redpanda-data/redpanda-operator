@@ -25,11 +25,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
@@ -49,10 +49,7 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
@@ -142,10 +139,7 @@ func TestClientPasswordCreation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
@@ -265,10 +259,7 @@ func TestPasswordNotGenerated(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 	require.NotNil(t, c)
 

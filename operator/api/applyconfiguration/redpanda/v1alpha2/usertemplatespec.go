@@ -11,13 +11,13 @@
 
 package v1alpha2
 
-// UserTemplateSpecApplyConfiguration represents an declarative configuration of the UserTemplateSpec type for use
+// UserTemplateSpecApplyConfiguration represents a declarative configuration of the UserTemplateSpec type for use
 // with apply.
 type UserTemplateSpecApplyConfiguration struct {
 	Secret *ResourceTemplateApplyConfiguration `json:"secret,omitempty"`
 }
 
-// UserTemplateSpecApplyConfiguration constructs an declarative configuration of the UserTemplateSpec type for use with
+// UserTemplateSpecApplyConfiguration constructs a declarative configuration of the UserTemplateSpec type for use with
 // apply.
 func UserTemplateSpec() *UserTemplateSpecApplyConfiguration {
 	return &UserTemplateSpecApplyConfiguration{}

@@ -173,10 +173,6 @@ type TopicList struct {
 	Items []Topic `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Topic{}, &TopicList{})
-}
-
 func (t *Topic) GetTopicName() string {
 	topicName := t.Name
 	if t.Spec.OverwriteTopicName != nil && *t.Spec.OverwriteTopicName != "" {

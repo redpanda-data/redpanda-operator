@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// KafkaAPISpecApplyConfiguration represents an declarative configuration of the KafkaAPISpec type for use
+// KafkaAPISpecApplyConfiguration represents a declarative configuration of the KafkaAPISpec type for use
 // with apply.
 type KafkaAPISpecApplyConfiguration struct {
 	Brokers []string                     `json:"brokers,omitempty"`
@@ -19,7 +19,7 @@ type KafkaAPISpecApplyConfiguration struct {
 	SASL    *KafkaSASLApplyConfiguration `json:"sasl,omitempty"`
 }
 
-// KafkaAPISpecApplyConfiguration constructs an declarative configuration of the KafkaAPISpec type for use with
+// KafkaAPISpecApplyConfiguration constructs a declarative configuration of the KafkaAPISpec type for use with
 // apply.
 func KafkaAPISpec() *KafkaAPISpecApplyConfiguration {
 	return &KafkaAPISpecApplyConfiguration{}

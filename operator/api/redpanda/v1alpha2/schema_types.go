@@ -20,10 +20,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-func init() {
-	SchemeBuilder.Register(&Schema{}, &SchemaList{})
-}
-
 // Schema defines the CRD for a Redpanda schema.
 // +genclient
 // +kubebuilder:object:root=true

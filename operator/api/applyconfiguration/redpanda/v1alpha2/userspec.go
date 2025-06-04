@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// UserSpecApplyConfiguration represents an declarative configuration of the UserSpec type for use
+// UserSpecApplyConfiguration represents a declarative configuration of the UserSpec type for use
 // with apply.
 type UserSpecApplyConfiguration struct {
 	ClusterSource  *ClusterSourceApplyConfiguration          `json:"cluster,omitempty"`
@@ -20,7 +20,7 @@ type UserSpecApplyConfiguration struct {
 	Template       *UserTemplateSpecApplyConfiguration       `json:"template,omitempty"`
 }
 
-// UserSpecApplyConfiguration constructs an declarative configuration of the UserSpec type for use with
+// UserSpecApplyConfiguration constructs a declarative configuration of the UserSpec type for use with
 // apply.
 func UserSpec() *UserSpecApplyConfiguration {
 	return &UserSpecApplyConfiguration{}

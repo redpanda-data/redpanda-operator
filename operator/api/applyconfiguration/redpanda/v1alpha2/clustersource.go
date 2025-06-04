@@ -11,14 +11,14 @@
 
 package v1alpha2
 
-// ClusterSourceApplyConfiguration represents an declarative configuration of the ClusterSource type for use
+// ClusterSourceApplyConfiguration represents a declarative configuration of the ClusterSource type for use
 // with apply.
 type ClusterSourceApplyConfiguration struct {
 	ClusterRef          *ClusterRefApplyConfiguration                `json:"clusterRef,omitempty"`
 	StaticConfiguration *StaticConfigurationSourceApplyConfiguration `json:"staticConfiguration,omitempty"`
 }
 
-// ClusterSourceApplyConfiguration constructs an declarative configuration of the ClusterSource type for use with
+// ClusterSourceApplyConfiguration constructs a declarative configuration of the ClusterSource type for use with
 // apply.
 func ClusterSource() *ClusterSourceApplyConfiguration {
 	return &ClusterSourceApplyConfiguration{}
