@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// SchemaRegistrySpecApplyConfiguration represents an declarative configuration of the SchemaRegistrySpec type for use
+// SchemaRegistrySpecApplyConfiguration represents a declarative configuration of the SchemaRegistrySpec type for use
 // with apply.
 type SchemaRegistrySpecApplyConfiguration struct {
 	URLs []string                              `json:"urls,omitempty"`
@@ -19,7 +19,7 @@ type SchemaRegistrySpecApplyConfiguration struct {
 	SASL *SchemaRegistrySASLApplyConfiguration `json:"sasl,omitempty"`
 }
 
-// SchemaRegistrySpecApplyConfiguration constructs an declarative configuration of the SchemaRegistrySpec type for use with
+// SchemaRegistrySpecApplyConfiguration constructs a declarative configuration of the SchemaRegistrySpec type for use with
 // apply.
 func SchemaRegistrySpec() *SchemaRegistrySpecApplyConfiguration {
 	return &SchemaRegistrySpecApplyConfiguration{}

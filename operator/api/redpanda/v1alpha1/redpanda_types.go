@@ -27,7 +27,3 @@ type Redpanda redpandav1alpha2.Redpanda
 // RedpandaList contains a list of Redpanda objects.
 // +kubebuilder:object:root=true
 type RedpandaList redpandav1alpha2.RedpandaList
-
-func init() {
-	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
-}

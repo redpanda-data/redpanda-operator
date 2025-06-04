@@ -15,7 +15,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// BrokerTemplateApplyConfiguration represents an declarative configuration of the BrokerTemplate type for use
+// BrokerTemplateApplyConfiguration represents a declarative configuration of the BrokerTemplate type for use
 // with apply.
 type BrokerTemplateApplyConfiguration struct {
 	Image                     *string                                  `json:"image,omitempty"`
@@ -29,7 +29,7 @@ type BrokerTemplateApplyConfiguration struct {
 	PodTemplate               *PodTemplateApplyConfiguration           `json:"podTemplate,omitempty"`
 }
 
-// BrokerTemplateApplyConfiguration constructs an declarative configuration of the BrokerTemplate type for use with
+// BrokerTemplateApplyConfiguration constructs a declarative configuration of the BrokerTemplate type for use with
 // apply.
 func BrokerTemplate() *BrokerTemplateApplyConfiguration {
 	return &BrokerTemplateApplyConfiguration{}

@@ -49,12 +49,12 @@
             # update TestToolVersions.
             packages = [
               pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
-              pkgs.applyconfiguration-gen
               pkgs.awscli2
               pkgs.backport
               pkgs.bk
               pkgs.buildkite-agent
               pkgs.changie # Changelog manager
+              pkgs.code-generator
               pkgs.controller-gen
               pkgs.crd-ref-docs # Generates documentation from CRD definitions. Used by our docs but present here to let us control and test the config.yaml
               pkgs.diffutils # Provides `diff`, used by golangci-lint.

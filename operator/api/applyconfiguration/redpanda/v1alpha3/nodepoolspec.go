@@ -11,14 +11,14 @@
 
 package v1alpha3
 
-// NodePoolSpecApplyConfiguration represents an declarative configuration of the NodePoolSpec type for use
+// NodePoolSpecApplyConfiguration represents a declarative configuration of the NodePoolSpec type for use
 // with apply.
 type NodePoolSpecApplyConfiguration struct {
 	EmbeddedNodePoolSpecApplyConfiguration `json:",inline"`
 	ClusterRef                             *ClusterRefApplyConfiguration `json:"clusterRef,omitempty"`
 }
 
-// NodePoolSpecApplyConfiguration constructs an declarative configuration of the NodePoolSpec type for use with
+// NodePoolSpecApplyConfiguration constructs a declarative configuration of the NodePoolSpec type for use with
 // apply.
 func NodePoolSpec() *NodePoolSpecApplyConfiguration {
 	return &NodePoolSpecApplyConfiguration{}
@@ -28,7 +28,7 @@ func NodePoolSpec() *NodePoolSpecApplyConfiguration {
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Replicas field is set to the value of the last call.
 func (b *NodePoolSpecApplyConfiguration) WithReplicas(value int32) *NodePoolSpecApplyConfiguration {
-	b.Replicas = &value
+	b.EmbeddedNodePoolSpecApplyConfiguration.Replicas = &value
 	return b
 }
 
@@ -36,7 +36,7 @@ func (b *NodePoolSpecApplyConfiguration) WithReplicas(value int32) *NodePoolSpec
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the BrokerTemplate field is set to the value of the last call.
 func (b *NodePoolSpecApplyConfiguration) WithBrokerTemplate(value *BrokerTemplateApplyConfiguration) *NodePoolSpecApplyConfiguration {
-	b.BrokerTemplate = value
+	b.EmbeddedNodePoolSpecApplyConfiguration.BrokerTemplate = value
 	return b
 }
 

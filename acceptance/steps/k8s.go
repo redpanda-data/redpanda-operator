@@ -35,7 +35,7 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	require.Eventually(t, func() bool {
 		require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
 		require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
-		cluster.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
+		cluster.SetGroupVersionKind(redpandav1alpha2.SchemeGroupVersion.WithKind("Redpanda"))
 
 		references := o.GetOwnerReferences()
 		if len(references) != 1 {

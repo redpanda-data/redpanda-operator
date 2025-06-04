@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -35,7 +34,6 @@ import (
 )
 
 func TestEnsureConfigMap(t *testing.T) {
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
 	clusterWithExternal := pandaCluster().DeepCopy()
 	clusterWithExternal.Spec.Configuration.KafkaAPI = append(clusterWithExternal.Spec.Configuration.KafkaAPI, vectorizedv1alpha1.KafkaAPI{AuthenticationMethod: "sasl", Port: 30001, External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}})
 	clusterWithMultipleKafkaTLS := pandaCluster().DeepCopy()
@@ -95,7 +93,7 @@ func TestEnsureConfigMap(t *testing.T) {
 			cfgRes := resources.NewConfigMap(
 				c,
 				&testcases[i].cluster,
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				cfg,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
@@ -291,8 +289,6 @@ func TestMultiExternalListenersConfigMap(t *testing.T) {
 }
 
 func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme.Scheme))
-
 	testcases := []struct {
 		name                    string
 		additionalConfiguration map[string]string
@@ -357,7 +353,7 @@ func TestEnsureConfigMap_AdditionalConfig(t *testing.T) {
 			cfgRes := resources.NewConfigMap(
 				c,
 				panda,
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				cfg,
 				ctrl.Log.WithName("test"))
 			require.NoError(t, cfgRes.Ensure(context.TODO()))
@@ -550,7 +546,7 @@ func TestConfigmap_BrokerTLSClients(t *testing.T) {
 	cfgRes := resources.NewConfigMap(
 		c,
 		panda,
-		scheme.Scheme,
+		controller.UnifiedScheme,
 		cfg,
 		ctrl.Log.WithName("test"))
 	require.NoError(t, cfgRes.Ensure(context.TODO()))
