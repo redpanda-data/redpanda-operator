@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Operator chart had missing 'https' named port in operator container ports list
+time: 2025-06-05T18:55:48.103615+02:00

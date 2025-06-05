@@ -115,6 +115,11 @@ func operatorContainers(dot *helmette.Dot, podTerminationGracePeriodSeconds *int
 					ContainerPort: 9443,
 					Protocol:      corev1.ProtocolTCP,
 				},
+				{
+					Name:          "https",
+					ContainerPort: 8443,
+					Protocol:      corev1.ProtocolTCP,
+				},
 			},
 			VolumeMounts:   operatorPodVolumesMounts(dot),
 			LivenessProbe:  livenessProbe(dot, podTerminationGracePeriodSeconds),
