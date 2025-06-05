@@ -147,6 +147,23 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("unable to retrieve Cluster resource: %w", err)
 	}
 
+	// If we have a resource to manage, ensure that we re-enqueue to re-examine it on a regular basis.
+	// Return values from Reconcile should already ensure this, but this last step represents a
+	// belt-and-braces check that we'll come back to reassert configuration.
+	defer func() {
+		if err != nil {
+			// Error returns cause a re-enqueuing this with exponential backoff
+			return
+		}
+
+		if result.Requeue || result.RequeueAfter > 0 {
+			// We're already set up to enqueue this resource again
+			return
+		}
+
+		result.RequeueAfter = r.configurationReassertionPeriod()
+	}()
+
 	// After every reconciliation, update status:
 	// - Set observedGeneration. The reconciler finished, every action
 	//   performed in this run - including updating status - has been finished, and has

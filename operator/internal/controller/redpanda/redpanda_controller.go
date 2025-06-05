@@ -60,6 +60,12 @@ const (
 	// we've explicitly aborted a reconciliation loop early
 	// due to an in-progress operation
 	requeueTimeout = 10 * time.Second
+
+	// periodicRequeue is the maximal period between re-examining
+	// a cluster; this is used to ensure that we regularly reassert
+	// cluster configuration (which may depend on external secrets,
+	// for which there's no change event we can latch onto).
+	periodicRequeue = 3 * time.Minute
 )
 
 // RedpandaReconciler reconciles a Redpanda object
@@ -113,11 +119,27 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 	return builder.Complete(r)
 }
 
-func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, err error) {
+func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	rp := &redpandav1alpha2.Redpanda{}
 	if err := r.Client.Get(ctx, req.NamespacedName, rp); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	defer func() {
+		// If we have a resource to manage, ensure that we re-enqueue to re-examine it on a regular basis
+		if err != nil {
+			// Error returns cause a re-enqueuing this with exponential backoff
+			return
+		}
+
+		if result.Requeue || result.RequeueAfter > 0 {
+			// We're already set up to enqueue this resource again
+			return
+		}
+
+		result.RequeueAfter = periodicRequeue
+	}()
+
 	rp.ManagedFields = nil // nil out our managed fields
 
 	cluster := lifecycle.NewClusterWithPools(rp)
