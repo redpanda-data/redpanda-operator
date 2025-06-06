@@ -151,3 +151,156 @@ func (r *NodePortServiceResource) obj() (k8sclient.Object, error) {
 func (r *NodePortServiceResource) Key() types.NamespacedName {
 	return types.NamespacedName{Name: r.pandaCluster.Name + "-external", Namespace: r.pandaCluster.Namespace}
 }
+
+// RenderNodePortService renders a NodePort service
+func RenderNodePortService(
+	_ context.Context,
+	cluster *vectorizedv1alpha1.Cluster,
+) (k8sclient.Object, error) {
+	svcPorts := collectNodePortsFromCluster(cluster)
+	if len(svcPorts) == 0 {
+		return nil, nil
+	}
+
+	var ports []corev1.ServicePort
+	for _, svcPort := range svcPorts {
+		port := corev1.ServicePort{
+			Name:       svcPort.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       int32(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
+		}
+		if !svcPort.GenerateNodePort {
+			port.NodePort = int32(svcPort.Port)
+		}
+		ports = append(ports, port)
+	}
+	serviceName := cluster.Name + "-external"
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name:      serviceName,
+			Labels:    labels.ForCluster(cluster),
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeNodePort,
+			ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
+			Ports: ports,
+			Selector: nil,
+		},
+	}
+	return svc, nil
+}
+
+// collectNodePortsFromCluster extracts NodePort configurations directly from cluster spec.
+// This function replicates the exact behavior of the original networking.NewRedpandaPorts + collectNodePorts
+// to avoid import cycles
+func collectNodePortsFromCluster(cluster *vectorizedv1alpha1.Cluster) []NamedServiceNodePort {
+	var nodeports []NamedServiceNodePort
+	internalListener := cluster.InternalListener()
+	adminAPIInternal := cluster.AdminAPIInternal()
+	proxyAPIInternal := cluster.PandaproxyAPIInternal()
+	for i, externalListener := range cluster.KafkaAPIExternalListeners() {
+		if externalListener.External.ExcludeFromService {
+			continue
+		}
+
+		portName := getPortName(externalListener.Name, ExternalListenerName, i)
+		port := externalListener.Port
+		externalPortIsGenerated := false
+
+		if port == 0 {
+			if internalListener != nil {
+				port = internalListener.Port + 1
+			}
+			externalPortIsGenerated = true
+		}
+
+		nodeports = append(nodeports, NamedServiceNodePort{
+			NamedServicePort: NamedServicePort{
+				Name: portName,
+				Port: port,
+			},
+			GenerateNodePort: externalPortIsGenerated,
+		})
+	}
+
+
+	if adminAPIExternal := cluster.AdminAPIExternal(); adminAPIExternal != nil && !adminAPIExternal.External.ExcludeFromService {
+		port := adminAPIExternal.Port
+		externalPortIsGenerated := false
+
+		if port == 0 {
+			if adminAPIInternal != nil {
+				port = adminAPIInternal.Port + 1
+			}
+			externalPortIsGenerated = true
+		}
+
+		nodeports = append(nodeports, NamedServiceNodePort{
+			NamedServicePort: NamedServicePort{
+				Name: AdminPortExternalName,
+				Port: port,
+			},
+			GenerateNodePort: externalPortIsGenerated,
+		})
+	}
+
+	for i, proxyExternal := range cluster.PandaproxyAPIExternalListeners() {
+		if proxyExternal.External.ExcludeFromService {
+			continue
+		}
+
+		portName := getPortName(proxyExternal.Name, PandaproxyPortExternalName, i)
+		port := proxyExternal.Port
+		externalPortIsGenerated := false
+
+		if port == 0 {
+			if proxyAPIInternal != nil {
+				port = proxyAPIInternal.Port + 1
+			}
+			externalPortIsGenerated = true
+		}
+
+		nodeports = append(nodeports, NamedServiceNodePort{
+			NamedServicePort: NamedServicePort{
+				Name: portName,
+				Port: port,
+			},
+			GenerateNodePort: externalPortIsGenerated,
+		})
+	}
+
+	for i, sr := range cluster.SchemaRegistryListeners() {
+		if !sr.IsExternallyAvailable() || sr.External.ExcludeFromService {
+			continue
+		}
+
+		portName := getPortName(sr.Name, SchemaRegistryPortName, i)
+		externalPortIsGenerated := !sr.External.StaticNodePort
+
+		nodeports = append(nodeports, NamedServiceNodePort{
+			NamedServicePort: NamedServicePort{
+				Name: portName,
+				Port: sr.Port,
+			},
+			GenerateNodePort: externalPortIsGenerated,
+		})
+	}
+	return nodeports
+}
+
+func getPortName(listenerName, baseName string, i int) string {
+	if listenerName != "" {
+		return listenerName
+	}
+	if i == 0 {
+		return baseName
+	}
+	return fmt.Sprintf("%s-%d", baseName, i)
+}

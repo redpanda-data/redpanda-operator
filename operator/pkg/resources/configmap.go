@@ -264,3 +264,35 @@ func (r *ConfigMapResource) SetAnnotationForCluster(
 	}
 	return r.Update(ctx, &existing)
 }
+
+// ConfigTemplater is an interface for objects that can provide template data for ConfigMap creation
+type ConfigTemplater interface {
+	Templates() (map[string]string, error)
+}
+
+// RenderConfigMap renders a ConfigMap for the given cluster using the provided config templater
+func RenderConfigMap(
+	_ context.Context,
+	cluster *vectorizedv1alpha1.Cluster,
+	cfg ConfigTemplater,
+) (k8sclient.Object, error) {
+	cfgSerialized, err := cfg.Templates()
+	if err != nil {
+		return nil, fmt.Errorf("serializing templates: %w", err)
+	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name:      resourceNameTrim(cluster.Name, baseSuffix),
+			Labels:    labels.ForCluster(cluster),
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		Data: cfgSerialized,
+	}
+
+	return cm, nil
+}
