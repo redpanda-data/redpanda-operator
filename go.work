@@ -7,10 +7,10 @@ use (
 	./charts/console
 	./charts/redpanda
 	./gen
-	./gotohelm
-	./gotohelm/testdata/src/example
 	./harpoon
 	./licenseupdater
 	./operator
 	./pkg
 )
+
+replace github.com/redpanda-data/redpanda-operator/gotohelm => github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
