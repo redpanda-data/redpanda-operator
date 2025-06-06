@@ -13,7 +13,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int) {
+func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int32) {
 	key := t.ResourceKey(clusterName)
 	image := &redpandav1alpha2.RedpandaImage{
 		Tag:        ptr.To("dev"),
@@ -66,7 +66,7 @@ func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, cl
 	})
 }
 
-func iScaleToNodes(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int) {
+func iScaleToNodes(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int32) {
 	var cluster redpandav1alpha2.Redpanda
 	var err error
 

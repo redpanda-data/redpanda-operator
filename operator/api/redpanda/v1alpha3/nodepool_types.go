@@ -79,21 +79,23 @@ type EmbeddedNodePoolSpec struct {
 }
 
 type BrokerTemplate struct {
-	Image     string                      `json:"image"`
-	Resources corev1.ResourceRequirements `json:"resources"`
-	// Arguments to be passed to rpk tune
-	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
-	Tuning                    []string               `json:"tuning"`
-	NodeConfig                map[string]ValueSource `json:"nodeConfig"`
-	RPKConfig                 map[string]ValueSource `json:"rpkConfig"`
-	SetDataDirectoryOwnership bool                   `json:"setDataDirectoryOwnership"`
-	ValidateFilesystem        bool                   `json:"validateFilesystem"`
+	Image                     string                      `json:"image"`
+	Resources                 corev1.ResourceRequirements `json:"resources"`
+	NodeConfig                map[string]ValueSource      `json:"nodeConfig"`
+	RPKConfig                 map[string]ValueSource      `json:"rpkConfig"`
+	SetDataDirectoryOwnership bool                        `json:"setDataDirectoryOwnership"`
+	ValidateFilesystem        bool                        `json:"validateFilesystem"`
 
 	// Require volumes with special names to be provided.
 	// datadir = required
 	// ts-cache = optional tiered storage cache
-	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates"`
-	PodTemplate          *PodTemplate                   `json:"podTemplate"`
+	// VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates"`
+	PodTemplate *PodTemplate `json:"podTemplate"`
+
+	// TODO does rpk redpanda tune read from redpanda.yaml?
+	// Arguments to be passed to rpk redpanda tune
+	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
+	// Tuning                    []string               `json:"tuning"`
 
 	// TODO flags??
 	// Likely to be merged into NodeConfig w/ CEL functions.
