@@ -79,8 +79,7 @@ tasks:
 
   gotohelm:
     cmds:
-      - task: go:build
-        vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
+      - GOBIN='{{.BUILD_ROOT}}' go install github.com/redpanda-data/redpanda-operator/gotohelm/cmd/gotohelm@7d25eb0350e2f16c9a5f09e06501d4546bd7da68
 
   licenseupdater:
     cmds:
