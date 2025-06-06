@@ -47,6 +47,9 @@ import (
 const (
 	FinalizerKey                    = "operator.redpanda.com/finalizer"
 	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
+	SyncerModeKey                   = "operator.redpanda.com/config-sync-mode"
+	SyncerModeDeclarative           = "declarative"
+	SyncerModeAdditive              = "additive" // The default for the moment
 
 	NotManaged = "false"
 
@@ -595,7 +598,9 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 		return "", false, errors.WithStack(err)
 	}
 
-	syncer := syncclusterconfig.Syncer{Client: admin, Mode: syncclusterconfig.SyncerModeAdditive}
+	mode := r.configSyncMode(ctx, rp)
+
+	syncer := syncclusterconfig.Syncer{Client: admin, Mode: mode}
 	configStatus, err := syncer.Sync(ctx, config, usersTXT)
 	if err != nil {
 		return "", false, errors.WithStack(err)
@@ -603,6 +608,19 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 
 	// TODO: this needs to be updated when the hashing code lands
 	return strconv.FormatInt(configStatus.Version, 10), configStatus.NeedsRestart, nil
+}
+
+func (r *RedpandaReconciler) configSyncMode(ctx context.Context, rp *redpandav1alpha2.Redpanda) syncclusterconfig.SyncerMode {
+	switch strings.ToLower(rp.Annotations[SyncerModeKey]) {
+	case SyncerModeDeclarative:
+		return syncclusterconfig.SyncerModeDeclarative
+	case "", SyncerModeAdditive:
+		return syncclusterconfig.SyncerModeAdditive
+	default:
+		logger := log.FromContext(ctx)
+		logger.Info("unrecognised value for %s, syncing config in Additive mode", SyncerModeKey)
+		return syncclusterconfig.SyncerModeAdditive
+	}
 }
 
 func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
