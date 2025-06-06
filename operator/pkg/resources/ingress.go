@@ -268,3 +268,167 @@ func objectLabels(obj metav1.Object) (labels.CommonLabels, error) {
 	}
 	return objLabels, nil
 }
+
+
+// RenderIngress creates an Ingress object 
+func RenderIngress(
+	_ context.Context,
+	obj metav1.Object,
+	subdomain string,
+	tlsSecretName string,
+	clusterIssuer string,
+) (k8sclient.Object, error) {
+	// Check for empty subdomain early
+	if subdomain == "" {
+		return nil, nil // No ingress needed without subdomain
+	}
+
+	var svcName string
+	var svcPortName string
+	var ingressName string
+	var endpoint string
+	extraAnnotations := map[string]string{}
+
+	switch o := obj.(type) {
+	case *vectorizedv1alpha1.Cluster:
+		pandaproxyAPI := o.FirstPandaproxyAPIExternal()
+		var userConfig *vectorizedv1alpha1.IngressConfig
+		if pandaproxyAPI != nil {
+			userConfig = pandaproxyAPI.External.Ingress
+		}
+		
+		if userConfig != nil && userConfig.Enabled != nil && !*userConfig.Enabled {
+			return nil, nil
+		}
+		
+		svcName = o.GetName() + "-cluster"
+		svcPortName = "proxy-external"
+		ingressName = o.GetName()
+		extraAnnotations[SSLPassthroughAnnotation] = "true"
+		
+		// Use user-configured endpoint if provided
+		if userConfig != nil && userConfig.Endpoint != "" {
+			endpoint = userConfig.Endpoint
+		}
+		
+		// Merge user annotations (user annotations take precedence)
+		if userConfig != nil {
+			for k, v := range userConfig.Annotations {
+				extraAnnotations[k] = v
+			}
+		}
+
+	case *vectorizedv1alpha1.Console:
+		userConfig := o.Spec.Ingress
+		if userConfig != nil && userConfig.Enabled != nil && !*userConfig.Enabled {
+			return nil, nil
+		}
+		
+		svcName = o.GetName()
+		svcPortName = "http"
+		ingressName = o.GetName()
+		
+		// Add server snippet to block admin/debug paths for Console
+		extraAnnotations["nginx.ingress.kubernetes.io/server-snippet"] = "if ($request_uri ~* ^/(debug|admin)) {\n\treturn 403;\n\t}"
+		
+		// Use "console" as default endpoint if none provided
+		if endpoint == "" {
+			endpoint = "console"
+		}
+		// Use user-configured endpoint if provided
+		if userConfig != nil && userConfig.Endpoint != "" {
+			endpoint = userConfig.Endpoint
+		}
+		
+		// Merge user annotations (user annotations take precedence)
+		if userConfig != nil {
+			for k, v := range userConfig.Annotations {
+				extraAnnotations[k] = v
+			}
+		}
+
+	default:
+		return nil, fmt.Errorf("expected object to be Cluster or Console")
+	}
+
+	// Construct the host with optional endpoint prefix
+	host := subdomain
+	if endpoint != "" {
+		host = fmt.Sprintf("%s.%s", endpoint, subdomain)
+	}
+
+	// Default configuration
+	ingressClassName := nginx
+	pathTypePrefix := networkingv1.PathTypePrefix
+
+	objLabels, err := objectLabels(obj)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get object labels: %w", err)
+	}
+
+	annotations := map[string]string{}
+	for k, v := range extraAnnotations {
+		annotations[k] = v
+	}
+
+	var tlsConfig []networkingv1.IngressTLS
+
+	// Configure TLS if secret name is provided
+	if tlsSecretName != "" {
+		// Add TLS annotations
+		if clusterIssuer != "" {
+			annotations["cert-manager.io/cluster-issuer"] = clusterIssuer
+			annotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = "true"
+		}
+
+		// Add TLS configuration
+		tlsConfig = []networkingv1.IngressTLS{
+			{
+				Hosts:      []string{host, fmt.Sprintf("*.%s", host)},
+				SecretName: tlsSecretName,
+			},
+		}
+	}
+
+	ingress := &networkingv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Ingress",
+			APIVersion: "networking.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        ingressName,
+			Namespace:   obj.GetNamespace(),
+			Labels:      objLabels,
+			Annotations: annotations,
+		},
+		Spec: networkingv1.IngressSpec{
+			IngressClassName: &ingressClassName,
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: host,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Path:     "/",
+									PathType: &pathTypePrefix,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: svcName,
+											Port: networkingv1.ServiceBackendPort{
+												Name: svcPortName,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			TLS: tlsConfig,
+		},
+	}
+
+	return ingress, nil
+}
