@@ -450,7 +450,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, cluster 
 }
 
 func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI) error {
-	if rp.Spec.ClusterSpec.Enterprise == nil {
+	if rp.Spec.ClusterSpec == nil || rp.Spec.ClusterSpec.Enterprise == nil {
 		return nil
 	}
 
