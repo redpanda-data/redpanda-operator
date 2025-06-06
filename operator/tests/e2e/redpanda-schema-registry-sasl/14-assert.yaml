@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: delete-schema-rp-sasl
+  name: delete-schema-with-client-tls-rp-sasl
 status:
   conditions:
     - status: "True"
