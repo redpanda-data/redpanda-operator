@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Empty Redpanda specs (i.e. `clusterSpec: null` or otherwise unspecified) no longer causes the operator to panic'
+time: 2025-06-06T13:29:24.970882-04:00
