@@ -45,6 +45,9 @@ type TestSuite struct {
 	Name     string
 	Required bool
 	Timeout  time.Duration
+	// Retry, if provided, is the upper limit of how many times to
+	// automatically retry this TestSuite.
+	Retry *int
 
 	JUnitPattern *string
 }
@@ -59,22 +62,31 @@ func (suite *TestSuite) junitPattern() string {
 func (suite *TestSuite) ToStep() pipeline.Step {
 	prettyName := fmt.Sprintf("%s Tests", cases.Title(language.English, cases.NoLower).String(suite.Name))
 
+	remainingFields := map[string]any{
+		"soft_fail":          !suite.Required,
+		"timeout_in_minutes": int(suite.Timeout.Minutes()),
+		"agents":             AgentsLarge,
+		"notify": []any{
+			NotifyGitHubCommitStatus{Context: prettyName},
+		},
+	}
+	if suite.Retry != nil {
+		// See https://buildkite.com/docs/pipelines/configure/step-types/command-step#retry-attributes
+		remainingFields["retry"] = map[string]any{
+			"automatic": map[string]any{
+				"limit": *suite.Retry,
+			},
+		}
+	}
 	return &pipeline.GroupStep{
 		Group: &prettyName,
 		Key:   strings.ToLower(suite.Name),
 		Steps: pipeline.Steps{
 			&pipeline.CommandStep{
-				Key:     strings.ToLower(suite.Name) + "-run",
-				Label:   "Run " + prettyName,
-				Command: "./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:" + strings.ToLower(suite.Name),
-				RemainingFields: map[string]any{
-					"soft_fail":          !suite.Required,
-					"timeout_in_minutes": int(suite.Timeout.Minutes()),
-					"agents":             AgentsLarge,
-					"notify": []any{
-						NotifyGitHubCommitStatus{Context: prettyName},
-					},
-				},
+				Key:             strings.ToLower(suite.Name) + "-run",
+				Label:           "Run " + prettyName,
+				Command:         "./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:" + strings.ToLower(suite.Name),
+				RemainingFields: remainingFields,
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
 						GITHUB_API_TOKEN, // Required to clone private GH repos (Flux Shims, buildkite slack).
