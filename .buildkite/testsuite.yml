@@ -91,6 +91,9 @@ steps:
           failed: true
         message: ':cloud: Integration Tests Job Failed'
         slack_token_env_var_name: SLACK_VBOT_TOKEN
+    retry:
+      automatic:
+        limit: 3
     soft_fail: true
     timeout_in_minutes: 90
   - continue_on_failure: true
@@ -133,6 +136,9 @@ steps:
           failed: true
         message: ':cloud: Acceptance Tests Job Failed'
         slack_token_env_var_name: SLACK_VBOT_TOKEN
+    retry:
+      automatic:
+        limit: 3
     soft_fail: true
     timeout_in_minutes: 60
   - continue_on_failure: true
