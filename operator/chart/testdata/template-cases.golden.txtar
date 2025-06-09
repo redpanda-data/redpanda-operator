@@ -60697,6 +60697,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -61576,6 +61582,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -62473,6 +62485,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -63376,6 +63394,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -64291,6 +64315,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -65219,6 +65249,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -67246,6 +67282,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -68165,6 +68207,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -69089,6 +69137,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -70194,6 +70248,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -71150,6 +71210,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -72249,6 +72315,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -73317,6 +73389,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -75575,6 +75653,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -78192,6 +78276,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -79577,6 +79667,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -83458,6 +83554,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -84648,6 +84750,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -86047,6 +86155,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -87290,6 +87404,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -89471,6 +89591,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -90714,6 +90840,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -92685,6 +92817,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -93960,6 +94098,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -95253,6 +95397,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -97249,6 +97399,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -98452,6 +98608,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -100712,6 +100874,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -102000,6 +102168,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -104266,6 +104440,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -105512,6 +105692,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -106713,6 +106899,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -108822,6 +109014,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -111059,6 +111257,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -117377,6 +117581,12 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:

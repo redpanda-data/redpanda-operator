@@ -15,6 +15,7 @@ func init() {
 	// General scenario steps
 
 	framework.RegisterStep(`^cluster "([^"]*)" is available$`, checkClusterAvailability)
+	framework.RegisterStep("running `(.*)` will output:$", runScriptInClusterCheckOutput)
 
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
