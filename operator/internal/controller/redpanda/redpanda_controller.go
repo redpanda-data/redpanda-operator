@@ -618,7 +618,7 @@ func (r *RedpandaReconciler) configSyncMode(ctx context.Context, rp *redpandav1a
 		return syncclusterconfig.SyncerModeAdditive
 	default:
 		logger := log.FromContext(ctx)
-		logger.Info("unrecognised value for %s, syncing config in Additive mode", SyncerModeKey)
+		logger.Info("unrecognised value %q for %s, syncing config in Additive mode", rp.Annotations[SyncerModeKey], SyncerModeKey)
 		return syncclusterconfig.SyncerModeAdditive
 	}
 }
