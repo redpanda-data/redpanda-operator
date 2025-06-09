@@ -38,11 +38,13 @@ var suites = []TestSuite{
 		Name:     "integration",
 		Required: true,
 		Timeout:  30*time.Minute + time.Hour,
+		Retry:    ptr.To(3),
 	},
 	{
 		Name:     "acceptance",
 		Required: true,
 		Timeout:  time.Hour,
+		Retry:    ptr.To(3),
 	},
 	// kuttl-v1 is currently the slowest and flakiest of our test suites. The
 	// majority of changes made aren't exercised by this suite. It runs conditionally
@@ -53,6 +55,7 @@ var suites = []TestSuite{
 		Timeout:      30*time.Minute + time.Hour,
 		JUnitPattern: ptr.To("work/operator/tests/_e2e_artifacts/kuttl-report.xml"),
 		Condition:    `build.pull_request.labels includes "run-kuttl-v1"`,
+		Retry:        ptr.To(3),
 	},
 	{
 		Name:         "kuttl-v1-nodepools",
