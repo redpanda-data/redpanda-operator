@@ -45,6 +45,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			RuleFiles: []string{
 				"files/rbac/leader-election.ClusterRole.yaml",
 				"files/rbac/pvcunbinder.ClusterRole.yaml",
+				"files/rbac/rack-awareness.ClusterRole.yaml", // Rack awareness is a toggle on the CR, so we always need RBAC for it.
 				"files/rbac/v1-manager.ClusterRole.yaml",
 			},
 		},
@@ -140,8 +141,7 @@ func Roles(dot *helmette.Dot) []rbacv1.Role {
 			Name:    Fullname(dot),
 			Enabled: values.Scope == Namespace,
 			RuleFiles: []string{
-				"files/rbac/rack-awareness.Role.yaml", // Rack awareness is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/sidecar.Role.yaml",        // Sidecar is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/sidecar.Role.yaml", // Sidecar is a toggle on the CR, so we always need RBAC for it.
 				"files/rbac/v2-manager.Role.yaml",
 			},
 		},
