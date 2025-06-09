@@ -46,6 +46,9 @@ type TestSuite struct {
 	Required  bool
 	Timeout   time.Duration
 	Condition string
+	// Retry, if provided, is the upper limit of how many times to
+	// automatically retry this TestSuite.
+	Retry *int
 
 	JUnitPattern *string
 }
@@ -70,6 +73,14 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 	}
 	if suite.Condition != "" {
 		remainingFields["if"] = suite.Condition
+	}
+	if suite.Retry != nil {
+		// See https://buildkite.com/docs/pipelines/configure/step-types/command-step#retry-attributes
+		remainingFields["retry"] = map[string]any{
+			"automatic": map[string]any{
+				"limit": *suite.Retry,
+			},
+		}
 	}
 	return &pipeline.GroupStep{
 		Key:   strings.ToLower(suite.Name),
