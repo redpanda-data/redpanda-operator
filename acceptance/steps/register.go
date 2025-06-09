@@ -17,6 +17,7 @@ func init() {
 	framework.RegisterStep(`^cluster "([^"]*)" is available$`, checkClusterAvailability)
 
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
+	framework.RegisterStep("running `(.*)` will output:$", runScriptInClusterCheckOutput)
 
 	// Schema scenario steps
 	framework.RegisterStep(`^there is no schema "([^"]*)" in cluster "([^"]*)"$`, thereIsNoSchema)

@@ -27,6 +27,9 @@ This is required to ensure that a pre-existing sts can roll over to new configur
 * Setting `serviceAccount.create` to `false` no longer prevents the Kubernetes ServiceAccountToken volume from being mounted to the operator Pod.
 * updated operator v1 to ignore "cluster.redpanda.com/node-pool-spec" annotation for pod rolls. previously, under certain conditions, the operator started rolling pods if this annotation changed - but there is no need to do so.
 * Empty Redpanda specs (i.e. `clusterSpec: null` or otherwise unspecified) no longer causes the operator to panic
+* `get` permissions on `Node` resources is now correctly configured by default.
+
+   `--set rbac.createAdditionalControllerCRs=true` is no longer required for rackawareness to work.
 
 ## v2.4.2 - 2025-05-02
 ### Added
