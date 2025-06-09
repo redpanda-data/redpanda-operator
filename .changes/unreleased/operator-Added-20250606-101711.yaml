@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'The annotation `operator.redpanda.com/config-sync-mode: Declarative` may be added to a Redpanda resource to control the mode in which cluster configuration is updated. `Declarative` mode will *remove* any configuration that''s not specified on the resource. The default behaviour is `Additive`, wich preserves the current overwrite-only mode.'
+time: 2025-06-06T10:17:11.978547+01:00
