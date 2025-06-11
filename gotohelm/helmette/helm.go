@@ -200,7 +200,7 @@ func Tpl(dot *Dot, tpl string, context any) string {
 // Lookup is a wrapper around helm's builtin lookup function that instead
 // returns `nil, false` if the lookup fails instead of an empty dictionary.
 // See: https://github.com/helm/helm/blob/e24e31f6cc122405ae25069f5b3960036c202c46/pkg/engine/lookup_func.go#L60-L97
-func Lookup[T any, PT kube.AddrofObject[T]](dot *Dot, namespace, name string) (obj *T, found bool) {
+func Lookup[T any, PT kube.AddrOfObject[T]](dot *Dot, namespace, name string) (obj *T, found bool) {
 	obj, found, err := SafeLookup[T, PT](dot, namespace, name)
 	if err != nil {
 		panic(err)
@@ -212,7 +212,7 @@ func Lookup[T any, PT kube.AddrofObject[T]](dot *Dot, namespace, name string) (o
 // SafeLookup is a wrapper around helm's builtin lookup function. It acts
 // exactly like Lookup except it returns any errors that may have occurred
 // in the underlying lookup operations.
-func SafeLookup[T any, PT kube.AddrofObject[T]](dot *Dot, namespace, name string) (*T, bool, error) {
+func SafeLookup[T any, PT kube.AddrOfObject[T]](dot *Dot, namespace, name string) (*T, bool, error) {
 	// Special case, if no KubeConfig has been provided, short circuit and
 	// report that the object wasn't found. This allows execution without
 	// access to a Kubernetes cluster, like `helm template`.
