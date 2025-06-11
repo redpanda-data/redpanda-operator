@@ -12,11 +12,12 @@ package kube
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ObjectList is a generic equivalent of [ObjectList].
-type ObjectList[T any] interface {
+type AddrOfObjectList[T any] interface {
 	client.ObjectList
 	*T
 }
@@ -28,10 +29,50 @@ type AddrofObject[T any] interface {
 	client.Object
 }
 
+func ApplyAll[T client.Object](ctx context.Context, ctl *Ctl, objs ...T) error {
+	var errs []error
+	for _, obj := range objs {
+		if err := ctl.Apply(ctx, obj); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func ApplyAllAndWait[T client.Object](ctx context.Context, ctl *Ctl, cond CondFn[T], objs ...T) error {
+	if err := ApplyAll(ctx, ctl, objs...); err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if err := ctl.WaitFor(ctx, obj, func(o Object, err error) (bool, error) {
+			return cond(T(obj), err)
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func Apply[T client.Object](ctx context.Context, ctl *Ctl, obj T) error {
+	return ctl.Apply(ctx, obj)
+}
+
+func ApplyAndWait[T client.Object](ctx context.Context, ctl *Ctl, obj T, cond CondFn[T]) error {
+	if err := ctl.Apply(ctx, obj); err != nil {
+		return err
+	}
+
+	return ctl.WaitFor(ctx, obj, func(o Object, err error) (bool, error) {
+		return cond(T(obj), err)
+	})
+}
+
 // List is a generic equivalent of [Ctl.List].
-func List[T any, L ObjectList[T]](ctx context.Context, ctl *Ctl, opts ...client.ListOption) (*T, error) {
+func List[T any, L AddrOfObjectList[T]](ctx context.Context, ctl *Ctl, opts ...client.ListOption) (*T, error) {
 	var list T
-	if err := ctl.client.List(ctx, L(&list), opts...); err != nil {
+	if err := ctl.List(ctx, L(&list), opts...); err != nil {
 		return nil, err
 	}
 	return &list, nil
