@@ -13,4 +13,4 @@ use (
 	./pkg
 )
 
-replace github.com/redpanda-data/redpanda-operator/gotohelm => github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
+replace github.com/redpanda-data/redpanda-operator/gotohelm => github.com/redpanda-data/redpanda-operator/gotohelm v1.2.0
