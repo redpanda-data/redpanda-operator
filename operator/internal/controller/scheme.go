@@ -12,6 +12,7 @@ package controller
 import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -23,11 +24,13 @@ import (
 
 var (
 	v1SchemeFns = []func(s *runtime.Scheme) error{
+		apiextensionsv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		certmanagerv1.AddToScheme,
 		vectorizedv1alpha1.AddToScheme,
 	}
 	v2SchemeFns = []func(s *runtime.Scheme) error{
+		apiextensionsv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		certmanagerv1.AddToScheme,
 		redpandav1alpha1.AddToScheme,

@@ -25,7 +25,7 @@ const controlPlaneVersion = "1.30.x"
 // NewEnv starts a local kubernetes control plane via [envtest.Environment] and
 // returns a [kube.Ctl] to access it. The provided [testing.T] will be used to
 // shutdown the control plane at the end of the test.
-func NewEnv(t *testing.T) *kube.Ctl {
+func NewEnv(t *testing.T, opts ...kube.Option) *kube.Ctl {
 	// TODO: Would be nice to instead just import setup-envtest but the package
 	// isn't exactly friendly to be used as a library. Alternatively, we could
 	// use nix to provide the etcd and kubeapi-server binaries as that's all
@@ -50,7 +50,7 @@ func NewEnv(t *testing.T) *kube.Ctl {
 		require.NoError(t, env.Stop())
 	})
 
-	ctl, err := kube.FromRESTConfig(cfg)
+	ctl, err := kube.FromRESTConfig(cfg, opts...)
 	require.NoError(t, err)
 
 	return ctl
