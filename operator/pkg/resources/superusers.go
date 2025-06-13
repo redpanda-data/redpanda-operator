@@ -16,6 +16,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -146,4 +147,78 @@ func (r *SuperUsersResource) Key() types.NamespacedName {
 // GetUsername returns username used for Kafka SASL config that has prefix based on --superusers-prefix flag
 func (r *SuperUsersResource) GetUsername() string {
 	return r.username
+}
+
+func RenderSuperUsers(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, username, suffix string, client k8sclient.Client, scheme *runtime.Scheme) (k8sclient.Object, error) {
+	// Check if resource already exists
+	exists, err := isResourceExists(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceNameTrim(cluster.Name, suffix),
+			Namespace: cluster.Namespace,
+		},
+	}, client)
+	if err != nil {
+		return nil, fmt.Errorf("checking if secret exists: %w", err)
+	}
+
+	// If the Secret already exists, return nil to indicate we don't need to create it
+	if exists {
+		return nil, nil
+	}
+
+	// Resource doesn't exist, create a new one
+	password, err := generatePassword(scramPasswordLength)
+	if err != nil {
+		return nil, fmt.Errorf("could not generate SASL password: %w", err)
+	}
+
+	// Create the secret object with metadata
+	obj := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceNameTrim(cluster.Name, suffix),
+			Namespace: cluster.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		Type: corev1.SecretTypeBasicAuth,
+		Data: map[string][]byte{
+			corev1.BasicAuthUsernameKey: []byte(username),
+			corev1.BasicAuthPasswordKey: []byte(password),
+		},
+	}
+
+	return obj, nil
+}
+
+// isResourceExists checks to see if a resource exists. False if there is an error or it is not found, true if it exists
+func isResourceExists(ctx context.Context, object k8sclient.Object, client k8sclient.Client) (bool, error) {
+	// For Secret objects, we need to explicitly set the GVK
+	if secret, ok := object.(*corev1.Secret); ok {
+		err := client.Get(ctx, types.NamespacedName{
+			Namespace: secret.GetNamespace(),
+			Name:      secret.GetName(),
+		}, secret)
+		if err != nil && !errors.IsNotFound(err) {
+			return false, fmt.Errorf("error while fetching secret %s: %w", secret.GetName(), err)
+		}
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return true, nil
+	}
+
+	// For other object types
+	err := client.Get(ctx, types.NamespacedName{
+		Namespace: object.GetNamespace(),
+		Name:      object.GetName(),
+	}, object)
+	if err != nil && !errors.IsNotFound(err) {
+		return false, fmt.Errorf("error while fetching %s: %w", object.GetName(), err)
+	}
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, nil
 }

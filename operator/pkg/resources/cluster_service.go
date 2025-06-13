@@ -148,3 +148,45 @@ func (r *ClusterServiceResource) ServiceFQDN(clusterDomain string) string {
 		clusterDomain,
 	)
 }
+
+// RenderClusterService renders a cluster service
+func RenderClusterService(
+	_ context.Context,
+	cluster *vectorizedv1alpha1.Cluster,
+	svcPorts []NamedServicePort,
+) (k8sclient.Object, error) {
+	if len(svcPorts) == 0 {
+		return nil, nil
+	}
+
+	ports := make([]corev1.ServicePort, 0, len(svcPorts))
+	for _, svcPort := range svcPorts {
+		ports = append(ports, corev1.ServicePort{
+			Name:       svcPort.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       int32(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
+		})
+	}
+
+	objLabels := labels.ForCluster(cluster)
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name:      cluster.Name + "-cluster",
+			Labels:    objLabels,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: corev1.ServiceSpec{
+			PublishNotReadyAddresses: true,
+			Type:                     corev1.ServiceTypeClusterIP,
+			Ports:                    ports,
+			Selector:                 objLabels.AsAPISelector().MatchLabels,
+		},
+	}
+
+	return svc, nil
+}

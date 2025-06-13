@@ -1,0 +1,256 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  annotations:
+    redpanda.vectorized.io/managed: "true"
+  creationTimestamp: "2025-05-15T18:19:14Z"
+  generation: 1
+  name: rp-x9y8z7w6v5u4t3s2r1q0
+  namespace: redpanda
+  resourceVersion: "85097"
+  uid: b5efe9dc-50d0-45da-9dd0-dc300ed54a73
+spec:
+  additionalConfiguration:
+    redpanda.aggregate_metrics: "true"
+    redpanda.audit_enabled: "true"
+    redpanda.cloud_storage_access_key: unused
+    redpanda.cloud_storage_cache_size_percent: "15"
+    redpanda.cloud_storage_credentials_host: sts.us-east-2.amazonaws.com
+    redpanda.cloud_storage_enable_remote_read: "true"
+    redpanda.cloud_storage_enable_remote_write: "true"
+    redpanda.cloud_storage_manifest_cache_size: "16777216"
+    redpanda.cloud_storage_secret_key: unused
+    redpanda.cloud_storage_segment_max_upload_interval_sec: "3600"
+    redpanda.cloud_storage_spillover_manifest_size: "65536"
+    redpanda.cluster_id: rp-x9y8z7w6v5u4t3s2r1q0
+    redpanda.compacted_log_segment_size: "67108864"
+    redpanda.core_balancing_continuous: "true"
+    redpanda.default_topic_replications: "3"
+    redpanda.disk_reservation_percent: "0"
+    redpanda.enable_controller_log_rate_limiting: "true"
+    redpanda.enable_rack_awareness: "true"
+    redpanda.enable_usage: "true"
+    redpanda.fetch_reads_debounce_timeout: "5"
+    redpanda.group_topic_partitions: "6"
+    redpanda.initial_retention_local_target_ms_default: "600000"
+    redpanda.kafka_batch_max_bytes: "1048576"
+    redpanda.kafka_connection_rate_limit: "1000"
+    redpanda.kafka_connections_max: "3700"
+    redpanda.kafka_enable_partition_reassignment: "false"
+    redpanda.kafka_rpc_server_tcp_recv_buf: "null"
+    redpanda.kafka_rpc_server_tcp_send_buf: "null"
+    redpanda.kafka_throughput_limit_node_in_bps: "13333334"
+    redpanda.kafka_throughput_limit_node_out_bps: "40000000"
+    redpanda.log_segment_ms_min: "300000"
+    redpanda.log_segment_size: "134217728"
+    redpanda.log_segment_size_max: "134217728"
+    redpanda.log_segment_size_min: "16777216"
+    redpanda.max_compacted_log_segment_size: "268435456"
+    redpanda.max_concurrent_producer_ids: "3700"
+    redpanda.minimum_topic_replications: "3"
+    redpanda.partition_autobalancing_mode: continuous
+    redpanda.raft_learner_recovery_rate: "104857600"
+    redpanda.retention_local_strict: "false"
+    redpanda.retention_local_strict_override: "false"
+    redpanda.retention_local_target_capacity_percent: "70"
+    redpanda.retention_local_target_ms_default: "21600000"
+    redpanda.rpc_client_connections_per_peer: "80"
+    redpanda.rpc_server_listen_backlog: "1000"
+    redpanda.rps_limit_acls_and_users_operations: "100"
+    redpanda.rps_limit_configuration_operations: "10"
+    redpanda.rps_limit_move_operations: "2000"
+    redpanda.rps_limit_node_management_operations: "10"
+    redpanda.rps_limit_topic_operations: "100"
+    redpanda.space_management_enable: "true"
+    redpanda.space_management_enable_override: "true"
+    redpanda.topic_memory_per_partition: "157287"
+    redpanda.topic_partitions_per_shard: "2066"
+    redpanda.transaction_coordinator_partitions: "6"
+    redpanda.use_fetch_scheduler_group: "true"
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+  cloudStorage:
+    apiEndpoint: s3.us-east-2.amazonaws.com
+    bucket: redpanda-cloud-storage-x9y8z7w6v5u4t3s2r1q0
+    cacheStorage:
+      capacity: 140G
+      storageClassName: local-path
+    credentialsSource: sts
+    enabled: true
+    region: us-east-2
+    secretKeyRef: {}
+    trustfile: /etc/ssl/certs/ca-certificates.crt
+  configuration:
+    additionalCommandlineArguments:
+      abort-on-seastar-bad-alloc: ""
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+    adminApi:
+      - external: {}
+        port: 9644
+        tls: {}
+    kafkaApi:
+      - authenticationMethod: sasl
+        external: {}
+        port: 9092
+        tls: {}
+      - authenticationMethod: sasl
+        external:
+          enabled: true
+          endpointTemplate: '{{ .Index }}-a9371ae7-{{ .HostIP | sha256sum | substr 0
+          7 }}'
+          subdomain: x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com
+        port: 30092
+        tls:
+          enabled: true
+          issuerRef:
+            kind: ClusterIssuer
+            name: letsencrypt-dns-prod
+    pandaproxyApi:
+      - external: {}
+        port: 8082
+        tls: {}
+      - authenticationMethod: none
+        external:
+          enabled: true
+          endpointTemplate: '{{ .Index }}-2f462aba-{{ .HostIP | sha256sum | substr 0
+          7 }}'
+          ingress:
+            enabled: false
+          subdomain: x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com
+        port: 30082
+        tls:
+          enabled: true
+          nodeSecretRef:
+            apiVersion: v1
+            kind: Secret
+            name: rp-x9y8z7w6v5u4t3s2r1q0-redpanda
+            namespace: redpanda
+    rpcServer:
+      port: 33145
+    schemaRegistry:
+      authenticationMethod: none
+      external:
+        enabled: true
+        endpoint: schema-registry-1dfac1ba
+        staticNodePort: true
+        subdomain: x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com
+      port: 30081
+      tls:
+        enabled: true
+        nodeSecretRef:
+          apiVersion: v1
+          kind: Secret
+          name: rp-x9y8z7w6v5u4t3s2r1q0-redpanda
+          namespace: redpanda
+  image: public.ecr.aws/l9j0i2e0/redpanda
+  initialValidationForVolume: true
+  kafkaEnableAuthorization: true
+  licenseRef:
+    key: license
+    name: redpanda-x9y8z7w6v5u4t3s2r1q0-license
+    namespace: redpanda
+  nodePools:
+    - additionalCommandlineArguments:
+        abort-on-seastar-bad-alloc: ""
+        dump-memory-diagnostics-on-alloc-failure-kind: all
+      cloudCacheStorage:
+        capacity: 140550M
+        storageClassName: local-path
+      hostIndexOffset: 100
+      name: blue-a
+      nodeSelector:
+        redpanda-node: "true"
+        redpanda-node-pool: blue-a
+      replicas: 3
+      resources:
+        limits:
+          cpu: "1"
+          memory: 6553Mi
+        redpanda:
+          cpu: "1"
+        requests:
+          cpu: "1"
+          memory: 6553Mi
+      storage:
+        capacity: 796450M
+        storageClassName: local-path
+      tolerations:
+        - effect: NoSchedule
+          key: redpanda-node
+          operator: Equal
+          value: "true"
+        - effect: NoSchedule
+          key: redpanda-node-pool
+          operator: Equal
+          value: "true"
+  nodeSelector:
+    redpanda-node: "true"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+  priorityClassName: system-node-critical
+  resources:
+    limits:
+      cpu: "1"
+      memory: 6553Mi
+    redpanda:
+      cpu: "1"
+    requests:
+      cpu: "1"
+      memory: 6553Mi
+  restartConfig: {}
+  serviceAccount: rp-x9y8z7w6v5u4t3s2r1q0
+  sidecars: {}
+  storage:
+    capacity: 797G
+    storageClassName: local-path
+  superUsers:
+    - username: __redpanda_cloud__testuser2
+    - username: __redpanda_cloud__connectors
+    - username: __redpanda_cloud__kminion
+    - username: __redpanda_cloud__redpanda_connect
+  tolerations:
+    - effect: NoSchedule
+      key: redpanda-node
+      operator: Equal
+      value: "true"
+  version: v25.1.4
+status:
+  conditions:
+    - lastTransitionTime: "2025-05-15T18:24:52Z"
+      status: "True"
+      type: OperatorQuiescent
+    - lastTransitionTime: "2025-05-15T21:36:29Z"
+      message: Cluster configuration reasserted at 2025-05-15 21:36:29
+      status: "True"
+      type: ClusterConfigured
+  currentReplicas: 3
+  nodePools:
+    blue-a:
+      currentReplicas: 3
+      readyReplicas: 3
+      replicas: 3
+      restarting: false
+  nodes:
+    external:
+      - 0-a9371ae7-e838e10.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30092
+      - 2-a9371ae7-b8415ea.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30092
+      - 1-a9371ae7-477049b.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30092
+    externalPandaproxy:
+      - 0-2f462aba-e838e10.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30082
+      - 2-2f462aba-b8415ea.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30082
+      - 1-2f462aba-477049b.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30082
+    internal:
+      - rp-x9y8z7w6v5u4t3s2r1q0-blue-a-0.rp-x9y8z7w6v5u4t3s2r1q0.redpanda.svc.cluster.local.
+      - rp-x9y8z7w6v5u4t3s2r1q0-blue-a-2.rp-x9y8z7w6v5u4t3s2r1q0.redpanda.svc.cluster.local.
+      - rp-x9y8z7w6v5u4t3s2r1q0-blue-a-1.rp-x9y8z7w6v5u4t3s2r1q0.redpanda.svc.cluster.local.
+    pandaproxyIngress: x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com
+    schemaRegistry:
+      external: schema-registry-1dfac1ba.x9y8z7w6v5u4t3s2r1q0.example.test.redpanda.com:30081
+      internal: rp-x9y8z7w6v5u4t3s2r1q0-cluster.redpanda.svc.cluster.local.:30081
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  restarting: false
+  upgrading: false
+  version: v25.1.4
