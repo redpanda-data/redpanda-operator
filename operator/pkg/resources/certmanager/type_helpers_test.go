@@ -564,7 +564,7 @@ func TestClusterCertificates(t *testing.T) {
 				},
 			},
 			[]string{"test-schema-registry-trusted-client-ca", "test-schema-registry-selfsigned-issuer", "test-schema-registry-root-certificate", "test-schema-registry-root-issuer", "test-schema-registry-node", "test-schema-registry-client"},
-			2, validateVolumesFn("tlsschemaregistrycert", []string{"ca.crt", "tls.crt", "tls.key"}), nil,
+			2, validateVolumesFn("tlsschemaregistrycert", []string{"tls.crt", "tls.key"}), nil,
 		},
 	}
 	for _, tt := range tests {
