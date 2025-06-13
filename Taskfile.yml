@@ -73,9 +73,22 @@ tasks:
       MOD:
         sh: go work edit -json | jq -r '.Use.[].DiskPath'
     cmds:
+    # go.works make things a bit funky. We have to sync twice to avoid
+    # accidentally upgrading deps everywhere which can be quite disruptive.
+    #
+    # The first sync will ensure that any newly added transient deps get pulled
+    # in at the same version as our other modules, if applicable.
+    # If we have Mod A and B and a 3rd party dep X such that:
+    # A -> B -> X
+    # if A imports X:
+    # `go mod tidy` will pull in the most recent version of X.
+    # `go work sync` will pull in the version that B is using.
+    - go work sync
     - for:
         var: MOD
       cmd: go mod tidy -C {{.ITEM}}
+    # The second go work sync, is the more standard go work sync. Any newly
+    # added deps will get added to the go.work.sum file.
     - go work sync
 
   fmt:
