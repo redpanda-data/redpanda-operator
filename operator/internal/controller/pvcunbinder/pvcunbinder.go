@@ -11,6 +11,7 @@ package pvcunbinder
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -44,7 +45,11 @@ var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|
 //  2. Ensure that all PVs in question have a Retain policy
 //  3. Delete all PVCs from step 1. (PVCs are immutable after creation,
 //     deletion is the only option)
-//  4. Deleting the Pod to re-trigger PVC creation and rebinding.
+//  4. (Optionally) "Recycle" all PVs from step 1 by clearing the ClaimRef.
+//     Kubernetes will only consider binding PVs that have a satisfiable
+//     NodeAffinity. By "recycling" we permit Flakey Nodes to rejoin the cluster
+//     which _might_ reclaim the now freed volume.
+//  5. Deleting the Pod to re-trigger PVC creation and rebinding.
 type Controller struct {
 	Client client.Client
 	// Timeout is the duration a Pod must be stuck in Pending before
@@ -57,6 +62,15 @@ type Controller struct {
 	// Reconciler will consider for remediation via some sort of filtering
 	// function.
 	Filter func(ctx context.Context, pod *corev1.Pod) (bool, error)
+	// AllowRebinding optionally enables clearing of the unbound PV's ClaimRef
+	// which effectively makes the PVs "re-bindable" if the underlying Node
+	// become capable of scheduling Pods once again.
+	// NOTE: This option can present problems when a Node's name is reused and
+	// using HostPath volumes and LocalPathProvisioner. In such a case, the
+	// helper Pod of LocalPathProvisioner will NOT run a second time as the
+	// Volume is assumed to exist. This can lead to Permission errors or
+	// referencing a directory that does not exist.
+	AllowRebinding bool
 }
 
 func FilterPodOwner(ownerNamespace, ownerName string) func(ctx context.Context, pod *corev1.Pod) (bool, error) {
@@ -130,9 +144,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	// Filter PVs down to ones that are:
-	// 1. Bound to a PVC we care about.
-	// 2. Have a NodeAffinity (which we assume is the cause of our Pod being in Pending)
+	// 1. Filter PVs down to ones that are:
+	// - Bound to a PVC we care about.
+	// - Have a NodeAffinity (which we assume is the cause of our Pod being in Pending)
 	var pvs []*corev1.PersistentVolume
 	for i := range pvList.Items {
 		pv := &pvList.Items[i]
@@ -161,14 +175,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pvs = append(pvs, pv)
 	}
 
-	// 3. Ensure that all PVs have reclaim set to Retain
+	// 2. Ensure that all PVs have reclaim set to Retain
 	for _, pv := range pvs {
 		if err := r.ensureRetainPolicy(ctx, pv); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	// 4. Delete all Bound PVCs
+	// 3. Delete all Bound PVCs
 	for key, pvc := range pvcByKey {
 		if pvc == nil || pvc.Spec.VolumeName == "" {
 			continue
@@ -186,6 +200,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Indicate that this PVC is now deleted.
 		pvcByKey[key] = nil
+	}
+
+	// 4. "Recycle" PVs that have been released. Technically optional, this
+	// allows disks to rebind if a Node happens to recover.
+	for _, pv := range pvs {
+		if err := r.maybeRecyclePersistentVolume(ctx, pv); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	missingPVCs := false
@@ -225,6 +247,44 @@ func (r *Controller) ensureRetainPolicy(ctx context.Context, pv *corev1.Persiste
 
 	patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
 	pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
+	if err := r.Client.Patch(ctx, pv, patch); err != nil {
+		return err
+	}
+	return nil
+}
+
+// maybeRecyclePersistentVolume "recycles" a released PV by clearing it's .ClaimRef
+// which makes it available for binding once again IF AllowRebinding is true.
+// This strategy is only valid for volumes that utilize .HostPath or .Local.
+func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume) error {
+	// This case should never hit as we filter out such PVs earlier in the
+	// controller though it's likely we don't handle such cases well aside from
+	// not unbinding them.
+	// TODO(chrisseto): Remove this check and add better clarify the expected
+	// behavior of this controller if it encounters network backed disks.
+	if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
+		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for recycling: %q", pv, pv.Name)
+	}
+
+	// NB: We handle this flag here to ensure we get explicit the log messages
+	// for all PVs we would have cleared the ClaimRef of.
+	if !r.AllowRebinding {
+		log.FromContext(ctx).Info("Skipping .ClaimRef clearing of PersistentVolume", "name", pv.Name, "AllowRebinding", r.AllowRebinding)
+		return nil
+	}
+
+	// Skip over unbound PVs.
+	if pv.Spec.ClaimRef == nil {
+		return nil
+	}
+
+	log.FromContext(ctx).Info("Clearing .ClaimRef of PersistentVolume", "name", pv.Name, "AllowRebinding", r.AllowRebinding)
+
+	// NB: We explicitly don't use an optimistic lock here as the control plane
+	// will likely have updated this PV's Status to indicate that it's now
+	// Released.
+	patch := client.StrategicMergeFrom(pv.DeepCopy())
+	pv.Spec.ClaimRef = nil
 	if err := r.Client.Patch(ctx, pv, patch); err != nil {
 		return err
 	}
