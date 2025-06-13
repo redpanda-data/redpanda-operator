@@ -149,6 +149,7 @@ func Command() *cobra.Command {
 		ghostbuster                         bool
 		unbindPVCsAfter                     time.Duration
 		unbinderSelector                    LabelSelectorValue
+		allowPVRebinding                    bool
 		autoDeletePVCs                      bool
 		webhookCertPath                     string
 		webhookCertName                     string
@@ -213,6 +214,7 @@ func Command() *cobra.Command {
 				ghostbuster,
 				unbindPVCsAfter,
 				unbinderSelector.Selector,
+				allowPVRebinding,
 				autoDeletePVCs,
 				pprofAddr,
 				webhookCertPath,
@@ -263,6 +265,7 @@ func Command() *cobra.Command {
 	cmd.Flags().StringSliceVar(&additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	cmd.Flags().BoolVar(&operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	cmd.Flags().DurationVar(&unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+	cmd.Flags().BoolVar(&allowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
 	cmd.Flags().Var(&unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().BoolVar(&autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
@@ -329,6 +332,7 @@ func Run(
 	ghostbuster bool,
 	unbindPVCsAfter time.Duration,
 	unbinderSelector labels.Selector,
+	allowPVRebinding bool,
 	autoDeletePVCs bool,
 	pprofAddr string,
 	webhookCertPath string,
@@ -684,14 +688,15 @@ func Run(
 
 	// The unbinder gets to run in any mode, if it's enabled.
 	if unbindPVCsAfter <= 0 {
-		setupLog.Info("PVCUnbinder controller not active", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
+		setupLog.Info("PVCUnbinder controller not active", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector, "allow-pv-rebinding", allowPVRebinding)
 	} else {
-		setupLog.Info("starting PVCUnbinder controller", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector)
+		setupLog.Info("starting PVCUnbinder controller", "unbind-after", unbindPVCsAfter, "selector", unbinderSelector, "allow-pv-rebinding", allowPVRebinding)
 
 		if err := (&pvcunbinder.Controller{
-			Client:   mgr.GetClient(),
-			Timeout:  unbindPVCsAfter,
-			Selector: unbinderSelector,
+			Client:         mgr.GetClient(),
+			Timeout:        unbindPVCsAfter,
+			Selector:       unbinderSelector,
+			AllowRebinding: allowPVRebinding,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
