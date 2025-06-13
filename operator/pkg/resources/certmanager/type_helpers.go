@@ -634,8 +634,8 @@ func (cc *ClusterCertificates) Volumes() (
 		mountPoints.SchemaRegistryAPI.NodeCertMountDir,
 		schemaRegistryClientCAVolName,
 		mountPoints.SchemaRegistryAPI.ClientCAMountDir,
-		true,
-		true,
+		cc.schemaRegistryAPI.selfSignedNodeCertificate,
+		len(cc.schemaRegistryAPI.clientCertificates) > 0,
 	)
 	vols = append(vols, vol...)
 	mounts = append(mounts, mount...)
