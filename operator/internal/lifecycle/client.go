@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"slices"
 
 	"github.com/go-logr/logr"
@@ -30,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // Cluster is a generic interface for a pointer to a Kubernetes object
@@ -272,15 +273,16 @@ func (r *ResourceClient[T, U]) listResources(ctx context.Context, object client.
 		}
 	}
 
-	converted := []client.Object{}
-	items := reflect.ValueOf(list).Elem().FieldByName("Items")
-	for i := 0; i < items.Len(); i++ {
-		item := items.Index(i).Addr().Interface().(client.Object)
-		item.GetObjectKind().SetGroupVersionKind(*kind)
-		converted = append(converted, item)
+	items, err := kube.Items[client.Object](list)
+	if err != nil {
+		return nil, err
 	}
 
-	return sortCreation(converted), nil
+	for _, item := range items {
+		item.GetObjectKind().SetGroupVersionKind(*kind)
+	}
+
+	return sortCreation(items), nil
 }
 
 // listAllOwnedResources lists all resources owned by a given cluster, optionally including node pools.

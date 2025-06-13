@@ -11,7 +11,9 @@ package kube
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,4 +67,29 @@ func Delete[T any, PT AddrofObject[T]](ctx context.Context, ctl *Ctl, key Object
 
 func AsKey(obj Object) ObjectKey {
 	return ObjectKey{Namespace: obj.GetNamespace(), Name: obj.GetName()}
+}
+
+// Items is a generic aware accessor for [client.ObjectList] that handles
+// non-standard list implementations.
+func Items[T Object](list client.ObjectList) ([]T, error) {
+	items := reflect.ValueOf(list).Elem().FieldByName("Items")
+
+	out := make([]T, items.Len())
+	for i := 0; i < items.Len(); i++ {
+		item := items.Index(i)
+		if item.Kind() != reflect.Pointer {
+			item = item.Addr()
+		}
+
+		converted, ok := item.Interface().(T)
+		if !ok {
+			to := reflect.TypeFor[T]()
+			from := items.Index(i).Type()
+			return nil, errors.Newf("can't convert %v to %v", from, to)
+		}
+
+		out[i] = converted
+	}
+
+	return out, nil
 }
