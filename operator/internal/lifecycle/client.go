@@ -17,6 +17,7 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -272,15 +273,16 @@ func (r *ResourceClient[T, U]) listResources(ctx context.Context, object client.
 		}
 	}
 
-	converted := []client.Object{}
-	items := reflect.ValueOf(list).Elem().FieldByName("Items")
-	for i := 0; i < items.Len(); i++ {
-		item := items.Index(i).Addr().Interface().(client.Object)
-		item.GetObjectKind().SetGroupVersionKind(*kind)
-		converted = append(converted, item)
+	items, err := kube.Items[client.Object](list)
+	if err != nil {
+		return nil, err
 	}
 
-	return sortCreation(converted), nil
+	for _, item := range items {
+		item.GetObjectKind().SetGroupVersionKind(*kind)
+	}
+
+	return sortCreation(items), nil
 }
 
 // listAllOwnedResources lists all resources owned by a given cluster, optionally including node pools.
