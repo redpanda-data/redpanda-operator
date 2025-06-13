@@ -8,6 +8,7 @@ require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/go-logr/logr v1.4.2
 	github.com/gonvenience/ytbx v1.4.4
+	github.com/google/go-cmp v0.7.0
 	github.com/homeport/dyff v1.7.1
 	github.com/invopop/jsonschema v0.12.0
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
@@ -111,7 +112,6 @@ require (
 	github.com/gonvenience/wrap v1.2.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
