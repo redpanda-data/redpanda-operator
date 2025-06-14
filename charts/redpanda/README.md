@@ -322,14 +322,8 @@ Redpanda Docker image settings.
 **Default:**
 
 ```
-{"pullPolicy":"IfNotPresent","repository":"docker.redpanda.com/redpandadata/redpanda","tag":""}
+{"repository":"docker.redpanda.com/redpandadata/redpanda","tag":""}
 ```
-
-### [image.pullPolicy](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=image.pullPolicy)
-
-The imagePullPolicy. If `image.tag` is 'latest', the default is `Always`.
-
-**Default:** `"IfNotPresent"`
 
 ### [image.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=image.repository)
 
