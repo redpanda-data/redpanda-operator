@@ -247,7 +247,7 @@ Role-based Access Control (RBAC) configuration for the Redpanda Operator.
 **Default:**
 
 ```
-{"create":true,"createAdditionalControllerCRs":true,"createRPKBundleCRs":true}
+{"create":true,"createAdditionalControllerCRs":true}
 ```
 
 ### [rbac.create](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=rbac.create)
@@ -262,12 +262,6 @@ Create RBAC cluster roles needed for the Redpanda Helm chart's 'rbac.enabled' fe
 
 **Default:** `true`
 
-### [rbac.createRPKBundleCRs](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=rbac.createRPKBundleCRs)
-
-Create ClusterRoles needed for the Redpanda Helm chart's 'rbac.rpkDebugBundle' feature.
-
-**Default:** `true`
-
 ### [replicaCount](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=replicaCount)
 
 Sets the number of instances of the Redpanda Operator to deploy. Each instance is deployed as a Pod. All instances are managed by a Deployment resource.
@@ -279,12 +273,6 @@ Sets the number of instances of the Redpanda Operator to deploy. Each instance i
 Sets resources requests/limits for Redpanda Operator Pods. By default requests and limits are not set to increase the chances that the charts run on environments with few resources, such as Minikube. To specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after `resources`.
 
 **Default:** `{}`
-
-### [scope](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=scope)
-
-Sets the scope of the Redpanda Operator. Valid values are `Cluster` or `Namespace`. The Cluster scope is deprecated because it deploys the deprecated version of the Redpanda Operator. Use the default Namespace scope. In the Namespace scope, the Redpanda Operator manages Redpanda resources that are deployed in the same namespace as itself.
-
-**Default:** `"Namespace"`
 
 ### [serviceAccount](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=serviceAccount)
 

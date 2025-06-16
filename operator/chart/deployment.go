@@ -208,12 +208,6 @@ func containerImage(dot *helmette.Dot) string {
 	return fmt.Sprintf("%s:%s", values.Image.Repository, tag)
 }
 
-func isWebhookEnabled(dot *helmette.Dot) bool {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	return values.Webhook.Enabled && values.Scope == Cluster
-}
-
 func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -221,7 +215,7 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 		kubeTokenAPIVolume(ServiceAccountVolumeName),
 	}
 
-	if !isWebhookEnabled(dot) {
+	if values.Webhook.Enabled {
 		return vol
 	}
 
@@ -289,6 +283,7 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 }
 
 func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
+	values := helmette.Unwrap[Values](dot.Values)
 	volMount := []corev1.VolumeMount{}
 
 	mountName := ServiceAccountVolumeName
@@ -304,7 +299,7 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		MountPath: DefaultAPITokenMountPath,
 	})
 
-	if !isWebhookEnabled(dot) {
+	if values.Webhook.Enabled {
 		return volMount
 	}
 
@@ -324,21 +319,19 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=:8443",
 		"--leader-elect",
-		fmt.Sprintf("--webhook-enabled=%t", isWebhookEnabled(dot)),
+		fmt.Sprintf("--log-level=%s", values.LogLevel),
+		fmt.Sprintf("--webhook-enabled=%t", values.Webhook.Enabled),
 	}
 
-	if isWebhookEnabled(dot) {
+	if values.Webhook.Enabled {
 		args = append(args,
 			"--webhook-enabled=true",
 			fmt.Sprintf("--webhook-cert-path=%s", webhookCertificatePath),
 		)
 	}
 
-	if values.Scope == Namespace {
-		args = append(args,
-			fmt.Sprintf("--namespace=%s", dot.Release.Namespace),
-			fmt.Sprintf("--log-level=%s", values.LogLevel),
-		)
+	if values.VectorizedControllers.Enabled {
+		args = append(args, "--enable-vectorized-controllers")
 	}
 
 	hasConfiguratorTag := false
