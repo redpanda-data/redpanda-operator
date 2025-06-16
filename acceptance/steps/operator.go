@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -50,8 +51,17 @@ func acceptServiceAccountMetricsRequest(ctx context.Context, serviceAccountName 
 	clientsForOperator(ctx, true, serviceAccountName, "").ExpectCorrectMetricsResponse(ctx)
 }
 
-func createClusterRoleBinding(ctx context.Context, serviceAccountName, clusterRoleName string) {
+func createClusterRoleBinding(ctx context.Context, serviceAccountName, clusterRoleRegexp string) {
 	t := framework.T(ctx)
+
+	crs := &rbacv1.ClusterRoleList{}
+	require.NoError(t, t.List(ctx, crs))
+	clusterRoleName := ""
+	for _, cr := range crs.Items {
+		if regexp.MustCompile(clusterRoleRegexp).Match([]byte(cr.Name)) {
+			clusterRoleName = cr.Name
+		}
+	}
 
 	require.NoError(t, t.Create(ctx, &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{

@@ -48,7 +48,7 @@ func init() {
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)
 	framework.RegisterStep(`^its metrics endpoint should reject http request with status code "([^"]*)"$`, requestMetricsEndpointPlainHTTP)
 	framework.RegisterStep(`^its metrics endpoint should reject authorization random token request with status code "([^"]*)"$`, requestMetricsEndpointWithTLSAndRandomToken)
-	framework.RegisterStep(`^"([^"]*)" service account has bounded "([^"]*)" cluster role$`, createClusterRoleBinding)
+	framework.RegisterStep(`^"([^"]*)" service account has bounded "([^"]*)" regexp cluster role name$`, createClusterRoleBinding)
 	framework.RegisterStep(`^its metrics endpoint should accept https request with "([^"]*)" service account token$`, acceptServiceAccountMetricsRequest)
 
 	// Helm migration scenario steps

@@ -254,7 +254,7 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 	return c.restConfig
 }
 
-func (c *Cluster) ImportImage(image string) error {
+func (c *Cluster) ImportImage(images ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if out, err := exec.Command(
@@ -262,7 +262,7 @@ func (c *Cluster) ImportImage(image string) error {
 		"image",
 		"import",
 		fmt.Sprintf("--cluster=%s", c.Name),
-		image,
+		strings.Join(images, " "),
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
 	}

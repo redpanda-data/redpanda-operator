@@ -47,6 +47,7 @@ type Env struct {
 	group     *errgroup.Group
 	host      *k3d.Cluster
 	config    *rest.Config
+	client    client.Client
 }
 
 type Options struct {
@@ -118,6 +119,8 @@ func New(t *testing.T, options Options) *Env {
 
 	require.NoError(t, c.Create(ctx, ns))
 
+	otelClient := otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+
 	env := &Env{
 		t:         t,
 		scheme:    options.Scheme,
@@ -128,11 +131,12 @@ func New(t *testing.T, options Options) *Env {
 		cancel:    cancel,
 		host:      host,
 		config:    config,
+		client:    otelClient,
 	}
 
 	if !options.SkipVCluster {
 		t.Logf("Executing in namespace '%s' of vCluster '%s'", ns.Name, cluster.Name())
-		t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- '", cluster.Name(), cluster.Name())
+		t.Logf("Connect to vCluster using 'vcluster connect --namespace %s %s -- bash'", cluster.Name(), cluster.Name())
 	} else {
 		t.Logf("Executing in namespace '%s'", ns.Name)
 	}
@@ -157,12 +161,7 @@ func New(t *testing.T, options Options) *Env {
 }
 
 func (e *Env) Client() client.Client {
-	c, err := client.New(e.config, client.Options{
-		Scheme: e.scheme,
-	})
-	require.NoError(e.t, err)
-
-	return otelkube.NewClient(client.NewNamespacedClient(c, e.namespace.Name))
+	return e.client
 }
 
 func (e *Env) Namespace() string {

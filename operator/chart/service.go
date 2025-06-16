@@ -25,7 +25,7 @@ import (
 func WebhookService(dot *helmette.Dot) *corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !(values.Webhook.Enabled && values.Scope == Cluster) {
+	if !values.Webhook.Enabled {
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func MetricsService(dot *helmette.Dot) *corev1.Service {
 func MutatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.MutatingWebhookConfiguration {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Webhook.Enabled || values.Scope != "Cluster" {
+	if !values.Webhook.Enabled {
 		return nil
 	}
 
@@ -132,7 +132,7 @@ func MutatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.Mu
 func ValidatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.ValidatingWebhookConfiguration {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Webhook.Enabled || values.Scope != "Cluster" {
+	if !values.Webhook.Enabled {
 		return nil
 	}
 

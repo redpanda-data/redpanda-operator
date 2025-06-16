@@ -18,51 +18,47 @@ import (
 )
 
 type RBACBundle struct {
-	Name string
-	// NB: Subject is currently only used by ClusterRoles as we'll be moving to ClusterScope soon.
-	Subject     string
 	Enabled     bool
-	RuleFiles   []string
+	Name        string
+	Subject     string
+	RuleFiles   map[string]bool
 	Annotations map[string]string
 }
 
-func clusterRoleBundles(dot *helmette.Dot) []RBACBundle {
+func rbacBundles(dot *helmette.Dot) []RBACBundle {
 	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.RBAC.Create {
-		return nil
-	}
 
 	return []RBACBundle{
 		{
 			Name:    Fullname(dot),
+			Enabled: true,
 			Subject: ServiceAccountName(dot),
-			Enabled: values.Scope == Cluster,
-			RuleFiles: []string{
-				"files/rbac/leader-election.ClusterRole.yaml",
-				"files/rbac/pvcunbinder.ClusterRole.yaml",
-				"files/rbac/rack-awareness.ClusterRole.yaml", // Rack awareness is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/v1-manager.ClusterRole.yaml",
-			},
-		},
-		{
-			Name:    Fullname(dot),
-			Subject: ServiceAccountName(dot),
-			Enabled: values.Scope == Namespace,
-			RuleFiles: []string{
-				"files/rbac/leader-election.ClusterRole.yaml",
-				"files/rbac/v2-manager.ClusterRole.yaml",
+			RuleFiles: map[string]bool{
+				"files/rbac/leader-election.ClusterRole.yaml": true,
+				"files/rbac/leader-election.Role.yaml":        true,
+				"files/rbac/pvcunbinder.ClusterRole.yaml":     true,
+				"files/rbac/pvcunbinder.Role.yaml":            true,
+				"files/rbac/rack-awareness.ClusterRole.yaml":  true, // Rack awareness is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/rpk-debug-bundle.Role.yaml":       true, // debug bundle permissions is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/sidecar.Role.yaml":                true, // Sidecar is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/v1-manager.ClusterRole.yaml":      values.VectorizedControllers.Enabled,
+				"files/rbac/v1-manager.Role.yaml":             values.VectorizedControllers.Enabled,
+				"files/rbac/v2-manager.ClusterRole.yaml":      true,
 			},
 		},
 		{
 			Name:    cleanForK8sWithSuffix(Fullname(dot), "additional-controllers"),
+			Enabled: values.RBAC.CreateAdditionalControllerCRs,
 			Subject: ServiceAccountName(dot),
-			Enabled: values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs,
-			RuleFiles: []string{
-				"files/rbac/decommission.ClusterRole.yaml",
-				"files/rbac/node-watcher.ClusterRole.yaml",     // Deprecated but not yet removed.
-				"files/rbac/old-decommission.ClusterRole.yaml", // Deprecated but not yet removed.
-				"files/rbac/pvcunbinder.ClusterRole.yaml",
+			RuleFiles: map[string]bool{
+				"files/rbac/decommission.ClusterRole.yaml":     true,
+				"files/rbac/decommission.Role.yaml":            true,
+				"files/rbac/node-watcher.ClusterRole.yaml":     true, // Deprecated but not yet removed.
+				"files/rbac/node-watcher.Role.yaml":            true, // Deprecated but not yet removed.
+				"files/rbac/old-decommission.ClusterRole.yaml": true, // Deprecated but not yet removed.
+				"files/rbac/old-decommission.Role.yaml":        true, // Deprecated but not yet removed.
+				"files/rbac/pvcunbinder.ClusterRole.yaml":      true,
+				"files/rbac/pvcunbinder.Role.yaml":             true,
 			},
 		},
 		// ClusterRole for the CRD installation Job.
@@ -75,8 +71,8 @@ func clusterRoleBundles(dot *helmette.Dot) []RBACBundle {
 				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 				"helm.sh/hook-weight":        "-10",
 			},
-			RuleFiles: []string{
-				"files/rbac/crd-installation.ClusterRole.yaml",
+			RuleFiles: map[string]bool{
+				"files/rbac/crd-installation.ClusterRole.yaml": true,
 			},
 		},
 	}
@@ -97,7 +93,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 				Kind:       "ClusterRole",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        cleanForK8sWithSuffix(Fullname(dot), "metrics-reader"),
+				Name:        cleanForK8sWithSuffix(Fullname(dot)+"-"+dot.Release.Namespace, "metrics-reader"),
 				Labels:      Labels(dot),
 				Annotations: values.Annotations,
 			},
@@ -110,13 +106,17 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 		},
 	}
 
-	for _, bundle := range clusterRoleBundles(dot) {
+	for _, bundle := range rbacBundles(dot) {
 		if !bundle.Enabled {
 			continue
 		}
 
 		var rules []rbacv1.PolicyRule
-		for _, file := range bundle.RuleFiles {
+		for file, enabled := range helmette.SortedMap(bundle.RuleFiles) {
+			if !enabled {
+				continue
+			}
+
 			clusterRole := helmette.FromYaml[rbacv1.ClusterRole](dot.Files.Get(file))
 			rules = append(rules, clusterRole.Rules...)
 		}
@@ -141,85 +141,6 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 	return clusterRoles
 }
 
-func Roles(dot *helmette.Dot) []rbacv1.Role {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.RBAC.Create {
-		return nil
-	}
-
-	bundles := []RBACBundle{
-		{
-			Name:    cleanForK8sWithSuffix(Fullname(dot), "election-role"),
-			Enabled: true,
-			RuleFiles: []string{
-				"files/rbac/leader-election.Role.yaml",
-			},
-		},
-		{
-			Name:    Fullname(dot),
-			Enabled: values.Scope == Cluster,
-			RuleFiles: []string{
-				"files/rbac/pvcunbinder.Role.yaml",
-			},
-		},
-		{
-			Name:    Fullname(dot),
-			Enabled: values.Scope == Namespace,
-			RuleFiles: []string{
-				"files/rbac/sidecar.Role.yaml", // Sidecar is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/v2-manager.Role.yaml",
-			},
-		},
-		{
-			Name:    Fullname(dot) + "-additional-controllers",
-			Enabled: values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs,
-			RuleFiles: []string{
-				"files/rbac/decommission.Role.yaml",
-				"files/rbac/node-watcher.Role.yaml",     // Deprecated but not yet removed.
-				"files/rbac/old-decommission.Role.yaml", // Deprecated but not yet removed.
-				"files/rbac/pvcunbinder.Role.yaml",
-			},
-		},
-		{
-			Name:    cleanForK8sWithSuffix(Fullname(dot), "rpk-bundle"),
-			Enabled: values.RBAC.CreateRPKBundleCRs,
-			RuleFiles: []string{
-				"files/rbac/rpk-debug-bundle.Role.yaml",
-			},
-		},
-	}
-
-	var roles []rbacv1.Role
-	for _, bundle := range bundles {
-		if !bundle.Enabled {
-			continue
-		}
-
-		var rules []rbacv1.PolicyRule
-		for _, file := range bundle.RuleFiles {
-			clusterRole := helmette.FromYaml[rbacv1.Role](dot.Files.Get(file))
-			rules = append(rules, clusterRole.Rules...)
-		}
-
-		roles = append(roles, rbacv1.Role{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "Role",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        bundle.Name,
-				Namespace:   dot.Release.Namespace,
-				Labels:      Labels(dot),
-				Annotations: values.Annotations,
-			},
-			Rules: rules,
-		})
-	}
-
-	return roles
-}
-
 func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -229,7 +150,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 
 	// NB: We skip over making a binding for the metrics viewer role.
 	var bindings []rbacv1.ClusterRoleBinding
-	for _, bundle := range clusterRoleBundles(dot) {
+	for _, bundle := range rbacBundles(dot) {
 		if !bundle.Enabled {
 			continue
 		}
@@ -256,44 +177,6 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 				{
 					Kind:      "ServiceAccount",
 					Name:      bundle.Subject,
-					Namespace: dot.Release.Namespace,
-				},
-			},
-		})
-	}
-
-	return bindings
-}
-
-func RoleBindings(dot *helmette.Dot) []rbacv1.RoleBinding {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.RBAC.Create {
-		return nil
-	}
-
-	var bindings []rbacv1.RoleBinding
-	for _, role := range Roles(dot) {
-		bindings = append(bindings, rbacv1.RoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "RoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        role.ObjectMeta.Name,
-				Namespace:   dot.Release.Namespace,
-				Labels:      Labels(dot),
-				Annotations: values.Annotations,
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "Role",
-				Name:     role.ObjectMeta.Name,
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      ServiceAccountName(dot),
 					Namespace: dot.Release.Namespace,
 				},
 			},

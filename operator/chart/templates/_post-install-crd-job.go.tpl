@@ -25,6 +25,9 @@
 {{- if $values.crds.experimental -}}
 {{- $args = (concat (default (list) $args) (list "--experimental")) -}}
 {{- end -}}
+{{- if $values.vectorizedControllers.enabled -}}
+{{- $args = (concat (default (list) $args) (list "--vectorized")) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "crd-installation" "image" (get (fromJson (include "operator.containerImage" (dict "a" (list $dot)))) "r") "imagePullPolicy" $values.image.pullPolicy "command" (list "/redpanda-operator") "args" $args "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false)) "volumeMounts" (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) "resources" $values.resources)))) | toJson -}}
 {{- break -}}

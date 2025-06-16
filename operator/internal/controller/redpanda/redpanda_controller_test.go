@@ -841,46 +841,7 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 			Name:        "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
 			Annotations: make(map[string]string),
 		},
-		Spec: redpandav1alpha2.RedpandaSpec{
-			// Any empty structs are to make setting them more ergonomic
-			// without having to worry about nil pointers.
-			ChartRef: redpandav1alpha2.ChartRef{},
-			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
-				Config: &redpandav1alpha2.Config{},
-				External: &redpandav1alpha2.External{
-					// Disable NodePort creation to stop broken tests from blocking others due to port conflicts.
-					Enabled: ptr.To(false),
-				},
-				Image: &redpandav1alpha2.RedpandaImage{
-					Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
-				},
-				Console: &redpandav1alpha2.RedpandaConsole{
-					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
-				},
-				Statefulset: &redpandav1alpha2.Statefulset{
-					Replicas: ptr.To(1), // Speed up tests ever so slightly.
-					PodAntiAffinity: &redpandav1alpha2.PodAntiAffinity{
-						// Disable the default "hard" affinity so we can
-						// schedule multiple redpanda Pods on a single
-						// kubernetes node. Useful for tests that require > 3
-						// brokers.
-						Type: ptr.To("soft"),
-					},
-					// Speeds up managed decommission tests. Decommissioned
-					// nodes will take the entirety of
-					// TerminationGracePeriodSeconds as the pre-stop hook
-					// doesn't account for decommissioned nodes.
-					TerminationGracePeriodSeconds: ptr.To(10),
-				},
-				Resources: &redpandav1alpha2.Resources{
-					CPU: &redpandav1alpha2.CPU{
-						// Inform redpanda/seastar that it's not going to get
-						// all the resources it's promised.
-						Overprovisioned: ptr.To(true),
-					},
-				},
-			},
-		},
+		Spec: redpandav1alpha2.MinimalRedpandaSpec(),
 	}
 }
 
@@ -1015,29 +976,22 @@ func TestControllerRBAC(t *testing.T) {
 		require.Len(t, gkvs, 1)
 		gvk := gkvs[0]
 
-		rules := role.Rules
-		if !isNamespaced(typ) {
-			rules = clusterRole.Rules
-		}
-
 		group := gvk.Group
 		kind := pluralize(gvk.Kind)
 
+		rules := clusterRole.Rules
 		idx := slices.IndexFunc(rules, func(rule rbacv1.PolicyRule) bool {
 			return slices.Contains(rule.APIGroups, group) && slices.Contains(rule.Resources, kind)
 		})
+		if idx == -1 {
+			rules = role.Rules
+			idx = slices.IndexFunc(rules, func(rule rbacv1.PolicyRule) bool {
+				return slices.Contains(rule.APIGroups, group) && slices.Contains(rule.Resources, kind)
+			})
+		}
 
 		require.NotEqual(t, -1, idx, "missing rules for %s %s", gvk.Group, kind)
 		require.EqualValues(t, expectedVerbs, rules[idx].Verbs, "incorrect verbs for %s %s", gvk.Group, kind)
-	}
-}
-
-func isNamespaced(obj client.Object) bool {
-	switch obj.(type) {
-	case *corev1.Namespace, *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
-		return false
-	default:
-		return true
 	}
 }
 

@@ -17,7 +17,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -273,14 +272,6 @@ func (in *Redpanda) GetHelmReleaseName() string {
 	return in.Name
 }
 
-func (in *Redpanda) GetHelmRepositoryName() string {
-	helmRepository := in.Spec.ChartRef.HelmRepositoryName
-	if helmRepository == "" {
-		helmRepository = "redpanda-repository"
-	}
-	return helmRepository
-}
-
 func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 	vyaml, err := json.Marshal(in.Spec.ClusterSpec)
 	if err != nil {
@@ -293,31 +284,6 @@ func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 
 func (in *Redpanda) GenerationObserved() bool {
 	return in.Generation != 0 && in.Generation == in.Status.ObservedGeneration
-}
-
-// RedpandaReady registers a successful reconciliation of the given HelmRelease.
-func RedpandaReady(rp *Redpanda) *Redpanda {
-	newCondition := metav1.Condition{
-		Type:    ReadyCondition,
-		Status:  metav1.ConditionTrue,
-		Reason:  "RedpandaClusterDeployed",
-		Message: "Redpanda reconciliation succeeded",
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
-	rp.Status.LastAppliedRevision = rp.Status.LastAttemptedRevision
-	return rp
-}
-
-// RedpandaNotReady registers a failed reconciliation of the given Redpanda.
-func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
-	newCondition := metav1.Condition{
-		Type:    ReadyCondition,
-		Status:  metav1.ConditionFalse,
-		Reason:  reason,
-		Message: message,
-	}
-	apimeta.SetStatusCondition(rp.GetConditions(), newCondition)
-	return rp
 }
 
 // GetConditions returns the status conditions of the object.
@@ -354,4 +320,49 @@ func (in *Redpanda) GetDot(restConfig *rest.Config) (*helmette.Dot, error) {
 			IsInstall: true,
 			IsUpgrade: true,
 		}, in.Spec.ClusterSpec.DeepCopy())
+}
+
+// MinimalRedpandaSpec returns a [RedpandaSpec] with the smallest resource
+// footprint possible for use in integration and E2E tests.
+func MinimalRedpandaSpec() RedpandaSpec {
+	return RedpandaSpec{
+		// Any empty structs are to make setting them more ergonomic
+		// without having to worry about nil pointers.
+		ChartRef: ChartRef{},
+		ClusterSpec: &RedpandaClusterSpec{
+			Config: &Config{},
+			External: &External{
+				// Disable NodePort creation to stop broken tests from blocking others due to port conflicts.
+				Enabled: ptr.To(false),
+			},
+			Image: &RedpandaImage{
+				Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
+			},
+			Console: &RedpandaConsole{
+				Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
+			},
+			Statefulset: &Statefulset{
+				Replicas: ptr.To(1), // Speed up tests ever so slightly.
+				PodAntiAffinity: &PodAntiAffinity{
+					// Disable the default "hard" affinity so we can
+					// schedule multiple redpanda Pods on a single
+					// kubernetes node. Useful for tests that require > 3
+					// brokers.
+					Type: ptr.To("soft"),
+				},
+				// Speeds up managed decommission tests. Decommissioned
+				// nodes will take the entirety of
+				// TerminationGracePeriodSeconds as the pre-stop hook
+				// doesn't account for decommissioned nodes.
+				TerminationGracePeriodSeconds: ptr.To(10),
+			},
+			Resources: &Resources{
+				CPU: &CPU{
+					// Inform redpanda/seastar that it's not going to get
+					// all the resources it's promised.
+					Overprovisioned: ptr.To(true),
+				},
+			},
+		},
+	}
 }

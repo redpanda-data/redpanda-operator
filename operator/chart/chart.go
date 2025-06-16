@@ -62,16 +62,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		CRDJobServiceAccount(dot),
 	}
 
-	for _, role := range Roles(dot) {
-		manifests = append(manifests, &role)
-	}
-
 	for _, cr := range ClusterRoles(dot) {
 		manifests = append(manifests, &cr)
-	}
-
-	for _, rb := range RoleBindings(dot) {
-		manifests = append(manifests, &rb)
 	}
 
 	for _, crb := range ClusterRoleBindings(dot) {

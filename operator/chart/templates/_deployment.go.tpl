@@ -89,24 +89,13 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "operator.isWebhookEnabled" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (and $values.webhook.enabled (eq $values.scope "Cluster"))) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "operator.operatorPodVolumes" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r")) -}}
-{{- if (not (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r")) -}}
+{{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $vol) | toJson -}}
 {{- break -}}
@@ -140,8 +129,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
 {{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) -}}
-{{- if (not (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r")) -}}
+{{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volMount) | toJson -}}
 {{- break -}}
@@ -158,12 +148,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $args := (list "--health-probe-bind-address=:8081" "--metrics-bind-address=:8443" "--leader-elect" (printf "--webhook-enabled=%t" (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r"))) -}}
-{{- if (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r") -}}
+{{- $args := (list "--health-probe-bind-address=:8081" "--metrics-bind-address=:8443" "--leader-elect" (printf "--log-level=%s" $values.logLevel) (printf "--webhook-enabled=%t" $values.webhook.enabled)) -}}
+{{- if $values.webhook.enabled -}}
 {{- $args = (concat (default (list) $args) (list "--webhook-enabled=true" (printf "--webhook-cert-path=%s" "/tmp/k8s-webhook-server/serving-certs"))) -}}
 {{- end -}}
-{{- if (eq $values.scope "Namespace") -}}
-{{- $args = (concat (default (list) $args) (list (printf "--namespace=%s" $dot.Release.Namespace) (printf "--log-level=%s" $values.logLevel))) -}}
+{{- if $values.vectorizedControllers.enabled -}}
+{{- $args = (concat (default (list) $args) (list "--enable-vectorized-controllers")) -}}
 {{- end -}}
 {{- $hasConfiguratorTag := false -}}
 {{- $hasConfiguratorImage := false -}}
