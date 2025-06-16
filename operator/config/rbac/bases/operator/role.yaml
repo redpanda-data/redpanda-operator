@@ -8,6 +8,10 @@ rules:
   - ""
   resources:
   - configmaps
+  - pods
+  - secrets
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -20,9 +24,6 @@ rules:
   - ""
   resources:
   - events
-  - secrets
-  - serviceaccounts
-  - services
   verbs:
   - create
   - get
@@ -42,16 +43,7 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - persistentvolumes
-  - pods
   verbs:
   - delete
   - get
@@ -79,6 +71,14 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - controllerrevisions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
   - deployments
   - statefulsets
   verbs:
@@ -89,6 +89,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -101,6 +108,30 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - cert-manager.io
   resources:
@@ -160,6 +191,31 @@ rules:
   - update
   - watch
 - apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -188,6 +244,8 @@ rules:
   resources:
   - clusterrolebindings
   - clusterroles
+  - rolebindings
+  - roles
   verbs:
   - create
   - delete
@@ -245,10 +303,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
-  - secrets
-  - serviceaccounts
-  - services
   verbs:
   - create
   - delete
@@ -265,6 +319,8 @@ rules:
   - pods/log
   - replicationcontrollers
   - resourcequotas
+  - serviceaccounts
+  - services
   verbs:
   - get
   - list
@@ -289,9 +345,18 @@ rules:
   - update
   - watch
 - apiGroups:
-  - apps
+  - ""
   resources:
-  - controllerrevisions
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
   verbs:
   - get
   - list
@@ -299,114 +364,15 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - deployments
   - statefulsets
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets/status
-  verbs:
-  - patch
-  - update
-- apiGroups:
-  - autoscaling
-  resources:
-  - horizontalpodautoscalers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cert-manager.io
-  resources:
-  - certificates
-  - issuers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
   - leases
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - podmonitors
-  - servicemonitors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - policy
-  resources:
-  - poddisruptionbudgets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete

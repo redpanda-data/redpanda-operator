@@ -22,6 +22,7 @@ spec:
         - "--log-level=trace"
         - "--enable-ghost-broker-decommissioner"
         - "--unbind-pvcs-after=5s"
+        - "--enable-vectorized-controllers"
         livenessProbe:
           timeoutSeconds: 10
         readinessProbe:
