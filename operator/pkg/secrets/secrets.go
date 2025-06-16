@@ -33,38 +33,39 @@ func NewCloudExpander(
 	logger := log.FromContext(ctx)
 	slogLogger := slog.New(logr.ToSlogHandler(logger.WithName("slog").WithValues("mode", "slog")))
 
-	var secretsAPI secrets.SecretAPI
 	var err error
-	if cloudConfig.AWSRegion != "" {
+	var secretsAPI secrets.SecretAPI
+
+	switch {
+	case cloudConfig.AWSRegion != "":
 		secretsAPI, err = secrets.NewAWSSecretsManager(
 			ctx,
 			slogLogger,
 			cloudConfig.AWSRegion,
 			cloudConfig.AWSRoleARN,
 		)
-		if err != nil {
-			return nil, err
-		}
-	} else if cloudConfig.GCPProjectID != "" {
+
+	case cloudConfig.GCPProjectID != "":
 		secretsAPI, err = secrets.NewGCPSecretsManager(
 			ctx,
 			slogLogger,
 			cloudConfig.GCPProjectID,
 		)
-		if err != nil {
-			return nil, err
-		}
-	} else if cloudConfig.AzureKeyVaultURI != "" {
+
+	case cloudConfig.AzureKeyVaultURI != "":
 		secretsAPI, err = secrets.NewAzSecretsManager(
 			slogLogger,
 			cloudConfig.AzureKeyVaultURI,
 		)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("incorrect cloud secret store configuration")
+
+	default:
+		return nil, errors.New("failed to construct SecretAPI: none of AWSRegion, GCPProjectID, nor AzureKeyVaultURI provided")
 	}
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "constructing %T", secretsAPI)
+	}
+
 	provider, err := secrets.NewSecretProvider(secretsAPI, prefix, "")
 	if err != nil {
 		return nil, errors.WithStack(err)
