@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed a bug where pods would be restarted indefinitely in the case of config version changes when syncing cluster configuration.
+time: 2025-06-17T11:33:25.480184-04:00
