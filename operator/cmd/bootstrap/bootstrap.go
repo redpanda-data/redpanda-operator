@@ -38,9 +38,8 @@ func Command() *cobra.Command {
 		cloudSecretsAzureKeyVaultURI string
 	)
 	cmd := &cobra.Command{
-		Use:     "bootstrap",
-		Short:   "Configure .bootstrap.yaml based on supplied fixups",
-		Aliases: []string{"configure"},
+		Use:   "bootstrap",
+		Short: "Configure .bootstrap.yaml based on supplied fixups",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			var cloudExpander *pkgsecrets.CloudExpander

@@ -322,6 +322,27 @@ func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) erro
 	}
 }
 
+// Logs returns a log stream for `container` in the [corev1.Pod].
+func (c *Ctl) Logs(ctx context.Context, pod *corev1.Pod, options corev1.PodLogOptions) (io.ReadCloser, error) {
+	client, err := c.restClient()
+	if err != nil {
+		return nil, err
+	}
+
+	req := client.Get().
+		Namespace(pod.Namespace).
+		Name(pod.Name).
+		Resource("pods").
+		SubResource("log").
+		VersionedParams(&options, runtime.NewParameterCodec(c.client.Scheme()))
+
+	stream, err := req.Stream(ctx)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return stream, nil
+}
+
 type ExecOptions struct {
 	Container string
 	Command   []string
@@ -336,18 +357,9 @@ func (c *Ctl) Exec(ctx context.Context, pod *corev1.Pod, opts ExecOptions) error
 		opts.Container = pod.Spec.Containers[0].Name
 	}
 
-	// Apparently, nothing in the k8s SDK, except exec'ing, uses RESTClientFor.
-	// RESTClientFor checks for GroupVersion and NegotiatedSerializer which are
-	// never set by the config loading tool chain.
-	// The .APIPath setting was a random shot in the dark that happened to work...
-	// Pulled from https://github.com/kubernetes/kubectl/blob/acf4a09f2daede8fdbf65514ade9426db0367ed3/pkg/cmd/util/kubectl_match_version.go#L115
-	cfg := c.RestConfig()
-	cfg.APIPath = "/api"
-	cfg.GroupVersion = &schema.GroupVersion{Version: "v1"}
-	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
-	restClient, err := rest.RESTClientFor(cfg)
+	restClient, err := c.restClient()
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	// Inspired by https://github.com/kubernetes/kubectl/blob/acf4a09f2daede8fdbf65514ade9426db0367ed3/pkg/cmd/exec/exec.go#L388
@@ -456,4 +468,21 @@ func (c *Ctl) PortForward(ctx context.Context, pod *corev1.Pod, out, errOut io.W
 			close(stopChan)
 		}
 	}, nil
+}
+
+func (c *Ctl) restClient() (*rest.RESTClient, error) {
+	// Apparently, nothing in the k8s SDK, except exec'ing, uses RESTClientFor.
+	// RESTClientFor checks for GroupVersion and NegotiatedSerializer which are
+	// never set by the config loading tool chain.
+	// The .APIPath setting was a random shot in the dark that happened to work...
+	// Pulled from https://github.com/kubernetes/kubectl/blob/acf4a09f2daede8fdbf65514ade9426db0367ed3/pkg/cmd/util/kubectl_match_version.go#L115
+	cfg := c.RestConfig()
+	cfg.APIPath = "/api"
+	cfg.GroupVersion = &schema.GroupVersion{Version: "v1"}
+	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	restClient, err := rest.RESTClientFor(cfg)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return restClient, nil
 }
