@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: The generated bootstrap user password secret is now immutable. It was always intended to be a single-time generation, and now that is enforced at the Kubernetes API layer.
+time: 2025-06-18T18:28:09.325375-04:00
