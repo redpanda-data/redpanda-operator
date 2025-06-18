@@ -11,6 +11,7 @@ package sidecar
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -54,6 +55,7 @@ func Command() *cobra.Command {
 		brokerProbeBrokerURL       string
 		runUnbinder                bool
 		unbinderTimeout            time.Duration
+		panicAfter                 time.Duration
 	)
 
 	cmd := &cobra.Command{
@@ -82,6 +84,7 @@ func Command() *cobra.Command {
 				brokerProbeBrokerURL,
 				runUnbinder,
 				unbinderTimeout,
+				panicAfter,
 			)
 		},
 	}
@@ -118,6 +121,10 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&runUnbinder, "run-pvc-unbinder", false, "Specifies if the PVC unbinder should be run.")
 	cmd.Flags().DurationVar(&unbinderTimeout, "pvc-unbinder-timeout", 60*time.Second, "The time period to wait before removing any unbound PVCs.")
 
+	// Internal use flags.
+	cmd.Flags().DurationVar(&panicAfter, "panic-after", 0, "If non-zero, will trigger an unhandled panic after the specified time resulting in a process crash.")
+	_ = cmd.Flags().MarkHidden("panic-after")
+
 	return cmd
 }
 
@@ -141,6 +148,7 @@ func Run(
 	brokerProbeBrokerURL string,
 	runUnbinder bool,
 	unbinderTimeout time.Duration,
+	panicAfter time.Duration,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -242,6 +250,14 @@ func Run(
 			setupLog.Error(err, "unable to run config watcher")
 			return err
 		}
+	}
+
+	if panicAfter > 0 {
+		go func() {
+			time.Sleep(panicAfter)
+
+			panic(fmt.Sprintf("unhandled panic triggered by --panic-after=%s", panicAfter))
+		}()
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
