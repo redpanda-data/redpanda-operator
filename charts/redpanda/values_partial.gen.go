@@ -285,6 +285,7 @@ type PartialTieredStorageConfig map[string]any
 
 type PartialSidecars struct {
 	Image       *PartialImage "json:\"image,omitempty\""
+	Args        []string      "json:\"args,omitempty\""
 	PVCUnbinder *struct {
 		Enabled     *bool   "json:\"enabled,omitempty\""
 		UnbindAfter *string "json:\"unbindAfter,omitempty\""

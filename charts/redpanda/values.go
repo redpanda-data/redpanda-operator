@@ -822,7 +822,8 @@ func (t *Tuning) Translate() map[string]any {
 }
 
 type Sidecars struct {
-	Image       Image `json:"image"`
+	Image       Image    `json:"image"`
+	Args        []string `json:"args"`
 	PVCUnbinder struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
