@@ -828,6 +828,7 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	args := []string{
+		`/redpanda-operator`,
 		`sidecar`,
 		`--redpanda-yaml`,
 		`/etc/redpanda/redpanda.yaml`,
@@ -865,6 +866,8 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 		}...)
 	}
 
+	args = append(args, values.Statefulset.SideCars.Args...)
+
 	volumeMounts := append(
 		CommonMounts(dot),
 		corev1.VolumeMount{
@@ -882,7 +885,7 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 		Name:         "sidecar",
 		Image:        fmt.Sprintf(`%s:%s`, values.Statefulset.SideCars.Image.Repository, values.Statefulset.SideCars.Image.Tag),
 		Command:      []string{`/redpanda-operator`},
-		Args:         args,
+		Args:         append([]string{`supervisor`, `--`}, args...),
 		Env:          append(rpkEnvVars(dot, nil), statefulSetRedpandaEnv()...),
 		VolumeMounts: volumeMounts,
 		ReadinessProbe: &corev1.Probe{
