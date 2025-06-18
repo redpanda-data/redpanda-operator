@@ -414,6 +414,44 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	s.deleteAndWait(rp)
 }
 
+func (s *RedpandaControllerSuite) TestClusterSettingsRegressionSuperusers() {
+	rp := s.minimalRP()
+	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
+
+	// Ensure that some superusers exist.
+	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
+		SASL: &redpandav1alpha2.SASL{
+			Enabled: ptr.To(true),
+			Users: []redpandav1alpha2.UsersItems{
+				{Name: ptr.To("bob"), Password: ptr.To("bobert")},
+				{Name: ptr.To("alice"), Password: ptr.To("alicert")},
+			},
+		},
+	}
+
+	s.applyAndWait(rp)
+
+	initialVersion := rp.Status.ConfigVersion
+
+	// Add a superuser and ensure we don't change the config version (since we now hash).
+	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
+		SASL: &redpandav1alpha2.SASL{
+			Enabled: ptr.To(true),
+			Users: []redpandav1alpha2.UsersItems{
+				{Name: ptr.To("bob"), Password: ptr.To("bobert")},
+				{Name: ptr.To("alice"), Password: ptr.To("alicert")},
+				{Name: ptr.To("ted"), Password: ptr.To("tedrt")},
+			},
+		},
+	}
+
+	s.applyAndWait(rp)
+
+	s.Require().Equal(initialVersion, rp.Status.ConfigVersion)
+
+	s.deleteAndWait(rp)
+}
+
 func (s *RedpandaControllerSuite) TestLicenseReal() {
 	const (
 		LicenseEnvVar             = "REDPANDA_SAMPLE_LICENSE"
