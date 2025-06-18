@@ -23,6 +23,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -74,6 +75,7 @@ type ClusterReconciler struct {
 	client.Client
 	Log                            logr.Logger
 	configuratorSettings           resources.ConfiguratorSettings
+	LifecycleClient                *lifecycle.ResourceClient[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster]
 	clusterDomain                  string
 	Scheme                         *runtime.Scheme
 	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
@@ -215,12 +217,16 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("Redpanda version >=%s is required to support FeatureGate EmptySeedStartCluster", featuregates.V23_2.String())
 	}
 
-	ar.bootstrapService()
-	ar.clusterRole()
-	ar.clusterRoleBinding()
-	ar.clusterService()
-	ar.headlessService()
-	ar.ingress()
+	if err := r.LifecycleClient.SyncAll(ctx, &vectorizedCluster); err != nil {
+		return ctrl.Result{}, fmt.Errorf("syncing resources: %w", err)
+	}
+
+	//	ar.bootstrapService()
+	//ar.clusterRole()
+	//ar.clusterRoleBinding()
+	//ar.clusterService()
+	//	ar.headlessService()
+	//	ar.ingress()
 	ar.nodeportService()
 	if err := ar.pki(); err != nil {
 		return ctrl.Result{}, err
@@ -229,12 +235,12 @@ func (r *ClusterReconciler) Reconcile(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("getting pki: %w", err)
 	}
-	ar.podDisruptionBudget()
-	ar.proxySuperuser()
-	ar.schemaRegistrySuperUser()
-	ar.rpkSuperUser()
-	ar.serviceAccount()
-	ar.secret()
+	//ar.podDisruptionBudget()
+	//ar.proxySuperuser()
+	//ar.schemaRegistrySuperUser()
+	//ar.rpkSuperUser()
+	//ar.serviceAccount()
+	//ar.secret()
 
 	var secrets []types.NamespacedName
 	if ar.getProxySuperuser() != nil {

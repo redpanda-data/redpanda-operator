@@ -507,10 +507,20 @@ func Run(
 
 		adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
+		cloudSecrets := lifecycle.CloudSecretsFlags{
+			CloudSecretsEnabled:          cloudSecretsEnabled,
+			CloudSecretsPrefix:           cloudSecretsPrefix,
+			CloudSecretsAWSRegion:        cloudSecretsAWSRegion,
+			CloudSecretsAWSRoleARN:       cloudSecretsAWSRoleARN,
+			CloudSecretsGCPProjectID:     cloudSecretsGCPProjectID,
+			CloudSecretsAzureKeyVaultURI: cloudSecretsAzureKeyVaultURI,
+		}
+
 		if err = (&vectorizedcontrollers.ClusterReconciler{
 			Client:                    mgr.GetClient(),
 			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 			Scheme:                    mgr.GetScheme(),
+			LifecycleClient:           lifecycle.NewResourceClient(mgr, lifecycle.V1ResourceManagers(cloudSecrets)),
 			AdminAPIClientFactory:     adminAPIClientFactory,
 			DecommissionWaitInterval:  decommissionWaitInterval,
 			MetricsTimeout:            metricsTimeout,
