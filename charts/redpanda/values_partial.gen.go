@@ -360,6 +360,7 @@ type PartialSecurityContext struct {
 
 type PartialSidecars struct {
 	Image             *PartialImage           "json:\"image,omitempty\""
+	Args              []string                "json:\"args,omitempty\""
 	ExtraVolumeMounts *string                 "json:\"extraVolumeMounts,omitempty\""
 	Resources         map[string]any          "json:\"resources,omitempty\""
 	SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""

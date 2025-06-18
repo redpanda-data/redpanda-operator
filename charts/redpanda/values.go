@@ -915,6 +915,7 @@ func (t *Tuning) Translate() map[string]any {
 
 type Sidecars struct {
 	Image             Image                   `json:"image"`
+	Args              []string                `json:"args"`
 	ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 	Resources         map[string]any          `json:"resources"`
 	SecurityContext   *corev1.SecurityContext `json:"securityContext"`
