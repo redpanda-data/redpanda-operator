@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -26,15 +27,54 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/transport/spdy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 type (
-	Object    = client.Object
-	ObjectKey = client.ObjectKey
+	Object     = client.Object
+	ObjectList = client.ObjectList
+	ObjectKey  = client.ObjectKey
 )
 
+type Option interface {
+	ApplyToOptions(*Options)
+}
+
+type Options struct {
+	client.Options
+
+	FieldManager string
+}
+
+func (o Options) ApplyToOptions(opts *Options) {
+	if o.Cache != nil {
+		opts.Cache = o.Cache
+	}
+
+	if o.Scheme != nil {
+		opts.Scheme = o.Scheme
+	}
+
+	if o.DryRun != nil {
+		opts.DryRun = o.DryRun
+	}
+
+	if o.HTTPClient != nil {
+		opts.HTTPClient = o.HTTPClient
+	}
+
+	if o.Mapper != nil {
+		opts.Mapper = o.Mapper
+	}
+
+	if o.HTTPClient != nil {
+		opts.HTTPClient = o.HTTPClient
+	}
+}
+
 // FromEnv returns a [Ctl] for the default context in $KUBECONFIG.
-func FromEnv() (*Ctl, error) {
+func FromEnv(opts ...Option) (*Ctl, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
@@ -43,39 +83,42 @@ func FromEnv() (*Ctl, error) {
 		return nil, err
 	}
 
-	c, err := client.New(config, client.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Ctl{
-		config: config,
-		client: c,
-	}, nil
+	return FromRESTConfig(config, opts...)
 }
 
-func FromConfig(cfg Config) (*Ctl, error) {
+func FromConfig(cfg Config, opts ...Option) (*Ctl, error) {
 	rest, err := ConfigToRest(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return FromRESTConfig(rest)
+	return FromRESTConfig(rest, opts...)
 }
 
-func FromRESTConfig(cfg *RESTConfig) (*Ctl, error) {
-	c, err := client.New(cfg, client.Options{})
+func FromRESTConfig(cfg *RESTConfig, opts ...Option) (*Ctl, error) {
+	var options Options
+	for _, o := range opts {
+		o.ApplyToOptions(&options)
+	}
+
+	c, err := client.New(cfg, options.Options)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Ctl{config: cfg, client: c}, nil
+	fieldManager := options.FieldManager
+	if fieldManager == "" {
+		fieldManager = "*kube.Ctl"
+	}
+
+	return &Ctl{config: cfg, client: c, fieldManager: fieldManager}, nil
 }
 
 // Ctl is a Kubernetes client inspired by the shape of the `kubectl` CLI with a
 // focus on being ergonomic.
 type Ctl struct {
-	config *rest.Config
-	client client.Client
+	config       *rest.Config
+	client       client.Client
+	fieldManager string
 }
 
 // RestConfig returns a deep copy of the [rest.Config] used by this [Ctl].
@@ -95,6 +138,46 @@ func (c *Ctl) Get(ctx context.Context, key ObjectKey, obj Object) error {
 	return nil
 }
 
+// List fetches a list of objects into `objs` from Kubernetes.
+// Usage:
+//
+//	var pods corev1.PodList
+//	ctl.List(ctx, &pods)
+func (c *Ctl) List(ctx context.Context, objs client.ObjectList, opts ...client.ListOption) error {
+	if err := c.client.List(ctx, objs, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+// ApplyAndWait is a convenience function to call [Ctl.Apply] followed by
+// [Ctl.WaitFor].
+func (c *Ctl) ApplyAndWait(ctx context.Context, obj Object, cond CondFn[Object]) error {
+	if err := c.Apply(ctx, obj); err != nil {
+		return err
+	}
+
+	return c.WaitFor(ctx, obj, cond)
+}
+
+// Apply "applies" the provided [Object] via SSA (Server Side Apply).
+func (c *Ctl) Apply(ctx context.Context, obj Object) error {
+	kinds, _, err := c.client.Scheme().ObjectKinds(obj)
+	if err != nil {
+		return err
+	}
+
+	obj.SetManagedFields(nil)
+
+	obj.GetObjectKind().SetGroupVersionKind(kinds[0])
+
+	if err := c.client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.fieldManager)); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
 func (c *Ctl) Create(ctx context.Context, obj Object) error {
 	if err := c.client.Create(ctx, obj); err != nil {
 		return errors.WithStack(err)
@@ -107,6 +190,58 @@ func (c *Ctl) Delete(ctx context.Context, obj Object) error {
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+// CondFn is a condition checker for Kubernetes Objects. The provided error is
+// the result of [Ctl.Get] and may be used e.g. to await 404's in Deletes.
+type CondFn[T Object] func(T, error) (bool, error)
+
+// WaitFor blocks until cond returns true for obj or the internal time of 5m is
+// exceeded. obj is continuously refreshed via [Ctl.Get] before calling cond.
+func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) error {
+	const logEvery = 10 * time.Second
+	const timeout = 5 * time.Minute
+
+	ctx, cancel := context.WithTimeoutCause(ctx, timeout, errors.Newf("TODO"))
+	defer cancel()
+
+	start := time.Now()
+	lastLog := start
+
+	// TODO(chrisseto): We should be able to pull this off obj but Get doesn't
+	// seem to set TypeMeta?
+	kinds, _, err := c.client.Scheme().ObjectKinds(obj)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	gvk := kinds[0]
+
+	for {
+		err := c.Get(ctx, AsKey(obj), obj)
+
+		done, err := cond(obj, err)
+		if err != nil {
+			return err
+		}
+
+		if done {
+			log.Info(ctx, "Cond satisfied", "key", AsKey(obj), "gvk", gvk, "waited", time.Since(start))
+			return nil
+		}
+
+		if time.Since(lastLog) >= logEvery {
+			lastLog = time.Now()
+			log.Info(ctx, "waiting for Cond", "key", AsKey(obj), "gvk", gvk, "waited", time.Since(start))
+		}
+
+		select {
+		case <-time.After(10 * time.Second):
+			continue
+		case <-ctx.Done():
+			return errors.WithStack(ctx.Err())
+		}
+	}
 }
 
 type ExecOptions struct {

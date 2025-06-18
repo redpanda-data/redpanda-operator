@@ -137,6 +137,180 @@ func SecretKey(pandaCluster *vectorizedv1alpha1.Cluster) types.NamespacedName {
 	return types.NamespacedName{Name: resourceNameTrim(pandaCluster.Name, lifecycleSuffix), Namespace: pandaCluster.Namespace}
 }
 
+// RenderLifecycleSecret creates a Secret containing lifecycle scripts for the Redpanda cluster
+func RenderLifecycleSecret(
+	ctx context.Context,
+	cluster *vectorizedv1alpha1.Cluster,
+	client k8sclient.Client,
+) (*corev1.Secret, error) {
+	k := SecretKey(cluster)
+	
+	secret := &corev1.Secret{}
+	err := client.Get(ctx, k, secret)
+	
+	if err != nil && k8sclient.IgnoreNotFound(err) != nil {
+		return nil, fmt.Errorf("error while fetching secret: %w", err)
+	}
+	
+	if err == nil {
+		return nil, nil
+	}
+	
+	
+	newSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k.Name,
+			Namespace: k.Namespace,
+			Labels:    labels.ForCluster(cluster),
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		Data: map[string][]byte{
+			postStartKey: []byte(getPostStartScript(cluster)),
+			preStopKey:   []byte(getPreStopScript(cluster)),
+		},
+	}
+	
+	return newSecret, nil
+}
+
+func getPostStartScript(cluster *vectorizedv1alpha1.Cluster) string {
+	// Simplified version that doesn't require the resource's logger
+	adminAPI := cluster.AdminAPIInternal()
+	
+	// Curl command to get node ID
+	curlNodeIDCmd := fmt.Sprintf("curl --silent --fail ")
+	
+	// Add TLS flags if needed
+	tlsConfig := adminAPI.GetTLS()
+	proto := "http"
+	if tlsConfig != nil && tlsConfig.Enabled {
+		proto = "https"
+		if tlsConfig.RequireClientAuth {
+			curlNodeIDCmd += "--cacert /etc/tls/certs/admin/ca/ca.crt --cert /etc/tls/certs/admin/tls.crt --key /etc/tls/certs/admin/tls.key "
+		} else {
+			curlNodeIDCmd += "--cacert /etc/tls/certs/admin/tls.crt "
+		}
+	}
+	
+	// Finish building curl command for node_config
+	podNameTemplate := fmt.Sprintf("${POD_NAME}.%s.%s.svc.cluster.local:%d", 
+		cluster.Name, cluster.Namespace, adminAPI.Port)
+	curlNodeIDCmd += fmt.Sprintf("%s://%s/v1/node_config", proto, podNameTemplate)
+	
+	// Build maintenance mode command
+	curlMaintenanceCmd := fmt.Sprintf("curl -X DELETE --silent -o /dev/null -w \"%%{http_code}\" ")
+	
+	// Add same TLS flags
+	if tlsConfig != nil && tlsConfig.Enabled {
+		if tlsConfig.RequireClientAuth {
+			curlMaintenanceCmd += "--cacert /etc/tls/certs/admin/ca/ca.crt --cert /etc/tls/certs/admin/tls.crt --key /etc/tls/certs/admin/tls.key "
+		} else {
+			curlMaintenanceCmd += "--cacert /etc/tls/certs/admin/tls.crt "
+		}
+	}
+	
+	// Finish building maintenance command
+	curlMaintenanceCmd += fmt.Sprintf("%s://%s/v1/brokers/${NODE_ID}/maintenance", proto, podNameTemplate)
+	
+	// Create the full script
+	return fmt.Sprintf(`#!/usr/bin/env bash
+set -x
+
+postStartHook () {
+	until NODE_ID=$(%s | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+		sleep 0.5
+	done
+	echo "Clearing maintenance mode on node ${NODE_ID}"
+	until [ "${status:-}" = "200" ] || [ "${status:-}" = "400" ]; do
+		status=$(%s)
+		sleep 0.5
+	done
+}
+
+export -f postStartHook
+timeout %d bash -c "postStartHook"
+true
+`, curlNodeIDCmd, curlMaintenanceCmd, terminationGracePeriodSeconds/2)
+}
+
+func getPreStopScript(cluster *vectorizedv1alpha1.Cluster) string {
+	// Simplified version that doesn't require the resource's logger
+	adminAPI := cluster.AdminAPIInternal()
+	
+	// Curl command to get node ID
+	curlNodeIDCmd := fmt.Sprintf("curl --silent --fail ")
+	
+	// Add TLS flags if needed
+	tlsConfig := adminAPI.GetTLS()
+	proto := "http"
+	if tlsConfig != nil && tlsConfig.Enabled {
+		proto = "https"
+		if tlsConfig.RequireClientAuth {
+			curlNodeIDCmd += "--cacert /etc/tls/certs/admin/ca/ca.crt --cert /etc/tls/certs/admin/tls.crt --key /etc/tls/certs/admin/tls.key "
+		} else {
+			curlNodeIDCmd += "--cacert /etc/tls/certs/admin/tls.crt "
+		}
+	}
+	
+	// Finish building curl command for node_config
+	podNameTemplate := fmt.Sprintf("${POD_NAME}.%s.%s.svc.cluster.local:%d", 
+		cluster.Name, cluster.Namespace, adminAPI.Port)
+	curlNodeIDCmd += fmt.Sprintf("%s://%s/v1/node_config", proto, podNameTemplate)
+	
+	// Build maintenance mode commands
+	curlMaintenanceCmd := fmt.Sprintf("curl -X PUT --silent -o /dev/null -w \"%%{http_code}\" ")
+	curlGetMaintenanceCmd := fmt.Sprintf("curl --silent ")
+	
+	// Add same TLS flags
+	if tlsConfig != nil && tlsConfig.Enabled {
+		if tlsConfig.RequireClientAuth {
+			curlMaintenanceCmd += "--cacert /etc/tls/certs/admin/ca/ca.crt --cert /etc/tls/certs/admin/tls.crt --key /etc/tls/certs/admin/tls.key "
+			curlGetMaintenanceCmd += "--cacert /etc/tls/certs/admin/ca/ca.crt --cert /etc/tls/certs/admin/tls.crt --key /etc/tls/certs/admin/tls.key "
+		} else {
+			curlMaintenanceCmd += "--cacert /etc/tls/certs/admin/tls.crt "
+			curlGetMaintenanceCmd += "--cacert /etc/tls/certs/admin/tls.crt "
+		}
+	}
+	
+	// Finish building maintenance commands
+	curlMaintenanceCmd += fmt.Sprintf("%s://%s/v1/brokers/${NODE_ID}/maintenance", proto, podNameTemplate)
+	curlGetMaintenanceCmd += fmt.Sprintf("%s://%s/v1/maintenance", proto, podNameTemplate)
+	
+	// Create the full script
+	return fmt.Sprintf(`#!/usr/bin/env bash
+set -x
+
+preStopHook () {
+	until NODE_ID=$(%s | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+		sleep 0.5
+	done
+	echo "Setting maintenance mode on node ${NODE_ID}"
+	until [ "${status:-}" = "200" ]; do
+		status=$(%s)
+		if [ "${status:-}" = "404" ]; then
+			echo "Got 404 when enabling maintenance mode, giving up because node does not exist anymore."
+			return 0
+		fi
+		echo "Got ${status} for enabling maint. mode"
+		sleep 0.5
+	done
+	until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+		res=$(%s)
+		finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+		draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+		sleep 0.5
+	done
+}
+
+export -f preStopHook
+timeout %d bash -c "preStopHook"
+true
+`, curlNodeIDCmd, curlMaintenanceCmd, curlGetMaintenanceCmd, terminationGracePeriodSeconds/2)
+}
+
 // getPostStartScript creates a script that removes maintenance mode after startup.
 func (r *PreStartStopScriptResource) getPostStartScript() string {
 	// TODO replace scripts with proper RPK calls
