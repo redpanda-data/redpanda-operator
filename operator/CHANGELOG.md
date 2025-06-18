@@ -98,6 +98,7 @@ This is required to ensure that a pre-existing sts can roll over to new configur
 * `get` permissions on `Node` resources is now correctly configured by default.
 
    `--set rbac.createAdditionalControllerCRs=true` is no longer required for rackawareness to work.
+* Fixed a bug where pods would be restarted indefinitely in the case of config version changes when syncing cluster configuration.
 
 ## [v25.1.1-beta3](https://github.com/redpanda-data/redpanda-operator/releases/tag/operator%2Fv25.1.1-beta3) - 2025-05-07
 ### Added
