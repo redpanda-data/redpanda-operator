@@ -268,3 +268,122 @@ func objectLabels(obj metav1.Object) (labels.CommonLabels, error) {
 	}
 	return objLabels, nil
 }
+
+// RenderIngress creates an Ingress object for a Redpanda cluster
+func RenderIngress(
+	cluster *vectorizedv1alpha1.Cluster,
+	tlsSecretName string,
+	clusterIssuer string,
+) (*networkingv1.Ingress, error) {
+	// Get subdomain from first PandaProxy external listener
+	pandaproxyAPI := cluster.FirstPandaproxyAPIExternal()
+	if pandaproxyAPI == nil || pandaproxyAPI.External.Subdomain == "" {
+		return nil, nil // No ingress needed without external configuration
+	}
+
+	subdomain := pandaproxyAPI.External.Subdomain
+
+	var userConfig *vectorizedv1alpha1.IngressConfig
+	if pandaproxyAPI != nil {
+		userConfig = pandaproxyAPI.External.Ingress
+	}
+
+	if userConfig != nil && userConfig.Enabled != nil && !*userConfig.Enabled {
+		return nil, nil
+	}
+
+	svcName := cluster.GetName() + "-cluster"
+	svcPortName := "proxy-external"
+	ingressName := cluster.GetName()
+	extraAnnotations := map[string]string{
+		SSLPassthroughAnnotation: "true",
+	}
+
+	var endpoint string
+	// Use user-configured endpoint if provided
+	if userConfig != nil && userConfig.Endpoint != "" {
+		endpoint = userConfig.Endpoint
+	}
+
+	// Merge user annotations (user annotations take precedence)
+	if userConfig != nil {
+		for k, v := range userConfig.Annotations {
+			extraAnnotations[k] = v
+		}
+	}
+
+	// Construct the host with optional endpoint prefix
+	host := subdomain
+	if endpoint != "" {
+		host = fmt.Sprintf("%s.%s", endpoint, subdomain)
+	}
+
+	// Default configuration
+	ingressClassName := nginx
+	pathTypePrefix := networkingv1.PathTypePrefix
+
+	annotations := map[string]string{}
+	for k, v := range extraAnnotations {
+		annotations[k] = v
+	}
+
+	var tlsConfig []networkingv1.IngressTLS
+
+	// Configure TLS if secret name is provided
+	if tlsSecretName != "" {
+		// Add TLS annotations
+		if clusterIssuer != "" {
+			annotations["cert-manager.io/cluster-issuer"] = clusterIssuer
+			annotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = "true"
+		}
+
+		// Add TLS configuration
+		tlsConfig = []networkingv1.IngressTLS{
+			{
+				Hosts:      []string{host, fmt.Sprintf("*.%s", host)},
+				SecretName: tlsSecretName,
+			},
+		}
+	}
+
+	ingress := &networkingv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Ingress",
+			APIVersion: "networking.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        ingressName,
+			Namespace:   cluster.GetNamespace(),
+			Annotations: annotations,
+		},
+		Spec: networkingv1.IngressSpec{
+			IngressClassName: &ingressClassName,
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: host,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Path:     "/",
+									PathType: &pathTypePrefix,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: svcName,
+											Port: networkingv1.ServiceBackendPort{
+												Name: svcPortName,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			TLS: tlsConfig,
+		},
+	}
+
+	return ingress, nil
+}
