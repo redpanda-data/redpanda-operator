@@ -14,7 +14,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -584,8 +583,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 		return "", false, errors.WithStack(err)
 	}
 
-	// TODO: this needs to be updated when the hashing code lands
-	return strconv.FormatInt(configStatus.Version, 10), configStatus.NeedsRestart, nil
+	return configStatus.PropertiesThatNeedRestartHash, configStatus.NeedsRestart, nil
 }
 
 func (r *RedpandaReconciler) configSyncMode(ctx context.Context, rp *redpandav1alpha2.Redpanda) syncclusterconfig.SyncerMode {
