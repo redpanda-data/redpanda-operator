@@ -23,6 +23,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/supervisor"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 )
@@ -43,14 +44,15 @@ var (
 
 func init() {
 	rootCmd.AddCommand(
-		configurator.Command(),
 		bootstrap.Command(),
+		configurator.Command(),
 		envsubst.Command(),
+		ready.Command(),
 		run.Command(),
+		sidecar.Command(),
+		supervisor.Command(),
 		syncclusterconfig.Command(),
 		version.Command(),
-		sidecar.Command(),
-		ready.Command(),
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())

@@ -15,6 +15,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"math/big"
@@ -386,6 +387,48 @@ func TestIntegrationChart(t *testing.T) {
 		assert.NoErrorf(t, kafkaListenerTest(ctx, rpk), "Kafka listener sub test failed")
 		assert.NoErrorf(t, adminListenerTest(ctx, rpk), "Admin listener sub test failed")
 		assert.NoErrorf(t, superuserTest(ctx, rpk, "superuser", "kubernetes-controller"), "Superuser sub test failed")
+	})
+
+	t.Run("sidecar", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Statefulset: &redpanda.PartialStatefulset{
+					SideCars: &redpanda.PartialSidecars{
+						Args: []string{"--panic-after=5s"},
+					},
+				},
+			}),
+		})
+
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+			"app.kubernetes.io/instance":  release.Name,
+			"app.kubernetes.io/component": release.Chart + "-statefulset",
+		})
+		require.NoError(t, err)
+
+		// Assert that all Pods have a sidecar instance that's panicking based
+		// on their logs and that the panic has NOT triggered a restart of any
+		// container. i.e. Sidecar crashes don't crash redpanda.
+		for _, pod := range pods.Items {
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				logStream, err := env.Ctl().Logs(ctx, &pod, corev1.PodLogOptions{
+					Container: "sidecar",
+				})
+				require.NoError(t, err)
+
+				logs, err := io.ReadAll(logStream)
+				require.NoError(t, err)
+
+				require.Contains(t, string(logs), "unhandled panic triggered by --panic-after")
+			}, 5*time.Minute, 5*time.Second)
+
+			for _, container := range pod.Status.ContainerStatuses {
+				require.Zero(t, container.RestartCount)
+			}
+		}
 	})
 }
 
