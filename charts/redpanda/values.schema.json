@@ -19198,6 +19198,19 @@
         },
         "sideCars": {
           "properties": {
+            "args": {
+              "oneOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "brokerDecommissioner": {
               "properties": {
                 "decommissionAfter": {
