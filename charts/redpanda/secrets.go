@@ -213,6 +213,8 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
 	if existing, ok := helmette.Lookup[corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
+		// make any existing secret immutable
+		existing.Immutable = ptr.To(true)
 		return existing
 	}
 
@@ -233,7 +235,8 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 			Namespace: dot.Release.Namespace,
 			Labels:    FullLabels(dot),
 		},
-		Type: corev1.SecretTypeOpaque,
+		Immutable: ptr.To(true),
+		Type:      corev1.SecretTypeOpaque,
 		StringData: map[string]string{
 			"password": password,
 		},
