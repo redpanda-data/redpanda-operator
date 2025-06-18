@@ -143,3 +143,62 @@ func (r *LoadBalancerServiceResource) getAnnotation() map[string]string {
 	}
 	return ext.External.Bootstrap.Annotations
 }
+
+// RenderLoadBalancerService renders a LoadBalancer service
+func RenderLoadBalancerService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
+	var bootstrapPorts []NamedServicePort
+	for _, listener := range cluster.KafkaAPIExternalListeners() {
+		if listener.External.Bootstrap != nil {
+			portName := listener.Name
+			if portName == "" {
+				portName = "kafka-external-bootstrap"
+			} else {
+				portName = portName + "-bootstrap"
+			}
+
+			bootstrapPorts = append(bootstrapPorts, NamedServicePort{
+				Name:       portName,
+				Port:       listener.External.Bootstrap.Port,
+				TargetPort: listener.Port,
+			})
+		}
+	}
+
+	name := cluster.Name + "-lb-bootstrap"
+	ports := make([]corev1.ServicePort, 0, len(bootstrapPorts))
+	for _, svcPort := range bootstrapPorts {
+		ports = append(ports, corev1.ServicePort{
+			Name:       svcPort.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       int32(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.TargetPort)),
+		})
+	}
+
+	objLabels := labels.ForCluster(cluster)
+
+	ext := cluster.FirstExternalListener()
+	var annotations map[string]string
+	if ext != nil && ext.External.Bootstrap != nil {
+		annotations = ext.External.Bootstrap.Annotations
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   cluster.Namespace,
+			Name:        name,
+			Labels:      objLabels,
+			Annotations: annotations,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: corev1.ServiceSpec{
+			PublishNotReadyAddresses: true,
+			Type:                     corev1.ServiceTypeLoadBalancer,
+			Ports:                    ports,
+			Selector:                 objLabels.AsAPISelector().MatchLabels,
+		},
+	}
+}

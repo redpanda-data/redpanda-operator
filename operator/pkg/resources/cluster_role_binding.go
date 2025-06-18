@@ -178,3 +178,32 @@ func (r *ClusterRoleBindingResource) RemoveSubject(
 
 	return nil
 }
+
+// RenderClusterRoleBinding renders a cluster role binding
+func RenderClusterRoleBinding(cluster *vectorizedv1alpha1.Cluster, ) *rbacv1.ClusterRoleBinding {
+	s := serviceAccountResourceKey(cluster)
+	return &rbacv1.ClusterRoleBinding{
+		// metav1.ObjectMeta can NOT have namespace set as
+		// ClusterRoleBinding is the cluster wide resource.
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "redpanda-init-configurator",
+			Namespace: "",
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      s.Name,
+				Namespace: s.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     "redpanda-init-configurator",
+		},
+	}
+}
