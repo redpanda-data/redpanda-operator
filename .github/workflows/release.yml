@@ -31,7 +31,7 @@ jobs:
             tag="${{ github.ref_name }}"
           fi
           echo "using ref name: $tag"
-          echo "ref_name=$tag" >> "$github_output"
+          echo "ref_name=$tag" >> "$GITHUB_OUTPUT"
 
       - name: checkout code
         uses: actions/checkout@v4
@@ -53,35 +53,52 @@ jobs:
         run: |
           # turn refs into slightly friendlier names. e.g. operator/v1.2.3 -> operator: v1.2.3
           release_name="$(echo "${{ steps.get_ref.outputs.ref_name }}" | sed 's|/v|: v|')"
-          echo "release_name=$release_name" >> "$github_output"
+          echo "release_name=$release_name" >> "$GITHUB_OUTPUT"
 
       - name: package helm chart
         run: |
+          set -ex
           tag="${{ steps.get_ref.outputs.ref_name }}"
           # extract the directory from the tag (e.g., "operator" from "operator/v1.2.3")
           dir="$(dirname "$tag")"
           # search for chart.yaml in $dir or one directory deep (e.g., operator/chart)
-          chart_path=$(find "$dir" -maxdepth 2 -type f -name "chart.yaml" | head -n 1)
+          chart_path=$(find "$dir" -maxdepth 2 -type f -name "Chart.yaml" | head -n 1)
           # exit early if no chart.yaml file is found
           if [[ -z "$chart_path" ]]; then
             echo "no chart.yaml found for $tag. skipping step."
             exit 0
           fi
 
+          # Explicitly set the version based on the tag, stripping the leading
+          # v. This is done due to a mishap in managing the operator's version.
+          # All our charts specify `version` without a leading v but the
+          # operator's chart accidentally began doing so when binding version
+          # and appVersion.
+          # We enforce uniformity here, which retroactively corrects this
+          # issue.
+          version="$(basename "$tag")"
+          version="${version#v}"
+
           echo "packaging chart at $chart_path"
-          helm package -u "$(dirname "$chart_path")"
+          helm package -u --version "$version" "$(dirname "$chart_path")"
+
+      - name: reformat change log
+        run: |
+          # Our CHANGE LOGS begin with '## VERSION - DATE', which is
+          # duplicative to include in the GH release body. tail -n +2 will
+          # remove the first line.
+          tail -n +2 .changes/${{ steps.get_ref.outputs.ref_name }}.md > RELEASE_BODY.md
 
       # create github release and upload file
       - name: create github release
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          name: steps.release_name.outputs.release_name
-          tag_name: steps.get_ref.outputs.ref_name
+          name: ${{ steps.release_name.outputs.release_name }}
+          tag_name: ${{ steps.get_ref.outputs.ref_name }}
           draft: false
           make_latest: false
           prerelease: ${{ contains(steps.get_ref.outputs.ref_name, '-alpha') || contains(steps.get_ref.outputs.ref_name, '-beta') }}
-          body_path: ".changes/${{ steps.get_ref.outputs.ref_name }}.md" # pull the release body from changie.
+          body_path: RELEASE_BODY.md
           # if a chart was packaged, we'll upload it to this release preserving helm's naming convention.
           files: |
             ./*.tgz
