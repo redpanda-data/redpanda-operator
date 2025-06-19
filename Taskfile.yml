@@ -132,7 +132,7 @@ tasks:
     - ./.changes/**/*.md
     - ./.changes/**/*.yaml
     cmds:
-    - changie merge -u '## Unreleased' # Ensure CHANGELOG.mds are up to date.
+    - changie merge # Ensure CHANGELOG.mds are up to date.
 
   build:
     cmds:
