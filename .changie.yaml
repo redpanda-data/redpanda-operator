@@ -43,7 +43,7 @@ projects:
     # Update operator's Chart.yaml
     - path: operator/chart/Chart.yaml
       find: '^version: .*$'
-      replace: 'version: {{.Version}}'
+      replace: 'version: {{.VersionNoPrefix}}'
     - path: operator/chart/Chart.yaml
       find: '^appVersion: .*$'
       replace: 'appVersion: {{.Version}}'
