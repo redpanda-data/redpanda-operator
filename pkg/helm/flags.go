@@ -36,6 +36,10 @@ func ToFlags(flagsStruct any) []string {
 			value = !value.(bool)
 		}
 
+		if field.Type.Kind() == reflect.Pointer && reflect.ValueOf(value).IsNil() {
+			continue
+		}
+
 		if field.Type.Kind() == reflect.String && reflect.ValueOf(value).IsZero() {
 			continue
 		}
