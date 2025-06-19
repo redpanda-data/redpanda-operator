@@ -224,21 +224,28 @@ func (c *Client) GetValues(ctx context.Context, release *Release, values any) er
 }
 
 type InstallOptions struct {
-	CreateNamespace bool     `flag:"create-namespace"`
-	Name            string   `flag:"-"`
-	Namespace       string   `flag:"namespace"`
-	Values          any      `flag:"-"`
-	Version         string   `flag:"version"`
-	NoWait          bool     `flag:"wait"`
-	NoWaitForJobs   bool     `flag:"wait-for-jobs"`
-	GenerateName    bool     `flag:"generate-name"`
-	ValuesFile      string   `flag:"values"`
-	Set             []string `flag:"set"`
+	CreateNamespace bool           `flag:"create-namespace"`
+	Name            string         `flag:"-"`
+	Namespace       string         `flag:"namespace"`
+	Values          any            `flag:"-"`
+	Version         string         `flag:"version"`
+	NoHooks         bool           `flag:"no-hooks"`
+	Timeout         *time.Duration `flag:"timeout"`
+	NoWait          bool           `flag:"wait"`
+	NoWaitForJobs   bool           `flag:"wait-for-jobs"`
+	GenerateName    bool           `flag:"generate-name"`
+	ValuesFile      string         `flag:"values"`
+	Set             []string       `flag:"set"`
 }
 
 func (c *Client) Install(ctx context.Context, chart string, opts InstallOptions) (Release, error) {
 	if opts.Name == "" {
 		opts.GenerateName = true
+	}
+
+	if deadline, ok := ctx.Deadline(); ok && opts.Timeout == nil {
+		timeout := time.Until(deadline).Round(time.Second)
+		opts.Timeout = &timeout
 	}
 
 	if opts.Values != nil {

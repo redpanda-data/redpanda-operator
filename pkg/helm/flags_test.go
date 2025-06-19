@@ -11,15 +11,18 @@ package helm_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
 type Flags struct {
-	NoWait        bool `flag:"wait"`
-	NoWaitForJobs bool `flag:"no-wait-for-jobs"`
+	NoWait        bool           `flag:"wait"`
+	NoWaitForJobs bool           `flag:"no-wait-for-jobs"`
+	Timeout       *time.Duration `flag:"timeout"`
 	NotAFlag      string
 	StringFlag    string   `flag:"string-flag"`
 	StringArray   []string `flag:"string-array"`
@@ -66,6 +69,16 @@ func TestToFlags(t *testing.T) {
 				"--string-array=1",
 				"--string-array=2",
 				"--string-array=3",
+			},
+		},
+		{
+			in: Flags{
+				Timeout: ptr.To(time.Hour),
+			},
+			out: []string{
+				"--wait=true",
+				"--no-wait-for-jobs=false",
+				"--timeout=1h0m0s",
 			},
 		},
 	}

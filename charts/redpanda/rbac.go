@@ -39,7 +39,7 @@ func Roles(dot *helmette.Dot) []*rbacv1.Role {
 		role := helmette.FromYaml[rbacv1.Role](dot.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
-		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Name(dot), role.ObjectMeta.Name)
+		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(dot), role.ObjectMeta.Name)
 		role.ObjectMeta.Namespace = dot.Release.Namespace
 		role.ObjectMeta.Labels = FullLabels(dot)
 		role.ObjectMeta.Annotations = helmette.Merge(
@@ -73,7 +73,10 @@ func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 		role := helmette.FromYaml[rbacv1.ClusterRole](dot.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
-		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(dot), role.ObjectMeta.Name)
+		// For ClusterScoped resources, we include the Namespace to permit
+		// installing multiple releases with the same names into the same
+		// cluster.
+		role.ObjectMeta.Name = cleanForK8s(fmt.Sprintf("%s-%s-%s", Fullname(dot), dot.Release.Namespace, role.ObjectMeta.Name))
 		role.ObjectMeta.Labels = FullLabels(dot)
 		role.ObjectMeta.Annotations = helmette.Merge(
 			map[string]string{},
