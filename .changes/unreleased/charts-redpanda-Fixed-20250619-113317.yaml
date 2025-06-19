@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Corrected naming of `Role`s to use Fullname instead of Name, which ensures they are unique within their namespace.
+time: 2025-06-19T11:33:17.161135-04:00

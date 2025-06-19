@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Updated naming of `ClusterRole`s to include the release namespace. This ensures that they are unique per release and permits installing the chart with the same name across different namespaces.
+time: 2025-06-19T11:35:26.699507-04:00
