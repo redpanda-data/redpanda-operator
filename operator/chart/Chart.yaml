@@ -4,8 +4,9 @@ description: Redpanda operator helm chart
 type: application
 
 # The operator helm chart is considered part of the operator itself. Therefore
-# version == appVersion.
-version: v2.4.2
+# version == appVersion. Our charts' versions, don't include a leading `v`, so
+# we match that precedence here.
+version: 2.4.2
 appVersion: v2.4.2
 kubeVersion: ">= 1.25.0-0"
 

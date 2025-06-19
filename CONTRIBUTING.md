@@ -97,11 +97,12 @@ Releases](https://redpandadata.atlassian.net/projects/K8S?selectedItem=com.atlas
 To release any project in this repository:
 1. Mint the version and its CHANGELOG.md entry via `changie batch -j <project> <version>`
     - If minting a pre-release, specify `-k` to keep the unreleased changes in place for the official release.
+    - Manually review the contents and make any formatting or language adjustments as need be.
 2. Run `task test:unit` and `task lint`, they will report additional required actions, if any.
 4. Commit the resultant diff with the commit message `<project>: cut release <version>` and rebase it into master via a Pull Request.
 5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
 6. Push the tags.
-7. Verify that the Release Workflow ran successfully.
+7. Verify that the [Release Workflow](./.github/workflows/release.yml) ran successfully.
 8. If applicable, mark the newly minted release as the "latest".
 
 ## Nightly build
