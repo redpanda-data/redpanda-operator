@@ -40,10 +40,9 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-type ChartYAML struct {
-	Version     string            `json:"version"`
-	AppVersion  string            `json:"appVersion"`
-	Annotations map[string]string `json:"annotations"`
+type ImageAnnotation struct {
+	Name  string `json:"name"`
+	Image string `json:"image"`
 }
 
 func TestChartYaml(t *testing.T) {
@@ -55,16 +54,17 @@ func TestChartYaml(t *testing.T) {
 
 	expectedVersion := string(out[len("operator/"):])
 
-	assert.Equal(t, expectedVersion, Chart.Metadata().Version, "Chart.yaml's version should match `%s: %s", changieCmd, expectedVersion)
+	assert.Equal(t, expectedVersion, Chart.Metadata().AppVersion, "Chart.yaml's appVersion should match `%s: %s", changieCmd, expectedVersion)
+	assert.Equal(t, expectedVersion[1:], Chart.Metadata().Version, "Chart.yaml's version should match `%s: %s", changieCmd, expectedVersion)
 
-	assert.Equal(t, Chart.Metadata().AppVersion, Chart.Metadata().Version, "The Operator and its chart are distributed as the same package. Any changes to appVersion should be made to version and visa vera.")
+	var operatorImages []ImageAnnotation
+	require.NoError(t, yaml.Unmarshal([]byte(Chart.Metadata().Annotations["artifacthub.io/images"]), &operatorImages))
 
-	assert.Contains(
-		t,
-		Chart.Metadata().Annotations["artifacthub.io/images"],
-		fmt.Sprintf("%s:%s", operatorRepo, expectedVersion),
-		"artifacthub.io/images should be in sync with .version",
-	)
+	var redpandaImages []ImageAnnotation
+	require.NoError(t, yaml.Unmarshal([]byte(redpanda.Chart.Metadata().Annotations["artifacthub.io/images"]), &redpandaImages))
+
+	assert.Equal(t, operatorImages[1], redpandaImages[0], "artifacthub.io/images should be in sync with the vendored redpanda chart")
+	assert.Equal(t, fmt.Sprintf("%s:%s", operatorRepo, expectedVersion), operatorImages[0].Image, "artifacthub.io/images should be in sync with appVersion")
 }
 
 func TestRBACBindings(t *testing.T) {
