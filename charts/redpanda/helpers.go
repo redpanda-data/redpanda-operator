@@ -46,7 +46,11 @@ func ChartLabel(dot *helmette.Dot) string {
 	return cleanForK8s(strings.ReplaceAll(fmt.Sprintf("%s-%s", dot.Chart.Name, dot.Chart.Version), "+", "_"))
 }
 
-// Expand the name of the chart
+// Name returns the name of this chart as specified in Chart.yaml, unless
+// explicitly overridden.
+// Name is effectively static and should not be used for naming of resources.
+// Name is truncated at 63 characters to satisfy Kubernetes field limits
+// and DNS limits.
 func Name(dot *helmette.Dot) string {
 	if override, ok := dot.Values["nameOverride"].(string); ok && override != "" {
 		return cleanForK8s(override)
@@ -54,8 +58,10 @@ func Name(dot *helmette.Dot) string {
 	return cleanForK8s(dot.Chart.Name)
 }
 
-// Create a default fully qualified app name.
-// We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+// Fullname returns the name of this helm release, unless explicitly
+// overridden.
+// Fullname is truncated at 63 characters to satisfy Kubernetes field limits
+// and DNS limits.
 func Fullname(dot *helmette.Dot) string {
 	if override, ok := dot.Values["fullnameOverride"].(string); ok && override != "" {
 		return cleanForK8s(override)
