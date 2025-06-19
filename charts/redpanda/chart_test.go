@@ -49,6 +49,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/tlsgeneration"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
@@ -1165,5 +1166,78 @@ func TestGoHelmEquivalence(t *testing.T) {
 				assert.Equal(t, helmObjsMap[typ], goObjsMap[typ], "expected = helm\nactual = go")
 			}
 		})
+	}
+}
+
+// TestMultiNamespaceInstall verifies that:
+// - Multiple instances of the redpanda chart with different names may be installed in the same instance.
+// - Multiple instances of the redpanda chart with the same name may be installed in different namespaces.
+func TestMultiNamespaceInstall(t *testing.T) {
+	ctl := kubetest.NewEnv(t)
+	client, err := helm.New(helm.Options{
+		KubeConfig: ctl.RestConfig(),
+	})
+	require.NoError(t, err)
+
+	values := redpanda.PartialValues{
+		// Disable NodePort services to avoid port conflicts.
+		External: &redpanda.PartialExternalConfig{
+			Type: ptr.To(corev1.ServiceTypeLoadBalancer),
+		},
+		// Disable cert-manager integration so we don't have to
+		// install their CRDs.
+		TLS: &redpanda.PartialTLS{
+			Certs: redpanda.PartialTLSCertMap{
+				"default": redpanda.PartialTLSCert{
+					SecretRef: &corev1.LocalObjectReference{
+						Name: "default",
+					},
+				},
+				"external": redpanda.PartialTLSCert{
+					SecretRef: &corev1.LocalObjectReference{
+						Name: "default",
+					},
+				},
+			},
+		},
+	}
+
+	for i := 0; i < 2; i++ {
+		namespace := fmt.Sprintf("namespace-%d", i)
+
+		require.NoError(t, ctl.Apply(t.Context(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: namespace},
+		}))
+
+		for j := 0; j < 2; j++ {
+			_, err := client.Install(t.Context(), ".", helm.InstallOptions{
+				Name:      fmt.Sprintf("redpanda-%d", j),
+				Namespace: namespace,
+				// Disable all forms of waits / checks. This isn't an actual
+				// cluster, were just verifying that the API server and helm
+				// don't report naming conflicts.
+				NoHooks:       true,
+				NoWait:        true,
+				NoWaitForJobs: true,
+				Timeout:       ptr.To(5 * time.Second),
+				Values:        values,
+			})
+			require.NoError(t, err)
+		}
+
+		// One final check to show that conflicting names will result in an error.
+		_, err := client.Install(t.Context(), ".", helm.InstallOptions{
+			Name:      "redpanda-0",
+			Namespace: namespace,
+			// Disable all forms of waits / checks. This isn't an actual
+			// cluster, were just verifying that the API server and helm
+			// don't report naming conflicts.
+			NoHooks:       true,
+			NoWait:        true,
+			NoWaitForJobs: true,
+			Timeout:       ptr.To(5 * time.Second),
+			Values:        values,
+		})
+		require.Error(t, err)
 	}
 }
