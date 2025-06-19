@@ -101,10 +101,8 @@ To release any project in this repository:
 4. Commit the resultant diff with the commit message `<project>: cut release <version>` and rebase it into master via a Pull Request.
 5. Tag the above commit with as `<project>/v<version>` with `git tag $(changie latest -j <project>) <commit-sha>`.
 6. Push the tags.
-7. Create a [Release on GitHub](https://github.com/redpanda-data/redpanda-operator/releases)
-    - Associate it with the tag pushed in the previous step.
-    - Paste the contents of `.changes/<project>/<version>.md`, excluding the header, into the release notes field.
-    - Name the release `<project>: <version>`
+7. Verify that the Release Workflow ran successfully.
+8. If applicable, mark the newly minted release as the "latest".
 
 ## Nightly build
 
