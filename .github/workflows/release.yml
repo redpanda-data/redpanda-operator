@@ -1,0 +1,89 @@
+name: Release On Tag
+
+on:
+  push:
+    tags:
+      # Only match tags that look like go module tags.
+      # This way we explicitly ignore our legacy tagging of the operator.
+      - '*/v*'
+  workflow_dispatch:
+    inputs:
+      ref_name:
+        description: "The ref name to process (e.g., 'operator/v1.2.3')"
+        required: false
+        default: ""
+
+jobs:
+  release:
+    name: Create Release on GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # for testing purposes and to allow updating of pre-existing releases,
+      # this workflow can be triggered by a tag being pushed or directly. This
+      # step normalized the possible inputs into a single variable.
+      - name: get ref
+        id: get_ref
+        run: |
+          if [[ -n "${{ inputs.ref_name }}" ]]; then
+            tag="${{ inputs.ref_name }}"
+          else
+            tag="${{ github.ref_name }}"
+          fi
+          echo "using ref name: $tag"
+          echo "ref_name=$tag" >> "$github_output"
+
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.get_ref.outputs.ref_name }}
+
+      - uses: nixbuild/nix-quick-install-action@v30
+        with:
+          github_access_token: ${{ secrets.github_token }}
+
+      # cache the nix store.
+      - uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashfiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
+
+      - name: build release name
+        id: release_name
+        run: |
+          # turn refs into slightly friendlier names. e.g. operator/v1.2.3 -> operator: v1.2.3
+          release_name="$(echo "${{ steps.get_ref.outputs.ref_name }}" | sed 's|/v|: v|')"
+          echo "release_name=$release_name" >> "$github_output"
+
+      - name: package helm chart
+        run: |
+          tag="${{ steps.get_ref.outputs.ref_name }}"
+          # extract the directory from the tag (e.g., "operator" from "operator/v1.2.3")
+          dir="$(dirname "$tag")"
+          # search for chart.yaml in $dir or one directory deep (e.g., operator/chart)
+          chart_path=$(find "$dir" -maxdepth 2 -type f -name "chart.yaml" | head -n 1)
+          # exit early if no chart.yaml file is found
+          if [[ -z "$chart_path" ]]; then
+            echo "no chart.yaml found for $tag. skipping step."
+            exit 0
+          fi
+
+          echo "packaging chart at $chart_path"
+          helm package -u "$(dirname "$chart_path")"
+
+      # create github release and upload file
+      - name: create github release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: steps.release_name.outputs.release_name
+          tag_name: steps.get_ref.outputs.ref_name
+          draft: false
+          make_latest: false
+          prerelease: ${{ contains(steps.get_ref.outputs.ref_name, '-alpha') || contains(steps.get_ref.outputs.ref_name, '-beta') }}
+          body_path: ".changes/${{ steps.get_ref.outputs.ref_name }}.md" # pull the release body from changie.
+          # if a chart was packaged, we'll upload it to this release preserving helm's naming convention.
+          files: |
+            ./*.tgz
+
+      # todo(chrisseto) trigger an action in the charts repo that updates index.yaml
