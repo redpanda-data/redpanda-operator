@@ -99,6 +99,7 @@
 {{- $existing_4 := (index $_207_existing_4_ok_5 0) -}}
 {{- $ok_5 := (index $_207_existing_4_ok_5 1) -}}
 {{- if $ok_5 -}}
+{{- $_ := (set $existing_4 "immutable" true) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $existing_4) | toJson -}}
 {{- break -}}
@@ -109,7 +110,7 @@
 {{- $password = $userPassword -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $secretName "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "type" "Opaque" "stringData" (dict "password" $password)))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $secretName "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "immutable" true "type" "Opaque" "stringData" (dict "password" $password)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
