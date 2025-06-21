@@ -18,6 +18,7 @@ package rapidutil
 import (
 	"reflect"
 	"time"
+	"unicode"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,8 +28,9 @@ import (
 )
 
 var (
-	Quantity = rapid.Custom(func(t *rapid.T) *resource.Quantity {
-		return resource.NewQuantity(rapid.Int64().Draw(t, "Quantity"), resource.DecimalSI)
+	Quantity = rapid.Custom(func(t *rapid.T) resource.Quantity {
+		q := resource.NewQuantity(int64(rapid.Int32().Draw(t, "Quantity")), resource.DecimalSI)
+		return *q
 	})
 
 	Duration = rapid.Custom(func(t *rapid.T) metav1.Duration {
@@ -40,7 +42,7 @@ var (
 		if rapid.Bool().Draw(t, "intorstr") {
 			return intstr.FromInt32(rapid.Int32().Draw(t, "FromInt32"))
 		} else {
-			return intstr.FromString(rapid.StringN(0, 10, 10).Draw(t, "FromString"))
+			return intstr.FromString(rapid.StringOf(rapid.RuneFrom([]rune{}, unicode.ASCII_Hex_Digit)).Draw(t, "FromString"))
 		}
 	})
 
@@ -55,11 +57,15 @@ var (
 	})
 
 	KubernetesTypes = rapid.MakeConfig{
+		Kinds: map[reflect.Kind]*rapid.Generator[any]{
+			reflect.String: rapid.StringOf(rapid.RuneFrom([]rune{}, unicode.ASCII_Hex_Digit)).AsAny(),
+		},
 		Types: map[reflect.Type]*rapid.Generator[any]{
 			reflect.TypeFor[int64]():              rapid.Int64Range(-99999, 99999).AsAny(),
 			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
 			reflect.TypeFor[*metav1.FieldsV1]():   rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[*resource.Quantity](): Quantity.AsAny(),
+			reflect.TypeFor[resource.Quantity]():  Quantity.AsAny(),
+			reflect.TypeFor[metav1.TypeMeta]():    rapid.Just(metav1.TypeMeta{}).AsAny(),
 			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
 			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
 			reflect.TypeFor[corev1.Probe]():       Probe.AsAny(),
