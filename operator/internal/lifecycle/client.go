@@ -206,6 +206,14 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 		// custom mappings
 		builder.Watches(resourceType, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 			if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
+				// NB: we do a Get here to make sure we've watched the given
+				// namespace for the client-side cache. If we haven't set up
+				// the namespace to be cached then we'll error, just ignore it.
+				toReconcile := cluster.DeepCopyObject().(client.Object)
+				if err := r.client.Get(context.Background(), *owner, toReconcile); err != nil {
+					return nil
+				}
+
 				return []reconcile.Request{{
 					NamespacedName: *owner,
 				}}
@@ -293,9 +301,27 @@ func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner 
 		if err != nil {
 			return nil, err
 		}
+		if legacyResolver, ok := r.ownershipResolver.(LegacyOwnershipResolver[T, U]); ok {
+			legacyMatching, err := r.listResources(ctx, resourceType, client.MatchingLabels(legacyResolver.GetLegacyOwnerLabels(owner)))
+			if err != nil {
+				return nil, err
+			}
+			// this may have duplicate entriea, make sure we filter them in the loop below
+			matching = append(matching, legacyMatching...)
+		}
 		filtered := []client.Object{}
+		seen := map[gvkObject]struct{}{}
 		for i := range matching {
 			object := matching[i]
+			key := gvkObject{
+				gvk: object.GetObjectKind().GroupVersionKind(),
+				nn:  client.ObjectKeyFromObject(object),
+			}
+
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
 
 			// filter out unowned resources
 			mapping, err := getResourceScope(r.mapper, r.scheme, object)
@@ -397,9 +423,27 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	if err != nil {
 		return nil, fmt.Errorf("listing StatefulSets: %w", err)
 	}
+	if legacyResolver, ok := r.ownershipResolver.(LegacyOwnershipResolver[T, U]); ok {
+		legacySets, err := r.listResources(ctx, &appsv1.StatefulSet{}, client.MatchingLabels(legacyResolver.GetLegacyOwnerLabels(cluster)))
+		if err != nil {
+			return nil, fmt.Errorf("listing legacy StatefulSets: %w", err)
+		}
+		// this may have duplicate entriea, make sure we filter them in the loop below
+		sets = append(sets, legacySets...)
+	}
 
 	existing := []*poolWithOrdinals{}
+	seen := map[gvkObject]struct{}{}
 	for _, set := range sets {
+		key := gvkObject{
+			gvk: set.GetObjectKind().GroupVersionKind(),
+			nn:  client.ObjectKeyFromObject(set),
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+
 		statefulSet := set.(*appsv1.StatefulSet)
 
 		if !r.nodePoolRenderer.IsNodePool(statefulSet) {

@@ -49,6 +49,16 @@ func (m *V2OwnershipResolver) AddLabels(cluster *ClusterWithPools) map[string]st
 // to a given cluster.
 func (m *V2OwnershipResolver) GetOwnerLabels(cluster *ClusterWithPools) map[string]string {
 	return map[string]string{
+		m.namespaceLabel: cluster.GetNamespace(),
+		m.ownerLabel:     cluster.GetName(),
+		m.operatorLabel:  "v2",
+	}
+}
+
+// GetLegacyOwnerLabels returns the labels that can identify a resource belonging
+// to a given cluster coming from our old flux-based operator.
+func (m *V2OwnershipResolver) GetLegacyOwnerLabels(cluster *ClusterWithPools) map[string]string {
+	return map[string]string{
 		fluxNameLabel:      cluster.Name,
 		fluxNamespaceLabel: cluster.Namespace,
 	}
@@ -56,21 +66,12 @@ func (m *V2OwnershipResolver) GetOwnerLabels(cluster *ClusterWithPools) map[stri
 
 // ownerFromLabels returns the v2 cluster based on a resource's labels.
 func (m *V2OwnershipResolver) ownerFromLabels(labels map[string]string) types.NamespacedName {
-	owner := labels[m.ownerLabel]
-	if owner == "" {
-		// fallback to flux labels
-		owner = labels[fluxNameLabel]
+	if labels[m.operatorLabel] != "v2" {
+		return types.NamespacedName{}
 	}
-
-	namespace := labels[m.namespaceLabel]
-	if namespace == "" {
-		// fallback to flux labels
-		namespace = labels[fluxNamespaceLabel]
-	}
-
 	return types.NamespacedName{
-		Namespace: namespace,
-		Name:      owner,
+		Namespace: labels[m.namespaceLabel],
+		Name:      labels[m.ownerLabel],
 	}
 }
 
