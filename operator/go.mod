@@ -29,7 +29,7 @@ require (
 	github.com/redpanda-data/common-go/secrets v0.1.3
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.3-0.20250528165859-05efa25f40a6
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250628160953-94cc69c73bc3
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8

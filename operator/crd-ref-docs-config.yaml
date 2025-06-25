@@ -4,6 +4,9 @@ processor:
   - 'Migration$'
   ignoreFields:
   - 'migration$'
+  customMarkers:
+  - name: "hidefromdoc"
+    target: field
 
 render:
   kubernetesVersion: 1.28
