@@ -120,7 +120,7 @@ spec:
                       This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
                       ChartRef fields to be ignored.
 
-                      Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.23` or the corresponding
+                      Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.26` or the corresponding
                       version of the Redpanda chart.
 
                       Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
@@ -18858,6 +18858,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource
@@ -20511,7 +20515,7 @@ spec:
                       This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
                       ChartRef fields to be ignored.
 
-                      Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.23` or the corresponding
+                      Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.26` or the corresponding
                       version of the Redpanda chart.
 
                       Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
@@ -39249,6 +39253,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource

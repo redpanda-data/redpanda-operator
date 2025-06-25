@@ -46,6 +46,13 @@ type ConfigWatcher struct {
 	fs             afero.Fs
 	log            logr.Logger
 
+	// When deployed using operator cluster configuration is synced only
+	// in main reconciler. ConfigWatcher sidecar should only synchronize users
+	// and their passwords.
+	// Only when deployed via helm the ConfigWatcher must synchronize superuser
+	// cluster configuration list.
+	noSetSuperusers bool
+
 	// for testing mostly
 	initialized chan struct{}
 }
@@ -71,6 +78,12 @@ func WithFs(fs afero.Fs) Option {
 func WithInitializedSignal(ch chan struct{}) Option {
 	return func(c *ConfigWatcher) {
 		c.initialized = ch
+	}
+}
+
+func WithSkipClusterConfigurationSync(noSetSuperusers bool) Option {
+	return func(c *ConfigWatcher) {
+		c.noSetSuperusers = noSetSuperusers
 	}
 }
 
@@ -209,6 +222,10 @@ func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
 }
 
 func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {
+	if w.noSetSuperusers {
+		return
+	}
+
 	w.log.Info("setting superusers", "users", users)
 
 	if _, err := w.adminClient.PatchClusterConfig(ctx, map[string]any{

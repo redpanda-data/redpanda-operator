@@ -236,6 +236,19 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	// TODO This change needs to wait for 2.3.13-24.3.17 operator release
+	// The flag that disables cluster configuration synchronization is set to `true` to not
+	// conflict with operator cluster configuration synchronization.
+	//if rp.Spec.ClusterSpec.Statefulset == nil {
+	//	rp.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
+	//}
+	//
+	//if rp.Spec.ClusterSpec.Statefulset.SideCars == nil {
+	//	rp.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	//}
+	//
+	//rp.Spec.ClusterSpec.Statefulset.SideCars.Args = []string{"--no-set-superusers"}
+
 	rp, err := r.reconcileFlux(ctx, rp)
 	if err != nil {
 		return ctrl.Result{}, errors.WithStack(err)
@@ -676,13 +689,13 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 		return errors.WithStack(err)
 	}
 
-	usersTXT, err := r.usersTXTFor(ctx, rp)
+	superusers, err := r.superusersFor(ctx, rp)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	syncer := syncclusterconfig.Syncer{Client: client, Mode: syncclusterconfig.SyncerModeAdditive}
-	configStatus, err := syncer.Sync(ctx, config, usersTXT)
+	configStatus, err := syncer.Sync(ctx, config, superusers)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -708,14 +721,14 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, rp *red
 	return nil
 }
 
-func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) (map[string][]byte, error) {
+func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
 	values, err := rp.GetValues()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	if !values.Auth.SASL.Enabled {
-		return map[string][]byte{}, nil
+		return nil, nil
 	}
 
 	key := client.ObjectKey{Namespace: rp.Namespace, Name: values.Auth.SASL.SecretRef}
@@ -723,12 +736,18 @@ func (r *RedpandaReconciler) usersTXTFor(ctx context.Context, rp *redpandav1alph
 	var users corev1.Secret
 	if err := r.Client.Get(ctx, key, &users); err != nil {
 		if apierrors.IsNotFound(err) {
-			return map[string][]byte{}, nil
+			return nil, nil
 		}
 		return nil, errors.WithStack(err)
 	}
 
-	return users.Data, nil
+	superusers := []string{}
+	for filename, userTXT := range users.Data {
+		superusers = append(superusers, syncclusterconfig.LoadUsersFile(ctx, filename, userTXT)...)
+	}
+
+	// internal superuser should always be added
+	return syncclusterconfig.NormalizeSuperusers(append(superusers, values.Auth.SASL.BootstrapUser.Username())), nil
 }
 
 func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema) (_ map[string]any, err error) {
