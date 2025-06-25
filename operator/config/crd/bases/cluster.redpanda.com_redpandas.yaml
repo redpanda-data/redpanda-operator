@@ -18874,6 +18874,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource
@@ -39281,6 +39285,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource

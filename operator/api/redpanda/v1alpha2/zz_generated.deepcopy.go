@@ -3565,6 +3565,11 @@ func (in *SideCars) DeepCopyInto(out *SideCars) {
 		*out = new(RedpandaImage)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Args != nil {
+		in, out := &in.Args, &out.Args
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.ConfigWatcher != nil {
 		in, out := &in.ConfigWatcher, &out.ConfigWatcher
 		*out = new(ConfigWatcher)

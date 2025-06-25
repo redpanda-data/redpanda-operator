@@ -2711,6 +2711,7 @@ SideCars configures the additional sidecar containers that run alongside the mai
 |===
 | Field | Description | Default | Validation
 | *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+
 | *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
 | *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 
 | *`controllers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]__ |  |  | 
