@@ -336,18 +336,16 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 		{
 			Name: "should_enable_transactions",
 			In: map[string]any{
+				"admin_api_require_auth":      true,
 				"enable_transactions":         true,
 				"enable_schema_id_validation": "none",
-				// TODO: Minor bug in the helm chart here, setting superusers
-				// in cluster.config results in the bootstrap users getting
-				// excluded.
-				// "superusers":                  []any{"jimbob"},
+				"superusers":                  []any{"jimbob"},
 			},
 			Expected: map[string]any{
 				"admin_api_require_auth":    true,
 				"cloud_storage_access_key":  "VURYSECRET",
 				"cloud_storage_disable_tls": true,
-				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
+				"superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
 		{

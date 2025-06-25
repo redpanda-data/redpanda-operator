@@ -17,8 +17,6 @@
 package syncclusterconfig
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -89,14 +87,14 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
-			usersTXTs, err := loadUsersFiles(ctx, usersDirectoryPath)
+			superusers, err := loadUsersFiles(ctx, usersDirectoryPath)
 			if err != nil {
 				return err
 			}
 
 			syncer := Syncer{Client: client, Mode: syncerMode}
 
-			if _, err := syncer.Sync(ctx, clusterConfig, usersTXTs); err != nil {
+			if _, err := syncer.Sync(ctx, clusterConfig, superusers); err != nil {
 				return err
 			}
 
@@ -161,7 +159,7 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 	return config, nil
 }
 
-func loadUsersFiles(ctx context.Context, path string) (map[string][]byte, error) {
+func loadUsersFiles(ctx context.Context, path string) ([]string, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -171,7 +169,7 @@ func loadUsersFiles(ctx context.Context, path string) (map[string][]byte, error)
 		return nil, err
 	}
 
-	users := map[string][]byte{}
+	users := []string{}
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -186,48 +184,10 @@ func loadUsersFiles(ctx context.Context, path string) (map[string][]byte, error)
 			continue
 		}
 
-		users[file.Name()] = usersFile
+		users = append(users, LoadUsersFile(ctx, filename, usersFile)...)
 	}
 
-	return users, nil
-}
-
-func loadUsersFile(ctx context.Context, filename string, usersFile []byte) []string {
-	scanner := bufio.NewScanner(bytes.NewReader(usersFile))
-
-	users := []string{}
-
-	i := 0
-	for scanner.Scan() {
-		i++
-
-		line := scanner.Text()
-		tokens := strings.Split(line, ":")
-		if len(tokens) != 2 && len(tokens) != 3 {
-			log.FromContext(ctx).Info(fmt.Sprintf("Skipping malformatted line number %d in file %q", i, filename))
-			continue
-		}
-		users = append(users, tokens[0])
-	}
-
-	return users
-}
-
-// normalizeSuperusers de-duplicates and sorts the superusers
-func normalizeSuperusers(entries []string) []string {
-	var sorted sort.StringSlice
-
-	unique := make(map[string]struct{})
-	for _, value := range entries {
-		if _, ok := unique[value]; !ok {
-			sorted = append(sorted, value)
-		}
-		unique[value] = struct{}{}
-	}
-
-	sorted.Sort()
-
-	return sorted
+	return NormalizeSuperusers(users), nil
 }
 
 type SyncerMode int
@@ -273,7 +233,7 @@ type ClusterConfigStatus struct {
 // If no changes are needed, it will return the highest config version from
 // reported by the brokers. If there's a change, it will return the new version
 // of the cluster config.
-func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[string][]byte) (*ClusterConfigStatus, error) {
+func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []string) (*ClusterConfigStatus, error) {
 	equal := s.EqualityCheck
 	if equal == nil {
 		equal = func(_ string, desired, current any) bool {
@@ -282,7 +242,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	}
 	logger := log.FromContext(ctx)
 
-	s.maybeMergeSuperusers(ctx, desired, usersTXT)
+	s.maybeMergeSuperusers(ctx, desired, superusers)
 
 	current, err := s.Client.Config(ctx, false)
 	if err != nil {
@@ -381,18 +341,8 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, usersTXT map[
 	}, nil
 }
 
-func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, usersTXT map[string][]byte) {
+func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, superusers []string) {
 	logger := log.FromContext(ctx)
-
-	if len(usersTXT) == 0 {
-		logger.Info("usersTXT not specified or empty. Skipping superusers merge.")
-		return
-	}
-
-	superusers := []string{}
-	for name, content := range usersTXT {
-		superusers = append(superusers, loadUsersFile(ctx, name, content)...)
-	}
 
 	superusersConfig, ok := config[superusersEntry]
 	if !ok {
@@ -418,7 +368,7 @@ func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any
 		return
 	}
 
-	config[superusersEntry] = normalizeSuperusers(superusers)
+	config[superusersEntry] = NormalizeSuperusers(superusers)
 }
 
 // hashConfigsThatNeedRestart returns a hash of the config that needs the
