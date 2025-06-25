@@ -29,7 +29,7 @@ annotations:
     - name: configurator
       image: docker.redpanda.com/redpandadata/configurator:v2.3.12-24.3.17
     - name: redpanda
-      image: docker.redpanda.com/redpandadata/redpanda:v24.3.14
+      image: docker.redpanda.com/redpandadata/redpanda:v24.3.17
   artifacthub.io/crds: |
     - kind: Redpanda
       version: v1alpha1

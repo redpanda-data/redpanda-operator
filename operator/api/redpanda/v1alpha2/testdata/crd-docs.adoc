@@ -405,7 +405,7 @@ This ties the operator to a specific version of the Go-based Redpanda Helm chart
 ChartRef fields to be ignored. +
 
 
-Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.23` or the corresponding +
+Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.26` or the corresponding +
 version of the Redpanda chart. +
 
 
@@ -2702,6 +2702,7 @@ SideCars configures the additional sidecar containers that run alongside the mai
 |===
 | Field | Description | Default | Validation
 | *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+
 | *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
 | *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 
 | *`controllers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]__ |  |  | 
