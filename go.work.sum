@@ -1095,9 +1095,9 @@ github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoG
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/redis/go-redis/v9 v9.6.1/go.mod h1:0C0c6ycQsdpVNQpxb1njEQIqkx5UcsM8FJCQLgE9+RA=
-github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.3-0.20250528145651-6ede752c17cb/go.mod h1:33q+FpNfYgIVnV5EOPTKWk2udlG6JoYi0UqLX8YHU/E=
 github.com/redpanda-data/redpanda-operator/gotohelm v1.2.0 h1:wHV+l6YmAuzdk+0Wd8Kd/e/Laabk3aN/wjPUKsqis9w=
 github.com/redpanda-data/redpanda-operator/gotohelm v1.2.0/go.mod h1:xEykm5zdjxPBFTOd9cR4Gd7Fv5J0g9d/kThL+wnulns=
+github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.0.0-20250628160953-94cc69c73bc3/go.mod h1:33q+FpNfYgIVnV5EOPTKWk2udlG6JoYi0UqLX8YHU/E=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
