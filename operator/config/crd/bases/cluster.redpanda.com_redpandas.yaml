@@ -1967,6 +1967,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -2177,6 +2179,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -2196,6 +2200,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -2411,6 +2417,8 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -2430,6 +2438,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -2728,6 +2738,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -2747,6 +2759,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -19152,6 +19166,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource
@@ -22805,6 +22823,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -23015,6 +23035,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -23034,6 +23056,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -23249,6 +23273,8 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -23268,6 +23294,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -23566,6 +23594,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for this
                               listener. For example, 'mtls_identity', `sasl` or `http_basic`.
@@ -23585,6 +23615,8 @@ spec:
                                     format: int32
                                     type: integer
                                   type: array
+                                appProtocol:
+                                  type: string
                                 authenticationMethod:
                                   description: Specifies the authentication method
                                     for this listener. For example, 'mtls_identity',
@@ -39990,6 +40022,10 @@ spec:
                         description: Defines the additional sidecar containers that
                           run alongside the main Redpanda container in the Pod.
                         properties:
+                          args:
+                            items:
+                              type: string
+                            type: array
                           configWatcher:
                             description: Configures the `config-watcher` sidecar.
                               The `config-watcher` sidecar polls the Secret resource

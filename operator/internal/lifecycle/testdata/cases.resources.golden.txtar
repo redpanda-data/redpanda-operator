@@ -605,7 +605,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-decommission
+    name: basic-test-decommission
     namespace: basic-test
   rules:
   - apiGroups:
@@ -656,7 +656,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-pvcunbinder
+    name: basic-test-pvcunbinder
     namespace: basic-test
   rules:
   - apiGroups:
@@ -684,7 +684,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-rpk-debug-bundle
+    name: basic-test-rpk-debug-bundle
     namespace: basic-test
   rules:
   - apiGroups:
@@ -719,7 +719,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-sidecar
+    name: basic-test-sidecar
     namespace: basic-test
   rules:
   - apiGroups:
@@ -749,7 +749,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-decommission
+    name: basic-test-basic-test-decommission
   rules:
   - apiGroups:
     - ""
@@ -772,7 +772,7 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-pvcunbinder
+    name: basic-test-basic-test-pvcunbinder
   rules:
   - apiGroups:
     - ""
@@ -798,12 +798,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-decommission
+    name: basic-test-decommission
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: redpanda-decommission
+    name: basic-test-decommission
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -823,12 +823,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-pvcunbinder
+    name: basic-test-pvcunbinder
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: redpanda-pvcunbinder
+    name: basic-test-pvcunbinder
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -848,12 +848,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-rpk-debug-bundle
+    name: basic-test-rpk-debug-bundle
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: redpanda-rpk-debug-bundle
+    name: basic-test-rpk-debug-bundle
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -873,12 +873,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: redpanda-sidecar
+    name: basic-test-sidecar
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: redpanda-sidecar
+    name: basic-test-sidecar
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -898,12 +898,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-decommission
+    name: basic-test-basic-test-decommission
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: basic-test-decommission
+    name: basic-test-basic-test-decommission
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -923,12 +923,12 @@
       helm.sh/chart: redpanda-5.10.2
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-pvcunbinder
+    name: basic-test-basic-test-pvcunbinder
     namespace: basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: basic-test-pvcunbinder
+    name: basic-test-basic-test-pvcunbinder
   subjects:
   - kind: ServiceAccount
     name: basic-test

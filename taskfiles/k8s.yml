@@ -136,7 +136,8 @@ tasks:
       crd-ref-docs \
       --config crd-ref-docs-config.yaml \
       --source-path ./api/redpanda/v1alpha2/ \
-      --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc
+      --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc \
+      --templates-dir=./crd-docs-templates/
 
   generate:statuses:
     run: when_changed

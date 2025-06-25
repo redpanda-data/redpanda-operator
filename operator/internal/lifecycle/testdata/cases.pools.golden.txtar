@@ -150,6 +150,9 @@
             name: kube-api-access
             readOnly: true
         - args:
+          - supervisor
+          - --
+          - /redpanda-operator
           - sidecar
           - --redpanda-yaml
           - /etc/redpanda/redpanda.yaml

@@ -152,6 +152,7 @@ Admin configures settings for the Admin API listeners.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -162,7 +163,6 @@ For historical backwards compatibility, this field is present on both +
 internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listeners. + |  | 
-| *`appProtocol`* __string__ |  |  | 
 |===
 
 
@@ -932,6 +932,7 @@ ExternalListener configures settings for the external listeners.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -1010,6 +1011,7 @@ HTTP configures settings for the HTTP Proxy listeners.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -1115,6 +1117,7 @@ Kafka configures settings for the Kafka API listeners.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -1310,6 +1313,7 @@ LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -2446,6 +2450,7 @@ SchemaRegistry configures settings for the Schema Registry listeners.
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 | *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
@@ -2805,6 +2810,7 @@ SideCars configures the additional sidecar containers that run alongside the mai
 |===
 | Field | Description | Default | Validation
 | *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+
 | *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
 | *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 
 | *`controllers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]__ |  |  | 
