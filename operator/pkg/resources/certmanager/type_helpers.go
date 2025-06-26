@@ -606,7 +606,7 @@ func (cc *ClusterCertificates) Volumes() (
 		mountPoints.AdminAPI.NodeCertMountDir,
 		adminAPIClientCAVolName,
 		mountPoints.AdminAPI.ClientCAMountDir,
-		true,
+		cc.adminAPI.selfSignedNodeCertificate,
 		true,
 	)
 	vols = append(vols, vol...)
