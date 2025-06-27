@@ -16,6 +16,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -146,4 +147,76 @@ func (r *SuperUsersResource) Key() types.NamespacedName {
 // GetUsername returns username used for Kafka SASL config that has prefix based on --superusers-prefix flag
 func (r *SuperUsersResource) GetUsername() string {
 	return r.username
+}
+
+func RenderSuperUsers(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, client k8sclient.Client) ([]*corev1.Secret, error) {
+	var output []*corev1.Secret
+	if cluster.IsSASLOnInternalEnabled() && cluster.PandaproxyAPIInternal() != nil {
+		user, err := buildUser(ctx, cluster, client, ScramPandaproxyUsername, PandaProxySuffix)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, user)
+	}
+
+	if cluster.IsSASLOnInternalEnabled() && cluster.Spec.Configuration.SchemaRegistry != nil {
+		user, err := buildUser(ctx, cluster, client, ScramSchemaRegistryUsername, SchemaRegistrySuffix)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, user)
+	}
+
+	if cluster.IsSASLOnInternalEnabled() {
+		user, err := buildUser(ctx, cluster, client, ScramRPKUsername, RPKSuffix)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, user)
+	}
+	return output, nil
+}
+
+func buildUser(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, client k8sclient.Client, user, suffix string) (*corev1.Secret, error) {
+	// Check if resource already exists
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceNameTrim(cluster.Name, suffix),
+			Namespace: cluster.Namespace,
+		},
+	}
+
+	getErr := client.Get(ctx, types.NamespacedName{
+		Namespace: secret.GetNamespace(),
+		Name:      secret.GetName(),
+	}, secret)
+	// it doesn't exist and we can't talk to the cluster, something is deeply wrong
+	if getErr != nil && !errors.IsNotFound(getErr) {
+		return nil, getErr
+	}
+	// it exists, we do nothing but return what we got back from get
+	if getErr == nil {
+		return secret, nil
+	}
+	// resource doesn't exist but we can talk to the cluster, create a new one
+	password, err := generatePassword(scramPasswordLength)
+	if err != nil {
+		return nil, fmt.Errorf("could not generate SASL password: %w", err)
+	}
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceNameTrim(cluster.Name, suffix),
+			Namespace: cluster.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		Type: corev1.SecretTypeBasicAuth,
+		Data: map[string][]byte{
+			corev1.BasicAuthUsernameKey: []byte(user),
+			corev1.BasicAuthPasswordKey: []byte(password),
+		},
+	}, nil
 }
