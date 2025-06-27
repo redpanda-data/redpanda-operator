@@ -12,7 +12,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0
-	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17
+	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250528175436-e8cca0053dc6
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8

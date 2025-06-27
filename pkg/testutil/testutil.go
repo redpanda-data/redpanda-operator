@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gonvenience/ytbx"
+	"github.com/google/go-cmp/cmp"
 	"github.com/homeport/dyff/pkg/dyff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -204,6 +205,19 @@ type Writer struct {
 func (w Writer) Write(p []byte) (int, error) {
 	w.T.Log(string(p))
 	return len(p), nil
+}
+
+// AssertEqual is [assert.Equal] but uses [cmp.Equal] to perform comparisons.
+// This allows it to successfully compare values, such as [resource.Quantity],
+// that defy [reflect.DeepEqual].
+func AssertEqual(t assert.TestingT, expected, actual any, opts ...cmp.Option) bool {
+	if cmp.Equal(expected, actual, opts...) {
+		return true
+	}
+
+	diff := cmp.Diff(expected, actual, opts...)
+
+	return assert.Fail(t, "- Expected\n+ Actual\n", diff)
 }
 
 type GoldenAssertion int

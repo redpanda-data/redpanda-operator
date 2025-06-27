@@ -11,29 +11,24 @@
 
 package v1alpha3
 
-import (
-	v1 "k8s.io/client-go/applyconfigurations/core/v1"
-)
-
-// PodTemplateApplyConfiguration represents an declarative configuration of the PodTemplate type for use
+// ObjectMetaApplyConfiguration represents an declarative configuration of the ObjectMeta type for use
 // with apply.
-type PodTemplateApplyConfiguration struct {
-	*ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                          *v1.PodSpecApplyConfiguration `json:"spec,omitempty"`
+type ObjectMetaApplyConfiguration struct {
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-// PodTemplateApplyConfiguration constructs an declarative configuration of the PodTemplate type for use with
+// ObjectMetaApplyConfiguration constructs an declarative configuration of the ObjectMeta type for use with
 // apply.
-func PodTemplate() *PodTemplateApplyConfiguration {
-	return &PodTemplateApplyConfiguration{}
+func ObjectMeta() *ObjectMetaApplyConfiguration {
+	return &ObjectMetaApplyConfiguration{}
 }
 
 // WithLabels puts the entries into the Labels field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *PodTemplateApplyConfiguration) WithLabels(entries map[string]string) *PodTemplateApplyConfiguration {
-	b.ensureObjectMetaApplyConfigurationExists()
+func (b *ObjectMetaApplyConfiguration) WithLabels(entries map[string]string) *ObjectMetaApplyConfiguration {
 	if b.Labels == nil && len(entries) > 0 {
 		b.Labels = make(map[string]string, len(entries))
 	}
@@ -47,27 +42,12 @@ func (b *PodTemplateApplyConfiguration) WithLabels(entries map[string]string) *P
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *PodTemplateApplyConfiguration) WithAnnotations(entries map[string]string) *PodTemplateApplyConfiguration {
-	b.ensureObjectMetaApplyConfigurationExists()
+func (b *ObjectMetaApplyConfiguration) WithAnnotations(entries map[string]string) *ObjectMetaApplyConfiguration {
 	if b.Annotations == nil && len(entries) > 0 {
 		b.Annotations = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
 		b.Annotations[k] = v
 	}
-	return b
-}
-
-func (b *PodTemplateApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
-	if b.ObjectMetaApplyConfiguration == nil {
-		b.ObjectMetaApplyConfiguration = &ObjectMetaApplyConfiguration{}
-	}
-}
-
-// WithSpec sets the Spec field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Spec field is set to the value of the last call.
-func (b *PodTemplateApplyConfiguration) WithSpec(value v1.PodSpecApplyConfiguration) *PodTemplateApplyConfiguration {
-	b.Spec = &value
 	return b
 }

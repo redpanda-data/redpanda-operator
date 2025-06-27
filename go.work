@@ -14,3 +14,5 @@ use (
 	./operator
 	./pkg
 )
+
+replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20250521184210-5cd1ae592754

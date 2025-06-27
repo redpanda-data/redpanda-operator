@@ -37,19 +37,24 @@ type RedpandaList struct {
 // RedpandaSpec defines the desired state of the Redpanda cluster.
 type RedpandaSpec struct {
 	// +kubebuilder:default="cluster.local."
-	ClusterDomain string       `json:"clusterDomain,omitempty"`
-	Enterprise    Enterprise   `json:"enterprise"`
-	NodePoolSpec  NodePoolSpec `json:"nodePoolSpec"`
-	Listeners     Listeners    `json:"listeners"`
-	Console       ConsoleSpec  `json:"console,omitempty"`
+	ClusterDomain string               `json:"clusterDomain,omitempty"`
+	Enterprise    Enterprise           `json:"enterprise"`
+	NodePoolSpec  EmbeddedNodePoolSpec `json:"nodePoolSpec"`
+	Listeners     Listeners            `json:"listeners"`
+	ClusterConfig ClusterConfig        `json:"clusterConfig"`
+
+	// TODO
+	// Console       ConsoleSpec            `json:"console,omitempty"`
 }
 
+type ClusterConfig map[string]ValueSource
+
 type Enterprise struct {
-	License *License `json:"license,omitempty"`
+	License License `json:"license,omitempty"`
 }
 
 type License struct {
-	Value     string            `json:"value"`
+	Value     string            `json:"value,omitempty"`
 	ValueFrom *LicenseValueFrom `json:"valueFrom,omitempty"`
 }
 
@@ -58,36 +63,105 @@ type LicenseValueFrom struct {
 	SecretKeyRef corev1.SecretKeySelector `json:"secretKeyRef"`
 }
 
+// TODO Add enum options
 type AuthenticationMethod string
 
 // TODO Add CEL validation that requires at least 1 "internal" listener
 // OR should that be implicit / defaulted if not defined?
+// TODO defaults in CRD or nullable w/ implicit defaults?
+// TODO enforce name uniquness
+// TODO enforce port uniquness?
 type Listeners struct {
-	// TODO defaults in CRD or nullable w/ implicit defaults?
-	RPC   Listener   `json:"rpc,omitempty"`
-	Kafka []Listener `json:"kafka,omitempty"`
-	Admin []Listener `json:"admin,omitempty"`
+	RPC RPCListener `json:"rpc,omitempty"`
+
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	Kafka []Listener `json:"kafka,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	Admin []Listener `json:"admin,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	SchemaRegistry []Listener `json:"schemaRegistry,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
 	// TODO(chrisseto) is PandaProxy or HTTP a better name here?
-	HTTP           []Listener `json:"http,omitempty"`
-	SchemaRegistry []Listener `json:"schemaRegistry,omitempty"`
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	HTTP []Listener `json:"http,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+}
+
+type RPCListener struct {
+	// +default:value=33145
+	Port int32        `json:"port,omitempty"`
+	TLS  *ListenerTLS `json:"tls,omitempty"`
 }
 
 // https://docs.redpanda.com/current/manage/security/listener-configuration/
 type Listener struct {
-	Name string `json:"name"`
-
-	// +default:value="0.0.0.0"
-	Address        *string      `json:"address"`
-	AdvertisedHost *ValueSource `json:"advertisedHost,omitempty"`
-
-	Port           int32        `json:"port"`
-	AdvertisedPort *ValueSource `json:"advertisedPort,omitempty"`
-
+	Name                 string                `json:"name"`
+	Port                 int32                 `json:"port"`
 	AuthenticationMethod *AuthenticationMethod `json:"authenticationMethod,omitempty"`
-	RequireClientAuth    *bool                 `json:"requireClientAuth,omitempty"`
+	// TODO replace/convert these into EXPR fields.
+	AdvertisedPorts []int32      `json:"advertisedPorts,omitempty"`
+	PrefixTemplate  *string      `json:"prefixTemplate,omitempty"`
+	TLS             *ListenerTLS `json:"tls,omitempty"`
 
-	// TLS *ListenerTLSSource `json:"tls,omitempty"`
 	// Service ServiceConfig
+	// TODO: Address isn't currently supported in the chart or CRD. Though it
+	// might be nice to allow it in the future?
+	// +default:value="0.0.0.0"
+	// Address        string       `json:"address"`
+	// AdvertisedHost *ValueSource `json:"advertisedHost,omitempty"`
+	// AdvertisedPort *ValueSource `json:"advertisedPort,omitempty"`
+}
+
+type ListenerTLS struct {
+	RequireClientAuth bool        `json:"requireClientAuth,omitempty"`
+	TrustStore        *TrustStore `json:"trustStore,omitempty"`
+
+	CertificateSource `json:",inline"`
+}
+
+type CertificateSource struct {
+	IssuerRef   *IssuerRefCertificateSource   `json:"issuerRef,omitempty"`
+	CertManager *CertManagerCertificateSource `json:"certManager,omitempty"`
+	Secrets     *SecretCertificateSource      `json:"secrets,omitempty"`
+}
+
+type SecretCertificateSource struct {
+	SecretRef       corev1.LocalObjectReference  `json:"secretRef"`
+	ClientSecretRef *corev1.LocalObjectReference `json:"clientSecretRef,omitempty"`
+}
+
+// ConditionStatus represents a condition's status.
+// +kubebuilder:validation:Enum=Issuer;ClusterIssuer
+type IssuerKind string
+
+type IssuerRefCertificateSource struct {
+	// Name of the resource being referred to.
+	Name string `json:"name"`
+	// Kind of the resource being referred to.
+	Kind IssuerKind `json:"kind,omitempty"`
+}
+
+type CertManagerCertificateSource struct {
+	// default:value=43800h
+	Duration *metav1.Duration `json:"duration,omitempty"`
+}
+
+type TrustStore struct {
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef"`
+	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef"`
 }
 
 type RedpandaStatus struct {

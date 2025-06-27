@@ -19,10 +19,10 @@ import (
 // ValueSourceApplyConfiguration represents an declarative configuration of the ValueSource type for use
 // with apply.
 type ValueSourceApplyConfiguration struct {
-	Value           *string                  `json:"value,omitempty"`
-	ConfigMapKeyRef *v1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
-	SecretKeyRef    *v1.SecretKeySelector    `json:"secretKeyRef,omitempty"`
-	Expr            *v1alpha3.Expr           `json:"expr,omitempty"`
+	Value           *v1alpha3.YAMLRepresentation `json:"value,omitempty"`
+	ConfigMapKeyRef *v1.ConfigMapKeySelector     `json:"configMapKeyRef,omitempty"`
+	SecretKeyRef    *v1.SecretKeySelector        `json:"secretKeyRef,omitempty"`
+	UseRawValue     *bool                        `json:"useRawValue,omitempty"`
 }
 
 // ValueSourceApplyConfiguration constructs an declarative configuration of the ValueSource type for use with
@@ -34,7 +34,7 @@ func ValueSource() *ValueSourceApplyConfiguration {
 // WithValue sets the Value field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Value field is set to the value of the last call.
-func (b *ValueSourceApplyConfiguration) WithValue(value string) *ValueSourceApplyConfiguration {
+func (b *ValueSourceApplyConfiguration) WithValue(value v1alpha3.YAMLRepresentation) *ValueSourceApplyConfiguration {
 	b.Value = &value
 	return b
 }
@@ -55,10 +55,10 @@ func (b *ValueSourceApplyConfiguration) WithSecretKeyRef(value v1.SecretKeySelec
 	return b
 }
 
-// WithExpr sets the Expr field in the declarative configuration to the given value
+// WithUseRawValue sets the UseRawValue field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Expr field is set to the value of the last call.
-func (b *ValueSourceApplyConfiguration) WithExpr(value v1alpha3.Expr) *ValueSourceApplyConfiguration {
-	b.Expr = &value
+// If called multiple times, the UseRawValue field is set to the value of the last call.
+func (b *ValueSourceApplyConfiguration) WithUseRawValue(value bool) *ValueSourceApplyConfiguration {
+	b.UseRawValue = &value
 	return b
 }
