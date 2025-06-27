@@ -36,7 +36,7 @@ var suites = []TestSuite{
 	},
 	{
 		Name:     "integration",
-		Required: false,
+		Required: true,
 		Timeout:  30*time.Minute + time.Hour,
 		Retry:    ptr.To(3),
 	},
@@ -63,7 +63,7 @@ var suites = []TestSuite{
 	},
 	{
 		Name:         "kuttl-v2",
-		Required:     false,
+		Required:     true,
 		Timeout:      time.Hour,
 		JUnitPattern: ptr.To("work/operator/tests/_e2e_artifacts_v2/kuttl-report.xml"),
 	},

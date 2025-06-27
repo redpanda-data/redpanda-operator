@@ -94,7 +94,7 @@ steps:
     retry:
       automatic:
         limit: 3
-    soft_fail: true
+    soft_fail: false
     timeout_in_minutes: 90
   - continue_on_failure: true
     wait: null
@@ -223,7 +223,7 @@ steps:
           failed: true
         message: ':cloud: Kuttl-V2 Tests Job Failed'
         slack_token_env_var_name: SLACK_VBOT_TOKEN
-    soft_fail: true
+    soft_fail: false
     timeout_in_minutes: 60
   - continue_on_failure: true
     wait: null
