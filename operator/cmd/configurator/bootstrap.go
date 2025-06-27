@@ -13,9 +13,9 @@ import (
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 )
 
-// Template out the bootstrap file
+// TemplateBootstrapYaml expands the bootstrap file
 // This takes an input template, resolves any remaining external references, then writes out the resulting bootstrap file
-func templateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile, fixups string) error {
+func TemplateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile, fixups string) error {
 	var bootstrap map[string]string
 	buf, err := os.ReadFile(inFile)
 	if err != nil {
