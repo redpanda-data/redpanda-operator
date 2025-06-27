@@ -860,28 +860,6 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 			PodTemplate: &redpanda.PartialPodTemplate{
 				Spec: applycorev1.PodSpec().WithTerminationGracePeriodSeconds(10),
 			},
-			SideCars: &redpanda.PartialSidecars{
-				Image: &redpanda.PartialImage{
-					Repository: ptr.To("localhost/redpanda-operator"),
-					Tag:        ptr.To("dev"),
-				},
-				Controllers: &struct {
-					Image              *redpanda.PartialImage  "json:\"image,omitempty\""
-					Enabled            *bool                   "json:\"enabled,omitempty\""
-					CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
-					Resources          any                     "json:\"resources,omitempty\""
-					SecurityContext    *corev1.SecurityContext "json:\"securityContext,omitempty\""
-					HealthProbeAddress *string                 "json:\"healthProbeAddress,omitempty\""
-					MetricsAddress     *string                 "json:\"metricsAddress,omitempty\""
-					PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
-					Run                []string                "json:\"run,omitempty\""
-				}{
-					Image: &redpanda.PartialImage{
-						Repository: ptr.To("localhost/redpanda-operator"),
-						Tag:        ptr.To("dev"),
-					},
-				},
-			},
 		},
 	}
 
