@@ -69,6 +69,15 @@ projects:
       replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
 - label: Redpanda Helm Chart
   key: charts/redpanda
+  replacements:
+    # Update Chart.yaml
+    - path: charts/redpanda/Chart.yaml
+      find: '^version: .*$'
+      replace: 'version: {{.VersionNoPrefix}}'
+    # Update tests without having to re-run.
+    - path: charts/redpanda/testdata/*.golden.txtar
+      find: '/chart: redpanda-v.*$'
+      replace: '/chart: redpanda-{{.VersionNoPrefix}}'
   changelog: charts/redpanda/CHANGELOG.md
 - label: Console Helm Chart
   key: charts/console
