@@ -11,6 +11,7 @@ package users
 
 import (
 	"context"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -32,6 +33,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
+const redpandaTestContainerImage = "docker.redpanda.com/redpandadata/redpanda:"
+
+func getTestImage() string {
+	containerTag := os.Getenv("TEST_REDPANDA_VERSION")
+	return redpandaTestContainerImage + containerTag
+}
+
 func TestClient(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
@@ -48,7 +56,7 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
+	container, err := redpanda.Run(ctx, getTestImage(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
 		redpanda.WithSuperusers("user"),
@@ -122,7 +130,7 @@ func TestClientPasswordCreation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
+	container, err := redpanda.Run(ctx, getTestImage(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
 		redpanda.WithSuperusers("user"),
@@ -227,4 +235,110 @@ func TestClientPasswordCreation(t *testing.T) {
 			runTest(t, username, password, secret)
 		})
 	}
+}
+
+func TestPasswordNotGenerated(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	err = redpandav1alpha2.AddToScheme(scheme.Scheme)
+	require.NoError(t, err)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	container, err := redpanda.Run(ctx, getTestImage(),
+		redpanda.WithEnableKafkaAuthorization(),
+		redpanda.WithEnableSASL(),
+		redpanda.WithSuperusers("user"),
+		redpanda.WithNewServiceAccount("user", "password"),
+	)
+
+	require.NoError(t, err)
+
+	broker, err := container.KafkaSeedBroker(ctx)
+	require.NoError(t, err)
+
+	admin, err := container.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(broker), kgo.SASL(scram.Auth{
+		User: "user",
+		Pass: "password",
+	}.AsSha256Mechanism()))
+	require.NoError(t, err)
+
+	rpadminClient, err := rpadmin.NewAdminAPI([]string{admin}, &rpadmin.BasicAuth{
+		Username: "user",
+		Password: "password",
+	}, nil)
+	require.NoError(t, err)
+
+	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
+	require.NoError(t, err)
+	defer usersClient.Close()
+
+	annotations := map[string]string{
+		"test": "annotation",
+	}
+	labels := map[string]string{
+		"test": "label",
+	}
+
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testuser" + strconv.Itoa(int(time.Now().UnixNano())),
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Name: "bogus",
+				},
+			},
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Type: ptr.To(redpandav1alpha2.SASLMechanismScramSHA512),
+				Password: redpandav1alpha2.Password{
+					Value: "",
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "testsecret",
+							},
+							Key: "password",
+						},
+					},
+					NoGenerate: true,
+				},
+			},
+			Template: &redpandav1alpha2.UserTemplateSpec{
+				Secret: &redpandav1alpha2.ResourceTemplate{
+					Metadata: redpandav1alpha2.MetadataTemplate{
+						Labels:      labels,
+						Annotations: annotations,
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, c.Create(ctx, user))
+	require.EqualError(t, usersClient.Create(ctx, user), "secrets \"testsecret\" not found")
+
+	require.NoError(t, c.Create(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testsecret",
+			Namespace: metav1.NamespaceDefault,
+		},
+		StringData: map[string]string{
+			"wrong-key": "password",
+		},
+	}))
+	require.EqualError(t, usersClient.Create(ctx, user), "key \"password\" not found in Secret default/testsecret")
 }
