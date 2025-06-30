@@ -60,6 +60,10 @@ spec:
                   password:
                     description: Password specifies where a password is read from.
                     properties:
+                      noGenerate:
+                        description: NoGenerate when set to true does not create kubernetes
+                          secret when ValueFrom points to none-existent secret.
+                        type: boolean
                       value:
                         description: |-
                           Value is a hardcoded value to use for the given password. It should only be used for testing purposes.

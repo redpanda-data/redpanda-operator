@@ -129,6 +129,8 @@ type Password struct {
 	Value string `json:"value,omitempty"`
 	// ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
 	ValueFrom *PasswordSource `json:"valueFrom"`
+	// NoGenerate when set to true does not create kubernetes secret when ValueFrom points to none-existent secret.
+	NoGenerate bool `json:"noGenerate,omitempty"`
 }
 
 // Fetch fetches the actual value of a password based on its configuration.
