@@ -40,6 +40,7 @@
               { name = "GOROOT"; value = "${pkgs.go_1_23}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.29.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
+              { name = "TEST_REDPANDA_VERSION"; eval = "v25.1.1"; }
             ];
 
             # If the version of the installed binary is important make sure to

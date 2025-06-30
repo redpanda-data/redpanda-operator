@@ -60,6 +60,11 @@ spec:
                   password:
                     description: Password specifies where a password is read from.
                     properties:
+                      noGenerate:
+                        description: |-
+                          NoGenerate When `true`, prevents the operator from generating non-existent Secrets and non-existent Secret
+                          keys that are specified via `valueFrom`
+                        type: boolean
                       value:
                         description: |-
                           Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
