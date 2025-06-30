@@ -129,6 +129,9 @@ type Password struct {
 	Value string `json:"value,omitempty"`
 	// ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
 	ValueFrom *PasswordSource `json:"valueFrom"`
+	// NoGenerate When `true`, prevents the operator from generating non-existent Secrets and non-existent Secret
+	// keys that are specified via `valueFrom`
+	NoGenerate bool `json:"noGenerate,omitempty"`
 }
 
 // Fetch fetches the actual value of a password based on its configuration.
