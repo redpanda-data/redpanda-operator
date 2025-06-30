@@ -1562,6 +1562,8 @@ Password specifies a password for the user.
 | *`value`* __string__ | Value is a hardcoded value to use for the given password. It should only be used for testing purposes. +
 In production, use ValueFrom. + |  | 
 | *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. + |  | 
+| *`noGenerate`* __boolean__ | NoGenerate When `true`, prevents the operator from generating non-existent Secrets and non-existent Secret +
+keys that are specified via `valueFrom` + |  | 
 |===
 
 

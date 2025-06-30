@@ -13,6 +13,7 @@ import (
 	"context"
 	"slices"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -158,7 +159,8 @@ func (c *Client) getPassword(ctx context.Context, user *redpandav1alpha2.User) (
 	// 3. If it does, we return it
 	// 4. If it doesn't we either dump the user provided
 	//    password into the secret or dump a randomly
-	//    generated password into the secret
+	//    generated password into the secret or return
+	//    an error if NoGenerate flag is set.
 	if auth.Password.ValueFrom != nil { //nolint:nestif // this is fine
 		secret := auth.Password.ValueFrom.SecretKeyRef.Name
 		key := auth.Password.ValueFrom.SecretKeyRef.Key
@@ -169,7 +171,7 @@ func (c *Client) getPassword(ctx context.Context, user *redpandav1alpha2.User) (
 		var passwordSecret corev1.Secret
 		nn := types.NamespacedName{Namespace: user.Namespace, Name: secret}
 		if err := c.client.Get(ctx, nn, &passwordSecret); err != nil {
-			if !apierrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) || auth.Password.NoGenerate {
 				return "", err
 			}
 
@@ -178,6 +180,10 @@ func (c *Client) getPassword(ctx context.Context, user *redpandav1alpha2.User) (
 
 		data, ok := passwordSecret.Data[key]
 		if !ok {
+			if auth.Password.NoGenerate {
+				return "", errors.Newf("key %q not found in Secret %s/%s", key, user.Namespace, secret)
+			}
+
 			return c.generateAndStorePassword(ctx, user, userProvidedPassword, nn, key)
 		}
 

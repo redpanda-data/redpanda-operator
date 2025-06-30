@@ -14,8 +14,9 @@ package v1alpha2
 // PasswordApplyConfiguration represents an declarative configuration of the Password type for use
 // with apply.
 type PasswordApplyConfiguration struct {
-	Value     *string                           `json:"value,omitempty"`
-	ValueFrom *PasswordSourceApplyConfiguration `json:"valueFrom,omitempty"`
+	Value      *string                           `json:"value,omitempty"`
+	ValueFrom  *PasswordSourceApplyConfiguration `json:"valueFrom,omitempty"`
+	NoGenerate *bool                             `json:"noGenerate,omitempty"`
 }
 
 // PasswordApplyConfiguration constructs an declarative configuration of the Password type for use with
@@ -37,5 +38,13 @@ func (b *PasswordApplyConfiguration) WithValue(value string) *PasswordApplyConfi
 // If called multiple times, the ValueFrom field is set to the value of the last call.
 func (b *PasswordApplyConfiguration) WithValueFrom(value *PasswordSourceApplyConfiguration) *PasswordApplyConfiguration {
 	b.ValueFrom = value
+	return b
+}
+
+// WithNoGenerate sets the NoGenerate field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NoGenerate field is set to the value of the last call.
+func (b *PasswordApplyConfiguration) WithNoGenerate(value bool) *PasswordApplyConfiguration {
+	b.NoGenerate = &value
 	return b
 }
