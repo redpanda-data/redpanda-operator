@@ -189,7 +189,9 @@ func fieldByNameOrJSON(v reflect.Value, name string) (reflect.Value, *reflect.Va
 		zero := reflect.New(v.Type().Elem())
 		return zero.Elem(), &v
 	default:
-		panic(fmt.Errorf("unhandled default case %q", v.Kind()))
+		// The user's specified a path to a structure element we can't handle.
+		// Common causes here include using `redpanda.` prefixes on clusterConfiguration.
+		return reflect.Value{}, nil
 	}
 	return reflect.Value{}, nil
 }
