@@ -336,7 +336,6 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 		{
 			Name: "should_enable_transactions",
 			In: map[string]any{
-				"admin_api_require_auth":      true,
 				"enable_transactions":         true,
 				"enable_schema_id_validation": "none",
 				"superusers":                  []any{"jimbob"},
