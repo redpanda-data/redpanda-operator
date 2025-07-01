@@ -42,7 +42,7 @@ var suites = []TestSuite{
 	},
 	{
 		Name:     "acceptance",
-		Required: false,
+		Required: true,
 		Timeout:  time.Hour,
 		Retry:    ptr.To(3),
 	},
