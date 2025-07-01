@@ -139,7 +139,7 @@ steps:
     retry:
       automatic:
         limit: 3
-    soft_fail: true
+    soft_fail: false
     timeout_in_minutes: 60
   - continue_on_failure: true
     wait: null
