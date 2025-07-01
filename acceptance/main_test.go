@@ -16,8 +16,11 @@ import (
 	"sync"
 	"testing"
 
+	sourcev1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
@@ -46,7 +49,11 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("aks", framework.NoopProvider).
 		RegisterProvider("k3d", framework.NoopProvider).
 		WithDefaultProvider("k3d").
-		WithSchemeFunctions(redpandav1alpha1.AddToScheme, redpandav1alpha2.AddToScheme).
+		WithSchemeFunctions(
+			redpandav1alpha1.AddToScheme,
+			redpandav1alpha2.AddToScheme,
+			sourcev1beta2.AddToScheme,
+		).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 			Name:            "cert-manager",
 			Namespace:       "cert-manager",
@@ -59,10 +66,12 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithCRDDirectory("../operator/config/crd/bases").
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
+			namespace := t.IsolateNamespace(ctx)
+
 			t.Log("Installing Redpanda operator chart")
 			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
-				Namespace: t.IsolateNamespace(ctx),
+				Namespace: namespace,
 				Values: map[string]any{
 					"logLevel": "trace",
 					"image": map[string]any{
@@ -72,6 +81,24 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				},
 			})
 			t.Log("Successfully installed Redpanda operator chart")
+
+			// As CRDs are installed and cleaned up in a different lifecycle,
+			// we need to clear our the HelmRepository created by the operator
+			// before removing the operator itself. If we don't, the CRD
+			// removal will get stuck waiting on a finalizer that the
+			// (uninstalled) operator would have removed.
+			t.Cleanup(func(ctx context.Context) {
+				t.Log("removing redpanda-repository HelmRepository")
+				err := t.Delete(ctx, &sourcev1beta2.HelmRepository{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redpanda-repository",
+						Namespace: namespace,
+					},
+				})
+				if err != nil && !apierrors.IsNotFound(err) {
+					require.NoError(t, err)
+				}
+			})
 		}).
 		RegisterTag("cluster", 1, ClusterTag).
 		ExitOnCleanupFailures().

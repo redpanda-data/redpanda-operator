@@ -100,7 +100,9 @@ func KubectlDelete(ctx context.Context, fileOrDirectory string, options ...*Kube
 		mergedOptions = mergedOptions.merge(option)
 	}
 
-	return kubectl(ctx, mergedOptions, "delete", "-f", fileOrDirectory, "--ignore-not-found=true")
+	// Most objects should cleanly delete in < 1m, anything longer generally
+	// indicates something being stuck on a finalizer.
+	return kubectl(ctx, mergedOptions, "delete", "-f", fileOrDirectory, "--ignore-not-found=true", "--timeout=90s")
 }
 
 func KubectlApply(ctx context.Context, fileOrDirectory string, options ...*KubectlOptions) (string, error) {
