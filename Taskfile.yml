@@ -184,4 +184,9 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
+        # Acceptance tests only run from the acceptance package. Limiting the
+        # scope cuts a substantial amount of time off running this task and
+        # makes the output stream instead of being buffered.
+        MOD: "acceptance"
+        PKG: "."
         CLI_ARGS: '{{.CLI_ARGS}} -run "^TestAcceptance" -timeout 35m -tags acceptance'
