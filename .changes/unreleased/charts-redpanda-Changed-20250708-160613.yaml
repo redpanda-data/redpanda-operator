@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Bump Redpanda version in helm chart metadata and appVersion to `v25.1.7`.
+time: 2025-07-08T16:06:13.435335+02:00
