@@ -52,21 +52,22 @@ projects:
     - path: operator/chart/testdata/*.golden.txtar
       find: '/version: v.*$'
       replace: '/version: {{.Version}}'
+    # TODO this mergie auto correction is very useful but it prevents from cutting operator release
     # Update references to the operator image in redpanda's values.yaml
     # The whitespace ensures we update both values without touching the redpanda tag.
     # It's fragile but all values are checked via unittests.
-    - path: charts/redpanda/values.yaml
-      find: '^      tag: .*$'
-      replace: '      tag: {{.Version}}'
-    - path: charts/redpanda/values.yaml
-      find: '^        tag: .*$'
-      replace: '        tag: {{.Version}}'
+    #- path: charts/redpanda/values.yaml
+    #  find: '^      tag: .*$'
+    # replace: '      tag: {{.Version}}'
+    #- path: charts/redpanda/values.yaml
+    #  find: '^        tag: .*$'
+    #  replace: '        tag: {{.Version}}'
     # Update golden files across the entire repo.
     # Changie uses go's filepath.Match which doesn't support ** globbing so
     # there's some repetition here.
-    - path: 'charts/redpanda/testdata/*.golden.txtar'
-      find: 'image: docker.redpanda.com/redpandadata/redpanda-operator:v.*$'
-      replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
+    #- path: 'charts/redpanda/testdata/*.golden.txtar'
+    #  find: 'image: docker.redpanda.com/redpandadata/redpanda-operator:v.*$'
+    #  replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
 - label: Redpanda Helm Chart
   key: charts/redpanda
   replacements:

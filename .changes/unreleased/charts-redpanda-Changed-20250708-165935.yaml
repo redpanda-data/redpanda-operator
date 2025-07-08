@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Bump appVersion version to `v24.3.17`.
+time: 2025-07-08T16:59:35.503867+02:00
