@@ -80,7 +80,7 @@ steps:
     timeout_in_minutes: 180
     if: |
       // Only run if:
-      // 1. There's a tag and it's of the form 'v*' or 'operator/v*'
+      // 1. There's a tag in the form 'operator/v*'
       // 2. NIGHTLY_RELEASE envvar isn't set (paranoid check)
       // 3. This isn't a pull request (paranoid check)
       // 4. As buildkite schedule build on tag with the same branch settings as per the following (paranoid check)
@@ -90,7 +90,7 @@ steps:
       // > intended behaviour. Our docs aren’t really clear on this and we’re updating them now.
       //
       // https://forum.buildkite.community/t/branch-names-vs-tag-names/974/2
-      (build.tag =~ /^v/ || build.tag =~ /^operator\/v/) &&
+      (build.tag =~ /^operator\/v/) &&
       build.pull_request.id == null &&
       build.env("NIGHTLY_RELEASE") != "true" &&
       build.branch == build.tag
