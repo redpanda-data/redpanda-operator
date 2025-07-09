@@ -5,7 +5,7 @@ on:
     tags:
       # Only match tags that look like go module tags.
       # This way we explicitly ignore our legacy tagging of the operator.
-      - '*/v*'
+      - '**/v*'
   workflow_dispatch:
     inputs:
       ref_name:
@@ -89,7 +89,7 @@ jobs:
           # remove the first line.
           tail -n +2 .changes/${{ steps.get_ref.outputs.ref_name }}.md > RELEASE_BODY.md
 
-      # create github release and upload file
+      # Create github release and upload packaged chart, if any.
       - name: create github release
         uses: softprops/action-gh-release@v2
         with:
