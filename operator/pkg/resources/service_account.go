@@ -14,6 +14,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,6 +68,7 @@ func (s *ServiceAccountResource) obj() (k8sclient.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Key().Name,
 			Namespace: s.Key().Namespace,
+			Labels:    labels.ForCluster(s.pandaCluster),
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
