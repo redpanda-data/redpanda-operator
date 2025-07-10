@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"strings"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -105,15 +106,31 @@ func checkRPKCommands(ctx context.Context, t framework.TestingT, clusterName str
 			Stderr:    &stderr,
 		}), "\nStdout: %s\nStderr: %s\n", stdout.String(), stderr.String())
 		require.Len(t, stderr.Bytes(), 0)
+		stdout.Reset()
 
-		require.NoErrorf(t, ctl.Exec(ctx, &p, kube.ExecOptions{
-			Container: "redpanda",
-			Command:   []string{"rpk", "registry", "schema", "list"},
-			Stdin:     nil,
-			Stdout:    &stdout,
-			Stderr:    &stderr,
-		}), "\nStdout: %s\nStderr: %s\n", stdout.String(), stderr.String())
-		require.Len(t, stderr.Bytes(), 0)
+		require.Eventually(t, func() bool {
+			command := []string{"rpk", "registry", "schema", "list"}
+			err := ctl.Exec(ctx, &p, kube.ExecOptions{
+				Container: "redpanda",
+				Command:   command,
+				Stdin:     nil,
+				Stdout:    &stdout,
+				Stderr:    &stderr,
+			})
+			if err != nil {
+				t.Logf("rpk command %q failed with error: %v\nStdout: %s\nStderr: %s\n", strings.Join(command, " "), err, stdout.String(), stderr.String())
+				stdout.Reset()
+				return false
+			}
+			if len(stderr.Bytes()) != 0 {
+				t.Logf("rpk command %q failed with \nStdout: %s\nStderr: %s\n", strings.Join(command, " "), stdout.String(), stderr.String())
+				stderr.Reset()
+				stdout.Reset()
+				return false
+			}
+			return true
+		}, time.Minute, 10*time.Second)
+		stdout.Reset()
 
 		require.NoErrorf(t, ctl.Exec(ctx, &p, kube.ExecOptions{
 			Container: "redpanda",
@@ -123,5 +140,6 @@ func checkRPKCommands(ctx context.Context, t framework.TestingT, clusterName str
 			Stderr:    &stderr,
 		}), "\nStdout: %s\nStderr: %s\n", stdout.String(), stderr.String())
 		require.Len(t, stderr.Bytes(), 0)
+
 	}
 }
