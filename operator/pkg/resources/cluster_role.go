@@ -22,6 +22,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
 var _ Resource = &ClusterRoleResource{}
@@ -77,6 +78,7 @@ func (r *ClusterRoleResource) obj() k8sclient.Object {
 			// ClusterRole is the cluster wide resource.
 			Name:      r.Key().Name,
 			Namespace: "",
+			Labels:    labels.ForCluster(r.pandaCluster),
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
