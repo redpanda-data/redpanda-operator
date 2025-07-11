@@ -363,7 +363,15 @@ func getZoneLabels(nodeName string) (zone, zoneID string, err error) {
 		return "", "", fmt.Errorf("unable to retrieve node: %w", err)
 	}
 	zone = node.Labels["topology.kubernetes.io/zone"]
-	zoneID = node.Labels["topology.cloud.redpanda.com/zone-id"]
+
+	// With AWS EKS 1.30, the topology.k8s.aws/zone-id label is added to worker nodes. Prefer it
+	// over the redpanda custom label. These zone-id labels are only important for AWS, as we use the zone
+	// label in other cloud providers.
+	zoneID = node.Labels["topology.k8s.aws/zone-id"]
+	if zoneID == "" {
+		zoneID = node.Labels["topology.cloud.redpanda.com/zone-id"]
+	}
+
 	return zone, zoneID, nil
 }
 
