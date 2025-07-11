@@ -109,6 +109,16 @@ func NodePool() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("nodepools.cluster.redpanda.com"))
 }
 
+// Cluster returns the Cluster CustomResourceDefinition.
+func Cluster() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("clusters.redpanda.vectorized.io"))
+}
+
+// Console returns the Console CustomResourceDefinition.
+func Console() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("consoles.redpanda.vectorized.io"))
+}
+
 func mustT[T any](r T, err error) T {
 	must(err)
 	return r
