@@ -420,7 +420,7 @@ its internal Go-based Helm chart. FluxCD resources are still +
 managed by the operator albeit in a suspended state. +
 
 
-If `false`, `chartVersion` MUST be `v5.10.2` or unspecified. The +
+If `false`, `chartVersion` MUST be `v5.10.3` or unspecified. The +
 operator does not reconcile any Redpanda resources that have `chartVersion` set to +
 another version while `useFlux` is `false. + |  | 
 |===
