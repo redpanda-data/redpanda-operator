@@ -7,3 +7,8 @@ spec:
   clusterSpec:
     statefulset:
       replicas: 3
+      sideCars:
+        image:
+          repository: localhost/redpanda-operator
+          tag: dev
+          pullPolicy: Never

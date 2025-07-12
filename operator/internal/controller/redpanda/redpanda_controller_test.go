@@ -250,6 +250,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			},
 		},
 	}
+
 	s.applyAndWait(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "creds",
@@ -309,16 +310,13 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			In: map[string]any{
 				"enable_transactions":         true,
 				"enable_schema_id_validation": "none",
-				// TODO: Minor bug in the helm chart here, setting superusers
-				// in cluster.config results in the bootstrap users getting
-				// excluded.
-				// "superusers":                  []any{"jimbob"},
+				"superusers":                  []any{"jimbob"},
 			},
 			Expected: map[string]any{
 				"admin_api_require_auth":    true,
 				"cloud_storage_access_key":  "VURYSECRET",
 				"cloud_storage_disable_tls": true,
-				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
+				"superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
 		{
@@ -358,7 +356,9 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 					return int(a.ConfigVersion - b.ConfigVersion)
 				}).ConfigVersion
 
-				assert.Greater(t, currVersion, initialVersion, "expected config version to increase")
+				// Only operator should change cluster configuration once. If there is any other party that changes
+				// Redpanda cluster configuration, it is unexpected and should be investigated.
+				assert.Equal(t, initialVersion+1, currVersion, "current config version should increase only by one")
 
 				assert.False(t, slices.ContainsFunc(st, func(cs rpadmin.ConfigStatus) bool {
 					return cs.Restart
@@ -1025,6 +1025,13 @@ func (s *RedpandaControllerSuite) minimalRP(useFlux bool) *redpandav1alpha2.Redp
 					Enabled: ptr.To(false), // Speed up most cases by not enabling console to start.
 				},
 				Statefulset: &redpandav1alpha2.Statefulset{
+					SideCars: &redpandav1alpha2.SideCars{
+						Image: &redpandav1alpha2.RedpandaImage{
+							Repository: ptr.To("localhost/redpanda-operator"),
+							Tag:        ptr.To("dev"),
+							PullPolicy: ptr.To("Never"),
+						},
+					},
 					Replicas: ptr.To(1), // Speed up tests ever so slightly.
 					PodAntiAffinity: &redpandav1alpha2.PodAntiAffinity{
 						// Disable the default "hard" affinity so we can

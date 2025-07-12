@@ -348,36 +348,36 @@ func TestSyncSuperusers(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		config      map[string]any
-		suTxt       string
+		suTxt       []string
 		expectArray bool
 	}{
 		{
 			name:   "no superusers",
 			config: map[string]any{},
-			suTxt:  "a::\nb::",
+			suTxt:  []string{"a", "b"},
 			// TODO: this should probably insert `a` and `b` as superusers; we don't hit this in v2 at present.
 		},
 		{
 			name:        "[]any superusers",
 			config:      map[string]any{superusersEntry: []any{"b", "c"}},
-			suTxt:       "a::\nb::",
+			suTxt:       []string{"a", "b"},
 			expectArray: true,
 		},
 		{
 			name:        "[]string superusers",
 			config:      map[string]any{superusersEntry: []string{"b", "c"}},
-			suTxt:       "a::\nb::",
+			suTxt:       []string{"a", "b"},
 			expectArray: true,
 		},
 		{
 			name:   "bad superusers",
 			config: map[string]any{superusersEntry: "broken"},
-			suTxt:  "a::\nb::",
+			suTxt:  []string{"a", "b"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c := maps.Clone(tc.config)
-			s.maybeMergeSuperusers(context.TODO(), c, map[string][]byte{"x": []byte(tc.suTxt)})
+			s.maybeMergeSuperusers(context.TODO(), c, tc.suTxt)
 			if tc.expectArray {
 				assert.Equal(t, []string{"a", "b", "c"}, c[superusersEntry])
 			}

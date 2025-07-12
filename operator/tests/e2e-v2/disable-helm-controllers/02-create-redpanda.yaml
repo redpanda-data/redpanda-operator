@@ -5,4 +5,10 @@ metadata:
   name: redpanda
 spec:
   chartRef: {}
-  clusterSpec: {}
+  clusterSpec:
+    statefluset:
+      sideCars:
+        image:
+          repository: localhost/redpanda-operator
+          tag: dev
+          pullPolicy: Never

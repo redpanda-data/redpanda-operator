@@ -49,6 +49,7 @@ func Command() *cobra.Command {
 		redpandaYAMLPath           string
 		usersDirectoryPath         string
 		watchUsers                 bool
+		noSetSuperusers            bool
 		runDecommissioner          bool
 		runBrokerProbe             bool
 		brokerProbeShutdownTimeout time.Duration
@@ -78,6 +79,7 @@ func Command() *cobra.Command {
 				redpandaYAMLPath,
 				usersDirectoryPath,
 				watchUsers,
+				noSetSuperusers,
 				runDecommissioner,
 				runBrokerProbe,
 				brokerProbeShutdownTimeout,
@@ -109,7 +111,9 @@ func Command() *cobra.Command {
 
 	// users flags
 	cmd.Flags().BoolVar(&watchUsers, "watch-users", false, "Specifies if the sidecar should watch and configure superusers based on a mounted users file.")
+	cmd.Flags().BoolVar(&noSetSuperusers, "no-set-superusers", false, "Specifies if the sidecar should sync the superuser cluster configuration with watched users or not")
 	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted.")
+	cmd.Flags().MarkHidden("no-set-superusers") // nolint:gosec
 
 	// broker probe flags
 	cmd.Flags().BoolVar(&runBrokerProbe, "run-broker-probe", false, "Specifies if the sidecar should run the health probe.")
@@ -142,6 +146,7 @@ func Run(
 	redpandaYAMLPath string,
 	usersDirectoryPath string,
 	watchUsers bool,
+	noSetSuperusers bool,
 	runDecommissioner bool,
 	runBrokerProbe bool,
 	brokerProbeShutdownTimeout time.Duration,
@@ -245,6 +250,7 @@ func Run(
 		watcher := configwatcher.NewConfigWatcher(mgr.GetLogger(), true,
 			configwatcher.WithRedpandaConfigPath(redpandaYAMLPath),
 			configwatcher.WithUsersDirectory(usersDirectoryPath),
+			configwatcher.WithSkipClusterConfigurationSync(noSetSuperusers),
 		)
 		if err := mgr.Add(watcher); err != nil {
 			setupLog.Error(err, "unable to run config watcher")

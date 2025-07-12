@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Setting of the `superuser` cluster configuration is now solely controlled by the operator and now correctly includes the `kubernetes-controller` bootstrap user.
+time: 2025-06-25T10:14:14.143026+02:00
