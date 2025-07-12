@@ -16,6 +16,11 @@ spec:
   clusterSpec:
     statefulset:
       replicas: 1
+      sideCars:
+        image:
+          repository: localhost/redpanda-operator
+          tag: dev
+          pullPolicy: Never
     config:
       extraClusterConfiguration:
         segment_appender_flush_timeout_ms:
