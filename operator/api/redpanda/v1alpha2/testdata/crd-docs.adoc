@@ -150,9 +150,11 @@ Admin configures settings for the Admin API listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
 | *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
 | *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
 |===
 
@@ -394,7 +396,7 @@ Certificate configures TLS certificates.
 Only charts in the v5.9.x and v5.10.x series are supported. +
 
 
-If unspecified, defaults to the operator's vendored chart version: `v5.10.2`. +
+If unspecified, defaults to the operator's vendored chart version: `v5.10.3`. +
 
 
 It is recommended to leave this field unspecified. + |  | Pattern: `^v?5\.(9|10)\.` +
@@ -1000,6 +1002,7 @@ HTTP configures settings for the HTTP Proxy listeners.
 |===
 | Field | Description | Default | Validation
 | *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`enabled`* __boolean__ | Specifies whether the HTTP Proxy is enabled. + |  | 
 | *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
 | *`kafkaEndpoint`* __string__ | Configures the listener to use for HTTP connections. For example `default` for the internal listener. + |  | 
@@ -1121,7 +1124,9 @@ Kafka configures settings for the Kafka API listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
 | *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
@@ -2353,6 +2358,7 @@ SchemaRegistry configures settings for the Schema Registry listeners.
 |===
 | Field | Description | Default | Validation
 | *`authenticationMethod`* __string__ | Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`. + |  | 
+| *`appProtocol`* __string__ |  |  | 
 | *`enabled`* __boolean__ | Specifies whether the Schema Registry is enabled. + |  | 
 | *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener[$$ExternalListener$$])__ | Defines settings for the external listener. + |  | 
 | *`kafkaEndpoint`* __string__ | Configures the listener to use for HTTP connections. For example `default` for the internal listener. + |  | 

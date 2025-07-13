@@ -44,7 +44,7 @@ type ChartRef struct {
 	// Defines the version of the Redpanda Helm chart to deploy.
 	// Only charts in the v5.9.x and v5.10.x series are supported.
 	//
-	// If unspecified, defaults to the operator's vendored chart version: `v5.10.2`.
+	// If unspecified, defaults to the operator's vendored chart version: `v5.10.3`.
 	//
 	// It is recommended to leave this field unspecified.
 	// +kubebuilder:validation:Type=string

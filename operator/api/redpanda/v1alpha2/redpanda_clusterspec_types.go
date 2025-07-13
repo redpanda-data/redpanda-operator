@@ -927,19 +927,23 @@ type ExternalListener struct {
 
 // Admin configures settings for the Admin API listeners.
 type Admin struct {
+	Enabled *bool `json:"enabled,omitempty"`
 	// Defines settings for the external listener.
 	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Specifies the container port number for the internal listener.
 	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
-	TLS         *ListenerTLS `json:"tls,omitempty"`
-	AppProtocol *string      `json:"appProtocol,omitempty"`
+	TLS *ListenerTLS `json:"tls,omitempty"`
+	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
+	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	AppProtocol          *string `json:"appProtocol,omitempty"`
 }
 
 // HTTP configures settings for the HTTP Proxy listeners.
 type HTTP struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	AppProtocol          *string `json:"appProtocol,omitempty"`
 	// Specifies whether the HTTP Proxy is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Defines settings for the external listener.
@@ -956,8 +960,10 @@ type HTTP struct {
 
 // Kafka configures settings for the Kafka API listeners.
 type Kafka struct {
+	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	AppProtocol          *string `json:"appProtocol,omitempty"`
 	// Defines settings for the external listener.
 	External map[string]*ExternalListener `json:"external,omitempty"`
 	// Specifies the container port number for the internal listener.
@@ -980,6 +986,7 @@ type RPC struct {
 type SchemaRegistry struct {
 	// Specifies the authentication method for the external listener. For example, 'mtls_identity' or `sasl`.
 	AuthenticationMethod *string `json:"authenticationMethod,omitempty"`
+	AppProtocol          *string `json:"appProtocol,omitempty"`
 	// Specifies whether the Schema Registry is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Defines settings for the external listener.
