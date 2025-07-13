@@ -59,7 +59,7 @@ spec:
                       Defines the version of the Redpanda Helm chart to deploy.
                       Only charts in the v5.9.x and v5.10.x series are supported.
 
-                      If unspecified, defaults to the operator's vendored chart version: `v5.10.2`.
+                      If unspecified, defaults to the operator's vendored chart version: `v5.10.3`.
 
                       It is recommended to leave this field unspecified.
                     pattern: ^v?5\.(9|10)\.
@@ -1963,6 +1963,12 @@ spec:
                         properties:
                           appProtocol:
                             type: string
+                          authenticationMethod:
+                            description: Specifies the authentication method for the
+                              external listener. For example, 'mtls_identity' or `sasl`.
+                            type: string
+                          enabled:
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -2167,6 +2173,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
@@ -2389,10 +2397,14 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
                             type: string
+                          enabled:
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -2692,6 +2704,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
@@ -20452,7 +20466,7 @@ spec:
                       Defines the version of the Redpanda Helm chart to deploy.
                       Only charts in the v5.9.x and v5.10.x series are supported.
 
-                      If unspecified, defaults to the operator's vendored chart version: `v5.10.2`.
+                      If unspecified, defaults to the operator's vendored chart version: `v5.10.3`.
 
                       It is recommended to leave this field unspecified.
                     pattern: ^v?5\.(9|10)\.
@@ -22356,6 +22370,12 @@ spec:
                         properties:
                           appProtocol:
                             type: string
+                          authenticationMethod:
+                            description: Specifies the authentication method for the
+                              external listener. For example, 'mtls_identity' or `sasl`.
+                            type: string
+                          enabled:
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -22560,6 +22580,8 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
@@ -22782,10 +22804,14 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
                             type: string
+                          enabled:
+                            type: boolean
                           external:
                             additionalProperties:
                               description: ExternalListener configures settings for
@@ -23085,6 +23111,8 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          appProtocol:
+                            type: string
                           authenticationMethod:
                             description: Specifies the authentication method for the
                               external listener. For example, 'mtls_identity' or `sasl`.
