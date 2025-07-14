@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Added `noGenerate` to `Password`. When `true`, it prevents the operator from generating non-existent Secrets and non-existent Secret keys that are specified via `valueFrom`
-time: 2025-06-30T18:28:54.805625+02:00

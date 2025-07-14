@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Bump Redpanda operator sidecar container tag to `v2.3.13-24.3.17`.
+time: 2025-07-14T17:46:46.162822+02:00
