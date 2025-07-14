@@ -90,6 +90,15 @@ type OwnershipResolver[T any, U Cluster[T]] interface {
 	OwnerForObject(object client.Object) *types.NamespacedName
 }
 
+// LegacyOwnershipResolver is an OwnershipResolver that also has supporrt
+// for fetching resources provisioned by legacy implementations.
+type LegacyOwnershipResolver[T any, U Cluster[T]] interface {
+	OwnershipResolver[T, U]
+	// GetLegacyOwnerLabels returns the minimal set of labels that
+	// can identify ownership of an object from legacy implementations.
+	GetLegacyOwnerLabels(cluster U) map[string]string
+}
+
 // SimpleResourceRenderer handles compilation of all desired
 // resources to be created by a cluster. These resources should
 // be "simple" in nature in that we don't need to manually control

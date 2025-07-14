@@ -115,7 +115,9 @@ func TestV2ResourceClient(t *testing.T) {
 			redpanda.Namespace = file.Name
 			cluster := NewClusterWithPools(redpanda)
 
-			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
+			legacyResolver := resourceClient.ownershipResolver.(LegacyOwnershipResolver[ClusterWithPools, *ClusterWithPools])
+			legacyOwnerLabels := legacyResolver.GetLegacyOwnerLabels(cluster)
+			ownerLabels := legacyResolver.GetOwnerLabels(cluster)
 
 			pools, err := resourceClient.nodePoolRenderer.Render(ctx, cluster)
 			require.NoError(t, err)
@@ -125,9 +127,24 @@ func TestV2ResourceClient(t *testing.T) {
 				if labels == nil {
 					labels = map[string]string{}
 				}
+
 				// copied from the original redpanda_controller normalization code
 				labels["helm.toolkit.fluxcd.io/name"] = cluster.Name
 				labels["helm.toolkit.fluxcd.io/namespace"] = cluster.Namespace
+				object.SetLabels(labels)
+
+				for label, value := range legacyOwnerLabels {
+					objectLabel, ok := labels[label]
+					require.True(t, ok, "no label %q found on %q: %s", label, object.GetObjectKind().GroupVersionKind().String(), client.ObjectKeyFromObject(object).String())
+					require.Equal(t, objectLabel, value)
+				}
+
+				// we don't pick up ownership based on legacy labels
+				require.Nil(t, resourceClient.ownershipResolver.OwnerForObject(object))
+
+				for label, value := range resourceClient.ownershipResolver.AddLabels(cluster) {
+					labels[label] = value
+				}
 				object.SetLabels(labels)
 
 				for label, value := range ownerLabels {
@@ -137,11 +154,6 @@ func TestV2ResourceClient(t *testing.T) {
 				}
 
 				require.Equal(t, client.ObjectKeyFromObject(cluster), *resourceClient.ownershipResolver.OwnerForObject(object))
-
-				for label, value := range resourceClient.ownershipResolver.AddLabels(cluster) {
-					labels[label] = value
-				}
-				object.SetLabels(labels)
 			}
 
 			for _, pool := range pools {
