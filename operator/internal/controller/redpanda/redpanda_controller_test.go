@@ -310,13 +310,13 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 			In: map[string]any{
 				"enable_transactions":         true,
 				"enable_schema_id_validation": "none",
-				//"superusers":                  []any{"jimbob"},
+				"superusers":                  []any{"jimbob"},
 			},
 			Expected: map[string]any{
 				"admin_api_require_auth":    true,
 				"cloud_storage_access_key":  "VURYSECRET",
 				"cloud_storage_disable_tls": true,
-				"superusers":                []any{"alice", "bob", "kubernetes-controller"},
+				"superusers":                []any{"alice", "bob", "jimbob", "kubernetes-controller"},
 			},
 		},
 		{
