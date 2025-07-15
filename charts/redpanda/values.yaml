@@ -703,7 +703,7 @@ statefulset:
     securityContext: {}
     extraVolumeMounts: ""
     image:
-      tag: v2.4.3
+      tag: v2.4.4
       repository: docker.redpanda.com/redpandadata/redpanda-operator
     # Additional arguments to pass to the sidecar command. Reserved for internal testing.
     # @ignored
@@ -734,7 +734,7 @@ statefulset:
     # -- DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder
     controllers:
       image:
-        tag: v2.4.3
+        tag: v2.4.4
         repository: docker.redpanda.com/redpandadata/redpanda-operator
       # You must also enable RBAC, `rbac.enabled=true`, to deploy this sidecar
       enabled: false
