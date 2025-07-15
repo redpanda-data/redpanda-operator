@@ -87,6 +87,10 @@ This is required to ensure that a pre-existing sts can roll over to new configur
   if correct FullNameOverride is not provided and handled the same way for both
   client creation and render function.
 * The Redpanda license was not set by operator. Now it will be set in the first reconciliation. After initial setup the consequent license re-set will be reconciled after client-go cache resync timeout (default 10h).
+### Removed
+* [CHART] The [`kube-prometheus-stack`](https://prometheus-community.github.io/helm-charts) subchart has been removed.
+
+  This integration was not being up kept and most use cases will be better served by deploying this chart themselves.
 
 ## v2.3.8-24.3.6 - 2025-03-05
 ### Fixed
