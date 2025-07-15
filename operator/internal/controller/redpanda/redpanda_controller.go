@@ -236,18 +236,17 @@ func (r *RedpandaReconciler) Reconcile(c context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	// TODO This change needs to wait for 2.3.13-24.3.17 operator release
 	// The flag that disables cluster configuration synchronization is set to `true` to not
 	// conflict with operator cluster configuration synchronization.
-	//if rp.Spec.ClusterSpec.Statefulset == nil {
-	//	rp.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
-	//}
-	//
-	//if rp.Spec.ClusterSpec.Statefulset.SideCars == nil {
-	//	rp.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
-	//}
-	//
-	//rp.Spec.ClusterSpec.Statefulset.SideCars.Args = []string{"--no-set-superusers"}
+	if rp.Spec.ClusterSpec.Statefulset == nil {
+		rp.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
+	}
+
+	if rp.Spec.ClusterSpec.Statefulset.SideCars == nil {
+		rp.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
+	}
+
+	rp.Spec.ClusterSpec.Statefulset.SideCars.Args = []string{"--no-set-superusers"}
 
 	rp, err := r.reconcileFlux(ctx, rp)
 	if err != nil {
