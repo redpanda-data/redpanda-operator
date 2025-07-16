@@ -12,12 +12,12 @@ package testenv
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/rand"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -220,7 +220,7 @@ func RandString(length int) string {
 	name := ""
 	for i := 0; i < length; i++ {
 		//nolint:gosec // not meant to be a secure random string.
-		name += string(alphabet[rand.Intn(len(alphabet))])
+		name += string(alphabet[rand.IntN(len(alphabet))])
 	}
 
 	return name
