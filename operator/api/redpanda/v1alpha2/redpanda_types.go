@@ -44,7 +44,7 @@ type ChartRef struct {
 	// Defines the version of the Redpanda Helm chart to deploy.
 	// Only charts in the v5.9.x and v5.10.x series are supported.
 	//
-	// If unspecified, defaults to the operator's vendored chart version: `v5.10.3`.
+	// If unspecified, defaults to the operator's vendored chart version: `v5.10.4`.
 	//
 	// It is recommended to leave this field unspecified.
 	// +kubebuilder:validation:Type=string
@@ -71,7 +71,7 @@ type ChartRef struct {
 	// its internal Go-based Helm chart. FluxCD resources are still
 	// managed by the operator albeit in a suspended state.
 	//
-	// If `false`, `chartVersion` MUST be `v5.10.3` or unspecified. The
+	// If `false`, `chartVersion` MUST be `v5.10.4` or unspecified. The
 	// operator does not reconcile any Redpanda resources that have `chartVersion` set to
 	// another version while `useFlux` is `false.
 	// +optional
