@@ -68,7 +68,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
-			client, err := adminAPIFromRPKConfig(redpandaYAMLPath)
+			client, err := adminAPIFromRPKConfig(ctx, redpandaYAMLPath)
 			if err != nil {
 				return err
 			}
@@ -132,7 +132,7 @@ If present and not empty, the $%s environment variable will be set as the cluste
 // We've opted to re-use rpk's config format as it's already being computed in
 // the helm chart and it handles loading authn envvars such as: RPK_USER and
 // RPK_PASSWORD.
-func adminAPIFromRPKConfig(configPath string) (*rpadmin.AdminAPI, error) {
+func adminAPIFromRPKConfig(ctx context.Context, configPath string) (*rpadmin.AdminAPI, error) {
 	fs := afero.NewOsFs()
 
 	params := rpkconfig.Params{ConfigFlag: configPath}
@@ -142,7 +142,7 @@ func adminAPIFromRPKConfig(configPath string) (*rpadmin.AdminAPI, error) {
 		return nil, err
 	}
 
-	return rpkadminapi.NewClient(fs, rpkCfg.VirtualProfile())
+	return rpkadminapi.NewClient(ctx, fs, rpkCfg.VirtualProfile())
 }
 
 func loadBoostrapYAML(path string) (map[string]any, error) {
