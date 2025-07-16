@@ -15,6 +15,8 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
     name: Create Release on GitHub
     runs-on: ubuntu-latest
 
@@ -103,4 +105,20 @@ jobs:
           files: |
             ./*.tgz
 
-      # todo(chrisseto) trigger an action in the charts repo that updates index.yaml
+      # Trigger a workflow in the helm-charts repo to update the gh-pages index.yaml.
+      # https://github.com/redpanda-data/helm-charts/blob/main/.github/workflows/release_from_operator.yaml
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.RP_AWS_CRED_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
+      - uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          secret-ids: |
+            ,sdlc/prod/github/actions_bot_token
+          parse-json-secrets: true
+      - name: Trigger Sync Releases in redpanda-data/helm-charts
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ env.ACTIONS_BOT_TOKEN }}
+          repository: redpanda-data/helm-charts
+          event-type: sync-operator-repo-releases
