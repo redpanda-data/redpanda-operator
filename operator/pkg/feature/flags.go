@@ -1,10 +1,6 @@
 package feature
 
 import (
-	"strings"
-
-	"github.com/cockroachdb/errors"
-
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 )
 
@@ -55,18 +51,10 @@ var (
 	// Valid Value(s):
 	// - additive: Set all keys, don't unset keys not explicit set
 	// - declarative: Set all keys, unset any keys not explicitly set
+	// - disabled: Don't sync, cluster config at all.
 	ClusterConfigSyncMode = Register(V2Flags, AnnotationFeatureFlag[syncclusterconfig.SyncerMode]{
 		Key:     "operator.redpanda.com/config-sync-mode",
 		Default: "additive",
-		Parse: func(s string) (syncclusterconfig.SyncerMode, error) {
-			switch strings.ToLower(s) {
-			case "declarative":
-				return syncclusterconfig.SyncerModeDeclarative, nil
-			case "additive":
-				return syncclusterconfig.SyncerModeAdditive, nil
-			default:
-				return syncclusterconfig.SyncerMode(0), errors.Newf("unknown cluster config syncer mode: %q", s)
-			}
-		},
+		Parse:   syncclusterconfig.StringToMode,
 	})
 )
