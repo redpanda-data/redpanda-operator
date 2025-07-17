@@ -94,7 +94,7 @@ tls:
 -- disable-cert-manager-overriding-defaults --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-NO-CERTIFICATES
+# ASSERT-NO-GVK ["cert-manager.io/v1", "Certificate"]
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 tls:
   certs:
@@ -108,7 +108,7 @@ tls:
 -- disable-cert-manger-fully-specified --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# ASSERT-NO-CERTIFICATES
+# ASSERT-NO-GVK ["cert-manager.io/v1", "Certificate"]
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 listeners:
   http:
@@ -1561,3 +1561,26 @@ config:
       externalSecretRefSelector:
         name: my-external-secret
         optional: true
+    external_opt_raw:
+      externalSecretRefSelector:
+        name: my-external-secret
+        optional: true
+      useRawValue: true
+
+-- umbrella-disableable-clusterroles --
+# ASSERT-NO-ERROR
+# ASSERT-NO-GVK ["rbac.authorization.k8s.io/v1", "ClusterRole"]
+statefulset:
+  sideCars:
+    controllers:
+      enabled: false
+
+-- itemized-disableable-clusterroles --
+# ASSERT-NO-ERROR
+# ASSERT-NO-GVK ["rbac.authorization.k8s.io/v1", "ClusterRole"]
+statefulset:
+  sideCars:
+    brokerDecommissioner:
+      enabled: false
+    pvcUnbinder:
+      enabled: false
