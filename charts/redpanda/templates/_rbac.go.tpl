@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $mapping := (dict "files/sidecar.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/pvcunbinder.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/decommission.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/rpk-debug-bundle.Role.yaml" (and $values.rbac.enabled $values.rbac.rpkDebugBundle)) -}}
+{{- $mapping := (dict "files/sidecar.Role.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/pvcunbinder.Role.yaml" (and (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars)))) "r") (get (fromJson (include "redpanda.Sidecars.PVCUnbinderEnabled" (dict "a" (list $values.statefulset.sideCars)))) "r")) "files/decommission.Role.yaml" (and (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars)))) "r") (get (fromJson (include "redpanda.Sidecars.BrokerDecommissionerEnabled" (dict "a" (list $values.statefulset.sideCars)))) "r")) "files/rpk-debug-bundle.Role.yaml" (and $values.rbac.enabled $values.rbac.rpkDebugBundle)) -}}
 {{- $roles := (coalesce nil) -}}
 {{- range $file, $enabled := $mapping -}}
 {{- if (not $enabled) -}}
@@ -32,7 +32,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $mapping := (dict "files/pvcunbinder.ClusterRole.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/decommission.ClusterRole.yaml" (and $values.rbac.enabled $values.statefulset.sideCars.controllers.createRBAC) "files/rack-awareness.ClusterRole.yaml" (and $values.rbac.enabled $values.rackAwareness.enabled)) -}}
+{{- $mapping := (dict "files/pvcunbinder.ClusterRole.yaml" (and (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars)))) "r") (get (fromJson (include "redpanda.Sidecars.PVCUnbinderEnabled" (dict "a" (list $values.statefulset.sideCars)))) "r")) "files/decommission.ClusterRole.yaml" (and (get (fromJson (include "redpanda.Sidecars.ShouldCreateRBAC" (dict "a" (list $values.statefulset.sideCars)))) "r") (get (fromJson (include "redpanda.Sidecars.BrokerDecommissionerEnabled" (dict "a" (list $values.statefulset.sideCars)))) "r")) "files/rack-awareness.ClusterRole.yaml" (and $values.rbac.enabled $values.rackAwareness.enabled)) -}}
 {{- $clusterRoles := (coalesce nil) -}}
 {{- range $file, $enabled := $mapping -}}
 {{- if (not $enabled) -}}
