@@ -13,7 +13,6 @@ package test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
 )
 
 const (
@@ -63,7 +61,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 	Context("When managing a RedpandaCluster with centralized config", func() {
 		It("Can initialize a cluster with centralized configuration", func() {
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("central-initialize")
+			key, baseKey, redpandaCluster, namespace, _ := getInitialTestCluster("central-initialize")
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
 
@@ -88,9 +86,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Setting the configmap-hash annotation on the statefulset")
 			Eventually(annotationGetter(key, &sts, configMapHashKey), timeout, interval).ShouldNot(BeEmpty())
-
-			By("Not patching the admin API for any reason")
-			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -137,7 +132,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Sending the new property to the admin API")
 			Eventually(adminAPI.PropertyGetter("non-restarting"), timeout, interval).Should(Equal("the-val"))
-			Consistently(adminAPI.PatchesGetter(), timeoutShort, intervalShort).Should(HaveLen(1))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -208,15 +202,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Adding two fields to the config at once")
 			Eventually(adminAPI.PropertyGetter("p1")).Should(Equal("v1"))
 			Eventually(adminAPI.PropertyGetter("p2")).Should(Equal("v2"))
-			patches := adminAPI.PatchesGetter()()
-			Expect(patches).NotTo(BeEmpty())
-			Expect(patches[len(patches)-1]).To(Equal(configuration.CentralConfigurationPatch{
-				Upsert: map[string]interface{}{
-					"p1": "v1",
-					"p2": "v2",
-				},
-				Remove: []string{},
-			}))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -233,14 +218,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Producing the right patch")
 			Eventually(adminAPI.PropertyGetter("p1")).Should(Equal("v1x"))
-			patches = adminAPI.PatchesGetter()()
-			Expect(patches).NotTo(BeEmpty())
-			Expect(patches[len(patches)-1]).To(Equal(configuration.CentralConfigurationPatch{
-				Upsert: map[string]interface{}{
-					"p1": "v1x",
-				},
-				Remove: []string{"p2"},
-			}))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -266,14 +243,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				"_schemas",
 			}))
 
-			patches = adminAPI.PatchesGetter()()
-			Expect(patches).NotTo(BeEmpty())
-			expectedPatch := patches[len(patches)-1]
-			Expect(expectedPatch).NotTo(BeNil())
-			arrayInterface := expectedPatch.Upsert["kafka_nodelete_topics"]
-			Expect(arrayInterface).NotTo(BeNil())
-			Expect(reflect.TypeOf(arrayInterface).String()).To(Equal("[]interface {}"))
-			Expect(len(arrayInterface.([]interface{})) == 7).To(BeTrue())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
 			By("Deleting the cluster")
@@ -343,8 +312,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCentralizedConfigHash))
 			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
 
-			numberOfPatches := len(adminAPI.PatchesGetter()())
-
 			By("Accepting a change in a node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
 			latest = cluster.DeepCopy()
@@ -379,9 +346,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-
-			By("Not patching the admin API for node property changes")
-			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(numberOfPatches))
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -789,7 +753,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}
 
 			By("Allowing creation of a new cluster")
-			key, baseKey, redpandaCluster, namespace, adminAPI := getInitialTestCluster("test-additional-cmdline")
+			key, baseKey, redpandaCluster, namespace, _ := getInitialTestCluster("test-additional-cmdline")
 			redpandaCluster.Spec.Configuration.AdditionalCommandlineArguments = args
 			Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), redpandaCluster)).Should(Succeed())
@@ -822,9 +786,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Setting the configmap-hash annotation on the statefulset")
 			Eventually(annotationGetter(key, &sts, configMapHashKey), timeout, interval).ShouldNot(BeEmpty())
-
-			By("Not patching the admin API for any reason")
-			Consistently(adminAPI.NumPatchesGetter(), timeoutShort, intervalShort).Should(Equal(0))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())

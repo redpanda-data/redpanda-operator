@@ -13,7 +13,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +43,7 @@ func TestSync(t *testing.T) {
 	// No auth is easy, only test on a cluster with auth on admin API.
 	container, err := redpanda.Run(
 		ctx,
-		"docker.redpanda.com/redpandadata/redpanda:v24.2.4",
+		"docker.redpanda.com/redpandadata/redpanda:"+os.Getenv("TEST_REDPANDA_VERSION"),
 		// TODO: Upgrade to testcontainers 0.33.0 so we get
 		// WithBootstrapConfig. For whatever reason, it seems to not get along
 		// with CI.
@@ -89,19 +88,21 @@ func TestSync(t *testing.T) {
 	require.NoError(t, err)
 
 	redpandaYAMLPath := testutils.WriteFile(t, "redpanda-*.yaml", rpkConfigBytes)
-	usersTxtYAMLPath := testutils.WriteFile(t, "users-*.txt", []byte(strings.Join([]string{admin, password, saslMechanism}, ":")))
+	usersTXTPath := testutils.WriteFile(t, "users-*.txt", []byte(strings.Join([]string{user, password, saslMechanism}, ":")))
 
 	cases := []struct {
-		Config          map[string]any
-		Expected        map[string]any
-		UsersTXTDir     string
-		DeclarativeMode bool
+		Config      map[string]any
+		Expected    map[string]any
+		UsersTXTDir string
+		Mode        SyncerMode
 	}{
 		{
-			// No superusers entry, the value just gets pulled from
-			// what we initialized in our redpanda.Run call above.
+			// Superusers only set to what is pulled from usersTXT
+			// NB: `user` can't be removed from `superusers` when
+			// `admin_api_require_auth` is enabled as redpanda validates this:
+			// > superusers must contain the user making the change when auth is enabled
 			Config:      map[string]any{},
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
+			UsersTXTDir: filepath.Dir(usersTXTPath),
 			Expected: map[string]any{
 				"admin_api_require_auth": true,
 				"superusers":             []any{user},
@@ -115,9 +116,9 @@ func TestSync(t *testing.T) {
 			// in this test, so all subsequent test cases will have both
 			// superusers.
 			Config: map[string]any{
-				"superusers": []string{user},
+				"superusers": []string{admin},
 			},
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
+			UsersTXTDir: filepath.Dir(usersTXTPath),
 			Expected: map[string]any{
 				"admin_api_require_auth": true,
 				"superusers":             []any{admin, user},
@@ -128,7 +129,6 @@ func TestSync(t *testing.T) {
 				"abort_index_segment_size":      10,
 				"audit_queue_drain_interval_ms": 60,
 			},
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -143,7 +143,6 @@ func TestSync(t *testing.T) {
 			// Showcasing that settings are not unset if/when they're removed.
 			// This is to showcase feature parity with the helm chart's job(s).
 			// Improvements are welcome.
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -155,7 +154,6 @@ func TestSync(t *testing.T) {
 			Config: map[string]any{
 				"audit_queue_drain_interval_ms": 70,
 			},
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"admin_api_require_auth":        true,
@@ -169,7 +167,6 @@ func TestSync(t *testing.T) {
 				// auth is ignored if it's not required.
 				"admin_api_require_auth": false,
 			},
-			UsersTXTDir: filepath.Dir(usersTxtYAMLPath),
 			Expected: map[string]any{
 				"abort_index_segment_size":      10,
 				"audit_queue_drain_interval_ms": 70,
@@ -204,21 +201,49 @@ func TestSync(t *testing.T) {
 		},
 		{
 			// In declarative mode, we'll drop any unspecified configuration
-			Config:          map[string]any{},
-			UsersTXTDir:     os.TempDir() + "/this-path-does-not-exist",
-			DeclarativeMode: true,
-			Expected:        map[string]any{},
+			Config:      map[string]any{},
+			UsersTXTDir: os.TempDir() + "/this-path-does-not-exist",
+			Mode:        SyncerModeDeclarative,
+			Expected:    map[string]any{},
 		},
 		{
-			// Even in declarative mode, the implicit settings from UsersTXT
-			// should still be applied.
+			// Even in declarative mode, the UsersTXT
+			// is still applied.
+			Mode:        SyncerModeDeclarative,
+			UsersTXTDir: filepath.Dir(usersTXTPath),
 			Config: map[string]any{
-				"superusers": []string{user},
+				"superusers": []string{admin},
 			},
-			UsersTXTDir:     filepath.Dir(usersTxtYAMLPath),
-			DeclarativeMode: true,
 			Expected: map[string]any{
 				"superusers": []any{admin, user},
+			},
+		},
+		{
+			Mode: SyncerModeDeclarative,
+			Config: map[string]any{
+				// An aliased config value.
+				"schema_registry_normalize_on_startup": true,
+			},
+			Expected: map[string]any{
+				"schema_registry_always_normalize": true,
+			},
+		},
+		{
+			Mode: SyncerModeDeclarative,
+			Config: map[string]any{
+				// Conflicting values of aliased keys, we perform client side
+				// processing to normalize our formation of
+				"cloud_storage_graceful_transfer_timeout":    1000,
+				"cloud_storage_graceful_transfer_timeout_ms": 2000,
+				"delete_retention_ms":                        200,
+				"log_retention_ms":                           100,
+				"schema_registry_always_normalize":           false,
+				"schema_registry_normalize_on_startup":       true,
+			},
+			Expected: map[string]any{
+				"log_retention_ms": 100,
+				// "schema_registry_always_normalize":           false, <- Excluded, this is the default
+				"cloud_storage_graceful_transfer_timeout_ms": 2000,
 			},
 		},
 	}
@@ -234,9 +259,7 @@ func TestSync(t *testing.T) {
 			"--users-directory", tc.UsersTXTDir,
 			"--redpanda-yaml", redpandaYAMLPath,
 			"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", configBytes),
-		}
-		if tc.DeclarativeMode {
-			args = append(args, "--mode", "declarative")
+			"--mode", tc.Mode.String(),
 		}
 		cmd.SetArgs(args)
 
@@ -376,10 +399,9 @@ func TestSyncSuperusers(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := maps.Clone(tc.config)
-			s.maybeMergeSuperusers(t.Context(), c, tc.suTxt)
+			merged, _ := s.mergeSuperusers(t.Context(), tc.suTxt, tc.config)
 			if tc.expectArray {
-				assert.Equal(t, []string{"a", "b", "c"}, c[superusersEntry])
+				assert.Equal(t, []string{"a", "b", "c"}, merged)
 			}
 		})
 	}
