@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Cluster configuration synchronization now correctly handles aliased keys such as `schema_registry_normalize_on_startup`.
+time: 2025-07-21T13:39:51.694469-04:00

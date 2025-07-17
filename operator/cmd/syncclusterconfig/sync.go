@@ -25,9 +25,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"reflect"
-	"slices"
-	"sort"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -98,14 +95,6 @@ If present and not empty, the $%s environment variable will be set as the cluste
 				return err
 			}
 
-			// NB: remove must be an empty slice NOT nil.
-			result, err := client.PatchClusterConfig(ctx, clusterConfig, []string{})
-			if err != nil {
-				return err
-			}
-
-			logger.Info("Updated cluster configuration", "config_version", result.ConfigVersion)
-
 			// NB: It's unclear why this endpoint is being hit. It's preserved
 			// as a historical artifact.
 			// See also: https://github.com/redpanda-data/redpanda-operator/issues/232
@@ -162,11 +151,11 @@ func loadBoostrapYAML(path string) (map[string]any, error) {
 func loadUsersFiles(ctx context.Context, path string) ([]string, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			log.FromContext(ctx).Info(fmt.Sprintf("users directory doesn't exist; skipping: %q", path))
-			return nil, nil
+		if !os.IsNotExist(err) {
+			return nil, err
 		}
-		return nil, err
+		log.FromContext(ctx).Info(fmt.Sprintf("users directory doesn't exist; skipping: %q", path))
+		return nil, nil
 	}
 
 	users := []string{}
@@ -195,16 +184,32 @@ type SyncerMode int
 const (
 	SyncerModeAdditive = SyncerMode(iota)
 	SyncerModeDeclarative
+	SyncerModeDisabled
+
+	maxSyncMode // Not a valid value, used for static checks.
 )
 
 var ErrSyncerMode = errors.New("unrecognised syncer mode")
 
-func StringToMode(m string) (SyncerMode, error) {
+func (m SyncerMode) String() string {
 	switch m {
-	case "additive":
-		return SyncerModeAdditive, nil
-	case "declarative":
-		return SyncerModeDeclarative, nil
+	case SyncerModeAdditive:
+		return "additive"
+	case SyncerModeDeclarative:
+		return "declarative"
+	case SyncerModeDisabled:
+		return "disabled"
+	default:
+		return "SyncerMode(-1)"
+	}
+}
+
+func StringToMode(m string) (SyncerMode, error) {
+	m = strings.ToLower(m)
+	for i := 0; i < int(maxSyncMode); i++ {
+		if m == SyncerMode(i).String() {
+			return SyncerMode(i), nil
+		}
 	}
 	// Let Unwrap identify the concrete error
 	return SyncerModeAdditive, fmt.Errorf("cannot parse %s: %w", m, ErrSyncerMode)
@@ -234,141 +239,187 @@ type ClusterConfigStatus struct {
 // reported by the brokers. If there's a change, it will return the new version
 // of the cluster config.
 func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []string) (*ClusterConfigStatus, error) {
-	equal := s.EqualityCheck
-	if equal == nil {
-		equal = func(_ string, desired, current any) bool {
-			return reflect.DeepEqual(desired, current)
-		}
-	}
 	logger := log.FromContext(ctx)
 
-	s.maybeMergeSuperusers(ctx, desired, superusers)
-
-	current, err := s.Client.Config(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-
-	var added []string
-	var changed []string
-	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
-	removed := []string{}
-	upsert := maps.Clone(desired)
-	status, err := s.Client.ClusterConfigStatus(ctx, true)
-	if err != nil {
-		return nil, err
-	}
 	schema, err := s.Client.ClusterConfigSchema(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// 1. Normalize the desired config.
+	// **All operations that go to redpanda APIs will operate on the normalized value.**
+	// **All operations that go to Kubernetes will operate on the unmodified desired value.**
+	normalized := s.normalizeConfig(ctx, schema, superusers, desired)
+
+	// 2. Compute values to be removed.
+	status, err := s.Client.ClusterConfigStatus(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
+	toRemove := []string{}
+
+	// We need to explicitly mark unknown or invalid properties to remove, because
+	// they will otherwise linger, since AdminAPI.Config does not return those entries.
+	// We always send requests for config status to the leader to avoid inconsistencies
+	// due to config propagation delays.
+	// This list is generally expected to be empty.
+	for i := range status {
+		for _, invalid := range status[i].Invalid {
+			if _, ok := normalized[invalid]; !ok {
+				toRemove = append(toRemove, invalid)
+			}
+		}
+		for _, unknown := range status[i].Unknown {
+			if _, ok := normalized[unknown]; !ok {
+				toRemove = append(toRemove, unknown)
+			}
+		}
+	}
+
+	// If we're operating in declarative mode, we'll remove the any keys that
+	// aren't present in our normalized config.
+	if s.Mode == SyncerModeDeclarative {
+		current, err := s.Client.Config(ctx, false)
+		if err != nil {
+			return nil, err
+		}
+
+		for key := range current {
+			if _, ok := normalized[key]; !ok {
+				toRemove = append(toRemove, key)
+			}
+		}
+	}
+
+	// Intermediate variable to hold the config result if syncing is actually
+	// enabled.
+	configVersion := int64(-1)
+
+	// 3. Actually send the patch to redpanda, if enabled.
+	if s.Mode == SyncerModeDisabled {
+		logger.Info("cluster config synchronization is disabled")
+	} else {
+		result, err := s.Client.PatchClusterConfig(ctx, normalized, toRemove)
+		if err != nil {
+			return nil, err
+		}
+
+		configVersion = int64(result.ConfigVersion)
+		logger.Info("updated cluster configuration", "config_version", result.ConfigVersion, "removed", toRemove)
+	}
+
+	// Compute a hash of configs that might trigger a restart of the cluster.
+	// This incorrectly uses the desired config instead of the one reflected by
+	// the cluster and could technically trigger a restart prior to the config
+	// be set but is historical consistent.
+	// Use of this hash is slated for removal.
 	hashOfConfigsThatNeedRestart, err := hashConfigsThatNeedRestart(desired, schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash config: %w", err)
 	}
-	if s.Mode == SyncerModeDeclarative {
-		for key, value := range current {
-			if currentValue, ok := desired[key]; !ok {
-				removed = append(removed, key)
-			} else if equal(key, value, currentValue) {
-				// No change, leave it be
-				delete(upsert, key)
-			}
-		}
 
-		// We need to explicitly mark unknown or invalid properties to remove, because
-		// they will otherwise linger, since AdminAPI.Config does not return those entries.
-		// We always send requests for config status to the leader to avoid inconsistencies
-		// due to config propagation delays.
-		for i := range status {
-			for _, invalid := range status[i].Invalid {
-				if _, ok := desired[invalid]; !ok {
-					removed = append(removed, invalid)
-				}
-			}
-			for _, unknown := range status[i].Unknown {
-				if _, ok := desired[unknown]; !ok {
-					removed = append(removed, unknown)
-				}
-			}
-		}
-	}
-	for key, value := range upsert {
-		if currentValue, ok := current[key]; !ok {
-			added = append(added, key)
-		} else if !equal(key, value, currentValue) {
-			changed = append(changed, key)
-		}
-	}
-	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
-		logger.Info("no cluster config changes to apply")
-		// find the highest config version
-		return &ClusterConfigStatus{
-			Version: slices.MaxFunc(status, func(a, b rpadmin.ConfigStatus) int {
-				return int(a.ConfigVersion - b.ConfigVersion)
-			}).ConfigVersion,
-			NeedsRestart:                  slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
-			PropertiesThatNeedRestartHash: hashOfConfigsThatNeedRestart,
-		}, nil
-	}
-
-	{
-		var keys []string
-		for k := range maps.Keys(desired) {
-			keys = append(keys, k)
-		}
-		sort.Strings(added)
-		sort.Strings(changed)
-		sort.Strings(removed)
-		sort.Strings(keys)
-		logger.Info("updating cluster config", "added", added, "removed", removed, "changed", changed, "config", keys)
-	}
-
-	result, err := s.Client.PatchClusterConfig(ctx, upsert, removed)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Info("updated cluster configuration", "config_version", result.ConfigVersion)
 	status, err = s.Client.ClusterConfigStatus(ctx, true)
 	if err != nil {
 		return nil, err
 	}
+
+	needsRestart := false
+	for _, s := range status {
+		configVersion = max(s.ConfigVersion, configVersion)
+		needsRestart = needsRestart || s.Restart
+	}
+
 	return &ClusterConfigStatus{
-		Version:                       int64(result.ConfigVersion),
-		NeedsRestart:                  slices.ContainsFunc(status, func(s rpadmin.ConfigStatus) bool { return s.Restart }),
+		Version:                       configVersion,
+		NeedsRestart:                  needsRestart,
 		PropertiesThatNeedRestartHash: hashOfConfigsThatNeedRestart,
 	}, nil
 }
 
-func (s *Syncer) maybeMergeSuperusers(ctx context.Context, config map[string]any, superusers []string) {
+func (s *Syncer) normalizeConfig(
+	ctx context.Context,
+	schema rpadmin.ConfigSchema,
+	superusers []string,
+	desired map[string]any,
+) map[string]any {
 	logger := log.FromContext(ctx)
+	normalized := maps.Clone(desired)
 
-	superusersConfig, ok := config[superusersEntry]
-	if !ok {
-		// we have no superusers configuration, so don't do anything
-		logger.Info("Configuration does not contain a 'superusers' entry. Skipping superusers merge.")
-		return
+	if superusers, ok := s.mergeSuperusers(ctx, superusers, desired); ok {
+		// Conversely, if ok is false, we don't need to unset superusers as it
+		// should already be unset.
+		normalized["superusers"] = superusers
 	}
 
-	switch su := superusersConfig.(type) {
-	case []string:
-		superusers = append(superusers, su...)
-	case []any:
-		for _, s := range su {
-			if cast, ok := s.(string); ok {
-				superusers = append(superusers, cast)
-			} else {
-				logger.Info("Unable to cast value from %T to string, skipping.", s)
+	// Redpanda's cluster configs can be aliased. The preferred name is the one
+	// that's listed in the schema (as opposed to being present in an alias
+	// list). We perform client side processing here to normalize the
+	// computation of the "toRemove" slice in Declarative mode, otherwise we
+	// might accidentally send payloads to redpanda that both set and unset a
+	// key at the same time with different names.
+	for key, schema := range schema {
+		_, hasKey := normalized[key]
+
+		for _, alias := range schema.Aliases {
+			aliased, hasAlias := normalized[alias]
+
+			if !hasKey && hasAlias {
+				logger.Info("renaming aliased config key", "from", alias, "to", key)
+				normalized[key] = aliased
+				delete(normalized, alias)
+			} else if hasKey && hasAlias {
+				logger.Info("dropping aliased key due to non-alias key being provided", "alias", alias, "non-alias", key)
+				delete(normalized, alias)
 			}
 		}
-	default:
-		err := fmt.Errorf("expected superusers entry to be an array of strings, got %T", superusersConfig)
-		logger.Error(err, fmt.Sprintf("Unable to cast superusers entry to array. Skipping superusers merge. Type is: %T", superusersConfig))
-		return
 	}
 
-	config[superusersEntry] = NormalizeSuperusers(superusers)
+	return normalized
+}
+
+func (s *Syncer) mergeSuperusers(ctx context.Context, superusers []string, desired map[string]any) ([]string, bool) {
+	desiredSUs, ok := desired["superusers"]
+	superusers = append(superusers, coherceToSliceOf[string](ctx, desiredSUs)...)
+
+	// return union(desired['superusers'], superusers) and an indication of
+	// whether or not the superusers key should be set or not.
+	//
+	// **Setting the key or not has different implications depending on s.Mode**
+	//
+	// We largely key off the presence, or lack thereof, of the superusers key
+	// in the desired cluster config. If any superusers are provided via other
+	// means, we consider that as an implicit setting of superusers.
+	return NormalizeSuperusers(superusers), ok || len(superusers) > 0
+}
+
+func coherceToSliceOf[T any](ctx context.Context, in any) []T {
+	logger := log.FromContext(ctx)
+
+	switch in := in.(type) {
+	case nil:
+		return nil
+
+	case []T:
+		return in
+
+	case []any:
+		out := make([]T, 0, len(in))
+		for i := 0; i < len(in); i++ {
+			if asT, ok := in[i].(T); ok {
+				out = append(out, asT)
+			} else {
+				logger.Info("unable to cast values from %T to %T; skipping", in[i], asT)
+			}
+		}
+		return out
+
+	default:
+		err := errors.Newf("can't coherce %T to %T", in, make([]T, 1))
+		logger.Error(err, "unhandled type in coherceToSliceOf")
+		return nil
+	}
 }
 
 // hashConfigsThatNeedRestart returns a hash of the config that needs the
