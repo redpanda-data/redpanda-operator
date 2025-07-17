@@ -44,6 +44,7 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/patch"
@@ -57,10 +58,6 @@ const (
 	FinalizerKey = "operator.redpanda.com/finalizer"
 
 	SecretAnnotationExternalCAKey = "operator.redpanda.com/external-ca"
-
-	NotManaged = "false"
-
-	managedPath = "/managed"
 )
 
 var (
@@ -205,8 +202,10 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	isManaged := isRedpandaClusterManaged(log, &vectorizedCluster) && isRedpandaClusterVersionManaged(log, &vectorizedCluster, r.RestrictToRedpandaVersion)
-	if !isManaged {
+	if !feature.V1Managed.Get(ctx, &vectorizedCluster) || !isRedpandaClusterVersionManaged(log, &vectorizedCluster, r.RestrictToRedpandaVersion) {
+		key := feature.V1Managed.Key
+		log.Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it",
+			key))
 		return ctrl.Result{}, nil
 	}
 
@@ -1207,19 +1206,6 @@ func collectClusterPorts(
 	}
 
 	return clusterPorts
-}
-
-func isRedpandaClusterManaged(
-	l logr.Logger, redpandaCluster *vectorizedv1alpha1.Cluster,
-) bool {
-	log := l.WithName("isRedpandaClusterManaged")
-	managedAnnotationKey := vectorizedv1alpha1.GroupVersion.Group + managedPath
-	if managed, exists := redpandaCluster.Annotations[managedAnnotationKey]; exists && managed == NotManaged {
-		log.Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it",
-			managedAnnotationKey))
-		return false
-	}
-	return true
 }
 
 func isRedpandaClusterVersionManaged(

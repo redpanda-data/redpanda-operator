@@ -37,6 +37,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -137,7 +138,11 @@ func (r *ConsoleReconciler) Reconcile(
 
 	r.Log.V(logger.DebugLevel).Info("console", "observed generation", console.Status.ObservedGeneration, "generation", console.GetGeneration())
 
-	if !isConsoleManaged(r.Log, console) {
+	if !feature.V1Managed.Get(ctx, console) {
+		log.Info(fmt.Sprintf(
+			"management is disabled; to enable it, change the '%s' annotation to true or remove it",
+			feature.V1Managed.Key,
+		))
 		return ctrl.Result{}, nil
 	}
 
@@ -378,17 +383,4 @@ func (r *ConsoleReconciler) reconcileConsoleForCluster(pctx context.Context, c c
 	}
 
 	return res
-}
-
-func isConsoleManaged(
-	l logr.Logger, console *vectorizedv1alpha1.Console,
-) bool {
-	log := l.WithName("isConsoleManaged")
-	managedAnnotationKey := vectorizedv1alpha1.GroupVersion.Group + managedPath
-	if managed, exists := console.Annotations[managedAnnotationKey]; exists && managed == NotManaged {
-		log.Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it",
-			managedAnnotationKey))
-		return false
-	}
-	return true
 }
