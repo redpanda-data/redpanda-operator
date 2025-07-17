@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `ClusterRole`s for the PVCUnbinder and BrokerDecommissioner are now enabled / disabled when their respective controller is enabled / disabled.
+
+      Previously `ClusterRole`s were always generated and could only be disabled by setting `.statefulset.sideCars.controllers.createRBAC=false` which rendered the sidecar inoperable.
+time: 2025-07-17T15:51:55.231105-04:00
