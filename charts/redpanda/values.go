@@ -946,6 +946,14 @@ type Sidecars struct {
 	} `json:"controllers"`
 }
 
+func (s *Sidecars) PVCUnbinderEnabled() bool {
+	return s.Controllers.Enabled && s.PVCUnbinder.Enabled
+}
+
+func (s *Sidecars) BrokerDecommissionerEnabled() bool {
+	return s.Controllers.Enabled && s.BrokerDecommissioner.Enabled
+}
+
 func (s *Sidecars) ShouldCreateRBAC() bool {
 	return (s.Controllers.Enabled && s.Controllers.CreateRBAC) || s.AdditionalSidecarControllersEnabled()
 }

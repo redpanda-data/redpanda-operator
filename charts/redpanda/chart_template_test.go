@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +30,8 @@ import (
 	"golang.org/x/tools/txtar"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -174,8 +175,8 @@ func TestTemplate(t *testing.T) {
 				case `ASSERT-TRUST-STORES`:
 					AssertTrustStores(t, out, params)
 
-				case `ASSERT-NO-CERTIFICATES`:
-					AssertNoCertficates(t, objs, out)
+				case `ASSERT-NO-GVK`:
+					AssertNoGVK(t, redpanda.Scheme, objs, params)
 
 				case `ASSERT-FIELD-EQUALS`:
 					AssertFieldEquals(t, params, objs)
@@ -449,18 +450,25 @@ func AssertTrustStores(t *testing.T, manifests []byte, params []json.RawMessage)
 	assert.Equal(t, expected, actual[listener])
 }
 
-func AssertNoCertficates(t *testing.T, objs []kube.Object, manifests []byte) {
-	for _, obj := range objs {
-		_, ok := obj.(*certmanagerv1.Certificate)
-		// The -root-certificate is always created right now, ignore that
-		// one.
-		if ok && strings.HasSuffix(obj.GetName(), "-root-certificate") {
-			continue
-		}
-		require.Falsef(t, ok, "Found unexpected Certificate %q", obj.GetName())
-	}
+func AssertNoGVK(t *testing.T, scheme *runtime.Scheme, objs []kube.Object, params []json.RawMessage) {
+	var apiVersion string
+	require.NoError(t, json.Unmarshal(params[0], &apiVersion))
+	var kind string
+	require.NoError(t, json.Unmarshal(params[1], &kind))
 
-	require.NotContains(t, manifests, []byte(certmanagerv1.CertificateKind))
+	notWant := schema.FromAPIVersionAndKind(apiVersion, kind)
+
+	// Ensure we recognize this GVK.
+	_, err := scheme.New(notWant)
+	require.NoError(t, err)
+
+	for _, obj := range objs {
+		gvks, _, err := scheme.ObjectKinds(obj)
+		assert.NoError(t, err)
+		for _, gvk := range gvks {
+			assert.NotEqual(t, notWant, gvk, "unexpectedly found %T:\n %+v", obj, obj)
+		}
+	}
 }
 
 func AssertValidRPKConfiguration(t *testing.T, objs []kube.Object) {
