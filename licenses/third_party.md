@@ -175,7 +175,7 @@ run `task generate:third-party-licenses-list`
 | github.com/go-openapi/strfmt | [Apache-2.0](https://github.com/go-openapi/strfmt/blob/v0.21.9/LICENSE) |
 | github.com/go-openapi/swag | [Apache-2.0](https://github.com/go-openapi/swag/blob/v0.23.0/LICENSE) |
 | github.com/go-openapi/validate | [Apache-2.0](https://github.com/go-openapi/validate/blob/v0.22.3/LICENSE) |
-| github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.2.1/LICENSE) |
+| github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.3.0/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
 | github.com/golang-jwt/jwt/v4 | [MIT](https://github.com/golang-jwt/jwt/blob/v4.5.0/LICENSE) |
