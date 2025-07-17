@@ -50,6 +50,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
@@ -82,6 +83,26 @@ var (
 	_ suite.SetupAllSuite  = (*RedpandaControllerSuite)(nil)
 	_ suite.SetupTestSuite = (*RedpandaControllerSuite)(nil)
 )
+
+func (s *RedpandaControllerSuite) TestManaged() {
+	rp := s.minimalRP()
+
+	s.applyAndWait(rp)
+
+	// We've had default feature annotations applied.
+	s.Equal("true", rp.Annotations[feature.V2Managed.Key])
+
+	rp.Annotations[feature.V2Managed.Key] = "false"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(10) // Better hope this feature works.
+
+	// The signifier that this a cluster is not being "managed" any more is
+	// that its finalizes have been removed.
+	s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
+		return len(o.(*redpandav1alpha2.Redpanda).Finalizers) == 0, nil
+	})
+
+	s.deleteAndWait(rp)
+}
 
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	rp := s.minimalRP()
@@ -253,7 +274,7 @@ func (s *RedpandaControllerSuite) TestExternalSecretInjection() {
 
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
-	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
+	rp.Annotations[feature.RestartOnConfigChange.Key] = "true"
 
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
@@ -415,7 +436,7 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 func (s *RedpandaControllerSuite) TestClusterSettingsRegressionSuperusers() {
 	rp := s.minimalRP()
-	rp.Annotations[redpanda.RestartClusterOnConfigChangeKey] = "true"
+	rp.Annotations[feature.RestartOnConfigChange.Key] = "true"
 
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
