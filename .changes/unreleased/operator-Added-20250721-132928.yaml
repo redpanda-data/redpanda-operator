@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add `disabled` to `operator.redpanda.com/config-sync-mode` which completely disabled cluster configuration syncing without blocking the reconciliation loop
+time: 2025-07-21T13:29:28.330497-04:00
