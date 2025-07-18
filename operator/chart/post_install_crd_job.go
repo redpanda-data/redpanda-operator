@@ -77,6 +77,10 @@ func crdJobContainers(dot *helmette.Dot) []corev1.Container {
 		args = append(args, "--experimental")
 	}
 
+	if values.VectorizedControllers.Enabled {
+		args = append(args, "--vectorized")
+	}
+
 	return []corev1.Container{
 		{
 			Name:            "crd-installation",

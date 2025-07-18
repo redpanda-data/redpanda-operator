@@ -64,8 +64,6 @@ rbac:
   # -- Create RBAC cluster roles needed for the Redpanda Helm chart's 'rbac.enabled' feature.
   # WARNING: Disabling this value may prevent the operator from deploying certain configurations of redpanda.
   createAdditionalControllerCRs: true
-  # -- Create ClusterRoles needed for the Redpanda Helm chart's 'rbac.rpkDebugBundle' feature.
-  createRPKBundleCRs: true
 
 # -- Specifies whether to create Webhook resources both to intercept and potentially modify or reject Kubernetes API requests as well as authenticate requests to the Kubernetes API. Only valid when `scope` is set to Cluster.
 webhook:
@@ -137,6 +135,11 @@ additionalCmdFlags: []
 # For example, `my.k8s.service: redpanda-operator`.
 commonLabels: {}
 
+# @ignored
+# Enables controllers for the Resources in the Vectorized group.
+vectorizedControllers:
+  enabled: false
+
 # -- Configuration for monitoring.
 monitoring:
   # -- Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.
@@ -179,8 +182,3 @@ podTemplate:
 # For details,
 # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
 # readinessProbe:
-
-# -- Sets the scope of the Redpanda Operator.
-# Valid values are `Cluster` or `Namespace`.
-# The Cluster scope is deprecated because it deploys the deprecated version of the Redpanda Operator. Use the default Namespace scope. In the Namespace scope, the Redpanda Operator manages Redpanda resources that are deployed in the same namespace as itself.
-scope: Namespace
