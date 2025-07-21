@@ -708,6 +708,15 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 		return nil, errors.WithStack(err)
 	}
 
+	if conf.Warn() != nil {
+		warn := conf.Warn().Error()
+
+		logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].clusterConfigFor", *rp))
+		logger.V(log.InfoLevel).Info("warning during configuration processing", warn)
+
+		r.EventRecorder.Eventf(rp, "Warning", redpandav1alpha2.EventSeverityError, warn)
+	}
+
 	return desired, nil
 }
 

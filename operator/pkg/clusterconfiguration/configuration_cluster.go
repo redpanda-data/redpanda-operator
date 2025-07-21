@@ -33,6 +33,7 @@ type clusterCfg struct {
 	templated map[string]string
 	fixups    []Fixup
 	errs      []error
+	warnings  []error
 
 	// These are created only once, on demand
 	concrete map[string]any
@@ -40,6 +41,10 @@ type clusterCfg struct {
 
 func (c *clusterCfg) Error() error {
 	return errors.Join(c.errs...)
+}
+
+func (c *clusterCfg) Warn() error {
+	return errors.Join(c.warnings...)
 }
 
 func (c *clusterCfg) Set(k string, v vectorizedv1alpha1.ClusterConfigValue) {
@@ -229,6 +234,8 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 	if err := t.Fixup(factory); err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	c.warnings = append(c.warnings, t.Warnings...)
 
 	// Finally, use the schema to turn those representations into concrete values
 	properties := make(map[string]any, len(representations))
