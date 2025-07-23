@@ -1,11 +1,12 @@
 {
   "fork": false,
   "autoMerge": true,
+  "commitConflicts": true,
   "repoOwner": "redpanda-data",
   "repoName": "redpanda-operator",
   "targetBranchChoices": ["release/v25.1.x", "release/v2.4.x", "release/v2.3.x"],
   "targetPRLabels": ["backport"],
   "branchLabelMapping": {
     "^v(\\d+).(\\d+).x$": "release/v$1.$2.x"
-  }
+  }  
 }
