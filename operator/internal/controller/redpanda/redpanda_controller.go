@@ -313,11 +313,24 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			return r.syncStatusErr(ctx, err, status, cluster)
 		}
 
-		requeue := status.ConfigVersion == nil || *status.ConfigVersion != version
-
+		didConfigChange := ptr.Deref(status.ConfigVersion, "") != version
 		status.ConfigVersion = ptr.To(version)
 
-		if requeue && restartOnConfigChange {
+		// This check tests whether or not the configuration hash changed and
+		// whether or not we should do a rolling restart when a cluster config
+		// change appears to need one. This will be the case when:
+		// 1. The ConfigVersion is not set in the cluster status
+		// 2. The ConfigVersion has changed (i.e. a hashed parameter indicating a
+		//    restart is needed has changed), and
+		// 3. We have the restart on config change annotation on the cluster CR
+		//
+		// It does all of this to avoid flapping a Stable state when we know we're
+		// about to restart a broker node. All three of the above conditions must
+		// be true for the early return, otherwise the internal pod rolling logic
+		// will not roll any pods and we may wind up in an infinite loop attempting
+		// reconciliation because we've never rolled the pods as necessary or recorded
+		// the current config hash in their labels.
+		if didConfigChange && restartOnConfigChange {
 			return r.syncStatusAndRequeue(ctx, status, cluster)
 		}
 	}
