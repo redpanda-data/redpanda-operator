@@ -62,7 +62,7 @@ func SetDefaults(ctx context.Context, bundle FlagBundle, obj AnnotationGetSetter
 	}
 
 	obj.SetAnnotations(annos)
-	return false
+	return true
 }
 
 type AnnotationFeatureFlag[T any] struct {
