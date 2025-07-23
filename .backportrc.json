@@ -6,6 +6,6 @@
   "targetBranchChoices": ["release/v25.1.x", "release/v2.4.x", "release/v2.3.x"],
   "targetPRLabels": ["backport"],
   "branchLabelMapping": {
-    "^v(\\d+).(\\d+).\\d+$": "release/v$1.$2.x"
+    "^v(\\d+).(\\d+).x$": "release/v$1.$2.x"
   }
 }
