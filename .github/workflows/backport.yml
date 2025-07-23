@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Backport Action
         uses: sorenlouv/backport-github-action@v9.5.1
-        with:
-          github_token: ${{ secrets.ACTIONS_BOT_TOKEN }}
 
       - name: Info log
         if: ${{ success() }}
