@@ -178,8 +178,9 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
+	restartOnConfigChange := feature.RestartOnConfigChange.Get(ctx, rp)
 	injectedConfigVersion := ""
-	if feature.RestartOnConfigChange.Get(ctx, rp) {
+	if restartOnConfigChange {
 		injectedConfigVersion = rp.Status.ConfigVersion
 	}
 	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, cluster, injectedConfigVersion)
@@ -304,7 +305,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	// change, or, in worst case, the default runtime cache-sync interval of ~10 hours. On the flip-side, it causes us to hammer
 	// the API less often.
 	if !statuses.HasRecentCondition(rp, statuses.ClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
-		version, requeue, err := r.reconcileClusterConfig(ctx, admin, rp)
+		version, err := r.reconcileClusterConfig(ctx, admin, rp)
 		if err != nil {
 			status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
 
@@ -312,9 +313,11 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			return r.syncStatusErr(ctx, err, status, cluster)
 		}
 
+		requeue := status.ConfigVersion == nil || *status.ConfigVersion != version
+
 		status.ConfigVersion = ptr.To(version)
 
-		if requeue {
+		if requeue && restartOnConfigChange {
 			return r.syncStatusAndRequeue(ctx, status, cluster)
 		}
 	}
@@ -588,23 +591,23 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 	return licenseStatus(), nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, _ bool, err error) {
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, err error) {
 	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
 	defer func() { trace.EndSpan(span, err) }()
 
 	schema, err := admin.ClusterConfigSchema(ctx)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	config, err := r.clusterConfigFor(ctx, rp, schema)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	superusers, err := r.superusersFor(ctx, rp)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	mode := feature.ClusterConfigSyncMode.Get(ctx, rp)
@@ -612,10 +615,10 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 	syncer := syncclusterconfig.Syncer{Client: admin, Mode: mode}
 	configStatus, err := syncer.Sync(ctx, config, superusers)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	return configStatus.PropertiesThatNeedRestartHash, configStatus.NeedsRestart, nil
+	return configStatus.PropertiesThatNeedRestartHash, nil
 }
 
 func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
