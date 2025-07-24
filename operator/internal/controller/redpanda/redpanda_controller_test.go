@@ -384,14 +384,23 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 	for _, c := range cases {
 		s.Run(c.Name, func() {
+			s.waitUntilReady(rp)
+
 			adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
 			s.Require().NoError(err)
 			defer adminClient.Close()
-			st, err := adminClient.ClusterConfigStatus(s.ctx, false)
-			s.Assert().NoError(err)
-			initialVersion := slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
-				return int(a.ConfigVersion - b.ConfigVersion)
-			}).ConfigVersion
+
+			var initialVersion int64
+			s.EventuallyWithT(func(t *assert.CollectT) {
+				st, err := adminClient.ClusterConfigStatus(s.ctx, false)
+				if !assert.NoError(t, err) {
+					s.T().Logf("[%s] getting cluster config status failed with: %v", time.Now().Format(time.DateTime), err)
+					return
+				}
+				initialVersion = slices.MaxFunc(st, func(a, b rpadmin.ConfigStatus) int {
+					return int(a.ConfigVersion - b.ConfigVersion)
+				}).ConfigVersion
+			}, 5*time.Minute, time.Second)
 
 			waitFn := setConfig(c.In)
 			s.EventuallyWithT(func(t *assert.CollectT) {
