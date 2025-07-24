@@ -313,7 +313,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			return r.syncStatusErr(ctx, err, status, cluster)
 		}
 
-		didConfigChange := ptr.Deref(status.ConfigVersion, "") != version
+		didConfigChange := rp.Status.ConfigVersion != version
 		status.ConfigVersion = ptr.To(version)
 
 		// This check tests whether or not the configuration hash changed and
