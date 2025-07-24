@@ -156,8 +156,9 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
+	restartOnConfigChange := feature.RestartOnConfigChange.Get(ctx, rp)
 	injectedConfigVersion := ""
-	if feature.RestartOnConfigChange.Get(ctx, rp) {
+	if restartOnConfigChange {
 		injectedConfigVersion = rp.Status.ConfigVersion
 	}
 	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, cluster, injectedConfigVersion)
@@ -282,7 +283,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	// change, or, in worst case, the default runtime cache-sync interval of ~10 hours. On the flip-side, it causes us to hammer
 	// the API less often.
 	if !statuses.HasRecentCondition(rp, statuses.ClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
-		version, requeue, err := r.reconcileClusterConfig(ctx, admin, rp)
+		version, err := r.reconcileClusterConfig(ctx, admin, rp)
 		if err != nil {
 			status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
 
@@ -290,9 +291,24 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 			return r.syncStatusErr(ctx, err, status, cluster)
 		}
 
+		didConfigChange := rp.Status.ConfigVersion != version
 		status.ConfigVersion = ptr.To(version)
 
-		if requeue {
+		// This check tests whether or not the configuration hash changed and
+		// whether or not we should do a rolling restart when a cluster config
+		// change appears to need one. This will be the case when:
+		// 1. The ConfigVersion is not set in the cluster status
+		// 2. The ConfigVersion has changed (i.e. a hashed parameter indicating a
+		//    restart is needed has changed), and
+		// 3. We have the restart on config change annotation on the cluster CR
+		//
+		// It does all of this to avoid flapping a Stable state when we know we're
+		// about to restart a broker node. All three of the above conditions must
+		// be true for the early return, otherwise the internal pod rolling logic
+		// will not roll any pods and we may wind up in an infinite loop attempting
+		// reconciliation because we've never rolled the pods as necessary or recorded
+		// the current config hash in their labels.
+		if didConfigChange && restartOnConfigChange {
 			return r.syncStatusAndRequeue(ctx, status, cluster)
 		}
 	}
@@ -566,23 +582,23 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, admin *rpadmi
 	return licenseStatus(), nil
 }
 
-func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, _ bool, err error) {
+func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *rpadmin.AdminAPI, rp *redpandav1alpha2.Redpanda) (_ string, err error) {
 	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
 	defer func() { trace.EndSpan(span, err) }()
 
 	schema, err := admin.ClusterConfigSchema(ctx)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	config, err := r.clusterConfigFor(ctx, rp, schema)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	superusers, err := r.superusersFor(ctx, rp)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	mode := feature.ClusterConfigSyncMode.Get(ctx, rp)
@@ -590,10 +606,10 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 	syncer := syncclusterconfig.Syncer{Client: admin, Mode: mode}
 	configStatus, err := syncer.Sync(ctx, config, superusers)
 	if err != nil {
-		return "", false, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	return configStatus.PropertiesThatNeedRestartHash, configStatus.NeedsRestart, nil
+	return configStatus.PropertiesThatNeedRestartHash, nil
 }
 
 func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
