@@ -37,6 +37,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
@@ -44,15 +45,7 @@ import (
 )
 
 const (
-	FinalizerKey                    = "operator.redpanda.com/finalizer"
-	RestartClusterOnConfigChangeKey = "operator.redpanda.com/restart-cluster-on-config-change"
-	SyncerModeKey                   = "operator.redpanda.com/config-sync-mode"
-	SyncerModeDeclarative           = "declarative"
-	SyncerModeAdditive              = "additive" // The default for the moment
-
-	NotManaged = "false"
-
-	managedPath = "/managed"
+	FinalizerKey = "operator.redpanda.com/finalizer"
 
 	revisionPath        = "/revision"
 	componentLabelValue = "redpanda-statefulset"
@@ -147,7 +140,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 
 	logger := log.FromContext(ctx)
 
-	if !isRedpandaManaged(ctx, rp) {
+	if !feature.V2Managed.Get(ctx, rp) {
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := r.Client.Update(ctx, rp); err != nil {
 				logger.Error(err, "updating cluster finalizer")
@@ -164,7 +157,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 	// from and sync in any subsequent operation that
 	// early returns
 	injectedConfigVersion := ""
-	if rp.Annotations != nil && rp.Annotations[RestartClusterOnConfigChangeKey] == "true" {
+	if feature.RestartOnConfigChange.Get(ctx, rp) {
 		injectedConfigVersion = rp.Status.ConfigVersion
 	}
 	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, cluster, injectedConfigVersion)
@@ -199,14 +192,15 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_
 		return ctrl.Result{}, nil
 	}
 
-	// we are not deleting, so add a finalizer first before
-	// allocating any additional resources
-	if controllerutil.AddFinalizer(rp, FinalizerKey) {
+	// Update our Redpanda with our finalizer and any default Annotation FFs.
+	// If any changes are made, persist the changes and immediately requeue to
+	// prevent any cache / resource version synchronization issues.
+	if controllerutil.AddFinalizer(rp, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, rp) {
 		if err := r.Client.Update(ctx, rp); err != nil {
-			logger.Error(err, "updating cluster finalizer")
+			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	if err := validateClusterParameters(rp); err != nil {
@@ -591,7 +585,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 		return "", false, errors.WithStack(err)
 	}
 
-	mode := r.configSyncMode(ctx, rp)
+	mode := feature.ClusterConfigSyncMode.Get(ctx, rp)
 
 	syncer := syncclusterconfig.Syncer{Client: admin, Mode: mode}
 	configStatus, err := syncer.Sync(ctx, config, superusers)
@@ -600,19 +594,6 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, admin *
 	}
 
 	return configStatus.PropertiesThatNeedRestartHash, configStatus.NeedsRestart, nil
-}
-
-func (r *RedpandaReconciler) configSyncMode(ctx context.Context, rp *redpandav1alpha2.Redpanda) syncclusterconfig.SyncerMode {
-	switch strings.ToLower(rp.Annotations[SyncerModeKey]) {
-	case SyncerModeDeclarative:
-		return syncclusterconfig.SyncerModeDeclarative
-	case "", SyncerModeAdditive:
-		return syncclusterconfig.SyncerModeAdditive
-	default:
-		logger := log.FromContext(ctx)
-		logger.Info("unrecognised value %q for %s, syncing config in Additive mode", rp.Annotations[SyncerModeKey], SyncerModeKey)
-		return syncclusterconfig.SyncerModeAdditive
-	}
 }
 
 func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
@@ -821,15 +802,4 @@ func validateClusterParameters(rp *redpandav1alpha2.Redpanda) error {
 	}
 
 	return nil
-}
-
-func isRedpandaManaged(ctx context.Context, redpandaCluster *redpandav1alpha2.Redpanda) bool {
-	logger := log.FromContext(ctx)
-
-	managedAnnotationKey := redpandav1alpha2.GroupVersion.Group + managedPath
-	if managed, exists := redpandaCluster.Annotations[managedAnnotationKey]; exists && managed == NotManaged {
-		logger.V(log.TraceLevel).Info(fmt.Sprintf("management is disabled; to enable it, change the '%s' annotation to true or remove it", managedAnnotationKey))
-		return false
-	}
-	return true
 }
