@@ -7,11 +7,6 @@
   "targetBranchChoices": ["release/v2.4.x", "release/v2.3.x"],
   "targetPRLabels": ["backport"],
   "branchLabelMapping": {
-<<<<<<< HEAD
-    "^v(\\d+).(\\d+).\\d+$": "release/v$1.$2.x"
-  }
-=======
     "^v(\\d+).(\\d+).x$": "release/v$1.$2.x"
   }  
->>>>>>> b5e0f50d (Tie retriggering reconciliation on config hash change and annotation rather than reported needs restart status (#1004))
 }
