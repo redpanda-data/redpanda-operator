@@ -50,11 +50,23 @@ var (
 			Help: "Number of Redpanda clusters having configuration problems",
 		}, []string{"reason"},
 	)
+	ghostBrokerDecommissionTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "ghost_broker_decommission_total",
+			Help: "Total number of successful ghost broker decommissions",
+		},
+	)
+	ghostBrokerDecommissionErrors = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "ghost_broker_decommission_errors_total",
+			Help: "Total number of failed ghost broker decommissions",
+		},
+	)
 )
 
 func init() {
 	// Register custom metrics with the global prometheus registry
-	metrics.Registry.MustRegister(redpandaClusters, desireRedpandaNodes, actualRedpandaNodes, misconfiguredClusters)
+	metrics.Registry.MustRegister(redpandaClusters, desireRedpandaNodes, actualRedpandaNodes, misconfiguredClusters, ghostBrokerDecommissionTotal, ghostBrokerDecommissionErrors)
 }
 
 // ClusterMetricController provides metrics for nodes and cluster

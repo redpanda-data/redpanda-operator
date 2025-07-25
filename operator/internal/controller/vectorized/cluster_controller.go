@@ -1035,6 +1035,7 @@ func (r *ClusterReconciler) decommissionGhostBrokers(c context.Context, vCluster
 	for _, ndID := range nodesConsideredDown {
 		l.Info("decommissioning ghost broker", "node-id", ndID)
 		if err = adminClient.DecommissionBroker(ctx, ndID); err != nil {
+			ghostBrokerDecommissionErrors.Inc()
 			log.Error(err, "failed to decommission ghost broker",
 				"node-id", ndID,
 				"nodes-considered-down", nodesConsideredDown,
@@ -1043,6 +1044,7 @@ func (r *ClusterReconciler) decommissionGhostBrokers(c context.Context, vCluster
 				"actual-broker-ids", actualBrokerIDs)
 			continue
 		}
+		ghostBrokerDecommissionTotal.Inc()
 	}
 }
 
