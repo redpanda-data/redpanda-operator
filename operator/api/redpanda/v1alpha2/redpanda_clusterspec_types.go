@@ -76,6 +76,7 @@ type RedpandaClusterSpec struct {
 
 	// Defines Redpanda Connector settings.
 	// Deprecated, ignored, and unused as of v25.1.1
+	// +hidefromdoc
 	Connectors *RedpandaConnectors `json:"connectors,omitempty"`
 
 	// Defines authentication settings for listeners.
