@@ -1953,8 +1953,7 @@ RedpandaClusterSpec defines the desired state of a Redpanda cluster. These setti
 | *`enterprise`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise[$$Enterprise$$]__ | Defines an Enterprise license. + |  | 
 | *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
 | *`console`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]__ | Defines Redpanda Console settings. + |  | 
-| *`connectors`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]__ | Defines Redpanda Connector settings. +
-Deprecated, ignored, and unused as of v25.1.1 + |  | 
+
 | *`auth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth[$$Auth$$]__ | Defines authentication settings for listeners. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
 | *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
