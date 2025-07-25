@@ -8,10 +8,22 @@ rules:
       - ""
     resources:
       - configmaps
+      - pods
       - secrets
     verbs:
       - get
       - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - delete
+      - get
+      - list
+      - patch
+      - update
       - watch
   - apiGroups:
       - ""
@@ -23,6 +35,13 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets/status
+    verbs:
+      - patch
+      - update
   - apiGroups:
       - cluster.redpanda.com
     resources:

@@ -5966,9 +5966,6 @@
         },
         "createAdditionalControllerCRs": {
           "type": "boolean"
-        },
-        "createRPKBundleCRs": {
-          "type": "boolean"
         }
       },
       "type": "object"
@@ -6153,11 +6150,6 @@
       },
       "type": "object"
     },
-    "scope": {
-      "description": "Sets the scope of the Redpanda Operator.",
-      "pattern": "^(Namespace|Cluster)$",
-      "type": "string"
-    },
     "serviceAccount": {
       "additionalProperties": false,
       "properties": {
@@ -6245,6 +6237,15 @@
         }
       ]
     },
+    "vectorizedControllers": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "webhook": {
       "additionalProperties": false,
       "properties": {
@@ -6258,8 +6259,5 @@
       "type": "string"
     }
   },
-  "required": [
-    "scope"
-  ],
   "type": "object"
 }

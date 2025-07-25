@@ -6,18 +6,24 @@ import (
 	"io"
 	"net"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 const (
@@ -36,11 +42,75 @@ type Cluster struct {
 	namespace *corev1.Namespace
 }
 
-func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
+type Options struct {
+	CRDs         []*apiextensionsv1.CustomResourceDefinition
+	ImportImages []string
+	Scheme       *runtime.Scheme
+}
+
+func ForTestInShared(t *testing.T, options Options) *Cluster {
+	var cluster *Cluster
+	var err error
+	require.Eventually(t, func() bool {
+		cluster, err = NewInShared(t.Context(), options)
+		return err == nil
+	}, 3*time.Minute, 30*time.Second)
+	require.NoError(t, err)
+
+	testutil.MaybeCleanup(t, func() {
+		require.NoError(t, cluster.Delete())
+	})
+
+	return cluster
+}
+
+func ForTest(t *testing.T, host *k3d.Cluster, options Options) *Cluster {
+	cluster, err := New(t.Context(), host, options.Scheme)
+	require.NoError(t, err)
+
+	testutil.MaybeCleanup(t, func() {
+		require.NoError(t, cluster.Delete())
+	})
+
+	return cluster
+}
+
+func NewInShared(ctx context.Context, options Options) (*Cluster, error) {
+	host, err := k3d.GetShared()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	for _, image := range options.ImportImages {
+		if err := host.ImportImage(image); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	cl, err := New(ctx, host, options.Scheme)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if len(options.CRDs) > 0 {
+		_, err = envtest.InstallCRDs(cl.config, envtest.CRDInstallOptions{
+			CRDs: dupCRDs(options.CRDs),
+		})
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	return cl, nil
+}
+
+func New(ctx context.Context, host *k3d.Cluster, scheme *runtime.Scheme) (*Cluster, error) {
 	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
-	c, err := client.New(host.RESTConfig(), client.Options{})
+	c, err := client.New(host.RESTConfig(), client.Options{
+		Scheme: scheme,
+	})
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -268,4 +338,12 @@ func pipe(ctx context.Context, src net.Conn, dst net.Conn) error {
 	case err := <-errCh:
 		return err
 	}
+}
+
+func dupCRDs(crds []*apiextensionsv1.CustomResourceDefinition) []*apiextensionsv1.CustomResourceDefinition {
+	cloned := []*apiextensionsv1.CustomResourceDefinition{}
+	for _, crd := range crds {
+		cloned = append(cloned, crd.DeepCopy())
+	}
+	return cloned
 }

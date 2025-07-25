@@ -1015,29 +1015,22 @@ func TestControllerRBAC(t *testing.T) {
 		require.Len(t, gkvs, 1)
 		gvk := gkvs[0]
 
-		rules := role.Rules
-		if !isNamespaced(typ) {
-			rules = clusterRole.Rules
-		}
-
 		group := gvk.Group
 		kind := pluralize(gvk.Kind)
 
+		rules := clusterRole.Rules
 		idx := slices.IndexFunc(rules, func(rule rbacv1.PolicyRule) bool {
 			return slices.Contains(rule.APIGroups, group) && slices.Contains(rule.Resources, kind)
 		})
+		if idx == -1 {
+			rules = role.Rules
+			idx = slices.IndexFunc(rules, func(rule rbacv1.PolicyRule) bool {
+				return slices.Contains(rule.APIGroups, group) && slices.Contains(rule.Resources, kind)
+			})
+		}
 
 		require.NotEqual(t, -1, idx, "missing rules for %s %s", gvk.Group, kind)
 		require.EqualValues(t, expectedVerbs, rules[idx].Verbs, "incorrect verbs for %s %s", gvk.Group, kind)
-	}
-}
-
-func isNamespaced(obj client.Object) bool {
-	switch obj.(type) {
-	case *corev1.Namespace, *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
-		return false
-	default:
-		return true
 	}
 }
 
