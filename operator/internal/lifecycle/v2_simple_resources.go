@@ -38,6 +38,13 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // should be considered a node pool.
 func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]client.Object, error) {
+	spec := cluster.Spec.ClusterSpec.DeepCopy()
+
+	if spec != nil {
+		// normalize the spec by removing the connectors stanza which is deprecated
+		spec.Connectors = nil
+	}
+
 	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
 	// v1alpha2 to it's values here.
 	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
@@ -45,7 +52,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, cluster.Spec.ClusterSpec.DeepCopy())
+	}, spec)
 	if err != nil {
 		return nil, err
 	}
