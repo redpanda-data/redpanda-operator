@@ -40,8 +40,10 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]client.Object, error) {
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 
-	// normalize the spec by removing the connectors stanza which is deprecated
-	spec.Connectors = nil
+	if spec != nil {
+		// normalize the spec by removing the connectors stanza which is deprecated
+		spec.Connectors = nil
+	}
 
 	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
 	// v1alpha2 to it's values here.
