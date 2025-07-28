@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: Crashes from the Sidecar container (e.g. due to a temporary API Server outage) no longer forcefully restart the redpanda container.
-time: 2025-06-25T16:45:12.982167-04:00
