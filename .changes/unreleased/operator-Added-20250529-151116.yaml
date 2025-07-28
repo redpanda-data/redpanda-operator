@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Add option to the operator installation to install CRDs as part of the helm install process.
-time: 2025-05-29T15:11:16.032083-04:00

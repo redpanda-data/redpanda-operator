@@ -1,8 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-    DeprecatedFullNameOverride was interpreted differently between rendering resources and creating 
-      kafka, admin and schema registry client. Now deprecated fullNameOverride will be used only
-      if correct FullNameOverride is not provided and handled the same way for both
-      client creation and render function.
-time: 2025-04-11T21:52:34.834578+02:00

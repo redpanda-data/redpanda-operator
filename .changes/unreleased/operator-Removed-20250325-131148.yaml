@@ -1,4 +1,0 @@
-project: operator
-kind: Removed
-body: The V1 operator now requires a minimum Redpanda version of 23.2; all feature-gated behaviour that supported older versions is now enabled unconditionally.
-time: 2025-03-25T13:11:48.512445Z
