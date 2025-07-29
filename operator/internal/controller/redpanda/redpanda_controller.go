@@ -139,21 +139,6 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 	cluster := lifecycle.NewClusterWithPools(rp)
 
-	// The flag that disables cluster configuration synchronization is set to `true` to not
-	// conflict with operator cluster configuration synchronization.
-	if cluster.Spec.ClusterSpec == nil {
-		cluster.Spec.ClusterSpec = &redpandav1alpha2.RedpandaClusterSpec{}
-	}
-
-	if cluster.Spec.ClusterSpec.Statefulset == nil {
-		cluster.Spec.ClusterSpec.Statefulset = &redpandav1alpha2.Statefulset{}
-	}
-	if cluster.Spec.ClusterSpec.Statefulset.SideCars == nil {
-		cluster.Spec.ClusterSpec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
-	}
-
-	cluster.Spec.ClusterSpec.Statefulset.SideCars.Args = []string{"--no-set-superusers"}
-
 	ctx, span := trace.Start(otelkube.Extract(ctx, rp), "Reconcile", trace.WithAttributes(
 		attribute.String("name", req.Name),
 		attribute.String("namespace", req.Namespace),

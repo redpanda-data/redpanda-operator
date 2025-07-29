@@ -63,6 +63,8 @@ import (
 
 const (
 	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
+	DefaultRedpandaImageTag           = "v25.2.1"
+	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
 	AllControllers         = RedpandaController("all")
 	NodeController         = RedpandaController("nodeWatcher")
@@ -87,6 +89,8 @@ type RunOptions struct {
 	configuratorBaseImage               string
 	configuratorTag                     string
 	configuratorImagePullPolicy         string
+	redpandaDefaultTag                  string
+	redpandaDefaultRepository           string
 	decommissionWaitInterval            time.Duration
 	metricsTimeout                      time.Duration
 	rpClientTimeout                     time.Duration
@@ -136,6 +140,8 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
+	cmd.Flags().StringVar(&o.redpandaDefaultTag, "redpanda-tag", DefaultRedpandaImageTag, "The default docker image tag for redpanda containers")
+	cmd.Flags().StringVar(&o.redpandaDefaultRepository, "redpanda-repository", DefaultRedpandaRepository, "The default docker repository to pull redpanda images from")
 	cmd.Flags().StringVar(&o.configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
 	cmd.Flags().DurationVar(&o.decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
 	cmd.Flags().DurationVar(&o.metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
@@ -508,9 +514,15 @@ func Run(
 			CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
 			CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
 		}
-		redpandaImage := lifecycle.Image{
+
+		sidecarImage := lifecycle.Image{
 			Repository: opts.configuratorBaseImage,
 			Tag:        opts.configuratorTag,
+		}
+
+		redpandaImage := lifecycle.Image{
+			Repository: opts.redpandaDefaultRepository,
+			Tag:        opts.redpandaDefaultTag,
 		}
 
 		// Redpanda Reconciler
@@ -518,7 +530,7 @@ func Run(
 			KubeConfig:           mgr.GetConfig(),
 			Client:               mgr.GetClient(),
 			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
+			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 		}).SetupWithManager(ctx, mgr); err != nil {

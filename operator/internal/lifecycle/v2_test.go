@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 	"time"
 
@@ -95,11 +96,15 @@ func TestV2ResourceClient(t *testing.T) {
 		CloudSecretsEnabled: false,
 	}
 	redpandaImage := Image{
+		Repository: "redpandadata/redpanda-operator",
+		Tag:        os.Getenv("TEST_REDPANDA_VERSION"),
+	}
+	sidecarImage := Image{
 		Repository: "localhost/redpanda-operator",
 		Tag:        "dev",
 	}
 
-	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, cloudSecrets))
+	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets))
 
 	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 
