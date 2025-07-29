@@ -35,14 +35,9 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
-	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -188,33 +183,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		EventRecorder:           k8sManager.GetEventRecorderFor("Console"),
 		KafkaAdminClientFactory: testKafkaAdminFactory,
 	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	// Redpanda Reconciler
-	err = (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:    k8sManager.GetConfig(),
-		Client:        k8sManager.GetClient(),
-		ClientFactory: internalclient.NewFactory(k8sManager.GetConfig(), k8sManager.GetClient()),
-		LifecycleClient: lifecycle.NewResourceClient(k8sManager, lifecycle.V2ResourceManagers(lifecycle.Image{
-			Repository: "localhost/redpanda-operator",
-			Tag:        "dev",
-		}, lifecycle.CloudSecretsFlags{
-			CloudSecretsEnabled: false,
-		})),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
-	}).SetupWithManager(ctx, k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&olddecommission.DecommissionReconciler{
-		Client:       k8sManager.GetClient(),
-		OperatorMode: false,
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&nodewatcher.RedpandaNodePVCReconciler{
-		Client:       k8sManager.GetClient(),
-		OperatorMode: false,
-	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

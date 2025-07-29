@@ -30,7 +30,7 @@ func NewClusterWithPools(cluster *redpandav1alpha2.Redpanda, pools ...*redpandav
 }
 
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
-func V2ResourceManagers(image Image, cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
+func V2ResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
 	OwnershipResolver[ClusterWithPools, *ClusterWithPools],
 	ClusterStatusUpdater[ClusterWithPools, *ClusterWithPools],
 	NodePoolRenderer[ClusterWithPools, *ClusterWithPools],
@@ -42,6 +42,6 @@ func V2ResourceManagers(image Image, cloudSecrets CloudSecretsFlags) func(mgr ct
 		NodePoolRenderer[ClusterWithPools, *ClusterWithPools],
 		SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools],
 	) {
-		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, image, cloudSecrets), NewV2SimpleResourceRenderer(mgr)
+		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewV2SimpleResourceRenderer(mgr)
 	}
 }

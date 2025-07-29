@@ -42,7 +42,7 @@
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
-              { name = "TEST_REDPANDA_VERSION"; eval = "v25.1.1"; }
+              { name = "TEST_REDPANDA_VERSION"; eval = "v25.2.1"; }
             ];
 
             # If the version of the installed binary is important make sure to

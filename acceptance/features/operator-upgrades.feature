@@ -1,10 +1,10 @@
 @operator:none
 Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
-  Scenario: Operator upgrade from 2.3.x
-    Given I install redpanda helm chart version "v2.3.9-24.3.11" with the values:
+  Scenario: Operator upgrade from 2.4.5
+    Given I install redpanda helm chart version "v2.4.5" with the values:
     """
-    
+
     """
     And I apply Kubernetes manifest:
     """

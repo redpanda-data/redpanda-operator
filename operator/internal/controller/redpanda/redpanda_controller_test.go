@@ -716,6 +716,37 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}
 }
 
+func (s *RedpandaControllerSuite) TestScaling() {
+	isStable := func(obj client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
+		rp := obj.(*redpandav1alpha2.Redpanda)
+		for _, cond := range rp.Status.Conditions {
+			if cond.Type == statuses.ClusterStable {
+				return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
+			}
+		}
+		return false, nil
+	}
+
+	rp := s.minimalRP()
+
+	// Start with 5 brokers.
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(5)
+	s.applyAndWaitFor(isStable, rp)
+
+	// Scale down to 3.
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWaitFor(isStable, rp)
+
+	// And then back up to 5.
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(5)
+	s.applyAndWaitFor(isStable, rp)
+
+	s.deleteAndWait(rp)
+}
+
 func (s *RedpandaControllerSuite) SetupTest() {
 	prev := s.ctx
 	s.ctx = trace.Test(s.T())
@@ -750,12 +781,11 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			KubeConfig:    mgr.GetConfig(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory: s.clientFactory,
-			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(lifecycle.Image{
-				Repository: "localhost/redpanda-operator",
-				Tag:        "dev",
-			}, lifecycle.CloudSecretsFlags{
-				CloudSecretsEnabled: false,
-			})),
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
+				lifecycle.Image{Repository: "redpandadata/redpanda", Tag: os.Getenv("TEST_REDPANDA_VERSION")},
+				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
+				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
+			)),
 		}).SetupWithManager(s.ctx, mgr)
 	})
 
