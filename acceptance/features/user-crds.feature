@@ -71,6 +71,13 @@ Feature: User CRDs
       cluster:
         clusterRef:
           name: sasl
+      authentication:
+        type: scram-sha-512
+        password:
+          valueFrom:
+            secretKeyRef:
+              name: travis-password
+              key: password
       authorization:
         acls:
         - type: allow
