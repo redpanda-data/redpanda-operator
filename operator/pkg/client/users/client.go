@@ -16,6 +16,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,7 +64,16 @@ func NewClient(ctx context.Context, kubeClient client.Client, kafkaAdminClient *
 
 // Delete deletes the given user.
 func (c *Client) Delete(ctx context.Context, user *redpandav1alpha2.User) error {
-	return c.delete(ctx, user.Name)
+	sasl := kadm.ScramSha512
+	if user.Spec.Authentication != nil && user.Spec.Authentication.Type != nil {
+		var err error
+		sasl, err = user.Spec.Authentication.Type.ScramToKafka()
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.delete(ctx, user.Name, sasl)
 }
 
 // Create creates the given user, generating a password if necessary and synchronizing it to
@@ -93,10 +103,11 @@ func (c *Client) Close() {
 	c.adminClient.Close()
 }
 
-func (c *Client) delete(ctx context.Context, username string) error {
+func (c *Client) delete(ctx context.Context, username string, mechanism kadm.ScramMechanism) error {
 	if c.scramAPISupported {
 		resp, err := c.kafkaAdminClient.AlterUserSCRAMs(ctx, []kadm.DeleteSCRAM{{
-			User: username,
+			User:      username,
+			Mechanism: mechanism,
 		}}, nil)
 		if err != nil {
 			return err
@@ -113,6 +124,8 @@ func (c *Client) create(ctx context.Context, username, password string, mechanis
 			User:      username,
 			Password:  password,
 			Mechanism: mechanism,
+			// The Iteration is hardcoded to the same as Admin API would create SCRAM user.
+			Iterations: 4096,
 		}})
 		if err != nil {
 			return err
@@ -130,10 +143,17 @@ func (c *Client) has(ctx context.Context, username string) (bool, error) {
 			return false, err
 		}
 		if err := scrams.Error(); err != nil {
+			var franzErr *kerr.Error
+			if errors.As(err, &franzErr) {
+				if franzErr.Code == kerr.ResourceNotFound.Code {
+					return false, nil
+				}
+			}
+
 			return false, err
 		}
 
-		return len(scrams) == 0, nil
+		return len(scrams) != 0, nil
 	}
 
 	users, err := c.adminClient.ListUsers(ctx)
