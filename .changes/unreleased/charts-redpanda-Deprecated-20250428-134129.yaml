@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Deprecated
-body: '`.statefulset.sidecars.controllers.image` is now deprecated. It may be specified but will not be respected. Use `.statefulset.sidecars.image` instead.'
-time: 2025-04-28T13:41:29.844714-04:00

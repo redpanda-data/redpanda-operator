@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Bump Redpanda operator side car container tag to `v2.3.7-24.3.6`.
-time: 2025-03-03T11:50:48.319871+01:00
