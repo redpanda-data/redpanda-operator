@@ -5,6 +5,9 @@ metadata:
   name: sasl
 spec:
   clusterSpec:
+    image:
+      repository: docker.redpanda.com/redpandadata/redpanda-unstable
+      tag: v25.2.1-rc7
     auth:
       sasl:
         enabled: true

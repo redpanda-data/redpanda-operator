@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fix SCRAM users using Kafka protocol
+time: 2025-07-30T18:53:59.63905+02:00
