@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Operator Helm chart.
 ---
 
-![Version: 25.1.1](https://img.shields.io/badge/Version-25.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v25.1.1](https://img.shields.io/badge/AppVersion-v25.1.1-informational?style=flat-square)
+![Version: 25.1.2](https://img.shields.io/badge/Version-25.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v25.1.2](https://img.shields.io/badge/AppVersion-v25.1.2-informational?style=flat-square)
 
 This page describes the official Redpanda Operator Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](./values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
