@@ -72,7 +72,7 @@ Feature: User CRDs
         clusterRef:
           name: sasl
       authentication:
-        type: scram-sha-512
+        type: scram-sha-256
         password:
           valueFrom:
             secretKeyRef:

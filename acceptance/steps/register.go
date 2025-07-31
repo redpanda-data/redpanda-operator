@@ -79,4 +79,9 @@ func init() {
 	// Operator upgrade scenario steps
 	framework.RegisterStep(`^I can upgrade to the latest operator with the values:$`, iCanUpgradeToTheLatestOperatorWithTheValues)
 	framework.RegisterStep(`^I install redpanda helm chart version "([^"]*)" with the values:$`, iInstallRedpandaHelmChartVersionWithTheValues)
+
+	// User CRDs with Redpanda 25.2 scenario steps
+	framework.RegisterStep(`^I create a sasl cluster named "([^"]*)"$`, iCreateSASLCluster)
+	framework.RegisterStep(`^I upgrade to "([^"]*)" cluster to 25.2.1$`, iUpgradeCluster)
+	framework.RegisterStep(`^I should be able to modify CRD-based users for cluster "([^"]*)":$`, iUpdateCRDbasedUsers)
 }

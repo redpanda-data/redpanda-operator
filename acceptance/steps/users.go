@@ -12,11 +12,13 @@ package steps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -66,6 +68,29 @@ func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, cluster str
 			}
 			require.NoError(t, t.Delete(ctx, user))
 		})
+	}
+}
+
+func iUpdateCRDbasedUsers(ctx context.Context, t framework.TestingT, cluster string, users *godog.Table) {
+	for _, user := range usersFromFullTable(t, cluster, users) {
+		user := user
+
+		var oldUser redpandav1alpha2.User
+		require.NoError(t, t.Get(ctx, t.ResourceKey(user.Name), &oldUser))
+
+		t.Logf("Updating user %q", user.Name)
+		user.ObjectMeta.ResourceVersion = oldUser.ObjectMeta.ResourceVersion
+		require.NoError(t, t.Update(ctx, user))
+
+		// make sure the resource is stable
+		checkStableResource(ctx, t, user)
+
+		// make sure it's synchronized
+		t.RequireCondition(metav1.Condition{
+			Type:   redpandav1alpha2.ResourceConditionTypeSynced,
+			Status: metav1.ConditionTrue,
+			Reason: redpandav1alpha2.ResourceConditionReasonSynced,
+		}, user.Status.Conditions)
 	}
 }
 
@@ -175,4 +200,68 @@ func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.Testi
 
 func thereIsNoUser(ctx context.Context, user, cluster string) {
 	clientsForCluster(ctx, cluster).ExpectNoUser(ctx, user)
+}
+
+func iCreateSASLCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	image := &redpandav1alpha2.RedpandaImage{
+		Tag:        ptr.To("dev"),
+		Repository: ptr.To("localhost/redpanda-operator"),
+	}
+
+	require.NoError(t, t.Create(ctx, &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					Replicas: ptr.To(1),
+					SideCars: &redpandav1alpha2.SideCars{
+						Image: image,
+						Controllers: &redpandav1alpha2.RPControllers{
+							Image: image,
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	t.Cleanup(func(ctx context.Context) {
+		t := framework.T(ctx)
+
+		t.Log("cleaning up Redpanda cluster")
+		require.NoError(t, t.Delete(ctx, &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+			},
+		}))
+
+		var cluster redpandav1alpha2.Redpanda
+		require.Eventually(t, func() bool {
+			// this can take some time
+			deleted := false
+			if err := t.Get(ctx, key, &cluster); err != nil && apierrors.IsNotFound(err) {
+				deleted = true
+			}
+
+			t.Logf("checking that Redpanda cluster %q is fully deleted: %v", clusterName, deleted)
+
+			return deleted
+		}, 2*time.Minute, 5*time.Second, `Cluster %q still exists`, clusterName)
+	})
+}
+
+func iUpgradeCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	var cluster redpandav1alpha2.Redpanda
+
+	require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
+	cluster.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
+		Repository: ptr.To("docker.redpanda.com/redpandadata/redpanda-unstable"),
+		Tag:        ptr.To("v25.2.1-rc7"),
+	}
+	require.NoError(t, t.Update(ctx, &cluster))
 }
