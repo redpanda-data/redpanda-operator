@@ -1,10 +1,10 @@
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: up-img-admin-tls
+  name: up-img-admin-mtls
 spec:
   image: "redpandadata/redpanda"
-  version: "v24.1.15"
+  version: "v24.2.24"
   replicas: 3
   resources:
     requests:
@@ -24,6 +24,7 @@ spec:
       - port: 9644
         tls:
           enabled: true
+          requireClientAuth: true
     developerMode: true
     additionalCommandlineArguments:
       default-log-level: trace

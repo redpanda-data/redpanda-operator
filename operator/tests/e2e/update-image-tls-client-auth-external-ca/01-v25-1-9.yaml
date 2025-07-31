@@ -4,7 +4,7 @@ metadata:
   name: update-img-external-client-ca
 spec:
   image: "redpandadata/redpanda"
-  version: "v24.2.12"
+  version: "v25.1.9"
   replicas: 1
   resources:
     requests:
