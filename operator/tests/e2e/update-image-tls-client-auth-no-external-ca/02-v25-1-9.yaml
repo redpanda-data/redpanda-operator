@@ -11,4 +11,4 @@ kind: Cluster
 metadata:
   name: up-img-admin-mtls
 spec:
-  version: "v24.2.24"
+  version: "v25.1.9"

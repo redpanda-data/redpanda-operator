@@ -1,11 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: update-image-cluster-and-node-port-external
+spec:
+  externalTrafficPolicy: Local
+  ports:
+    - name: kafka-different-name
+      nodePort: 32748
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: admin-different-name
+      nodePort: 31178
+      port: 9645
+      protocol: TCP
+      targetPort: 9645
+  type: NodePort
+---
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: up-img-admin-mtls
+  name: update-image-cluster-and-node-port
 spec:
   image: "redpandadata/redpanda"
-  version: "v24.1.15"
+  version: "v24.2.24"
   replicas: 3
+  restartConfig:
+    underReplicatedPartitionThreshold: 0
   resources:
     requests:
       cpu: "100m"
@@ -20,11 +41,12 @@ spec:
       port: 33145
     kafkaApi:
       - port: 9092
+      - external:
+          enabled: true
     adminApi:
       - port: 9644
-        tls:
+      - external:
           enabled: true
-          requireClientAuth: true
     developerMode: true
     additionalCommandlineArguments:
       default-log-level: trace
