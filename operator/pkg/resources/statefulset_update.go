@@ -45,7 +45,9 @@ const (
 	RequeueDuration        = time.Second * 10
 	defaultAdminAPITimeout = time.Second * 2
 
-	ClusterUpdatePodCondition = corev1.PodConditionType("ClusterUpdate")
+	ClusterUpdatePodCondition  = corev1.PodConditionType("ClusterUpdate")
+	ClusterUpdateReasonConfig  = "ConfigNeedsRestart"
+	ClusterUpdateReasonVersion = "VersionMismatch"
 )
 
 var (
@@ -120,7 +122,7 @@ func (r *StatefulSetResource) runUpdate(
 		}
 
 		log.V(logger.DebugLevel).Info("Setting ClusterUpdate condition on pods")
-		if err = r.MarkPodsForUpdate(ctx); err != nil {
+		if err = r.MarkPodsForUpdate(ctx, ClusterUpdateReasonVersion); err != nil {
 			return fmt.Errorf("unable to mark pods for update: %w", err)
 		}
 	}
@@ -232,7 +234,7 @@ func sortPodList(podList *corev1.PodList, cluster *vectorizedv1alpha1.Cluster) *
 	return podList
 }
 
-func (r *StatefulSetResource) MarkPodsForUpdate(ctx context.Context) error {
+func (r *StatefulSetResource) MarkPodsForUpdate(ctx context.Context, reason string) error {
 	podList, err := r.getPodList(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting pods %w", err)
@@ -245,10 +247,16 @@ func (r *StatefulSetResource) MarkPodsForUpdate(ctx context.Context) error {
 
 	for i := range podList.Items {
 		pod := &podList.Items[i]
+		if existingCondition := utils.FindStatusPodCondition(pod.Status.Conditions, ClusterUpdatePodCondition); existingCondition != nil && existingCondition.Status == corev1.ConditionTrue {
+			// Keep this and don't overwrite it; it might be a "Needs Restart" condition
+			continue
+		}
+
 		podPatch := k8sclient.MergeFrom(pod.DeepCopy())
 		newCondition := corev1.PodCondition{
 			Type:    ClusterUpdatePodCondition,
 			Status:  corev1.ConditionTrue,
+			Reason:  reason,
 			Message: "Cluster update pending",
 		}
 		utils.SetStatusPodCondition(&pod.Status.Conditions, &newCondition)
@@ -452,7 +460,17 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return err
 	}
 
-	if patchResult.IsEmpty() {
+	var updateForConfigRestart bool
+	if cond := utils.FindStatusPodCondition(pod.Status.Conditions, ClusterUpdatePodCondition); cond != nil && cond.Reason == ClusterUpdateReasonConfig {
+		// It's okay to remove this condition - it will be reapplied if the cluster remains in "Needs Restart"
+		log.Info("Pod marked as requiring an update for restart-only configuration. Replacing pod",
+			"pod-name", pod.Name)
+		updateForConfigRestart = true
+	}
+
+	if patchResult.IsEmpty() && !updateForConfigRestart {
+		log.Info("Pod marked as requiring an update for statefulset change, but no diff. Skipping pod",
+			"pod-name", pod.Name)
 		podPatch := k8sclient.MergeFrom(pod.DeepCopy())
 		utils.RemoveStatusPodCondition(&pod.Status.Conditions, ClusterUpdatePodCondition)
 		if err = r.Client.Status().Patch(ctx, pod, podPatch); err != nil {
@@ -472,7 +490,8 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return nil
 	}
 
-	log.Info("Put broker into maintenance mode", "patch", patchResult.Patch)
+	log.Info("Put broker into maintenance mode",
+		"pod-name", pod.Name, "patch", patchResult.Patch)
 	if err = r.putInMaintenanceMode(ctx, pod.Name); err != nil {
 		if e := new(rpadmin.HTTPResponseError); errors.As(err, &e) && e.Response != nil && e.Response.StatusCode != http.StatusNotFound {
 			log.Info("Enabling maintenance mode failed and returned 404. Ignoring, as broker is most likely decommissioned.", "pod", pod.Name)
@@ -487,7 +506,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		}
 	}
 	log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
-		"patch", patchResult.Patch)
+		"pod-name", pod.Name, "patch", patchResult.Patch)
 
 	if err = r.Delete(ctx, pod); err != nil {
 		return fmt.Errorf("unable to remove Redpanda pod: %w", err)
