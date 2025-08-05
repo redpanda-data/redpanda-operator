@@ -360,6 +360,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 		"message", conditionData.Message,
 		"needs_restart", clusterNeedsRestart,
 		"restarting", restartingCluster,
+		"isRestarting", isRestarting,
 	)
 	if conditionChanged || (restartingCluster && !isRestarting) {
 		log.Info("Updating configuration state for cluster")
@@ -377,7 +378,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 			if sts == nil {
 				continue
 			}
-			if err := sts.MarkPodsForUpdate(ctx); err != nil {
+			if err := sts.MarkPodsForUpdate(ctx, resources.ClusterUpdateReasonConfig); err != nil {
 				return nil, errorWithContext(err, "could not mark pods for update")
 			}
 		}
