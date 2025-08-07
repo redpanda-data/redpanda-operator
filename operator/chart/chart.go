@@ -58,7 +58,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		ServiceAccount(dot),
 		ServiceMonitor(dot),
 		Deployment(dot),
-		PostInstallCRDJob(dot),
+		PreInstallCRDJob(dot),
+		CRDJobServiceAccount(dot),
 	}
 
 	for _, role := range Roles(dot) {
