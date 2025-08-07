@@ -21,15 +21,11 @@ import (
 // Create the name of the service account to use
 func ServiceAccountName(dot *helmette.Dot) string {
 	values := helmette.Unwrap[Values](dot.Values)
+	return ptr.Deref(values.ServiceAccount.Name, Fullname(dot))
+}
 
-	if values.ServiceAccount.Create {
-		if ptr.Deref(values.ServiceAccount.Name, "") != "" {
-			return *values.ServiceAccount.Name
-		}
-		return Fullname(dot)
-	}
-
-	return helmette.Default(Fullname(dot), *values.ServiceAccount.Name)
+func CRDJobServiceAccountName(dot *helmette.Dot) string {
+	return ServiceAccountName(dot) + "-crd-job"
 }
 
 func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
@@ -51,5 +47,39 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Annotations: values.ServiceAccount.Annotations,
 		},
 		AutomountServiceAccountToken: values.ServiceAccount.AutomountServiceAccountToken,
+	}
+}
+
+// CRDJobServiceAccount returns a ServiceAccount that's used by
+// [PreInstallCRDJob]. Helm will delete it after the job succeeds.
+func CRDJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	if !(values.CRDs.Enabled || !values.CRDs.Experimental) {
+		return nil
+	}
+
+	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      CRDJobServiceAccountName(dot),
+			Labels:    Labels(dot),
+			Namespace: dot.Release.Namespace,
+			Annotations: helmette.Merge(
+				helmette.Default(
+					map[string]string{},
+					values.ServiceAccount.Annotations,
+				),
+				map[string]string{
+					"helm.sh/hook":               "pre-install,pre-upgrade",
+					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+					"helm.sh/hook-weight":        "-10",
+				},
+			),
+		},
+		AutomountServiceAccountToken: ptr.To(false),
 	}
 }

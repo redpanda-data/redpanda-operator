@@ -18,29 +18,25 @@ import (
 )
 
 type RBACBundle struct {
-	Enabled   bool
-	RuleFiles []string
-	Name      string
+	Name string
+	// NB: Subject is currently only used by ClusterRoles as we'll be moving to ClusterScope soon.
+	Subject     string
+	Enabled     bool
+	RuleFiles   []string
+	Annotations map[string]string
 }
 
-func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
+func clusterRoleBundles(dot *helmette.Dot) []RBACBundle {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.RBAC.Create {
 		return nil
 	}
 
-	managerFiles := []string{
-		"files/rbac/leader-election.ClusterRole.yaml",
-		"files/rbac/v2-manager.ClusterRole.yaml",
-	}
-	if values.CRDs.Enabled || values.CRDs.Experimental {
-		managerFiles = append(managerFiles, "files/rbac/crd-installation.ClusterRole.yaml")
-	}
-
-	bundles := []RBACBundle{
+	return []RBACBundle{
 		{
 			Name:    Fullname(dot),
+			Subject: ServiceAccountName(dot),
 			Enabled: values.Scope == Cluster,
 			RuleFiles: []string{
 				"files/rbac/leader-election.ClusterRole.yaml",
@@ -50,12 +46,17 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			},
 		},
 		{
-			Name:      Fullname(dot),
-			Enabled:   values.Scope == Namespace,
-			RuleFiles: managerFiles,
+			Name:    Fullname(dot),
+			Subject: ServiceAccountName(dot),
+			Enabled: values.Scope == Namespace,
+			RuleFiles: []string{
+				"files/rbac/leader-election.ClusterRole.yaml",
+				"files/rbac/v2-manager.ClusterRole.yaml",
+			},
 		},
 		{
 			Name:    cleanForK8sWithSuffix(Fullname(dot), "additional-controllers"),
+			Subject: ServiceAccountName(dot),
 			Enabled: values.Scope == Namespace && values.RBAC.CreateAdditionalControllerCRs,
 			RuleFiles: []string{
 				"files/rbac/decommission.ClusterRole.yaml",
@@ -64,6 +65,28 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 				"files/rbac/pvcunbinder.ClusterRole.yaml",
 			},
 		},
+		// ClusterRole for the CRD installation Job.
+		{
+			Name:    CRDJobServiceAccountName(dot),
+			Enabled: values.CRDs.Enabled || values.CRDs.Experimental,
+			Subject: CRDJobServiceAccountName(dot),
+			Annotations: map[string]string{
+				"helm.sh/hook":               "pre-install,pre-upgrade",
+				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+				"helm.sh/hook-weight":        "-10",
+			},
+			RuleFiles: []string{
+				"files/rbac/crd-installation.ClusterRole.yaml",
+			},
+		},
+	}
+}
+
+func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	if !values.RBAC.Create {
+		return nil
 	}
 
 	clusterRoles := []rbacv1.ClusterRole{
@@ -87,7 +110,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 		},
 	}
 
-	for _, bundle := range bundles {
+	for _, bundle := range clusterRoleBundles(dot) {
 		if !bundle.Enabled {
 			continue
 		}
@@ -104,9 +127,12 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 				Kind:       "ClusterRole",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        bundle.Name,
-				Labels:      Labels(dot),
-				Annotations: values.Annotations,
+				Name:   bundle.Name + "-" + dot.Release.Namespace,
+				Labels: Labels(dot),
+				Annotations: helmette.Merge(
+					helmette.Default(map[string]string{}, values.Annotations),
+					helmette.Default(map[string]string{}, bundle.Annotations),
+				),
 			},
 			Rules: rules,
 		})
@@ -203,26 +229,33 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 
 	// NB: We skip over making a binding for the metrics viewer role.
 	var bindings []rbacv1.ClusterRoleBinding
-	for _, role := range ClusterRoles(dot)[1:] {
+	for _, bundle := range clusterRoleBundles(dot) {
+		if !bundle.Enabled {
+			continue
+		}
+
 		bindings = append(bindings, rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRoleBinding",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        role.ObjectMeta.Name,
-				Labels:      Labels(dot),
-				Annotations: values.Annotations,
+				Name:   bundle.Name + "-" + dot.Release.Namespace,
+				Labels: Labels(dot),
+				Annotations: helmette.Merge(
+					helmette.Default(map[string]string{}, values.Annotations),
+					helmette.Default(map[string]string{}, bundle.Annotations),
+				),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
-				Name:     role.ObjectMeta.Name,
+				Name:     bundle.Name + "-" + dot.Release.Namespace,
 			},
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      ServiceAccountName(dot),
+					Name:      bundle.Subject,
 					Namespace: dot.Release.Namespace,
 				},
 			},

@@ -21,9 +21,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-// This is a post-install job due to requiring the RBAC credentials
-// for creating/updating CRDs to be created before it is run.
-func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
+// This is a pre-install job as the operator will crash loop without the CRDs
+// which deadlocks helm install commands.
+// It, it's ServiceAccount, ClusterRole, and ClusterRoleBindings are all
+// executed as a helm hook and removed upon success (or failure).
+func PreInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.CRDs.Enabled && !values.CRDs.Experimental {
@@ -42,8 +44,8 @@ func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 				Labels(dot),
 			),
 			Annotations: map[string]string{
-				"helm.sh/hook":               "post-install,post-upgrade",
-				"helm.sh/hook-delete-policy": "before-hook-creation",
+				"helm.sh/hook":               "pre-install,pre-upgrade",
+				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 				"helm.sh/hook-weight":        "-5",
 			},
 		},
@@ -58,10 +60,10 @@ func PostInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 					AutomountServiceAccountToken:  ptr.To(false),
 					TerminationGracePeriodSeconds: ptr.To(int64(10)),
 					ImagePullSecrets:              values.ImagePullSecrets,
-					ServiceAccountName:            ServiceAccountName(dot),
+					ServiceAccountName:            CRDJobServiceAccountName(dot),
 					NodeSelector:                  values.NodeSelector,
 					Tolerations:                   values.Tolerations,
-					Volumes:                       operatorPodVolumes(dot),
+					Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
 					Containers:                    crdJobContainers(dot),
 				},
 			},
@@ -85,7 +87,7 @@ func crdJobContainers(dot *helmette.Dot) []corev1.Container {
 			Command:         []string{"/redpanda-operator"},
 			Args:            args,
 			SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To(false)},
-			VolumeMounts:    operatorPodVolumesMounts(dot),
+			VolumeMounts:    []corev1.VolumeMount{serviceAccountTokenVolumeMount()},
 			Resources:       values.Resources,
 		},
 	}
