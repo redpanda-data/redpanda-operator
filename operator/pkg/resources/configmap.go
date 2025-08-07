@@ -47,10 +47,6 @@ const (
 	bootstrapTemplateFile      = ".bootstrap.json.in"
 )
 
-// LastAppliedCriticalConfigurationAnnotationKey is used to store the hash of the most-recently-applied configuration,
-// selecting only those values which are marked in the schema as requiring a cluster restart.
-var LastAppliedCriticalConfigurationAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/last-applied-critical-configuration"
-
 var _ Resource = &ConfigMapResource{}
 
 // ConfigMapResource contains definition and reconciliation logic for operator's ConfigMap.
@@ -107,14 +103,6 @@ func (r *ConfigMapResource) update(
 	c k8sclient.Client,
 	logger logr.Logger,
 ) error {
-	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
-		if modified.Annotations == nil {
-			modified.Annotations = make(map[string]string)
-		}
-		modified.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = val
-	}
-
 	if err := r.markConfigurationConditionChanged(ctx, current, modified); err != nil {
 		return err
 	}
@@ -240,27 +228,4 @@ func (r *ConfigMapResource) GetAnnotationFromCluster(
 		return &ann, true, nil
 	}
 	return nil, true, nil
-}
-
-// SetAnnotationForCluster sets or updates an annotation in the configmap
-func (r *ConfigMapResource) SetAnnotationForCluster(
-	ctx context.Context, annotation string, newValue *string,
-) error {
-	existing := corev1.ConfigMap{}
-	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
-		return fmt.Errorf("could not load configmap for storing last applied configuration: %w", err)
-	}
-	existingValue, found := existing.Annotations[annotation]
-	if newValue == nil {
-		if !found {
-			return nil
-		}
-		delete(existing.Annotations, annotation)
-	} else {
-		if existingValue == *newValue {
-			return nil
-		}
-		existing.Annotations[annotation] = *newValue
-	}
-	return r.Update(ctx, &existing)
 }
