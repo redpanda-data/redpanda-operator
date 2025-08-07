@@ -1078,6 +1078,12 @@ func TestAppVersion(t *testing.T) {
 }
 
 func TestControllersTag(t *testing.T) {
+	// We can't pin to the latest version of the operator container any as the
+	// container isn't built until after the release.
+	// TODO Add a proactive check during the release process of redpanda to
+	// ensure it's using the latest operator version.
+	t.Skip("This test is no longer valid as of v25.1.x")
+
 	chartBytes, err := os.ReadFile("../../operator/chart/Chart.yaml")
 	require.NoError(t, err)
 
