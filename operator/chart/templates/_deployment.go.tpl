@@ -105,7 +105,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $vol := (list (get (fromJson (include "operator.kubeTokenAPIVolume" (dict "a" (list "kube-api-access")))) "r")) -}}
+{{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r")) -}}
 {{- if (not (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $vol) | toJson -}}
@@ -118,12 +118,20 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "operator.kubeTokenAPIVolume" -}}
-{{- $name := (index .a 0) -}}
+{{- define "operator.serviceAccountTokenVolume" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "projected" (mustMergeOverwrite (dict "sources" (coalesce nil)) (dict "defaultMode" (420 | int) "sources" (list (mustMergeOverwrite (dict) (dict "serviceAccountToken" (mustMergeOverwrite (dict "path" "") (dict "path" "token" "expirationSeconds" ((3607 | int) | int64))))) (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" "kube-root-ca.crt")) (dict "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (mustMergeOverwrite (dict) (dict "downwardAPI" (mustMergeOverwrite (dict) (dict "items" (list (mustMergeOverwrite (dict "path" "") (dict "path" "namespace" "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "metadata.namespace")))))))))))))) (dict "name" $name))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "projected" (mustMergeOverwrite (dict "sources" (coalesce nil)) (dict "defaultMode" (420 | int) "sources" (list (mustMergeOverwrite (dict) (dict "serviceAccountToken" (mustMergeOverwrite (dict "path" "") (dict "path" "token" "expirationSeconds" ((3607 | int) | int64))))) (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" "kube-root-ca.crt")) (dict "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (mustMergeOverwrite (dict) (dict "downwardAPI" (mustMergeOverwrite (dict) (dict "items" (list (mustMergeOverwrite (dict "path" "") (dict "path" "namespace" "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "metadata.namespace")))))))))))))) (dict "name" "kube-api-access"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.serviceAccountTokenVolumeMount" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -132,17 +140,7 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $volMount := (list) -}}
-{{- $mountName := "kube-api-access" -}}
-{{- range $_, $vol := (get (fromJson (include "operator.operatorPodVolumes" (dict "a" (list $dot)))) "r") -}}
-{{- if (hasPrefix $vol.name (printf "%s%s" "kube-api-access" "-")) -}}
-{{- $mountName = $vol.name -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $volMount = (concat (default (list) $volMount) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" $mountName "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount")))) -}}
+{{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) -}}
 {{- if (not (get (fromJson (include "operator.isWebhookEnabled" (dict "a" (list $dot)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volMount) | toJson -}}

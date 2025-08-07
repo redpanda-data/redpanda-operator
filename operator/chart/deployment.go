@@ -12,7 +12,6 @@ package operator
 
 import (
 	"fmt"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -218,7 +217,7 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	vol := []corev1.Volume{
-		kubeTokenAPIVolume(ServiceAccountVolumeName),
+		serviceAccountTokenVolume(),
 	}
 
 	if !isWebhookEnabled(dot) {
@@ -238,13 +237,13 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 	return vol
 }
 
-// kubeTokenAPIVolume is a slightly changed variant of
+// serviceAccountTokenVolume is a slightly changed variant of
 // https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L484-L524
 // Upstream creates Projected Volume Source, but this function returns Volume with provided name.
 // Also const are renamed.
-func kubeTokenAPIVolume(name string) corev1.Volume {
+func serviceAccountTokenVolume() corev1.Volume {
 	return corev1.Volume{
-		Name: name,
+		Name: ServiceAccountVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Projected: &corev1.ProjectedVolumeSource{
 				// explicitly set default value, see https://github.com/kubernetes/kubernetes/issues/104464
@@ -288,21 +287,16 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 	}
 }
 
-func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
-	volMount := []corev1.VolumeMount{}
-
-	mountName := ServiceAccountVolumeName
-	for _, vol := range operatorPodVolumes(dot) {
-		if strings.HasPrefix(ServiceAccountVolumeName+"-", vol.Name) {
-			mountName = vol.Name
-		}
-	}
-
-	volMount = append(volMount, corev1.VolumeMount{
-		Name:      mountName,
+func serviceAccountTokenVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      ServiceAccountVolumeName,
 		ReadOnly:  true,
 		MountPath: DefaultAPITokenMountPath,
-	})
+	}
+}
+
+func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
+	volMount := []corev1.VolumeMount{serviceAccountTokenVolumeMount()}
 
 	if !isWebhookEnabled(dot) {
 		return volMount
