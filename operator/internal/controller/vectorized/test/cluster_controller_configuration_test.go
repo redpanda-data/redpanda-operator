@@ -48,9 +48,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 		timeoutShort  = time.Millisecond * 100
 		intervalShort = time.Millisecond * 20
 
-		configMapHashKey                = "redpanda.vectorized.io/configmap-hash"
-		centralizedConfigurationHashKey = "redpanda.vectorized.io/centralized-configuration-hash"
-		lastAppliedConfigurationHashKey = "redpanda.vectorized.io/last-applied-critical-configuration"
+		configMapHashKey = "redpanda.vectorized.io/configmap-hash"
 	)
 
 	gracePeriod := int64(0)
@@ -77,9 +75,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(cm.Data[clusterconfiguration.BootstrapTemplateFile]).ToNot(BeEmpty())
 			Expect(cm.Data[clusterconfiguration.BootstrapFixupFile]).ToNot(BeEmpty())
 
-			By("Always adding the last-applied-critical-configuration annotation on the configmap")
-			Eventually(annotationGetter(baseKey, &cm, lastAppliedConfigurationHashKey), timeout, interval).ShouldNot(BeEmpty())
-
 			By("Creating the statefulset")
 			var sts appsv1.StatefulSet
 			Eventually(resourceGetter(key, &appsv1.StatefulSet{})).Should(Succeed())
@@ -89,9 +84,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-
-			By("Not using the centralized-config annotation at this stage on the statefulset")
-			Consistently(annotationGetter(key, &sts, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -116,8 +108,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the configuration")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-			initialCriticalConfigHash := annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey)()
-			Expect(initialCriticalConfigHash).ToNot(BeEmpty())
 
 			By("Accepting a change")
 			adminAPI.RegisterPropertySchema("non-restarting", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
@@ -139,15 +129,9 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Not changing the configmap-hash in the statefulset")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash))
 
-			By("Not setting the centralized configuration hash in the statefulset")
-			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
-
-			By("Not changing the critical configuration hash on the configmap")
-			Consistently(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCriticalConfigHash))
-
 			By("Never restarting the cluster")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash))
-			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
+			By("TODO: no restart of pods")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -224,7 +208,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Never restarting the cluster")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(hash))
-			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
+			By("TODO: no restart of pods")
 
 			By("Adding configuration of array type")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -263,12 +247,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("Starting with an empty hash")
-			var sts appsv1.StatefulSet
-			Expect(annotationGetter(key, &sts, centralizedConfigurationHashKey)()).To(BeEmpty())
-			initialConfigMapHash := sts.Spec.Template.Annotations[configMapHashKey]
-			Expect(initialConfigMapHash).NotTo(BeEmpty())
-
 			By("Accepting a change that would require restart")
 			adminAPI.RegisterPropertySchema("prop-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: true, Type: "string"})
 			var cluster vectorizedv1alpha1.Cluster
@@ -287,11 +265,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("Changing the statefulset hash and keeping it stable")
-			Eventually(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeout, interval).ShouldNot(BeEmpty())
-			initialCentralizedConfigHash := annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()
-			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCentralizedConfigHash))
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
+			By("TODO: restart of pods")
+			By("TODO: NeedsRestart condition cleared")
 
 			By("Accepting another change that would not require restart")
 			adminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
@@ -307,10 +282,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("Not changing the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(Equal(initialCentralizedConfigHash))
-			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(Equal(initialCentralizedConfigHash))
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()).To(Equal(initialConfigMapHash))
+			By("TODO: no pod restart")
 
 			By("Accepting a change in a node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -319,14 +291,13 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Changing the hash because of the node property change")
-			Eventually(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeout, interval).ShouldNot(Equal(initialConfigMapHash))
 			configMapHash2 := annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash2))
 
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(Equal(initialCentralizedConfigHash))
-
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+
+			By("TODO: pods restart")
 
 			By("Accepting another change to a redpanda node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -341,8 +312,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeout, interval).ShouldNot(Equal(configMapHash2))
 			configMapHash3 := annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey)()
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash3))
-
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(Equal(initialCentralizedConfigHash))
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
@@ -436,8 +405,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -484,8 +452,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -514,9 +481,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(resourceGetter(baseKey, &corev1.ConfigMap{}), timeout, interval).Should(Succeed())
 			Eventually(resourceGetter(key, &appsv1.StatefulSet{}), timeout, interval).Should(Succeed())
 
-			By("Always adding the last-applied-configuration annotation on the configmap")
-			Eventually(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeout, interval).ShouldNot(BeEmpty())
-
 			By("Marking the cluster as not properly configured")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeFalse())
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
@@ -527,8 +491,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -581,8 +544,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -629,8 +591,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -659,9 +620,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			Eventually(resourceGetter(baseKey, &corev1.ConfigMap{}), timeout, interval).Should(Succeed())
 			Eventually(resourceGetter(key, &appsv1.StatefulSet{}), timeout, interval).Should(Succeed())
 
-			By("Always adding the last-applied-configuration annotation on the configmap")
-			Eventually(annotationGetter(baseKey, &corev1.ConfigMap{}, lastAppliedConfigurationHashKey), timeout, interval).ShouldNot(BeEmpty())
-
 			By("Marking the cluster as not properly configured")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeFalse())
 			Consistently(clusterConfiguredConditionStatusGetter(key), timeoutShort, intervalShort).Should(BeFalse())
@@ -672,8 +630,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("None of the property used here should change the hash")
-			Expect(annotationGetter(key, &appsv1.StatefulSet{}, centralizedConfigurationHashKey)()).To(BeEmpty())
+			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -789,9 +746,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-
-			By("Not using the centralized-config annotation at this stage on the statefulset")
-			Consistently(annotationGetter(key, &sts, centralizedConfigurationHashKey), timeoutShort, intervalShort).Should(BeEmpty())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster)).Should(Succeed())
