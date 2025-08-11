@@ -26,6 +26,8 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,6 +46,7 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
@@ -56,7 +59,7 @@ var (
 	k8sClient             client.Client
 	testEnv               *testutils.RedpandaTestEnv
 	cfg                   *rest.Config
-	testAdminAPI          func(string) *adminutils.MockAdminAPI
+	testAdminAPI          func(string, string) *adminutils.MockAdminAPI
 	testAdminAPIFactory   adminutils.NodePoolAdminAPIClientFactory
 	testStore             *consolepkg.Store
 	testKafkaAdmin        *mockKafkaAdmin
@@ -111,10 +114,47 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 
 	testAdminAPIs := make(map[string]*adminutils.MockAdminAPI)
 	var mu sync.Mutex
-	testAdminAPI = func(clusterName string) *adminutils.MockAdminAPI {
+
+	// When determining whether the cluster "NeedsRestart" for configuration,
+	// check the oldest created timestamp for pods against the time of the last
+	// configuration change that touched a "NeedsRestart" item.
+	oldestPodFactory := func(ns, clusterName string) func(context.Context) time.Time {
+		return func(ctx context.Context) time.Time {
+			oldest := time.Now()
+			key := k8stypes.NamespacedName{
+				Name:      clusterName,
+				Namespace: ns,
+			}
+			var cl vectorizedv1alpha1.Cluster
+			err := k8sClient.Get(ctx, key, &cl)
+			if err != nil {
+				l.Error(err, "can't fetch cluster to determine oldest pod")
+				return time.Time{}
+			}
+			var podList corev1.PodList
+			err = k8sClient.List(context.Background(), &podList, &client.ListOptions{
+				Namespace:     key.Namespace,
+				LabelSelector: labels.ForCluster(&cl).AsClientSelector(),
+			})
+			if err != nil {
+				l.Error(err, "can't list pods for cluster")
+				return time.Time{}
+			}
+			for _, pod := range podList.Items {
+				created := pod.CreationTimestamp.Time
+				if created.Before(oldest) {
+					oldest = created
+				}
+			}
+			return oldest
+		}
+	}
+
+	testAdminAPI = func(namespace, clusterName string) *adminutils.MockAdminAPI {
+		key := fmt.Sprintf("%s/%s", namespace, clusterName)
 		mu.Lock()
 		defer mu.Unlock()
-		api, found := testAdminAPIs[clusterName]
+		api, found := testAdminAPIs[key]
 		if !found {
 			api = &adminutils.MockAdminAPI{Log: l.WithName("testAdminAPI").WithName("mockAdminAPI").WithName(clusterName)}
 
@@ -133,7 +173,8 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 			api.SetProperty("log_segment_size", 536870912)
 			api.SetProperty("enable_rack_awareness", true)
 
-			testAdminAPIs[clusterName] = api
+			api.OldestPod = oldestPodFactory(namespace, clusterName)
+			testAdminAPIs[key] = api
 		}
 		return api
 	}
@@ -148,7 +189,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		_ time.Duration,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {
-		api := testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
+		api := testAdminAPI(cluster.Namespace, cluster.Name)
 		if len(pods) == 1 {
 			return &adminutils.NodePoolScopedMockAdminAPI{
 				MockAdminAPI: api,

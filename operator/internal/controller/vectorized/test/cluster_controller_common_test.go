@@ -13,6 +13,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -74,6 +75,54 @@ func clusterConfiguredConditionStatusGetter(key client.ObjectKey) func() bool {
 		cond := clusterConfiguredConditionGetter(key)()
 		return cond != nil && cond.Status == corev1.ConditionTrue
 	}
+}
+
+func clusterPodsNewerThan(key client.ObjectKey, since time.Time) bool {
+	var cluster vectorizedv1alpha1.Cluster
+	if err := k8sClient.Get(context.Background(), key, &cluster); err != nil {
+		return false
+	}
+	var podList corev1.PodList
+	if err := k8sClient.List(context.Background(), &podList, &client.ListOptions{
+		Namespace:     key.Namespace,
+		LabelSelector: labels.ForCluster(&cluster).AsClientSelector(),
+	}); err != nil {
+		return false
+	}
+	if len(podList.Items) == 0 {
+		return true
+	}
+	for _, pod := range podList.Items {
+		created := pod.CreationTimestamp.Time
+		if !created.After(since) {
+			return false
+		}
+	}
+	return true
+}
+
+func clusterPodsOlderThan(key client.ObjectKey, since time.Time) bool {
+	var cluster vectorizedv1alpha1.Cluster
+	if err := k8sClient.Get(context.Background(), key, &cluster); err != nil {
+		return false
+	}
+	var podList corev1.PodList
+	if err := k8sClient.List(context.Background(), &podList, &client.ListOptions{
+		Namespace:     key.Namespace,
+		LabelSelector: labels.ForCluster(&cluster).AsClientSelector(),
+	}); err != nil {
+		return false
+	}
+	if len(podList.Items) == 0 {
+		return true
+	}
+	for _, pod := range podList.Items {
+		created := pod.CreationTimestamp.Time
+		if !created.Before(since) {
+			return false
+		}
+	}
+	return true
 }
 
 func clusterUpdater(

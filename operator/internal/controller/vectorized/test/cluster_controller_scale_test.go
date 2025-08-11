@@ -12,7 +12,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -284,7 +283,7 @@ func getClusterWithReplicas(
 			},
 		},
 	}
-	return key, cluster, testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
+	return key, cluster, testAdminAPI(cluster.Namespace, cluster.Name)
 }
 
 func getClusterWithNodePool(
@@ -342,5 +341,5 @@ func getClusterWithNodePool(
 			},
 		},
 	}
-	return key, cluster, testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
+	return key, cluster, testAdminAPI(cluster.Namespace, cluster.Name)
 }

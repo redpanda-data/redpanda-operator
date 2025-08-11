@@ -118,6 +118,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				cluster.Spec.AdditionalConfiguration = make(map[string]string)
 			}
 			cluster.Spec.AdditionalConfiguration["redpanda.non-restarting"] = "the-val"
+			updatedAt := time.Now()
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Sending the new property to the admin API")
@@ -131,7 +132,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Never restarting the cluster")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(configMapHash))
-			By("TODO: no restart of pods")
+			Expect(clusterPodsOlderThan(key, updatedAt)).Should(BeTrue())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -153,6 +154,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Synchronizing the configuration")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			readyAt := time.Now()
 
 			By("Accepting an initial change")
 			adminAPI.RegisterPropertySchema("p0", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
@@ -208,7 +210,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Never restarting the cluster")
 			Consistently(annotationGetter(key, &appsv1.StatefulSet{}, configMapHashKey), timeoutShort, intervalShort).Should(Equal(hash))
-			By("TODO: no restart of pods")
+			Expect(clusterPodsOlderThan(key, readyAt)).To(BeTrue())
 
 			By("Adding configuration of array type")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -257,6 +259,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}
 			const propValue = "the-value"
 			cluster.Spec.AdditionalConfiguration["redpanda.prop-restart"] = propValue
+			updateAt := time.Now()
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
 			By("Synchronizing the field with the admin API")
@@ -265,8 +268,14 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: restart of pods")
-			By("TODO: NeedsRestart condition cleared")
+			By("Pods are all restarted")
+			Expect(clusterPodsNewerThan(key, updateAt)).Should(BeTrue())
+
+			By("NeedsRestart condition cleared")
+			status, err := adminAPI.ClusterConfigStatus(context.Background(), true)
+			Expect(err).To(BeNil())
+			Expect(status[0].Restart).To(BeFalse())
+			updatedAt := time.Now()
 
 			By("Accepting another change that would not require restart")
 			adminAPI.RegisterPropertySchema("prop-no-restart", rpadmin.ConfigPropertyMetadata{NeedsRestart: false, Type: "string"})
@@ -282,7 +291,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
+			By("Without further pod restart")
+			Expect(clusterPodsOlderThan(key, updatedAt)).To(BeTrue())
 
 			By("Accepting a change in a node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -297,7 +307,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			By("Synchronizing the condition")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: pods restart")
+			By("With a pod restart")
+			Expect(clusterPodsNewerThan(key, updatedAt)).To(BeTrue())
 
 			By("Accepting another change to a redpanda node property to trigger restart")
 			Expect(k8sClient.Get(context.Background(), key, &cluster)).To(Succeed())
@@ -374,6 +385,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Configuring the cluster")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			readyAt := time.Now()
 
 			By("Accepting an unknown property")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
@@ -405,7 +417,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
+			By("Without restarting pods")
+			Expect(clusterPodsOlderThan(key, readyAt)).To(BeTrue())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -428,6 +441,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Configuring the cluster")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			readyAt := time.Now()
 
 			By("Accepting an unknown property")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
@@ -452,7 +466,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
+			By("Without restarting pods")
+			Expect(clusterPodsOlderThan(key, readyAt)).To(BeTrue())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -491,8 +506,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
-
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
 			testutils.DeleteAllInNamespace(testEnv, k8sClient, namespace)
@@ -512,6 +525,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Configuring the cluster")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			readyAt := time.Now()
 
 			By("Accepting an invalid property")
 			adminAPI.RegisterPropertySchema("inv", rpadmin.ConfigPropertyMetadata{Description: "invalid", Type: "string"}) // triggers mock validation
@@ -544,7 +558,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
+			By("Without restarting pods")
+			Expect(clusterPodsOlderThan(key, readyAt)).Should(BeTrue())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -567,6 +582,7 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 
 			By("Configuring the cluster")
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
+			readyAt := time.Now()
 
 			By("Accepting an unknown property")
 			Eventually(clusterUpdater(key, func(cluster *vectorizedv1alpha1.Cluster) {
@@ -591,7 +607,8 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
 
-			By("TODO: no pod restart")
+			By("Without restarting pods")
+			Expect(clusterPodsOlderThan(key, readyAt)).To(BeTrue())
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -629,8 +646,6 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 				delete(cluster.Spec.AdditionalConfiguration, "redpanda.unk")
 			}), timeout, interval).Should(Succeed())
 			Eventually(clusterConfiguredConditionStatusGetter(key), timeout, interval).Should(BeTrue())
-
-			By("TODO: no pod restart")
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster, deleteOptions)).Should(Succeed())
@@ -809,5 +824,5 @@ func getInitialTestCluster(
 			Name: ns,
 		},
 	}
-	return key, baseKey, cluster, namespace, testAdminAPI(fmt.Sprintf("%s/%s", cluster.Namespace, cluster.Name))
+	return key, baseKey, cluster, namespace, testAdminAPI(cluster.Namespace, cluster.Name)
 }

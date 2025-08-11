@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -42,6 +43,8 @@ type MockAdminAPI struct {
 	Log               logr.Logger
 	clusterHealth     bool
 	MaintenanceStatus *rpadmin.MaintenanceStatus
+	needsRestartSince time.Time
+	OldestPod         func(context.Context) time.Time
 }
 
 var _ AdminAPIClient = &MockAdminAPI{Log: ctrl.Log.WithName("AdminAPIClient").WithName("mockAdminAPI")}
@@ -80,7 +83,7 @@ func (m *MockAdminAPI) Config(context.Context, bool) (rpadmin.Config, error) {
 }
 
 func (m *MockAdminAPI) ClusterConfigStatus(
-	_ context.Context, _ bool,
+	ctx context.Context, _ bool,
 ) (rpadmin.ConfigStatusResponse, error) {
 	m.Log.WithName("ClusterConfigStatus").Info("called")
 	m.monitor.Lock()
@@ -88,7 +91,12 @@ func (m *MockAdminAPI) ClusterConfigStatus(
 	if m.unavailable {
 		return rpadmin.ConfigStatusResponse{}, &unavailableError{}
 	}
+	var needsRestart bool
+	if !m.needsRestartSince.IsZero() && m.OldestPod != nil && m.OldestPod(ctx).Before(m.needsRestartSince) {
+		needsRestart = true
+	}
 	node := rpadmin.ConfigStatus{
+		Restart: needsRestart,
 		Invalid: append([]string{}, m.invalid...),
 		Unknown: append([]string{}, m.unknown...),
 	}
@@ -152,9 +160,15 @@ func (m *MockAdminAPI) PatchClusterConfig(
 		m.config = make(map[string]interface{})
 	}
 	for k, v := range upsert {
+		if m.config[k] != v && m.schema[k].NeedsRestart {
+			m.needsRestartSince = time.Now()
+		}
 		m.config[k] = v
 	}
 	for _, k := range remove {
+		if _, found := m.config[k]; found && m.schema[k].NeedsRestart {
+			m.needsRestartSince = time.Now()
+		}
 		delete(m.config, k)
 		for i := range m.invalid {
 			if m.invalid[i] == k {
@@ -225,6 +239,7 @@ func (m *MockAdminAPI) Clear() {
 	m.brokers = nil
 	m.clusterHealth = true
 	m.MaintenanceStatus = &rpadmin.MaintenanceStatus{}
+	m.needsRestartSince = time.Time{}
 }
 
 func (m *MockAdminAPI) GetFeatures(
