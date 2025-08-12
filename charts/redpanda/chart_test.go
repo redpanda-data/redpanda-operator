@@ -171,17 +171,9 @@ func TestIntegrationChart(t *testing.T) {
 			Values: partial,
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -246,17 +238,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -305,17 +289,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -368,17 +344,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -507,7 +475,7 @@ func TieredStorageSecretRefs(t *testing.T, secret *corev1.Secret) redpanda.Parti
 	}
 }
 
-func kafkaListenerTest(ctx context.Context, rpk Client) error {
+func kafkaListenerTest(ctx context.Context, rpk *Client) error {
 	input := "test-input"
 	topicName := "testTopic"
 	_, err := rpk.CreateTopic(ctx, topicName)
@@ -532,7 +500,7 @@ func kafkaListenerTest(ctx context.Context, rpk Client) error {
 	return nil
 }
 
-func adminListenerTest(ctx context.Context, rpk Client) error {
+func adminListenerTest(ctx context.Context, rpk *Client) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -542,7 +510,7 @@ func adminListenerTest(ctx context.Context, rpk Client) error {
 				continue
 			}
 
-			if out["is_healthy"].(bool) {
+			if out.IsHealthy {
 				return nil
 			}
 		case <-deadline:
@@ -553,7 +521,7 @@ func adminListenerTest(ctx context.Context, rpk Client) error {
 	}
 }
 
-func superuserTest(ctx context.Context, rpk Client, superusers ...string) error {
+func superuserTest(ctx context.Context, rpk *Client, superusers ...string) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -594,7 +562,7 @@ func equalElements[T comparable](a, b []T) bool {
 	return true
 }
 
-func schemaRegistryListenerTest(ctx context.Context, rpk Client) ([]byte, string, error) {
+func schemaRegistryListenerTest(ctx context.Context, rpk *Client) ([]byte, string, error) {
 	// Test schema registry
 	// Based on https://docs.redpanda.com/current/manage/schema-reg/schema-reg-api/
 	formats, err := rpk.QuerySupportedFormats(ctx)
@@ -677,7 +645,7 @@ type HTTPResponse []struct {
 	Offset    int     `json:"offset"`
 }
 
-func httpProxyListenerTest(ctx context.Context, rpk Client) error {
+func httpProxyListenerTest(ctx context.Context, rpk *Client) error {
 	// Test http proxy
 	// Based on https://docs.redpanda.com/current/develop/http-proxy/
 	_, err := rpk.ListTopics(ctx)
