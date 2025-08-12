@@ -888,14 +888,14 @@ func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain s
 }
 
 func (l *Listeners) AdminList(replicas int32, fullname, internalDomain string) []string {
-	return ServerList(replicas, "", fullname, internalDomain, l.Admin.Port)
+	return serverList(replicas, "", fullname, internalDomain, l.Admin.Port)
 }
 
 func (l *Listeners) SchemaRegistryList(replicas int32, fullname, internalDomain string) []string {
-	return ServerList(replicas, "", fullname, internalDomain, l.SchemaRegistry.Port)
+	return serverList(replicas, "", fullname, internalDomain, l.SchemaRegistry.Port)
 }
 
-func ServerList(replicas int32, prefix, fullname, internalDomain string, port int32) []string {
+func serverList(replicas int32, prefix, fullname, internalDomain string, port int32) []string {
 	var result []string
 	for i := int32(0); i < replicas; i++ {
 		result = append(result, fmt.Sprintf("%s%s-%d.%s:%d", prefix, fullname, i, internalDomain, int(port)))

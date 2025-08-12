@@ -26,3 +26,6 @@ README.md.gotmpl
 *.go
 testdata/
 ci/
+
+# dlv debug binaries
+debug.*
