@@ -550,7 +550,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.ServerList" (dict "a" (list $replicas "" $fullname $internalDomain ($l.admin.port | int))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.serverList" (dict "a" (list $replicas "" $fullname $internalDomain ($l.admin.port | int))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -563,12 +563,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.ServerList" (dict "a" (list $replicas "" $fullname $internalDomain ($l.schemaRegistry.port | int))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.serverList" (dict "a" (list $replicas "" $fullname $internalDomain ($l.schemaRegistry.port | int))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.ServerList" -}}
+{{- define "redpanda.serverList" -}}
 {{- $replicas := (index .a 0) -}}
 {{- $prefix := (index .a 1) -}}
 {{- $fullname := (index .a 2) -}}

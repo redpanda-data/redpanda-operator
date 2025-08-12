@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package client
 
 import (
 	"context"
@@ -28,9 +28,12 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 var (
@@ -48,6 +51,13 @@ var (
 	supportedSASLMechanisms = []string{
 		"SCRAM-SHA-256", "SCRAM-SHA-512",
 	}
+
+	// permitOutOfClusterDNS controls whether or not this package will use the
+	// provided dialer to approximate "out of cluster DNS" by constructing a
+	// [net.Resolver] that tunnels into a kube-dns Pod. Building with the
+	// integration build tag will set this flag to true as that's the only
+	// environment we expect to use out of cluster DNS.
+	permitOutOfClusterDNS = false
 )
 
 // DialContextFunc is a function that acts as a dialer for the underlying Kafka client.
@@ -57,16 +67,11 @@ type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn
 // configuration over its internal listeners.
 func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
-	name := redpanda.Fullname(dot)
-	domain := redpanda.InternalDomain(dot)
-	prefix := "http://"
 
-	var tlsConfig *tls.Config
 	var err error
+	var tlsConfig *tls.Config
 
 	if values.Listeners.Admin.TLS.IsEnabled(&values.TLS) {
-		prefix = "https://"
-
 		tlsConfig, err = tlsConfigFromDot(dot, values.Listeners.Admin.TLS)
 		if err != nil {
 			return nil, err
@@ -88,8 +93,17 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt)
 		auth = &rpadmin.NopAuth{}
 	}
 
-	hosts := redpanda.ServerList(values.Statefulset.Replicas, prefix, name, domain, values.Listeners.Admin.Port)
+	records, err := srvLookup(dot, dialer, redpanda.InternalAdminAPIPortName)
+	if err != nil {
+		return nil, err
+	}
 
+	hosts := make([]string, len(records))
+	for i, record := range records {
+		hosts[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
+	}
+
+	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
 	client, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer, opts...)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -102,8 +116,6 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt)
 // configuration over its internal listeners.
 func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
-	name := redpanda.Fullname(dot)
-	domain := redpanda.InternalDomain(dot)
 	prefix := "http://"
 
 	// These transport values come from the TLS client options found here:
@@ -150,7 +162,16 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
 
-	hosts := redpanda.ServerList(values.Statefulset.Replicas, prefix, name, domain, values.Listeners.SchemaRegistry.Port)
+	records, err := srvLookup(dot, dialer, redpanda.InternalAdminAPIPortName)
+	if err != nil {
+		return nil, err
+	}
+
+	hosts := make([]string, len(records))
+	for i, record := range records {
+		hosts[i] = fmt.Sprintf("%s%s:%d", prefix, record.Target, record.Port)
+	}
+
 	copts = append(copts, sr.URLs(hosts...))
 
 	// finally, override any calculated client opts with whatever was
@@ -167,10 +188,16 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 // configuration over its internal listeners.
 func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*kgo.Client, error) {
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
-	name := redpanda.Fullname(dot)
-	domain := redpanda.InternalDomain(dot)
 
-	brokers := redpanda.ServerList(values.Statefulset.Replicas, "", name, domain, values.Listeners.Kafka.Port)
+	records, err := srvLookup(dot, dialer, redpanda.InternalKafkaPortName)
+	if err != nil {
+		return nil, err
+	}
+
+	brokers := make([]string, len(records))
+	for i, record := range records {
+		brokers[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
+	}
 
 	opts = append(opts, kgo.SeedBrokers(brokers...))
 
@@ -414,4 +441,90 @@ func wrapTLSDialer(dialer DialContextFunc, config *tls.Config) DialContextFunc {
 		}
 		return tls.Client(conn, config), nil
 	}
+}
+
+// srvLookup performs an SRV DNS lookup on the given helm release as a form of service discovery.
+//
+// As with all forms of service discovery, this method may miss Pods that are
+// temporarily unavailable at the time of invocation.
+//
+// If dialer is nil, this function assumes that it's being executed from within
+// a Kubernetes and performs a DNS query through the default resolver.
+//
+// See also: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#srv-records
+func srvLookup(dot *helmette.Dot, dialer DialContextFunc, service string) ([]*net.SRV, error) {
+	// To preserve backwards compatibility of the top level client
+	// constructor's methods, we use a context with a static timeout.
+	// While less than ideal, 30s should be a reasonable upper limit for this method.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// A nil / zero resolver is valid. In the case that dialer is nil, we
+	// assume our DNS requests will go to kube-dns and appropriately resolve.
+	var resolver net.Resolver
+
+	// Otherwise we'll perform an out of cluster DNS query. This code block
+	// will only be executed from our test cases (gated on the integration
+	// build tag). It's a bit sketchy but is technically valid / safe to
+	// run outside of test cases. See the below comments for details.
+	//
+	// NB: It may not always be safe to assume that dialer != nil indicates
+	// execution outside of a cluster.
+	if permitOutOfClusterDNS && dialer != nil {
+		ctl, err := kube.FromRESTConfig(dot.KubeConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		resolver = net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, _network, _address string) (net.Conn, error) {
+				// Querying for k8s-app=kube-dns is a generally accepted / safe
+				// way of finding the kube DNS. We could alternatively find the
+				// kube-dns service and use its label selector.
+				pods, err := kube.List[corev1.PodList](ctx, ctl, client.MatchingLabels{
+					"k8s-app": "kube-dns",
+				}, client.InNamespace(metav1.NamespaceSystem))
+				if err != nil {
+					return nil, err
+				}
+
+				if len(pods.Items) == 0 {
+					return nil, errors.New("failed to locate core DNS Pods for out of cluster DNS queries")
+				}
+
+				pod := pods.Items[0]
+
+				// Fun fact: core-dns and most kube-dns implementations are
+				// exposed over TCP in addition to UDP which makes this method
+				// possible.
+				//
+				// This is where things get fairly sketchy.
+				//
+				// We're ignoring network because kubectl portforward doesn't
+				// support UDP, the standard protocol for DNS, and we're
+				// assuming that kube-dns will accept TCP connections. This is
+				// _generally_ a safe assumption.
+				//
+				// We're ignoring address because we don't want to use the
+				// system supplied name servers and instead go directly to
+				// kube-dns. We're also assuming the kube-dns is serving on
+				// port 53, the standard port for DNS. Yet another generally
+				// correct but not bulletproof assumption.
+				//
+				// Furthermore, this dial call will very likely result in
+				// another DNS query being kicked off through the system
+				// resolver to  initiate the portforward. Again, sketchy but
+				// technically OK.
+				return dialer(ctx, "tcp", fmt.Sprintf("%s.%s:53", pod.Name, pod.Namespace))
+			},
+		}
+	}
+
+	_, records, err := resolver.LookupSRV(ctx, service, "tcp", redpanda.InternalDomain(dot))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return records, nil
 }
