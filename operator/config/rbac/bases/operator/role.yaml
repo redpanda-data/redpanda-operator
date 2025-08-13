@@ -145,6 +145,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -158,17 +159,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - nodepools/finalizers
-  - redpandas/finalizers
-  - roles/finalizers
-  - schemas/finalizers
-  - topics/finalizers
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
+  - consoles/status
   - nodepools/status
   - redpandas/status
   - roles/status
@@ -178,6 +169,17 @@ rules:
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools/finalizers
+  - redpandas/finalizers
+  - roles/finalizers
+  - schemas/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
   - update
 - apiGroups:
   - cluster.redpanda.com

@@ -193,6 +193,23 @@ func (c *Ctl) Apply(ctx context.Context, obj Object, opts ...client.PatchOption)
 	return nil
 }
 
+// ApplyStatus "applies" the .Status of the provided [Object] via SSA (Server Side Apply).
+func (c *Ctl) ApplyStatus(ctx context.Context, obj Object, opts ...client.SubResourcePatchOption) error {
+	obj.SetManagedFields(nil)
+
+	if err := setGVK(c.Scheme(), obj); err != nil {
+		return err
+	}
+
+	// Prepend field owner to allow caller's to override it.
+	opts = append([]client.SubResourcePatchOption{c.fieldOwner}, opts...)
+
+	if err := c.client.Status().Patch(ctx, obj, client.Apply, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // ApplyAndWait is the equivalent of calling [Ctl.Apply] followed by [Ctl.WaitFor].
 func (c *Ctl) ApplyAndWait(ctx context.Context, obj Object, cond CondFn[Object]) error {
 	if err := c.Apply(ctx, obj); err != nil {
@@ -250,6 +267,20 @@ func (c *Ctl) CreateAndWait(ctx context.Context, obj Object, cond CondFn[Object]
 		return err
 	}
 	return c.WaitFor(ctx, obj, cond)
+}
+
+func (c *Ctl) Update(ctx context.Context, obj Object, opts ...client.UpdateOption) error {
+	if err := c.client.Update(ctx, obj, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (c *Ctl) UpdateStatus(ctx context.Context, obj Object, opts ...client.SubResourceUpdateOption) error {
+	if err := c.client.Status().Update(ctx, obj, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // Delete declaratively initiates deletion the given [Object].

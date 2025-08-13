@@ -31,15 +31,16 @@ import (
 
 var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.Console(),
 		crds.Redpanda(),
+		crds.Role(),
+		crds.Schema(),
 		crds.Topic(),
 		crds.User(),
-		crds.Schema(),
-		crds.Role(),
 	}
 	vectorizedCRDs = []*apiextensionsv1.CustomResourceDefinition{
-		crds.Cluster(),
-		crds.Console(),
+		crds.VectorizedCluster(),
+		crds.VectorizedConsole(),
 	}
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.NodePool(),

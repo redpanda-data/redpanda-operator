@@ -11,7 +11,7 @@
 {{- break -}}
 {{- end -}}
 {{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list (index $state.Dot.Subcharts "console"))))) "r") -}}
-{{- $staticCfg := (get (fromJson (include "redpanda.toStaticConfig" (dict "a" (list $state)))) "r") -}}
+{{- $staticCfg := (get (fromJson (include "redpanda.RenderState.ToStaticConfig" (dict "a" (list $state)))) "r") -}}
 {{- $overlay := (get (fromJson (include "console.StaticConfigurationSourceToPartialRenderValues" (dict "a" (list $staticCfg)))) "r") -}}
 {{- $_ := (set $consoleState.Values.configmap "create" true) -}}
 {{- $_ := (set $consoleState.Values.deployment "create" true) -}}
@@ -33,7 +33,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.toStaticConfig" -}}
+{{- define "redpanda.RenderState.ToStaticConfig" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}

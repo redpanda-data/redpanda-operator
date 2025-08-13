@@ -32,7 +32,7 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 
 	consoleState := consolechart.DotToState(state.Dot.Subcharts["console"])
 
-	staticCfg := toStaticConfig(state)
+	staticCfg := state.ToStaticConfig()
 	overlay := console.StaticConfigurationSourceToPartialRenderValues(&staticCfg)
 
 	consoleState.Values.ConfigMap.Create = true
@@ -62,44 +62,44 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 	}
 }
 
-func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
-	username := state.Values.Auth.SASL.BootstrapUser.Username()
-	passwordRef := state.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(state))
+func (r *RenderState) ToStaticConfig() ir.StaticConfigurationSource {
+	username := r.Values.Auth.SASL.BootstrapUser.Username()
+	passwordRef := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
 
 	// Kafka API configuration
 	kafkaSpec := &ir.KafkaAPISpec{
-		Brokers: BrokerList(state, state.Values.Listeners.Kafka.Port),
+		Brokers: BrokerList(r, r.Values.Listeners.Kafka.Port),
 	}
 
 	// Add TLS configuration for Kafka if enabled
-	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
-		kafkaSpec.TLS = state.Values.Listeners.Kafka.TLS.ToCommonTLS(state, &state.Values.TLS)
+	if r.Values.Listeners.Kafka.TLS.IsEnabled(&r.Values.TLS) {
+		kafkaSpec.TLS = r.Values.Listeners.Kafka.TLS.ToCommonTLS(r, &r.Values.TLS)
 	}
 
 	// TODO This check may need to be more complex.
 	// There's two cluster configs and then listener level configuration.
 	// Add SASL authentication using bootstrap user if enabled
-	if state.Values.Auth.IsSASLEnabled() {
+	if r.Values.Auth.IsSASLEnabled() {
 		kafkaSpec.SASL = &ir.KafkaSASL{
 			Username: username,
 			Password: ir.SecretKeyRef{
 				Name: passwordRef.Name,
 				Key:  passwordRef.Key,
 			},
-			Mechanism: ir.SASLMechanism(state.Values.Auth.SASL.BootstrapUser.GetMechanism()),
+			Mechanism: ir.SASLMechanism(r.Values.Auth.SASL.BootstrapUser.GetMechanism()),
 		}
 	}
 
 	// Admin API configuration
 	var adminTLS *ir.CommonTLS
 	adminSchema := "http"
-	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
+	if r.Values.Listeners.Admin.TLS.IsEnabled(&r.Values.TLS) {
 		adminSchema = "https"
-		adminTLS = state.Values.Listeners.Admin.TLS.ToCommonTLS(state, &state.Values.TLS)
+		adminTLS = r.Values.Listeners.Admin.TLS.ToCommonTLS(r, &r.Values.TLS)
 	}
 
 	var adminAuth *ir.AdminAuth
-	adminAuthEnabled, _ := state.Values.Config.Cluster["admin_api_require_auth"].(bool)
+	adminAuthEnabled, _ := r.Values.Config.Cluster["admin_api_require_auth"].(bool)
 	if adminAuthEnabled {
 		adminAuth = &ir.AdminAuth{
 			Username: username,
@@ -115,22 +115,22 @@ func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
 		Auth: adminAuth,
 		URLs: []string{
 			// NB: Console uses SRV based service discovery and doesn't require a full list of addresses.
-			fmt.Sprintf("%s://%s:%d", adminSchema, InternalDomain(state), state.Values.Listeners.Admin.Port),
+			fmt.Sprintf("%s://%s:%d", adminSchema, InternalDomain(r), r.Values.Listeners.Admin.Port),
 		},
 	}
 
 	// Schema Registry configuration (if enabled)
 	var schemaRegistrySpec *ir.SchemaRegistrySpec
-	if state.Values.Listeners.SchemaRegistry.Enabled {
+	if r.Values.Listeners.SchemaRegistry.Enabled {
 		var schemaTLS *ir.CommonTLS
 		schemaSchema := "http"
-		if state.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&state.Values.TLS) {
+		if r.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&r.Values.TLS) {
 			schemaSchema = "https"
-			schemaTLS = state.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(state, &state.Values.TLS)
+			schemaTLS = r.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(r, &r.Values.TLS)
 		}
 
 		var schemaURLs []string
-		brokers := BrokerList(state, state.Values.Listeners.SchemaRegistry.Port)
+		brokers := BrokerList(r, r.Values.Listeners.SchemaRegistry.Port)
 		for _, broker := range brokers {
 			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s", schemaSchema, broker))
 		}
@@ -142,7 +142,7 @@ func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
 
 		// TODO: This check is likely incorrect but it matches the historical
 		// behavior.
-		if state.Values.Auth.IsSASLEnabled() {
+		if r.Values.Auth.IsSASLEnabled() {
 			schemaRegistrySpec.SASL = &ir.SchemaRegistrySASL{
 				Username: username,
 				Password: ir.SecretKeyRef{

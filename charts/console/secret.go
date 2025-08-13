@@ -13,18 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 func Secret(state *RenderState) *corev1.Secret {
 	if !state.Values.Secret.Create {
 		return nil
-	}
-
-	jwtSigningKey := state.Values.Secret.Authentication.JWTSigningKey
-	if jwtSigningKey == "" {
-		jwtSigningKey = helmette.RandAlphaNum(32)
 	}
 
 	return &corev1.Secret{
@@ -57,7 +50,7 @@ func Secret(state *RenderState) *corev1.Secret {
 			"schemaregistry-tls-key":      ptr.Deref(state.Values.Secret.SchemaRegistry.TLSKey, ""),
 
 			// Authentication
-			"authentication-jwt-signingkey":     jwtSigningKey,
+			"authentication-jwt-signingkey":     state.Values.Secret.Authentication.JWTSigningKey,
 			"authentication-oidc-client-secret": ptr.Deref(state.Values.Secret.Authentication.OIDC.ClientSecret, ""),
 
 			// License
