@@ -253,7 +253,6 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	ar.configMap(cfg)
-	cm := ar.getConfigMap(cfg)
 	if err = ar.statefulSet(cfg); err != nil {
 		return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
 	}
@@ -309,7 +308,6 @@ func (r *ClusterReconciler) Reconcile(
 		ctx,
 		&vectorizedCluster,
 		cfg,
-		cm,
 		stSets,
 		pki,
 		ar.getHeadlessServiceFQDN(),

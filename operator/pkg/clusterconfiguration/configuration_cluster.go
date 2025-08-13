@@ -2,7 +2,6 @@ package clusterconfiguration
 
 import (
 	"context"
-	"crypto/md5" //nolint:gosec // this is not encrypting secure info
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -242,28 +241,4 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 	}
 	c.concrete = properties
 	return properties, nil
-}
-
-// criticalClusterConfigurationHash is a short-term helper to handle checking of cluster configuration.
-// It hashes only properties that require a restart.
-func criticalClusterConfigurationHash(
-	concreteCfg map[string]any,
-	schema rpadmin.ConfigSchema,
-) (string, error) {
-	// Ignore cluster properties that don't require restart
-	criticalCfg := make(map[string]any)
-	for k, v := range concreteCfg {
-		// Unknown properties should be ignored as they might be user errors
-		if meta, ok := schema[k]; ok && meta.NeedsRestart {
-			criticalCfg[k] = v
-		}
-	}
-	// Hash this using the json-marshalled format.
-	buf, err := json.Marshal(criticalCfg)
-	if err != nil {
-		return "", err
-	}
-	// We keep using md5 for having the same format as node hash
-	md5Hash := md5.Sum(buf) //nolint:gosec // this is not encrypting secure info
-	return fmt.Sprintf("%x", md5Hash), nil
 }
