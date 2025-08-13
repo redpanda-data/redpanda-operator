@@ -240,8 +240,9 @@ func TestIntegrationChart(t *testing.T) {
 		assert.NoErrorf(t, kafkaListenerTest(ctx, rpk), "Kafka listener sub test failed")
 		assert.NoErrorf(t, adminListenerTest(ctx, rpk), "Admin listener sub test failed")
 		schemaBytes, retrievedSchema, err := schemaRegistryListenerTest(ctx, rpk)
-		assert.JSONEq(t, string(schemaBytes), retrievedSchema)
-		assert.NoErrorf(t, err, "Schema Registry listener sub test failed")
+		if assert.NoErrorf(t, err, "Schema Registry listener sub test failed") {
+			assert.JSONEq(t, string(schemaBytes), retrievedSchema)
+		}
 		assert.NoErrorf(t, httpProxyListenerTest(ctx, rpk), "HTTP Proxy listener sub test failed")
 	})
 
@@ -654,22 +655,12 @@ func schemaRegistryListenerTest(ctx context.Context, rpk *Client) ([]byte, strin
 		},
 	}
 
-	registeredID, err := rpk.RegisterSchema(ctx, schema)
+	registered, err := rpk.RegisterSchema(ctx, schema)
 	if err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	var id float64
-	if idForSchema, ok := registeredID["id"]; ok {
-		id = idForSchema.(float64)
-	}
-
-	schemaBytes, err := json.Marshal(schema)
-	if err != nil {
-		return nil, "", errors.WithStack(err)
-	}
-
-	retrievedSchema, err := rpk.RetrieveSchema(ctx, int(id))
+	retrievedSchema, err := rpk.RetrieveSchema(ctx, registered.ID)
 	if err != nil {
 		return nil, "", errors.WithStack(err)
 	}
@@ -679,20 +670,18 @@ func schemaRegistryListenerTest(ctx context.Context, rpk *Client) ([]byte, strin
 		return nil, "", errors.WithStack(err)
 	}
 	if resp[0] != "sensor-value" {
-		return nil, "", fmt.Errorf("expected sensor-value %s, got %s", resp[0], registeredID["id"])
+		return nil, "", fmt.Errorf("expected sensor-value %d, got %q", registered.ID, resp[0])
 	}
 
-	_, err = rpk.SoftDeleteSchema(ctx, resp[0], int(id))
-	if err != nil {
+	if err := rpk.SoftDeleteSchema(ctx, resp[0], registered.ID); err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	_, err = rpk.HardDeleteSchema(ctx, resp[0], int(id))
-	if err != nil {
+	if err := rpk.HardDeleteSchema(ctx, resp[0], registered.ID); err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	return schemaBytes, retrievedSchema, nil
+	return []byte(registered.Schema.Schema), retrievedSchema.Schema, nil
 }
 
 type HTTPResponse []struct {

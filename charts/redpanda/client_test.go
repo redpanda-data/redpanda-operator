@@ -25,6 +25,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/portforward"
 	"sigs.k8s.io/yaml"
@@ -37,10 +38,9 @@ import (
 )
 
 type Client struct {
-	Ctl           *kube.Ctl
-	dot           *helmette.Dot
-	schemaClients map[string]*portForwardClient
-	proxyClients  map[string]*portForwardClient
+	Ctl          *kube.Ctl
+	dot          *helmette.Dot
+	proxyClients map[string]*portForwardClient
 }
 
 func newClient(t *testing.T, ctl *kube.Ctl, release *helm.Release, values any) *Client {
@@ -172,232 +172,96 @@ func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 }
 
 func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
-	pod, err := c.getStsPod(ctx, 0)
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
 
-	client := c.schemaClients[pod.Name]
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://127.0.0.1:%d/schemas/types", client.schema, client.exposedPort), nil)
+	types, err := srClient.SupportedTypes(ctx)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if res.StatusCode > 299 {
-		return nil, errors.New("response above 299 HTTP code")
-	}
-
-	var formats []string
-	if err = json.Unmarshal(body, &formats); err != nil {
-		return nil, errors.WithStack(err)
+	formats := make([]string, len(types))
+	for i, t := range types {
+		formats[i] = t.String()
 	}
 
 	return formats, nil
 }
 
-func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (map[string]any, error) {
-	pod, err := c.getStsPod(ctx, 0)
+func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (sr.SubjectSchema, error) {
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
-		return nil, err
+		return sr.SubjectSchema{}, err
 	}
 
-	client := c.schemaClients[pod.Name]
-
-	schemaStr, err := json.Marshal(schema)
+	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		return nil, err
+		return sr.SubjectSchema{}, nil
 	}
 
-	payload := map[string]any{
-		"schema": string(schemaStr),
-	}
-
-	payloadStr, err := json.Marshal(payload)
+	subject, err := srClient.CreateSchema(ctx, "sensor-value", sr.Schema{
+		Schema: string(schemaBytes),
+	})
 	if err != nil {
-		return nil, err
+		return sr.SubjectSchema{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s://127.0.0.1:%d/subjects/sensor-value/versions", client.schema, client.exposedPort), bytes.NewReader(payloadStr))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.schemaregistry.v1+json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if res.StatusCode > 299 {
-		return nil, errors.New("response above 299 HTTP code")
-	}
-
-	var resp map[string]any
-	if err = json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return subject, nil
 }
 
-func (c *Client) RetrieveSchema(ctx context.Context, id int) (string, error) {
-	pod, err := c.getStsPod(ctx, 0)
+func (c *Client) RetrieveSchema(ctx context.Context, id int) (sr.Schema, error) {
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
-		return "", err
+		return sr.Schema{}, err
 	}
 
-	client := c.schemaClients[pod.Name]
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://127.0.0.1:%d/schemas/ids/%d", client.schema, client.exposedPort, id), nil)
+	schema, err := srClient.SchemaByID(ctx, id)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return sr.Schema{}, err
 	}
 
-	res, err := client.Do(req)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	if res.StatusCode > 299 {
-		return "", errors.New("response above 299 HTTP code")
-	}
-
-	var resp map[string]any
-	if err = json.Unmarshal(body, &resp); err != nil {
-		return "", err
-	}
-
-	return resp["schema"].(string), nil
+	return schema, nil
 }
 
 func (c *Client) ListRegistrySubjects(ctx context.Context) ([]string, error) {
-	pod, err := c.getStsPod(ctx, 0)
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
 
-	client := c.schemaClients[pod.Name]
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://127.0.0.1:%d/subjects", client.schema, client.exposedPort), nil)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if res.StatusCode > 299 {
-		return nil, errors.New("response above 299 HTTP code")
-	}
-
-	var resp []string
-	if err = json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return srClient.Subjects(ctx)
 }
 
-func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version int) (string, error) {
-	pod, err := c.getStsPod(ctx, 0)
+func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version int) error {
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	client := c.schemaClients[pod.Name]
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s://127.0.0.1:%d/subjects/%s/versions/%d", client.schema, client.exposedPort, subject, version), nil)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	// When soft delete is called for second time the code would be 404 (Not Found)
-	// and the body mentioned that subject `was soft deleted.Set permanent=true
-	// to delete permanently`.
-	if res.StatusCode > 299 && res.StatusCode != 404 {
-		return "", errors.Newf("response above 299 HTTP code (Status Code: %d) (Body: %s)", res.StatusCode, body)
-	}
-
-	return string(body), nil
+	return srClient.DeleteSchema(ctx, subject, version, sr.SoftDelete)
 }
 
-func (c *Client) HardDeleteSchema(ctx context.Context, subject string, version int) (string, error) {
-	pod, err := c.getStsPod(ctx, 0)
+func (c *Client) HardDeleteSchema(ctx context.Context, subject string, version int) error {
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	_, err = c.SoftDeleteSchema(ctx, subject, version)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	client := c.schemaClients[pod.Name]
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s://127.0.0.1:%d/subjects/%s/versions/%d?permanent=true", client.schema, client.exposedPort, subject, version), nil)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	if res.StatusCode > 299 {
-		return "", errors.New("response above 299 HTTP code")
-	}
-
-	return string(body), nil
+	return srClient.DeleteSchema(ctx, subject, version, sr.HardDelete)
 }
 
 func (c *Client) ListTopics(ctx context.Context) ([]string, error) {
@@ -522,10 +386,6 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 		return cleanup, errors.WithStack(err)
 	}
 
-	if c.schemaClients == nil {
-		c.schemaClients = make(map[string]*portForwardClient)
-	}
-
 	if c.proxyClients == nil {
 		c.proxyClients = make(map[string]*portForwardClient)
 	}
@@ -540,24 +400,7 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.dot.Release.Name, "default", "cert")
 
 	secretName := defaultSecretName
-	cert := values.TLS.Certs[values.Listeners.SchemaRegistry.TLS.Cert]
-	if ref := cert.ClientSecretRef; ref != nil {
-		secretName = ref.Name
-	}
-
-	schemaClient, err := c.createClient(ctx,
-		getInternalPort(rpYaml.SchemaRegistry.SchemaRegistryAPI, availablePorts),
-		isTLSEnabled(rpYaml.SchemaRegistry.SchemaRegistryAPITLS),
-		isMutualTLSEnabled(rpYaml.SchemaRegistry.SchemaRegistryAPITLS),
-		secretName)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	c.schemaClients[pod.Name] = schemaClient
-
-	secretName = defaultSecretName
-	cert = values.TLS.Certs[values.Listeners.HTTP.TLS.Cert]
+	cert := values.TLS.Certs[values.Listeners.HTTP.TLS.Cert]
 	if ref := cert.ClientSecretRef; ref != nil {
 		secretName = ref.Name
 	}
