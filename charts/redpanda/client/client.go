@@ -162,7 +162,7 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
 
-	records, err := srvLookup(dot, dialer, redpanda.InternalAdminAPIPortName)
+	records, err := srvLookup(dot, dialer, redpanda.InternalSchemaRegistryPortName)
 	if err != nil {
 		return nil, err
 	}
