@@ -31,10 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 type Env struct {
@@ -94,7 +94,7 @@ func New(t *testing.T, options Options) *Env {
 	config := host.RESTConfig()
 
 	if !options.SkipVCluster {
-		cluster, err = vcluster.New(ctx, host)
+		cluster, err = vcluster.New(ctx, host.RESTConfig())
 		require.NoError(t, err)
 		config = cluster.RESTConfig()
 	}
