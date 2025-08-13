@@ -56,6 +56,10 @@ func DotToState(dot *helmette.Dot) *console.RenderState {
 	values := helmette.Unwrap[Values](dot.Values)
 	templater := &templater{Dot: dot, FauxDot: newFauxDot(dot)}
 
+	if values.RenderValues.Secret.Authentication.JWTSigningKey == "" {
+		values.RenderValues.Secret.Authentication.JWTSigningKey = helmette.RandAlphaNum(32)
+	}
+
 	return &console.RenderState{
 		ReleaseName: dot.Release.Name,
 		Namespace:   dot.Release.Namespace,

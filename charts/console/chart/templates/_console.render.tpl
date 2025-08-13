@@ -87,6 +87,15 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "console.Types" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) "status" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict "scaleTargetRef" (dict "kind" "" "name" "") "maxReplicas" 0) "status" (dict "desiredReplicas" 0 "currentMetrics" (coalesce nil))) (dict)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "console.cleanForK8s" -}}
 {{- $s := (index .a 0) -}}
 {{- range $_ := (list 1) -}}

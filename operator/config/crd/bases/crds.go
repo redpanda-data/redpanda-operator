@@ -89,6 +89,11 @@ func Redpanda() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("redpandas.cluster.redpanda.com"))
 }
 
+// Console returns the Redpanda CustomResourceDefinition.
+func Console() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("consoles.cluster.redpanda.com"))
+}
+
 // Topic returns the Topic CustomResourceDefinition.
 func Topic() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("topics.cluster.redpanda.com"))
@@ -114,13 +119,13 @@ func NodePool() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("nodepools.cluster.redpanda.com"))
 }
 
-// Cluster returns the Cluster CustomResourceDefinition.
-func Cluster() *apiextensionsv1.CustomResourceDefinition {
+// VectorizedCluster returns the Cluster CustomResourceDefinition.
+func VectorizedCluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("clusters.redpanda.vectorized.io"))
 }
 
 // Console returns the Console CustomResourceDefinition.
-func Console() *apiextensionsv1.CustomResourceDefinition {
+func VectorizedConsole() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("consoles.redpanda.vectorized.io"))
 }
 
