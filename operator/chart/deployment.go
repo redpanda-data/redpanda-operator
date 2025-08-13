@@ -315,7 +315,8 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--health-probe-bind-address": ":8081",
 		"--metrics-bind-address":      ":8443",
 		"--leader-elect":              "",
-		"--log-level":                 fmt.Sprintf("%q", values.LogLevel),
+		"--enable-console":            "true",
+		"--log-level":                 values.LogLevel,
 		"--webhook-enabled":           fmt.Sprintf("%t", values.Webhook.Enabled),
 		// If --configurator-base-image and --configurator-tag haven't been
 		// specified, set them to the image specified in this chart. This ensures
@@ -323,7 +324,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 		// deploying itself for other purposes, like the sidecar, initcontainer, or
 		// configurator.
 		"--configurator-tag":              containerTag(dot),
-		"--configurator-base-image":       fmt.Sprintf("%q", values.Image.Repository),
+		"--configurator-base-image":       values.Image.Repository,
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
 	}
 

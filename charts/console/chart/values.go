@@ -17,12 +17,10 @@ import (
 type Values struct {
 	console.RenderValues `json:",inline"`
 
-	Globals          map[string]any    `json:"global,omitempty"`
-	Enabled          *bool             `json:"enabled,omitempty"`
-	CommonLabels     map[string]string `json:"commonLabels"`
-	NameOverride     string            `json:"nameOverride"`
-	FullnameOverride string            `json:"fullnameOverride"`
-	Tests            Enableable        `json:"tests"`
+	Globals      map[string]any    `json:"global,omitempty"`
+	Enabled      *bool             `json:"enabled,omitempty"`
+	CommonLabels map[string]string `json:"commonLabels"`
+	Tests        Enableable        `json:"tests"`
 }
 
 type Enableable struct {

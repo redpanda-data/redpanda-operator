@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func listFor(scheme *runtime.Scheme, obj Object) (ObjectList, error) {
+func ListFor(scheme *runtime.Scheme, obj Object) (ObjectList, error) {
 	gvk, err := GVKFor(scheme, obj)
 	if err != nil {
 		return nil, err

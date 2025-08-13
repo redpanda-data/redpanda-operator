@@ -186,6 +186,9 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// Pod eviction happens in a timely fashion.
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
+		// Disable the traefik Ingress controller. We don't use Ingress for
+		// anything and will install a standalone version if one is required.
+		`--k3s-arg`, `--disable=traefik@server:*`,
 		`--verbose`,
 	}
 

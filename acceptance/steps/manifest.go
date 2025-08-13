@@ -26,7 +26,9 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 	file, err := os.CreateTemp("", "manifest-*.yaml")
 	require.NoError(t, err)
 
-	_, err = file.Write(normalizeContent(t, manifest.Content))
+	content := PatchManifest(t, manifest.Content)
+
+	_, err = file.Write(normalizeContent(t, content))
 	require.NoError(t, err)
 	require.NoError(t, file.Close())
 
@@ -97,6 +99,8 @@ func PatchManifest(t framework.TestingT, content string) string {
 			return DefaultRedpandaRepo
 		case "DEFAULT_REDPANDA_TAG":
 			return DefaultRedpandaTag
+		case "NAMESPACE":
+			return t.Namespace()
 		}
 
 		t.Fatalf("unhandled expansion: %s", key)

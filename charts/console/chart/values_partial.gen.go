@@ -22,8 +22,6 @@ type PartialValues struct {
 	Globals                     map[string]any     "json:\"global,omitempty\""
 	Enabled                     *bool              "json:\"enabled,omitempty\""
 	CommonLabels                map[string]string  "json:\"commonLabels,omitempty\""
-	NameOverride                *string            "json:\"nameOverride,omitempty\""
-	FullnameOverride            *string            "json:\"fullnameOverride,omitempty\""
 	Tests                       *PartialEnableable "json:\"tests,omitempty\""
 }
 
