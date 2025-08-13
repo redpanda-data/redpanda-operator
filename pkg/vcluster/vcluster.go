@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -29,18 +28,18 @@ const (
 )
 
 type Cluster struct {
-	config    *kube.RESTConfig
-	helm      *helm.Client
-	release   helm.Release
-	host      *k3d.Cluster
-	namespace *corev1.Namespace
+	config     *kube.RESTConfig
+	hostConfig *kube.RESTConfig
+	helm       *helm.Client
+	release    helm.Release
+	namespace  *corev1.Namespace
 }
 
-func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
+func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
-	c, err := client.New(host.RESTConfig(), client.Options{})
+	c, err := client.New(config, client.Options{})
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -55,7 +54,7 @@ func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
 	}
 
 	hc, err := helm.New(helm.Options{
-		KubeConfig: host.RESTConfig(),
+		KubeConfig: config,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -127,7 +126,7 @@ func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
 	}
 
 	// To access the vCluster's API server, we dial into the api-server Pod on the host.
-	dialer := kube.NewPodDialer(host.RESTConfig())
+	dialer := kube.NewPodDialer(config)
 
 	cfg.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
 		// It's fairly safe to assume that all connections are meant for the
@@ -138,11 +137,11 @@ func New(ctx context.Context, host *k3d.Cluster) (*Cluster, error) {
 	}
 
 	return &Cluster{
-		config:    cfg,
-		helm:      hc,
-		release:   rel,
-		host:      host,
-		namespace: namespace,
+		config:     cfg,
+		helm:       hc,
+		release:    rel,
+		hostConfig: config,
+		namespace:  namespace,
 	}, nil
 }
 
@@ -194,14 +193,9 @@ func (c *Cluster) PortForwardedRESTConfig(ctx context.Context) (*kube.RESTConfig
 	return cfg, nil
 }
 
-// Host returns the host Cluster this vCluster is deployed onto.
-func (c *Cluster) Host() *k3d.Cluster {
-	return c.host
-}
-
 // Delete deletes this vCluster by deleting the Namespace it's deployed into.
 func (c *Cluster) Delete() error {
-	client, err := client.New(c.host.RESTConfig(), client.Options{})
+	client, err := client.New(c.hostConfig, client.Options{})
 	if err != nil {
 		return err
 	}
