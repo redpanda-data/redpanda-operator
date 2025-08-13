@@ -43,6 +43,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
@@ -54,6 +55,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
@@ -428,6 +430,25 @@ func Run(
 			setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 			return err
 		}
+	}
+
+	ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+		Options: client.Options{
+			Scheme: mgr.GetScheme(),
+			// mgr's GetClient sets the cache, to have a fully compatible ctl, we
+			// need to set the cache as well.
+			Cache: &client.CacheOptions{
+				Reader: mgr.GetCache(),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Console")
+		return err
 	}
 
 	// ShadowLink Reconciler

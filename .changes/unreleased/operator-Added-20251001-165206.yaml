@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Added a new `Console` CRD for managing a [Redpanda Console](https://github.com/redpanda-data/console/) deployments. For examples, see [`acceptance/features/console.feature`](../acceptance/features/console.feature).
+time: 2025-10-01T16:52:06.679323-04:00
