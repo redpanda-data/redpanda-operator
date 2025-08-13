@@ -203,6 +203,9 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
+        # Minor speed up only building the acceptance package, which (surprise
+        # surprise) is the only package with acceptance tests.
+        PKG: ./acceptance/
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 35m -tags acceptance'
 
   test:pull-images:

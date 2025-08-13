@@ -784,10 +784,19 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 	clusterRole := roles[0].(*rbacv1.ClusterRole)
 
 	// Inject additional permissions required for running in testenv.
-	role.Rules = append(role.Rules, rbacv1.PolicyRule{
+	// For this style of tests we port-forward into Pods to emulate "in-cluster networking"
+	// and we need list and get pods in kube-system to emulate in cluster DNS.
+	// As our client is namespace scoped, it's non-trivial to make a kube-system
+	// dedicated role so we're settling with overscoped Pod get and list
+	// permissions.
+	clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
 		APIGroups: []string{""},
 		Resources: []string{"pods/portforward"},
 		Verbs:     []string{"*"},
+	}, rbacv1.PolicyRule{
+		APIGroups: []string{""},
+		Resources: []string{"pods"},
+		Verbs:     []string{"get", "list"},
 	})
 
 	name := "testenv-" + testenv.RandString(6)
