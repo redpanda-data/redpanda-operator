@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Scaling down a cluster when the controller leader is one of the Brokers to be decommissioned now works as expected.
+time: 2025-08-13T10:25:27.101819-04:00
