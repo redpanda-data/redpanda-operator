@@ -1,4 +1,4 @@
-@isolated
+@vcluster @isolated
 Feature: stub
   Scenario Outline: templated stub
     Given there is a stub

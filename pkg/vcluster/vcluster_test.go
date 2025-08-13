@@ -16,10 +16,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 func TestIntegrationVCluster(t *testing.T) {
@@ -30,7 +30,7 @@ func TestIntegrationVCluster(t *testing.T) {
 	host, err := k3d.GetShared()
 	require.NoError(t, err)
 
-	cluster, err := vcluster.New(ctx, host)
+	cluster, err := vcluster.New(ctx, host.RESTConfig())
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
