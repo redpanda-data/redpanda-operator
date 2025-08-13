@@ -34,6 +34,7 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 			Enabled: true,
 			Subject: ServiceAccountName(dot),
 			RuleFiles: map[string]bool{
+				"files/rbac/console.ClusterRole.yaml":         true,
 				"files/rbac/leader-election.ClusterRole.yaml": true,
 				"files/rbac/leader-election.Role.yaml":        true,
 				"files/rbac/pvcunbinder.ClusterRole.yaml":     true,
@@ -111,6 +112,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			continue
 		}
 
+		// TODO might be nice to do a bit of de-duplication of rules.
 		var rules []rbacv1.PolicyRule
 		for file, enabled := range helmette.SortedMap(bundle.RuleFiles) {
 			if !enabled {

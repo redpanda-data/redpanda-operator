@@ -174,7 +174,7 @@ func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
 			return nil, err
 		}
 
-		list, err := listFor(s.Ctl.client.Scheme(), t)
+		list, err := ListFor(s.Ctl.client.Scheme(), t)
 		if err != nil {
 			return nil, err
 		}

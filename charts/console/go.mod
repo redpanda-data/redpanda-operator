@@ -4,6 +4,7 @@ go 1.24.3
 
 require (
 	github.com/cloudhut/common v0.11.0
+	github.com/cockroachdb/errors v1.11.3
 	github.com/google/gofuzz v1.2.0
 	github.com/redpanda-data/console/backend v0.0.0-20250915195818-3cd9fabec94b
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
@@ -37,7 +38,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect

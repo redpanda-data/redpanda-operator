@@ -43,6 +43,8 @@ tasks:
           PATH: ./internal/controller/pvcunbinder
         - NAME: v2-manager
           PATH: ./internal/controller/redpanda
+        - NAME: console
+          PATH: ./internal/controller/console
         - NAME: v1-manager
           PATH: ./internal/controller/vectorized
         - NAME: decommission
@@ -88,7 +90,8 @@ tasks:
           ./config/rbac/itemized/sidecar.yaml \
           ./config/rbac/itemized/crd-installation.yaml \
           ./config/rbac/itemized/v1-manager.yaml \
-          ./config/rbac/itemized/v2-manager.yaml
+          ./config/rbac/itemized/v2-manager.yaml \
+          ./config/rbac/itemized/console.yaml
 
       # Some integration tests use their RBAC declarations but generally
       # require some additional permissions (e.g. leader election, running
@@ -119,6 +122,10 @@ tasks:
         ./api/redpanda/v1alpha2
       - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+
+      # Generate rote conversion functions.
+      # Must run after deepcopy is generated.
+      - goverter gen ./api/redpanda/v1alpha2/
 
   generate:crd-docs:
     desc: Generates an example ascii doc from our crd-ref-docs configuration.

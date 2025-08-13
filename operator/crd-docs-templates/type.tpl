@@ -1,6 +1,6 @@
 {{- define "type" -}}
 {{- $type := . -}}
-{{- if asciidocShouldRenderType $type -}}
+{{- if and (asciidocShouldRenderType $type) (not $type.Markers.hidefromdoc) -}}
 
 [id="{{ asciidocTypeID $type | asciidocRenderAnchorID }}"]
 ==== {{ $type.Name  }}
@@ -16,10 +16,17 @@
 {{- end }}
 {{- end }}
 
-{{ if $type.References -}}
+{{- $references := list -}}
+{{- range $type.SortedReferences -}}
+{{- if (not .Markers.hidefromdoc) -}}
+{{- $references = (append $references .) -}}
+{{- end -}}
+{{- end }}
+
+{{ if $references -}}
 .Appears In:
 ****
-{{- range $type.SortedReferences }}
+{{- range $references }}
 - {{ asciidocRenderTypeLink . }}
 {{- end }}
 ****

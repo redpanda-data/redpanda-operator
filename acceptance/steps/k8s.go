@@ -10,19 +10,25 @@
 package steps
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/cucumber/godog"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // this is a nasty hack due to the fact that we can't disable the linter for typecheck
@@ -155,4 +161,31 @@ func execJSONPath(ctx context.Context, t framework.TestingT, jsonPath, groupVers
 		}
 	}
 	return nil
+}
+
+func iExecInPodMatching(
+	ctx context.Context,
+	t framework.TestingT,
+	cmd,
+	selectorStr string,
+	expected *godog.DocString,
+) {
+	selector, err := labels.Parse(selectorStr)
+	require.NoError(t, err)
+
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	pods, err := kube.List[corev1.PodList](ctx, ctl, t.Namespace(), client.MatchingLabelsSelector{Selector: selector})
+	require.NoError(t, err)
+
+	require.True(t, len(pods.Items) > 0, "selector %q found no Pods", selector.String())
+
+	var stdout bytes.Buffer
+	require.NoError(t, ctl.Exec(ctx, &pods.Items[0], kube.ExecOptions{
+		Command: []string{"sh", "-c", cmd},
+		Stdout:  &stdout,
+	}))
+
+	assert.Equal(t, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
 }

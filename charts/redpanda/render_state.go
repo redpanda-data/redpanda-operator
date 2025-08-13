@@ -18,6 +18,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
 // RenderState contains contextual information about the current rendering of
@@ -92,5 +93,106 @@ func (r *RenderState) FetchStatefulSetPodSelector() {
 			r.StatefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
 			r.StatefulSetSelector = existing.Spec.Selector.MatchLabels
 		}
+	}
+}
+
+func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
+	username := r.Values.Auth.SASL.BootstrapUser.Username()
+	passwordRef := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
+
+	// Kafka API configuration
+	kafkaSpec := &ir.KafkaAPISpec{
+		Brokers: BrokerList(r, r.Values.Listeners.Kafka.Port),
+	}
+
+	// Add TLS configuration for Kafka if enabled
+	if r.Values.Listeners.Kafka.TLS.IsEnabled(&r.Values.TLS) {
+		kafkaSpec.TLS = r.Values.Listeners.Kafka.TLS.ToCommonTLS(r, &r.Values.TLS)
+	}
+
+	// TODO This check may need to be more complex.
+	// There's two cluster configs and then listener level configuration.
+	// Add SASL authentication using bootstrap user if enabled
+	if r.Values.Auth.IsSASLEnabled() {
+		kafkaSpec.SASL = &ir.KafkaSASL{
+			Username: username,
+			Password: ir.SecretKeyRef{
+				Namespace: r.Release.Namespace,
+				Name:      passwordRef.Name,
+				Key:       passwordRef.Key,
+			},
+			Mechanism: ir.SASLMechanism(r.Values.Auth.SASL.BootstrapUser.GetMechanism()),
+		}
+	}
+
+	// Admin API configuration
+	var adminTLS *ir.CommonTLS
+	adminSchema := "http"
+	if r.Values.Listeners.Admin.TLS.IsEnabled(&r.Values.TLS) {
+		adminSchema = "https"
+		adminTLS = r.Values.Listeners.Admin.TLS.ToCommonTLS(r, &r.Values.TLS)
+	}
+
+	var adminAuth *ir.AdminAuth
+	adminAuthEnabled, _ := r.Values.Config.Cluster["admin_api_require_auth"].(bool)
+	if adminAuthEnabled {
+		adminAuth = &ir.AdminAuth{
+			Username: username,
+			Password: ir.SecretKeyRef{
+				Namespace: r.Release.Namespace,
+				Name:      passwordRef.Name,
+				Key:       passwordRef.Key,
+			},
+		}
+	}
+
+	adminSpec := &ir.AdminAPISpec{
+		TLS:  adminTLS,
+		Auth: adminAuth,
+		URLs: []string{
+			// NB: Console uses SRV based service discovery and doesn't require a full list of addresses.
+			fmt.Sprintf("%s://%s:%d", adminSchema, InternalDomain(r), r.Values.Listeners.Admin.Port),
+		},
+	}
+
+	// Schema Registry configuration (if enabled)
+	var schemaRegistrySpec *ir.SchemaRegistrySpec
+	if r.Values.Listeners.SchemaRegistry.Enabled {
+		var schemaTLS *ir.CommonTLS
+		schemaSchema := "http"
+		if r.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&r.Values.TLS) {
+			schemaSchema = "https"
+			schemaTLS = r.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(r, &r.Values.TLS)
+		}
+
+		var schemaURLs []string
+		brokers := BrokerList(r, r.Values.Listeners.SchemaRegistry.Port)
+		for _, broker := range brokers {
+			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s", schemaSchema, broker))
+		}
+
+		schemaRegistrySpec = &ir.SchemaRegistrySpec{
+			URLs: schemaURLs,
+			TLS:  schemaTLS,
+		}
+
+		// TODO: This check is likely incorrect but it matches the historical
+		// behavior.
+		if r.Values.Auth.IsSASLEnabled() {
+			schemaRegistrySpec.SASL = &ir.SchemaRegistrySASL{
+				Username: username,
+				Password: ir.SecretKeyRef{
+					Namespace: r.Release.Namespace,
+					Name:      passwordRef.Name,
+					Key:       passwordRef.Key,
+				},
+			}
+		}
+	}
+
+	return ir.StaticConfigurationSource{
+		Kafka:          kafkaSpec,
+		Admin:          adminSpec,
+		SchemaRegistry: schemaRegistrySpec,
 	}
 }

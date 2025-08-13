@@ -43,6 +43,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
@@ -54,6 +55,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
@@ -86,6 +88,7 @@ type RunOptions struct {
 
 	enableV2NodepoolController          bool
 	enableShadowLinksController         bool
+	enableConsoleController             bool
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
 	secureMetrics                       bool
@@ -139,6 +142,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 
 	// Controller flags.
+	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", false, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableShadowLinksController, "enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
@@ -426,6 +430,28 @@ func Run(
 			Client: mgr.GetClient(),
 		}).SetupWithManager(ctx, mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+			return err
+		}
+	}
+
+	// Console Reconciler.
+	if opts.enableConsoleController {
+		ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+			Options: client.Options{
+				Scheme: mgr.GetScheme(),
+				// mgr's GetClient sets the cache, to have a fully compatible ctl, we
+				// need to set the cache as well.
+				Cache: &client.CacheOptions{
+					Reader: mgr.GetCache(),
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Console")
 			return err
 		}
 	}

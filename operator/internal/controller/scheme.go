@@ -24,18 +24,18 @@ import (
 
 var (
 	v1SchemeFns = []func(s *runtime.Scheme) error{
-		clientgoscheme.AddToScheme,
-		certmanagerv1.AddToScheme,
-		vectorizedv1alpha1.Install,
 		apiextensionsv1.AddToScheme,
+		certmanagerv1.AddToScheme,
+		clientgoscheme.AddToScheme,
+		vectorizedv1alpha1.Install,
 	}
 	v2SchemeFns = []func(s *runtime.Scheme) error{
-		clientgoscheme.AddToScheme,
+		apiextensionsv1.AddToScheme,
 		certmanagerv1.AddToScheme,
+		clientgoscheme.AddToScheme,
+		monitoringv1.AddToScheme,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
-		monitoringv1.AddToScheme,
-		apiextensionsv1.AddToScheme,
 	}
 
 	V1Scheme      *runtime.Scheme

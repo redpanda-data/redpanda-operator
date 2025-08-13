@@ -72,6 +72,7 @@ type RedpandaClusterSpec struct {
 	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
 
 	// Defines Redpanda Console settings.
+	// Deprecated: Use the dedicated Console CRD.
 	Console *RedpandaConsole `json:"console,omitempty"`
 
 	// Defines Redpanda Connector settings.

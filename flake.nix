@@ -74,6 +74,7 @@
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum
+              pkgs.goverter
               pkgs.helm-3-10-3
               pkgs.helm-docs
               pkgs.jq

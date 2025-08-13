@@ -149,7 +149,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--log-level" (printf "%q" $values.logLevel) "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" (printf "%q" $values.image.repository) "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
 {{- end -}}
