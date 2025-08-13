@@ -1499,7 +1499,9 @@ spec:
                         type: array
                     type: object
                   console:
-                    description: Defines Redpanda Console settings.
+                    description: |-
+                      Defines Redpanda Console settings.
+                      Deprecated: Use the dedicated Console CRD.
                     properties:
                       affinity:
                         description: Defines affinity rules for Pod assignment.
@@ -22607,7 +22609,9 @@ spec:
                         type: array
                     type: object
                   console:
-                    description: Defines Redpanda Console settings.
+                    description: |-
+                      Defines Redpanda Console settings.
+                      Deprecated: Use the dedicated Console CRD.
                     properties:
                       affinity:
                         description: Defines affinity rules for Pod assignment.

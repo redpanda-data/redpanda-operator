@@ -54,11 +54,38 @@ func TestCtl(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, cms.Items, 3)
 
+	t.Run("Apply", func(t *testing.T) {
+		s := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "conflict-me",
+				Namespace: ns.Name,
+			},
+			Data: map[string][]byte{},
+		}
+
+		require.NoError(t, ctl.Create(t.Context(), s))
+
+		// Modify to change (increment) resource version.
+		// DeepCopy and an explicit scope is used so `s`'s ResourceVersion is unchanged.
+		{
+			s := s.DeepCopy()
+			s.Data = map[string][]byte{"key": []byte("value")}
+			require.NoError(t, ctl.Apply(t.Context(), s))
+		}
+
+		// Update fails with an optimistic locking error as .ResourceVersion is not zero.
+		s.Data = map[string][]byte{"key": []byte("valuevalue")}
+		require.EqualError(t, ctl.Update(ctx, s), "Operation cannot be fulfilled on secrets \"conflict-me\": the object has been modified; please apply your changes to the latest version and try again")
+
+		// Apply succeeds, it does not support optimistic locking.
+		require.NoError(t, ctl.Apply(ctx, s))
+	})
+
 	t.Run("Delete", func(t *testing.T) {
 		s := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "delete-me",
-				Namespace: "hello-world",
+				Namespace: ns.Name,
 				// Set a finalizer to stall deletion.
 				Finalizers: []string{"i-prevent.com/deletion"},
 			},

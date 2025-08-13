@@ -26,7 +26,9 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 	file, err := os.CreateTemp("", "manifest-*.yaml")
 	require.NoError(t, err)
 
-	_, err = file.Write(normalizeContent(t, manifest.Content))
+	content := PatchManifest(t, manifest.Content)
+
+	_, err = file.Write(normalizeContent(t, content))
 	require.NoError(t, err)
 	require.NoError(t, file.Close())
 

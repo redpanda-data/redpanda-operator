@@ -27,6 +27,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
@@ -49,7 +50,7 @@ type NodePoolReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	enqueueNodePoolFromCluster, err := registerClusterSourceIndex(ctx, mgr, "pool", &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
+	enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 	if err != nil {
 		return err
 	}
