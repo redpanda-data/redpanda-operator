@@ -17,12 +17,12 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -61,25 +61,22 @@ func TestEnsure_PDB(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := fake.NewClientBuilder().Build()
-
-			err := vectorizedv1alpha1.AddToScheme(scheme.Scheme)
-			assert.NoError(t, err, tt.name)
+			c := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build()
 
 			if tt.existingObject != nil {
 				tt.existingObject.SetResourceVersion("")
 
-				err = c.Create(context.Background(), tt.existingObject)
+				err := c.Create(context.Background(), tt.existingObject)
 				assert.NoError(t, err, tt.name)
 			}
 
-			err = c.Create(context.Background(), tt.pandaCluster)
+			err := c.Create(context.Background(), tt.pandaCluster)
 			assert.NoError(t, err)
 
 			pdb := res.NewPDB(
 				c,
 				tt.pandaCluster,
-				scheme.Scheme,
+				controller.UnifiedScheme,
 				ctrl.Log.WithName("test"))
 
 			err = pdb.Ensure(context.Background())

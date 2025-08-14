@@ -15,7 +15,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// SchemaStatusApplyConfiguration represents an declarative configuration of the SchemaStatus type for use
+// SchemaStatusApplyConfiguration represents a declarative configuration of the SchemaStatus type for use
 // with apply.
 type SchemaStatusApplyConfiguration struct {
 	ObservedGeneration *int64                           `json:"observedGeneration,omitempty"`
@@ -24,7 +24,7 @@ type SchemaStatusApplyConfiguration struct {
 	SchemaHash         *string                          `json:"schemaHash,omitempty"`
 }
 
-// SchemaStatusApplyConfiguration constructs an declarative configuration of the SchemaStatus type for use with
+// SchemaStatusApplyConfiguration constructs a declarative configuration of the SchemaStatus type for use with
 // apply.
 func SchemaStatus() *SchemaStatusApplyConfiguration {
 	return &SchemaStatusApplyConfiguration{}

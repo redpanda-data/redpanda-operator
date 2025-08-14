@@ -276,7 +276,7 @@ func TestClusterSpecBackwardsCompat(t *testing.T) {
 	cr := unstructured.Unstructured{Object: make(map[string]interface{})}
 	cr.SetNamespace("default")
 	cr.SetName("namespace-selector")
-	cr.SetGroupVersionKind(redpandav1alpha2.GroupVersion.WithKind("Redpanda"))
+	cr.SetGroupVersionKind(redpandav1alpha2.SchemeGroupVersion.WithKind("Redpanda"))
 
 	// Create a minimal redpanda CR with an extranious field in the namespace
 	// selector (which was previously mistyped as a map[string]any).

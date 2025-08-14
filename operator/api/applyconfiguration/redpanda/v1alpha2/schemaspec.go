@@ -15,7 +15,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// SchemaSpecApplyConfiguration represents an declarative configuration of the SchemaSpec type for use
+// SchemaSpecApplyConfiguration represents a declarative configuration of the SchemaSpec type for use
 // with apply.
 type SchemaSpecApplyConfiguration struct {
 	ClusterSource      *ClusterSourceApplyConfiguration     `json:"cluster,omitempty"`
@@ -25,7 +25,7 @@ type SchemaSpecApplyConfiguration struct {
 	CompatibilityLevel *redpandav1alpha2.CompatibilityLevel `json:"compatibilityLevel,omitempty"`
 }
 
-// SchemaSpecApplyConfiguration constructs an declarative configuration of the SchemaSpec type for use with
+// SchemaSpecApplyConfiguration constructs a declarative configuration of the SchemaSpec type for use with
 // apply.
 func SchemaSpec() *SchemaSpecApplyConfiguration {
 	return &SchemaSpecApplyConfiguration{}

@@ -15,13 +15,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PasswordSourceApplyConfiguration represents an declarative configuration of the PasswordSource type for use
+// PasswordSourceApplyConfiguration represents a declarative configuration of the PasswordSource type for use
 // with apply.
 type PasswordSourceApplyConfiguration struct {
 	SecretKeyRef *v1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 
-// PasswordSourceApplyConfiguration constructs an declarative configuration of the PasswordSource type for use with
+// PasswordSourceApplyConfiguration constructs a declarative configuration of the PasswordSource type for use with
 // apply.
 func PasswordSource() *PasswordSourceApplyConfiguration {
 	return &PasswordSourceApplyConfiguration{}

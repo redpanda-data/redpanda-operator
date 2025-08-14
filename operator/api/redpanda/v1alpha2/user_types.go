@@ -24,10 +24,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-func init() {
-	SchemeBuilder.Register(&User{}, &UserList{})
-}
-
 // User defines the CRD for a Redpanda user.
 // +genclient
 // +kubebuilder:object:root=true

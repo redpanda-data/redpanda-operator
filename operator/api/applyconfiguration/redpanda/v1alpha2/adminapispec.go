@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// AdminAPISpecApplyConfiguration represents an declarative configuration of the AdminAPISpec type for use
+// AdminAPISpecApplyConfiguration represents a declarative configuration of the AdminAPISpec type for use
 // with apply.
 type AdminAPISpecApplyConfiguration struct {
 	URLs []string                     `json:"urls,omitempty"`
@@ -19,7 +19,7 @@ type AdminAPISpecApplyConfiguration struct {
 	SASL *AdminSASLApplyConfiguration `json:"sasl,omitempty"`
 }
 
-// AdminAPISpecApplyConfiguration constructs an declarative configuration of the AdminAPISpec type for use with
+// AdminAPISpecApplyConfiguration constructs a declarative configuration of the AdminAPISpec type for use with
 // apply.
 func AdminAPISpec() *AdminAPISpecApplyConfiguration {
 	return &AdminAPISpecApplyConfiguration{}

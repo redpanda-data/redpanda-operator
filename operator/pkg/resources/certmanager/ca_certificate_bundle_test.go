@@ -23,11 +23,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	fake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
@@ -39,13 +39,8 @@ const (
 	ns                       = "default"
 )
 
-func init() {
-	fakeK8sClient := fake.NewClientBuilder().Build()
-	_ = vectorizedv1alpha1.AddToScheme(fakeK8sClient.Scheme())
-}
-
 func TestCreateCACertBundle(t *testing.T) {
-	fakeK8sClient := fake.NewClientBuilder().Build()
+	fakeK8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build()
 	nsPrefix := "test-ns"
 
 	pandaCluster := &vectorizedv1alpha1.Cluster{
@@ -118,7 +113,7 @@ func TestCreateCACertBundle(t *testing.T) {
 }
 
 func TestUpdateCACertBundle(t *testing.T) {
-	fakeK8sClient := fake.NewClientBuilder().Build()
+	fakeK8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build()
 
 	pandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -178,7 +173,7 @@ func TestUpdateCACertBundle(t *testing.T) {
 }
 
 func TestCACertBundleFailures(t *testing.T) {
-	fakeK8sClient := fake.NewClientBuilder().Build()
+	fakeK8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).Build()
 
 	pandaCluster := &vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -245,7 +240,7 @@ func getCertSecretFromFile(filePath string) (*corev1.Secret, error) {
 
 func k8sObject(s []byte) (runtime.Object, error) {
 	// Decode text (yaml/json) to kube api object
-	deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+	deserializer := serializer.NewCodecFactory(controller.UnifiedScheme).UniversalDeserializer()
 	obj, group, err := deserializer.Decode(s, nil, nil)
 	if err != nil {
 		return nil, err

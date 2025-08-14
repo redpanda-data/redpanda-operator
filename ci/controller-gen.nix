@@ -23,7 +23,6 @@ buildGoModule rec {
 
   subPackages = [
     "cmd/controller-gen"
-    "cmd/type-scaffold"
     "cmd/helpgen"
   ];
 

@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// KafkaSASLAWSMskIamApplyConfiguration represents an declarative configuration of the KafkaSASLAWSMskIam type for use
+// KafkaSASLAWSMskIamApplyConfiguration represents a declarative configuration of the KafkaSASLAWSMskIam type for use
 // with apply.
 type KafkaSASLAWSMskIamApplyConfiguration struct {
 	AccessKey    *string                         `json:"accessKey,omitempty"`
@@ -20,7 +20,7 @@ type KafkaSASLAWSMskIamApplyConfiguration struct {
 	UserAgent    *string                         `json:"userAgent,omitempty"`
 }
 
-// KafkaSASLAWSMskIamApplyConfiguration constructs an declarative configuration of the KafkaSASLAWSMskIam type for use with
+// KafkaSASLAWSMskIamApplyConfiguration constructs a declarative configuration of the KafkaSASLAWSMskIam type for use with
 // apply.
 func KafkaSASLAWSMskIam() *KafkaSASLAWSMskIamApplyConfiguration {
 	return &KafkaSASLAWSMskIamApplyConfiguration{}

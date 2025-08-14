@@ -12,19 +12,19 @@
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// ACLRuleApplyConfiguration represents an declarative configuration of the ACLRule type for use
+// ACLRuleApplyConfiguration represents a declarative configuration of the ACLRule type for use
 // with apply.
 type ACLRuleApplyConfiguration struct {
-	Type       *v1alpha2.ACLType                  `json:"type,omitempty"`
+	Type       *redpandav1alpha2.ACLType          `json:"type,omitempty"`
 	Resource   *ACLResourceSpecApplyConfiguration `json:"resource,omitempty"`
 	Host       *string                            `json:"host,omitempty"`
-	Operations []v1alpha2.ACLOperation            `json:"operations,omitempty"`
+	Operations []redpandav1alpha2.ACLOperation    `json:"operations,omitempty"`
 }
 
-// ACLRuleApplyConfiguration constructs an declarative configuration of the ACLRule type for use with
+// ACLRuleApplyConfiguration constructs a declarative configuration of the ACLRule type for use with
 // apply.
 func ACLRule() *ACLRuleApplyConfiguration {
 	return &ACLRuleApplyConfiguration{}
@@ -33,7 +33,7 @@ func ACLRule() *ACLRuleApplyConfiguration {
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *ACLRuleApplyConfiguration) WithType(value v1alpha2.ACLType) *ACLRuleApplyConfiguration {
+func (b *ACLRuleApplyConfiguration) WithType(value redpandav1alpha2.ACLType) *ACLRuleApplyConfiguration {
 	b.Type = &value
 	return b
 }
@@ -57,7 +57,7 @@ func (b *ACLRuleApplyConfiguration) WithHost(value string) *ACLRuleApplyConfigur
 // WithOperations adds the given value to the Operations field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Operations field.
-func (b *ACLRuleApplyConfiguration) WithOperations(values ...v1alpha2.ACLOperation) *ACLRuleApplyConfiguration {
+func (b *ACLRuleApplyConfiguration) WithOperations(values ...redpandav1alpha2.ACLOperation) *ACLRuleApplyConfiguration {
 	for i := range values {
 		b.Operations = append(b.Operations, values[i])
 	}

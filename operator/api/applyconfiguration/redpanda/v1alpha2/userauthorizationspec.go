@@ -12,17 +12,17 @@
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// UserAuthorizationSpecApplyConfiguration represents an declarative configuration of the UserAuthorizationSpec type for use
+// UserAuthorizationSpecApplyConfiguration represents a declarative configuration of the UserAuthorizationSpec type for use
 // with apply.
 type UserAuthorizationSpecApplyConfiguration struct {
-	Type *v1alpha2.AuthorizationType `json:"type,omitempty"`
-	ACLs []ACLRuleApplyConfiguration `json:"acls,omitempty"`
+	Type *redpandav1alpha2.AuthorizationType `json:"type,omitempty"`
+	ACLs []ACLRuleApplyConfiguration         `json:"acls,omitempty"`
 }
 
-// UserAuthorizationSpecApplyConfiguration constructs an declarative configuration of the UserAuthorizationSpec type for use with
+// UserAuthorizationSpecApplyConfiguration constructs a declarative configuration of the UserAuthorizationSpec type for use with
 // apply.
 func UserAuthorizationSpec() *UserAuthorizationSpecApplyConfiguration {
 	return &UserAuthorizationSpecApplyConfiguration{}
@@ -31,7 +31,7 @@ func UserAuthorizationSpec() *UserAuthorizationSpecApplyConfiguration {
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *UserAuthorizationSpecApplyConfiguration) WithType(value v1alpha2.AuthorizationType) *UserAuthorizationSpecApplyConfiguration {
+func (b *UserAuthorizationSpecApplyConfiguration) WithType(value redpandav1alpha2.AuthorizationType) *UserAuthorizationSpecApplyConfiguration {
 	b.Type = &value
 	return b
 }

@@ -15,7 +15,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// SchemaRegistrySASLApplyConfiguration represents an declarative configuration of the SchemaRegistrySASL type for use
+// SchemaRegistrySASLApplyConfiguration represents a declarative configuration of the SchemaRegistrySASL type for use
 // with apply.
 type SchemaRegistrySASLApplyConfiguration struct {
 	Username  *string                         `json:"username,omitempty"`
@@ -24,7 +24,7 @@ type SchemaRegistrySASLApplyConfiguration struct {
 	AuthToken *SecretKeyRefApplyConfiguration `json:"token,omitempty"`
 }
 
-// SchemaRegistrySASLApplyConfiguration constructs an declarative configuration of the SchemaRegistrySASL type for use with
+// SchemaRegistrySASLApplyConfiguration constructs a declarative configuration of the SchemaRegistrySASL type for use with
 // apply.
 func SchemaRegistrySASL() *SchemaRegistrySASLApplyConfiguration {
 	return &SchemaRegistrySASLApplyConfiguration{}

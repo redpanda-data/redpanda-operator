@@ -15,13 +15,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
-// PodTemplateApplyConfiguration represents an declarative configuration of the PodTemplate type for use
+// PodTemplateApplyConfiguration represents a declarative configuration of the PodTemplate type for use
 // with apply.
 type PodTemplateApplyConfiguration struct {
 	v1.PodApplyConfiguration `json:",inline"`
 }
 
-// PodTemplateApplyConfiguration constructs an declarative configuration of the PodTemplate type for use with
+// PodTemplateApplyConfiguration constructs a declarative configuration of the PodTemplate type for use with
 // apply.
 func PodTemplate() *PodTemplateApplyConfiguration {
 	return &PodTemplateApplyConfiguration{}

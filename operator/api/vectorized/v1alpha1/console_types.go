@@ -361,7 +361,3 @@ type ConsoleList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Console `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Console{}, &ConsoleList{})
-}
