@@ -1,0 +1,4 @@
+project: operator
+kind: Removed
+body: The vectorized operator used to use a `centralized-configuration-hash` annotation to drive statefulset restarts. This is now directly performed on the basis of the RP admin API reporting "Needs Restart" for its cluster configuration status. Related annotations are dropped.
+time: 2025-08-13T15:48:34.953961+01:00

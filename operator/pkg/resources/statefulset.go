@@ -26,7 +26,6 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,8 +74,6 @@ const (
 var (
 	// ConfigMapHashAnnotationKey contains the hash of the node local properties of the cluster
 	ConfigMapHashAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/configmap-hash"
-	// CentralizedConfigurationHashAnnotationKey contains the hash of the centralized configuration properties that require a restart when changed
-	CentralizedConfigurationHashAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/centralized-configuration-hash"
 
 	// terminationGracePeriodSeconds should account for additional delay introduced by hooks
 	terminationGracePeriodSeconds int64 = 120
@@ -250,39 +247,6 @@ func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// GetCentralizedConfigurationHashFromCluster retrieves the current centralized configuration hash from the statefulset
-func (r *StatefulSetResource) GetCentralizedConfigurationHashFromCluster(
-	ctx context.Context,
-) (string, error) {
-	existing := appsv1.StatefulSet{}
-	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
-		return "", fmt.Errorf("could not load statefulset for reading the centralized configuration hash: %w", err)
-	}
-	if hash, ok := existing.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey]; ok {
-		return hash, nil
-	}
-	return "", nil
-}
-
-// SetCentralizedConfigurationHashInCluster saves the given centralized configuration hash in the statefulset
-func (r *StatefulSetResource) SetCentralizedConfigurationHashInCluster(
-	ctx context.Context, hash string,
-) error {
-	existing := appsv1.StatefulSet{}
-	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			// No place where to store it
-			return nil
-		}
-		return fmt.Errorf("could not load statefulset for storing the centralized configuration hash: %w", err)
-	}
-	if existing.Spec.Template.Annotations == nil {
-		existing.Spec.Template.Annotations = make(map[string]string)
-	}
-	existing.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey] = hash
-	return r.Update(ctx, &existing)
 }
 
 func preparePVCResource(
