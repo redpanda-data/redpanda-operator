@@ -91,14 +91,6 @@ func (r *StatefulSetResource) runUpdate(
 ) error {
 	log := r.logger.WithName("runUpdate").WithValues("nodepool", r.nodePool.Name)
 
-	// Keep existing central config hash annotation during standard reconciliation
-	if ann, ok := current.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey]; ok {
-		if modified.Spec.Template.Annotations == nil {
-			modified.Spec.Template.Annotations = make(map[string]string)
-		}
-		modified.Spec.Template.Annotations[CentralizedConfigurationHashAnnotationKey] = ann
-	}
-
 	// Check if we should run update on this specific STS.
 
 	log.V(logger.DebugLevel).Info("Checking that we should update")
@@ -637,7 +629,6 @@ func (r *StatefulSetResource) shouldUpdate(
 		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
 		utils.IgnoreAnnotation(redpandaAnnotatorKey),
 		utils.IgnoreAnnotation(labels.NodePoolSpecKey),
-		utils.IgnoreAnnotation(CentralizedConfigurationHashAnnotationKey),
 	}
 	patchResult, err := patch.NewPatchMaker(patch.NewAnnotator(redpandaAnnotatorKey), &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{}).Calculate(current, modified, opts...)
 	if err != nil || patchResult.IsEmpty() {

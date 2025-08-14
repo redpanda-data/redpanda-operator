@@ -183,11 +183,6 @@ func (a *attachedResources) configMap(cfg *clusterconfiguration.CombinedCfg) {
 	a.order = append(a.order, configMap)
 }
 
-func (a *attachedResources) getConfigMap(cfg *clusterconfiguration.CombinedCfg) *resources.ConfigMapResource {
-	a.configMap(cfg)
-	return a.items[configMap].(*resources.ConfigMapResource)
-}
-
 func (a *attachedResources) headlessService() {
 	// if already initialized, exit immediately
 	if _, ok := a.items[headlessService]; ok {

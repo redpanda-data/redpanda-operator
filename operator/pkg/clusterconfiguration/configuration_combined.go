@@ -310,22 +310,6 @@ func (c *CombinedCfg) ReifyClusterConfiguration(
 	return c.Cluster.Reify(ctx, c.reader, c.cloudExpander, schema)
 }
 
-// GetCriticalClusterConfigHash returns md5 hash of the cluster configuration,
-// considering only those elements that are declared to require a restart according
-// to the supplied schema.
-func (c *CombinedCfg) GetCriticalClusterConfigHash(
-	ctx context.Context,
-	schema rpadmin.ConfigSchema,
-) (string, error) {
-	// Concretise the node configuration, weed out anything that would cause
-	// a useless sts restart, and return the resulting hash.
-	clusterConfig, err := c.ReifyClusterConfiguration(ctx, schema)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	return criticalClusterConfigurationHash(clusterConfig, schema)
-}
-
 // clone supplies a serialisation-backed object cloning mechanism for cases where
 // the underlying type doesn't supply a `.Clone()` mechanism.
 func clone[T any](val T) (T, error) {
