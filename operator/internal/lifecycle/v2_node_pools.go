@@ -133,7 +133,8 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 // For now, this concrete implementation just looks for any StatefulSets and says that they are a
 // node pool.
 func isNodePool(object client.Object) bool {
-	return isStatefulSet(object)
+	_, ok := object.(*appsv1.StatefulSet)
+	return ok
 }
 
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.

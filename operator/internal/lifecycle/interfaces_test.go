@@ -364,10 +364,7 @@ func (r *MockNodePoolRenderer) Render(ctx context.Context, cluster *MockCluster)
 }
 
 func (r *MockNodePoolRenderer) IsNodePool(object client.Object) bool {
-	gvk := object.GetObjectKind().GroupVersionKind()
-	if gvk.Group != appsv1.SchemeGroupVersion.Group ||
-		gvk.Version != appsv1.SchemeGroupVersion.Version ||
-		gvk.Kind != "StatefulSet" {
+	if !isNodePool(object) {
 		return false
 	}
 

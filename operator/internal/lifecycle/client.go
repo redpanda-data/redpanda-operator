@@ -11,19 +11,16 @@ package lifecycle
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"maps"
 	"slices"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,11 +46,23 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 // NewResourceClient creates a new instance of a ResourceClient for managing resources.
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
+	ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+		Options: client.Options{
+			Scheme: mgr.GetScheme(),
+			Mapper: mgr.GetRESTMapper(),
+		},
+		FieldManager: string(DefaultFieldOwner),
+	})
+	if err != nil {
+		// NB: This is less than ideal but it's exceptionally unlikely that
+		// FromRESTConfig actually returns an error and this method is only
+		// ever called at initializtion time, not runtime.
+		panic(err)
+	}
+
 	return &ResourceClient[T, U]{
+		ctl:                    ctl,
 		logger:                 mgr.GetLogger().WithName("ResourceClient"),
-		client:                 mgr.GetClient(),
-		scheme:                 mgr.GetScheme(),
-		mapper:                 mgr.GetRESTMapper(),
 		ownershipResolver:      ownershipResolver,
 		statusUpdater:          statusUpdater,
 		nodePoolRenderer:       nodePoolRenderer,
@@ -64,10 +73,8 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 // ResourceClient is a client used to manage dependent resources,
 // both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
-	client                 client.Client
+	ctl                    *kube.Ctl
 	logger                 logr.Logger
-	scheme                 *runtime.Scheme
-	mapper                 apimeta.RESTMapper
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -76,7 +83,12 @@ type ResourceClient[T any, U Cluster[T]] struct {
 
 // PatchNodePoolSet updates a StatefulSet for a specific node pool.
 func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *appsv1.StatefulSet) error {
-	return r.patchOwnedResource(ctx, owner, set)
+	if set.GetLabels() == nil {
+		set.SetLabels(map[string]string{})
+	}
+	maps.Copy(set.GetLabels(), r.ownershipResolver.AddLabels(owner))
+	set.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
+	return r.ctl.Apply(ctx, set, client.ForceOwnership)
 }
 
 // SetClusterStatus sets the status of the given cluster.
@@ -84,54 +96,47 @@ func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus
 	return r.statusUpdater.Update(cluster, status)
 }
 
-type gvkObject struct {
-	gvk schema.GroupVersionKind
-	nn  types.NamespacedName
+type renderer[T any, U Cluster[T]] struct {
+	SimpleResourceRenderer[T, U]
+	Cluster U
+}
+
+func (r *renderer[T, U]) Render(ctx context.Context) ([]kube.Object, error) {
+	return r.SimpleResourceRenderer.Render(ctx, r.Cluster)
+}
+
+func (r *renderer[T, U]) Types() []kube.Object {
+	types := r.SimpleResourceRenderer.WatchedResourceTypes()
+	return slices.DeleteFunc(types, func(o kube.Object) bool {
+		_, ok := o.(*appsv1.StatefulSet)
+		return ok
+	})
+}
+
+func (r *ResourceClient[T, U]) syncer(owner U) *kube.Syncer {
+	return &kube.Syncer{
+		Ctl:       r.ctl,
+		Namespace: owner.GetNamespace(),
+		Renderer: &renderer[T, U]{
+			Cluster:                owner,
+			SimpleResourceRenderer: r.simpleResourceRenderer,
+		},
+		OwnershipLabels: r.ownershipResolver.GetOwnerLabels(owner),
+		Preprocess: func(o kube.Object) {
+			if o.GetLabels() == nil {
+				o.SetLabels(map[string]string{})
+			}
+			maps.Copy(o.GetLabels(), r.ownershipResolver.AddLabels(owner))
+		},
+		Owner: *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
+	}
 }
 
 // SyncAll synchronizes the simple resources associated with the given cluster,
 // cleaning up any resources that should no longer exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
-	// we don't sync node pools here
-	resources, err := r.listAllOwnedResources(ctx, owner, false)
-	if err != nil {
-		return err
-	}
-	toDelete := map[gvkObject]client.Object{}
-	for _, resource := range resources {
-		toDelete[gvkObject{
-			gvk: resource.GetObjectKind().GroupVersionKind(),
-			nn:  client.ObjectKeyFromObject(resource),
-		}] = resource
-	}
-
-	toSync, err := r.simpleResourceRenderer.Render(ctx, owner)
-	if err != nil {
-		return err
-	}
-
-	// attempt to create as many resources in one pass as we can
-	errs := []error{}
-
-	for _, resource := range toSync {
-		if err := r.patchOwnedResource(ctx, owner, resource); err != nil {
-			errs = append(errs, err)
-		}
-		delete(toDelete, gvkObject{
-			gvk: resource.GetObjectKind().GroupVersionKind(),
-			nn:  client.ObjectKeyFromObject(resource),
-		})
-	}
-
-	for _, resource := range toDelete {
-		if err := r.client.Delete(ctx, resource); err != nil {
-			if !k8sapierrors.IsNotFound(err) {
-				errs = append(errs, err)
-			}
-		}
-	}
-
-	return errors.Join(errs...)
+	_, err := r.syncer(owner).Sync(ctx)
+	return err
 }
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
@@ -184,7 +189,12 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 	builder.Owns(&appsv1.StatefulSet{})
 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
-		mapping, err := getResourceScope(r.mapper, r.scheme, resourceType)
+		gvk, err := kube.GVKFor(r.ctl.Scheme(), resourceType)
+		if err != nil {
+			return err
+		}
+
+		mapping, err := r.ctl.ScopeOf(gvk)
 		if err != nil {
 			if !apimeta.IsNoMatchError(err) {
 				return err
@@ -196,7 +206,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 			continue
 		}
 
-		if mapping.Name() == apimeta.RESTScopeNamespace.Name() {
+		if mapping == apimeta.RESTScopeNameNamespace {
 			// we're working with a namespace scoped resource, so we can work with ownership
 			builder.Owns(resourceType)
 			continue
@@ -220,189 +230,52 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 
 // DeleteAll deletes all resources owned by the given cluster, including node pools.
 func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
-	// since this is a widespread deletion, we can delete even stateful sets
-	resources, err := r.listAllOwnedResources(ctx, owner, true)
+	errs := []error{}
+	allDeleted, err := r.syncer(owner).DeleteAll(ctx)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	pools, err := r.fetchExistingPools(ctx, owner)
 	if err != nil {
 		return false, err
 	}
 
-	alive := []client.Object{}
-	for _, o := range resources {
-		if o.GetDeletionTimestamp() == nil {
-			alive = append(alive, o)
+	for _, pool := range pools {
+		if pool.set.DeletionTimestamp != nil {
+			allDeleted = false
 		}
-	}
 
-	// attempt to delete as many resources in one pass as we can
-	errs := []error{}
-	for _, resource := range alive {
-		if err := r.client.Delete(ctx, resource); err != nil {
+		if err := r.ctl.Delete(ctx, pool.set); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	return len(alive) > 0, errors.Join(errs...)
-}
-
-// listResources lists resources of a specific type and object, returning them as an array.
-func (r *ResourceClient[T, U]) listResources(ctx context.Context, object client.Object, opts ...client.ListOption) ([]client.Object, error) {
-	kind, err := getGroupVersionKind(r.client.Scheme(), object)
-	if err != nil {
-		return nil, err
-	}
-
-	olist, err := r.client.Scheme().New(schema.GroupVersionKind{
-		Group:   kind.Group,
-		Version: kind.Version,
-		Kind:    kind.Kind + "List",
-	})
-	if err != nil {
-		return nil, fmt.Errorf("initializing list: %w", err)
-	}
-	list, ok := olist.(client.ObjectList)
-	if !ok {
-		return nil, fmt.Errorf("invalid object list type: %T", object)
-	}
-
-	if err := r.client.List(ctx, list, opts...); err != nil {
-		// no-op list on unregistered resources, this happens when we
-		// don't actually have a CRD installed for some resource type
-		// we're trying to list
-		if !apimeta.IsNoMatchError(err) {
-			return nil, fmt.Errorf("listing resources: %w", err)
-		}
-	}
-
-	items, err := kube.Items[client.Object](list)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, item := range items {
-		item.GetObjectKind().SetGroupVersionKind(*kind)
-	}
-
-	return sortCreation(items), nil
-}
-
-// listAllOwnedResources lists all resources owned by a given cluster, optionally including node pools.
-func (r *ResourceClient[T, U]) listAllOwnedResources(ctx context.Context, owner U, includeNodePools bool) ([]client.Object, error) {
-	resources := []client.Object{}
-	for _, resourceType := range append(r.simpleResourceRenderer.WatchedResourceTypes(), &appsv1.StatefulSet{}) {
-		matching, err := r.listResources(ctx, resourceType, client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(owner)))
-		if err != nil {
-			return nil, err
-		}
-		filtered := []client.Object{}
-		for i := range matching {
-			object := matching[i]
-
-			// filter out unowned resources
-			mapping, err := getResourceScope(r.mapper, r.scheme, object)
-			if err != nil {
-				if !apimeta.IsNoMatchError(err) {
-					return nil, err
-				}
-
-				// we have an unknown mapping so just ignore this
-				continue
-			}
-
-			// isOwner defaults to true here because we don't set
-			// owner refs on ClusterScoped resources. We only check
-			// for ownership if it's namespace scoped.
-			isOwner := true
-			if mapping.Name() == apimeta.RESTScopeNameNamespace {
-				isOwner = slices.ContainsFunc(object.GetOwnerReferences(), func(ref metav1.OwnerReference) bool {
-					return ref.UID == owner.GetUID()
-				})
-			}
-
-			// special case the node pools
-			if (includeNodePools || !r.nodePoolRenderer.IsNodePool(object)) && isOwner {
-				filtered = append(filtered, object)
-			}
-		}
-		resources = append(resources, filtered...)
-	}
-	return resources, nil
-}
-
-// patchOwnedResource applies a patch to a resource owned by the cluster.
-func (r *ResourceClient[T, U]) patchOwnedResource(ctx context.Context, owner U, object client.Object, extraLabels ...map[string]string) error {
-	if err := r.normalize(object, owner, extraLabels...); err != nil {
-		return err
-	}
-	return r.client.Patch(ctx, object, client.Apply, defaultFieldOwner, client.ForceOwnership)
-}
-
-// normalize normalizes an object by setting its labels and owner references. Any labels passed in as `extraLabels`
-// will potentially override those set by the ownership resolver.
-func (r *ResourceClient[T, U]) normalize(object client.Object, owner U, extraLabels ...map[string]string) error {
-	kind, err := getGroupVersionKind(r.scheme, object)
-	if err != nil {
-		return err
-	}
-
-	unknownMapping := false
-
-	mapping, err := getResourceScope(r.mapper, r.scheme, object)
-	if err != nil {
-		if !apimeta.IsNoMatchError(err) {
-			return err
-		}
-
-		// we have an unknown mapping so err on the side of not setting
-		// an owner reference
-		unknownMapping = true
-	}
-
-	// nil out the managed fields since with some resources that actually do
-	// a fetch (i.e. secrets that are created only once), we get an error trying
-	// to patch a second time
-	object.SetManagedFields(nil)
-
-	// This needs to be set explicitly in order for SSA to function properly.
-	// If an initialized pointer to a concrete CR has not specified its GVK
-	// explicitly, SSA will fail.
-	object.GetObjectKind().SetGroupVersionKind(*kind)
-
-	labels := object.GetLabels()
-	if labels == nil {
-		labels = map[string]string{}
-	}
-
-	for name, value := range r.ownershipResolver.AddLabels(owner) {
-		labels[name] = value
-	}
-
-	for _, extra := range extraLabels {
-		for name, value := range extra {
-			labels[name] = value
-		}
-	}
-
-	object.SetLabels(labels)
-
-	if !unknownMapping && mapping.Name() == apimeta.RESTScopeNamespace.Name() {
-		object.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
-	}
-
-	return nil
+	return allDeleted, errors.Join(errs...)
 }
 
 // fetchExistingPools fetches the existing pools (StatefulSets) for a given cluster.
 func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U) ([]*poolWithOrdinals, error) {
-	sets, err := r.listResources(ctx, &appsv1.StatefulSet{}, client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
+	sets, err := kube.List[appsv1.StatefulSetList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
 	if err != nil {
-		return nil, fmt.Errorf("listing StatefulSets: %w", err)
+		return nil, errors.Wrapf(err, "listing StatefulSets")
 	}
 
-	existing := []*poolWithOrdinals{}
-	for _, set := range sets {
-		statefulSet := set.(*appsv1.StatefulSet)
+	i := 0
+	for _, set := range sets.Items {
+		isOwned := slices.ContainsFunc(set.OwnerReferences, func(ref metav1.OwnerReference) bool {
+			return ref.UID == cluster.GetUID()
+		})
+		if isOwned {
+			sets.Items[i] = set
+			i++
+		}
+	}
+	sets.Items = sets.Items[:i]
 
-		if !r.nodePoolRenderer.IsNodePool(statefulSet) {
+	existing := []*poolWithOrdinals{}
+	for _, statefulSet := range sets.Items {
+		if !r.nodePoolRenderer.IsNodePool(&statefulSet) {
 			continue
 		}
 
@@ -412,31 +285,32 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		// based on https://github.com/kubernetes/kubernetes/blob/c90a4b16b6aa849ed362ee40997327db09e3a62d/pkg/controller/history/controller_history.go#L222
-		revisions, err := r.listResources(ctx, &appsv1.ControllerRevision{}, client.MatchingLabelsSelector{
+		revisions, err := kube.List[appsv1.ControllerRevisionList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("listing ControllerRevisions: %w", err)
+			return nil, errors.Wrapf(err, "listing ControllerRevisions")
 		}
+
 		ownedRevisions := []*appsv1.ControllerRevision{}
-		for i := range revisions {
-			ref := metav1.GetControllerOfNoCopy(revisions[i])
-			if ref == nil || ref.UID == set.GetUID() {
-				ownedRevisions = append(ownedRevisions, revisions[i].(*appsv1.ControllerRevision))
+		for i := range revisions.Items {
+			ref := metav1.GetControllerOfNoCopy(&revisions.Items[i])
+			if ref == nil || ref.UID == statefulSet.GetUID() {
+				ownedRevisions = append(ownedRevisions, &revisions.Items[i])
 			}
 
 		}
 
-		pods, err := r.listResources(ctx, &corev1.Pod{}, client.MatchingLabelsSelector{
+		pods, err := kube.List[corev1.PodList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("listing Pods: %w", err)
 		}
 
-		ownedPods := []*corev1.Pod{}
-		for i := range pods {
-			ownedPods = append(ownedPods, pods[i].(*corev1.Pod))
+		ownedPods := make([]*corev1.Pod, len(pods.Items))
+		for i := range pods.Items {
+			ownedPods[i] = &pods.Items[i]
 		}
 
 		withOrdinals, err := sortPodsByOrdinal(ownedPods...)
@@ -445,7 +319,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		existing = append(existing, &poolWithOrdinals{
-			set:       statefulSet,
+			set:       &statefulSet,
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
 		})
