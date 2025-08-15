@@ -34,8 +34,8 @@ Feature: Upgrading the operator
     And cluster "operator-upgrade" should be stable with 1 nodes
 
   @skip:gke @skip:aks @skip:eks
-  Scenario: Operator upgrade from 25.1.2
-    And I install redpanda helm chart version "v25.1.2" with the values:
+  Scenario: Operator upgrade from 25.1.3
+    And I install redpanda helm chart version "v25.1.3" with the values:
     """
     crds:
       enabled: true
