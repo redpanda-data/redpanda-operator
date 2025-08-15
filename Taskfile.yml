@@ -218,14 +218,18 @@ tasks:
       TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
       TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
       TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
+      IMAGES:
+      - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
+      - docker.redpanda.com/redpandadata/redpanda:{{.TEST_REDPANDA_VERSION}}
+      - docker.redpanda.com/redpandadata/redpanda:{{.TEST_UPGRADE_REDPANDA_VERSION}}
+      - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
+
     cmds:
-      - docker pull quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
-      - docker pull quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
-      - docker pull quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
-      - docker pull quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
-      - docker pull docker.redpanda.com/redpandadata/redpanda:{{.TEST_REDPANDA_VERSION}}
-      - docker pull docker.redpanda.com/redpandadata/redpanda:{{.TEST_UPGRADE_REDPANDA_VERSION}}
-      - docker pull docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
+      - for: {var: IMAGES}
+        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
