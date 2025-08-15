@@ -6,9 +6,11 @@ import (
 	"io"
 	"net"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -16,7 +18,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 const (
@@ -33,6 +37,42 @@ type Cluster struct {
 	helm       *helm.Client
 	release    helm.Release
 	namespace  *corev1.Namespace
+}
+
+func ForTestInShared(t *testing.T) *Cluster {
+	cluster, err := NewInShared(t.Context())
+	require.NoError(t, err)
+
+	testutil.MaybeCleanup(t, func() {
+		require.NoError(t, cluster.Delete())
+	})
+
+	return cluster
+}
+
+func ForTest(t *testing.T, host *k3d.Cluster) *Cluster {
+	cluster, err := New(t.Context(), host.RESTConfig())
+	require.NoError(t, err)
+
+	testutil.MaybeCleanup(t, func() {
+		require.NoError(t, cluster.Delete())
+	})
+
+	return cluster
+}
+
+func NewInShared(ctx context.Context) (*Cluster, error) {
+	host, err := k3d.GetShared()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	cl, err := New(ctx, host.RESTConfig())
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return cl, nil
 }
 
 func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {

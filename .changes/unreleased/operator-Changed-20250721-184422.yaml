@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Redpanda operator, by default will now reconcile Redpanda custom resource accross namespaces. If user would like to scope reconciler to particular namespace please set `--namespace` flag into operator deployment.
+time: 2025-07-21T18:44:22.117328+02:00

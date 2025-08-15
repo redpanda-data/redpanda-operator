@@ -731,8 +731,6 @@ rbac:
   # -- Controls whether or not Roles, ClusterRoles, and bindings thereof will
   # be generated. Disabling this very likely result in a non-functional
   # deployment.
-  # If you use the Redpanda Operator, you must deploy it with the `--set
-  # rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles.
   enabled: true
 
   # -- Controls whether or not a Role and RoleBinding will be generated for the

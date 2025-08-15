@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -59,28 +58,35 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
+
+type Controller string
 
 const (
 	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
 	DefaultRedpandaImageTag           = "v25.2.1"
 	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
-	AllControllers         = RedpandaController("all")
-	NodeController         = RedpandaController("nodeWatcher")
-	DecommissionController = RedpandaController("decommission")
-
-	OperatorV1Mode          = OperatorState("Clustered-v1")
-	OperatorV2Mode          = OperatorState("Namespaced-v2")
-	NamespaceControllerMode = OperatorState("Namespaced-Controllers")
+	AllNonVectorizedControllers = Controller("all")
+	NodeWatcherController       = Controller("nodeWatcher")
+	OldDecommissionController   = Controller("decommission")
 )
 
 var availableControllers = []string{
-	NodeController.toString(),
-	DecommissionController.toString(),
+	string(NodeWatcherController),
+	string(OldDecommissionController),
 }
 
 type RunOptions struct {
+	namespace             string
+	additionalControllers []string
+
+	// enableVectorizedControllers controls whether or not controllers for
+	// resources in the vectorized group (Cluster, Console) AKA the V1 Operator
+	// will be enabled or not.
+	enableVectorizedControllers bool
+
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
 	secureMetrics                       bool
@@ -95,9 +101,6 @@ type RunOptions struct {
 	metricsTimeout                      time.Duration
 	rpClientTimeout                     time.Duration
 	restrictToRedpandaVersion           string
-	namespace                           string
-	additionalControllers               []string
-	operatorMode                        bool
 	ghostbuster                         bool
 	unbindPVCsAfter                     time.Duration
 	unbinderSelector                    LabelSelectorValue
@@ -137,6 +140,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 
 	// Controller flags.
+	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
@@ -150,7 +154,6 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
 	cmd.Flags().StringSliceVar(&o.additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
-	cmd.Flags().BoolVar(&o.operatorMode, "operator-mode", true, "enables to run as an operator, setting this to false will disable cluster (deprecated), redpanda resources reconciliation.")
 	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
@@ -178,23 +181,16 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().String("helm-repository-url", "https://charts.redpanda.com/", "A deprecated and unused flag")
 	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
 	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
+	cmd.Flags().Bool("operator-mode", true, "A deprecated and unused flag")
 }
 
-func (o *RunOptions) ControllerEnabled(controller RedpandaController) bool {
+func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 	for _, c := range o.additionalControllers {
-		if RedpandaController(c) == AllControllers || RedpandaController(c) == controller {
+		if Controller(c) == AllNonVectorizedControllers || Controller(c) == controller {
 			return true
 		}
 	}
 	return false
-}
-
-type RedpandaController string
-
-type OperatorState string
-
-func (r RedpandaController) toString() string {
-	return string(r)
 }
 
 type LabelSelectorValue struct {
@@ -258,21 +254,6 @@ func Command() *cobra.Command {
 	options.BindFlags(cmd)
 
 	return cmd
-}
-
-type v1Fetcher struct {
-	client kubeClient.Client
-}
-
-func (f *v1Fetcher) FetchLatest(ctx context.Context, name, namespace string) (any, error) {
-	var vectorizedCluster vectorizedv1alpha1.Cluster
-	if err := f.client.Get(ctx, types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, &vectorizedCluster); err != nil {
-		return nil, err
-	}
-	return &vectorizedCluster, nil
 }
 
 //nolint:funlen,gocyclo // length looks good
@@ -401,218 +382,90 @@ func Run(
 		return err
 	}
 
-	// init running state values if we are not in operator mode
-	var operatorRunningState OperatorState
-	if opts.namespace != "" {
-		operatorRunningState = NamespaceControllerMode
+	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
+
+	factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(opts.rpClientTimeout)
+
+	cloudSecrets := lifecycle.CloudSecretsFlags{
+		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
+		CloudSecretsPrefix:           opts.cloudSecretsPrefix,
+		CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
+		CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
+		CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
+		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
 	}
 
-	// but if we are in operator mode, then the run state is different
-	if opts.operatorMode {
-		operatorRunningState = OperatorV1Mode
-		if opts.namespace != "" {
-			operatorRunningState = OperatorV2Mode
-		}
+	sidecarImage := lifecycle.Image{
+		Repository: opts.configuratorBaseImage,
+		Tag:        opts.configuratorTag,
 	}
 
-	// Now we start different processes depending on state
-	switch operatorRunningState {
-	case OperatorV1Mode:
-		ctrl.Log.Info("running in v1", "mode", OperatorV1Mode)
+	redpandaImage := lifecycle.Image{
+		Repository: opts.redpandaDefaultRepository,
+		Tag:        opts.redpandaDefaultTag,
+	}
 
-		configurator := resources.ConfiguratorSettings{
-			ConfiguratorBaseImage:        opts.configuratorBaseImage,
-			ConfiguratorTag:              opts.configuratorTag,
-			ImagePullPolicy:              corev1.PullPolicy(opts.configuratorImagePullPolicy),
-			CloudSecretsEnabled:          opts.cloudSecretsEnabled,
-			CloudSecretsPrefix:           opts.cloudSecretsPrefix,
-			CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
-			CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
-			CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
-			CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
-		}
-
-		adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
-
-		if err = (&vectorizedcontrollers.ClusterReconciler{
-			Client:                    mgr.GetClient(),
-			Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
-			Scheme:                    mgr.GetScheme(),
-			AdminAPIClientFactory:     adminAPIClientFactory,
-			DecommissionWaitInterval:  opts.decommissionWaitInterval,
-			MetricsTimeout:            opts.metricsTimeout,
-			RestrictToRedpandaVersion: opts.restrictToRedpandaVersion,
-			GhostDecommissioning:      opts.ghostbuster,
-			AutoDeletePVCs:            opts.autoDeletePVCs,
-			CloudSecretsExpander:      cloudExpander,
-			Timeout:                   opts.rpClientTimeout,
-		}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
-			return err
-		}
-
-		if err = vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).
-			SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Unable to create controller", "controller", "ClustersMetrics")
-			return err
-		}
-
-		if err = (&vectorizedcontrollers.ConsoleReconciler{
-			Client:                  mgr.GetClient(),
-			Scheme:                  mgr.GetScheme(),
-			Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
-			AdminAPIClientFactory:   adminAPIClientFactory,
-			Store:                   consolepkg.NewStore(mgr.GetClient(), mgr.GetScheme()),
-			EventRecorder:           mgr.GetEventRecorderFor("Console"),
-			KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
-		}).WithClusterDomain(opts.clusterDomain).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Console")
-			return err
-		}
-
-		if err = (&redpandacontrollers.TopicReconciler{
-			Client:        mgr.GetClient(),
-			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(opts.rpClientTimeout),
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Topic")
-			return err
-		}
-
-		// Setup webhooks
-		if opts.webhookEnabled {
-			setupLog.Info("Setup webhook")
-			if err = (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
-				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaCluster")
-				return err
-			}
-			hookServer := mgr.GetWebhookServer()
-			hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-				Handler: &redpandawebhooks.ConsoleDefaulter{
-					Client:  mgr.GetClient(),
-					Decoder: admission.NewDecoder(mgr.GetScheme()),
-				},
-			})
-			hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-				Handler: &redpandawebhooks.ConsoleValidator{
-					Client:  mgr.GetClient(),
-					Decoder: admission.NewDecoder(mgr.GetScheme()),
-				},
-			})
-		}
-	case OperatorV2Mode:
-		ctrl.Log.Info("running in v2", "mode", OperatorV2Mode, "namespace", opts.namespace)
-
-		factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(opts.rpClientTimeout)
-
-		cloudSecrets := lifecycle.CloudSecretsFlags{
-			CloudSecretsEnabled:          opts.cloudSecretsEnabled,
-			CloudSecretsPrefix:           opts.cloudSecretsPrefix,
-			CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
-			CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
-			CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
-			CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
-		}
-
-		sidecarImage := lifecycle.Image{
-			Repository: opts.configuratorBaseImage,
-			Tag:        opts.configuratorTag,
-		}
-
-		redpandaImage := lifecycle.Image{
-			Repository: opts.redpandaDefaultRepository,
-			Tag:        opts.redpandaDefaultTag,
-		}
-
-		// Redpanda Reconciler
-		if err = (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:           mgr.GetConfig(),
-			Client:               mgr.GetClient(),
-			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
-			ClientFactory:        factory,
-			CloudSecretsExpander: cloudExpander,
-		}).SetupWithManager(ctx, mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
-			return err
-		}
-
-		if err = (&redpandacontrollers.TopicReconciler{
-			Client:        mgr.GetClient(),
-			Factory:       factory,
-			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Topic")
-			return err
-		}
-
-		if err = redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "User")
-			return err
-		}
-
-		if err = redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Schema")
-			return err
-		}
-
-		if opts.ControllerEnabled(NodeController) {
-			if err = (&nodewatcher.RedpandaNodePVCReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: opts.operatorMode,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				return err
-			}
-		}
-
-		if opts.ControllerEnabled(DecommissionController) {
-			if err = (&olddecommission.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             opts.operatorMode,
-				DecommissionWaitInterval: opts.decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				return err
-			}
-		}
-
-		if opts.webhookEnabled {
-			setupLog.Info("Setup Redpanda conversion webhook")
-			if err = (&redpandav1alpha2.Redpanda{}).SetupWebhookWithManager(mgr); err != nil {
-				setupLog.Error(err, "Unable to create webhook", "webhook", "RedpandaConversion")
-				return err
-			}
-		}
-
-	case NamespaceControllerMode:
-		ctrl.Log.Info("running as a namespace controller", "mode", NamespaceControllerMode, "namespace", opts.namespace)
-		if opts.ControllerEnabled(NodeController) {
-			if err = (&nodewatcher.RedpandaNodePVCReconciler{
-				Client:       mgr.GetClient(),
-				OperatorMode: opts.operatorMode,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-				return err
-			}
-		}
-
-		if opts.ControllerEnabled(DecommissionController) {
-			if err = (&olddecommission.DecommissionReconciler{
-				Client:                   mgr.GetClient(),
-				OperatorMode:             opts.operatorMode,
-				DecommissionWaitInterval: opts.decommissionWaitInterval,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
-				return err
-			}
-		}
-	default:
-		err := errors.New("unable to run operator without specifying an operator state")
-		setupLog.Error(err, "shutting down")
+	// Redpanda Reconciler
+	if err := (&redpandacontrollers.RedpandaReconciler{
+		KubeConfig:           mgr.GetConfig(),
+		Client:               mgr.GetClient(),
+		EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+		LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+		ClientFactory:        factory,
+		CloudSecretsExpander: cloudExpander,
+	}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 		return err
+	}
+
+	if err := (&redpandacontrollers.TopicReconciler{
+		Client:        mgr.GetClient(),
+		Factory:       factory,
+		Scheme:        mgr.GetScheme(),
+		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Topic")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "User")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Schema")
+		return err
+	}
+
+	// Next configure and setup optional controllers.
+
+	if opts.enableVectorizedControllers {
+		setupLog.Info("setting up vectorized controllers")
+		if err := setupVectorizedControllers(ctx, mgr, cloudExpander, opts); err != nil {
+			return err
+		}
+	}
+
+	if opts.ControllerEnabled(NodeWatcherController) {
+		if err = (&nodewatcher.RedpandaNodePVCReconciler{
+			Client:       mgr.GetClient(),
+			OperatorMode: true,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
+			return err
+		}
+	}
+
+	if opts.ControllerEnabled(OldDecommissionController) {
+		if err = (&olddecommission.DecommissionReconciler{
+			Client:                   mgr.GetClient(),
+			OperatorMode:             true,
+			DecommissionWaitInterval: opts.decommissionWaitInterval,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
+			return err
+		}
 	}
 
 	// The unbinder gets to run in any mode, if it's enabled.
@@ -630,6 +483,133 @@ func Run(
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
 		}
+	}
+
+	//+kubebuilder:scaffold:builder
+
+	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
+		setupLog.Error(err, "Unable to set up health check")
+		return err
+	}
+
+	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
+		setupLog.Error(err, "Unable to set up ready check")
+		return err
+	}
+
+	if opts.webhookEnabled {
+		hookServer := mgr.GetWebhookServer()
+		if err := mgr.AddReadyzCheck("webhook", hookServer.StartedChecker()); err != nil {
+			setupLog.Error(err, "unable to create ready check")
+			return err
+		}
+
+		if err := mgr.AddHealthzCheck("webhook", hookServer.StartedChecker()); err != nil {
+			setupLog.Error(err, "unable to create health check")
+			return err
+		}
+	}
+
+	setupLog.Info("Starting manager")
+
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "Problem running manager")
+		return err
+	}
+
+	return nil
+}
+
+type v1Fetcher struct {
+	client kubeClient.Client
+}
+
+func (f *v1Fetcher) FetchLatest(ctx context.Context, name, namespace string) (any, error) {
+	var vectorizedCluster vectorizedv1alpha1.Cluster
+	if err := f.client.Get(ctx, types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, &vectorizedCluster); err != nil {
+		return nil, err
+	}
+	return &vectorizedCluster, nil
+}
+
+// setupVectorizedControllers configures and registers controllers and
+// runnables for the custom resources in the vectorized group, AKA the V1
+// operator.
+func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, cloudExpander *pkgsecrets.CloudExpander, opts *RunOptions) error {
+	log.Info(ctx, "Starting Vectorized (V1) Controllers")
+
+	configurator := resources.ConfiguratorSettings{
+		ConfiguratorBaseImage:        opts.configuratorBaseImage,
+		ConfiguratorTag:              opts.configuratorTag,
+		ImagePullPolicy:              corev1.PullPolicy(opts.configuratorImagePullPolicy),
+		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
+		CloudSecretsPrefix:           opts.cloudSecretsPrefix,
+		CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
+		CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
+		CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
+		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
+	}
+
+	adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
+
+	if err := (&vectorizedcontrollers.ClusterReconciler{
+		Client:                    mgr.GetClient(),
+		Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
+		Scheme:                    mgr.GetScheme(),
+		AdminAPIClientFactory:     adminAPIClientFactory,
+		DecommissionWaitInterval:  opts.decommissionWaitInterval,
+		MetricsTimeout:            opts.metricsTimeout,
+		RestrictToRedpandaVersion: opts.restrictToRedpandaVersion,
+		GhostDecommissioning:      opts.ghostbuster,
+		AutoDeletePVCs:            opts.autoDeletePVCs,
+		CloudSecretsExpander:      cloudExpander,
+		Timeout:                   opts.rpClientTimeout,
+	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
+		log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
+		return err
+	}
+
+	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
+		return err
+	}
+
+	if err := (&vectorizedcontrollers.ConsoleReconciler{
+		Client:                  mgr.GetClient(),
+		Scheme:                  mgr.GetScheme(),
+		Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
+		AdminAPIClientFactory:   adminAPIClientFactory,
+		Store:                   consolepkg.NewStore(mgr.GetClient(), mgr.GetScheme()),
+		EventRecorder:           mgr.GetEventRecorderFor("Console"),
+		KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
+	}).WithClusterDomain(opts.clusterDomain).SetupWithManager(mgr); err != nil {
+		log.Error(ctx, err, "unable to create controller", "controller", "Console")
+		return err
+	}
+
+	// Setup webhooks
+	if opts.webhookEnabled {
+		log.Info(ctx, "Setup webhook")
+		if err := (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
+			log.Error(ctx, err, "Unable to create webhook", "webhook", "RedpandaCluster")
+			return err
+		}
+		hookServer := mgr.GetWebhookServer()
+		hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
+			Handler: &redpandawebhooks.ConsoleDefaulter{
+				Client:  mgr.GetClient(),
+				Decoder: admission.NewDecoder(mgr.GetScheme()),
+			},
+		})
+		hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
+			Handler: &redpandawebhooks.ConsoleValidator{
+				Client:  mgr.GetClient(),
+				Decoder: admission.NewDecoder(mgr.GetScheme()),
+			},
+		})
 	}
 
 	if opts.enableGhostBrokerDecommissioner {
@@ -743,42 +723,11 @@ func Run(
 				return true, nil
 			}),
 		)
+
 		if err := d.SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			log.Error(ctx, err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
-	}
-
-	//+kubebuilder:scaffold:builder
-
-	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up health check")
-		return err
-	}
-
-	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up ready check")
-		return err
-	}
-
-	if opts.webhookEnabled {
-		hookServer := mgr.GetWebhookServer()
-		if err := mgr.AddReadyzCheck("webhook", hookServer.StartedChecker()); err != nil {
-			setupLog.Error(err, "unable to create ready check")
-			return err
-		}
-
-		if err := mgr.AddHealthzCheck("webhook", hookServer.StartedChecker()); err != nil {
-			setupLog.Error(err, "unable to create health check")
-			return err
-		}
-	}
-
-	setupLog.Info("Starting manager")
-
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "Problem running manager")
-		return err
 	}
 
 	return nil

@@ -35,10 +35,10 @@ import (
 )
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch;
-// +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch;
-// +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;update;patch;delete;watch
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;update;patch;delete;watch
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;patch;watch
-// +kubebuilder:rbac:groups=apps,namespace=default,resources=statefulsets/status,verbs=update;patch
+// +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=update;patch
 // Cluster wide access to configmaps and secrets are required as long as we're
 // fetching values from helm.
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets,verbs=get;list;watch

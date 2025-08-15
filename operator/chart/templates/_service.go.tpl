@@ -5,7 +5,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (not ((and $values.webhook.enabled (eq $values.scope "Cluster")))) -}}
+{{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -32,7 +32,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.webhook.enabled) (ne $values.scope "Cluster")) -}}
+{{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -48,7 +48,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.webhook.enabled) (ne $values.scope "Cluster")) -}}
+{{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}

@@ -592,7 +592,7 @@ Annotations to add to the `rbac` resources.
 
 ### [rbac.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=rbac.enabled)
 
-Controls whether or not Roles, ClusterRoles, and bindings thereof will be generated. Disabling this very likely result in a non-functional deployment. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles.
+Controls whether or not Roles, ClusterRoles, and bindings thereof will be generated. Disabling this very likely result in a non-functional deployment.
 
 **Default:** `true`
 

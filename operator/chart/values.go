@@ -17,11 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	Namespace = OperatorScope("Namespace")
-	Cluster   = OperatorScope("Cluster")
-)
-
 var (
 	//go:embed values.yaml
 	DefaultValuesYAML []byte
@@ -31,34 +26,38 @@ var (
 )
 
 type Values struct {
-	NameOverride       string                        `json:"nameOverride"`
-	FullnameOverride   string                        `json:"fullnameOverride"`
-	ReplicaCount       int32                         `json:"replicaCount"`
-	ClusterDomain      string                        `json:"clusterDomain"`
-	Image              Image                         `json:"image"`
-	Config             Config                        `json:"config"`
-	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets"`
-	LogLevel           string                        `json:"logLevel"`
-	RBAC               RBAC                          `json:"rbac"`
-	Webhook            Webhook                       `json:"webhook"`
-	ServiceAccount     ServiceAccountConfig          `json:"serviceAccount"`
-	Resources          corev1.ResourceRequirements   `json:"resources"`
-	NodeSelector       map[string]string             `json:"nodeSelector"`
-	Tolerations        []corev1.Toleration           `json:"tolerations"`
-	Affinity           *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
-	Strategy           appsv1.DeploymentStrategy     `json:"strategy"`
-	Annotations        map[string]string             `json:"annotations,omitempty"`
-	PodAnnotations     map[string]string             `json:"podAnnotations"`
-	PodLabels          map[string]string             `json:"podLabels"`
-	AdditionalCmdFlags []string                      `json:"additionalCmdFlags"`
-	CommonLabels       map[string]string             `json:"commonLabels"`
-	Monitoring         MonitoringConfig              `json:"monitoring"`
-	WebhookSecretName  string                        `json:"webhookSecretName"`
-	PodTemplate        *PodTemplateSpec              `json:"podTemplate,omitempty"`
-	LivenessProbe      *corev1.Probe                 `json:"livenessProbe,omitempty"`
-	ReadinessProbe     *corev1.Probe                 `json:"readinessProbe,omitempty"`
-	Scope              OperatorScope                 `json:"scope" jsonschema:"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator."`
-	CRDs               CRDs                          `json:"crds"`
+	NameOverride          string                        `json:"nameOverride"`
+	FullnameOverride      string                        `json:"fullnameOverride"`
+	ReplicaCount          int32                         `json:"replicaCount"`
+	ClusterDomain         string                        `json:"clusterDomain"`
+	Image                 Image                         `json:"image"`
+	Config                Config                        `json:"config"`
+	ImagePullSecrets      []corev1.LocalObjectReference `json:"imagePullSecrets"`
+	LogLevel              string                        `json:"logLevel"`
+	RBAC                  RBAC                          `json:"rbac"`
+	Webhook               Webhook                       `json:"webhook"`
+	ServiceAccount        ServiceAccountConfig          `json:"serviceAccount"`
+	Resources             corev1.ResourceRequirements   `json:"resources"`
+	NodeSelector          map[string]string             `json:"nodeSelector"`
+	Tolerations           []corev1.Toleration           `json:"tolerations"`
+	Affinity              *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
+	Strategy              appsv1.DeploymentStrategy     `json:"strategy"`
+	Annotations           map[string]string             `json:"annotations,omitempty"`
+	PodAnnotations        map[string]string             `json:"podAnnotations"`
+	PodLabels             map[string]string             `json:"podLabels"`
+	AdditionalCmdFlags    []string                      `json:"additionalCmdFlags"`
+	CommonLabels          map[string]string             `json:"commonLabels"`
+	Monitoring            MonitoringConfig              `json:"monitoring"`
+	WebhookSecretName     string                        `json:"webhookSecretName"`
+	PodTemplate           *PodTemplateSpec              `json:"podTemplate,omitempty"`
+	LivenessProbe         *corev1.Probe                 `json:"livenessProbe,omitempty"`
+	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
+	CRDs                  CRDs                          `json:"crds"`
+	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
+}
+
+type VectorizedControllers struct {
+	Enabled bool `json:"enabled"`
 }
 
 type CRDs struct {
@@ -75,8 +74,6 @@ type Metadata struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
-
-type OperatorScope string
 
 type Image struct {
 	Repository string            `json:"repository"`
@@ -119,7 +116,6 @@ type LeaderElectionConfig struct {
 type RBAC struct {
 	Create                        bool `json:"create"`
 	CreateAdditionalControllerCRs bool `json:"createAdditionalControllerCRs"`
-	CreateRPKBundleCRs            bool `json:"createRPKBundleCRs"`
 }
 
 type Webhook struct {

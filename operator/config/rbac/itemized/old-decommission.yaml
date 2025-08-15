@@ -8,36 +8,12 @@ rules:
   - ""
   resources:
   - configmaps
+  - pods
   - secrets
   verbs:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  verbs:
-  - get
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: old-decommission
-  namespace: default
-rules:
 - apiGroups:
   - ""
   resources:
@@ -52,10 +28,12 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - pods
+  - persistentvolumes
   verbs:
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - apps
@@ -64,3 +42,11 @@ rules:
   verbs:
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch

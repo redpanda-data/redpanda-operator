@@ -23,8 +23,6 @@ import (
 
 // This is a pre-install job as the operator will crash loop without the CRDs
 // which deadlocks helm install commands.
-// It, it's ServiceAccount, ClusterRole, and ClusterRoleBindings are all
-// executed as a helm hook and removed upon success (or failure).
 func PreInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -77,6 +75,10 @@ func crdJobContainers(dot *helmette.Dot) []corev1.Container {
 	args := []string{"crd"}
 	if values.CRDs.Experimental {
 		args = append(args, "--experimental")
+	}
+
+	if values.VectorizedControllers.Enabled {
+		args = append(args, "--vectorized")
 	}
 
 	return []corev1.Container{

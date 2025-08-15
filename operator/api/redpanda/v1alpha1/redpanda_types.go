@@ -31,13 +31,3 @@ type RedpandaList redpandav1alpha2.RedpandaList
 func init() {
 	SchemeBuilder.Register(&Redpanda{}, &RedpandaList{})
 }
-
-// RedpandaReady registers a successful reconciliation of the given HelmRelease.
-func RedpandaReady(rp *Redpanda) *Redpanda {
-	return (*Redpanda)(redpandav1alpha2.RedpandaReady((*redpandav1alpha2.Redpanda)(rp)))
-}
-
-// RedpandaNotReady registers a failed reconciliation of the given Redpanda.
-func RedpandaNotReady(rp *Redpanda, reason, message string) *Redpanda {
-	return (*Redpanda)(redpandav1alpha2.RedpandaNotReady((*redpandav1alpha2.Redpanda)(rp), reason, message))
-}

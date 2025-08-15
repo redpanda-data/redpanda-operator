@@ -10,17 +10,9 @@
 package v1alpha2
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 var _ conversion.Hub = &Redpanda{}
 
 func (*Redpanda) Hub() {}
-
-// SetupWebhookWithManager will setup the manager to manage the webhooks
-func (in *Redpanda) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(in).
-		Complete()
-}

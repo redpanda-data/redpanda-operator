@@ -19,34 +19,34 @@ import (
 )
 
 type PartialValues struct {
-	NameOverride       *string                       "json:\"nameOverride,omitempty\""
-	FullnameOverride   *string                       "json:\"fullnameOverride,omitempty\""
-	ReplicaCount       *int32                        "json:\"replicaCount,omitempty\""
-	ClusterDomain      *string                       "json:\"clusterDomain,omitempty\""
-	Image              *PartialImage                 "json:\"image,omitempty\""
-	Config             *PartialConfig                "json:\"config,omitempty\""
-	ImagePullSecrets   []corev1.LocalObjectReference "json:\"imagePullSecrets,omitempty\""
-	LogLevel           *string                       "json:\"logLevel,omitempty\""
-	RBAC               *PartialRBAC                  "json:\"rbac,omitempty\""
-	Webhook            *PartialWebhook               "json:\"webhook,omitempty\""
-	ServiceAccount     *PartialServiceAccountConfig  "json:\"serviceAccount,omitempty\""
-	Resources          *corev1.ResourceRequirements  "json:\"resources,omitempty\""
-	NodeSelector       map[string]string             "json:\"nodeSelector,omitempty\""
-	Tolerations        []corev1.Toleration           "json:\"tolerations,omitempty\""
-	Affinity           *corev1.Affinity              "json:\"affinity,omitempty\" jsonschema:\"deprecated\""
-	Strategy           *appsv1.DeploymentStrategy    "json:\"strategy,omitempty\""
-	Annotations        map[string]string             "json:\"annotations,omitempty\""
-	PodAnnotations     map[string]string             "json:\"podAnnotations,omitempty\""
-	PodLabels          map[string]string             "json:\"podLabels,omitempty\""
-	AdditionalCmdFlags []string                      "json:\"additionalCmdFlags,omitempty\""
-	CommonLabels       map[string]string             "json:\"commonLabels,omitempty\""
-	Monitoring         *PartialMonitoringConfig      "json:\"monitoring,omitempty\""
-	WebhookSecretName  *string                       "json:\"webhookSecretName,omitempty\""
-	PodTemplate        *PartialPodTemplateSpec       "json:\"podTemplate,omitempty\""
-	LivenessProbe      *corev1.Probe                 "json:\"livenessProbe,omitempty\""
-	ReadinessProbe     *corev1.Probe                 "json:\"readinessProbe,omitempty\""
-	Scope              *OperatorScope                "json:\"scope,omitempty\" jsonschema:\"required,pattern=^(Namespace|Cluster)$,description=Sets the scope of the Redpanda Operator.\""
-	CRDs               *PartialCRDs                  "json:\"crds,omitempty\""
+	NameOverride          *string                       "json:\"nameOverride,omitempty\""
+	FullnameOverride      *string                       "json:\"fullnameOverride,omitempty\""
+	ReplicaCount          *int32                        "json:\"replicaCount,omitempty\""
+	ClusterDomain         *string                       "json:\"clusterDomain,omitempty\""
+	Image                 *PartialImage                 "json:\"image,omitempty\""
+	Config                *PartialConfig                "json:\"config,omitempty\""
+	ImagePullSecrets      []corev1.LocalObjectReference "json:\"imagePullSecrets,omitempty\""
+	LogLevel              *string                       "json:\"logLevel,omitempty\""
+	RBAC                  *PartialRBAC                  "json:\"rbac,omitempty\""
+	Webhook               *PartialWebhook               "json:\"webhook,omitempty\""
+	ServiceAccount        *PartialServiceAccountConfig  "json:\"serviceAccount,omitempty\""
+	Resources             *corev1.ResourceRequirements  "json:\"resources,omitempty\""
+	NodeSelector          map[string]string             "json:\"nodeSelector,omitempty\""
+	Tolerations           []corev1.Toleration           "json:\"tolerations,omitempty\""
+	Affinity              *corev1.Affinity              "json:\"affinity,omitempty\" jsonschema:\"deprecated\""
+	Strategy              *appsv1.DeploymentStrategy    "json:\"strategy,omitempty\""
+	Annotations           map[string]string             "json:\"annotations,omitempty\""
+	PodAnnotations        map[string]string             "json:\"podAnnotations,omitempty\""
+	PodLabels             map[string]string             "json:\"podLabels,omitempty\""
+	AdditionalCmdFlags    []string                      "json:\"additionalCmdFlags,omitempty\""
+	CommonLabels          map[string]string             "json:\"commonLabels,omitempty\""
+	Monitoring            *PartialMonitoringConfig      "json:\"monitoring,omitempty\""
+	WebhookSecretName     *string                       "json:\"webhookSecretName,omitempty\""
+	PodTemplate           *PartialPodTemplateSpec       "json:\"podTemplate,omitempty\""
+	LivenessProbe         *corev1.Probe                 "json:\"livenessProbe,omitempty\""
+	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
+	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
+	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
 }
 
 type PartialImage struct {
@@ -67,7 +67,6 @@ type PartialConfig struct {
 type PartialRBAC struct {
 	Create                        *bool "json:\"create,omitempty\""
 	CreateAdditionalControllerCRs *bool "json:\"createAdditionalControllerCRs,omitempty\""
-	CreateRPKBundleCRs            *bool "json:\"createRPKBundleCRs,omitempty\""
 }
 
 type PartialWebhook struct {
@@ -88,6 +87,10 @@ type PartialMonitoringConfig struct {
 type PartialCRDs struct {
 	Enabled      *bool "json:\"enabled,omitempty\""
 	Experimental *bool "json:\"experimental,omitempty\""
+}
+
+type PartialVectorizedControllers struct {
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialPodTemplateSpec struct {
