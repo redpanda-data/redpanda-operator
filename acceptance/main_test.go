@@ -69,7 +69,6 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				"installCRDs": true,
 			},
 		}).
-		WithCRDDirectory("../operator/config/crd/bases").
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
@@ -86,6 +85,9 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 					Image: &operatorchart.PartialImage{
 						Tag:        ptr.To(imageTag),
 						Repository: ptr.To(imageRepo),
+					},
+					CRDs: &operatorchart.PartialCRDs{
+						Enabled: ptr.To(true),
 					},
 					AdditionalCmdFlags: []string{
 						// These are needed for running decommissioning tests.

@@ -27,16 +27,18 @@ Feature: Upgrading the operator
     image:
       tag: dev
       repository: localhost/redpanda-operator
+    crds:
+      enabled: true
     """
     # use the new status as this will eventually get set
     And cluster "operator-upgrade" should be stable with 1 nodes
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 25.1.2
-    Given I install local CRDs from "../operator/config/crd/bases"
     And I install redpanda helm chart version "v25.1.2" with the values:
     """
-
+    crds:
+      enabled: true
     """
     And I apply Kubernetes manifest:
     """
@@ -58,6 +60,8 @@ Feature: Upgrading the operator
     image:
       tag: dev
       repository: localhost/redpanda-operator
+    crds:
+      enabled: true
     """
     # use the new status as this will eventually get set
     And cluster "operator-upgrade" should be stable with 1 nodes
