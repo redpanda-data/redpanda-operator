@@ -48,7 +48,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	cfg *clusterconfiguration.CombinedCfg,
-	configMapResource *resources.ConfigMapResource,
 	statefulSetResources []*resources.StatefulSetResource,
 	pki *certmanager.PkiReconciler,
 	fqdn string,
@@ -82,11 +81,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return 0, errorWithContext(err, "error while creating the concrete configuration")
 	}
 
-	lastAppliedCriticalConfigurationHash, err := r.getOrInitLastAppliedCriticalConfiguration(ctx, configMapResource, cfg, schema)
-	if err != nil {
-		return 0, errorWithContext(err, "could not load the last applied configuration")
-	}
-
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated
 	// and the API returns the same error (400) that is returned in case of malformed input, which causes a stop of the reconciliation
 	var centralConfigActive bool
@@ -104,36 +98,6 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	if err != nil || !patchSuccess {
 		// patchSuccess=false indicates an error set on the condition that should not be propagated (but we terminate reconciliation anyway)
 		return 0, err
-	}
-
-	// TODO a failure and restart here (after successful patch, before setting the last applied configuration) may lead to inconsistency if the user
-	// changes the CR in the meantime (e.g. removing a field), since we applied a config to the cluster but did not store the information anywhere else.
-	// A possible fix is doing a two-phase commit (first stage commit on configmap, then apply it to the cluster, with possibility to recover on failure),
-	// but it seems overkill given that the case is rare and requires cooperation from the user.
-
-	for _, statefulSetResource := range statefulSetResources {
-		if statefulSetResource == nil {
-			continue
-		}
-		hash, hashChanged, err := r.checkCentralizedConfigurationHashChange(ctx, redpandaCluster, cfg, schema, lastAppliedCriticalConfigurationHash, statefulSetResource)
-		if err != nil {
-			return 0, err
-		} else if hashChanged {
-			// Definitely needs restart
-			log.Info("Centralized configuration hash has changed")
-			if err = statefulSetResource.SetCentralizedConfigurationHashInCluster(ctx, hash); err != nil {
-				return 0, errorWithContext(err, "could not update config hash on statefulset")
-			}
-		}
-	}
-
-	// Now we can mark the new lastAppliedCriticalConfiguration for next update
-	hash, err := cfg.GetCriticalClusterConfigHash(ctx, schema)
-	if err != nil {
-		return 0, errorWithContext(err, "could not concretize critical configuration to store last applied configuration in the cluster")
-	}
-	if err = configMapResource.SetAnnotationForCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey, &hash); err != nil {
-		return 0, errorWithContext(err, "could not store last applied configuration in the cluster")
 	}
 
 	// Synchronized status with cluster, including triggering a restart if needed
@@ -174,36 +138,6 @@ func (r *ClusterReconciler) ratelimitCondition(rp *vectorizedv1alpha1.Cluster, c
 
 	recheckAfter := r.configurationReassertionPeriod() - time.Since(cond.LastTransitionTime.Time)
 	return max(0, recheckAfter)
-}
-
-// getOrInitLastAppliedCriticalConfiguration gets the last applied critical configuration hash to the cluster or creates it when missing.
-//
-// This is needed because the controller will later use that annotation to drive the restart of stateful sets.
-// A missing annotation indicates a cluster where centralized configuration has just been primed using the
-// contents of the .bootstrap.yaml file, so we freeze its current content (early in the reconciliation cycle) so that
-// subsequent patches are computed correctly.
-func (r *ClusterReconciler) getOrInitLastAppliedCriticalConfiguration(
-	ctx context.Context,
-	configMapResource *resources.ConfigMapResource,
-	cfg *clusterconfiguration.CombinedCfg,
-	schema rpadmin.ConfigSchema,
-) (string, error) {
-	lastApplied, cmPresent, err := configMapResource.GetAnnotationFromCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey)
-	if err != nil {
-		return "", err
-	}
-	if !cmPresent || lastApplied != nil {
-		return *lastApplied, nil
-	}
-
-	hash, err := cfg.GetCriticalClusterConfigHash(ctx, schema)
-	if err != nil {
-		return "", err
-	}
-	if err := configMapResource.SetAnnotationForCluster(ctx, resources.LastAppliedCriticalConfigurationAnnotationKey, &hash); err != nil {
-		return "", err
-	}
-	return hash, nil
 }
 
 func (r *ClusterReconciler) applyPatchIfNeeded(
@@ -306,33 +240,6 @@ func (r *ClusterReconciler) ensureConditionPresent(
 	return false, nil
 }
 
-func (r *ClusterReconciler) checkCentralizedConfigurationHashChange(
-	ctx context.Context,
-	redpandaCluster *vectorizedv1alpha1.Cluster,
-	cfg *clusterconfiguration.CombinedCfg,
-	schema rpadmin.ConfigSchema,
-	lastAppliedHash string,
-	statefulSetResource *resources.StatefulSetResource,
-) (hash string, changed bool, err error) {
-	hash, err = cfg.GetCriticalClusterConfigHash(ctx, schema)
-	if err != nil {
-		return "", false, newErrorWithContext(redpandaCluster.Namespace, redpandaCluster.Name)(err, "could not compute hash of the new configuration")
-	}
-
-	oldHash, err := statefulSetResource.GetCentralizedConfigurationHashFromCluster(ctx)
-	if err != nil {
-		return "", false, err
-	}
-
-	if oldHash == "" {
-		// Annotation not yet set on the statefulset (e.g. first time we change config).
-		// We check a diff against last applied configuration to avoid triggering a restart when not needed.
-		oldHash = lastAppliedHash
-	}
-
-	return hash, hash != oldHash, nil
-}
-
 func (r *ClusterReconciler) synchronizeStatusWithCluster(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
@@ -360,6 +267,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 		"message", conditionData.Message,
 		"needs_restart", clusterNeedsRestart,
 		"restarting", restartingCluster,
+		"isRestarting", isRestarting,
 	)
 	if conditionChanged || (restartingCluster && !isRestarting) {
 		log.Info("Updating configuration state for cluster")
@@ -377,7 +285,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 			if sts == nil {
 				continue
 			}
-			if err := sts.MarkPodsForUpdate(ctx); err != nil {
+			if err := sts.MarkPodsForUpdate(ctx, resources.ClusterUpdateReasonConfig); err != nil {
 				return nil, errorWithContext(err, "could not mark pods for update")
 			}
 		}

@@ -39,13 +39,14 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/vcluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 type ImageAnnotation struct {
@@ -227,11 +228,13 @@ func TestChartYaml(t *testing.T) {
 	var operatorImages []ImageAnnotation
 	require.NoError(t, yaml.Unmarshal([]byte(Chart.Metadata().Annotations["artifacthub.io/images"]), &operatorImages))
 
-	var redpandaImages []ImageAnnotation
-	require.NoError(t, yaml.Unmarshal([]byte(redpanda.Chart.Metadata().Annotations["artifacthub.io/images"]), &redpandaImages))
+	redpandaImage := fmt.Sprintf("%s:%s", run.DefaultRedpandaRepository, run.DefaultRedpandaImageTag)
 
-	assert.Equal(t, operatorImages[1], redpandaImages[0], "artifacthub.io/images should be in sync with the vendored redpanda chart")
+	assert.Equal(t, operatorImages[1].Image, redpandaImage, "artifacthub.io/images should be in sync with the default declared in run.go")
 	assert.Equal(t, fmt.Sprintf("%s:%s", operatorRepo, expectedVersion), operatorImages[0].Image, "artifacthub.io/images should be in sync with appVersion")
+	// TODO(chrisseto): Enable this once the release is cut.
+	// NB: AppVersion is used here because it includes a leading v.
+	// assert.Truef(t, strings.HasPrefix(Chart.Metadata().AppVersion, run.DefaultRedpandaImageTag[:5]), "Chart.yaml's appVersion should have the same major and minor version as the default redpanda tag")
 }
 
 func TestRBACBindings(t *testing.T) {

@@ -20,7 +20,7 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: "redpandadata/redpanda:v24.2.24"
+      image: "redpandadata/redpanda:v25.1.9"
 status:
   phase: "Running"
 ---
@@ -31,7 +31,7 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: "redpandadata/redpanda:v24.2.24"
+      image: "redpandadata/redpanda:v25.1.9"
 status:
   phase: "Running"
 ---
@@ -42,7 +42,7 @@ metadata:
 spec:
   containers:
     - name: redpanda
-      image: "redpandadata/redpanda:v24.2.24"
+      image: "redpandadata/redpanda:v25.1.9"
 status:
   phase: "Running"
 ---
@@ -56,7 +56,7 @@ kind: Cluster
 metadata:
   name: up-img-admin-mtls
 status:
-  version: "v24.2.24"
+  version: "v25.1.9"
   readyReplicas: 3
   replicas: 3
   upgrading: false

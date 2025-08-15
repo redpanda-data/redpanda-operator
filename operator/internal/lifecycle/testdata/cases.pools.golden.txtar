@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -35,7 +35,7 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.10.2
+          helm.sh/chart: redpanda-5.10.4
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
@@ -67,7 +67,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.2
+          image: redpandadata/redpanda-operator:v25.2.1
           lifecycle:
             postStart:
               exec:
@@ -163,6 +163,7 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
+          - --no-set-superusers
           command:
           - /redpanda-operator
           env:
@@ -205,7 +206,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.2
+          image: redpandadata/redpanda-operator:v25.2.1
           name: tuning
           resources: {}
           securityContext:
@@ -243,7 +244,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.2
+          image: redpandadata/redpanda-operator:v25.2.1
           name: redpanda-configurator
           resources: {}
           securityContext:

@@ -229,17 +229,9 @@ func TestIntegrationChart(t *testing.T) {
 			Values: partial,
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -248,8 +240,9 @@ func TestIntegrationChart(t *testing.T) {
 		assert.NoErrorf(t, kafkaListenerTest(ctx, rpk), "Kafka listener sub test failed")
 		assert.NoErrorf(t, adminListenerTest(ctx, rpk), "Admin listener sub test failed")
 		schemaBytes, retrievedSchema, err := schemaRegistryListenerTest(ctx, rpk)
-		assert.JSONEq(t, string(schemaBytes), retrievedSchema)
-		assert.NoErrorf(t, err, "Schema Registry listener sub test failed")
+		if assert.NoErrorf(t, err, "Schema Registry listener sub test failed") {
+			assert.JSONEq(t, string(schemaBytes), retrievedSchema)
+		}
 		assert.NoErrorf(t, httpProxyListenerTest(ctx, rpk), "HTTP Proxy listener sub test failed")
 	})
 
@@ -304,17 +297,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -363,17 +348,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -426,17 +403,9 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
 
-		dot := &helmette.Dot{
-			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
-			Release: helmette.Release{Name: rpRelease.Name, Namespace: rpRelease.Namespace},
-			Chart: helmette.Chart{
-				Name: "redpanda",
-			},
-		}
-
-		cleanup, err := rpk.ExposeRedpandaCluster(ctx, dot, w, wErr)
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
 		if cleanup != nil {
 			t.Cleanup(cleanup)
 		}
@@ -565,7 +534,7 @@ func TieredStorageSecretRefs(t *testing.T, secret *corev1.Secret) redpanda.Parti
 	}
 }
 
-func kafkaListenerTest(ctx context.Context, rpk Client) error {
+func kafkaListenerTest(ctx context.Context, rpk *Client) error {
 	input := "test-input"
 	topicName := "testTopic"
 	_, err := rpk.CreateTopic(ctx, topicName)
@@ -590,7 +559,7 @@ func kafkaListenerTest(ctx context.Context, rpk Client) error {
 	return nil
 }
 
-func adminListenerTest(ctx context.Context, rpk Client) error {
+func adminListenerTest(ctx context.Context, rpk *Client) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -600,7 +569,7 @@ func adminListenerTest(ctx context.Context, rpk Client) error {
 				continue
 			}
 
-			if out["is_healthy"].(bool) {
+			if out.IsHealthy {
 				return nil
 			}
 		case <-deadline:
@@ -611,7 +580,7 @@ func adminListenerTest(ctx context.Context, rpk Client) error {
 	}
 }
 
-func superuserTest(ctx context.Context, rpk Client, superusers ...string) error {
+func superuserTest(ctx context.Context, rpk *Client, superusers ...string) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -652,7 +621,7 @@ func equalElements[T comparable](a, b []T) bool {
 	return true
 }
 
-func schemaRegistryListenerTest(ctx context.Context, rpk Client) ([]byte, string, error) {
+func schemaRegistryListenerTest(ctx context.Context, rpk *Client) ([]byte, string, error) {
 	// Test schema registry
 	// Based on https://docs.redpanda.com/current/manage/schema-reg/schema-reg-api/
 	formats, err := rpk.QuerySupportedFormats(ctx)
@@ -686,22 +655,12 @@ func schemaRegistryListenerTest(ctx context.Context, rpk Client) ([]byte, string
 		},
 	}
 
-	registeredID, err := rpk.RegisterSchema(ctx, schema)
+	registered, err := rpk.RegisterSchema(ctx, schema)
 	if err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	var id float64
-	if idForSchema, ok := registeredID["id"]; ok {
-		id = idForSchema.(float64)
-	}
-
-	schemaBytes, err := json.Marshal(schema)
-	if err != nil {
-		return nil, "", errors.WithStack(err)
-	}
-
-	retrievedSchema, err := rpk.RetrieveSchema(ctx, int(id))
+	retrievedSchema, err := rpk.RetrieveSchema(ctx, registered.ID)
 	if err != nil {
 		return nil, "", errors.WithStack(err)
 	}
@@ -711,20 +670,18 @@ func schemaRegistryListenerTest(ctx context.Context, rpk Client) ([]byte, string
 		return nil, "", errors.WithStack(err)
 	}
 	if resp[0] != "sensor-value" {
-		return nil, "", fmt.Errorf("expected sensor-value %s, got %s", resp[0], registeredID["id"])
+		return nil, "", fmt.Errorf("expected sensor-value %d, got %q", registered.ID, resp[0])
 	}
 
-	_, err = rpk.SoftDeleteSchema(ctx, resp[0], int(id))
-	if err != nil {
+	if err := rpk.SoftDeleteSchema(ctx, resp[0], registered.ID); err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	_, err = rpk.HardDeleteSchema(ctx, resp[0], int(id))
-	if err != nil {
+	if err := rpk.HardDeleteSchema(ctx, resp[0], registered.ID); err != nil {
 		return nil, "", errors.WithStack(err)
 	}
 
-	return schemaBytes, retrievedSchema, nil
+	return []byte(registered.Schema.Schema), retrievedSchema.Schema, nil
 }
 
 type HTTPResponse []struct {
@@ -735,7 +692,7 @@ type HTTPResponse []struct {
 	Offset    int     `json:"offset"`
 }
 
-func httpProxyListenerTest(ctx context.Context, rpk Client) error {
+func httpProxyListenerTest(ctx context.Context, rpk *Client) error {
 	// Test http proxy
 	// Based on https://docs.redpanda.com/current/develop/http-proxy/
 	_, err := rpk.ListTopics(ctx)

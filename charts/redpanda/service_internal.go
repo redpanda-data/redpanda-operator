@@ -20,6 +20,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+const (
+	InternalAdminAPIPortName       = "admin"
+	InternalKafkaPortName          = "kafka"
+	InternalSchemaRegistryPortName = "schemaregistry"
+	InternalPandaProxyPortName     = "http"
+)
+
 func MonitoringEnabledLabel(dot *helmette.Dot) map[string]string {
 	values := helmette.Unwrap[Values](dot.Values)
 	return map[string]string{
@@ -36,7 +43,7 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 	ports := []corev1.ServicePort{}
 
 	ports = append(ports, corev1.ServicePort{
-		Name:        "admin",
+		Name:        InternalAdminAPIPortName,
 		Protocol:    "TCP",
 		AppProtocol: values.Listeners.Admin.AppProtocol,
 		Port:        values.Listeners.Admin.Port,
@@ -45,14 +52,14 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 
 	if values.Listeners.HTTP.Enabled {
 		ports = append(ports, corev1.ServicePort{
-			Name:       "http",
+			Name:       InternalPandaProxyPortName,
 			Protocol:   "TCP",
 			Port:       values.Listeners.HTTP.Port,
 			TargetPort: intstr.FromInt32(values.Listeners.HTTP.Port),
 		})
 	}
 	ports = append(ports, corev1.ServicePort{
-		Name:       "kafka",
+		Name:       InternalKafkaPortName,
 		Protocol:   "TCP",
 		Port:       values.Listeners.Kafka.Port,
 		TargetPort: intstr.FromInt32(values.Listeners.Kafka.Port),
@@ -65,7 +72,7 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 	})
 	if values.Listeners.SchemaRegistry.Enabled {
 		ports = append(ports, corev1.ServicePort{
-			Name:       "schemaregistry",
+			Name:       InternalSchemaRegistryPortName,
 			Protocol:   "TCP",
 			Port:       values.Listeners.SchemaRegistry.Port,
 			TargetPort: intstr.FromInt32(values.Listeners.SchemaRegistry.Port),

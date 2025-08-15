@@ -17,3 +17,8 @@ func isolatedTag(ctx context.Context, t TestingT, args ...string) context.Contex
 	t.IsolateNamespace(ctx)
 	return ctx
 }
+
+func vclusterTag(ctx context.Context, t TestingT, args ...string) context.Context {
+	t.VCluster(ctx)
+	return ctx
+}

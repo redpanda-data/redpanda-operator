@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external
@@ -60,7 +60,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -91,7 +91,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -108,7 +108,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -320,7 +320,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -361,7 +361,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk
@@ -378,7 +378,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-selfsigned-issuer
@@ -398,7 +398,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-issuer
@@ -419,7 +419,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-selfsigned-issuer
@@ -439,7 +439,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-issuer
@@ -460,7 +460,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-certificate
@@ -490,7 +490,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-certificate
@@ -520,7 +520,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-cert
@@ -561,7 +561,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-cert
@@ -602,86 +602,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-decommission
-    namespace: basic-test
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - events
-    verbs:
-    - create
-    - patch
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumeclaims
-    verbs:
-    - delete
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    - secrets
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-pvcunbinder
-    namespace: basic-test
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumeclaims
-    - pods
-    verbs:
-    - delete
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -716,7 +637,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -735,55 +656,6 @@
     - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-basic-test-decommission
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumes
-    verbs:
-    - patch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-basic-test-pvcunbinder
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumes
-    verbs:
-    - get
-    - list
-    - patch
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     creationTimestamp: null
@@ -795,57 +667,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-decommission
-    namespace: basic-test
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: basic-test-decommission
-  subjects:
-  - kind: ServiceAccount
-    name: basic-test
-    namespace: basic-test
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-pvcunbinder
-    namespace: basic-test
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: basic-test-pvcunbinder
-  subjects:
-  - kind: ServiceAccount
-    name: basic-test
-    namespace: basic-test
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -870,7 +692,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -879,56 +701,6 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: basic-test-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: basic-test
-    namespace: basic-test
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-basic-test-decommission
-    namespace: basic-test
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: basic-test-basic-test-decommission
-  subjects:
-  - kind: ServiceAccount
-    name: basic-test
-    namespace: basic-test
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-basic-test-pvcunbinder
-    namespace: basic-test
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: basic-test-basic-test-pvcunbinder
   subjects:
   - kind: ServiceAccount
     name: basic-test
@@ -945,7 +717,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sts-lifecycle
@@ -1041,7 +813,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.2
+      helm.sh/chart: redpanda-5.10.4
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configurator

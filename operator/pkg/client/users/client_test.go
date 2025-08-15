@@ -56,62 +56,81 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	container, err := redpanda.Run(ctx, getTestImage(),
-		redpanda.WithEnableKafkaAuthorization(),
-		redpanda.WithEnableSASL(),
-		redpanda.WithSuperusers("user"),
-		redpanda.WithNewServiceAccount("user", "password"),
-	)
+	test := func(t *testing.T, container *redpanda.Container) {
+		broker, err := container.KafkaSeedBroker(ctx)
+		require.NoError(t, err)
 
-	require.NoError(t, err)
+		admin, err := container.AdminAPIAddress(ctx)
+		require.NoError(t, err)
 
-	broker, err := container.KafkaSeedBroker(ctx)
-	require.NoError(t, err)
+		kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(broker), kgo.SASL(scram.Auth{
+			User: "user",
+			Pass: "password",
+		}.AsSha256Mechanism()))
+		require.NoError(t, err)
 
-	admin, err := container.AdminAPIAddress(ctx)
-	require.NoError(t, err)
+		rpadminClient, err := rpadmin.NewAdminAPI([]string{admin}, &rpadmin.BasicAuth{
+			Username: "user",
+			Password: "password",
+		}, nil)
+		require.NoError(t, err)
 
-	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(broker), kgo.SASL(scram.Auth{
-		User: "user",
-		Pass: "password",
-	}.AsSha256Mechanism()))
-	require.NoError(t, err)
+		usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
+		require.NoError(t, err)
+		defer usersClient.Close()
 
-	rpadminClient, err := rpadmin.NewAdminAPI([]string{admin}, &rpadmin.BasicAuth{
-		Username: "user",
-		Password: "password",
-	}, nil)
-	require.NoError(t, err)
+		for _, mechanism := range []kadm.ScramMechanism{
+			kadm.ScramSha256, kadm.ScramSha512,
+		} {
+			t.Run(mechanism.String(), func(t *testing.T) {
+				username := "testuser" + strconv.Itoa(int(time.Now().UnixNano()))
 
-	usersClient, err := NewClient(ctx, c, kadm.NewClient(kafkaClient), rpadminClient)
-	require.NoError(t, err)
-	defer usersClient.Close()
+				ok, err := usersClient.has(ctx, username)
+				require.NoError(t, err)
+				require.False(t, ok)
 
-	for _, mechanism := range []kadm.ScramMechanism{
-		kadm.ScramSha256, kadm.ScramSha512,
-	} {
-		t.Run(mechanism.String(), func(t *testing.T) {
-			username := "testuser" + strconv.Itoa(int(time.Now().UnixNano()))
+				err = usersClient.create(ctx, username, "password", mechanism)
+				require.NoError(t, err)
 
-			ok, err := usersClient.has(ctx, username)
-			require.NoError(t, err)
-			require.False(t, ok)
+				ok, err = usersClient.has(ctx, username)
+				require.NoError(t, err)
+				require.True(t, ok)
 
-			err = usersClient.create(ctx, username, "password", mechanism)
-			require.NoError(t, err)
+				err = usersClient.delete(ctx, username, mechanism)
+				require.NoError(t, err)
 
-			ok, err = usersClient.has(ctx, username)
-			require.NoError(t, err)
-			require.True(t, ok)
-
-			err = usersClient.delete(ctx, username)
-			require.NoError(t, err)
-
-			ok, err = usersClient.has(ctx, username)
-			require.NoError(t, err)
-			require.False(t, ok)
-		})
+				ok, err = usersClient.has(ctx, username)
+				require.NoError(t, err)
+				require.False(t, ok)
+			})
+		}
 	}
+
+	t.Run("default test image", func(t *testing.T) {
+		container, err := redpanda.Run(ctx, getTestImage(),
+			redpanda.WithEnableKafkaAuthorization(),
+			redpanda.WithEnableSASL(),
+			redpanda.WithSuperusers("user"),
+			redpanda.WithNewServiceAccount("user", "password"),
+		)
+
+		require.NoError(t, err)
+
+		test(t, container)
+	})
+
+	t.Run("25.2.1 release candidate", func(t *testing.T) {
+		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-unstable:v25.2.1-rc7",
+			redpanda.WithEnableKafkaAuthorization(),
+			redpanda.WithEnableSASL(),
+			redpanda.WithSuperusers("user"),
+			redpanda.WithNewServiceAccount("user", "password"),
+		)
+
+		require.NoError(t, err)
+
+		test(t, container)
+	})
 }
 
 func TestClientPasswordCreation(t *testing.T) {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,10 +45,6 @@ const (
 	bootstrapDestinationEnvVar = "BOOTSTRAP_DESTINATION"
 	bootstrapTemplateFile      = ".bootstrap.json.in"
 )
-
-// LastAppliedCriticalConfigurationAnnotationKey is used to store the hash of the most-recently-applied configuration,
-// selecting only those values which are marked in the schema as requiring a cluster restart.
-var LastAppliedCriticalConfigurationAnnotationKey = vectorizedv1alpha1.GroupVersion.Group + "/last-applied-critical-configuration"
 
 var _ Resource = &ConfigMapResource{}
 
@@ -107,14 +102,6 @@ func (r *ConfigMapResource) update(
 	c k8sclient.Client,
 	logger logr.Logger,
 ) error {
-	// Do not touch existing last-applied-configuration (it's not reconciled in the main loop)
-	if val, ok := current.Annotations[LastAppliedCriticalConfigurationAnnotationKey]; ok {
-		if modified.Annotations == nil {
-			modified.Annotations = make(map[string]string)
-		}
-		modified.Annotations[LastAppliedCriticalConfigurationAnnotationKey] = val
-	}
-
 	if err := r.markConfigurationConditionChanged(ctx, current, modified); err != nil {
 		return err
 	}
@@ -220,47 +207,4 @@ func (r *ConfigMapResource) globalConfigurationChanged(
 	newConfigBootstrap := modified.Data[bootstrapTemplateFile]
 
 	return newConfigNode != oldConfigNode || newConfigBootstrap != oldConfigBootstrap
-}
-
-// GetAnnotationFromCluster returns the last applied configuration from the configmap,
-// together with information about the presence of the configmap itself.
-func (r *ConfigMapResource) GetAnnotationFromCluster(
-	ctx context.Context,
-	annotation string,
-) (annotationValue *string, configmapExists bool, err error) {
-	existing := corev1.ConfigMap{}
-	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			// No keys have been used previously
-			return nil, false, nil
-		}
-		return nil, false, fmt.Errorf("could not load configmap for reading last applied configuration: %w", err)
-	}
-	if ann, ok := existing.Annotations[annotation]; ok {
-		return &ann, true, nil
-	}
-	return nil, true, nil
-}
-
-// SetAnnotationForCluster sets or updates an annotation in the configmap
-func (r *ConfigMapResource) SetAnnotationForCluster(
-	ctx context.Context, annotation string, newValue *string,
-) error {
-	existing := corev1.ConfigMap{}
-	if err := r.Client.Get(ctx, r.Key(), &existing); err != nil {
-		return fmt.Errorf("could not load configmap for storing last applied configuration: %w", err)
-	}
-	existingValue, found := existing.Annotations[annotation]
-	if newValue == nil {
-		if !found {
-			return nil
-		}
-		delete(existing.Annotations, annotation)
-	} else {
-		if existingValue == *newValue {
-			return nil
-		}
-		existing.Annotations[annotation] = *newValue
-	}
-	return r.Update(ctx, &existing)
 }
