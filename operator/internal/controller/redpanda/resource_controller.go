@@ -22,11 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
-
-const fieldOwner client.FieldOwner = "redpanda-operator"
 
 type Resource[T any] interface {
 	*T
@@ -100,7 +99,7 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 	if !controllerutil.ContainsFinalizer(object, FinalizerKey) {
 		patch := r.reconciler.FinalizerPatch(request)
 		if patch != nil {
-			if err := r.Patch(ctx, object, patch, client.ForceOwnership, fieldOwner); err != nil {
+			if err := r.Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -109,7 +108,7 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 	patch, err := r.reconciler.SyncResource(ctx, request)
 	var syncError error
 	if patch != nil {
-		syncError = r.Status().Patch(ctx, object, patch, client.ForceOwnership, fieldOwner)
+		syncError = r.Status().Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner)
 	}
 
 	result := ctrl.Result{}
