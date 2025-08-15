@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -50,7 +51,7 @@ func ForTestInShared(t *testing.T) *Cluster {
 }
 
 func ForTest(t *testing.T, host *k3d.Cluster) *Cluster {
-	cluster, err := New(t.Context(), host)
+	cluster, err := New(t.Context(), host.RESTConfig())
 	require.NoError(t, err)
 
 	testutil.MaybeCleanup(t, func() {
@@ -66,7 +67,7 @@ func NewInShared(ctx context.Context) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	cl, err := New(ctx, host)
+	cl, err := New(ctx, host.RESTConfig())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

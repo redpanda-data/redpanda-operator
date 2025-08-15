@@ -394,9 +394,15 @@ func Run(
 		CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
 		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
 	}
-	redpandaImage := lifecycle.Image{
+
+	sidecarImage := lifecycle.Image{
 		Repository: opts.configuratorBaseImage,
 		Tag:        opts.configuratorTag,
+	}
+
+	redpandaImage := lifecycle.Image{
+		Repository: opts.redpandaDefaultRepository,
+		Tag:        opts.redpandaDefaultTag,
 	}
 
 	// Redpanda Reconciler
@@ -404,7 +410,7 @@ func Run(
 		KubeConfig:           mgr.GetConfig(),
 		Client:               mgr.GetClient(),
 		EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-		LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
+		LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 		ClientFactory:        factory,
 		CloudSecretsExpander: cloudExpander,
 	}).SetupWithManager(ctx, mgr); err != nil {
