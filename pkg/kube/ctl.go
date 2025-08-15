@@ -19,6 +19,7 @@ import (
 	"github.com/cockroachdb/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -112,25 +113,38 @@ func FromRESTConfig(cfg *RESTConfig, opts ...Option) (*Ctl, error) {
 		return nil, err
 	}
 
-	fieldManager := options.FieldManager
-	if fieldManager == "" {
-		fieldManager = "*kube.Ctl"
+	fieldOwner := options.FieldManager
+	if fieldOwner == "" {
+		fieldOwner = "*kube.Ctl"
 	}
 
-	return &Ctl{config: cfg, client: c, fieldManager: fieldManager}, nil
+	return &Ctl{config: cfg, client: c, fieldOwner: client.FieldOwner(fieldOwner)}, nil
 }
 
 // Ctl is a Kubernetes client inspired by the shape of the `kubectl` CLI with a
 // focus on being ergonomic.
 type Ctl struct {
-	config       *rest.Config
-	client       client.Client
-	fieldManager string
+	config     *rest.Config
+	client     client.Client
+	fieldOwner client.FieldOwner
 }
 
 // RestConfig returns a deep copy of the [rest.Config] used by this [Ctl].
 func (c *Ctl) RestConfig() *rest.Config {
 	return rest.CopyConfig(c.config)
+}
+
+// Scheme returns the [runtime.Scheme] used by this instance.
+func (c *Ctl) Scheme() *runtime.Scheme {
+	return c.client.Scheme()
+}
+
+func (c *Ctl) ScopeOf(gvk schema.GroupVersionKind) (meta.RESTScopeName, error) {
+	mapping, err := c.client.RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return meta.RESTScopeName(""), errors.WithStack(err)
+	}
+	return mapping.Scope.Name(), nil
 }
 
 // Get fetches the latest state of an object into `obj` from Kubernetes.
@@ -172,17 +186,17 @@ func (c *Ctl) List(ctx context.Context, namespace string, objs ObjectList, opts 
 }
 
 // Apply "applies" the provided [Object] via SSA (Server Side Apply).
-func (c *Ctl) Apply(ctx context.Context, obj Object) error {
-	kinds, _, err := c.client.Scheme().ObjectKinds(obj)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
+func (c *Ctl) Apply(ctx context.Context, obj Object, opts ...client.PatchOption) error {
 	obj.SetManagedFields(nil)
 
-	obj.GetObjectKind().SetGroupVersionKind(kinds[0])
+	if err := setGVK(c.Scheme(), obj); err != nil {
+		return err
+	}
 
-	if err := c.client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.fieldManager)); err != nil {
+	// Prepend field owner to allow caller's to override it.
+	opts = append([]client.PatchOption{c.fieldOwner}, opts...)
+
+	if err := c.client.Patch(ctx, obj, client.Apply, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -248,9 +262,16 @@ func (c *Ctl) CreateAndWait(ctx context.Context, obj Object, cond CondFn[Object]
 	return c.WaitFor(ctx, obj, cond)
 }
 
-// Delete initiates the deletion the given [Object].
+// Delete declaratively initiates deletion the given [Object].
+//
+// Unlike other Ctl methods, Delete does not update obj.
+//
+// If obj is already being deleted or has been successfully delete (e.g.
+// returns a 404), Delete returns nil.
 func (c *Ctl) Delete(ctx context.Context, obj Object) error {
 	if err := c.client.Delete(ctx, obj); err != nil {
+		// Swallow not found errors to behave as a "declarative" delete.
+		_, err := IsDeleted(obj, err)
 		return errors.WithStack(err)
 	}
 	return nil
