@@ -190,7 +190,7 @@ func TestGoModLint(t *testing.T) {
 	workspaceWideVersions := map[string]string{
 		"github.com/Masterminds/semver/v3": "v3.3.1",
 		"github.com/Masterminds/sprig/v3":  "v3.3.0",
-		"helm.sh/helm/v3":                  "v3.18.4",
+		"helm.sh/helm/v3":                  "v3.18.5",
 		"k8s.io/api":                       "v0.33.3",
 		"k8s.io/apiextensions-apiserver":   "v0.33.3",
 		"k8s.io/apimachinery":              "v0.33.3",
