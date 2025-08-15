@@ -481,10 +481,12 @@ func removeAllFinalizers(ctx context.Context, t framework.TestingT, gvk schema.G
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(gvk)
 
-	require.NoError(t, t.List(ctx, list))
-	for i := range list.Items {
-		item := list.Items[i]
-		item.SetFinalizers(nil)
-		require.NoError(t, t.Update(ctx, &item))
+	// swallow errors for non-existent crds
+	if err := t.List(ctx, list); err == nil {
+		for i := range list.Items {
+			item := list.Items[i]
+			item.SetFinalizers(nil)
+			require.NoError(t, t.Update(ctx, &item))
+		}
 	}
 }

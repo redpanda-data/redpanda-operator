@@ -13,6 +13,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -50,8 +53,17 @@ func acceptServiceAccountMetricsRequest(ctx context.Context, serviceAccountName 
 	clientsForOperator(ctx, true, serviceAccountName, "").ExpectCorrectMetricsResponse(ctx)
 }
 
-func createClusterRoleBinding(ctx context.Context, serviceAccountName, clusterRoleName string) {
+func createClusterRoleBinding(ctx context.Context, serviceAccountName, clusterRoleRegexp string) {
 	t := framework.T(ctx)
+
+	crs := &rbacv1.ClusterRoleList{}
+	require.NoError(t, t.List(ctx, crs))
+	clusterRoleName := ""
+	for _, cr := range crs.Items {
+		if regexp.MustCompile(clusterRoleRegexp).Match([]byte(cr.Name)) {
+			clusterRoleName = cr.Name
+		}
+	}
 
 	require.NoError(t, t.Create(ctx, &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,9 +124,14 @@ func iInstallRedpandaHelmChartVersionWithTheValues(ctx context.Context, t framew
 		require.NoError(t, os.RemoveAll(file.Name()))
 	})
 
-	// these are needed for old versions of the operator
-	t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml", version))
-	t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/source-controller.yaml", version))
+	major, err := strconv.Atoi(strings.Split(strings.TrimPrefix(version, "v"), ".")[0])
+	require.NoError(t, err)
+
+	if major < 25 {
+		// these are needed for old versions of the operator
+		t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml", version))
+		t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/source-controller.yaml", version))
+	}
 
 	t.Cleanup(func(ctx context.Context) {
 		// make sure we remove all finalizers for these or the CRD cleanup will get wedged

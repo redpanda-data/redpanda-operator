@@ -36,6 +36,10 @@ var (
 		crds.User(),
 		crds.Schema(),
 	}
+	vectorizedCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.Cluster(),
+		crds.Console(),
+	}
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.NodePool(),
 	}
@@ -49,6 +53,7 @@ var (
 
 func Command() *cobra.Command {
 	var experimental bool
+	var vectorized bool
 	cmd := &cobra.Command{
 		Use:   "crd",
 		Short: "Install CRDs into the cluster",
@@ -58,11 +63,13 @@ func Command() *cobra.Command {
 			run(
 				ctx,
 				experimental,
+				vectorized,
 			)
 		},
 	}
 
 	cmd.Flags().BoolVar(&experimental, "experimental", false, "Install experimental CRDs")
+	cmd.Flags().BoolVar(&vectorized, "vectorized", false, "Install vectorized group (Cluster, Console) AKA the V1 Operator CRDs")
 
 	return cmd
 }
@@ -70,6 +77,7 @@ func Command() *cobra.Command {
 func run(
 	ctx context.Context,
 	experimental bool,
+	vectorized bool,
 ) {
 	crdType := "stable"
 	if experimental {
@@ -92,6 +100,10 @@ func run(
 	toInstall := stableCRDs
 	if experimental {
 		toInstall = append(toInstall, experimentalCRDs...)
+	}
+
+	if vectorized {
+		toInstall = append(toInstall, vectorizedCRDs...)
 	}
 
 	var errs []error

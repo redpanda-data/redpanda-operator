@@ -33,3 +33,7 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 
 	t.ApplyManifest(ctx, file.Name())
 }
+
+func iInstallLocalCRDs(ctx context.Context, t framework.TestingT, directory string) {
+	t.ApplyManifest(ctx, directory)
+}

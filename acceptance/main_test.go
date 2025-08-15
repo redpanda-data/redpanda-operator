@@ -18,12 +18,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	operatorchart "github.com/redpanda-data/redpanda-operator/operator/chart"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -67,7 +69,6 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				"installCRDs": true,
 			},
 		}).
-		WithCRDDirectory("../operator/config/crd/bases").
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
@@ -79,15 +80,18 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: namespace,
-				Values: map[string]any{
-					"logLevel": "trace",
-					"image": map[string]any{
-						"tag":        imageTag,
-						"repository": imageRepo,
+				Values: operatorchart.PartialValues{
+					LogLevel: ptr.To("trace"),
+					Image: &operatorchart.PartialImage{
+						Tag:        ptr.To(imageTag),
+						Repository: ptr.To(imageRepo),
 					},
-					"additionalCmdFlags": []string{
+					CRDs: &operatorchart.PartialCRDs{
+						Enabled: ptr.To(true),
+					},
+					AdditionalCmdFlags: []string{
 						// These are needed for running decommissioning tests.
-						"--additional-controllers=all",
+						"--additional-controllers=nodeWatcher,decommission",
 						"--unbind-pvcs-after=5s",
 						// This is set to a lower timeout due to the way that our internal
 						// admin client handles retries to brokers that are gone but still

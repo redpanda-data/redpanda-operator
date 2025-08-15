@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	fuzz "github.com/google/gofuzz"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -27,23 +28,189 @@ import (
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 type ImageAnnotation struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
+}
+
+func TestIntegrationChart(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
+	host, err := k3d.GetShared()
+	require.NoError(t, err)
+
+	require.NoError(t, host.ImportImage("localhost/redpanda-operator:dev"))
+
+	isStable := func(rp *redpandav1alpha2.Redpanda, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
+
+		stable := apimeta.FindStatusCondition(rp.Status.Conditions, statuses.ClusterStable)
+		if stable == nil {
+			return false, nil
+		}
+
+		ready := stable.Status == metav1.ConditionTrue
+		upToDate := rp.Generation == stable.ObservedGeneration
+		return upToDate && ready, nil
+	}
+
+	t.Run("default", func(t *testing.T) {
+		t.Parallel()
+
+		cluster := vcluster.ForTest(t, host)
+
+		ctl, err := kube.FromRESTConfig(cluster.RESTConfig(), kube.Options{
+			Options: client.Options{
+				Scheme: controller.V2Scheme,
+			},
+		})
+		require.NoError(t, err)
+
+		configForCLITools, err := cluster.PortForwardedRESTConfig(t.Context())
+		require.NoError(t, err)
+
+		helmClient, err := helm.New(helm.Options{
+			KubeConfig: configForCLITools,
+			ConfigHome: testutil.TempDir(t),
+		})
+		require.NoError(t, err)
+
+		operatorNamespace := "redpanda-operator"
+		operatorChart := "."
+
+		release, err := helmClient.Install(t.Context(), operatorChart, helm.InstallOptions{
+			CreateNamespace: true,
+			Name:            operatorNamespace,
+			Namespace:       operatorNamespace,
+			Values: PartialValues{
+				CRDs: &PartialCRDs{Enabled: ptr.To(true)},
+				Image: &PartialImage{
+					Repository: ptr.To("localhost/redpanda-operator"),
+					PullPolicy: ptr.To(corev1.PullNever),
+					Tag:        ptr.To("dev"),
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create Redpanda resource in namespace where operator is deployed along with 2 new Redpandas custom resources in different namespaces
+		require.NoError(t, kube.ApplyAll(t.Context(), ctl,
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-2"},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-3"},
+			}))
+
+		// Apply 3 redpanda CRs across different namespaces (included the one
+		// the operator is installed in) and observe that they eventually
+		// become stable.
+		require.NoError(t, kube.ApplyAllAndWait(
+			t.Context(),
+			ctl,
+			isStable,
+			testRP("rp-1", release.Namespace),
+			testRP("rp-2", "rp-2"),
+			testRP("rp-3", "rp-3"),
+		))
+	})
+
+	t.Run("namespaced", func(t *testing.T) {
+		t.Parallel()
+
+		cluster := vcluster.ForTest(t, host)
+
+		ctl, err := kube.FromRESTConfig(cluster.RESTConfig(), kube.Options{
+			Options: client.Options{
+				Scheme: controller.V2Scheme,
+			},
+		})
+		require.NoError(t, err)
+
+		configForCLITools, err := cluster.PortForwardedRESTConfig(t.Context())
+		require.NoError(t, err)
+
+		helmClient, err := helm.New(helm.Options{
+			KubeConfig: configForCLITools,
+			ConfigHome: testutil.TempDir(t),
+		})
+		require.NoError(t, err)
+
+		operatorNamespace := "redpanda-operator"
+		operatorChart := "."
+
+		release, err := helmClient.Install(t.Context(), operatorChart, helm.InstallOptions{
+			CreateNamespace: true,
+			Name:            operatorNamespace,
+			Namespace:       operatorNamespace,
+			Values: PartialValues{
+				CRDs:               &PartialCRDs{Enabled: ptr.To(true)},
+				AdditionalCmdFlags: []string{fmt.Sprintf("--namespace=%s", operatorNamespace)},
+				Image: &PartialImage{
+					Repository: ptr.To("localhost/redpanda-operator"),
+					PullPolicy: ptr.To(corev1.PullNever),
+					Tag:        ptr.To("dev"),
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create Redpanda resource in namespace where operator is deployed, but other Redpanda resources in different namespaces
+		// will not be reconciled
+		require.NoError(t, kube.ApplyAll(t.Context(), ctl,
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-2"},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-3"},
+			}))
+
+		// Assert that we can create a redpanda CR that becomes stable in the namespace specified by --namespace.
+		require.NoError(t, kube.ApplyAndWait(t.Context(), ctl, testRP("rp-1", release.Namespace), isStable))
+
+		// redpanda CR's created in other namespaces will not be reconciled.
+		require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl,
+			func(rp *redpandav1alpha2.Redpanda, err error) (bool, error) {
+				if err != nil {
+					return false, err
+				}
+
+				// We define "not reconciled" as not having an ObservedGeneration set for at least 5 seconds.
+				return time.Since(rp.CreationTimestamp.Time) >= 5*time.Second && rp.Generation != 0 && rp.Status.ObservedGeneration == 0, nil
+			},
+			testRP("rp-2", "rp-2"),
+			testRP("rp-3", "rp-3")))
+	})
+}
+
+func testRP(name string, namespace string) *redpandav1alpha2.Redpanda {
+	return &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec:       redpandav1alpha2.MinimalRedpandaSpec(),
+	}
 }
 
 func TestChartYaml(t *testing.T) {
@@ -88,17 +255,11 @@ func TestRBACBindings(t *testing.T) {
 			},
 		},
 		{
-			name: "rpk-debug-bundle",
+			name: "vectorized-controllers",
 			values: PartialValues{
-				RBAC: &PartialRBAC{
-					CreateRPKBundleCRs: ptr.To(true),
+				VectorizedControllers: &PartialVectorizedControllers{
+					Enabled: ptr.To(true),
 				},
-			},
-		},
-		{
-			name: "cluster-scope",
-			values: PartialValues{
-				Scope: ptr.To(Cluster),
 			},
 		},
 	}
@@ -194,7 +355,8 @@ func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 			redpandaClusterRoleRules, redpandaRoleRules := ExtractRules(redpandaObjs)
 			operatorClusterRoleRules, operatorRoleRules := ExtractRules(operatorObjs)
 
-			assertRulesSuperSet(t, operatorRoleRules, redpandaRoleRules)
+			require.Empty(t, operatorRoleRules, "all operator permissions should be created in the cluster scope")
+			assertRulesSuperSet(t, operatorClusterRoleRules, redpandaRoleRules)
 			assertRulesSuperSet(t, operatorClusterRoleRules, redpandaClusterRoleRules)
 		})
 	}
@@ -320,49 +482,38 @@ func TestGenerateCases(t *testing.T) {
 	require.NoError(t, err)
 
 	files := make([]txtar.File, 0, 100)
-	for _, scope := range []OperatorScope{Namespace, Cluster} {
-		nilChance := float64(0.8)
-		for i := 0; i < 50; i++ {
-			// Every 5 iterations, decrease nil chance to ensure that we're biased
-			// towards exploring most cases.
-			if i%5 == 0 && nilChance > .1 {
-				nilChance -= .1
-			}
-
-			var values PartialValues
-			fuzzer.NilChance(nilChance).Fuzz(&values)
-			// Special case as fuzzer does not assign correctly scope
-			values.Scope = &scope
-			if scope == Cluster {
-				values.Webhook = &PartialWebhook{Enabled: ptr.To(true)}
-			} else {
-				values.Webhook = &PartialWebhook{Enabled: ptr.To(false)}
-			}
-			makeSureTagIsNotEmptyString(values, fuzzer)
-
-			out, err := yaml.Marshal(values)
-			require.NoError(t, err)
-
-			merged, err := helm.MergeYAMLValues(DefaultValuesYAML, out)
-			require.NoError(t, err)
-
-			// Ensure that our generated values comply with the schema set by the chart.
-			if err := schema.Validate(merged); err != nil {
-				t.Logf("Generated invalid values; trying again...\n%v", err)
-				i--
-				continue
-			}
-
-			index := i
-			if scope == Cluster {
-				index += 50
-			}
-
-			files = append(files, txtar.File{
-				Name: fmt.Sprintf("case-%03d", index),
-				Data: out,
-			})
+	nilChance := float64(0.8)
+	for i := 0; i < 50; i++ {
+		// Every 5 iterations, decrease nil chance to ensure that we're biased
+		// towards exploring most cases.
+		if i%5 == 0 && nilChance > .1 {
+			nilChance -= .1
 		}
+
+		var values PartialValues
+		fuzzer.NilChance(nilChance).Fuzz(&values)
+		// Special case as fuzzer does not assign correctly scope
+		makeSureTagIsNotEmptyString(values, fuzzer)
+
+		out, err := yaml.Marshal(values)
+		require.NoError(t, err)
+
+		merged, err := helm.MergeYAMLValues(DefaultValuesYAML, out)
+		require.NoError(t, err)
+
+		// Ensure that our generated values comply with the schema set by the chart.
+		if err := schema.Validate(merged); err != nil {
+			t.Logf("Generated invalid values; trying again...\n%v", err)
+			i--
+			continue
+		}
+
+		index := i
+
+		files = append(files, txtar.File{
+			Name: fmt.Sprintf("case-%03d", index),
+			Data: out,
+		})
 	}
 
 	archive := txtar.Format(&txtar.Archive{

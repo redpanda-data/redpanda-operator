@@ -16,6 +16,11 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
+// this is a nasty hack due to the fact that we can't disable the linter for typecheck
+// that reports sigs.k8s.io/controller-runtime/pkg/client as unused when it's solely used
+// for type assertions
+var _ client.Object = (client.Object)(nil)
+
 func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
 	var cluster redpandav1alpha2.Redpanda
 
