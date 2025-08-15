@@ -2,7 +2,8 @@
 Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 2.4.5
-    Given I install redpanda helm chart version "v2.4.5" with the values:
+    Given I install local CRDs from "../operator/config/crd/bases"
+    And I install redpanda helm chart version "v2.4.5" with the values:
     """
 
     """
@@ -32,7 +33,8 @@ Feature: Upgrading the operator
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 25.1.2
-    Given I install redpanda helm chart version "v25.1.2" with the values:
+    Given I install local CRDs from "../operator/config/crd/bases"
+    And I install redpanda helm chart version "v25.1.2" with the values:
     """
 
     """

@@ -441,6 +441,7 @@ func Run(
 	// Next configure and setup optional controllers.
 
 	if opts.enableVectorizedControllers {
+		setupLog.Info("setting up vectorized controllers")
 		if err := setupVectorizedControllers(ctx, mgr, cloudExpander, opts); err != nil {
 			return err
 		}

@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -122,9 +124,14 @@ func iInstallRedpandaHelmChartVersionWithTheValues(ctx context.Context, t framew
 		require.NoError(t, os.RemoveAll(file.Name()))
 	})
 
-	// these are needed for old versions of the operator
-	t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml", version))
-	t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/source-controller.yaml", version))
+	major, err := strconv.Atoi(strings.Split(strings.TrimPrefix(version, "v"), ".")[0])
+	require.NoError(t, err)
+
+	if major < 25 {
+		// these are needed for old versions of the operator
+		t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/helm-controller.yaml", version))
+		t.ApplyManifest(ctx, fmt.Sprintf("https://raw.githubusercontent.com/redpanda-data/redpanda-operator/refs/tags/%s/operator/config/crd/bases/toolkit.fluxcd.io/source-controller.yaml", version))
+	}
 
 	t.Cleanup(func(ctx context.Context) {
 		// make sure we remove all finalizers for these or the CRD cleanup will get wedged

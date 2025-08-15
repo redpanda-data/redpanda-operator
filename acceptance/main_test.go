@@ -89,7 +89,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 					},
 					AdditionalCmdFlags: []string{
 						// These are needed for running decommissioning tests.
-						"--additional-controllers=all",
+						"--additional-controllers=nodeWatcher,decommission",
 						"--unbind-pvcs-after=5s",
 						// This is set to a lower timeout due to the way that our internal
 						// admin client handles retries to brokers that are gone but still

@@ -79,4 +79,5 @@ func init() {
 	// Operator upgrade scenario steps
 	framework.RegisterStep(`^I can upgrade to the latest operator with the values:$`, iCanUpgradeToTheLatestOperatorWithTheValues)
 	framework.RegisterStep(`^I install redpanda helm chart version "([^"]*)" with the values:$`, iInstallRedpandaHelmChartVersionWithTheValues)
+	framework.RegisterStep(`^I install local CRDs from "([^"]*)"`, iInstallLocalCRDs)
 }
