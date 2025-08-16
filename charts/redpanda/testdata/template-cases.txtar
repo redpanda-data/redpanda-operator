@@ -271,7 +271,7 @@ listeners:
 
 -- trust-stores-only-one --
 # Showcase that trustStore may not have more than 1 property.
-# ASSERT-ERROR-CONTAINS ["Must have at most 1 properties"]
+# ASSERT-ERROR-CONTAINS ["maxProperties: got 2, want 1"]
 listeners:
   admin:
     tls:
