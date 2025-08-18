@@ -1,7 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-    `get` permissions on `Node` resources is now correctly configured by default.
-
-       `--set rbac.createAdditionalControllerCRs=true` is no longer required for rackawareness to work.
-time: 2025-06-09T15:29:34.084852-04:00

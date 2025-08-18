@@ -1,8 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-    Fixed hanging of helm installations that set `--wait` and `--set crds.enabled=true`.
-
-        The CRD installation job now runs as a preinstall/preupgrade hook and has
-        been given dedicated RBAC resources.
-time: 2025-08-07T12:14:01.430518-04:00

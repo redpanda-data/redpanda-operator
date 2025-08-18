@@ -1,9 +1,0 @@
-project: operator
-kind: Fixed
-body: |
-    Improved support for multi-STSes (e.g., multiple NodePools) in the ghost broker decommissioning logic.
-
-    - Desired replicas were previously fetched from a single STS, leading to incorrect broker count decisions when multiple STSes were present. Now, the logic accounts for all STSes.
-    - Fixed incorrect broker map keying: previously used pod ordinal, which is not unique across STSes (e.g., `blue-0` and `green-0` both mapped to `0`). Switched to using the pod name as the key to correctly distinguish brokers.
-    - Disabled ordinal-based broker deletion logic in Operator v1 mode, as it doesn't work reliably in a multi-STS setup.
-time: 2025-05-14T17:10:00.054146868+02:00

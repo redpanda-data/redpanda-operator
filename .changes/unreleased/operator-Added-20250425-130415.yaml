@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Added full lifecycle management support for v1alpha2/Redpanda resources by changing all StatefulSets to leverage OnDelete. Additionally, introduce NodePool statuses to the Redpanda structure and deprecate all old Flux-based status fields.
-time: 2025-04-25T13:04:15.502088-04:00

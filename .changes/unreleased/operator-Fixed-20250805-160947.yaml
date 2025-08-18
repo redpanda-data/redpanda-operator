@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: 'The vectorized operator is more robust against configuration changes that "need restart": it will sweep over pods and mark those requiring a configuration restart according to the admin API response.'
-time: 2025-08-05T16:09:47.911847+01:00

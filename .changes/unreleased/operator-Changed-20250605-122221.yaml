@@ -1,4 +1,0 @@
-project: operator
-kind: Changed
-body: The `Redpanda` controller will now unconditionally re-queue for reconciliation periodically. This permits it to pick up configuration changes in external secrets.
-time: 2025-06-05T12:22:21.481344+01:00
