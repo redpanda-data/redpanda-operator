@@ -1,7 +1,0 @@
-project: operator
-kind: Removed
-body: |-
-    The [`kube-prometheus-stack`](https://prometheus-community.github.io/helm-charts) subchart has been removed.
-
-      This integration was not being up kept and most use cases will be better served by deploying this chart themselves.
-time: 2025-03-27T13:02:01.084713-04:00

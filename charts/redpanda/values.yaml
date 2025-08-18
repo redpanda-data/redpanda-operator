@@ -667,7 +667,7 @@ statefulset:
     custom: {}
   sideCars:
     image:
-      tag: v25.1.1-beta3
+      tag: v25.2.1-beta1
       repository: docker.redpanda.com/redpandadata/redpanda-operator
     # Additional arguments to pass to the sidecar command. Reserved for internal testing.
     # @ignored
