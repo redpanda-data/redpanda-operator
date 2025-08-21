@@ -1,0 +1,30 @@
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: redpanda-cluster
+spec:
+  chartRef: {}
+  clusterSpec:
+    auth:
+      sasl:
+        enabled: true
+        secretRef: "redpanda-users"
+        mechanism: "SCRAM-SHA-256"
+    config:
+      redpanda:
+        enable_sasl: true
+        auto_create_topics_enabled: false
+    external:
+      enabled: false
+    statefulset:
+      replicas: 1
+  clusterConfig:
+    redpanda:
+      auto_create_topics_enabled: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redpanda-users
+data:
+  users.txt: c3VwZXJ1c2VyOnBhc3N3b3JkOlNDUkFNLVNIQS0yNTY=  # superuser:password:SCRAM-SHA-256
