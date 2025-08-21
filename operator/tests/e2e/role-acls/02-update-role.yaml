@@ -1,0 +1,19 @@
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Role
+metadata:
+  name: test-role
+spec:
+  cluster:
+    clusterRef:
+      name: redpanda-cluster
+  authorization:
+    type: simple
+    acls:
+    - type: Allow
+      resource:
+        type: Topic
+        name: updated-topic
+      operations:
+      - Read
+      - Write
+      - Describe

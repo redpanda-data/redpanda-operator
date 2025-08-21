@@ -1,0 +1,10 @@
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Role
+metadata:
+  name: test-role
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+    reason: ResourceSynced
+  managedAcls: true

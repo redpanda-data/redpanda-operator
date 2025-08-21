@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redpanda-users
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: redpanda-cluster
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Role
+metadata:
+  name: test-role
+assert:
+  - apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Role
+    metadata:
+      name: test-role
+    state: absent
