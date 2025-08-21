@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 			err := os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 			require.NoError(t, err)
 		}
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8")
+		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v24.2.1")
 		require.NoError(t, err)
 
 		t.Cleanup(func() {
