@@ -433,6 +433,11 @@ func Run(
 		return err
 	}
 
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Role")
+		return err
+	}
+
 	if err := redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
