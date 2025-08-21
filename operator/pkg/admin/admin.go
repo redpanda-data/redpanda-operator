@@ -192,6 +192,13 @@ type AdminAPIClient interface {
 
 	GetHealthOverview(ctx context.Context) (rpadmin.ClusterHealthOverview, error)
 
+	// Role management methods
+	Role(ctx context.Context, roleName string) (rpadmin.RoleDetailResponse, error)
+	CreateRole(ctx context.Context, roleName string) (rpadmin.CreateRole, error)
+	DeleteRole(ctx context.Context, roleName string, deleteACLs bool) error
+	UpdateRoleMembership(ctx context.Context, roleName string, add, remove []rpadmin.RoleMember, dryRun bool) (rpadmin.PatchRoleResponse, error)
+	RoleMembers(ctx context.Context, roleName string) (rpadmin.RoleMemberResponse, error)
+
 	Close()
 }
 
