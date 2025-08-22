@@ -107,10 +107,10 @@ func TestGenerateParital(t *testing.T) {
 	pkg := pkgs[1]
 	require.Equal(t, "partial", pkg.Name)
 
-	require.EqualError(t, GeneratePartial(pkg, "Values", nil), `named struct not found in package "partial": "Values"`)
+	require.EqualError(t, GeneratePartial(pkg, "Values", "", nil), `named struct not found in package "partial": "Values"`)
 
 	var buf bytes.Buffer
-	require.NoError(t, GeneratePartial(pkg, "ExampleStruct", &buf))
+	require.NoError(t, GeneratePartial(pkg, "ExampleStruct", "testdata", &buf))
 	testutil.AssertGolden(t, testutil.Text, "./testdata/partial.go", buf.Bytes())
 }
 
@@ -120,7 +120,7 @@ func TestEnsureOmitEmpty(t *testing.T) {
 		Out string
 	}{
 		{In: ``, Out: `json:",omitempty"`},
-		{In: `yaml:"foo"`, Out: `yaml:"foo" json:",omitempty"`},
+		{In: `yaml:"foo"`, Out: `yaml:"foo" json:"foo,omitempty"`},
 		{In: `json:"bar"`, Out: `json:"bar,omitempty"`},
 		{In: `json:"baz,omitempty"`, Out: `json:"baz,omitempty"`},
 		{In: `yaml:"foo" json:"baz,omitempty"`, Out: `yaml:"foo" json:"baz,omitempty"`},
@@ -131,6 +131,6 @@ func TestEnsureOmitEmpty(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		assert.Equal(t, EnsureOmitEmpty(tc.In), tc.Out)
+		assert.Equal(t, tc.Out, EnsureOmitEmpty(tc.In))
 	}
 }
