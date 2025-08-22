@@ -11,7 +11,7 @@
 
 package v1alpha2
 
-// RoleSpecApplyConfiguration represents an declarative configuration of the RoleSpec type for use
+// RoleSpecApplyConfiguration represents a declarative configuration of the RoleSpec type for use
 // with apply.
 type RoleSpecApplyConfiguration struct {
 	ClusterSource *ClusterSourceApplyConfiguration         `json:"cluster,omitempty"`
@@ -19,7 +19,7 @@ type RoleSpecApplyConfiguration struct {
 	Authorization *RoleAuthorizationSpecApplyConfiguration `json:"authorization,omitempty"`
 }
 
-// RoleSpecApplyConfiguration constructs an declarative configuration of the RoleSpec type for use with
+// RoleSpecApplyConfiguration constructs a declarative configuration of the RoleSpec type for use with
 // apply.
 func RoleSpec() *RoleSpecApplyConfiguration {
 	return &RoleSpecApplyConfiguration{}
