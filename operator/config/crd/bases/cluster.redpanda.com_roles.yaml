@@ -178,14 +178,6 @@ spec:
                           : true'
                     maxItems: 1024
                     type: array
-                  type:
-                    default: simple
-                    description: |-
-                      Type specifies the type of authorization to use for Role ACLs. If unspecified, defaults to `simple`. Valid values are:
-                      - simple
-                    enum:
-                    - simple
-                    type: string
                 type: object
               cluster:
                 description: |-
@@ -752,6 +744,11 @@ spec:
               managedAcls:
                 description: |-
                   ManagedACLs returns whether the role has managed ACLs that need
+                  to be cleaned up.
+                type: boolean
+              managedRole:
+                description: |-
+                  ManagedRole returns whether the role has been created in Redpanda and needs
                   to be cleaned up.
                 type: boolean
               observedGeneration:

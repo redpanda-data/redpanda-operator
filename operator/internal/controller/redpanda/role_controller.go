@@ -25,6 +25,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -48,8 +49,8 @@ func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) (client.Patch, error) {
 	role := request.object
-	hasManagedACLs := role.HasManagedACLs()
-	shouldManageACLs := role.ShouldManageACLs()
+	hasManagedACLs, hasManagedRole := role.HasManagedACLs(), role.HasManagedRole()
+	shouldManageACLs, shouldManageRole := role.ShouldManageACLs(), role.ShouldManageRole()
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
@@ -63,17 +64,33 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.RoleStatus().
 			WithObservedGeneration(role.Generation).
+			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
 	}
 
-	syncer, err := r.aclClient(ctx, request)
+	rolesClient, syncer, hasRole, err := r.roleAndACLClients(ctx, request)
 	if err != nil {
 		return createPatch(err)
 	}
+	defer rolesClient.Close()
 	defer syncer.Close()
+
+	if !hasRole && shouldManageRole {
+		if err := rolesClient.Create(ctx, role); err != nil {
+			return createPatch(err)
+		}
+		hasManagedRole = true
+	}
+
+	if hasRole && !shouldManageRole {
+		if err := rolesClient.Delete(ctx, role); err != nil {
+			return createPatch(err)
+		}
+		hasManagedRole = false
+	}
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, role); err != nil {
@@ -93,16 +110,24 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 }
 
 func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) error {
-	request.logger.V(2).Info("Deleting role ACLs from cluster")
+	request.logger.V(2).Info("Deleting role data from cluster")
 
 	role := request.object
-	hasManagedACLs := role.HasManagedACLs()
+	hasManagedACLs, hasManagedRole := role.HasManagedACLs(), role.HasManagedRole()
 
-	syncer, err := r.aclClient(ctx, request)
+	rolesClient, syncer, hasRole, err := r.roleAndACLClients(ctx, request)
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
+	defer rolesClient.Close()
 	defer syncer.Close()
+
+	if hasRole && hasManagedRole {
+		request.logger.V(2).Info("Deleting managed role")
+		if err := rolesClient.Delete(ctx, role); err != nil {
+			return ignoreAllConnectionErrors(request.logger, err)
+		}
+	}
 
 	if hasManagedACLs {
 		request.logger.V(2).Info("Deleting managed ACLs")
@@ -114,14 +139,24 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	return nil
 }
 
-func (r *RoleReconciler) aclClient(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) (*acls.Syncer, error) {
+func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
-	syncer, err := request.factory.ACLs(ctx, role, r.extraOptions...)
+	rolesClient, err := request.factory.Roles(ctx, role)
 	if err != nil {
-		return nil, err
+		return nil, nil, false, err
 	}
 
-	return syncer, nil
+	syncer, err := request.factory.ACLs(ctx, role, r.extraOptions...)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	hasRole, err := rolesClient.Has(ctx, role)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	return rolesClient, syncer, hasRole, nil
 }
 
 func SetupRoleController(ctx context.Context, mgr ctrl.Manager) error {

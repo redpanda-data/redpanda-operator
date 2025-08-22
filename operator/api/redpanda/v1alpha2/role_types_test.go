@@ -389,8 +389,6 @@ func TestRoleDefaults(t *testing.T) {
 	require.Len(t, authRole.GetACLs(), 1)
 
 	// Verify defaults are applied to authorization
-	require.NotNil(t, authRole.Spec.Authorization.Type)
-	require.Equal(t, AuthorizationTypeSimple, *authRole.Spec.Authorization.Type)
 	require.NotNil(t, authRole.Spec.Authorization.ACLs[0].Host)
 	require.Equal(t, "*", *authRole.Spec.Authorization.ACLs[0].Host)
 }

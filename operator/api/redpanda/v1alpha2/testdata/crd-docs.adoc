@@ -280,7 +280,6 @@ AuthorizationType specifies the type of authorization to use in creating a user.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]
 ****
 
@@ -2386,9 +2385,6 @@ RoleAuthorizationSpec defines authorization rules for this role.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authorizationtype[$$AuthorizationType$$]__ | Type specifies the type of authorization to use for Role ACLs. If unspecified, defaults to `simple`. Valid values are: +
-- simple + | simple | Enum: [simple] +
-
 | *`acls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$] array__ | List of ACL rules which should be applied to this role. + |  | MaxItems: 1024 +
 
 |===
@@ -2441,6 +2437,8 @@ RoleStatus defines the observed state of a Redpanda role
 | *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda role. + |  | 
 | *`managedAcls`* __boolean__ | ManagedACLs returns whether the role has managed ACLs that need +
+to be cleaned up. + |  | 
+| *`managedRole`* __boolean__ | ManagedRole returns whether the role has been created in Redpanda and needs +
 to be cleaned up. + |  | 
 |===
 

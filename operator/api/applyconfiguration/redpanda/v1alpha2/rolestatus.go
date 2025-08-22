@@ -15,15 +15,16 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// RoleStatusApplyConfiguration represents an declarative configuration of the RoleStatus type for use
+// RoleStatusApplyConfiguration represents a declarative configuration of the RoleStatus type for use
 // with apply.
 type RoleStatusApplyConfiguration struct {
 	ObservedGeneration *int64                           `json:"observedGeneration,omitempty"`
 	Conditions         []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 	ManagedACLs        *bool                            `json:"managedAcls,omitempty"`
+	ManagedRole        *bool                            `json:"managedRole,omitempty"`
 }
 
-// RoleStatusApplyConfiguration constructs an declarative configuration of the RoleStatus type for use with
+// RoleStatusApplyConfiguration constructs a declarative configuration of the RoleStatus type for use with
 // apply.
 func RoleStatus() *RoleStatusApplyConfiguration {
 	return &RoleStatusApplyConfiguration{}
@@ -55,5 +56,13 @@ func (b *RoleStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApp
 // If called multiple times, the ManagedACLs field is set to the value of the last call.
 func (b *RoleStatusApplyConfiguration) WithManagedACLs(value bool) *RoleStatusApplyConfiguration {
 	b.ManagedACLs = &value
+	return b
+}
+
+// WithManagedRole sets the ManagedRole field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ManagedRole field is set to the value of the last call.
+func (b *RoleStatusApplyConfiguration) WithManagedRole(value bool) *RoleStatusApplyConfiguration {
+	b.ManagedRole = &value
 	return b
 }

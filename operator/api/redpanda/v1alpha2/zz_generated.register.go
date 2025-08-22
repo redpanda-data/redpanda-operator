@@ -56,6 +56,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Redpanda{},
 		&RedpandaList{},
+		&Role{},
+		&RoleList{},
 		&Schema{},
 		&SchemaList{},
 		&Topic{},

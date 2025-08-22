@@ -16,10 +16,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-func init() {
-	SchemeBuilder.Register(&Role{}, &RoleList{})
-}
-
 // Role defines the CRD for a Redpanda role.
 // +genclient
 // +kubebuilder:object:root=true
@@ -69,6 +65,15 @@ func (r *Role) HasManagedACLs() bool {
 	return r.Status.ManagedACLs
 }
 
+func (r *Role) ShouldManageRole() bool {
+	// Always manage the role if it has a spec (similar to how users work)
+	return true
+}
+
+func (r *Role) HasManagedRole() bool {
+	return r.Status.ManagedRole
+}
+
 // RoleSpec defines the configuration of a Redpanda role.
 type RoleSpec struct {
 	// ClusterSource is a reference to the cluster where the role should be created.
@@ -88,10 +93,6 @@ type RoleSpec struct {
 
 // RoleAuthorizationSpec defines authorization rules for this role.
 type RoleAuthorizationSpec struct {
-	// Type specifies the type of authorization to use for Role ACLs. If unspecified, defaults to `simple`. Valid values are:
-	// - simple
-	// +kubebuilder:default=simple
-	Type *AuthorizationType `json:"type,omitempty"`
 	// List of ACL rules which should be applied to this role.
 	// +kubebuilder:validation:MaxItems=1024
 	ACLs []ACLRule `json:"acls,omitempty"`
@@ -106,6 +107,9 @@ type RoleStatus struct {
 	// ManagedACLs returns whether the role has managed ACLs that need
 	// to be cleaned up.
 	ManagedACLs bool `json:"managedAcls,omitempty"`
+	// ManagedRole returns whether the role has been created in Redpanda and needs
+	// to be cleaned up.
+	ManagedRole bool `json:"managedRole,omitempty"`
 }
 
 // RoleList contains a list of Redpanda role objects.
