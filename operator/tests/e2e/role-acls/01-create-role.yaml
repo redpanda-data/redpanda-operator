@@ -7,7 +7,6 @@ spec:
     clusterRef:
       name: redpanda-cluster
   authorization:
-    type: simple
     acls:
     - type: Allow
       resource:

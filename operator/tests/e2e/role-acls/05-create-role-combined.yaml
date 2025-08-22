@@ -1,18 +1,26 @@
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: Role
 metadata:
-  name: test-role
+  name: combined-role
 spec:
   cluster:
     clusterRef:
       name: redpanda-cluster
+  principals:
+  - "User:charlie"
+  - "User:dave"
   authorization:
     acls:
     - type: Allow
       resource:
         type: Topic
-        name: updated-topic
+        name: team-topic
       operations:
       - Read
       - Write
-      - Describe
+    - type: Allow
+      resource:
+        type: Group
+        name: team-group
+      operations:
+      - Read
