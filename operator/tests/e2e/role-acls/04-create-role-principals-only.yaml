@@ -1,0 +1,11 @@
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Role
+metadata:
+  name: principals-only-role
+spec:
+  cluster:
+    clusterRef:
+      name: redpanda-cluster
+  principals:
+  - "User:alice"
+  - "User:bob"
