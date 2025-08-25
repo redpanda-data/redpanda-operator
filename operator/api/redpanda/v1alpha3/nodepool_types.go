@@ -75,8 +75,8 @@ type EmbeddedNodePoolSpec struct {
 }
 
 type BrokerTemplate struct {
-	Image     string                      `json:"image"`
-	Resources corev1.ResourceRequirements `json:"resources"`
+	Images    BrokerImages                 `json:"images"`
+	Resources *corev1.ResourceRequirements `json:"resources"`
 	// Arguments to be passed to rpk tune
 	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
 	Tuning                    []string               `json:"tuning"`
@@ -95,4 +95,10 @@ type BrokerTemplate struct {
 	// Likely to be merged into NodeConfig w/ CEL functions.
 	// rack: Expr(node_annotation('k8s.io/failure-domain')),
 	// TODO deprecate and move me into CEL functions.
+}
+
+type BrokerImages struct {
+	Redpanda      string `json:"redpanda"`
+	Sidecar       string `json:"sidecar"`
+	InitContainer string `json:"init"`
 }
