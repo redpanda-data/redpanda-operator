@@ -162,7 +162,7 @@ func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []ku
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Secrets(dot, pools) {
+	for _, obj := range Secrets(dot) {
 		manifests = append(manifests, obj)
 	}
 

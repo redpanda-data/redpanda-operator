@@ -16,17 +16,22 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func PodDisruptionBudget(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) *policyv1.PodDisruptionBudget {
+func PodDisruptionBudget(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) *policyv1.PodDisruptionBudget {
 	values := helmette.Unwrap[Values](dot.Values)
 	budget := values.Statefulset.Budget.MaxUnavailable
 
 	// to maintain quorum, raft cannot lose more than half its members
-	minReplicas := values.Statefulset.Replicas / 2
+	totalNodes := values.Statefulset.Replicas
+	for _, pool := range pools {
+		totalNodes += ptr.Deref(pool.Spec.Replicas, 0)
+	}
+	minReplicas := totalNodes / 2
 
 	// the lowest we can go is 1 so allow that always
 	if budget > 1 && budget > minReplicas {

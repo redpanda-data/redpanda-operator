@@ -79,8 +79,10 @@ type BrokerTemplate struct {
 	Resources *corev1.ResourceRequirements `json:"resources"`
 	// Arguments to be passed to rpk tune
 	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
-	Tuning                    []string               `json:"tuning"`
-	NodeConfig                map[string]ValueSource `json:"nodeConfig"`
+	Tuning []string `json:"tuning"`
+
+	NodeConfig map[string]ValueSource `json:"nodeConfig"`
+	// TODO: Need to figure out what exactly we want to do with this
 	RPKConfig                 map[string]ValueSource `json:"rpkConfig"`
 	SetDataDirectoryOwnership bool                   `json:"setDataDirectoryOwnership"`
 	ValidateFilesystem        bool                   `json:"validateFilesystem"`

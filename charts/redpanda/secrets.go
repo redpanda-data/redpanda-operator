@@ -19,12 +19,11 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
-func Secrets(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.Secret {
+func Secrets(dot *helmette.Dot) []*corev1.Secret {
 	var secrets []*corev1.Secret
 	secrets = append(secrets, SecretSTSLifecycle(dot))
 	if saslUsers := SecretSASLUsers(dot); saslUsers != nil {
@@ -210,7 +209,7 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 	// TODO: Should we try to detect invalid configurations, panic, and request
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
+	if existing, ok := helmette.Lookup[corev1.Secret, *corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
 		// make any existing secret immutable
 		existing.Immutable = ptr.To(true)
 		return existing

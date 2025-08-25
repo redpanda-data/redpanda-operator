@@ -21,7 +21,7 @@ import (
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.Service {
+func LoadBalancerServices(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	// This is technically a divergence from previous behavior but this matches
@@ -42,12 +42,15 @@ func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool
 	// https://github.com/redpanda-data/helm-charts/blob/2baa77b99a71a993e639a7138deaf4543727c8a1/charts/redpanda/templates/service.loadbalancer.yaml#L33
 	labels["repdanda.com/type"] = "loadbalancer"
 
-	selector := StatefulSetPodLabelsSelector(dot)
+	selector := ClusterPodLabelsSelector(dot)
 
 	var services []*corev1.Service
-	replicas := values.Statefulset.Replicas // TODO fix me once the transpiler is fixed.
-	for i := int32(0); i < replicas; i++ {
+
+	renderService := func(pool *redpandav1alpha3.NodePool, i int32) {
 		podname := fmt.Sprintf("%s-%d", Fullname(dot), i)
+		if pool != nil {
+			podname = fmt.Sprintf("%s-%s-%d", Fullname(dot), pool.Name, i)
+		}
 
 		// NB: A range loop is used here as its the most terse way to handle
 		// nil maps in gotohelm.
@@ -112,6 +115,14 @@ func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool
 		}
 
 		services = append(services, svc)
+	}
+	for i := int32(0); i < values.Statefulset.Replicas; i++ {
+		renderService(nil, i)
+	}
+	for _, pool := range pools {
+		for i := int32(0); i < ptr.Deref(pool.Spec.Replicas, 0); i++ {
+			renderService(pool, i)
+		}
 	}
 
 	return services

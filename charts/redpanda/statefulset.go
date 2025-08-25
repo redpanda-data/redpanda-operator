@@ -85,7 +85,7 @@ func StatefulSetPodLabelsSelector(dot *helmette.Dot) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
 	if dot.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Selector.MatchLabels) > 0 {
+		if existing, ok := helmette.Lookup[appsv1.StatefulSet, *appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Selector.MatchLabels) > 0 {
 			return existing.Spec.Selector.MatchLabels
 		}
 	}
@@ -115,7 +115,7 @@ func StatefulSetPodLabels(dot *helmette.Dot) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
 	if dot.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
+		if existing, ok := helmette.Lookup[appsv1.StatefulSet, *appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
 			return existing.Spec.Template.ObjectMeta.Labels
 		}
 	}
@@ -924,7 +924,7 @@ func bootstrapEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVa
 	return envVars
 }
 
-func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*appsv1.StatefulSet {
+func StatefulSets(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*appsv1.StatefulSet {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	ss := &appsv1.StatefulSet{
@@ -953,7 +953,8 @@ func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*app
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: StatefulSetPodLabels(dot),
 							Annotations: map[string]string{
-								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(dot),
+								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(dot, pools),
+								"cluster.redpanda.com/broker":  "true",
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -994,12 +995,12 @@ func semver(dot *helmette.Dot) string {
 //
 // Append any additional dependencies that require the pods to restart
 // to the $dependencies list.
-func statefulSetChecksumAnnotation(dot *helmette.Dot) string {
+func statefulSetChecksumAnnotation(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) string {
 	values := helmette.Unwrap[Values](dot.Values)
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
-	dependencies = append(dependencies, RedpandaConfigFile(dot, false))
+	dependencies = append(dependencies, RedpandaConfigFile(dot, pools, false))
 	if values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(values.External.Domain, ""))
 		if helmette.Empty(values.External.Addresses) {

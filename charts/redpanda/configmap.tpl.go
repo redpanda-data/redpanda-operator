@@ -22,12 +22,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
-func ConfigMaps(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot), RPKProfile(dot)}
+func ConfigMaps(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.ConfigMap {
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot, pools), RPKProfile(dot)}
+	cms = append(cms, pooledRedpandaConfigMaps(dot, pools)...)
 	return cms
 }
 
-func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
+func RedpandaConfigMap(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) *corev1.ConfigMap {
 	bootstrap, fixups := BootstrapFile(dot)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -42,7 +43,7 @@ func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 		Data: map[string]string{
 			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
 			clusterconfiguration.BootstrapFixupFile:       fixups,
-			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(dot, true /* includeSeedServer */),
+			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(dot, pools, true /* includeSeedServer */),
 		},
 	}
 }
@@ -116,7 +117,7 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfigura
 	return template, fixups
 }
 
-func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string {
+func RedpandaConfigFile(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool, includeNonHashableItems bool) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	redpanda := map[string]any{
@@ -139,11 +140,11 @@ func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string 
 	}
 
 	if includeNonHashableItems {
-		redpandaYaml["rpk"] = rpkNodeConfig(dot)
-		redpandaYaml["pandaproxy_client"] = kafkaClient(dot)
-		redpandaYaml["schema_registry_client"] = kafkaClient(dot)
+		redpandaYaml["rpk"] = rpkNodeConfig(dot, pools)
+		redpandaYaml["pandaproxy_client"] = kafkaClient(dot, pools)
+		redpandaYaml["schema_registry_client"] = kafkaClient(dot, pools)
 		if RedpandaAtLeast_23_3_0(dot) && values.AuditLogging.Enabled && values.Auth.IsSASLEnabled() {
-			redpandaYaml["audit_log_client"] = kafkaClient(dot)
+			redpandaYaml["audit_log_client"] = kafkaClient(dot, pools)
 		}
 	}
 
@@ -358,21 +359,35 @@ func getFirstExternalKafkaListener(dot *helmette.Dot) string {
 	return helmette.First(keys).(string)
 }
 
-func BrokerList(dot *helmette.Dot, replicas int32, port int32) []string {
+func BrokerList(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool, port int32) []string {
+	values := helmette.Unwrap[Values](dot.Values)
+
 	var bl []string
 
-	for i := int32(0); i < replicas; i++ {
-		bl = append(bl, fmt.Sprintf("%s-%d.%s:%d", Fullname(dot), i, InternalDomain(dot), port))
+	for i := int32(0); i < values.Statefulset.Replicas; i++ {
+		broker := fmt.Sprintf("%s-%d.%s:%d", Fullname(dot), i, InternalDomain(dot), port)
+		if port == -1 {
+			broker = fmt.Sprintf("%s-%d.%s", Fullname(dot), i, InternalDomain(dot))
+		}
+		bl = append(bl, broker)
+	}
+
+	for _, p := range pools {
+		for i := int32(0); i < ptr.Deref(p.Spec.Replicas, 0); i++ {
+			broker := fmt.Sprintf("%s-%s-%d.%s:%d", Fullname(dot), p.Name, i, InternalDomain(dot), port)
+			if port == -1 {
+				broker = fmt.Sprintf("%s-%s-%d.%s", Fullname(dot), p.Name, i, InternalDomain(dot))
+			}
+			bl = append(bl, broker)
+		}
 	}
 
 	return bl
 }
 
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
-func rpkNodeConfig(dot *helmette.Dot) map[string]any {
+func rpkNodeConfig(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[string]any {
 	values := helmette.Unwrap[Values](dot.Values)
-
-	brokerList := BrokerList(dot, values.Statefulset.Replicas, values.Listeners.Kafka.Port)
 
 	var adminTLS map[string]any
 	if tls := rpkAdminAPIClientTLSConfiguration(dot); len(tls) > 0 {
@@ -396,15 +411,15 @@ func rpkNodeConfig(dot *helmette.Dot) map[string]any {
 		"enable_memory_locking":  lockMemory,
 		"overprovisioned":        overprovisioned,
 		"kafka_api": map[string]any{
-			"brokers": brokerList,
+			"brokers": BrokerList(dot, pools, values.Listeners.Kafka.Port),
 			"tls":     brokerTLS,
 		},
 		"admin_api": map[string]any{
-			"addresses": values.Listeners.AdminList(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot)),
+			"addresses": BrokerList(dot, pools, values.Listeners.Admin.Port),
 			"tls":       adminTLS,
 		},
 		"schema_registry": map[string]any{
-			"addresses": values.Listeners.SchemaRegistryList(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot)),
+			"addresses": BrokerList(dot, pools, values.Listeners.SchemaRegistry.Port),
 			"tls":       schemaRegistryTLS,
 		},
 	}
@@ -490,13 +505,13 @@ func rpkSchemaRegistryClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 // kafkaClient returns the configuration for internal components of redpanda to
 // connect to its own Kafka API. This is distinct from RPK's configuration for
 // Kafka API interactions.
-func kafkaClient(dot *helmette.Dot) map[string]any {
+func kafkaClient(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[string]any {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	brokerList := []map[string]any{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
+	for _, broker := range BrokerList(dot, pools, -1) {
 		brokerList = append(brokerList, map[string]any{
-			"address": fmt.Sprintf("%s-%d.%s", Fullname(dot), i, InternalDomain(dot)),
+			"address": broker,
 			"port":    values.Listeners.Kafka.Port,
 		})
 	}

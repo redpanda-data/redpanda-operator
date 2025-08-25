@@ -25,7 +25,7 @@ import (
 // consoleChartIntegration plumbs redpanda connection information into the console subchart.
 // It does this by calculating Kafka, Schema registry, Redpanda Admin API configuration
 // from Redpanda chart values.
-func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []kube.Object {
+func consoleChartIntegration(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []kube.Object {
 	values := helmette.UnmarshalInto[Values](dot.Values)
 
 	if !ptr.Deref(values.Console.Enabled, true) {
@@ -45,7 +45,7 @@ func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodeP
 	// Create console configuration based on Redpanda helm chart values.
 	if !ptr.Deref(values.Console.ConfigMap.Create, false) {
 		consoleValue.ConfigMap.Create = true
-		consoleValue.Config = ConsoleConfig(dot)
+		consoleValue.Config = ConsoleConfig(dot, pools)
 	}
 
 	if !ptr.Deref(values.Console.Deployment.Create, false) {
@@ -189,7 +189,7 @@ func consoleTLSVolumes(dot *helmette.Dot) []corev1.Volume {
 	return append(volumes, values.Console.ExtraVolumes...)
 }
 
-func ConsoleConfig(dot *helmette.Dot) map[string]any {
+func ConsoleConfig(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[string]any {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	var schemaURLs []string
@@ -199,8 +199,8 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 			schema = "https"
 		}
 
-		for i := int32(0); i < values.Statefulset.Replicas; i++ {
-			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s-%d.%s:%d", schema, Fullname(dot), i, InternalDomain(dot), values.Listeners.SchemaRegistry.Port))
+		for _, broker := range BrokerList(dot, pools, values.Listeners.SchemaRegistry.Port) {
+			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s", schema, broker))
 		}
 	}
 
@@ -209,9 +209,14 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 		schema = "https"
 	}
 
+	adminURLs := BrokerList(dot, pools, values.Listeners.Admin.Port)
+	for i, url := range adminURLs {
+		adminURLs[i] = fmt.Sprintf("%s://%s", schema, url)
+	}
+
 	c := map[string]any{
 		"kafka": map[string]any{
-			"brokers": BrokerList(dot, values.Statefulset.Replicas, values.Listeners.Kafka.Port),
+			"brokers": BrokerList(dot, pools, values.Listeners.Kafka.Port),
 			"sasl": map[string]any{
 				"enabled": values.Auth.IsSASLEnabled(),
 			},
@@ -220,10 +225,8 @@ func ConsoleConfig(dot *helmette.Dot) map[string]any {
 		"redpanda": map[string]any{
 			"adminApi": map[string]any{
 				"enabled": true,
-				"urls": []string{
-					fmt.Sprintf("%s://%s:%d", schema, InternalDomain(dot), values.Listeners.Admin.Port),
-				},
-				"tls": values.Listeners.Admin.ConsoleTLS(&values.TLS),
+				"urls":    adminURLs,
+				"tls":     values.Listeners.Admin.ConsoleTLS(&values.TLS),
 			},
 		},
 		"schemaRegistry": map[string]any{

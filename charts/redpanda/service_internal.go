@@ -99,7 +99,7 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 			Type:                     corev1.ServiceTypeClusterIP,
 			PublishNotReadyAddresses: true,
 			ClusterIP:                corev1.ClusterIPNone,
-			Selector:                 StatefulSetPodLabelsSelector(dot),
+			Selector:                 ClusterPodLabelsSelector(dot),
 			Ports:                    ports,
 		},
 	}
