@@ -17,6 +17,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/render"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -47,12 +48,12 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 
 	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
 	// v1alpha2 to it's values here.
-	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
+	rendered, err := render.RenderResourcesFromCRD(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, spec)
+	}, spec, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}

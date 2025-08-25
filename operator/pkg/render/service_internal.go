@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_service.internal.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -18,13 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-)
-
-const (
-	InternalAdminAPIPortName       = "admin"
-	InternalKafkaPortName          = "kafka"
-	InternalSchemaRegistryPortName = "schemaregistry"
-	InternalPandaProxyPortName     = "http"
 )
 
 func MonitoringEnabledLabel(dot *helmette.Dot) map[string]string {
@@ -43,7 +35,7 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 	ports := []corev1.ServicePort{}
 
 	ports = append(ports, corev1.ServicePort{
-		Name:        InternalAdminAPIPortName,
+		Name:        "admin",
 		Protocol:    "TCP",
 		AppProtocol: values.Listeners.Admin.AppProtocol,
 		Port:        values.Listeners.Admin.Port,
@@ -52,14 +44,14 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 
 	if values.Listeners.HTTP.Enabled {
 		ports = append(ports, corev1.ServicePort{
-			Name:       InternalPandaProxyPortName,
+			Name:       "http",
 			Protocol:   "TCP",
 			Port:       values.Listeners.HTTP.Port,
 			TargetPort: intstr.FromInt32(values.Listeners.HTTP.Port),
 		})
 	}
 	ports = append(ports, corev1.ServicePort{
-		Name:       InternalKafkaPortName,
+		Name:       "kafka",
 		Protocol:   "TCP",
 		Port:       values.Listeners.Kafka.Port,
 		TargetPort: intstr.FromInt32(values.Listeners.Kafka.Port),
@@ -72,7 +64,7 @@ func ServiceInternal(dot *helmette.Dot) *corev1.Service {
 	})
 	if values.Listeners.SchemaRegistry.Enabled {
 		ports = append(ports, corev1.ServicePort{
-			Name:       InternalSchemaRegistryPortName,
+			Name:       "schemaregistry",
 			Protocol:   "TCP",
 			Port:       values.Listeners.SchemaRegistry.Port,
 			TargetPort: intstr.FromInt32(values.Listeners.SchemaRegistry.Port),

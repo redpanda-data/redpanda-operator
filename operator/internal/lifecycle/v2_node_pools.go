@@ -17,9 +17,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/render"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -98,12 +98,12 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 
 	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
 	// v1alpha2 to it's values here.
-	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
+	rendered, err := render.RenderNodePoolsFromCRD(m.kubeConfig, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
 		IsUpgrade: true,
-	}, spec)
+	}, spec, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}

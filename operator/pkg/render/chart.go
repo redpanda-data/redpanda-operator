@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_chart.go.tpl
-package redpanda
+package render
 
 import (
 	"embed"
@@ -25,7 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
@@ -40,13 +40,14 @@ var (
 	//go:embed Chart.lock
 	//go:embed Chart.yaml
 	//go:embed files/*
-	//go:embed templates/*
 	//go:embed values.schema.json
 	//go:embed values.yaml
 	ChartFiles embed.FS
 
+	// we still keep this here for the side-effects
+
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart)
+	Chart = gotohelm.MustLoad(ChartFiles, func(d *helmette.Dot) []kube.Object { return nil }, console.Chart, connectors.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that
@@ -75,42 +76,19 @@ func Types() []kube.Object {
 	}
 }
 
-// +gotohelm:ignore=true
 func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
 }
 
-// +gotohelm:ignore=true
 func must(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-// render is the entrypoint to both the go and helm versions of the redpanda
-// helm chart.
-// In helm, _shims.render-manifest is used to call and filter the output of
-// this function.
-// In go, this function should be call by executing [Chart.Render], which will
-// handle construction of [helmette.Dot], subcharting, and output filtering.
-func render(dot *helmette.Dot) []kube.Object {
-	manifests := renderResources(dot, nil)
-
-	for _, obj := range StatefulSets(dot, nil) {
-		manifests = append(manifests, obj)
-	}
-
-	// NB: This slice may contain nil interfaces!
-	// Filtering happens elsewhere, don't call this function directly if you
-	// can avoid it.
-	return manifests
-}
-
 func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []kube.Object {
-	checkVersion(dot)
-
 	manifests := []kube.Object{
 		NodePortService(dot),
 		PodDisruptionBudget(dot, pools),
@@ -166,10 +144,5 @@ func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []ku
 		manifests = append(manifests, obj)
 	}
 
-	manifests = append(manifests, consoleChartIntegration(dot, pools)...)
-
-	// NB: This slice may contain nil interfaces!
-	// Filtering happens elsewhere, don't call this function directly if you
-	// can avoid it.
 	return manifests
 }

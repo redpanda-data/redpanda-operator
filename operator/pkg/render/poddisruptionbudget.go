@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_poddisruptionbudget.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -26,11 +25,12 @@ func PodDisruptionBudget(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) 
 	values := helmette.Unwrap[Values](dot.Values)
 	budget := values.Statefulset.Budget.MaxUnavailable
 
-	// to maintain quorum, raft cannot lose more than half its members
 	totalNodes := values.Statefulset.Replicas
 	for _, pool := range pools {
 		totalNodes += ptr.Deref(pool.Spec.Replicas, 0)
 	}
+
+	// to maintain quorum, raft cannot lose more than half its members
 	minReplicas := totalNodes / 2
 
 	// the lowest we can go is 1 so allow that always
@@ -39,7 +39,7 @@ func PodDisruptionBudget(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) 
 	}
 
 	maxUnavailable := intstr.FromInt32(int32(budget))
-	matchLabels := StatefulSetPodLabelsSelector(dot)
+	matchLabels := ClusterPodLabelsSelector(dot)
 	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(dot)
 
 	return &policyv1.PodDisruptionBudget{

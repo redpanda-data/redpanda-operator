@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -36,7 +36,10 @@ func RenderResourcesFromCRD(cfg *kube.RESTConfig, release helmette.Release, clus
 		return nil, err
 	}
 
-	return renderResources(dot, pools), nil
+	manifests := renderResources(dot, pools)
+	manifests = append(manifests, consoleChartIntegration(dot, pools)...)
+
+	return manifests, nil
 }
 
 func RenderNodePoolsFromCRD(cfg *kube.RESTConfig, release helmette.Release, cluster any, pools []*redpandav1alpha3.NodePool) (_ []*appsv1.StatefulSet, err error) {

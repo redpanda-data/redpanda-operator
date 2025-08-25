@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_console.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -16,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -37,15 +36,15 @@ func consoleChartIntegration(dot *helmette.Dot, pools []*redpandav1alpha3.NodePo
 
 	consoleValue := helmette.UnmarshalInto[console.Values](consoleDot.Values)
 	// Pass the same Redpanda License to Console
-	if license := values.Enterprise.License; license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
+	if license := GetLicenseLiteral(dot); license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
 		consoleValue.Secret.Create = true
-		consoleValue.Secret.License = license
+		consoleValue.Secret.Enterprise = console.EnterpriseSecrets{License: ptr.To(license)}
 	}
 
 	// Create console configuration based on Redpanda helm chart values.
 	if !ptr.Deref(values.Console.ConfigMap.Create, false) {
 		consoleValue.ConfigMap.Create = true
-		consoleValue.Config = ConsoleConfig(dot, pools)
+		consoleValue.Console.Config = ConsoleConfig(dot, pools)
 	}
 
 	if !ptr.Deref(values.Console.Deployment.Create, false) {
@@ -58,7 +57,7 @@ func consoleChartIntegration(dot *helmette.Dot, pools []*redpandav1alpha3.NodePo
 				"sh",
 				"-c",
 				"set -e; IFS=':' read -r KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM < <(grep \"\" $(find /mnt/users/* -print));" +
-					fmt.Sprintf(" KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM:-%s};", GetSASLMechanism(dot)) +
+					fmt.Sprintf(" KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM:-%s};", SASLMechanism(dot)) +
 					" export KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM;" +
 					" export KAFKA_SCHEMAREGISTRY_USERNAME=$KAFKA_SASL_USERNAME;" +
 					" export KAFKA_SCHEMAREGISTRY_PASSWORD=$KAFKA_SASL_PASSWORD;" +
@@ -71,8 +70,13 @@ func consoleChartIntegration(dot *helmette.Dot, pools []*redpandav1alpha3.NodePo
 		}
 
 		// Create License reference for Console
-		if secret := values.Enterprise.LicenseSecretRef; secret != nil {
-			consoleValue.LicenseSecretRef = secret
+		if secret := GetLicenseSecretReference(dot); secret != nil {
+			consoleValue.Enterprise = console.Enterprise{
+				LicenseSecretRef: console.SecretKeyRef{
+					Name: secret.Name,
+					Key:  secret.Key,
+				},
+			}
 		}
 
 		consoleValue.ExtraVolumes = consoleTLSVolumes(dot)
@@ -221,6 +225,11 @@ func ConsoleConfig(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[st
 				"enabled": values.Auth.IsSASLEnabled(),
 			},
 			"tls": values.Listeners.Kafka.ConsoleTLS(&values.TLS),
+			"schemaRegistry": map[string]any{
+				"enabled": values.Listeners.SchemaRegistry.Enabled,
+				"urls":    schemaURLs,
+				"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
+			},
 		},
 		"redpanda": map[string]any{
 			"adminApi": map[string]any{
@@ -229,16 +238,13 @@ func ConsoleConfig(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[st
 				"tls":     values.Listeners.Admin.ConsoleTLS(&values.TLS),
 			},
 		},
-		"schemaRegistry": map[string]any{
-			"enabled": values.Listeners.SchemaRegistry.Enabled,
-			"urls":    schemaURLs,
-			"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
-		},
 	}
 
-	if values.Console.Config == nil {
-		values.Console.Config = map[string]any{}
+	if values.Console.Console == nil {
+		values.Console.Console = &console.PartialConsole{
+			Config: map[string]any{},
+		}
 	}
 
-	return helmette.Merge(values.Console.Config, c)
+	return helmette.Merge(values.Console.Console.Config, c)
 }

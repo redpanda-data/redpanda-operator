@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_values.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -19,16 +18,15 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	_ "github.com/quasilyte/go-ruleguard/dsl"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/connectors"
+	"github.com/redpanda-data/redpanda-operator/charts/console"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 const (
@@ -37,17 +35,19 @@ const (
 	defaultTruststorePath = "/etc/ssl/certs/ca-certificates.crt"
 
 	// RedpandaContainerName is the user facing name of the redpanda container
-	// in the redpanda StatefulSet.
+	// in the redpanda StatefulSet. While the name of the container can
+	// technically change, this is the name that is used to locate the
+	// [corev1.Container] that will be smp'd into the redpanda container.
 	RedpandaContainerName = "redpanda"
 	// PostUpgradeContainerName is the user facing name of the post-install
 	// job's container.
 	PostInstallContainerName = "post-install"
+	// PostUpgradeContainerName is the user facing name of the post-upgrade
+	// job's container.
+	PostUpgradeContainerName = "post-upgrade"
 	// RedpandaControllersContainerName is the container that can perform day
 	// 2 operation similarly to Redpanda operator.
 	RedpandaControllersContainerName = "redpanda-controllers"
-	// RedpandaConfiguratorContainerName is the user facing name of the
-	// redpanda-configurator init container in the redpanda StatefulSet.
-	RedpandaConfiguratorContainerName = "redpanda-configurator"
 
 	// certificateMountPoint is a common mount point for any TLS certificate
 	// defined as external truststore or as certificate that would be
@@ -68,40 +68,63 @@ type MebiBytes = int64
 // the Values struct as well to ensure that nothing can ever get out of sync.
 
 type Values struct {
-	// Global is an untyped map of values that are "global" to this chart and
-	// all its sub-charts.
-	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any        `json:"global,omitempty"`
-	NameOverride     string                `json:"nameOverride"`
-	FullnameOverride string                `json:"fullnameOverride"`
-	ClusterDomain    string                `json:"clusterDomain"`
-	CommonLabels     map[string]string     `json:"commonLabels"`
-	Image            Image                 `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service              `json:"service"`
-	LicenseKey       string                `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	AuditLogging     AuditLogging          `json:"auditLogging"`
-	Enterprise       Enterprise            `json:"enterprise"`
-	RackAwareness    RackAwareness         `json:"rackAwareness"`
-	Console          console.PartialValues `json:"console,omitempty"`
-	Auth             Auth                  `json:"auth"`
-	TLS              TLS                   `json:"tls"`
-	External         ExternalConfig        `json:"external"`
-	Logging          Logging               `json:"logging"`
-	Monitoring       Monitoring            `json:"monitoring"`
-	Resources        RedpandaResources     `json:"resources"`
-	Storage          Storage               `json:"storage"`
-	PostInstallJob   PostInstallJob        `json:"post_install_job"`
-	Statefulset      Statefulset           `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg     `json:"serviceAccount"`
-	RBAC             RBAC                  `json:"rbac"`
-	Tuning           Tuning                `json:"tuning"`
-	Listeners        Listeners             `json:"listeners"`
-	Config           Config                `json:"config"`
+	NameOverride     string                        `json:"nameOverride"`
+	FullnameOverride string                        `json:"fullnameOverride"`
+	ClusterDomain    string                        `json:"clusterDomain"`
+	CommonLabels     map[string]string             `json:"commonLabels"`
+	NodeSelector     map[string]string             `json:"nodeSelector"`
+	Affinity         corev1.Affinity               `json:"affinity" jsonschema:"required"`
+	Tolerations      []corev1.Toleration           `json:"tolerations"`
+	Image            Image                         `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service                      `json:"service"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets"`
+	LicenseKey       string                        `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	LicenseSecretRef *LicenseSecretRef             `json:"license_secret_ref" jsonschema:"deprecated"`
+	AuditLogging     AuditLogging                  `json:"auditLogging"`
+	Enterprise       Enterprise                    `json:"enterprise"`
+	RackAwareness    RackAwareness                 `json:"rackAwareness"`
+	Console          console.PartialValues         `json:"console,omitempty"`
+	Connectors       connectors.PartialValues      `json:"connectors"`
+	Auth             Auth                          `json:"auth"`
+	TLS              TLS                           `json:"tls"`
+	External         ExternalConfig                `json:"external"`
+	Logging          Logging                       `json:"logging"`
+	Monitoring       Monitoring                    `json:"monitoring"`
+	Resources        RedpandaResources             `json:"resources"`
+	Storage          Storage                       `json:"storage"`
+	PostInstallJob   PostInstallJob                `json:"post_install_job"`
+	Statefulset      Statefulset                   `json:"statefulset"`
+	ServiceAccount   ServiceAccountCfg             `json:"serviceAccount"`
+	RBAC             RBAC                          `json:"rbac"`
+	Tuning           Tuning                        `json:"tuning"`
+	Listeners        Listeners                     `json:"listeners"`
+	Config           Config                        `json:"config"`
 	Tests            *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
-	Force       bool        `json:"force"`
-	PodTemplate PodTemplate `json:"podTemplate"`
+	Force bool `json:"force"`
+}
+
+// +gotohelm:ignore=true
+func (Values) JSONSchemaExtend(schema *jsonschema.Schema) {
+	deprecate(schema, "license_key", "license_secret_ref")
+}
+
+// SecurityContext is a legacy mishmash of [corev1.PodSecurityContext] and
+// [corev1.SecurityContext]. It's type exists for backwards compat purposes
+// only.
+type SecurityContext struct {
+	RunAsUser                *int64 `json:"runAsUser"`
+	RunAsGroup               *int64 `json:"runAsGroup"`
+	AllowPrivilegeEscalation *bool  `json:"allowPrivilegeEscalation"`
+	// AllowPriviledgeEscalation is typoed version of
+	// [SecurityContext.AllowPrivilegeEscalation]. It's respected for backwards
+	// compatibility.
+	// Deprecated: Prefer AllowPrivilegeEscalation.
+	AllowPriviledgeEscalation *bool                          `json:"allowPriviledgeEscalation"`
+	RunAsNonRoot              *bool                          `json:"runAsNonRoot"`
+	FSGroup                   *int64                         `json:"fsGroup"`
+	FSGroupChangePolicy       *corev1.PodFSGroupChangePolicy `json:"fsGroupChangePolicy"`
 }
 
 type Image struct {
@@ -123,6 +146,11 @@ type Service struct {
 	Internal struct {
 		Annotations map[string]string `json:"annotations"`
 	} `json:"internal"`
+}
+
+type LicenseSecretRef struct {
+	SecretName string `json:"secret_name"`
+	SecretKey  string `json:"secret_key"`
 }
 
 type AuditLogging struct {
@@ -192,13 +220,11 @@ func (a *AuditLogging) Translate(dot *helmette.Dot, isSASLEnabled bool) map[stri
 }
 
 type Enterprise struct {
-	License          string                    `json:"license"`
-	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
-}
-
-// +gotohelm:ignore=true
-func (Enterprise) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "licenseSecretRef")
+	License          string `json:"license"`
+	LicenseSecretRef *struct {
+		Key  string `json:"key"`
+		Name string `json:"name"`
+	} `json:"licenseSecretRef"`
 }
 
 type RackAwareness struct {
@@ -732,10 +758,14 @@ func (s *Storage) StorageMinFreeBytes() int64 {
 }
 
 type PostInstallJob struct {
-	Enabled     bool              `json:"enabled"`
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
-	PodTemplate PodTemplate       `json:"podTemplate"`
+	Resources   *corev1.ResourceRequirements `json:"resources"`
+	Affinity    corev1.Affinity              `json:"affinity"`
+	Enabled     bool                         `json:"enabled"`
+	Labels      map[string]string            `json:"labels"`
+	Annotations map[string]string            `json:"annotations"`
+	// Deprecated. Prefer [PodTemplate.Spec.SecurityContext].
+	SecurityContext *corev1.SecurityContext `json:"securityContext"`
+	PodTemplate     PodTemplate             `json:"podTemplate"`
 }
 
 type PodTemplate struct {
@@ -745,37 +775,98 @@ type PodTemplate struct {
 }
 
 type Statefulset struct {
-	AdditionalSelectorLabels   map[string]string                `json:"additionalSelectorLabels" jsonschema:"required"`
-	Replicas                   int32                            `json:"replicas" jsonschema:"required"`
-	UpdateStrategy             appsv1.StatefulSetUpdateStrategy `json:"updateStrategy" jsonschema:"required"`
-	AdditionalRedpandaCmdFlags []string                         `json:"additionalRedpandaCmdFlags"`
-	PodTemplate                PodTemplate                      `json:"podTemplate" jsonschema:"required"`
-	Budget                     struct {
+	AdditionalSelectorLabels map[string]string `json:"additionalSelectorLabels" jsonschema:"required"`
+	NodeAffinity             map[string]any    `json:"nodeAffinity"`
+	Replicas                 int32             `json:"replicas" jsonschema:"required"`
+	UpdateStrategy           struct {
+		Type string `json:"type" jsonschema:"required,pattern=^(RollingUpdate|OnDelete)$"`
+	} `json:"updateStrategy" jsonschema:"required"`
+	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags"`
+	// Annotations are used only for `Statefulset.spec.template.metadata.annotations`. The StatefulSet does not have
+	// any dedicated annotation.
+	Annotations map[string]string `json:"annotations" jsonschema:"deprecated"`
+	PodTemplate PodTemplate       `json:"podTemplate" jsonschema:"required"`
+	Budget      struct {
 		MaxUnavailable int32 `json:"maxUnavailable" jsonschema:"required"`
 	} `json:"budget" jsonschema:"required"`
+	StartupProbe struct {
+		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
+		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
+		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
+	} `json:"startupProbe" jsonschema:"required"`
+	LivenessProbe struct {
+		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
+		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
+		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
+	} `json:"livenessProbe" jsonschema:"required"`
+	ReadinessProbe struct {
+		InitialDelaySeconds int32 `json:"initialDelaySeconds" jsonschema:"required"`
+		FailureThreshold    int32 `json:"failureThreshold" jsonschema:"required"`
+		PeriodSeconds       int32 `json:"periodSeconds" jsonschema:"required"`
+		SuccessThreshold    int32 `json:"successThreshold"`
+		TimeoutSeconds      int32 `json:"timeoutSeconds"`
+	} `json:"readinessProbe" jsonschema:"required"`
+	PodAffinity     map[string]any `json:"podAffinity" jsonschema:"required"`
 	PodAntiAffinity struct {
 		TopologyKey string         `json:"topologyKey" jsonschema:"required"`
 		Type        string         `json:"type" jsonschema:"required,pattern=^(hard|soft|custom)$"`
 		Weight      int32          `json:"weight" jsonschema:"required"`
 		Custom      map[string]any `json:"custom"`
 	} `json:"podAntiAffinity" jsonschema:"required"`
-	SideCars       Sidecars `json:"sideCars" jsonschema:"required"`
-	InitContainers struct {
+	NodeSelector                  map[string]string `json:"nodeSelector" jsonschema:"required"`
+	PriorityClassName             string            `json:"priorityClassName" jsonschema:"required"`
+	TerminationGracePeriodSeconds int64             `json:"terminationGracePeriodSeconds"`
+	TopologySpreadConstraints     []struct {
+		MaxSkew           int32                                `json:"maxSkew"`
+		TopologyKey       string                               `json:"topologyKey"`
+		WhenUnsatisfiable corev1.UnsatisfiableConstraintAction `json:"whenUnsatisfiable" jsonschema:"pattern=^(ScheduleAnyway|DoNotSchedule)$"`
+	} `json:"topologySpreadConstraints" jsonschema:"required,minItems=1"`
+	Tolerations []corev1.Toleration `json:"tolerations" jsonschema:"required"`
+	// Deprecated. Prefer [PodTemplate.Spec.SecurityContext].
+	PodSecurityContext *SecurityContext `json:"podSecurityContext"`
+	// Deprecated. Prefer [PodTemplate.Spec.Containers[*].SecurityContext].
+	SecurityContext   SecurityContext `json:"securityContext" jsonschema:"required"`
+	SideCars          Sidecars        `json:"sideCars" jsonschema:"required"`
+	ExtraVolumes      string          `json:"extraVolumes"`      // XXX this is template-expanded into yaml
+	ExtraVolumeMounts string          `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+	InitContainers    struct {
+		Configurator struct {
+			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+			Resources         map[string]any `json:"resources"`
+			AdditionalCLIArgs []string       `json:"additionalCLIArgs,omitempty"`
+		} `json:"configurator"`
 		FSValidator struct {
-			Enabled    bool   `json:"enabled"`
-			ExpectedFS string `json:"expectedFS"`
+			Enabled           bool           `json:"enabled"`
+			Resources         map[string]any `json:"resources"`
+			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+			ExpectedFS        string         `json:"expectedFS"`
 		} `json:"fsValidator"`
 		SetDataDirOwnership struct {
-			Enabled bool `json:"enabled"`
+			Enabled           bool           `json:"enabled"`
+			Resources         map[string]any `json:"resources"`
+			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
 		} `json:"setDataDirOwnership"`
-		Configurator struct {
-			AdditionalCLIArgs []string `json:"additionalCLIArgs,omitempty"`
-		} `json:"configurator"`
+		SetTieredStorageCacheDirOwnership struct {
+			// Enabled           bool           `json:"enabled"`
+			Resources         map[string]any `json:"resources"`
+			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+		} `json:"setTieredStorageCacheDirOwnership"`
+		Tuning struct {
+			// Enabled           bool           `json:"enabled"`
+			Resources         map[string]any `json:"resources"`
+			ExtraVolumeMounts string         `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+		} `json:"tuning"`
+		ExtraInitContainers string `json:"extraInitContainers"` // XXX this is template-expanded into yaml
 	} `json:"initContainers"`
 	InitContainerImage struct {
 		Repository string `json:"repository"`
 		Tag        string `json:"tag"`
 	} `json:"initContainerImage"`
+}
+
+// +gotohelm:ignore=true
+func (Statefulset) JSONSchemaExtend(schema *jsonschema.Schema) {
+	deprecate(schema, "podSecurityContext", "securityContext")
 }
 
 type ServiceAccountCfg struct {
@@ -822,9 +913,12 @@ func (t *Tuning) Translate() map[string]any {
 }
 
 type Sidecars struct {
-	Image       Image    `json:"image"`
-	Args        []string `json:"args"`
-	PVCUnbinder struct {
+	Image             Image                   `json:"image"`
+	Args              []string                `json:"args"`
+	ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+	Resources         map[string]any          `json:"resources"`
+	SecurityContext   *corev1.SecurityContext `json:"securityContext"`
+	PVCUnbinder       struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
 	} `json:"pvcUnbinder"`
@@ -834,25 +928,22 @@ type Sidecars struct {
 		DecommissionRequeueTimeout string `json:"decommissionRequeueTimeout"`
 	} `json:"brokerDecommissioner"`
 	ConfigWatcher struct {
-		Enabled bool `json:"enabled"`
+		Enabled           bool                    `json:"enabled"`
+		ExtraVolumeMounts string                  `json:"extraVolumeMounts"` // XXX this is template-expanded into yaml
+		Resources         map[string]any          `json:"resources"`
+		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		DeprecatedImage    *Image   `json:"image"`
-		Enabled            bool     `json:"enabled"`
-		CreateRBAC         bool     `json:"createRBAC"`
-		HealthProbeAddress string   `json:"healthProbeAddress"`
-		MetricsAddress     string   `json:"metricsAddress"`
-		PprofAddress       string   `json:"pprofAddress"`
-		Run                []string `json:"run"`
+		Image              Image                   `json:"image"`
+		Enabled            bool                    `json:"enabled"`
+		CreateRBAC         bool                    `json:"createRBAC"`
+		Resources          any                     `json:"resources"`
+		SecurityContext    *corev1.SecurityContext `json:"securityContext"`
+		HealthProbeAddress string                  `json:"healthProbeAddress"`
+		MetricsAddress     string                  `json:"metricsAddress"`
+		PprofAddress       string                  `json:"pprofAddress"`
+		Run                []string                `json:"run"`
 	} `json:"controllers"`
-}
-
-func (s *Sidecars) PVCUnbinderEnabled() bool {
-	return s.Controllers.Enabled && s.PVCUnbinder.Enabled
-}
-
-func (s *Sidecars) BrokerDecommissionerEnabled() bool {
-	return s.Controllers.Enabled && s.BrokerDecommissioner.Enabled
 }
 
 func (s *Sidecars) ShouldCreateRBAC() bool {
@@ -872,19 +963,6 @@ type Listeners struct {
 		Port int32       `json:"port" jsonschema:"required"`
 		TLS  InternalTLS `json:"tls" jsonschema:"required"`
 	} `json:"rpc" jsonschema:"required"`
-}
-
-func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain string) []map[string]any {
-	var result []map[string]any
-	for i := int32(0); i < replicas; i++ {
-		result = append(result, map[string]any{
-			"host": map[string]any{
-				"address": fmt.Sprintf("%s-%d.%s", fullname, i, internalDomain),
-				"port":    l.RPC.Port,
-			},
-		})
-	}
-	return result
 }
 
 // TrustStoreVolume returns a [corev1.Volume] containing a projected volume
@@ -1055,10 +1133,10 @@ type ExternalSecretKeySelector struct {
 
 // Translate will take a ClusterConfiguration and extract its contributions to the cluster's configuration.
 // This produces *serialised* values, suitable for injection into a bootstrap.yaml template.
-func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfiguration.Fixup, []corev1.EnvVar) {
+func (c ClusterConfiguration) Translate() (map[string]string, []Fixup, []corev1.EnvVar) {
 	// Handle all keys in order, so that any resulting EnvVar definitions are stable.
 	template := map[string]string{}
-	fixups := []clusterconfiguration.Fixup{}
+	fixups := []Fixup{}
 	envVars := []corev1.EnvVar{}
 	for k, v := range helmette.SortedMap(c) {
 		// This is lifted directly from operator/pkg/clusterconfiguration.
@@ -1078,9 +1156,9 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
 			if v.UseRawValue {
-				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
+				fixups = append(fixups, Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, "envString", envName)})
 			} else {
-				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
+				fixups = append(fixups, Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, "repr", "envString", envName)})
 			}
 		} else if v.SecretKeyRef != nil {
 			envName := keyToEnvVar(k)
@@ -1095,9 +1173,9 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
 			if v.UseRawValue {
-				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
+				fixups = append(fixups, Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, "envString", envName)})
 			} else {
-				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
+				fixups = append(fixups, Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, "repr", "envString", envName)})
 			}
 		} else if v.ExternalSecretRefSelector != nil {
 			// We assume by default that the supplied value is a raw string, which can and should be quoted for the safe
@@ -1105,14 +1183,14 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
 			// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
-			fixup := fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
+			fixup := fmt.Sprintf(`%s("%s")`, "externalSecretRef", v.ExternalSecretRefSelector.Name)
 			if !v.UseRawValue {
-				fixup = fmt.Sprintf(`%s(%s)`, clusterconfiguration.CELRepr, fixup)
+				fixup = fmt.Sprintf(`%s(%s)`, "repr", fixup)
 			}
 			if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
-				fixup = fmt.Sprintf(`%s(%s)`, clusterconfiguration.CELErrorToWarning, fixup)
+				fixup = fmt.Sprintf(`%s(%s)`, "errorToWarning", fixup)
 			}
-			fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fixup})
+			fixups = append(fixups, Fixup{Field: k, CEL: fixup})
 		}
 	}
 	return template, fixups, envVars
@@ -1183,7 +1261,7 @@ type BootstrapUser struct {
 	Name         *string                   `json:"name"`
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
 	Password     *string                   `json:"password"`
-	Mechanism    SASLMechanism             `json:"mechanism"`
+	Mechanism    string                    `json:"mechanism" jsonschema:"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$"`
 }
 
 func (b *BootstrapUser) BootstrapEnvironment(fullname string) []corev1.EnvVar {
@@ -1236,14 +1314,14 @@ func (b *BootstrapUser) SecretKeySelector(fullname string) *corev1.SecretKeySele
 }
 
 type SASLUser struct {
-	Name      string         `json:"name"`
-	Password  string         `json:"password"`
-	Mechanism *SASLMechanism `json:"mechanism"`
+	Name      string `json:"name"`
+	Password  string `json:"password"`
+	Mechanism string `json:"mechanism" jsonschema:"pattern=^(SCRAM-SHA-512|SCRAM-SHA-256)$"`
 }
 
 type SASLAuth struct {
 	Enabled       bool          `json:"enabled" jsonschema:"required"`
-	Mechanism     SASLMechanism `json:"mechanism"`
+	Mechanism     string        `json:"mechanism"`
 	SecretRef     string        `json:"secretRef"`
 	Users         []SASLUser    `json:"users"`
 	BootstrapUser BootstrapUser `json:"bootstrapUser"`
@@ -1431,6 +1509,20 @@ func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalCo
 		})
 	}
 	return ports
+}
+
+func (l *ListenerConfig[T]) ConnectorsTLS(tls *TLS, fullName string) connectors.TLS {
+	t := connectors.TLS{Enabled: l.TLS.IsEnabled(tls)}
+	if !t.Enabled {
+		return t
+	}
+
+	t.CA = struct {
+		SecretRef           string `json:"secretRef"`
+		SecretNameOverwrite string `json:"secretNameOverwrite"`
+	}{SecretRef: fmt.Sprintf("%s-default-cert", fullName)}
+
+	return t
 }
 
 // TrustStores returns a slice of all configured and enabled [TrustStore]s on
@@ -1735,20 +1827,26 @@ func (c TieredStorageConfig) CloudStorageCacheSize() *resource.Quantity {
 	return ptr.To(helmette.UnmarshalInto[resource.Quantity](value))
 }
 
+// Fixup holds details of field patching
+type Fixup struct {
+	Field string `json:"field"`
+	CEL   string `json:"cel"`
+}
+
 // Translate converts TieredStorageConfig into a map suitable for use in
 // an unexpanded `.bootstrap.yaml`.
-func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[string]any, []clusterconfiguration.Fixup) {
+func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[string]any, []Fixup) {
 	// Clone ourselves as we're making changes.
 	config := helmette.Merge(map[string]any{}, c)
 
 	// For any values that can be specified as secrets and do not have explicit
 	// values, inject placeholders into config which will be replaced with
 	// `envsubst` in an initcontainer.
-	var fixups []clusterconfiguration.Fixup
+	var fixups []Fixup
 	for _, envvar := range creds.AsEnvVars(c) {
 		key := helmette.Lower(envvar.Name[len("REDPANDA_"):])
 		// NB: No string + string support in gotohelm.
-		fixups = append(fixups, clusterconfiguration.Fixup{
+		fixups = append(fixups, Fixup{
 			Field: key,
 			CEL:   fmt.Sprintf(`repr(envString("%s"))`, envvar.Name),
 		})

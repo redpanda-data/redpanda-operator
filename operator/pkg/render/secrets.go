@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_secrets.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -21,7 +20,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
+const DefaultSASLMechanism = "SCRAM-SHA-512"
 
 func Secrets(dot *helmette.Dot) []*corev1.Secret {
 	var secrets []*corev1.Secret
@@ -180,7 +179,10 @@ func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
 
 		// Working around lack of support for += or strings.Join at the moment
 		for _, user := range values.Auth.SASL.Users {
-			mechanism := ptr.Deref(user.Mechanism, defaultMechanism)
+			mechanism := defaultMechanism
+			if !helmette.Empty(user.Mechanism) {
+				mechanism = user.Mechanism
+			}
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)

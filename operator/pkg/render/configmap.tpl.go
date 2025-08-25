@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_configmap.go.tpl
-package redpanda
+package render
 
 import (
 	"fmt"
@@ -19,12 +18,10 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
 func ConfigMaps(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot, pools), RPKProfile(dot)}
-	cms = append(cms, pooledRedpandaConfigMaps(dot, pools)...)
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot, pools), RPKProfile(dot, pools)}
 	return cms
 }
 
@@ -41,9 +38,9 @@ func RedpandaConfigMap(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) *c
 			Labels:    FullLabels(dot),
 		},
 		Data: map[string]string{
-			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
-			clusterconfiguration.BootstrapFixupFile:       fixups,
-			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(dot, pools, true /* includeSeedServer */),
+			".bootstrap.json.in":    bootstrap,
+			"bootstrap.yaml.fixups": fixups,
+			"redpanda.yaml":         RedpandaConfigFile(dot, pools, true /* includeSeedServer */),
 		},
 	}
 }
@@ -68,11 +65,11 @@ func BootstrapFile(dot *helmette.Dot) (string, string) {
 	return helmette.ToJSON(template), fixupStr
 }
 
-func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfiguration.Fixup) {
+func BootstrapContents(dot *helmette.Dot) (map[string]string, []Fixup) {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	// Accumulate values and fixups
-	fixups := []clusterconfiguration.Fixup{}
+	fixups := []Fixup{}
 
 	bootstrap := map[string]any{
 		"kafka_enable_authorization": values.Auth.IsSASLEnabled(),
@@ -105,7 +102,7 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfigura
 	}
 
 	template := map[string]string{}
-	for k, v := range bootstrap {
+	for k, v := range helmette.SortedMap(bootstrap) {
 		template[k] = helmette.ToJSON(v)
 	}
 
@@ -125,7 +122,16 @@ func RedpandaConfigFile(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool, i
 	}
 
 	if includeNonHashableItems {
-		redpanda["seed_servers"] = values.Listeners.CreateSeedServers(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot))
+		result := []map[string]any{}
+		for _, broker := range BrokerList(dot, pools, -1) {
+			result = append(result, map[string]any{
+				"host": map[string]any{
+					"address": broker,
+					"port":    values.Listeners.RPC.Port,
+				},
+			})
+		}
+		redpanda["seed_servers"] = result
 	}
 
 	redpanda = helmette.Merge(redpanda, values.Config.Node.Translate())
@@ -155,7 +161,7 @@ func RedpandaConfigFile(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool, i
 // the external listeners of their redpanda cluster.
 // It is meant for external consumption via NOTES.txt and is not used within
 // this chart.
-func RPKProfile(dot *helmette.Dot) *corev1.ConfigMap {
+func RPKProfile(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) *corev1.ConfigMap {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.External.Enabled {
@@ -173,29 +179,52 @@ func RPKProfile(dot *helmette.Dot) *corev1.ConfigMap {
 			Labels:    FullLabels(dot),
 		},
 		Data: map[string]string{
-			"profile": helmette.ToYaml(rpkProfile(dot)),
+			"profile": helmette.ToYaml(rpkProfile(dot, pools)),
 		},
 	}
 }
 
 // rpkProfile generates an RPK Profile for connecting to external listeners.
 // It is intended to be used by the end user via a prompt in NOTES.txt.
-func rpkProfile(dot *helmette.Dot) map[string]any {
+func rpkProfile(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) map[string]any {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	brokerList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedKafkaPort(dot, i))))
+	{
+		for i := int32(0); i < values.Statefulset.Replicas; i++ {
+			brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(dot, nil, i), int(advertisedKafkaPort(dot, i))))
+		}
+
+		for _, pool := range pools {
+			for i := int32(0); i < ptr.Deref(pool.Spec.Replicas, 0); i++ {
+				brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(dot, pool, i), int(advertisedKafkaPort(dot, i))))
+			}
+		}
 	}
 
 	adminAdvertisedList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedAdminPort(dot, i))))
+	{
+		for i := int32(0); i < values.Statefulset.Replicas; i++ {
+			adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, nil, i), int(advertisedAdminPort(dot, i))))
+		}
+
+		for _, pool := range pools {
+			for i := int32(0); i < ptr.Deref(pool.Spec.Replicas, 0); i++ {
+				adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, pool, i), int(advertisedAdminPort(dot, i))))
+			}
+		}
 	}
 
 	schemaAdvertisedList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedSchemaPort(dot, i))))
+	{
+		for i := int32(0); i < values.Statefulset.Replicas; i++ {
+			schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, nil, i), int(advertisedSchemaPort(dot, i))))
+		}
+		for _, pool := range pools {
+			for i := int32(0); i < ptr.Deref(pool.Spec.Replicas, 0); i++ {
+				schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, pool, i), int(advertisedSchemaPort(dot, i))))
+			}
+		}
 	}
 
 	kafkaTLS := rpkKafkaClientTLSConfiguration(dot)
@@ -250,6 +279,8 @@ func rpkProfile(dot *helmette.Dot) map[string]any {
 	return result
 }
 
+// TODO: the i values here look fundamentally broken if we have a listener
+// shared across node pools due to the way indexing occurs
 func advertisedKafkaPort(dot *helmette.Dot, i int32) int {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -272,6 +303,8 @@ func advertisedKafkaPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
+// TODO: the i values here look fundamentally broken if we have a listener
+// shared across node pools due to the way indexing occurs
 func advertisedAdminPort(dot *helmette.Dot, i int32) int {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -298,6 +331,8 @@ func advertisedAdminPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
+// TODO: the i values here look fundamentally broken if we have a listener
+// shared across node pools due to the way indexing occurs
 func advertisedSchemaPort(dot *helmette.Dot, i int32) int {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -324,10 +359,13 @@ func advertisedSchemaPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
-func advertisedHost(dot *helmette.Dot, i int32) string {
+func advertisedHost(dot *helmette.Dot, pool *redpandav1alpha3.NodePool, i int32) string {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	address := fmt.Sprintf("%s-%d", Fullname(dot), int(i))
+	if pool != nil {
+		address = fmt.Sprintf("%s-%s-%d", Fullname(dot), pool.Name, int(i))
+	}
 	if ptr.Deref(values.External.Domain, "") != "" {
 		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, *values.External.Domain, dot))
 	}
@@ -362,24 +400,31 @@ func getFirstExternalKafkaListener(dot *helmette.Dot) string {
 func BrokerList(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool, port int32) []string {
 	values := helmette.Unwrap[Values](dot.Values)
 
+	// default broker
 	var bl []string
-
 	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		broker := fmt.Sprintf("%s-%d.%s:%d", Fullname(dot), i, InternalDomain(dot), port)
+		addr := fmt.Sprintf("%s-%d.%s:%d", Fullname(dot), i, InternalDomain(dot), port)
 		if port == -1 {
-			broker = fmt.Sprintf("%s-%d.%s", Fullname(dot), i, InternalDomain(dot))
+			addr = fmt.Sprintf("%s-%d.%s", Fullname(dot), i, InternalDomain(dot))
 		}
-		bl = append(bl, broker)
+		bl = append(bl, addr)
 	}
 
-	for _, p := range pools {
-		for i := int32(0); i < ptr.Deref(p.Spec.Replicas, 0); i++ {
-			broker := fmt.Sprintf("%s-%s-%d.%s:%d", Fullname(dot), p.Name, i, InternalDomain(dot), port)
-			if port == -1 {
-				broker = fmt.Sprintf("%s-%s-%d.%s", Fullname(dot), p.Name, i, InternalDomain(dot))
-			}
-			bl = append(bl, broker)
+	for _, pool := range pools {
+		bl = append(bl, brokersForPool(dot, pool, port)...)
+	}
+
+	return bl
+}
+
+func brokersForPool(dot *helmette.Dot, pool *redpandav1alpha3.NodePool, port int32) []string {
+	var bl []string
+	for i := int32(0); i < ptr.Deref(pool.Spec.Replicas, 0); i++ {
+		addr := fmt.Sprintf("%s-%s-%d.%s:%d", Fullname(dot), pool.Name, i, InternalDomain(dot), port)
+		if port == -1 {
+			addr = fmt.Sprintf("%s-%s-%d.%s", Fullname(dot), pool.Name, i, InternalDomain(dot))
 		}
+		bl = append(bl, addr)
 	}
 
 	return bl
