@@ -9,7 +9,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $consoleDot := (index $state.dot.Subcharts "console") -}}
+{{- $consoleDot := (index $state.Dot.Subcharts "console") -}}
 {{- $loadedValues := $consoleDot.Values -}}
 {{- $consoleValue := $consoleDot.Values -}}
 {{- $license_1 := $state.Values.enterprise.license -}}

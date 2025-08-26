@@ -34,8 +34,8 @@
 {{- $names = (concat (default (list) $names) (list (printf "*.%s.%s" $service $ns))) -}}
 {{- end -}}
 {{- if (ne (toJson $state.Values.external.domain) "null") -}}
-{{- $names = (concat (default (list) $names) (list (tpl $state.Values.external.domain $state.dot))) -}}
-{{- $names = (concat (default (list) $names) (list (printf "*.%s" (tpl $state.Values.external.domain $state.dot)))) -}}
+{{- $names = (concat (default (list) $names) (list (tpl $state.Values.external.domain $state.Dot))) -}}
+{{- $names = (concat (default (list) $names) (list (printf "*.%s" (tpl $state.Values.external.domain $state.Dot)))) -}}
 {{- end -}}
 {{- $duration := (default "43800h" $data.duration) -}}
 {{- $issuerRef := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $data.issuerRef (mustMergeOverwrite (dict "name" "") (dict "kind" "Issuer" "group" "cert-manager.io" "name" (printf "%s-%s-root-issuer" $fullname $name))))))) "r") -}}

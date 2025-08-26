@@ -10,7 +10,7 @@
 {{- if (not $enabled) -}}
 {{- continue -}}
 {{- end -}}
-{{- $role := (get (fromJson (include "_shims.fromYaml" (dict "a" (list ($state.Files.Get $file))))) "r") -}}
+{{- $role := (get (fromJson (include "_shims.fromYaml" (dict "a" (list ($state.Dot.Files.Get $file))))) "r") -}}
 {{- $_ := (set $role.metadata "name" (printf "%s-%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $role.metadata.name)) -}}
 {{- $_ := (set $role.metadata "namespace" $state.Release.Namespace) -}}
 {{- $_ := (set $role.metadata "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r")) -}}
@@ -36,7 +36,7 @@
 {{- if (not $enabled) -}}
 {{- continue -}}
 {{- end -}}
-{{- $role := (get (fromJson (include "_shims.fromYaml" (dict "a" (list ($state.Files.Get $file))))) "r") -}}
+{{- $role := (get (fromJson (include "_shims.fromYaml" (dict "a" (list ($state.Dot.Files.Get $file))))) "r") -}}
 {{- $_ := (set $role.metadata "name" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list (printf "%s-%s-%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $state.Release.Namespace $role.metadata.name))))) "r")) -}}
 {{- $_ := (set $role.metadata "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r")) -}}
 {{- $_ := (set $role.metadata "annotations" (merge (dict) (dict) $state.Values.serviceAccount.annotations $state.Values.rbac.annotations)) -}}

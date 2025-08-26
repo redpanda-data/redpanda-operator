@@ -307,7 +307,7 @@ echo "passed"`) -}}
 {{- $_is_returning := false -}}
 {{- $eaa := "${SERVICE_NAME}" -}}
 {{- $externalDomainTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
-{{- $expanded := (tpl $externalDomainTemplate $state.dot) -}}
+{{- $expanded := (tpl $externalDomainTemplate $state.Dot) -}}
 {{- if (not (empty $expanded)) -}}
 {{- $eaa = (printf "%s.%s" "${SERVICE_NAME}" $expanded) -}}
 {{- end -}}
@@ -334,7 +334,7 @@ echo "passed"`) -}}
 {{- end -}}
 {{- $domain_4 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
 {{- if (ne $domain_4 "") -}}
-{{- $host = (dict "name" $externalName "address" (printf "%s.%s" $address (tpl $domain_4 $state.dot)) "port" $port) -}}
+{{- $host = (dict "name" $externalName "address" (printf "%s.%s" $address (tpl $domain_4 $state.Dot)) "port" $port) -}}
 {{- else -}}
 {{- $host = (dict "name" $externalName "address" $address "port" $port) -}}
 {{- end -}}

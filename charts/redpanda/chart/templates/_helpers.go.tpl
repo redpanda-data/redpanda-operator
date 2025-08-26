@@ -113,22 +113,22 @@
 {{- end -}}
 {{- $listeners := (list "kafka" "admin" "schemaRegistry" "rpc" "http") -}}
 {{- range $_, $listener := $listeners -}}
-{{- $tlsCert := (dig "listeners" $listener "tls" "cert" false $state.dot.Values.AsMap) -}}
-{{- $tlsEnabled := (dig "listeners" $listener "tls" "enabled" false $state.dot.Values.AsMap) -}}
+{{- $tlsCert := (dig "listeners" $listener "tls" "cert" false $state.Dot.Values.AsMap) -}}
+{{- $tlsEnabled := (dig "listeners" $listener "tls" "enabled" false $state.Dot.Values.AsMap) -}}
 {{- if (and (not (empty $tlsEnabled)) (not (empty $tlsCert))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" true) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $external := (dig "listeners" $listener "external" false $state.dot.Values.AsMap) -}}
+{{- $external := (dig "listeners" $listener "external" false $state.Dot.Values.AsMap) -}}
 {{- if (empty $external) -}}
 {{- continue -}}
 {{- end -}}
 {{- $keys := (keys (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $external)))) "r")) -}}
 {{- range $_, $key := $keys -}}
-{{- $enabled := (dig "listeners" $listener "external" $key "enabled" false $state.dot.Values.AsMap) -}}
-{{- $tlsCert := (dig "listeners" $listener "external" $key "tls" "cert" false $state.dot.Values.AsMap) -}}
-{{- $tlsEnabled := (dig "listeners" $listener "external" $key "tls" "enabled" false $state.dot.Values.AsMap) -}}
+{{- $enabled := (dig "listeners" $listener "external" $key "enabled" false $state.Dot.Values.AsMap) -}}
+{{- $tlsCert := (dig "listeners" $listener "external" $key "tls" "cert" false $state.Dot.Values.AsMap) -}}
+{{- $tlsEnabled := (dig "listeners" $listener "external" $key "tls" "enabled" false $state.Dot.Values.AsMap) -}}
 {{- if (and (and (not (empty $enabled)) (not (empty $tlsCert))) (not (empty $tlsEnabled))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" true) | toJson -}}
@@ -154,7 +154,7 @@
 {{- $_is_returning := false -}}
 {{- $listeners := (list "kafka" "admin" "schemaRegistry" "rpc" "http") -}}
 {{- range $_, $listener := $listeners -}}
-{{- $required := (dig "listeners" $listener "tls" "requireClientAuth" false $state.dot.Values.AsMap) -}}
+{{- $required := (dig "listeners" $listener "tls" "requireClientAuth" false $state.Dot.Values.AsMap) -}}
 {{- if (not (empty $required)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" true) | toJson -}}
@@ -430,7 +430,7 @@
 {{- break -}}
 {{- else -}}{{- if (and (eq $kind "string") (contains "{{" (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r"))) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (tpl (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r") $state.dot)) | toJson -}}
+{{- (dict "r" (tpl (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r") $state.Dot)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

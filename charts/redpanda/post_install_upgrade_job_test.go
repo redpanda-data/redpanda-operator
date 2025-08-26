@@ -82,7 +82,7 @@ func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
 			err = json.Unmarshal(b, &dot.Values)
 			require.NoError(t, err)
 
-			state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: dot.Files, Release: dot.Release}
+			state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: &dot.Files, Release: &dot.Release, Chart: &dot.Chart, Dot: &dot}
 
 			envVars := PostInstallUpgradeEnvironmentVariables(state)
 
@@ -125,7 +125,7 @@ func TestAnnotationsOverwrite(t *testing.T) {
 	dot, err := Chart.Dot(nil, helmette.Release{}, v)
 	require.NoError(t, err)
 
-	state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: dot.Files, Release: dot.Release}
+	state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: &dot.Files, Release: &dot.Release, Chart: &dot.Chart}
 
 	job := PostInstallUpgradeJob(state)
 	require.Equal(t, job.Annotations["helm.sh/hook-delete-policy"], "before-hook-creation,hook-succeeded")

@@ -311,7 +311,7 @@ func advertisedSchemaPort(state *RenderState, i int32) int {
 func advertisedHost(state *RenderState, i int32) string {
 	address := fmt.Sprintf("%s-%d", Fullname(state), int(i))
 	if ptr.Deref(state.Values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
 	}
 
 	if len(state.Values.External.Addresses) <= 0 {
@@ -325,7 +325,7 @@ func advertisedHost(state *RenderState, i int32) string {
 	}
 
 	if ptr.Deref(state.Values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
 	}
 
 	return address

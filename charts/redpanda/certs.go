@@ -57,8 +57,8 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 		}
 
 		if state.Values.External.Domain != nil {
-			names = append(names, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
-			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot)))
+			names = append(names, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
+			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
 		}
 
 		duration := helmette.Default("43800h", data.Duration)

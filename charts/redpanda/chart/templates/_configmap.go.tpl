@@ -274,7 +274,7 @@
 {{- $_is_returning := false -}}
 {{- $address := (printf "%s-%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") ($i | int)) -}}
 {{- if (ne (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") "") -}}
-{{- $address = (printf "%s.%s" $address (tpl $state.Values.external.domain $state.dot)) -}}
+{{- $address = (printf "%s.%s" $address (tpl $state.Values.external.domain $state.Dot)) -}}
 {{- end -}}
 {{- if (le ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (0 | int)) -}}
 {{- $_is_returning = true -}}
@@ -287,7 +287,7 @@
 {{- $address = (index $state.Values.external.addresses $i) -}}
 {{- end -}}
 {{- if (ne (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") "") -}}
-{{- $address = (printf "%s.%s" $address (tpl $state.Values.external.domain $state.dot)) -}}
+{{- $address = (printf "%s.%s" $address (tpl $state.Values.external.domain $state.Dot)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $address) | toJson -}}

@@ -63,7 +63,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 				}
 			}
 
-			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
+			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
 
 			annotations["external-dns.alpha.kubernetes.io/hostname"] = address
 		}

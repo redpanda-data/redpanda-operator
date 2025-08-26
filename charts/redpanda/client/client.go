@@ -31,14 +31,12 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
-var (
-	// permitOutOfClusterDNS controls whether or not this package will use the
-	// provided dialer to approximate "out of cluster DNS" by constructing a
-	// [net.Resolver] that tunnels into a kube-dns Pod. Building with the
-	// integration build tag will set this flag to true as that's the only
-	// environment we expect to use out of cluster DNS.
-	permitOutOfClusterDNS = false
-)
+// permitOutOfClusterDNS controls whether or not this package will use the
+// provided dialer to approximate "out of cluster DNS" by constructing a
+// [net.Resolver] that tunnels into a kube-dns Pod. Building with the
+// integration build tag will set this flag to true as that's the only
+// environment we expect to use out of cluster DNS.
+var permitOutOfClusterDNS = false
 
 // DialContextFunc is a function that acts as a dialer for the underlying Kafka client.
 type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn, error)

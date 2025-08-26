@@ -57,11 +57,11 @@ var (
 // the chart.
 type RenderState struct {
 	// Metadata about the current Helm release.
-	Release helmette.Release
+	Release *helmette.Release
 	// Files contains the static files that are part of the Helm chart.
-	Files helmette.Files
+	Files *helmette.Files
 	// Chart is the helm chart being rendered.
-	Chart helmette.Chart
+	Chart *helmette.Chart
 
 	// Values are the values used to render the chart.
 	Values Values
@@ -80,10 +80,10 @@ type RenderState struct {
 	// TODO: move this to v1alpha2
 	Pools []*redpandav1alpha3.NodePool
 
-	// dot is the underlying [helmette.Dot] that was used to construct this
+	// Dot is the underlying [helmette.Dot] that was used to construct this
 	// RenderState.
 	// TODO: remove this eventually once we get templating figured out.
-	dot *helmette.Dot
+	Dot *helmette.Dot
 }
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in
@@ -103,7 +103,7 @@ func (r *RenderState) FetchBootstrapUser() {
 	// TODO: Should we try to detect invalid configurations, panic, and request
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](r.dot, r.Release.Namespace, secretName); ok {
+	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, secretName); ok {
 		// make any existing secret immutable
 		existing.Immutable = ptr.To(true)
 		r.BootstrapUserSecret = existing
@@ -122,7 +122,7 @@ func (r *RenderState) FetchStatefulSetPodSelector() {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
 	if r.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](r.dot, r.Release.Namespace, Fullname(r)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
+		if existing, ok := helmette.Lookup[appsv1.StatefulSet](r.Dot, r.Release.Namespace, Fullname(r)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
 			r.StatefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
 			r.StatefulSetSelector = existing.Spec.Selector.MatchLabels
 		}
@@ -141,7 +141,7 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 	if saslUsers != nil {
 		// read from the server since we're assuming all the resources
 		// have already been created
-		users, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.dot, saslUsers.Namespace, saslUsers.Name)
+		users, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, saslUsers.Namespace, saslUsers.Name)
 		if lookupErr != nil {
 			err = saslUsersError(lookupErr)
 			return
@@ -181,13 +181,14 @@ func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(values Values)) *R
 }
 
 // renderStateFromDot constructs a [RenderState] from the provided [helmette.Dot]
+// +gotohelm:ignore=true
 func renderStateFromDot(dot *helmette.Dot) *RenderState {
 	state := &RenderState{
-		Release: dot.Release,
-		Files:   dot.Files,
-		Chart:   dot.Chart,
+		Release: &dot.Release,
+		Files:   &dot.Files,
+		Chart:   &dot.Chart,
 		Values:  helmette.Unwrap[Values](dot.Values),
-		dot:     dot,
+		Dot:     dot,
 	}
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()
@@ -238,7 +239,7 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: serverName}
 
-	serverCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.dot, namespace, rootCertName)
+	serverCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, namespace, rootCertName)
 	if lookupErr != nil {
 		return nil, serverTLSError(lookupErr)
 	}
@@ -263,7 +264,7 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	tlsConfig.RootCAs = pool
 
 	if listener.RequireClientAuth {
-		clientCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.dot, namespace, clientCertName)
+		clientCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, namespace, clientCertName)
 		if lookupErr != nil {
 			return nil, clientTLSError(lookupErr)
 		}
@@ -327,5 +328,5 @@ func certificatesFor(state *RenderState, cert string) (certSecret, certKey, clie
 // KubeCTL constructs a kube.Ctl from the RenderState's kubeconfig.
 // +gotohelm:ignore=true
 func (r *RenderState) KubeCTL() (*kube.Ctl, error) {
-	return kube.FromRESTConfig(r.dot.KubeConfig)
+	return kube.FromRESTConfig(r.Dot.KubeConfig)
 }

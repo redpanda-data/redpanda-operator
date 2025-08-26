@@ -29,7 +29,7 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 		return nil
 	}
 
-	consoleDot := state.dot.Subcharts["console"]
+	consoleDot := state.Dot.Subcharts["console"]
 	loadedValues := consoleDot.Values
 
 	consoleValue := helmette.UnmarshalInto[console.Values](consoleDot.Values)

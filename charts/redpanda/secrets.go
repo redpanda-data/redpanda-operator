@@ -516,7 +516,7 @@ func adminTLSCurlFlags(state *RenderState) string {
 func externalAdvertiseAddress(state *RenderState) string {
 	eaa := "${SERVICE_NAME}"
 	externalDomainTemplate := ptr.Deref(state.Values.External.Domain, "")
-	expanded := helmette.Tpl(state.dot, externalDomainTemplate, state.dot)
+	expanded := helmette.Tpl(state.Dot, externalDomainTemplate, state.Dot)
 	if !helmette.Empty(expanded) {
 		eaa = fmt.Sprintf("%s.%s", "${SERVICE_NAME}", expanded)
 	}
@@ -540,7 +540,7 @@ func advertisedHostJSON(state *RenderState, externalName string, port int32, rep
 		if domain := ptr.Deref(state.Values.External.Domain, ""); domain != "" {
 			host = map[string]any{
 				"name":    externalName,
-				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(state.dot, domain, state.dot)),
+				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, domain, state.Dot)),
 				"port":    port,
 			}
 		} else {

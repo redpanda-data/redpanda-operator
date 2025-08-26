@@ -34,7 +34,7 @@ func Roles(state *RenderState) []*rbacv1.Role {
 			continue
 		}
 
-		role := helmette.FromYaml[rbacv1.Role](state.Files.Get(file))
+		role := helmette.FromYaml[rbacv1.Role](state.Dot.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
 		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(state), role.ObjectMeta.Name)
@@ -66,7 +66,7 @@ func ClusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 			continue
 		}
 
-		role := helmette.FromYaml[rbacv1.ClusterRole](state.Files.Get(file))
+		role := helmette.FromYaml[rbacv1.ClusterRole](state.Dot.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
 		// For ClusterScoped resources, we include the Namespace to permit

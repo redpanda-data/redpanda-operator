@@ -131,22 +131,22 @@ func TLSEnabled(state *RenderState) bool {
 	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
 	for _, listener := range listeners {
 		// TODO: replace the use of general map stuff to actually leverage the structured values
-		tlsCert := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
-		tlsEnabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
+		tlsCert := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
+		tlsEnabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
 		if !helmette.Empty(tlsEnabled) && !helmette.Empty(tlsCert) {
 			return true
 		}
 
-		external := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external")
+		external := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external")
 		if helmette.Empty(external) {
 			continue
 		}
 
 		keys := helmette.Keys(external.(map[string]any))
 		for _, key := range keys {
-			enabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
-			tlsCert := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
-			tlsEnabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
+			enabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
+			tlsCert := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
+			tlsEnabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
 
 			if !helmette.Empty(enabled) && !helmette.Empty(tlsCert) && !helmette.Empty(tlsEnabled) {
 				return true
@@ -160,7 +160,7 @@ func TLSEnabled(state *RenderState) bool {
 func ClientAuthRequired(state *RenderState) bool {
 	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
 	for _, listener := range listeners {
-		required := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
+		required := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
 		if !helmette.Empty(required) {
 			return true
 		}
@@ -385,7 +385,7 @@ func recursiveTpl(state *RenderState, data any) any {
 	} else if kind == "string" && helmette.Contains("{{", data.(string)) {
 		// Tpl is quite slow, so we gate this on template delimiters for a
 		// little speed up.
-		return helmette.Tpl(state.dot, data.(string), state.dot)
+		return helmette.Tpl(state.Dot, data.(string), state.Dot)
 	}
 
 	return data

@@ -88,7 +88,18 @@ func must(err error) {
 // In go, this function should be call by executing [Chart.Render], which will
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func render(dot *helmette.Dot) []kube.Object {
-	state := renderStateFromDot(dot)
+	// NB: we need to do this inline here to avoid a return that would
+	// otherwise jsonify the entire struct and make it impossible to pass
+	// in templates.
+	state := &RenderState{
+		Release: &dot.Release,
+		Files:   &dot.Files,
+		Chart:   &dot.Chart,
+		Values:  helmette.Unwrap[Values](dot.Values),
+		Dot:     dot,
+	}
+	state.FetchBootstrapUser()
+	state.FetchStatefulSetPodSelector()
 
 	manifests := renderResources(state)
 
