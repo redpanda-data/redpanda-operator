@@ -18,31 +18,30 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
 
-func ConfigMaps(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(dot), RPKProfile(dot)}
+func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(state), RPKProfile(state)}
 	return cms
 }
 
-func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
-	bootstrap, fixups := BootstrapFile(dot)
+func RedpandaConfigMap(state *RenderState) *corev1.ConfigMap {
+	bootstrap, fixups := BootstrapFile(state)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(dot),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      Fullname(state),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Data: map[string]string{
 			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
 			clusterconfiguration.BootstrapFixupFile:       fixups,
-			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(dot, true /* includeSeedServer */),
+			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */),
 		},
 	}
 }
@@ -58,8 +57,8 @@ func RedpandaConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 //
 // `.bootstrap.yaml` is templated and then read by both the redpanda container
 // and the post install/upgrade job.
-func BootstrapFile(dot *helmette.Dot) (string, string) {
-	template, fixups := BootstrapContents(dot)
+func BootstrapFile(state *RenderState) (string, string) {
+	template, fixups := BootstrapContents(state)
 	fixupStr := helmette.ToJSON(fixups)
 	if len(fixups) == 0 {
 		fixupStr = `[]`
@@ -67,25 +66,23 @@ func BootstrapFile(dot *helmette.Dot) (string, string) {
 	return helmette.ToJSON(template), fixupStr
 }
 
-func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfiguration.Fixup) {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func BootstrapContents(state *RenderState) (map[string]string, []clusterconfiguration.Fixup) {
 	// Accumulate values and fixups
 	fixups := []clusterconfiguration.Fixup{}
 
 	bootstrap := map[string]any{
-		"kafka_enable_authorization": values.Auth.IsSASLEnabled(),
-		"enable_sasl":                values.Auth.IsSASLEnabled(),
-		"enable_rack_awareness":      values.RackAwareness.Enabled,
-		"storage_min_free_bytes":     values.Storage.StorageMinFreeBytes(),
+		"kafka_enable_authorization": state.Values.Auth.IsSASLEnabled(),
+		"enable_sasl":                state.Values.Auth.IsSASLEnabled(),
+		"enable_rack_awareness":      state.Values.RackAwareness.Enabled,
+		"storage_min_free_bytes":     state.Values.Storage.StorageMinFreeBytes(),
 	}
 
-	bootstrap = helmette.Merge(bootstrap, values.AuditLogging.Translate(dot, values.Auth.IsSASLEnabled()))
-	bootstrap = helmette.Merge(bootstrap, values.Logging.Translate())
-	bootstrap = helmette.Merge(bootstrap, values.Config.Tunable.Translate())
-	bootstrap = helmette.Merge(bootstrap, values.Config.Cluster.Translate())
-	bootstrap = helmette.Merge(bootstrap, values.Auth.Translate(values.Auth.IsSASLEnabled()))
-	attrs, fixes := values.Storage.GetTieredStorageConfig().Translate(&values.Storage.Tiered.CredentialsSecretRef)
+	bootstrap = helmette.Merge(bootstrap, state.Values.AuditLogging.Translate(state, state.Values.Auth.IsSASLEnabled()))
+	bootstrap = helmette.Merge(bootstrap, state.Values.Logging.Translate())
+	bootstrap = helmette.Merge(bootstrap, state.Values.Config.Tunable.Translate())
+	bootstrap = helmette.Merge(bootstrap, state.Values.Config.Cluster.Translate())
+	bootstrap = helmette.Merge(bootstrap, state.Values.Auth.Translate(state.Values.Auth.IsSASLEnabled()))
+	attrs, fixes := state.Values.Storage.GetTieredStorageConfig().Translate(&state.Values.Storage.Tiered.CredentialsSecretRef)
 	bootstrap = helmette.Merge(bootstrap, attrs)
 	fixups = append(fixups, fixes...)
 
@@ -95,12 +92,12 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfigura
 	// See also:
 	// - https://github.com/redpanda-data/helm-charts/issues/583
 	// - https://github.com/redpanda-data/helm-charts/issues/1501
-	if _, ok := values.Config.Cluster["default_topic_replications"]; !ok && values.Statefulset.Replicas >= 3 {
+	if _, ok := state.Values.Config.Cluster["default_topic_replications"]; !ok && state.Values.Statefulset.Replicas >= 3 {
 		bootstrap["default_topic_replications"] = 3
 	}
 
-	if _, ok := values.Config.Cluster["storage_min_free_bytes"]; !ok {
-		bootstrap["storage_min_free_bytes"] = values.Storage.StorageMinFreeBytes()
+	if _, ok := state.Values.Config.Cluster["storage_min_free_bytes"]; !ok {
+		bootstrap["storage_min_free_bytes"] = state.Values.Storage.StorageMinFreeBytes()
 	}
 
 	template := map[string]string{}
@@ -109,41 +106,39 @@ func BootstrapContents(dot *helmette.Dot) (map[string]string, []clusterconfigura
 	}
 
 	// Fold in any extraClusterConfiguration values
-	extra, fixes, _ := values.Config.ExtraClusterConfiguration.Translate()
+	extra, fixes, _ := state.Values.Config.ExtraClusterConfiguration.Translate()
 	template = helmette.Merge(template, extra)
 	fixups = append(fixups, fixes...)
 
 	return template, fixups
 }
 
-func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool) string {
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 	}
 
 	if includeNonHashableItems {
-		redpanda["seed_servers"] = values.Listeners.CreateSeedServers(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot))
+		redpanda["seed_servers"] = state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
 	}
 
-	redpanda = helmette.Merge(redpanda, values.Config.Node.Translate())
+	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
 
-	configureListeners(redpanda, dot)
+	configureListeners(redpanda, state)
 
 	redpandaYaml := map[string]any{
 		"redpanda":        redpanda,
-		"schema_registry": schemaRegistry(dot),
-		"pandaproxy":      pandaProxyListener(dot),
+		"schema_registry": schemaRegistry(state),
+		"pandaproxy":      pandaProxyListener(state),
 		"config_file":     "/etc/redpanda/redpanda.yaml",
 	}
 
 	if includeNonHashableItems {
-		redpandaYaml["rpk"] = rpkNodeConfig(dot)
-		redpandaYaml["pandaproxy_client"] = kafkaClient(dot)
-		redpandaYaml["schema_registry_client"] = kafkaClient(dot)
-		if RedpandaAtLeast_23_3_0(dot) && values.AuditLogging.Enabled && values.Auth.IsSASLEnabled() {
-			redpandaYaml["audit_log_client"] = kafkaClient(dot)
+		redpandaYaml["rpk"] = rpkNodeConfig(state)
+		redpandaYaml["pandaproxy_client"] = kafkaClient(state)
+		redpandaYaml["schema_registry_client"] = kafkaClient(state)
+		if RedpandaAtLeast_23_3_0(state) && state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
+			redpandaYaml["audit_log_client"] = kafkaClient(state)
 		}
 	}
 
@@ -154,10 +149,8 @@ func RedpandaConfigFile(dot *helmette.Dot, includeNonHashableItems bool) string 
 // the external listeners of their redpanda cluster.
 // It is meant for external consumption via NOTES.txt and is not used within
 // this chart.
-func RPKProfile(dot *helmette.Dot) *corev1.ConfigMap {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.External.Enabled {
+func RPKProfile(state *RenderState) *corev1.ConfigMap {
+	if !state.Values.External.Enabled {
 		return nil
 	}
 
@@ -167,47 +160,45 @@ func RPKProfile(dot *helmette.Dot) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-rpk", Fullname(dot)),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      fmt.Sprintf("%s-rpk", Fullname(state)),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Data: map[string]string{
-			"profile": helmette.ToYaml(rpkProfile(dot)),
+			"profile": helmette.ToYaml(rpkProfile(state)),
 		},
 	}
 }
 
 // rpkProfile generates an RPK Profile for connecting to external listeners.
 // It is intended to be used by the end user via a prompt in NOTES.txt.
-func rpkProfile(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func rpkProfile(state *RenderState) map[string]any {
 	brokerList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedKafkaPort(dot, i))))
+	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
+		brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedKafkaPort(state, i))))
 	}
 
 	adminAdvertisedList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedAdminPort(dot, i))))
+	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
+		adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedAdminPort(state, i))))
 	}
 
 	schemaAdvertisedList := []string{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
-		schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(dot, i), int(advertisedSchemaPort(dot, i))))
+	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
+		schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedSchemaPort(state, i))))
 	}
 
-	kafkaTLS := rpkKafkaClientTLSConfiguration(dot)
+	kafkaTLS := rpkKafkaClientTLSConfiguration(state)
 	if _, ok := kafkaTLS["ca_file"]; ok {
 		kafkaTLS["ca_file"] = "ca.crt"
 	}
 
-	adminTLS := rpkAdminAPIClientTLSConfiguration(dot)
+	adminTLS := rpkAdminAPIClientTLSConfiguration(state)
 	if _, ok := adminTLS["ca_file"]; ok {
 		adminTLS["ca_file"] = "ca.crt"
 	}
 
-	schemaTLS := rpkSchemaRegistryClientTLSConfiguration(dot)
+	schemaTLS := rpkSchemaRegistryClientTLSConfiguration(state)
 	if _, ok := schemaTLS["ca_file"]; ok {
 		schemaTLS["ca_file"] = "ca.crt"
 	}
@@ -240,7 +231,7 @@ func rpkProfile(dot *helmette.Dot) map[string]any {
 	}
 
 	result := map[string]any{
-		"name":            getFirstExternalKafkaListener(dot),
+		"name":            getFirstExternalKafkaListener(state),
 		"kafka_api":       ka,
 		"admin_api":       aa,
 		"schema_registry": sa,
@@ -249,14 +240,12 @@ func rpkProfile(dot *helmette.Dot) map[string]any {
 	return result
 }
 
-func advertisedKafkaPort(dot *helmette.Dot, i int32) int {
-	values := helmette.Unwrap[Values](dot.Values)
+func advertisedKafkaPort(state *RenderState, i int32) int {
+	externalKafkaListenerName := getFirstExternalKafkaListener(state)
 
-	externalKafkaListenerName := getFirstExternalKafkaListener(dot)
+	listener := state.Values.Listeners.Kafka.External[externalKafkaListenerName]
 
-	listener := values.Listeners.Kafka.External[externalKafkaListenerName]
-
-	port := int(values.Listeners.Kafka.Port)
+	port := int(state.Values.Listeners.Kafka.Port)
 
 	if int(listener.Port) > int(1) {
 		port = int(listener.Port)
@@ -271,18 +260,16 @@ func advertisedKafkaPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
-func advertisedAdminPort(dot *helmette.Dot, i int32) int {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	keys := helmette.Keys(values.Listeners.Admin.External)
+func advertisedAdminPort(state *RenderState, i int32) int {
+	keys := helmette.Keys(state.Values.Listeners.Admin.External)
 
 	helmette.SortAlpha(keys)
 
 	externalAdminListenerName := helmette.First(keys)
 
-	listener := values.Listeners.Admin.External[externalAdminListenerName.(string)]
+	listener := state.Values.Listeners.Admin.External[externalAdminListenerName.(string)]
 
-	port := int(values.Listeners.Admin.Port)
+	port := int(state.Values.Listeners.Admin.Port)
 
 	if int(listener.Port) > 1 {
 		port = int(listener.Port)
@@ -297,18 +284,16 @@ func advertisedAdminPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
-func advertisedSchemaPort(dot *helmette.Dot, i int32) int {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	keys := helmette.Keys(values.Listeners.SchemaRegistry.External)
+func advertisedSchemaPort(state *RenderState, i int32) int {
+	keys := helmette.Keys(state.Values.Listeners.SchemaRegistry.External)
 
 	helmette.SortAlpha(keys)
 
 	externalSchemaListenerName := helmette.First(keys)
 
-	listener := values.Listeners.SchemaRegistry.External[externalSchemaListenerName.(string)]
+	listener := state.Values.Listeners.SchemaRegistry.External[externalSchemaListenerName.(string)]
 
-	port := int(values.Listeners.SchemaRegistry.Port)
+	port := int(state.Values.Listeners.SchemaRegistry.Port)
 
 	if int(listener.Port) > 1 {
 		port = int(listener.Port)
@@ -323,73 +308,67 @@ func advertisedSchemaPort(dot *helmette.Dot, i int32) int {
 	return port
 }
 
-func advertisedHost(dot *helmette.Dot, i int32) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	address := fmt.Sprintf("%s-%d", Fullname(dot), int(i))
-	if ptr.Deref(values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, *values.External.Domain, dot))
+func advertisedHost(state *RenderState, i int32) string {
+	address := fmt.Sprintf("%s-%d", Fullname(state), int(i))
+	if ptr.Deref(state.Values.External.Domain, "") != "" {
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
 	}
 
-	if len(values.External.Addresses) <= 0 {
+	if len(state.Values.External.Addresses) <= 0 {
 		return address
 	}
 
-	if len(values.External.Addresses) == 1 {
-		address = values.External.Addresses[0]
+	if len(state.Values.External.Addresses) == 1 {
+		address = state.Values.External.Addresses[0]
 	} else {
-		address = values.External.Addresses[i]
+		address = state.Values.External.Addresses[i]
 	}
 
-	if ptr.Deref(values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, *values.External.Domain, dot))
+	if ptr.Deref(state.Values.External.Domain, "") != "" {
+		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
 	}
 
 	return address
 }
 
-func getFirstExternalKafkaListener(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	keys := helmette.Keys(values.Listeners.Kafka.External)
+func getFirstExternalKafkaListener(state *RenderState) string {
+	keys := helmette.Keys(state.Values.Listeners.Kafka.External)
 
 	helmette.SortAlpha(keys)
 
 	return helmette.First(keys).(string)
 }
 
-func BrokerList(dot *helmette.Dot, replicas int32, port int32) []string {
+func BrokerList(state *RenderState, replicas int32, port int32) []string {
 	var bl []string
 
 	for i := int32(0); i < replicas; i++ {
-		bl = append(bl, fmt.Sprintf("%s-%d.%s:%d", Fullname(dot), i, InternalDomain(dot), port))
+		bl = append(bl, fmt.Sprintf("%s-%d.%s:%d", Fullname(state), i, InternalDomain(state), port))
 	}
 
 	return bl
 }
 
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
-func rpkNodeConfig(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	brokerList := BrokerList(dot, values.Statefulset.Replicas, values.Listeners.Kafka.Port)
+func rpkNodeConfig(state *RenderState) map[string]any {
+	brokerList := BrokerList(state, state.Values.Statefulset.Replicas, state.Values.Listeners.Kafka.Port)
 
 	var adminTLS map[string]any
-	if tls := rpkAdminAPIClientTLSConfiguration(dot); len(tls) > 0 {
+	if tls := rpkAdminAPIClientTLSConfiguration(state); len(tls) > 0 {
 		adminTLS = tls
 	}
 
 	var brokerTLS map[string]any
-	if tls := rpkKafkaClientTLSConfiguration(dot); len(tls) > 0 {
+	if tls := rpkKafkaClientTLSConfiguration(state); len(tls) > 0 {
 		brokerTLS = tls
 	}
 
 	var schemaRegistryTLS map[string]any
-	if tls := rpkSchemaRegistryClientTLSConfiguration(dot); len(tls) > 0 {
+	if tls := rpkSchemaRegistryClientTLSConfiguration(state); len(tls) > 0 {
 		schemaRegistryTLS = tls
 	}
 
-	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&values)
+	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&state.Values)
 
 	result := map[string]any{
 		"additional_start_flags": flags,
@@ -400,17 +379,17 @@ func rpkNodeConfig(dot *helmette.Dot) map[string]any {
 			"tls":     brokerTLS,
 		},
 		"admin_api": map[string]any{
-			"addresses": values.Listeners.AdminList(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot)),
+			"addresses": state.Values.Listeners.AdminList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
 			"tls":       adminTLS,
 		},
 		"schema_registry": map[string]any{
-			"addresses": values.Listeners.SchemaRegistryList(values.Statefulset.Replicas, Fullname(dot), InternalDomain(dot)),
+			"addresses": state.Values.Listeners.SchemaRegistryList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
 			"tls":       schemaRegistryTLS,
 		},
 	}
 
-	result = helmette.Merge(result, values.Tuning.Translate())
-	result = helmette.Merge(result, values.Config.CreateRPKConfiguration())
+	result = helmette.Merge(result, state.Values.Tuning.Translate())
+	result = helmette.Merge(result, state.Values.Config.CreateRPKConfiguration())
 
 	return result
 }
@@ -418,22 +397,20 @@ func rpkNodeConfig(dot *helmette.Dot) map[string]any {
 // rpkKafkaClientTLSConfiguration returns a value suitable for use as RPK's
 // "TLS" type.
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L178
-func rpkKafkaClientTLSConfiguration(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
+func rpkKafkaClientTLSConfiguration(state *RenderState) map[string]any {
+	tls := state.Values.Listeners.Kafka.TLS
 
-	tls := values.Listeners.Kafka.TLS
-
-	if !tls.IsEnabled(&values.TLS) {
+	if !tls.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}
 	}
 
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&values.TLS),
+		"ca_file": tls.ServerCAPath(&state.Values.TLS),
 	}
 
 	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
-		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(state))
+		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(state))
 	}
 
 	return result
@@ -442,22 +419,20 @@ func rpkKafkaClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 // rpkAdminAPIClientTLSConfiguration returns a value suitable for use as RPK's
 // "TLS" type.
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L184
-func rpkAdminAPIClientTLSConfiguration(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
+func rpkAdminAPIClientTLSConfiguration(state *RenderState) map[string]any {
+	tls := state.Values.Listeners.Admin.TLS
 
-	tls := values.Listeners.Admin.TLS
-
-	if !tls.IsEnabled(&values.TLS) {
+	if !tls.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}
 	}
 
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&values.TLS),
+		"ca_file": tls.ServerCAPath(&state.Values.TLS),
 	}
 
 	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
-		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(state))
+		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(state))
 	}
 
 	return result
@@ -466,22 +441,20 @@ func rpkAdminAPIClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 // rpkSchemaRegistryClientTLSConfiguration returns a value suitable for use as RPK's
 // "TLS" type.
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L184
-func rpkSchemaRegistryClientTLSConfiguration(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
+func rpkSchemaRegistryClientTLSConfiguration(state *RenderState) map[string]any {
+	tls := state.Values.Listeners.SchemaRegistry.TLS
 
-	tls := values.Listeners.SchemaRegistry.TLS
-
-	if !tls.IsEnabled(&values.TLS) {
+	if !tls.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}
 	}
 
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&values.TLS),
+		"ca_file": tls.ServerCAPath(&state.Values.TLS),
 	}
 
 	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
-		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(state))
+		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(state))
 	}
 
 	return result
@@ -490,33 +463,31 @@ func rpkSchemaRegistryClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 // kafkaClient returns the configuration for internal components of redpanda to
 // connect to its own Kafka API. This is distinct from RPK's configuration for
 // Kafka API interactions.
-func kafkaClient(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func kafkaClient(state *RenderState) map[string]any {
 	brokerList := []map[string]any{}
-	for i := int32(0); i < values.Statefulset.Replicas; i++ {
+	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
 		brokerList = append(brokerList, map[string]any{
-			"address": fmt.Sprintf("%s-%d.%s", Fullname(dot), i, InternalDomain(dot)),
-			"port":    values.Listeners.Kafka.Port,
+			"address": fmt.Sprintf("%s-%d.%s", Fullname(state), i, InternalDomain(state)),
+			"port":    state.Values.Listeners.Kafka.Port,
 		})
 	}
 
-	kafkaTLS := values.Listeners.Kafka.TLS
+	kafkaTLS := state.Values.Listeners.Kafka.TLS
 
 	var brokerTLS map[string]any
-	if values.Listeners.Kafka.TLS.IsEnabled(&values.TLS) {
+	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
 		brokerTLS = map[string]any{
 			"enabled":             true,
 			"require_client_auth": kafkaTLS.RequireClientAuth,
 			// NB: truststore_file here is synonymous with ca_file in the RPK
 			// configuration. The difference being that redpanda does NOT read
 			// the ca_file key.
-			"truststore_file": kafkaTLS.ServerCAPath(&values.TLS),
+			"truststore_file": kafkaTLS.ServerCAPath(&state.Values.TLS),
 		}
 
 		if kafkaTLS.RequireClientAuth {
-			brokerTLS["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
-			brokerTLS["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+			brokerTLS["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(state))
+			brokerTLS["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(state))
 		}
 
 	}
@@ -531,79 +502,71 @@ func kafkaClient(dot *helmette.Dot) map[string]any {
 	return cfg
 }
 
-func configureListeners(redpanda map[string]any, dot *helmette.Dot) {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func configureListeners(redpanda map[string]any, state *RenderState) {
 	var defaultKafkaAuth *KafkaAuthenticationMethod
-	if values.Auth.SASL.Enabled {
+	if state.Values.Auth.SASL.Enabled {
 		defaultKafkaAuth = ptr.To(SASLKafkaAuthenticationMethod)
 	}
 
-	redpanda["admin"] = values.Listeners.Admin.Listeners(nil /* No auth on admin API */)
-	redpanda["kafka_api"] = values.Listeners.Kafka.Listeners(defaultKafkaAuth)
-	redpanda["rpc_server"] = rpcListeners(dot)
+	redpanda["admin"] = state.Values.Listeners.Admin.Listeners(nil /* No auth on admin API */)
+	redpanda["kafka_api"] = state.Values.Listeners.Kafka.Listeners(defaultKafkaAuth)
+	redpanda["rpc_server"] = rpcListeners(state)
 
 	// Backwards compatibility layer, if any of the *_tls keys are an empty
 	// slice, they should instead be nil.
 
 	redpanda["admin_api_tls"] = nil
-	if tls := values.Listeners.Admin.ListenersTLS(&values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.Admin.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
 		redpanda["admin_api_tls"] = tls
 	}
 
 	redpanda["kafka_api_tls"] = nil
-	if tls := values.Listeners.Kafka.ListenersTLS(&values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.Kafka.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
 		redpanda["kafka_api_tls"] = tls
 	}
 
 	// With the exception of rpc_server_tls, it should just not be specified.
-	if tls := rpcListenersTLS(dot); len(tls) > 0 {
+	if tls := rpcListenersTLS(state); len(tls) > 0 {
 		redpanda["rpc_server_tls"] = tls
 	}
 }
 
-func pandaProxyListener(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func pandaProxyListener(state *RenderState) map[string]any {
 	pandaProxy := map[string]any{}
 
 	var pandaProxyAuth *HTTPAuthenticationMethod
-	if values.Auth.IsSASLEnabled() {
+	if state.Values.Auth.IsSASLEnabled() {
 		pandaProxyAuth = ptr.To(BasicHTTPAuthenticationMethod)
 	}
 
-	pandaProxy["pandaproxy_api"] = values.Listeners.HTTP.Listeners(pandaProxyAuth)
+	pandaProxy["pandaproxy_api"] = state.Values.Listeners.HTTP.Listeners(pandaProxyAuth)
 	pandaProxy["pandaproxy_api_tls"] = nil
-	if tls := values.Listeners.HTTP.ListenersTLS(&values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.HTTP.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
 		pandaProxy["pandaproxy_api_tls"] = tls
 	}
 	return pandaProxy
 }
 
-func schemaRegistry(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func schemaRegistry(state *RenderState) map[string]any {
 	schemaReg := map[string]any{}
-	schemaReg["schema_registry_api"] = values.Listeners.SchemaRegistry.Listeners(nil /* No auth on admin API */)
+	schemaReg["schema_registry_api"] = state.Values.Listeners.SchemaRegistry.Listeners(nil /* No auth on admin API */)
 	schemaReg["schema_registry_api_tls"] = nil
-	if tls := values.Listeners.SchemaRegistry.ListenersTLS(&values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.SchemaRegistry.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
 		schemaReg["schema_registry_api_tls"] = tls
 	}
 	return schemaReg
 }
 
-func rpcListenersTLS(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
+func rpcListenersTLS(state *RenderState) map[string]any {
+	r := state.Values.Listeners.RPC
 
-	r := values.Listeners.RPC
-
-	if !(RedpandaAtLeast_22_2_atleast_22_2_10(dot) ||
-		RedpandaAtLeast_22_3_atleast_22_3_13(dot) ||
-		RedpandaAtLeast_23_1_2(dot)) && (r.TLS.Enabled == nil && values.TLS.Enabled || ptr.Deref(r.TLS.Enabled, false)) {
-		panic(fmt.Sprintf("Redpanda version v%s does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.", helmette.TrimPrefix("v", Tag(dot))))
+	if !(RedpandaAtLeast_22_2_atleast_22_2_10(state) ||
+		RedpandaAtLeast_22_3_atleast_22_3_13(state) ||
+		RedpandaAtLeast_23_1_2(state)) && (r.TLS.Enabled == nil && state.Values.TLS.Enabled || ptr.Deref(r.TLS.Enabled, false)) {
+		panic(fmt.Sprintf("Redpanda version v%s does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.", helmette.TrimPrefix("v", Tag(state))))
 	}
 
-	if !r.TLS.IsEnabled(&values.TLS) {
+	if !r.TLS.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}
 	}
 
@@ -614,20 +577,18 @@ func rpcListenersTLS(dot *helmette.Dot) map[string]any {
 		"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
 		"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
 		"require_client_auth": r.TLS.RequireClientAuth,
-		"truststore_file":     r.TLS.TrustStoreFilePath(&values.TLS),
+		"truststore_file":     r.TLS.TrustStoreFilePath(&state.Values.TLS),
 	}
 }
 
-func rpcListeners(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func rpcListeners(state *RenderState) map[string]any {
 	return map[string]any{
 		"address": "0.0.0.0",
-		"port":    values.Listeners.RPC.Port,
+		"port":    state.Values.Listeners.RPC.Port,
 	}
 }
 
-// First parameter defaultTLSEnabled must come from `values.tls.enabled`.
+// First parameter defaultTLSEnabled must come from `state.Values.tls.enabled`.
 func createInternalListenerTLSCfg(tls *TLS, internal InternalTLS) map[string]any {
 	if !internal.IsEnabled(tls) {
 		return map[string]any{}

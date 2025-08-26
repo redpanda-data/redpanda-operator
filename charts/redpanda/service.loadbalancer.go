@@ -18,55 +18,52 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*corev1.Service {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func LoadBalancerServices(state *RenderState) []*corev1.Service {
 	// This is technically a divergence from previous behavior but this matches
 	// the NodePort's check and is more reasonable.
-	if !values.External.Enabled || !values.External.Service.Enabled {
+	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
 		return nil
 	}
 
-	if values.External.Type != corev1.ServiceTypeLoadBalancer {
+	if state.Values.External.Type != corev1.ServiceTypeLoadBalancer {
 		return nil
 	}
 
-	externalDNS := ptr.Deref(values.External.ExternalDNS, Enableable{})
+	externalDNS := ptr.Deref(state.Values.External.ExternalDNS, Enableable{})
 
-	labels := FullLabels(dot)
+	labels := FullLabels(state)
 
 	// This typo is intentionally being preserved for backwards compat
 	// https://github.com/redpanda-data/helm-charts/blob/2baa77b99a71a993e639a7138deaf4543727c8a1/charts/redpanda/templates/service.loadbalancer.yaml#L33
 	labels["repdanda.com/type"] = "loadbalancer"
 
-	selector := StatefulSetPodLabelsSelector(dot)
+	selector := StatefulSetPodLabelsSelector(state)
 
 	var services []*corev1.Service
-	replicas := values.Statefulset.Replicas // TODO fix me once the transpiler is fixed.
+	replicas := state.Values.Statefulset.Replicas // TODO fix me once the transpiler is fixed.
 	for i := int32(0); i < replicas; i++ {
-		podname := fmt.Sprintf("%s-%d", Fullname(dot), i)
+		podname := fmt.Sprintf("%s-%d", Fullname(state), i)
 
 		// NB: A range loop is used here as its the most terse way to handle
 		// nil maps in gotohelm.
 		annotations := map[string]string{}
-		for k, v := range helmette.SortedMap(values.External.Annotations) {
+		for k, v := range helmette.SortedMap(state.Values.External.Annotations) {
 			annotations[k] = v
 		}
 
 		if externalDNS.Enabled {
 			prefix := podname
-			if len(values.External.Addresses) > 0 {
-				if len(values.External.Addresses) == 1 {
-					prefix = values.External.Addresses[0]
+			if len(state.Values.External.Addresses) > 0 {
+				if len(state.Values.External.Addresses) == 1 {
+					prefix = state.Values.External.Addresses[0]
 				} else {
-					prefix = values.External.Addresses[i]
+					prefix = state.Values.External.Addresses[i]
 				}
 			}
 
-			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(dot, *values.External.Domain, dot))
+			address := fmt.Sprintf("%s.%s", prefix, helmette.Tpl(state.dot, *state.Values.External.Domain, state.dot))
 
 			annotations["external-dns.alpha.kubernetes.io/hostname"] = address
 		}
@@ -84,10 +81,10 @@ func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool
 		// in helm. TODO setup a linter that barks about this? Also a helper
 		// for getting the sorted keys of a map?
 		var ports []corev1.ServicePort
-		ports = append(ports, values.Listeners.Admin.ServicePorts("admin", &values.External)...)
-		ports = append(ports, values.Listeners.Kafka.ServicePorts("kafka", &values.External)...)
-		ports = append(ports, values.Listeners.HTTP.ServicePorts("http", &values.External)...)
-		ports = append(ports, values.Listeners.SchemaRegistry.ServicePorts("schema", &values.External)...)
+		ports = append(ports, state.Values.Listeners.Admin.ServicePorts("admin", &state.Values.External)...)
+		ports = append(ports, state.Values.Listeners.Kafka.ServicePorts("kafka", &state.Values.External)...)
+		ports = append(ports, state.Values.Listeners.HTTP.ServicePorts("http", &state.Values.External)...)
+		ports = append(ports, state.Values.Listeners.SchemaRegistry.ServicePorts("schema", &state.Values.External)...)
 
 		svc := &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -96,13 +93,13 @@ func LoadBalancerServices(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        fmt.Sprintf("lb-%s", podname),
-				Namespace:   dot.Release.Namespace,
+				Namespace:   state.Release.Namespace,
 				Labels:      labels,
 				Annotations: annotations,
 			},
 			Spec: corev1.ServiceSpec{
 				ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
-				LoadBalancerSourceRanges: values.External.SourceRanges,
+				LoadBalancerSourceRanges: state.Values.External.SourceRanges,
 				Ports:                    ports,
 				PublishNotReadyAddresses: true,
 				Selector:                 podSelector,

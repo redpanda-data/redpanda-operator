@@ -1,22 +1,21 @@
 {{- /* Generated from "service.nodeport.go" */ -}}
 
 {{- define "redpanda.NodePortService" -}}
-{{- $dot := (index .a 0) -}}
+{{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- if (or (not $values.external.enabled) (not $values.external.service.enabled)) -}}
+{{- if (or (not $state.Values.external.enabled) (not $state.Values.external.service.enabled)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if (ne $values.external.type "NodePort") -}}
+{{- if (ne $state.Values.external.type "NodePort") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $ports := (coalesce nil) -}}
-{{- range $name, $listener := $values.listeners.admin.external -}}
+{{- range $name, $listener := $state.Values.listeners.admin.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -29,7 +28,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $name, $listener := $values.listeners.kafka.external -}}
+{{- range $name, $listener := $state.Values.listeners.kafka.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -42,7 +41,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $name, $listener := $values.listeners.http.external -}}
+{{- range $name, $listener := $state.Values.listeners.http.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -55,7 +54,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $name, $listener := $values.listeners.schemaRegistry.external -}}
+{{- range $name, $listener := $state.Values.listeners.schemaRegistry.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
@@ -68,12 +67,12 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $annotations := $values.external.annotations -}}
+{{- $annotations := $state.Values.external.annotations -}}
 {{- if (eq (toJson $annotations) "null") -}}
 {{- $annotations = (dict) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-external" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $dot)))) "r")) "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "ports" $ports "publishNotReadyAddresses" true "selector" (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $dot)))) "r") "sessionAffinity" "None" "type" "NodePort"))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-external" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "ports" $ports "publishNotReadyAddresses" true "selector" (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state)))) "r") "sessionAffinity" "None" "type" "NodePort"))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

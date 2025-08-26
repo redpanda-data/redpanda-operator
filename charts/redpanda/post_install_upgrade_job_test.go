@@ -82,7 +82,9 @@ func TestPostInstallUpgradeEnvironmentVariables(t *testing.T) {
 			err = json.Unmarshal(b, &dot.Values)
 			require.NoError(t, err)
 
-			envVars := PostInstallUpgradeEnvironmentVariables(&dot)
+			state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: dot.Files, Release: dot.Release}
+
+			envVars := PostInstallUpgradeEnvironmentVariables(state)
 
 			slices.SortFunc(envVars, compareEnvVars)
 			slices.SortFunc(tc.expectedEnvVars, compareEnvVars)
@@ -123,7 +125,9 @@ func TestAnnotationsOverwrite(t *testing.T) {
 	dot, err := Chart.Dot(nil, helmette.Release{}, v)
 	require.NoError(t, err)
 
-	job := PostInstallUpgradeJob(dot)
+	state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: dot.Files, Release: dot.Release}
+
+	job := PostInstallUpgradeJob(state)
 	require.Equal(t, job.Annotations["helm.sh/hook-delete-policy"], "before-hook-creation,hook-succeeded")
 	require.Equal(t, job.Labels["app.kubernetes.io/name"], "overwrite-name")
 	require.Equal(t, job.Spec.Template.Annotations["some-annotation"], "some-annotation-value")

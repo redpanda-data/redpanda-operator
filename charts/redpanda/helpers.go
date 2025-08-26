@@ -42,8 +42,8 @@ const (
 )
 
 // Create chart name and version as used by the chart label.
-func ChartLabel(dot *helmette.Dot) string {
-	return cleanForK8s(strings.ReplaceAll(fmt.Sprintf("%s-%s", dot.Chart.Name, dot.Chart.Version), "+", "_"))
+func ChartLabel(state *RenderState) string {
+	return cleanForK8s(strings.ReplaceAll(fmt.Sprintf("%s-%s", state.Chart.Name, state.Chart.Version), "+", "_"))
 }
 
 // Name returns the name of this chart as specified in Chart.yaml, unless
@@ -51,51 +51,47 @@ func ChartLabel(dot *helmette.Dot) string {
 // Name is effectively static and should not be used for naming of resources.
 // Name is truncated at 63 characters to satisfy Kubernetes field limits
 // and DNS limits.
-func Name(dot *helmette.Dot) string {
-	if override, ok := dot.Values["nameOverride"].(string); ok && override != "" {
+func Name(state *RenderState) string {
+	if override := state.Values.NameOverride; override != "" {
 		return cleanForK8s(override)
 	}
-	return cleanForK8s(dot.Chart.Name)
+	return cleanForK8s(state.Chart.Name)
 }
 
 // Fullname returns the name of this helm release, unless explicitly
 // overridden.
 // Fullname is truncated at 63 characters to satisfy Kubernetes field limits
 // and DNS limits.
-func Fullname(dot *helmette.Dot) string {
-	if override, ok := dot.Values["fullnameOverride"].(string); ok && override != "" {
+func Fullname(state *RenderState) string {
+	if override := state.Values.FullnameOverride; override != "" {
 		return cleanForK8s(override)
 	}
-	return cleanForK8s(dot.Release.Name)
+	return cleanForK8s(state.Release.Name)
 }
 
 // full helm labels + common labels
-func FullLabels(dot *helmette.Dot) map[string]string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func FullLabels(state *RenderState) map[string]string {
 	labels := map[string]string{}
-	if values.CommonLabels != nil {
-		labels = values.CommonLabels
+	if state.Values.CommonLabels != nil {
+		labels = state.Values.CommonLabels
 	}
 
 	defaults := map[string]string{
-		"helm.sh/chart":                ChartLabel(dot),
-		"app.kubernetes.io/name":       Name(dot),
-		"app.kubernetes.io/instance":   dot.Release.Name,
-		"app.kubernetes.io/managed-by": dot.Release.Service,
-		"app.kubernetes.io/component":  Name(dot),
+		"helm.sh/chart":                ChartLabel(state),
+		"app.kubernetes.io/name":       Name(state),
+		"app.kubernetes.io/instance":   state.Release.Name,
+		"app.kubernetes.io/managed-by": state.Release.Service,
+		"app.kubernetes.io/component":  Name(state),
 	}
 
 	return helmette.Merge(labels, defaults)
 }
 
 // Use AppVersion if image.tag is not set
-func Tag(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	tag := string(values.Image.Tag)
+func Tag(state *RenderState) string {
+	tag := string(state.Values.Image.Tag)
 	if tag == "" {
-		tag = dot.Chart.AppVersion
+		tag = state.Chart.AppVersion
 	}
 
 	pattern := "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
@@ -110,52 +106,47 @@ func Tag(dot *helmette.Dot) string {
 }
 
 // Create a default service name
-func ServiceName(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.Service != nil && values.Service.Name != nil {
-		return cleanForK8s(*values.Service.Name)
+func ServiceName(state *RenderState) string {
+	if state.Values.Service != nil && state.Values.Service.Name != nil {
+		return cleanForK8s(*state.Values.Service.Name)
 	}
 
-	return Fullname(dot)
+	return Fullname(state)
 }
 
 // Generate internal fqdn
-func InternalDomain(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
+func InternalDomain(state *RenderState) string {
+	service := ServiceName(state)
+	ns := state.Release.Namespace
 
-	service := ServiceName(dot)
-	ns := dot.Release.Namespace
-
-	return fmt.Sprintf("%s.%s.svc.%s", service, ns, values.ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", service, ns, state.Values.ClusterDomain)
 }
 
 // check if client auth is enabled for any of the listeners
-func TLSEnabled(dot *helmette.Dot) bool {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.TLS.Enabled {
+func TLSEnabled(state *RenderState) bool {
+	if state.Values.TLS.Enabled {
 		return true
 	}
 
 	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
 	for _, listener := range listeners {
-		tlsCert := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
-		tlsEnabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
+		// TODO: replace the use of general map stuff to actually leverage the structured values
+		tlsCert := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
+		tlsEnabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
 		if !helmette.Empty(tlsEnabled) && !helmette.Empty(tlsCert) {
 			return true
 		}
 
-		external := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external")
+		external := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external")
 		if helmette.Empty(external) {
 			continue
 		}
 
 		keys := helmette.Keys(external.(map[string]any))
 		for _, key := range keys {
-			enabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
-			tlsCert := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
-			tlsEnabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
+			enabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
+			tlsCert := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
+			tlsEnabled := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
 
 			if !helmette.Empty(enabled) && !helmette.Empty(tlsCert) && !helmette.Empty(tlsEnabled) {
 				return true
@@ -166,10 +157,10 @@ func TLSEnabled(dot *helmette.Dot) bool {
 	return false
 }
 
-func ClientAuthRequired(dot *helmette.Dot) bool {
+func ClientAuthRequired(state *RenderState) bool {
 	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
 	for _, listener := range listeners {
-		required := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
+		required := helmette.Dig(state.dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
 		if !helmette.Empty(required) {
 			return true
 		}
@@ -178,22 +169,20 @@ func ClientAuthRequired(dot *helmette.Dot) bool {
 }
 
 // mounts that are common to most containers
-func DefaultMounts(dot *helmette.Dot) []corev1.VolumeMount {
+func DefaultMounts(state *RenderState) []corev1.VolumeMount {
 	return append([]corev1.VolumeMount{
 		{
 			Name:      "base-config",
 			MountPath: "/etc/redpanda",
 		},
-	}, CommonMounts(dot)...)
+	}, CommonMounts(state)...)
 }
 
 // mounts that are common to all containers
-func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func CommonMounts(state *RenderState) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 
-	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "users",
 			MountPath: "/etc/secrets/users",
@@ -201,12 +190,12 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		})
 	}
 
-	if TLSEnabled(dot) {
-		certNames := helmette.Keys(values.TLS.Certs)
+	if TLSEnabled(state) {
+		certNames := helmette.Keys(state.Values.TLS.Certs)
 		helmette.SortAlpha(certNames)
 
 		for _, name := range certNames {
-			cert := values.TLS.Certs[name]
+			cert := state.Values.TLS.Certs[name]
 
 			if !ptr.Deref(cert.Enabled, true) {
 				continue
@@ -218,11 +207,11 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 			})
 		}
 
-		adminTLS := values.Listeners.Admin.TLS
+		adminTLS := state.Values.Listeners.Admin.TLS
 		if adminTLS.RequireClientAuth {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      "mtls-client",
-				MountPath: fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot)),
+				MountPath: fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(state)),
 			})
 		}
 	}
@@ -230,32 +219,30 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	return mounts
 }
 
-func DefaultVolumes(dot *helmette.Dot) []corev1.Volume {
+func DefaultVolumes(state *RenderState) []corev1.Volume {
 	return append([]corev1.Volume{
 		{
 			Name: "base-config",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: Fullname(dot),
+						Name: Fullname(state),
 					},
 				},
 			},
 		},
-	}, CommonVolumes(dot)...)
+	}, CommonVolumes(state)...)
 }
 
 // volumes that are common to all pods
-func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
+func CommonVolumes(state *RenderState) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if TLSEnabled(dot) {
-		certNames := helmette.Keys(values.TLS.Certs)
+	if TLSEnabled(state) {
+		certNames := helmette.Keys(state.Values.TLS.Certs)
 		helmette.SortAlpha(certNames)
 
 		for _, name := range certNames {
-			cert := values.TLS.Certs[name]
+			cert := state.Values.TLS.Certs[name]
 
 			if !ptr.Deref(cert.Enabled, true) {
 				continue
@@ -265,17 +252,17 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 				Name: fmt.Sprintf("redpanda-%s-cert", name),
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  CertSecretName(dot, name, &cert),
+						SecretName:  CertSecretName(state, name, &cert),
 						DefaultMode: ptr.To[int32](0o440),
 					},
 				},
 			})
 		}
 
-		adminTLS := values.Listeners.Admin.TLS
-		cert := values.TLS.Certs[adminTLS.Cert]
+		adminTLS := state.Values.Listeners.Admin.TLS
+		cert := state.Values.TLS.Certs[adminTLS.Cert]
 		if adminTLS.RequireClientAuth {
-			secretName := fmt.Sprintf("%s-client", Fullname(dot))
+			secretName := fmt.Sprintf("%s-client", Fullname(state))
 			if cert.ClientSecretRef != nil {
 				secretName = cert.ClientSecretRef.Name
 			}
@@ -292,7 +279,7 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 		}
 	}
 
-	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: "users",
 			VolumeSource: corev1.VolumeSource{
@@ -307,55 +294,55 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 }
 
 // return correct secretName to use based if secretRef exists
-func CertSecretName(dot *helmette.Dot, certName string, cert *TLSCert) string {
+func CertSecretName(state *RenderState, certName string, cert *TLSCert) string {
 	if cert.SecretRef != nil {
 		return cert.SecretRef.Name
 	}
-	return fmt.Sprintf("%s-%s-cert", Fullname(dot), certName)
+	return fmt.Sprintf("%s-%s-cert", Fullname(state), certName)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_22_2_0(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_22_2_0)
+func RedpandaAtLeast_22_2_0(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_22_2_0)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_22_3_0(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_22_3_0)
+func RedpandaAtLeast_22_3_0(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_22_3_0)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_23_1_1(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_23_1_1)
+func RedpandaAtLeast_23_1_1(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_23_1_1)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_23_1_2(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_23_1_2)
+func RedpandaAtLeast_23_1_2(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_23_1_2)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_22_3_atleast_22_3_13(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_22_3_atleast_22_3_13)
+func RedpandaAtLeast_22_3_atleast_22_3_13(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_22_3_atleast_22_3_13)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_22_2_atleast_22_2_10(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_22_2_atleast_22_2_10)
+func RedpandaAtLeast_22_2_atleast_22_2_10(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_22_2_atleast_22_2_10)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_23_2_1(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_23_2_1)
+func RedpandaAtLeast_23_2_1(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_23_2_1)
 }
 
 //nolint:stylecheck
-func RedpandaAtLeast_23_3_0(dot *helmette.Dot) bool {
-	return redpandaAtLeast(dot, redpanda_23_3_0)
+func RedpandaAtLeast_23_3_0(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_23_3_0)
 }
 
-func redpandaAtLeast(dot *helmette.Dot, constraint string) bool {
-	version := strings.TrimPrefix(Tag(dot), "v")
+func redpandaAtLeast(state *RenderState, constraint string) bool {
+	version := strings.TrimPrefix(Tag(state), "v")
 
 	result, err := helmette.SemverCompare(constraint, version)
 	if err != nil {
@@ -370,21 +357,21 @@ func cleanForK8s(in string) string {
 
 // StructuredTpl (inefficiently) recurses through all fields of T and expands
 // any string fields containing template delimiters with [helmette.Tpl].
-func StructuredTpl[T any](dot *helmette.Dot, in T) T {
+func StructuredTpl[T any](state *RenderState, in T) T {
 	untyped := helmette.UnmarshalInto[map[string]any](in)
-	expanded := recursiveTpl(dot, untyped)
+	expanded := recursiveTpl(state, untyped)
 	return helmette.MergeTo[T](expanded)
 }
 
 // recursiveTpl is a helper for [StructuredTpl]. It performs all the works, it
 // just operates on untyped values.
-func recursiveTpl(dot *helmette.Dot, data any) any {
+func recursiveTpl(state *RenderState, data any) any {
 	kind := helmette.KindOf(data)
 
 	if kind == "map" {
 		m := data.(map[string]any)
 		for key, value := range m {
-			m[key] = recursiveTpl(dot, value)
+			m[key] = recursiveTpl(state, value)
 		}
 		return m
 	} else if kind == "slice" {
@@ -392,13 +379,13 @@ func recursiveTpl(dot *helmette.Dot, data any) any {
 		s := data.([]any)
 		var out []any
 		for i := range s {
-			out = append(out, recursiveTpl(dot, s[i]))
+			out = append(out, recursiveTpl(state, s[i]))
 		}
 		return out
 	} else if kind == "string" && helmette.Contains("{{", data.(string)) {
 		// Tpl is quite slow, so we gate this on template delimiters for a
 		// little speed up.
-		return helmette.Tpl(dot, data.(string), dot)
+		return helmette.Tpl(state.dot, data.(string), state.dot)
 	}
 
 	return data

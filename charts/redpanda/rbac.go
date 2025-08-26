@@ -19,15 +19,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func Roles(dot *helmette.Dot) []*rbacv1.Role {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func Roles(state *RenderState) []*rbacv1.Role {
 	// path of static role definition -> Enabled
 	mapping := map[string]bool{
-		"files/sidecar.Role.yaml":          values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
-		"files/pvcunbinder.Role.yaml":      values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.Role.yaml":     values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
-		"files/rpk-debug-bundle.Role.yaml": values.RBAC.Enabled && values.RBAC.RPKDebugBundle,
+		"files/sidecar.Role.yaml":          state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.Controllers.CreateRBAC,
+		"files/pvcunbinder.Role.yaml":      state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.PVCUnbinderEnabled(),
+		"files/decommission.Role.yaml":     state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/rpk-debug-bundle.Role.yaml": state.Values.RBAC.Enabled && state.Values.RBAC.RPKDebugBundle,
 	}
 
 	var roles []*rbacv1.Role
@@ -36,16 +34,16 @@ func Roles(dot *helmette.Dot) []*rbacv1.Role {
 			continue
 		}
 
-		role := helmette.FromYaml[rbacv1.Role](dot.Files.Get(file))
+		role := helmette.FromYaml[rbacv1.Role](state.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
-		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(dot), role.ObjectMeta.Name)
-		role.ObjectMeta.Namespace = dot.Release.Namespace
-		role.ObjectMeta.Labels = FullLabels(dot)
+		role.ObjectMeta.Name = fmt.Sprintf("%s-%s", Fullname(state), role.ObjectMeta.Name)
+		role.ObjectMeta.Namespace = state.Release.Namespace
+		role.ObjectMeta.Labels = FullLabels(state)
 		role.ObjectMeta.Annotations = helmette.Merge(
 			map[string]string{},
-			values.ServiceAccount.Annotations, // For backwards compatibility
-			values.RBAC.Annotations,
+			state.Values.ServiceAccount.Annotations, // For backwards compatibility
+			state.Values.RBAC.Annotations,
 		)
 
 		roles = append(roles, &role)
@@ -54,14 +52,12 @@ func Roles(dot *helmette.Dot) []*rbacv1.Role {
 	return roles
 }
 
-func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func ClusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 	// path of static ClusterRole definition -> Enabled
 	mapping := map[string]bool{
-		"files/pvcunbinder.ClusterRole.yaml":    values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.ClusterRole.yaml":   values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
-		"files/rack-awareness.ClusterRole.yaml": values.RBAC.Enabled && values.RackAwareness.Enabled,
+		"files/pvcunbinder.ClusterRole.yaml":    state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.PVCUnbinderEnabled(),
+		"files/decommission.ClusterRole.yaml":   state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/rack-awareness.ClusterRole.yaml": state.Values.RBAC.Enabled && state.Values.RackAwareness.Enabled,
 	}
 
 	var clusterRoles []*rbacv1.ClusterRole
@@ -70,18 +66,18 @@ func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 			continue
 		}
 
-		role := helmette.FromYaml[rbacv1.ClusterRole](dot.Files.Get(file))
+		role := helmette.FromYaml[rbacv1.ClusterRole](state.Files.Get(file))
 
 		// Populated all chart values on the loaded static Role.
 		// For ClusterScoped resources, we include the Namespace to permit
 		// installing multiple releases with the same names into the same
 		// cluster.
-		role.ObjectMeta.Name = cleanForK8s(fmt.Sprintf("%s-%s-%s", Fullname(dot), dot.Release.Namespace, role.ObjectMeta.Name))
-		role.ObjectMeta.Labels = FullLabels(dot)
+		role.ObjectMeta.Name = cleanForK8s(fmt.Sprintf("%s-%s-%s", Fullname(state), state.Release.Namespace, role.ObjectMeta.Name))
+		role.ObjectMeta.Labels = FullLabels(state)
 		role.ObjectMeta.Annotations = helmette.Merge(
 			map[string]string{},
-			values.ServiceAccount.Annotations, // For backwards compatibility
-			values.RBAC.Annotations,
+			state.Values.ServiceAccount.Annotations, // For backwards compatibility
+			state.Values.RBAC.Annotations,
 		)
 
 		clusterRoles = append(clusterRoles, &role)
@@ -90,13 +86,11 @@ func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 	return clusterRoles
 }
 
-func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func RoleBindings(state *RenderState) []*rbacv1.RoleBinding {
 	// Rather than worrying about syncing logic, we just generate the list of
 	// bindings from the roles that we create.
 	var roleBindings []*rbacv1.RoleBinding
-	for _, role := range Roles(dot) {
+	for _, role := range Roles(state) {
 		roleBindings = append(roleBindings, &rbacv1.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -104,12 +98,12 @@ func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      role.ObjectMeta.Name,
-				Labels:    FullLabels(dot),
-				Namespace: dot.Release.Namespace,
+				Labels:    FullLabels(state),
+				Namespace: state.Release.Namespace,
 				Annotations: helmette.Merge(
 					map[string]string{},
-					values.ServiceAccount.Annotations, // For backwards compatibility
-					values.RBAC.Annotations,
+					state.Values.ServiceAccount.Annotations, // For backwards compatibility
+					state.Values.RBAC.Annotations,
 				),
 			},
 			RoleRef: rbacv1.RoleRef{
@@ -120,8 +114,8 @@ func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      ServiceAccountName(dot),
-					Namespace: dot.Release.Namespace,
+					Name:      ServiceAccountName(state),
+					Namespace: state.Release.Namespace,
 				},
 			},
 		})
@@ -130,13 +124,11 @@ func RoleBindings(dot *helmette.Dot) []*rbacv1.RoleBinding {
 	return roleBindings
 }
 
-func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func ClusterRoleBindings(state *RenderState) []*rbacv1.ClusterRoleBinding {
 	// Rather than worrying about syncing logic, we just generate the list of
 	// bindings from the roles that we create.
 	var crbs []*rbacv1.ClusterRoleBinding
-	for _, clusterRole := range ClusterRoles(dot) {
+	for _, clusterRole := range ClusterRoles(state) {
 		crbs = append(crbs, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -144,12 +136,12 @@ func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      clusterRole.ObjectMeta.Name,
-				Labels:    FullLabels(dot),
-				Namespace: dot.Release.Namespace,
+				Labels:    FullLabels(state),
+				Namespace: state.Release.Namespace,
 				Annotations: helmette.Merge(
 					map[string]string{},
-					values.ServiceAccount.Annotations, // For backwards compatibility
-					values.RBAC.Annotations,
+					state.Values.ServiceAccount.Annotations, // For backwards compatibility
+					state.Values.RBAC.Annotations,
 				),
 			},
 			RoleRef: rbacv1.RoleRef{
@@ -160,8 +152,8 @@ func ClusterRoleBindings(dot *helmette.Dot) []*rbacv1.ClusterRoleBinding {
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      ServiceAccountName(dot),
-					Namespace: dot.Release.Namespace,
+					Name:      ServiceAccountName(state),
+					Namespace: state.Release.Namespace,
 				},
 			},
 		})

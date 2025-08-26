@@ -18,24 +18,22 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Monitoring.Enabled {
+func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
+	if !state.Values.Monitoring.Enabled {
 		return nil
 	}
 
 	endpoint := monitoringv1.Endpoint{
-		Interval:    values.Monitoring.ScrapeInterval,
+		Interval:    state.Values.Monitoring.ScrapeInterval,
 		Path:        "/public_metrics",
 		Port:        "admin",
-		EnableHttp2: values.Monitoring.EnableHTTP2,
+		EnableHttp2: state.Values.Monitoring.EnableHTTP2,
 		Scheme:      "http",
 	}
 
-	if values.Listeners.Admin.TLS.IsEnabled(&values.TLS) || values.Monitoring.TLSConfig != nil {
+	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) || state.Values.Monitoring.TLSConfig != nil {
 		endpoint.Scheme = "https"
-		endpoint.TLSConfig = values.Monitoring.TLSConfig
+		endpoint.TLSConfig = state.Values.Monitoring.TLSConfig
 
 		if endpoint.TLSConfig == nil {
 			endpoint.TLSConfig = &monitoringv1.TLSConfig{
@@ -52,17 +50,17 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(dot),
-			Namespace: dot.Release.Namespace,
-			Labels:    helmette.Merge(FullLabels(dot), values.Monitoring.Labels),
+			Name:      Fullname(state),
+			Namespace: state.Release.Namespace,
+			Labels:    helmette.Merge(FullLabels(state), state.Values.Monitoring.Labels),
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{endpoint},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"monitoring.redpanda.com/enabled": "true",
-					"app.kubernetes.io/name":          Name(dot),
-					"app.kubernetes.io/instance":      dot.Release.Name,
+					"app.kubernetes.io/name":          Name(state),
+					"app.kubernetes.io/instance":      state.Release.Name,
 				},
 			},
 		},

@@ -14,20 +14,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 // Create the name of the service account to use
-func ServiceAccountName(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	serviceAccount := values.ServiceAccount
+func ServiceAccountName(state *RenderState) string {
+	serviceAccount := state.Values.ServiceAccount
 
 	if serviceAccount.Create && serviceAccount.Name != "" {
 		return serviceAccount.Name
 	} else if serviceAccount.Create {
-		return Fullname(dot)
+		return Fullname(state)
 	} else if serviceAccount.Name != "" {
 		return serviceAccount.Name
 	}
@@ -35,10 +31,8 @@ func ServiceAccountName(dot *helmette.Dot) string {
 	return "default"
 }
 
-func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.ServiceAccount.Create {
+func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
+	if !state.Values.ServiceAccount.Create {
 		return nil
 	}
 
@@ -48,10 +42,10 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceAccountName(dot),
-			Namespace:   dot.Release.Namespace,
-			Labels:      FullLabels(dot),
-			Annotations: values.ServiceAccount.Annotations,
+			Name:        ServiceAccountName(state),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: state.Values.ServiceAccount.Annotations,
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}

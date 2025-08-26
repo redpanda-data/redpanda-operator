@@ -12,13 +12,9 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"net"
 	"net/http"
-	"slices"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -32,26 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 var (
-	ErrServerCertificateNotFound          = errors.New("server TLS certificate not found")
-	ErrServerCertificatePublicKeyNotFound = errors.New("server TLS certificate does not contain a public key")
-
-	ErrClientCertificateNotFound           = errors.New("client TLS certificate not found")
-	ErrClientCertificatePublicKeyNotFound  = errors.New("client TLS certificate does not contain a public key")
-	ErrClientCertificatePrivateKeyNotFound = errors.New("client TLS certificate does not contain a private key")
-
-	ErrSASLSecretNotFound          = errors.New("users secret not found")
-	ErrSASLSecretKeyNotFound       = errors.New("users secret key not found")
-	ErrSASLSecretSuperuserNotFound = errors.New("users secret has no users")
-
-	supportedSASLMechanisms = []string{
-		"SCRAM-SHA-256", "SCRAM-SHA-512",
-	}
-
 	// permitOutOfClusterDNS controls whether or not this package will use the
 	// provided dialer to approximate "out of cluster DNS" by constructing a
 	// [net.Resolver] that tunnels into a kube-dns Pod. Building with the
@@ -65,21 +45,19 @@ type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn
 
 // AdminClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
-func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
-	values := helmette.Unwrap[redpanda.Values](dot.Values)
-
+func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
 	var err error
 	var tlsConfig *tls.Config
 
-	if values.Listeners.Admin.TLS.IsEnabled(&values.TLS) {
-		tlsConfig, err = tlsConfigFromDot(dot, values.Listeners.Admin.TLS)
+	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
+		tlsConfig, err = state.TLSConfig(state.Values.Listeners.Admin.TLS)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	var auth rpadmin.Auth
-	username, password, _, err := authFromDot(dot)
+	username, password, _, err := authFromState(state)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +71,7 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt)
 		auth = &rpadmin.NopAuth{}
 	}
 
-	records, err := srvLookup(dot, dialer, redpanda.InternalAdminAPIPortName)
+	records, err := srvLookup(state, dialer, redpanda.InternalAdminAPIPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +92,7 @@ func AdminClient(dot *helmette.Dot, dialer DialContextFunc, opts ...rpadmin.Opt)
 
 // SchemaRegistryClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
-func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
-	values := helmette.Unwrap[redpanda.Values](dot.Values)
+func SchemaRegistryClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
 	prefix := "http://"
 
 	// These transport values come from the TLS client options found here:
@@ -138,10 +115,10 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 		}).DialContext
 	}
 
-	if values.Listeners.SchemaRegistry.TLS.IsEnabled(&values.TLS) {
+	if state.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&state.Values.TLS) {
 		prefix = "https://"
 
-		tlsConfig, err := tlsConfigFromDot(dot, values.Listeners.SchemaRegistry.TLS)
+		tlsConfig, err := state.TLSConfig(state.Values.Listeners.SchemaRegistry.TLS)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +130,7 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 		Transport: transport,
 	})}
 
-	username, password, _, err := authFromDot(dot)
+	username, password, _, err := authFromState(state)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +139,7 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
 
-	records, err := srvLookup(dot, dialer, redpanda.InternalSchemaRegistryPortName)
+	records, err := srvLookup(state, dialer, redpanda.InternalSchemaRegistryPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +163,8 @@ func SchemaRegistryClient(dot *helmette.Dot, dialer DialContextFunc, opts ...sr.
 
 // KafkaClient creates a client to talk to a Redpanda cluster based on its helm
 // configuration over its internal listeners.
-func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*kgo.Client, error) {
-	values := helmette.Unwrap[redpanda.Values](dot.Values)
-
-	records, err := srvLookup(dot, dialer, redpanda.InternalKafkaPortName)
+func KafkaClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...kgo.Opt) (*kgo.Client, error) {
+	records, err := srvLookup(state, dialer, redpanda.InternalKafkaPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -201,8 +176,8 @@ func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*k
 
 	opts = append(opts, kgo.SeedBrokers(brokers...))
 
-	if values.Listeners.Kafka.TLS.IsEnabled(&values.TLS) {
-		tlsConfig, err := tlsConfigFromDot(dot, values.Listeners.Kafka.TLS)
+	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
+		tlsConfig, err := state.TLSConfig(state.Values.Listeners.Kafka.TLS)
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +192,7 @@ func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*k
 		opts = append(opts, kgo.Dialer(dialer))
 	}
 
-	username, password, mechanism, err := authFromDot(dot)
+	username, password, mechanism, err := authFromState(state)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +209,7 @@ func KafkaClient(dot *helmette.Dot, dialer DialContextFunc, opts ...kgo.Opt) (*k
 	return client, nil
 }
 
-func authFromDot(dot *helmette.Dot) (username string, password string, mechanism string, err error) {
+func authFromState(state *redpanda.RenderState) (username string, password string, mechanism string, err error) {
 	// shim in the panic handler from helmette since the call to
 	// redpanda.SecretBootstrapUser can fail if something about the
 	// client connection dies unexpectedly, and, when it fails, due
@@ -249,180 +224,12 @@ func authFromDot(dot *helmette.Dot) (username string, password string, mechanism
 		}
 	}()
 
-	values := helmette.Unwrap[redpanda.Values](dot.Values)
-
-	bootstrapUser := redpanda.SecretBootstrapUser(dot)
-
-	if bootstrapUser != nil {
-		// if we have any errors grabbing the credentials from the bootstrap user
-		// then we'll just fallback to the superuser parsing code
-		user, found, lookupErr := helmette.SafeLookup[corev1.Secret](dot, bootstrapUser.Namespace, bootstrapUser.Name)
-		if lookupErr == nil && found {
-			selector := values.Auth.SASL.BootstrapUser.SecretKeySelector(redpanda.Fullname(dot))
-			mechanism := values.Auth.SASL.BootstrapUser.GetMechanism()
-			if data, found := user.Data[selector.Key]; found {
-				return values.Auth.SASL.BootstrapUser.Username(), string(data), string(mechanism), nil
-			}
-		}
+	if state.BootstrapUserSecret != nil && state.BootstrapUserPassword != "" {
+		return state.Values.Auth.SASL.BootstrapUser.Username(), state.BootstrapUserPassword, state.Values.Auth.SASL.BootstrapUser.GetMechanism(), nil
 	}
 
-	saslUsers := redpanda.SecretSASLUsers(dot)
-	saslUsersError := func(err error) error {
-		return fmt.Errorf("error fetching SASL authentication for %s/%s: %w", saslUsers.Namespace, saslUsers.Name, err)
-	}
-
-	if saslUsers != nil {
-		// read from the server since we're assuming all the resources
-		// have already been created
-		users, found, lookupErr := helmette.SafeLookup[corev1.Secret](dot, saslUsers.Namespace, saslUsers.Name)
-		if lookupErr != nil {
-			err = saslUsersError(lookupErr)
-			return
-		}
-
-		if !found {
-			err = saslUsersError(ErrSASLSecretNotFound)
-			return
-		}
-
-		data, found := users.Data["users.txt"]
-		if !found {
-			err = saslUsersError(ErrSASLSecretKeyNotFound)
-			return
-		}
-
-		username, password, mechanism = firstUser(data)
-		if username == "" {
-			err = saslUsersError(ErrSASLSecretSuperuserNotFound)
-			return
-		}
-	}
-
-	return
-}
-
-func certificatesFor(dot *helmette.Dot, cert string) (certSecret, certKey, clientSecret string) {
-	values := helmette.Unwrap[redpanda.Values](dot.Values)
-
-	name := redpanda.Fullname(dot)
-
-	// default to cert manager issued names and tls.crt which is
-	// where cert-manager outputs the root CA
-	certKey = corev1.TLSCertKey
-	certSecret = fmt.Sprintf("%s-%s-root-certificate", name, cert)
-	clientSecret = fmt.Sprintf("%s-client", name)
-
-	if certificate, ok := values.TLS.Certs[cert]; ok {
-		// if this references a non-enabled certificate, just return
-		// the default cert-manager issued names
-		if certificate.Enabled != nil && !*certificate.Enabled {
-			return certSecret, certKey, clientSecret
-		}
-
-		if certificate.ClientSecretRef != nil {
-			clientSecret = certificate.ClientSecretRef.Name
-		}
-		if certificate.SecretRef != nil {
-			certSecret = certificate.SecretRef.Name
-			if certificate.CAEnabled {
-				certKey = "ca.crt"
-			}
-		}
-	}
-	return certSecret, certKey, clientSecret
-}
-
-func tlsConfigFromDot(dot *helmette.Dot, listener redpanda.InternalTLS) (*tls.Config, error) {
-	namespace := dot.Release.Namespace
-	serverName := redpanda.InternalDomain(dot)
-
-	rootCertName, rootCertKey, clientCertName := certificatesFor(dot, listener.Cert)
-
-	serverTLSError := func(err error) error {
-		return fmt.Errorf("error fetching server root CA %s/%s: %w", namespace, rootCertName, err)
-	}
-	clientTLSError := func(err error) error {
-		return fmt.Errorf("error fetching client certificate default/%s: %w", clientCertName, err)
-	}
-
-	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: serverName}
-
-	serverCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](dot, namespace, rootCertName)
-	if lookupErr != nil {
-		return nil, serverTLSError(lookupErr)
-	}
-
-	if !found {
-		return nil, serverTLSError(ErrServerCertificateNotFound)
-	}
-
-	serverPublicKey, found := serverCert.Data[rootCertKey]
-	if !found {
-		return nil, serverTLSError(ErrServerCertificatePublicKeyNotFound)
-	}
-
-	block, _ := pem.Decode(serverPublicKey)
-	serverParsedCertificate, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, serverTLSError(fmt.Errorf("unable to parse public key %w", err))
-	}
-	pool := x509.NewCertPool()
-	pool.AddCert(serverParsedCertificate)
-
-	tlsConfig.RootCAs = pool
-
-	if listener.RequireClientAuth {
-		clientCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](dot, namespace, clientCertName)
-		if lookupErr != nil {
-			return nil, clientTLSError(lookupErr)
-		}
-
-		if !found {
-			return nil, clientTLSError(ErrServerCertificateNotFound)
-		}
-
-		// we always use tls.crt for client certs
-		clientPublicKey, found := clientCert.Data[corev1.TLSCertKey]
-		if !found {
-			return nil, clientTLSError(ErrClientCertificatePublicKeyNotFound)
-		}
-
-		clientPrivateKey, found := clientCert.Data[corev1.TLSPrivateKeyKey]
-		if !found {
-			return nil, clientTLSError(ErrClientCertificatePrivateKeyNotFound)
-		}
-
-		clientKey, err := tls.X509KeyPair(clientPublicKey, clientPrivateKey)
-		if err != nil {
-			return nil, clientTLSError(fmt.Errorf("unable to parse public and private key %w", err))
-		}
-
-		tlsConfig.Certificates = []tls.Certificate{clientKey}
-	}
-
-	return tlsConfig, nil
-}
-
-func firstUser(data []byte) (user string, password string, mechanism string) {
-	file := string(data)
-
-	for _, line := range strings.Split(file, "\n") {
-		tokens := strings.Split(line, ":")
-
-		switch len(tokens) {
-		case 2:
-			return tokens[0], tokens[1], string(redpanda.DefaultSASLMechanism)
-
-		case 3:
-			if !slices.Contains(supportedSASLMechanisms, tokens[2]) {
-				continue
-			}
-
-			return tokens[0], tokens[1], tokens[2]
-
-		default:
-			continue
-		}
+	if redpanda.SecretSASLUsers(state) != nil {
+		return state.FetchSASLUsers()
 	}
 
 	return
@@ -466,7 +273,7 @@ func wrapTLSDialer(dialer DialContextFunc, config *tls.Config) DialContextFunc {
 // a Kubernetes and performs a DNS query through the default resolver.
 //
 // See also: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#srv-records
-func srvLookup(dot *helmette.Dot, dialer DialContextFunc, service string) ([]*net.SRV, error) {
+func srvLookup(state *redpanda.RenderState, dialer DialContextFunc, service string) ([]*net.SRV, error) {
 	// To preserve backwards compatibility of the top level client
 	// constructor's methods, we use a context with a static timeout.
 	// While less than ideal, 30s should be a reasonable upper limit for this method.
@@ -485,7 +292,7 @@ func srvLookup(dot *helmette.Dot, dialer DialContextFunc, service string) ([]*ne
 	// NB: It may not always be safe to assume that dialer != nil indicates
 	// execution outside of a cluster.
 	if permitOutOfClusterDNS && dialer != nil {
-		ctl, err := kube.FromRESTConfig(dot.KubeConfig)
+		ctl, err := state.KubeCTL()
 		if err != nil {
 			return nil, err
 		}
@@ -535,7 +342,7 @@ func srvLookup(dot *helmette.Dot, dialer DialContextFunc, service string) ([]*ne
 		}
 	}
 
-	_, records, err := resolver.LookupSRV(ctx, service, "tcp", redpanda.InternalDomain(dot))
+	_, records, err := resolver.LookupSRV(ctx, service, "tcp", redpanda.InternalDomain(state))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

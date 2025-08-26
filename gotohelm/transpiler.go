@@ -1526,6 +1526,8 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 		// IntOrString's zero value appears to marshal to a 0 though it's
 		// unclear how correct this is.
 		return Literal("0")
+	case "*k8s.io/apimachinery/pkg/api/resource.Quantity":
+		return &Nil{}
 	case "k8s.io/apimachinery/pkg/api/resource.Quantity":
 		return Literal(`"0"`)
 	}

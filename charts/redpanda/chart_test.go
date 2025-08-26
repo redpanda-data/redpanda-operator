@@ -991,6 +991,8 @@ func TestLabels(t *testing.T) {
 		}, helmValues)
 		require.NoError(t, err)
 
+		state := redpanda.RenderStateFromDot(dot)
+
 		manifests, err := client.Template(ctx, "chart", helm.TemplateOptions{
 			Name:      dot.Release.Name,
 			Namespace: dot.Release.Namespace,
@@ -1003,7 +1005,7 @@ func TestLabels(t *testing.T) {
 		objs, err := kube.DecodeYAML(manifests, redpanda.Scheme)
 		require.NoError(t, err)
 
-		expectedLabels := redpanda.FullLabels(dot)
+		expectedLabels := redpanda.FullLabels(state)
 		require.Subset(t, expectedLabels, values.CommonLabels, "FullLabels does not contain CommonLabels")
 
 		for _, obj := range objs {
