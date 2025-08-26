@@ -38,7 +38,7 @@ dependencies:
   - name: console
     condition: console.enabled
     version: ">=3.1.0-0"
-    repository: file://../console
+    repository: file://../../console
 
 icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg
 sources:

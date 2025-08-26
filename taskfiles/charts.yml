@@ -9,7 +9,9 @@ tasks:
       - task: generate:redpanda
       - task: generate:connectors
       # Generate chart README.md's
-      - helm-docs --chart-to-generate charts/connectors,charts/console,charts/redpanda,operator/chart
+      - helm-docs --chart-to-generate charts/connectors,charts/console,operator/chart
+      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ../README.tpl.md --output-file ../README.md
+      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ../README.tpl.md --output-file README.md
 
   generate:console:
     desc: "Generate files for the console Helm chart"
@@ -37,9 +39,9 @@ tasks:
     - task: genpartial
       vars: { CHART: redpanda }
     - task: genschema
-      vars: { CHART: redpanda }
+      vars: { CHART: redpanda, OUT: ./chart/values.schema.json }
     - task: gotohelm
-      vars: { CHART: redpanda, DEPS: github.com/redpanda-data/redpanda-operator/charts/console/v3 }
+      vars: { CHART: redpanda, DEPS: github.com/redpanda-data/redpanda-operator/charts/console/v3, OUT: "./chart/templates" }
 
   generate:connectors:
     desc: "Generate files for the connectors Helm chart"
@@ -87,15 +89,16 @@ tasks:
     vars:
       CHART: '{{ .CHART }}'
       DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+      OUT: '{{ .OUT | default "./values.schema.json" }}'
     dir: '{{ .DIR }}'
     requires:
       vars: [CHART]
     sources:
     - ./*.go
     generates:
-    - ./values.schema.json
+    - "{{ .OUT }}"
     cmds:
-    - gen schema {{ .CHART }} > ./values.schema.json
+    - gen schema {{ .CHART }} > {{ .OUT }}
 
   gotohelm:
     internal: true
@@ -108,6 +111,7 @@ tasks:
       CHART: '{{ .CHART }}'
       DEPS: '{{ .DEPS }}'
       DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+      OUT: '{{ .OUT | default "./templates" }}'
     requires:
       vars: [CHART]
     dir: "{{ .DIR }}"
@@ -115,11 +119,11 @@ tasks:
     - ./*.go
     - ./**/*.go
     generates:
-    - ./templates/*
-    - ./templates/**/*
+    - "{{ .OUT }}/*"
+    - "{{ .OUT }}/**/*"
     cmds:
     # Generate helm templates from Go definitions
-    - gotohelm -write ./templates . {{ .DEPS }}
+    - gotohelm -write {{ .OUT }} . {{ .DEPS }}
 
   download-dependencies:
     desc: "Build out the charts/ directory from the Chart.lock file"

@@ -11,8 +11,6 @@
 package redpanda
 
 import (
-	"embed"
-
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
@@ -37,16 +36,8 @@ var (
 	// objects produced by the redpanda chart.
 	Scheme = runtime.NewScheme()
 
-	//go:embed Chart.lock
-	//go:embed Chart.yaml
-	//go:embed files/*
-	//go:embed templates/*
-	//go:embed values.schema.json
-	//go:embed values.yaml
-	ChartFiles embed.FS
-
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart)
+	Chart = gotohelm.MustLoad(chart.ChartFiles, render, console.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that
