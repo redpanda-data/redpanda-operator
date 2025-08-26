@@ -10,8 +10,7 @@ tasks:
       - task: generate:connectors
       # Generate chart README.md's
       - helm-docs --chart-to-generate charts/connectors,charts/console,operator/chart
-      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ../README.tpl.md --output-file ../README.md
-      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ../README.tpl.md --output-file README.md
+      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ./charts/redpanda/README.md.gotmpl --output-file README.md
 
   generate:console:
     desc: "Generate files for the console Helm chart"

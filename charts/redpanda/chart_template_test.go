@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to run helm repo add: %s", out)
 	}
 
-	out, err = exec.Command("helm", "dep", "build", "chart").CombinedOutput()
+	out, err = exec.Command("helm", "dep", "build", "./chart").CombinedOutput()
 	if err != nil {
 		log.Fatalf("failed to run helm dep build: %s", out)
 	}
@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 // - https://github.com/redpanda-data/helm-charts/issues/1454
 // - https://redpandadata.slack.com/archives/C01H6JRQX1S/p1728322201042639 (Kinda)
 func TestTemplateHelm310(t *testing.T) {
-	cmd := exec.Command("helm-3.10.3", "template", "chart", "--generate-name")
+	cmd := exec.Command("helm-3.10.3", "template", "./chart", "--generate-name")
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "helm-3.10.3 template failed:\n%s", out)
 }

@@ -116,7 +116,7 @@ func TestIntegrationChart(t *testing.T) {
 	w := &zapio.Writer{Log: log, Level: zapcore.InfoLevel}
 	wErr := &zapio.Writer{Log: log, Level: zapcore.ErrorLevel}
 
-	redpandaChart := "chart"
+	redpandaChart := "./chart"
 
 	h := helmtest.Setup(t)
 
@@ -993,7 +993,7 @@ func TestLabels(t *testing.T) {
 
 		state := redpanda.RenderStateFromDot(dot)
 
-		manifests, err := client.Template(ctx, "chart", helm.TemplateOptions{
+		manifests, err := client.Template(ctx, "./chart", helm.TemplateOptions{
 			Name:      dot.Release.Name,
 			Namespace: dot.Release.Namespace,
 			// Nor does it extend to tests.
@@ -1179,7 +1179,6 @@ func TestMultiNamespaceInstall(t *testing.T) {
 	ctl := kubetest.NewEnv(t)
 	client, err := helm.New(helm.Options{
 		KubeConfig: ctl.RestConfig(),
-		ConfigHome: "chart",
 	})
 	require.NoError(t, err)
 
@@ -1214,7 +1213,7 @@ func TestMultiNamespaceInstall(t *testing.T) {
 		}))
 
 		for j := 0; j < 2; j++ {
-			_, err := client.Install(t.Context(), "chart", helm.InstallOptions{
+			_, err := client.Install(t.Context(), "./chart", helm.InstallOptions{
 				Name:      fmt.Sprintf("redpanda-%d", j),
 				Namespace: namespace,
 				// Disable all forms of waits / checks. This isn't an actual
@@ -1230,7 +1229,7 @@ func TestMultiNamespaceInstall(t *testing.T) {
 		}
 
 		// One final check to show that conflicting names will result in an error.
-		_, err := client.Install(t.Context(), "chart", helm.InstallOptions{
+		_, err := client.Install(t.Context(), "./chart", helm.InstallOptions{
 			Name:      "redpanda-0",
 			Namespace: namespace,
 			// Disable all forms of waits / checks. This isn't an actual
