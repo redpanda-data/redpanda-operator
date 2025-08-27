@@ -13,16 +13,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 // ClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
 type ClusterWithPools struct {
 	*redpandav1alpha2.Redpanda
-	NodePools []*redpandav1alpha3.NodePool
+	NodePools []*redpandav1alpha2.NodePool
 }
 
-func NewClusterWithPools(cluster *redpandav1alpha2.Redpanda, pools ...*redpandav1alpha3.NodePool) *ClusterWithPools {
+func NewClusterWithPools(cluster *redpandav1alpha2.Redpanda, pools ...*redpandav1alpha2.NodePool) *ClusterWithPools {
 	return &ClusterWithPools{
 		Redpanda:  cluster,
 		NodePools: pools,

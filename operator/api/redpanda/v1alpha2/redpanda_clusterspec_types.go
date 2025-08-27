@@ -1039,15 +1039,7 @@ type ClusterConfiguration vectorizedv1alpha1.ClusterConfiguration
 
 // SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
 type SideCars struct {
-	Image *RedpandaImage `json:"image,omitempty"`
-	// Specifies additional volumes to mount to the sidecar.
-	ExtraVolumeMounts *string `json:"extraVolumeMounts,omitempty"`
-	// Specifies resource requests for the sidecar container.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	// Specifies the container's security context, including privileges and access levels of the container and its processes.
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
-	// +hidefromdoc
-	Args []string `json:"args,omitempty"`
+	Sidecars `json:",inline"`
 	// Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster.
 	ConfigWatcher *ConfigWatcher `json:"configWatcher,omitempty"`
 	RpkStatus     *SideCarObj    `json:"rpkStatus,omitempty"`

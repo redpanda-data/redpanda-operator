@@ -50,7 +50,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec = &redpandav1alpha2.RedpandaClusterSpec{}
 	}
 
-	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaults{}, cluster.Redpanda, cluster.NodePools)
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}

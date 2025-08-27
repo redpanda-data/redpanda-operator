@@ -16,7 +16,7 @@ import (
 
 // +genclient
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+// +kubebuilder:skipversion
 // +kubebuilder:resource:path=nodepools
 // +kubebuilder:resource:shortName=np
 type NodePool struct {

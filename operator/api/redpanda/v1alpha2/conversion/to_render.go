@@ -13,21 +13,22 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
-// V2Defaults contains the default values for the v2 CRD conversion.
-type V2Defaults struct {
-	RedpandaImage    *redpandav1alpha2.RedpandaImage
-	SidecarImage     *redpandav1alpha2.RedpandaImage
+// V2Defaulters contains the default values for the v2 CRD conversion.
+type V2Defaulters struct {
+	RedpandaImage    func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage
+	SidecarImage     func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage
 	ConfiguratorArgs []string
 }
 
 // ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart RenderState.
-func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda, _pools any) (*redpanda.RenderState, error) {
+func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpanda.RenderState, error) {
 	spec := defaultV2Spec(defaults, cluster)
 
 	dot, err := redpanda.Chart.Dot(config, helmette.Release{
@@ -40,13 +41,25 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaults, clust
 		return nil, err
 	}
 
-	return redpanda.RenderStateFromDot(dot, func(values redpanda.Values) error {
+	state, err := redpanda.RenderStateFromDot(dot, func(values redpanda.Values) error {
 		return convertV2Fields(dot, &values, spec)
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	sets, err := convertV2NodepoolsToStatefulsets(pools)
+	if err != nil {
+		return nil, err
+	}
+
+	state.Pools = sets
+	return state, nil
 }
 
 // defaultV2Spec defaults the v2 Redpanda CRD spec to avoid nil dereferences during chart construction.
-func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.RedpandaClusterSpec {
+func defaultV2Spec(defaults *V2Defaulters, cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.RedpandaClusterSpec {
 	// Big ol' block of defaulting to avoid nil dereferences.
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 	if spec == nil {
@@ -75,7 +88,9 @@ func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *re
 
 	// As we're currently pinned to the v5.10.x chart, we need to set the
 	// default image to the operator's preferred version.
-	spec.Image = defaults.RedpandaImage
+	if defaults.RedpandaImage != nil {
+		spec.Image = defaults.RedpandaImage(spec.Image)
+	}
 
 	// The flag that disables cluster configuration synchronization is set to `true` to not
 	// conflict with operator cluster configuration synchronization.
@@ -87,8 +102,10 @@ func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *re
 	// This ensures that custom deployments (e.g.
 	// localhost/redpanda-operator:dev) will use the image they are deployed
 	// with.
-	spec.Statefulset.SideCars.Image = defaults.SidecarImage
-	spec.Statefulset.SideCars.Controllers.Image = defaults.SidecarImage
+	if defaults.SidecarImage != nil {
+		spec.Statefulset.SideCars.Image = defaults.SidecarImage(spec.Statefulset.SideCars.Image)
+		spec.Statefulset.SideCars.Controllers.Image = defaults.SidecarImage(spec.Statefulset.SideCars.Controllers.Image)
+	}
 
 	// If not explicitly specified, set the initContainer flags for the bootstrap
 	// templating to instantiate an appropriate CloudExpander
@@ -277,4 +294,48 @@ func convertStatefulsetSidecarV2Fields(dot *helmette.Dot, values *redpanda.Value
 	}
 
 	return nil
+}
+
+func convertV2NodepoolsToStatefulsets(pools []*redpandav1alpha2.NodePool) ([]redpanda.NamedStatefulset, error) {
+	converted := []redpanda.NamedStatefulset{}
+	for _, pool := range pools {
+		set, err := convertV2NodepoolToStatefulset(pool)
+		if err != nil {
+			return nil, err
+		}
+		converted = append(converted, set)
+	}
+	return converted, nil
+}
+
+func convertV2NodepoolToStatefulset(pool *redpandav1alpha2.NodePool) (set redpanda.NamedStatefulset, err error) {
+	// we grab *just* the default values here
+	v, err := redpanda.Chart.LoadValues(map[string]any{})
+	if err != nil {
+		return set, err
+	}
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "yaml conversion failed")
+		default:
+			err = errors.Newf("yaml conversion failed: %#v", r)
+		}
+	}()
+
+	values := helmette.Unwrap[redpanda.Values](v)
+	defaultSet := values.Statefulset
+
+	// now we merge everything in to construct the pool
+	if err := convertJSON(pool.Spec, &defaultSet); err != nil {
+		return set, err
+	}
+
+	// and finally we wrap with a name
+	set = redpanda.NamedStatefulset{
+		Name:        pool.Name,
+		Statefulset: defaultSet,
+	}
+	return
 }

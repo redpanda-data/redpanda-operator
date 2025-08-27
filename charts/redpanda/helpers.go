@@ -548,7 +548,7 @@ func PodNames(state *RenderState, ss NamedStatefulset) []string {
 	}
 
 	var pods []string
-	for i := range ss.Statefulset.Replicas {
+	for i := int32(0); i < ss.Statefulset.Replicas; i++ {
 		pods = append(pods, fmt.Sprintf("%s%s-%d", Fullname(state), suffix, i))
 	}
 

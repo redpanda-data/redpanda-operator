@@ -597,7 +597,7 @@
 {{- $suffix = (printf "-%s" $ss.Name) -}}
 {{- end -}}
 {{- $pods := (coalesce nil) -}}
-{{- range $i, $_ := ($ss.Statefulset.replicas | int) -}}
+{{- range $_, $i := untilStep (((0 | int) | int)|int) (($ss.Statefulset.replicas | int)|int) (1|int) -}}
 {{- $pods = (concat (default (list) $pods) (list (printf "%s%s-%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $suffix $i))) -}}
 {{- end -}}
 {{- if $_is_returning -}}

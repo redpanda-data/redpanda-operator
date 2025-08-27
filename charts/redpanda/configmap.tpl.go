@@ -362,7 +362,7 @@ func BrokerList(state *RenderState, port int32) []string {
 func brokersFor(state *RenderState, ss NamedStatefulset, port int32) []string {
 	var bl []string
 
-	for i := range ss.Statefulset.Replicas {
+	for i := int32(0); i < ss.Statefulset.Replicas; i++ {
 		if port == -1 {
 			bl = append(bl, fmt.Sprintf("%s%s-%d.%s", Fullname(state), ss.Suffix(), i, InternalDomain(state)))
 		} else {

@@ -348,7 +348,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $bl := (coalesce nil) -}}
-{{- range $i, $_ := ($ss.Statefulset.replicas | int) -}}
+{{- range $_, $i := untilStep (((0 | int) | int)|int) (($ss.Statefulset.replicas | int)|int) (1|int) -}}
 {{- if (eq $port -1) -}}
 {{- $bl = (concat (default (list) $bl) (list (printf "%s%s-%d.%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.NamedStatefulset.Suffix" (dict "a" (list (deepCopy $ss))))) "r") $i (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")))) -}}
 {{- else -}}

@@ -96,37 +96,6 @@ type Migration struct {
 	ConsoleRef vectorizedv1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
-// NodePoolStatus defines the observed state of any node pools tied to this cluster
-type NodePoolStatus struct {
-	// Name is the name of the pool
-	Name string `json:"name"`
-	// Replicas is the number of actual replicas currently across
-	// the node pool. This differs from DesiredReplicas during
-	// a scaling operation, but should be the same once the cluster
-	// has quiesced.
-	Replicas int32 `json:"replicas"`
-	// DesiredReplicas is the number of replicas that ought to be
-	// run for the cluster. It combines the desired replicas across
-	// all node pools.
-	DesiredReplicas int32 `json:"desiredReplicas"`
-	// OutOfDateReplicas is the number of replicas that don't currently
-	// match their node pool definitions. If OutOfDateReplicas is not 0
-	// it should mean that the operator will soon roll this many pods.
-	OutOfDateReplicas int32 `json:"outOfDateReplicas"`
-	// UpToDateReplicas is the number of replicas that currently match
-	// their node pool definitions.
-	UpToDateReplicas int32 `json:"upToDateReplicas"`
-	// CondemnedReplicas is the number of replicas that will be decommissioned
-	// as part of a scaling down operation.
-	CondemnedReplicas int32 `json:"condemnedReplicas"`
-	// ReadyReplicas is the number of replicas whose readiness probes are
-	// currently passing.
-	ReadyReplicas int32 `json:"readyReplicas"`
-	// RunningReplicas is the number of replicas that are actively in a running
-	// state.
-	RunningReplicas int32 `json:"runningReplicas"`
-}
-
 // RedpandaStatus defines the observed state of Redpanda
 type RedpandaStatus struct {
 	// Conditions holds the conditions for the Redpanda.

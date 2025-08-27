@@ -31,6 +31,7 @@ import (
 
 var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.NodePool(),
 		crds.Redpanda(),
 		crds.Topic(),
 		crds.User(),
@@ -40,10 +41,8 @@ var (
 		crds.Cluster(),
 		crds.Console(),
 	}
-	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
-		crds.NodePool(),
-	}
-	schemes = []func(s *runtime.Scheme) error{
+	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{}
+	schemes          = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		apiextensionsv1.AddToScheme,
 	}

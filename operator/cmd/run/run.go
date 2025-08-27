@@ -418,6 +418,14 @@ func Run(
 		return err
 	}
 
+	// NodePool Reconciler
+	if err := (&redpandacontrollers.NodePoolReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+		return err
+	}
+
 	if err := (&redpandacontrollers.TopicReconciler{
 		Client:        mgr.GetClient(),
 		Factory:       factory,
