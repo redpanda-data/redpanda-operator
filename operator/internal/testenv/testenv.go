@@ -82,7 +82,7 @@ func New(t *testing.T, options Options) *Env {
 		options.Logger = logr.Discard()
 	}
 
-	host, err := k3d.GetOrCreate(options.Name)
+	host, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
 	require.NoError(t, err)
 
 	for _, image := range options.ImportImages {

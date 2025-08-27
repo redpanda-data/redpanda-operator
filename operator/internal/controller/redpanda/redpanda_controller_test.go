@@ -764,6 +764,10 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		CRDs:         crds.All(),
 		Logger:       log.FromContext(s.ctx),
 		SkipVCluster: true,
+		// this is needed due to the pod anti-affinity rules
+		// and the fact that our scaling test involves scaling
+		// up to 5 pods that can't be colocated on the same nodes
+		Agents: 5,
 		ImportImages: []string{
 			"localhost/redpanda-operator:dev",
 		},
