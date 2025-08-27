@@ -131,7 +131,7 @@ func defaultImage(base *redpandav1alpha2.RedpandaImage, default_ Image) *redpand
 	}
 }
 
-func constructRenderState(config *kube.RESTConfig, namespace, release string, spec *redpandav1alpha2.RedpandaClusterSpec, pools []*redpandav1alpha3.NodePool) (*redpanda.RenderState, error) {
+func constructRenderState(config *kube.RESTConfig, namespace, release string, spec *redpandav1alpha2.RedpandaClusterSpec, _pools []*redpandav1alpha3.NodePool) (*redpanda.RenderState, error) {
 	dot, err := redpanda.Chart.Dot(config, helmette.Release{
 		Namespace: namespace,
 		Name:      release,
