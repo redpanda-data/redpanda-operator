@@ -94,12 +94,12 @@ var transpileBootstrap = sync.OnceValues(func() (*File, error) {
 
 	// We call the private transpile method which doesn't bundle the _shims.tpl
 	// into the final chart.
-	bootstrapChart, err := transpile(pkgs[0])
+	bootstrapFiles, err := transpile(pkgs[0])
 	if err != nil {
 		return nil, err
 	}
 
-	shims := bootstrapChart.Files[0]
+	shims := bootstrapFiles[0]
 
 	// Attach a foot of helpers written in raw gotpl that can't be expressed in
 	// gotohelm.

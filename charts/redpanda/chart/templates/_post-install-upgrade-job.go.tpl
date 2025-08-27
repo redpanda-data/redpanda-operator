@@ -1,4 +1,5 @@
-{{- /* Generated from "post_install_upgrade_job.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/post_install_upgrade_job.go" */ -}}
 
 {{- define "redpanda.bootstrapYamlTemplater" -}}
 {{- $state := (index .a 0) -}}

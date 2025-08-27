@@ -1,4 +1,5 @@
-{{- /* Generated from "certificates.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/certificates.go" */ -}}
 
 {{- define "operator.Certificate" -}}
 {{- $dot := (index .a 0) -}}

@@ -1,4 +1,5 @@
-{{- /* Generated from "serviceaccount.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/connectors/serviceaccount.go" */ -}}
 
 {{- define "connectors.ServiceAccount" -}}
 {{- $dot := (index .a 0) -}}

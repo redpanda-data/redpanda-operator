@@ -1,4 +1,5 @@
-{{- /* Generated from "serviceaccount.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/serviceaccount.go" */ -}}
 
 {{- define "redpanda.ServiceAccountName" -}}
 {{- $state := (index .a 0) -}}

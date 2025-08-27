@@ -1,4 +1,5 @@
-{{- /* Generated from "asserts.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/typing/asserts.go" */ -}}
 
 {{- define "typing.typeTesting" -}}
 {{- $dot := (index .a 0) -}}

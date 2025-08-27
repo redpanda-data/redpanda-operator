@@ -1,0 +1,4 @@
+project: gotohelm
+kind: Changed
+body: Output files are now named `_$NAMESPACE.$FILE.tpl` instead of `$FILE.yaml`. This behavior may be overridden with the `+gotohelm:filename=` directive.
+time: 2025-08-27T11:08:37.533099-04:00

@@ -1,4 +1,5 @@
-{{- /* Generated from "common.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/aaacommon/common.go" */ -}}
 
 {{- define "aaacommon.SharedConstant" -}}
 {{- range $_ := (list 1) -}}

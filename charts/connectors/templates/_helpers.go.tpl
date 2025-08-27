@@ -1,4 +1,5 @@
-{{- /* Generated from "helpers.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/connectors/helpers.go" */ -}}
 
 {{- define "connectors.Name" -}}
 {{- $dot := (index .a 0) -}}

@@ -1,0 +1,7 @@
+project: gotohelm
+kind: Added
+body: |-
+    Added the ability to "bundle" in dependency packages as an alternative to subcharting
+
+      `gotohelm <pkg> --bundle <dependency>`
+time: 2025-08-27T11:04:47.608686-04:00

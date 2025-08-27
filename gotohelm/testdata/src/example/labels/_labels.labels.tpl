@@ -1,4 +1,5 @@
-{{- /* Generated from "labels.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/labels/labels.go" */ -}}
 
 {{- define "labels.FullLabels" -}}
 {{- $dot := (index .a 0) -}}
