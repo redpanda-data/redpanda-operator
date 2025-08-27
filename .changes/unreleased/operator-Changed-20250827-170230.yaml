@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Upgrade rendering of the Redpanda CRD to leverage the logic of the 25.x series helm charts. With this comes fixes around security contexts but also deprecation of the Console stanza controlling the unsupported Console v2 deployments within the Redpanda CRD. Console v3 support will be broken out into its own CRD.
+time: 2025-08-27T17:02:30.97402-04:00
