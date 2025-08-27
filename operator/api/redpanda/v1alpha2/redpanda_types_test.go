@@ -203,6 +203,11 @@ func TestHelmValuesCompat(t *testing.T) {
 				"Console":           rapid.Just[any](nil), // Asserted in their own test.
 				"Connectors":        rapid.Just[any](nil), // Asserted in their own test.
 				"CommonAnnotations": rapid.Just[any](nil), // This was accidentally added and shouldn't exist.
+				// WARNING: we have essentially broken the byte-to-byte compatability guarantees between v1alpha2 and the v25 helm chart
+				// due to how we mapped fields we want to eventually deprecate in the chart to a big pod template field. Because
+				// this test goes from chart --> CRD we're going to just nil out the entirety of the pod template since we don't ever
+				// do any back conversion in the operator, and only convert CRD --> chart manually.
+				"PodTemplate": rapid.Just[any](nil),
 			},
 			reflect.TypeFor[redpanda.PartialStorage](): {
 				"TieredStorageHostPath":         rapid.Just[any](nil), // Deprecated field, not worth fixing.
@@ -211,6 +216,7 @@ func TestHelmValuesCompat(t *testing.T) {
 			reflect.TypeFor[redpanda.PartialStatefulset](): {
 				"SecurityContext":    rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"PodSecurityContext": rapid.Just[any](nil), // Deprecated field, not worth fixing.
+				"UpdateStrategy":     rapid.Just[any](nil),
 			},
 			reflect.TypeFor[redpanda.PartialTieredStorageCredentials](): {
 				"ConfigurationKey": rapid.Just[any](nil), // Deprecated field, not worth fixing.
@@ -232,6 +238,9 @@ func TestHelmValuesCompat(t *testing.T) {
 			},
 			reflect.TypeFor[redpanda.PartialServiceAccountCfg](): {
 				"AutomountServiceAccountToken": rapid.Just[any](nil),
+			},
+			reflect.TypeFor[corev1.SecretKeySelector](): {
+				"Optional": rapid.Just[any](nil),
 			},
 			reflect.TypeFor[redpanda.PartialClusterConfigValue](): {
 				// Work around for divergences in the omitempty behavior of bool vs *bool.
