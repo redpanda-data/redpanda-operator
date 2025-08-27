@@ -31,6 +31,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -137,6 +138,7 @@ func createTestReconciler(t *testing.T, mgr manager.Manager) *ClusterReconciler 
 		MetricsTimeout:           8 * time.Second,
 		Timeout:                  10 * time.Second,
 		CloudSecretsExpander:     &secrets.CloudExpander{},
+		LifecycleClient:          lifecycle.NewResourceClient(mgr, lifecycle.V1ResourceManagers(lifecycle.CloudSecretsFlags{})),
 		AdminAPIClientFactory: func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (admin.AdminAPIClient, error) {
 			if api, ok := adminAPIs[redpandaCluster.Name]; ok {
 				return api, nil
