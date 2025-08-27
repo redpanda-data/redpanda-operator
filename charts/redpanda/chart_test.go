@@ -46,6 +46,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
@@ -62,7 +63,7 @@ func TestChartLock(t *testing.T) {
 	// TODO: Once all charts are split into individual modules, also assert
 	// that the versions reported by runtime/debug.BuildInfo() align with
 	// Chart.lock.
-	chartLockBytes, err := fs.ReadFile(redpanda.ChartFiles, "Chart.lock")
+	chartLockBytes, err := fs.ReadFile(chart.ChartFiles, "Chart.lock")
 	require.NoError(t, err)
 
 	var lock helm.ChartLock
@@ -115,7 +116,7 @@ func TestIntegrationChart(t *testing.T) {
 	w := &zapio.Writer{Log: log, Level: zapcore.InfoLevel}
 	wErr := &zapio.Writer{Log: log, Level: zapcore.ErrorLevel}
 
-	redpandaChart := "."
+	redpandaChart := "./chart"
 
 	h := helmtest.Setup(t)
 
@@ -990,7 +991,9 @@ func TestLabels(t *testing.T) {
 		}, helmValues)
 		require.NoError(t, err)
 
-		manifests, err := client.Template(ctx, ".", helm.TemplateOptions{
+		state := redpanda.RenderStateFromDot(dot)
+
+		manifests, err := client.Template(ctx, "./chart", helm.TemplateOptions{
 			Name:      dot.Release.Name,
 			Namespace: dot.Release.Namespace,
 			// Nor does it extend to tests.
@@ -1002,7 +1005,7 @@ func TestLabels(t *testing.T) {
 		objs, err := kube.DecodeYAML(manifests, redpanda.Scheme)
 		require.NoError(t, err)
 
-		expectedLabels := redpanda.FullLabels(dot)
+		expectedLabels := redpanda.FullLabels(state)
 		require.Subset(t, expectedLabels, values.CommonLabels, "FullLabels does not contain CommonLabels")
 
 		for _, obj := range objs {
@@ -1038,7 +1041,7 @@ func TestControllersTag(t *testing.T) {
 	chartBytes, err := os.ReadFile("../../operator/chart/Chart.yaml")
 	require.NoError(t, err)
 
-	valuesYAML, err := os.ReadFile("values.yaml")
+	valuesYAML, err := os.ReadFile("chart/values.yaml")
 	require.NoError(t, err)
 
 	var chart map[string]any
@@ -1210,7 +1213,7 @@ func TestMultiNamespaceInstall(t *testing.T) {
 		}))
 
 		for j := 0; j < 2; j++ {
-			_, err := client.Install(t.Context(), ".", helm.InstallOptions{
+			_, err := client.Install(t.Context(), "./chart", helm.InstallOptions{
 				Name:      fmt.Sprintf("redpanda-%d", j),
 				Namespace: namespace,
 				// Disable all forms of waits / checks. This isn't an actual
@@ -1226,7 +1229,7 @@ func TestMultiNamespaceInstall(t *testing.T) {
 		}
 
 		// One final check to show that conflicting names will result in an error.
-		_, err := client.Install(t.Context(), ".", helm.InstallOptions{
+		_, err := client.Install(t.Context(), "./chart", helm.InstallOptions{
 			Name:      "redpanda-0",
 			Namespace: namespace,
 			// Disable all forms of waits / checks. This isn't an actual

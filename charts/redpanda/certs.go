@@ -22,22 +22,20 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
-	if !TLSEnabled(dot) {
+func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
+	if !TLSEnabled(state) {
 		return []*certmanagerv1.Certificate{}
 	}
 
-	values := helmette.Unwrap[Values](dot.Values)
-
-	fullname := Fullname(dot)
-	service := ServiceName(dot)
-	ns := dot.Release.Namespace
+	fullname := Fullname(state)
+	service := ServiceName(state)
+	ns := state.Release.Namespace
 	// Trailing .'s don't play nice with TLS/SNI: https://datatracker.ietf.org/doc/html/rfc6066#section-3
 	// So we trim it when generating certificates.
-	domain := strings.TrimSuffix(values.ClusterDomain, ".")
+	domain := strings.TrimSuffix(state.Values.ClusterDomain, ".")
 
 	var certs []*certmanagerv1.Certificate
-	for name, data := range helmette.SortedMap(values.TLS.Certs) {
+	for name, data := range helmette.SortedMap(state.Values.TLS.Certs) {
 		if !helmette.Empty(data.SecretRef) || !ptr.Deref(data.Enabled, true) {
 			continue
 		}
@@ -58,9 +56,9 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 			names = append(names, fmt.Sprintf("*.%s.%s", service, ns))
 		}
 
-		if values.External.Domain != nil {
-			names = append(names, helmette.Tpl(dot, *values.External.Domain, dot))
-			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(dot, *values.External.Domain, dot)))
+		if state.Values.External.Domain != nil {
+			names = append(names, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
+			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
 		}
 
 		duration := helmette.Default("43800h", data.Duration)
@@ -77,8 +75,8 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
-				Labels:    FullLabels(dot),
-				Namespace: dot.Release.Namespace,
+				Labels:    FullLabels(state),
+				Namespace: state.Release.Namespace,
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				DNSNames:   names,
@@ -94,14 +92,14 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 		})
 	}
 
-	name := values.Listeners.Kafka.TLS.Cert
+	name := state.Values.Listeners.Kafka.TLS.Cert
 
-	data, ok := values.TLS.Certs[name]
+	data, ok := state.Values.TLS.Certs[name]
 	if !ok {
 		panic(fmt.Sprintf("Certificate %q referenced but not defined", name))
 	}
 
-	if !helmette.Empty(data.SecretRef) || !ClientAuthRequired(dot) {
+	if !helmette.Empty(data.SecretRef) || !ClientAuthRequired(state) {
 		return certs
 	}
 
@@ -125,7 +123,7 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   fmt.Sprintf("%s-client", fullname),
-			Labels: FullLabels(dot),
+			Labels: FullLabels(state),
 		},
 		Spec: certmanagerv1.CertificateSpec{
 			CommonName: fmt.Sprintf("%s-client", fullname),

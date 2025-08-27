@@ -19,49 +19,46 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
-func Secrets(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []*corev1.Secret {
+func Secrets(state *RenderState) []*corev1.Secret {
 	var secrets []*corev1.Secret
-	secrets = append(secrets, SecretSTSLifecycle(dot))
-	if saslUsers := SecretSASLUsers(dot); saslUsers != nil {
+	secrets = append(secrets, SecretSTSLifecycle(state))
+	if saslUsers := SecretSASLUsers(state); saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
-	secrets = append(secrets, SecretConfigurator(dot))
-	if fsValidator := SecretFSValidator(dot); fsValidator != nil {
+	secrets = append(secrets, SecretConfigurator(state))
+	if fsValidator := SecretFSValidator(state); fsValidator != nil {
 		secrets = append(secrets, fsValidator)
 	}
-	if bootstrapUser := SecretBootstrapUser(dot); bootstrapUser != nil {
+	if bootstrapUser := SecretBootstrapUser(state); bootstrapUser != nil {
 		secrets = append(secrets, bootstrapUser)
 	}
 	return secrets
 }
 
-func SecretSTSLifecycle(dot *helmette.Dot) *corev1.Secret {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sts-lifecycle", Fullname(dot)),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      fmt.Sprintf("%s-sts-lifecycle", Fullname(state)),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
 	}
-	adminCurlFlags := adminTLSCurlFlags(dot)
+	adminCurlFlags := adminTLSCurlFlags(state)
 	secret.StringData["common.sh"] = helmette.Join("\n", []string{
 		`#!/usr/bin/env bash`,
 		``,
 		`# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME`,
-		fmt.Sprintf(`CURL_URL="%s"`, adminInternalURL(dot)),
+		fmt.Sprintf(`CURL_URL="%s"`, adminInternalURL(state)),
 		``,
 		`# commands used throughout`,
 		fmt.Sprintf(`CURL_NODE_ID_CMD="curl --silent --fail %s ${CURL_URL}/v1/node_config"`, adminCurlFlags),
@@ -138,7 +135,7 @@ func SecretSTSLifecycle(dot *helmette.Dot) *corev1.Secret {
 		`  touch /tmp/preStopHookFinished`,
 		`}`,
 	}
-	if values.Statefulset.Replicas > 2 && !helmette.Dig(values.Config.Node, false, "recovery_mode_enabled").(bool) {
+	if state.Values.Statefulset.Replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool) {
 		preStopSh = append(preStopSh,
 			`preStopHook`,
 		)
@@ -155,19 +152,17 @@ func SecretSTSLifecycle(dot *helmette.Dot) *corev1.Secret {
 	return secret
 }
 
-func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.Auth.SASL.SecretRef != "" && values.Auth.SASL.Enabled && len(values.Auth.SASL.Users) > 0 {
+func SecretSASLUsers(state *RenderState) *corev1.Secret {
+	if state.Values.Auth.SASL.SecretRef != "" && state.Values.Auth.SASL.Enabled && len(state.Values.Auth.SASL.Users) > 0 {
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      values.Auth.SASL.SecretRef,
-				Namespace: dot.Release.Namespace,
-				Labels:    FullLabels(dot),
+				Name:      state.Values.Auth.SASL.SecretRef,
+				Namespace: state.Release.Namespace,
+				Labels:    FullLabels(state),
 			},
 			Type:       corev1.SecretTypeOpaque,
 			StringData: map[string]string{},
@@ -175,18 +170,18 @@ func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
 		usersTxt := []string{}
 
 		defaultMechanism := DefaultSASLMechanism
-		if values.Auth.SASL.Mechanism != "" {
-			defaultMechanism = values.Auth.SASL.Mechanism
+		if state.Values.Auth.SASL.Mechanism != "" {
+			defaultMechanism = state.Values.Auth.SASL.Mechanism
 		}
 
 		// Working around lack of support for += or strings.Join at the moment
-		for _, user := range values.Auth.SASL.Users {
+		for _, user := range state.Values.Auth.SASL.Users {
 			mechanism := ptr.Deref(user.Mechanism, defaultMechanism)
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)
 		return secret
-	} else if values.Auth.SASL.Enabled && values.Auth.SASL.SecretRef == "" {
+	} else if state.Values.Auth.SASL.Enabled && state.Values.Auth.SASL.SecretRef == "" {
 		panic("auth.sasl.secretRef cannot be empty when auth.sasl.enabled=true")
 	} else {
 		// XXX no secret generated when enabled, we have a secret ref, but we have no users
@@ -194,31 +189,20 @@ func SecretSASLUsers(dot *helmette.Dot) *corev1.Secret {
 	}
 }
 
-func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
-	values := helmette.Unwrap[Values](dot.Values)
-	if !values.Auth.SASL.Enabled || values.Auth.SASL.BootstrapUser.SecretKeyRef != nil {
+func SecretBootstrapUser(state *RenderState) *corev1.Secret {
+	if !state.Values.Auth.SASL.Enabled || state.Values.Auth.SASL.BootstrapUser.SecretKeyRef != nil {
 		return nil
 	}
 
-	secretName := fmt.Sprintf("%s-bootstrap-user", Fullname(dot))
+	secretName := fmt.Sprintf("%s-bootstrap-user", Fullname(state))
 
-	// Some tools don't correctly set .Release.Upgrade (ArgoCD, gotohelm, helm
-	// template) which has lead us to incorrectly re-generate the bootstrap
-	// user password. Rather than gating, we always attempt a lookup as that's
-	// likely the safest option. Though it's likely that Lookup will be
-	// stubbed out in similar scenarios (helm template).
-	// TODO: Should we try to detect invalid configurations, panic, and request
-	// that a password be explicitly set?
-	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](dot, dot.Release.Namespace, secretName); ok {
-		// make any existing secret immutable
-		existing.Immutable = ptr.To(true)
-		return existing
+	if state.BootstrapUserSecret != nil {
+		return state.BootstrapUserSecret
 	}
 
 	password := helmette.RandAlphaNum(32)
 
-	userPassword := values.Auth.SASL.BootstrapUser.Password
+	userPassword := state.Values.Auth.SASL.BootstrapUser.Password
 	if userPassword != nil {
 		password = *userPassword
 	}
@@ -230,8 +214,8 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Immutable: ptr.To(true),
 		Type:      corev1.SecretTypeOpaque,
@@ -241,10 +225,8 @@ func SecretBootstrapUser(dot *helmette.Dot) *corev1.Secret {
 	}
 }
 
-func SecretFSValidator(dot *helmette.Dot) *corev1.Secret {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.InitContainers.FSValidator.Enabled {
+func SecretFSValidator(state *RenderState) *corev1.Secret {
+	if !state.Values.Statefulset.InitContainers.FSValidator.Enabled {
 		return nil
 	}
 
@@ -254,9 +236,9 @@ func SecretFSValidator(dot *helmette.Dot) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.49s-fs-validator", Fullname(dot)),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      fmt.Sprintf("%.49s-fs-validator", Fullname(state)),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -303,18 +285,16 @@ echo "passed"`
 	return secret
 }
 
-func SecretConfigurator(dot *helmette.Dot) *corev1.Secret {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func SecretConfigurator(state *RenderState) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.51s-configurator", Fullname(dot)),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      fmt.Sprintf("%.51s-configurator", Fullname(state)),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -332,7 +312,7 @@ func SecretConfigurator(dot *helmette.Dot) *corev1.Secret {
 		`# Setup config files`,
 		`cp /tmp/base-config/redpanda.yaml "${CONFIG}"`,
 	)
-	if !RedpandaAtLeast_22_3_0(dot) {
+	if !RedpandaAtLeast_22_3_0(state) {
 		configuratorSh = append(configuratorSh,
 			``,
 			`# Configure bootstrap`,
@@ -344,19 +324,19 @@ func SecretConfigurator(dot *helmette.Dot) *corev1.Secret {
 		)
 	}
 
-	kafkaSnippet := secretConfiguratorKafkaConfig(dot)
+	kafkaSnippet := secretConfiguratorKafkaConfig(state)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
 
-	httpSnippet := secretConfiguratorHTTPConfig(dot)
+	httpSnippet := secretConfiguratorHTTPConfig(state)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
-	if RedpandaAtLeast_22_3_0(dot) && values.RackAwareness.Enabled {
+	if RedpandaAtLeast_22_3_0(state) && state.Values.RackAwareness.Enabled {
 		configuratorSh = append(configuratorSh,
 			``,
 			`# Configure Rack Awareness`,
 			`set +x`,
 			fmt.Sprintf(`RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')`,
-				helmette.SQuote(helmette.Quote(values.RackAwareness.NodeAnnotation)),
+				helmette.SQuote(helmette.Quote(state.Values.RackAwareness.NodeAnnotation)),
 			),
 			`set -x`,
 			`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
@@ -366,10 +346,8 @@ func SecretConfigurator(dot *helmette.Dot) *corev1.Secret {
 	return secret
 }
 
-func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(dot))
+func secretConfiguratorKafkaConfig(state *RenderState) []string {
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
 
@@ -382,22 +360,22 @@ func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
 		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
 			"name":    "internal",
 			"address": internalAdvertiseAddress,
-			"port":    values.Listeners.Kafka.Port,
+			"port":    state.Values.Listeners.Kafka.Port,
 		}))),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
 			redpandaConfigPart,
 			listenerAdvertisedName,
 		),
 	)
-	if len(values.Listeners.Kafka.External) > 0 {
+	if len(state.Values.Listeners.Kafka.External) > 0 {
 		externalCounter := 0
-		for externalName, externalVals := range helmette.SortedMap(values.Listeners.Kafka.External) {
+		for externalName, externalVals := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 			externalCounter = externalCounter + 1
 			snippet = append(snippet,
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(values.Statefulset.Replicas)) {
+			for _, replicaIndex := range helmette.Until(int(state.Values.Statefulset.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {
@@ -408,7 +386,7 @@ func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
 					}
 				}
 
-				host := advertisedHostJSON(dot, externalName, port, replicaIndex)
+				host := advertisedHostJSON(state, externalName, port, replicaIndex)
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
 				/// even with the original yaml template.
@@ -416,7 +394,7 @@ func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
 				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
 				if prefixTemplate == "" {
 					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", values.External.PrefixTemplate)
+					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
 				}
 				snippet = append(snippet,
 					``,
@@ -443,10 +421,8 @@ func secretConfiguratorKafkaConfig(dot *helmette.Dot) []string {
 	return snippet
 }
 
-func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(dot))
+func secretConfiguratorHTTPConfig(state *RenderState) []string {
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
 
@@ -459,22 +435,22 @@ func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
 		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
 			"name":    "internal",
 			"address": internalAdvertiseAddress,
-			"port":    values.Listeners.HTTP.Port,
+			"port":    state.Values.Listeners.HTTP.Port,
 		}))),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
 			redpandaConfigPart,
 			listenerAdvertisedName,
 		),
 	)
-	if len(values.Listeners.HTTP.External) > 0 {
+	if len(state.Values.Listeners.HTTP.External) > 0 {
 		externalCounter := 0
-		for externalName, externalVals := range helmette.SortedMap(values.Listeners.HTTP.External) {
+		for externalName, externalVals := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 			externalCounter = externalCounter + 1
 			snippet = append(snippet,
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(values.Statefulset.Replicas)) {
+			for _, replicaIndex := range helmette.Until(int(state.Values.Statefulset.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {
@@ -485,7 +461,7 @@ func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
 					}
 				}
 
-				host := advertisedHostJSON(dot, externalName, port, replicaIndex)
+				host := advertisedHostJSON(state, externalName, port, replicaIndex)
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
 				/// even with the original yaml template.
@@ -494,7 +470,7 @@ func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
 				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
 				if prefixTemplate == "" {
 					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", values.External.PrefixTemplate)
+					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
 				}
 				snippet = append(snippet,
 					``,
@@ -523,28 +499,24 @@ func secretConfiguratorHTTPConfig(dot *helmette.Dot) []string {
 
 // The following from _helpers.tpm
 
-func adminTLSCurlFlags(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Listeners.Admin.TLS.IsEnabled(&values.TLS) {
+func adminTLSCurlFlags(state *RenderState) string {
+	if !state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
 		return ""
 	}
 
-	if values.Listeners.Admin.TLS.RequireClientAuth {
-		path := fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot))
+	if state.Values.Listeners.Admin.TLS.RequireClientAuth {
+		path := fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(state))
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
-	path := values.Listeners.Admin.TLS.ServerCAPath(&values.TLS)
+	path := state.Values.Listeners.Admin.TLS.ServerCAPath(&state.Values.TLS)
 	return fmt.Sprintf("--cacert %s", path)
 }
 
-func externalAdvertiseAddress(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func externalAdvertiseAddress(state *RenderState) string {
 	eaa := "${SERVICE_NAME}"
-	externalDomainTemplate := ptr.Deref(values.External.Domain, "")
-	expanded := helmette.Tpl(dot, externalDomainTemplate, dot)
+	externalDomainTemplate := ptr.Deref(state.Values.External.Domain, "")
+	expanded := helmette.Tpl(state.Dot, externalDomainTemplate, state.Dot)
 	if !helmette.Empty(expanded) {
 		eaa = fmt.Sprintf("%s.%s", "${SERVICE_NAME}", expanded)
 	}
@@ -552,25 +524,23 @@ func externalAdvertiseAddress(dot *helmette.Dot) string {
 }
 
 // was advertised-host
-func advertisedHostJSON(dot *helmette.Dot, externalName string, port int32, replicaIndex int) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func advertisedHostJSON(state *RenderState, externalName string, port int32, replicaIndex int) map[string]any {
 	host := map[string]any{
 		"name":    externalName,
-		"address": externalAdvertiseAddress(dot),
+		"address": externalAdvertiseAddress(state),
 		"port":    port,
 	}
-	if len(values.External.Addresses) > 0 {
+	if len(state.Values.External.Addresses) > 0 {
 		address := ""
-		if len(values.External.Addresses) > 1 {
-			address = values.External.Addresses[replicaIndex]
+		if len(state.Values.External.Addresses) > 1 {
+			address = state.Values.External.Addresses[replicaIndex]
 		} else {
-			address = values.External.Addresses[0]
+			address = state.Values.External.Addresses[0]
 		}
-		if domain := ptr.Deref(values.External.Domain, ""); domain != "" {
+		if domain := ptr.Deref(state.Values.External.Domain, ""); domain != "" {
 			host = map[string]any{
 				"name":    externalName,
-				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(dot, domain, dot)),
+				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, domain, state.Dot)),
 				"port":    port,
 			}
 		} else {
@@ -585,10 +555,8 @@ func advertisedHostJSON(dot *helmette.Dot, externalName string, port int32, repl
 }
 
 // adminInternalHTTPProtocol was admin-http-protocol
-func adminInternalHTTPProtocol(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.Listeners.Admin.TLS.IsEnabled(&values.TLS) {
+func adminInternalHTTPProtocol(state *RenderState) string {
+	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
 		return "https"
 	}
 	return "http"
@@ -596,15 +564,13 @@ func adminInternalHTTPProtocol(dot *helmette.Dot) string {
 
 // Additional helpers
 
-func adminInternalURL(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func adminInternalURL(state *RenderState) string {
 	// NB: SERVICE_NAME here actually refers to the podname via the downward
 	// API.
 	return fmt.Sprintf("%s://%s.%s:%d",
-		adminInternalHTTPProtocol(dot),
+		adminInternalHTTPProtocol(state),
 		`${SERVICE_NAME}`,
-		strings.TrimSuffix(InternalDomain(dot), "."),
-		values.Listeners.Admin.Port,
+		strings.TrimSuffix(InternalDomain(state), "."),
+		state.Values.Listeners.Admin.Port,
 	)
 }

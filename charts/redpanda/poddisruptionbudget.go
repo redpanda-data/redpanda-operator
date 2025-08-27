@@ -16,17 +16,13 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
-func PodDisruptionBudget(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) *policyv1.PodDisruptionBudget {
-	values := helmette.Unwrap[Values](dot.Values)
-	budget := values.Statefulset.Budget.MaxUnavailable
+func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
+	budget := state.Values.Statefulset.Budget.MaxUnavailable
 
 	// to maintain quorum, raft cannot lose more than half its members
-	minReplicas := values.Statefulset.Replicas / 2
+	minReplicas := state.Values.Statefulset.Replicas / 2
 
 	// the lowest we can go is 1 so allow that always
 	if budget > 1 && budget > minReplicas {
@@ -34,8 +30,8 @@ func PodDisruptionBudget(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool)
 	}
 
 	maxUnavailable := intstr.FromInt32(int32(budget))
-	matchLabels := StatefulSetPodLabelsSelector(dot)
-	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(dot)
+	matchLabels := StatefulSetPodLabelsSelector(state)
+	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(state)
 
 	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
@@ -43,9 +39,9 @@ func PodDisruptionBudget(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool)
 			Kind:       "PodDisruptionBudget",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(dot),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      Fullname(state),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{

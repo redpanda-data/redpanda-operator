@@ -60,10 +60,10 @@ projects:
     # Update references to the operator image in redpanda's values.yaml
     # The whitespace ensures we update both values without touching the redpanda tag.
     # It's fragile but all values are checked via unittests.
-    - path: charts/redpanda/values.yaml
+    - path: charts/redpanda/chart/values.yaml
       find: '^      tag: .*$'
       replace: '      tag: {{.Version}}'
-    - path: charts/redpanda/values.yaml
+    - path: charts/redpanda/chart/values.yaml
       find: '^        tag: .*$'
       replace: '        tag: {{.Version}}'
     # Update golden files across the entire repo.

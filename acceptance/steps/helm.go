@@ -27,7 +27,7 @@ func iInstallHelmRelease(ctx context.Context, t framework.TestingT, helmReleaseN
 
 	require.NoError(t, helmClient.RepoAdd(ctx, "console", "https://charts.redpanda.com"))
 
-	path := "../charts/redpanda"
+	path := "../charts/redpanda/chart"
 	require.NoError(t, helmClient.DependencyBuild(ctx, path))
 
 	t.Logf("installing chart %q", path)

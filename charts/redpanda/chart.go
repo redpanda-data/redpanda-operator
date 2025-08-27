@@ -11,7 +11,7 @@
 package redpanda
 
 import (
-	"embed"
+	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -26,9 +26,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -37,16 +37,8 @@ var (
 	// objects produced by the redpanda chart.
 	Scheme = runtime.NewScheme()
 
-	//go:embed Chart.lock
-	//go:embed Chart.yaml
-	//go:embed files/*
-	//go:embed templates/*
-	//go:embed values.schema.json
-	//go:embed values.yaml
-	ChartFiles embed.FS
-
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(ChartFiles, render, console.Chart)
+	Chart = gotohelm.MustLoad(chart.ChartFiles, render, console.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that
@@ -96,9 +88,22 @@ func must(err error) {
 // In go, this function should be call by executing [Chart.Render], which will
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func render(dot *helmette.Dot) []kube.Object {
-	manifests := renderResources(dot, nil)
+	// NB: we need to do this inline here to avoid a return that would
+	// otherwise jsonify the entire struct and make it impossible to pass
+	// in templates.
+	state := &RenderState{
+		Release: &dot.Release,
+		Files:   &dot.Files,
+		Chart:   &dot.Chart,
+		Values:  helmette.Unwrap[Values](dot.Values),
+		Dot:     dot,
+	}
+	state.FetchBootstrapUser()
+	state.FetchStatefulSetPodSelector()
 
-	for _, obj := range StatefulSets(dot, nil) {
+	manifests := renderResources(state)
+
+	for _, obj := range StatefulSets(state) {
 		manifests = append(manifests, obj)
 	}
 
@@ -108,16 +113,16 @@ func render(dot *helmette.Dot) []kube.Object {
 	return manifests
 }
 
-func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []kube.Object {
-	checkVersion(dot)
+func renderResources(state *RenderState) []kube.Object {
+	checkVersion(state)
 
 	manifests := []kube.Object{
-		NodePortService(dot),
-		PodDisruptionBudget(dot, pools),
-		ServiceAccount(dot),
-		ServiceInternal(dot),
-		ServiceMonitor(dot),
-		PostInstallUpgradeJob(dot),
+		NodePortService(state),
+		PodDisruptionBudget(state),
+		ServiceAccount(state),
+		ServiceInternal(state),
+		ServiceMonitor(state),
+		PostInstallUpgradeJob(state),
 	}
 
 	// NB: gotohelm doesn't currently have a way to handle casting from
@@ -126,50 +131,57 @@ func renderResources(dot *helmette.Dot, pools []*redpandav1alpha3.NodePool) []ku
 	// Instead, it's easiest (though painful to read and write) to iterate over
 	// all functions that return slices and append them one at a time.
 
-	for _, obj := range ConfigMaps(dot, pools) {
+	for _, obj := range ConfigMaps(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range CertIssuers(dot) {
+	for _, obj := range CertIssuers(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range RootCAs(dot) {
+	for _, obj := range RootCAs(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClientCerts(dot) {
+	for _, obj := range ClientCerts(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Roles(dot) {
+	for _, obj := range Roles(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClusterRoles(dot) {
+	for _, obj := range ClusterRoles(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range RoleBindings(dot) {
+	for _, obj := range RoleBindings(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClusterRoleBindings(dot) {
+	for _, obj := range ClusterRoleBindings(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range LoadBalancerServices(dot, pools) {
+	for _, obj := range LoadBalancerServices(state) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Secrets(dot, pools) {
+	for _, obj := range Secrets(state) {
 		manifests = append(manifests, obj)
 	}
 
-	manifests = append(manifests, consoleChartIntegration(dot, pools)...)
+	manifests = append(manifests, consoleChartIntegration(state)...)
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
 	return manifests
+}
+
+func checkVersion(state *RenderState) {
+	if !RedpandaAtLeast_22_2_0(state) && !state.Values.Force {
+		sv := semver(state)
+		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
+	}
 }

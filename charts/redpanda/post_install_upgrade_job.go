@@ -25,16 +25,14 @@ import (
 // bootstrapYamlTemplater returns an initcontainer that will template
 // environment variables into ${base-config}/boostrap.yaml and output it to
 // ${config}/.bootstrap.yaml.
-func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	env := values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(values.Storage.GetTieredStorageConfig())
-	_, _, additionalEnv := values.Config.ExtraClusterConfiguration.Translate()
+func bootstrapYamlTemplater(state *RenderState) corev1.Container {
+	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
+	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
 	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Image.Repository,
-		values.Statefulset.SideCars.Image.Tag,
+		state.Values.Statefulset.SideCars.Image.Repository,
+		state.Values.Statefulset.SideCars.Image.Tag,
 	)
 
 	return corev1.Container{
@@ -47,7 +45,7 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 			"/tmp/base-config",
 			"--out-dir",
 			"/tmp/config",
-		}, values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
+		}, state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
 		Env: env,
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
@@ -73,16 +71,14 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	}
 }
 
-func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.PostInstallJob.Enabled {
+func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
+	if !state.Values.PostInstallJob.Enabled {
 		return nil
 	}
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Image.Repository,
-		values.Statefulset.SideCars.Image.Tag,
+		state.Values.Statefulset.SideCars.Image.Repository,
+		state.Values.Statefulset.SideCars.Image.Tag,
 	)
 
 	job := &batchv1.Job{
@@ -91,14 +87,14 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 			Kind:       "Job",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-configuration", Fullname(dot)),
-			Namespace: dot.Release.Namespace,
+			Name:      fmt.Sprintf("%s-configuration", Fullname(state)),
+			Namespace: state.Release.Namespace,
 			Labels: helmette.Merge(
-				helmette.Default(map[string]string{}, values.PostInstallJob.Labels),
-				FullLabels(dot),
+				helmette.Default(map[string]string{}, state.Values.PostInstallJob.Labels),
+				FullLabels(state),
 			),
 			Annotations: helmette.Merge(
-				helmette.Default(map[string]string{}, values.PostInstallJob.Annotations),
+				helmette.Default(map[string]string{}, state.Values.PostInstallJob.Annotations),
 				// This is what defines this resource as a hook. Without this line, the
 				// job is considered part of the release.
 				map[string]string{
@@ -110,30 +106,30 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 		},
 		Spec: batchv1.JobSpec{
 			Template: StrategicMergePatch(
-				StructuredTpl(dot, values.PostInstallJob.PodTemplate),
+				StructuredTpl(state, state.Values.PostInstallJob.PodTemplate),
 				StrategicMergePatch(
-					StructuredTpl(dot, values.PodTemplate),
+					StructuredTpl(state, state.Values.PodTemplate),
 					corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							GenerateName: fmt.Sprintf("%s-post-", dot.Release.Name),
+							GenerateName: fmt.Sprintf("%s-post-", state.Release.Name),
 							Labels: helmette.Merge(
 								map[string]string{
-									"app.kubernetes.io/name":      Name(dot),
-									"app.kubernetes.io/instance":  dot.Release.Name,
-									"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(dot)),
+									"app.kubernetes.io/name":      Name(state),
+									"app.kubernetes.io/instance":  state.Release.Name,
+									"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(state)),
 								},
-								helmette.Default(map[string]string{}, values.CommonLabels),
+								helmette.Default(map[string]string{}, state.Values.CommonLabels),
 							),
 						},
 						Spec: corev1.PodSpec{
 							RestartPolicy:                corev1.RestartPolicyNever,
-							InitContainers:               []corev1.Container{bootstrapYamlTemplater(dot)},
+							InitContainers:               []corev1.Container{bootstrapYamlTemplater(state)},
 							AutomountServiceAccountToken: ptr.To(false),
 							Containers: []corev1.Container{
 								{
 									Name:  PostInstallContainerName,
 									Image: image,
-									Env:   PostInstallUpgradeEnvironmentVariables(dot),
+									Env:   PostInstallUpgradeEnvironmentVariables(state),
 									// See sync-cluster-config in the operator for exact details. Roughly, it:
 									// 1. Sets the redpanda license
 									// 2. Sets the redpanda cluster config
@@ -149,20 +145,20 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 										"--bootstrap-yaml", "/tmp/config/.bootstrap.yaml",
 									},
 									VolumeMounts: append(
-										CommonMounts(dot),
+										CommonMounts(state),
 										corev1.VolumeMount{Name: "config", MountPath: "/tmp/config"},
 										corev1.VolumeMount{Name: "base-config", MountPath: "/tmp/base-config"},
 									),
 								},
 							},
 							Volumes: append(
-								CommonVolumes(dot),
+								CommonVolumes(state),
 								corev1.Volume{
 									Name: "base-config",
 									VolumeSource: corev1.VolumeSource{
 										ConfigMap: &corev1.ConfigMapVolumeSource{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: Fullname(dot),
+												Name: Fullname(state),
 											},
 										},
 									},
@@ -174,7 +170,7 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 									},
 								},
 							),
-							ServiceAccountName: ServiceAccountName(dot),
+							ServiceAccountName: ServiceAccountName(state),
 						},
 					},
 				),
@@ -187,16 +183,15 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 
 // PostInstallUpgradeEnvironmentVariables returns environment variables assigned to Redpanda
 // container.
-func PostInstallUpgradeEnvironmentVariables(dot *helmette.Dot) []corev1.EnvVar {
+func PostInstallUpgradeEnvironmentVariables(state *RenderState) []corev1.EnvVar {
 	envars := []corev1.EnvVar{}
-	values := helmette.Unwrap[Values](dot.Values)
 
-	if license := values.Enterprise.License; license != "" {
+	if license := state.Values.Enterprise.License; license != "" {
 		envars = append(envars, corev1.EnvVar{
 			Name:  "REDPANDA_LICENSE",
 			Value: license,
 		})
-	} else if secretReference := values.Enterprise.LicenseSecretRef; secretReference != nil {
+	} else if secretReference := state.Values.Enterprise.LicenseSecretRef; secretReference != nil {
 		envars = append(envars, corev1.EnvVar{
 			Name: "REDPANDA_LICENSE",
 			ValueFrom: &corev1.EnvVarSource{
@@ -206,5 +201,5 @@ func PostInstallUpgradeEnvironmentVariables(dot *helmette.Dot) []corev1.EnvVar {
 	}
 
 	// include any authentication envvars as well.
-	return bootstrapEnvVars(dot, envars)
+	return bootstrapEnvVars(state, envars)
 }

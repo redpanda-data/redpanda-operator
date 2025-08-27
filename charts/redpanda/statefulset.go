@@ -21,7 +21,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 )
 
 const (
@@ -81,29 +80,25 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 
 // StatefulSetPodLabelsSelector returns the label selector for the Redpanda StatefulSet.
 // If this helm release is an upgrade, the existing statefulset's label selector will be used as it's an immutable field.
-func StatefulSetPodLabelsSelector(dot *helmette.Dot) map[string]string {
+func StatefulSetPodLabelsSelector(state *RenderState) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
-	if dot.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Selector.MatchLabels) > 0 {
-			return existing.Spec.Selector.MatchLabels
-		}
+	if state.StatefulSetSelector != nil {
+		return state.StatefulSetSelector
 	}
 
-	values := helmette.Unwrap[Values](dot.Values)
-
 	additionalSelectorLabels := map[string]string{}
-	if values.Statefulset.AdditionalSelectorLabels != nil {
-		additionalSelectorLabels = values.Statefulset.AdditionalSelectorLabels
+	if state.Values.Statefulset.AdditionalSelectorLabels != nil {
+		additionalSelectorLabels = state.Values.Statefulset.AdditionalSelectorLabels
 	}
 
 	component := fmt.Sprintf("%s-statefulset",
-		strings.TrimSuffix(helmette.Trunc(51, Name(dot)), "-"))
+		strings.TrimSuffix(helmette.Trunc(51, Name(state)), "-"))
 
 	defaults := map[string]string{
 		"app.kubernetes.io/component": component,
-		"app.kubernetes.io/instance":  dot.Release.Name,
-		"app.kubernetes.io/name":      Name(dot),
+		"app.kubernetes.io/instance":  state.Release.Name,
+		"app.kubernetes.io/name":      Name(state),
 	}
 
 	return helmette.Merge(additionalSelectorLabels, defaults)
@@ -111,34 +106,27 @@ func StatefulSetPodLabelsSelector(dot *helmette.Dot) map[string]string {
 
 // StatefulSetPodLabels returns the label that includes label selector for the Redpanda PodTemplate.
 // If this helm release is an upgrade, the existing statefulset's pod template labels will be used as it's an immutable field.
-func StatefulSetPodLabels(dot *helmette.Dot) map[string]string {
-	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
-	// New installs will get better selectors.
-	if dot.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](dot, dot.Release.Namespace, Fullname(dot)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
-			return existing.Spec.Template.ObjectMeta.Labels
-		}
+func StatefulSetPodLabels(state *RenderState) map[string]string {
+	if state.StatefulSetPodLabels != nil {
+		return state.StatefulSetPodLabels
 	}
 
-	values := helmette.Unwrap[Values](dot.Values)
-
 	statefulSetLabels := map[string]string{}
-	if values.Statefulset.PodTemplate.Labels != nil {
-		statefulSetLabels = values.Statefulset.PodTemplate.Labels
+	if state.Values.Statefulset.PodTemplate.Labels != nil {
+		statefulSetLabels = state.Values.Statefulset.PodTemplate.Labels
 	}
 
 	defaults := map[string]string{
-		"redpanda.com/poddisruptionbudget": Fullname(dot),
+		"redpanda.com/poddisruptionbudget": Fullname(state),
 	}
 
-	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(dot), defaults, FullLabels(dot))
+	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state), defaults, FullLabels(state))
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
-func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
-	fullname := Fullname(dot)
-	volumes := CommonVolumes(dot)
-	values := helmette.Unwrap[Values](dot.Values)
+func StatefulSetVolumes(state *RenderState) []corev1.Volume {
+	fullname := Fullname(state)
+	volumes := CommonVolumes(state)
 
 	// NOTE and tiered-storage-dir are NOT in this
 	// function. TODO: Migrate them into this function.
@@ -177,7 +165,7 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 		},
 	}...)
 
-	if values.Statefulset.InitContainers.FSValidator.Enabled {
+	if state.Values.Statefulset.InitContainers.FSValidator.Enabled {
 		volumes = append(volumes, corev1.Volume{
 			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
 			VolumeSource: corev1.VolumeSource{
@@ -189,13 +177,13 @@ func StatefulSetVolumes(dot *helmette.Dot) []corev1.Volume {
 		})
 	}
 
-	if vol := values.Listeners.TrustStoreVolume(&values.TLS); vol != nil {
+	if vol := state.Values.Listeners.TrustStoreVolume(&state.Values.TLS); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
-	volumes = append(volumes, statefulSetVolumeDataDir(dot))
+	volumes = append(volumes, statefulSetVolumeDataDir(state))
 
-	if v := statefulSetVolumeTieredStorageDir(dot); v != nil {
+	if v := statefulSetVolumeTieredStorageDir(state); v != nil {
 		volumes = append(volumes, *v)
 	}
 
@@ -254,22 +242,20 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 	}
 }
 
-func statefulSetVolumeDataDir(dot *helmette.Dot) corev1.Volume {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func statefulSetVolumeDataDir(state *RenderState) corev1.Volume {
 	datadirSource := corev1.VolumeSource{
 		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	}
-	if values.Storage.PersistentVolume.Enabled {
+	if state.Values.Storage.PersistentVolume.Enabled {
 		datadirSource = corev1.VolumeSource{
 			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 				ClaimName: "datadir",
 			},
 		}
-	} else if values.Storage.HostPath != "" {
+	} else if state.Values.Storage.HostPath != "" {
 		datadirSource = corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: values.Storage.HostPath,
+				Path: state.Values.Storage.HostPath,
 			},
 		}
 	}
@@ -279,14 +265,12 @@ func statefulSetVolumeDataDir(dot *helmette.Dot) corev1.Volume {
 	}
 }
 
-func statefulSetVolumeTieredStorageDir(dot *helmette.Dot) *corev1.Volume {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Storage.IsTieredStorageEnabled() {
+func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
+	if !state.Values.Storage.IsTieredStorageEnabled() {
 		return nil
 	}
 
-	tieredType := values.Storage.TieredMountType()
+	tieredType := state.Values.Storage.TieredMountType()
 	if tieredType == "none" || tieredType == "persistentVolume" {
 		return nil
 	}
@@ -296,7 +280,7 @@ func statefulSetVolumeTieredStorageDir(dot *helmette.Dot) *corev1.Volume {
 			Name: "tiered-storage-dir",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: values.Storage.GetTieredStorageHostPath(),
+					Path: state.Values.Storage.GetTieredStorageHostPath(),
 				},
 			},
 		}
@@ -306,7 +290,7 @@ func statefulSetVolumeTieredStorageDir(dot *helmette.Dot) *corev1.Volume {
 		Name: "tiered-storage-dir",
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{
-				SizeLimit: values.Storage.GetTieredStorageConfig().CloudStorageCacheSize(),
+				SizeLimit: state.Values.Storage.GetTieredStorageConfig().CloudStorageCacheSize(),
 			},
 		},
 	}
@@ -314,9 +298,8 @@ func statefulSetVolumeTieredStorageDir(dot *helmette.Dot) *corev1.Volume {
 
 // StatefulSetRedpandaMounts returns the VolumeMounts for the Redpanda
 // Container of the Redpanda StatefulSet.
-func StatefulSetVolumeMounts(dot *helmette.Dot) []corev1.VolumeMount {
-	mounts := CommonMounts(dot)
-	values := helmette.Unwrap[Values](dot.Values)
+func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
+	mounts := CommonMounts(state)
 
 	mounts = append(mounts, []corev1.VolumeMount{
 		{Name: "config", MountPath: "/etc/redpanda"},
@@ -326,7 +309,7 @@ func StatefulSetVolumeMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		{Name: ServiceAccountVolumeName, MountPath: DefaultAPITokenMountPath, ReadOnly: true},
 	}...)
 
-	if len(values.Listeners.TrustStores(&values.TLS)) > 0 {
+	if len(state.Values.Listeners.TrustStores(&state.Values.TLS)) > 0 {
 		mounts = append(
 			mounts,
 			corev1.VolumeMount{Name: "truststores", MountPath: TrustStoreMountPath, ReadOnly: true},
@@ -336,35 +319,33 @@ func StatefulSetVolumeMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	return mounts
 }
 
-func StatefulSetInitContainers(dot *helmette.Dot) []corev1.Container {
+func StatefulSetInitContainers(state *RenderState) []corev1.Container {
 	var containers []corev1.Container
-	if c := statefulSetInitContainerTuning(dot); c != nil {
+	if c := statefulSetInitContainerTuning(state); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerSetDataDirOwnership(dot); c != nil {
+	if c := statefulSetInitContainerSetDataDirOwnership(state); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerFSValidator(dot); c != nil {
+	if c := statefulSetInitContainerFSValidator(state); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerSetTieredStorageCacheDirOwnership(dot); c != nil {
+	if c := statefulSetInitContainerSetTieredStorageCacheDirOwnership(state); c != nil {
 		containers = append(containers, *c)
 	}
-	containers = append(containers, *statefulSetInitContainerConfigurator(dot))
-	containers = append(containers, bootstrapYamlTemplater(dot))
+	containers = append(containers, *statefulSetInitContainerConfigurator(state))
+	containers = append(containers, bootstrapYamlTemplater(state))
 	return containers
 }
 
-func statefulSetInitContainerTuning(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Tuning.TuneAIOEvents {
+func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
+	if !state.Values.Tuning.TuneAIOEvents {
 		return nil
 	}
 
 	return &corev1.Container{
 		Name:  "tuning",
-		Image: fmt.Sprintf("%s:%s", values.Image.Repository, Tag(dot)),
+		Image: fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
 		Command: []string{
 			`/bin/bash`,
 			`-c`,
@@ -379,7 +360,7 @@ func statefulSetInitContainerTuning(dot *helmette.Dot) *corev1.Container {
 			RunAsGroup: ptr.To(int64(0)),
 		},
 		VolumeMounts: append(
-			CommonMounts(dot),
+			CommonMounts(state),
 			corev1.VolumeMount{
 				Name:      "base-config",
 				MountPath: "/etc/redpanda",
@@ -388,18 +369,16 @@ func statefulSetInitContainerTuning(dot *helmette.Dot) *corev1.Container {
 	}
 }
 
-func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
+func statefulSetInitContainerSetDataDirOwnership(state *RenderState) *corev1.Container {
+	if !state.Values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
 		return nil
 	}
 
-	uid, gid := securityContextUidGid(dot, "set-datadir-ownership")
+	uid, gid := securityContextUidGid(state, "set-datadir-ownership")
 
 	return &corev1.Container{
 		Name:  "set-datadir-ownership",
-		Image: fmt.Sprintf("%s:%s", values.Statefulset.InitContainerImage.Repository, values.Statefulset.InitContainerImage.Tag),
+		Image: fmt.Sprintf("%s:%s", state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
 			`-c`,
@@ -410,7 +389,7 @@ func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Cont
 			RunAsGroup: ptr.To[int64](0),
 		},
 		VolumeMounts: append(
-			CommonMounts(dot),
+			CommonMounts(state),
 			corev1.VolumeMount{
 				Name:      `datadir`,
 				MountPath: `/var/lib/redpanda/data`,
@@ -420,11 +399,9 @@ func statefulSetInitContainerSetDataDirOwnership(dot *helmette.Dot) *corev1.Cont
 }
 
 //nolint:stylecheck
-func securityContextUidGid(dot *helmette.Dot, containerName string) (int64, int64) {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	gid, uid := giduidFromPodTemplate(&values.PodTemplate, RedpandaContainerName)
-	sgid, suid := giduidFromPodTemplate(&values.Statefulset.PodTemplate, RedpandaContainerName)
+func securityContextUidGid(state *RenderState, containerName string) (int64, int64) {
+	gid, uid := giduidFromPodTemplate(&state.Values.PodTemplate, RedpandaContainerName)
+	sgid, suid := giduidFromPodTemplate(&state.Values.Statefulset.PodTemplate, RedpandaContainerName)
 
 	if sgid != nil {
 		gid = sgid
@@ -469,27 +446,25 @@ func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int
 	return gid, uid
 }
 
-func statefulSetInitContainerFSValidator(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Statefulset.InitContainers.FSValidator.Enabled {
+func statefulSetInitContainerFSValidator(state *RenderState) *corev1.Container {
+	if !state.Values.Statefulset.InitContainers.FSValidator.Enabled {
 		return nil
 	}
 
 	return &corev1.Container{
 		Name:    "fs-validator",
-		Image:   fmt.Sprintf("%s:%s", values.Image.Repository, Tag(dot)),
+		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
 		Command: []string{`/bin/sh`},
 		Args: []string{
 			`-c`,
 			fmt.Sprintf(`trap "exit 0" TERM; exec /etc/secrets/fs-validator/scripts/fsValidator.sh %s & wait $!`,
-				values.Statefulset.InitContainers.FSValidator.ExpectedFS,
+				state.Values.Statefulset.InitContainers.FSValidator.ExpectedFS,
 			),
 		},
 		VolumeMounts: append(
-			CommonMounts(dot),
+			CommonMounts(state),
 			corev1.VolumeMount{
-				Name:      fmt.Sprintf(`%.49s-fs-validator`, Fullname(dot)),
+				Name:      fmt.Sprintf(`%.49s-fs-validator`, Fullname(state)),
 				MountPath: `/etc/secrets/fs-validator/scripts/`,
 			},
 			corev1.VolumeMount{
@@ -500,24 +475,22 @@ func statefulSetInitContainerFSValidator(dot *helmette.Dot) *corev1.Container {
 	}
 }
 
-func statefulSetInitContainerSetTieredStorageCacheDirOwnership(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Storage.IsTieredStorageEnabled() {
+func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState) *corev1.Container {
+	if !state.Values.Storage.IsTieredStorageEnabled() {
 		return nil
 	}
 
-	uid, gid := securityContextUidGid(dot, "set-tiered-storage-cache-dir-ownership")
-	cacheDir := values.Storage.TieredCacheDirectory(dot)
-	mounts := CommonMounts(dot)
+	uid, gid := securityContextUidGid(state, "set-tiered-storage-cache-dir-ownership")
+	cacheDir := state.Values.Storage.TieredCacheDirectory(state)
+	mounts := CommonMounts(state)
 	mounts = append(mounts, corev1.VolumeMount{
 		Name:      "datadir",
 		MountPath: "/var/lib/redpanda/data",
 	})
-	if values.Storage.TieredMountType() != "none" {
+	if state.Values.Storage.TieredMountType() != "none" {
 		name := "tiered-storage-dir"
-		if values.Storage.PersistentVolume != nil && values.Storage.PersistentVolume.NameOverwrite != "" {
-			name = values.Storage.PersistentVolume.NameOverwrite
+		if state.Values.Storage.PersistentVolume != nil && state.Values.Storage.PersistentVolume.NameOverwrite != "" {
+			name = state.Values.Storage.PersistentVolume.NameOverwrite
 		}
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name,
@@ -527,7 +500,7 @@ func statefulSetInitContainerSetTieredStorageCacheDirOwnership(dot *helmette.Dot
 
 	return &corev1.Container{
 		Name:  `set-tiered-storage-cache-dir-ownership`,
-		Image: fmt.Sprintf(`%s:%s`, values.Statefulset.InitContainerImage.Repository, values.Statefulset.InitContainerImage.Tag),
+		Image: fmt.Sprintf(`%s:%s`, state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
 			`-c`,
@@ -545,10 +518,8 @@ func statefulSetInitContainerSetTieredStorageCacheDirOwnership(dot *helmette.Dot
 	}
 }
 
-func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	volMounts := CommonMounts(dot)
+func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container {
+	volMounts := CommonMounts(state)
 	volMounts = append(volMounts,
 		corev1.VolumeMount{
 			Name:      "config",
@@ -559,12 +530,12 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 			MountPath: "/tmp/base-config",
 		},
 		corev1.VolumeMount{
-			Name:      fmt.Sprintf(`%.51s-configurator`, Fullname(dot)),
+			Name:      fmt.Sprintf(`%.51s-configurator`, Fullname(state)),
 			MountPath: "/etc/secrets/configurator/scripts/",
 		},
 	)
 
-	if values.RackAwareness.Enabled {
+	if state.Values.RackAwareness.Enabled {
 		volMounts = append(volMounts, corev1.VolumeMount{
 			Name:      ServiceAccountVolumeName,
 			MountPath: DefaultAPITokenMountPath,
@@ -574,13 +545,13 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 
 	return &corev1.Container{
 		Name:  RedpandaConfiguratorContainerName,
-		Image: fmt.Sprintf(`%s:%s`, values.Image.Repository, Tag(dot)),
+		Image: fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
 		Command: []string{
 			`/bin/bash`,
 			`-c`,
 			`trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`,
 		},
-		Env: rpkEnvVars(dot, []corev1.EnvVar{
+		Env: rpkEnvVars(state, []corev1.EnvVar{
 			{
 				Name:  "CONFIGURATOR_SCRIPT",
 				Value: "/etc/secrets/configurator/scripts/configurator.sh",
@@ -618,10 +589,10 @@ func statefulSetInitContainerConfigurator(dot *helmette.Dot) *corev1.Container {
 	}
 }
 
-func StatefulSetContainers(dot *helmette.Dot) []corev1.Container {
+func StatefulSetContainers(state *RenderState) []corev1.Container {
 	var containers []corev1.Container
-	containers = append(containers, statefulSetContainerRedpanda(dot))
-	if c := statefulSetContainerSidecar(dot); c != nil {
+	containers = append(containers, statefulSetContainerRedpanda(state))
+	if c := statefulSetContainerSidecar(state); c != nil {
 		containers = append(containers, *c)
 	}
 	return containers
@@ -638,22 +609,20 @@ func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string
 	return []string{"bash", "-c", fmt.Sprintf("timeout -v %d %s 2>&1 | sed \"s/^/lifecycle-hook %s $(date): /\" | tee /proc/1/fd/1; true", timeoutSeconds, wrapped, hook)}
 }
 
-func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(dot))
+func statefulSetContainerRedpanda(state *RenderState) corev1.Container {
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(state))
 
 	container := corev1.Container{
 		Name:  RedpandaContainerName,
-		Image: fmt.Sprintf(`%s:%s`, values.Image.Repository, Tag(dot)),
-		Env:   bootstrapEnvVars(dot, statefulSetRedpandaEnv()),
+		Image: fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
+		Env:   bootstrapEnvVars(state, statefulSetRedpandaEnv()),
 		Lifecycle: &corev1.Lifecycle{
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
 					Command: wrapLifecycleHook(
 						"post-start",
-						*values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
+						*state.Values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
 					),
 				},
@@ -662,7 +631,7 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 				Exec: &corev1.ExecAction{
 					Command: wrapLifecycleHook(
 						"pre-stop",
-						*values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
+						*state.Values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},
 					),
 				},
@@ -679,9 +648,9 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 						helmette.Join("\n", []string{
 							`set -e`,
 							fmt.Sprintf(`RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")`,
-								adminTLSCurlFlags(dot),
-								adminInternalHTTPProtocol(dot),
-								adminApiURLs(dot),
+								adminTLSCurlFlags(state),
+								adminInternalHTTPProtocol(state),
+								adminApiURLs(state),
 							),
 							`echo $RESULT`,
 							`echo $RESULT | grep ready`,
@@ -702,9 +671,9 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 						`/bin/sh`,
 						`-c`,
 						fmt.Sprintf(`curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready"`,
-							adminTLSCurlFlags(dot),
-							adminInternalHTTPProtocol(dot),
-							adminApiURLs(dot),
+							adminTLSCurlFlags(state),
+							adminInternalHTTPProtocol(state),
+							adminApiURLs(state),
 						),
 					},
 				},
@@ -719,24 +688,24 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 			`start`,
 			fmt.Sprintf(`--advertise-rpc-addr=%s:%d`,
 				internalAdvertiseAddress,
-				values.Listeners.RPC.Port,
+				state.Values.Listeners.RPC.Port,
 			),
 		},
-		VolumeMounts: StatefulSetVolumeMounts(dot),
-		Resources:    values.Resources.GetResourceRequirements(),
+		VolumeMounts: StatefulSetVolumeMounts(state),
+		Resources:    state.Values.Resources.GetResourceRequirements(),
 	}
 
 	// admin http kafka schemaRegistry rpc
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "admin",
-		ContainerPort: values.Listeners.Admin.Port,
+		ContainerPort: state.Values.Listeners.Admin.Port,
 	})
-	for externalName, external := range helmette.SortedMap(values.Listeners.Admin.External) {
+	for externalName, external := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
 		if external.IsEnabled() {
 			// The original template used
 			// $external.port > 0 &&
 			// [ $external.enabled ||
-			//   (values.External.Enabled && (dig "enabled" true $external)
+			//   (state.Values.External.Enabled && (dig "enabled" true $external)
 			// ]
 			// ... which is equivalent to the above check
 			container.Ports = append(container.Ports, corev1.ContainerPort{
@@ -747,9 +716,9 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 	}
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "http",
-		ContainerPort: values.Listeners.HTTP.Port,
+		ContainerPort: state.Values.Listeners.HTTP.Port,
 	})
-	for externalName, external := range helmette.SortedMap(values.Listeners.HTTP.External) {
+	for externalName, external := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("http-%.8s", helmette.Lower(externalName)),
@@ -759,9 +728,9 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 	}
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "kafka",
-		ContainerPort: values.Listeners.Kafka.Port,
+		ContainerPort: state.Values.Listeners.Kafka.Port,
 	})
-	for externalName, external := range helmette.SortedMap(values.Listeners.Kafka.External) {
+	for externalName, external := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("kafka-%.8s", helmette.Lower(externalName)),
@@ -771,13 +740,13 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 	}
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "rpc",
-		ContainerPort: values.Listeners.RPC.Port,
+		ContainerPort: state.Values.Listeners.RPC.Port,
 	})
 	container.Ports = append(container.Ports, corev1.ContainerPort{
 		Name:          "schemaregistry",
-		ContainerPort: values.Listeners.SchemaRegistry.Port,
+		ContainerPort: state.Values.Listeners.SchemaRegistry.Port,
 	})
-	for externalName, external := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
+	for externalName, external := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
 				Name:          fmt.Sprintf("schema-%.8s", helmette.Lower(externalName)),
@@ -786,15 +755,15 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 		}
 	}
 
-	if values.Storage.IsTieredStorageEnabled() && values.Storage.TieredMountType() != "none" {
+	if state.Values.Storage.IsTieredStorageEnabled() && state.Values.Storage.TieredMountType() != "none" {
 		name := "tiered-storage-dir"
-		if values.Storage.PersistentVolume != nil && values.Storage.PersistentVolume.NameOverwrite != "" {
-			name = values.Storage.PersistentVolume.NameOverwrite
+		if state.Values.Storage.PersistentVolume != nil && state.Values.Storage.PersistentVolume.NameOverwrite != "" {
+			name = state.Values.Storage.PersistentVolume.NameOverwrite
 		}
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      name,
-				MountPath: values.Storage.TieredCacheDirectory(dot),
+				MountPath: state.Values.Storage.TieredCacheDirectory(state),
 			},
 		)
 	}
@@ -805,71 +774,65 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 // adminApiURLs was: admin-api-urls
 //
 //nolint:stylecheck
-func adminApiURLs(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func adminApiURLs(state *RenderState) string {
 	return fmt.Sprintf(`${SERVICE_NAME}.%s:%d`,
-		InternalDomain(dot),
-		values.Listeners.Admin.Port,
+		InternalDomain(state),
+		state.Values.Listeners.Admin.Port,
 	)
 }
 
 //nolint:stylecheck
-func adminURLsCLI(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func adminURLsCLI(state *RenderState) string {
 	return fmt.Sprintf(`$(SERVICE_NAME).%s:%d`,
-		InternalDomain(dot),
-		values.Listeners.Admin.Port,
+		InternalDomain(state),
+		state.Values.Listeners.Admin.Port,
 	)
 }
 
-func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func statefulSetContainerSidecar(state *RenderState) *corev1.Container {
 	args := []string{
 		`/redpanda-operator`,
 		`sidecar`,
 		`--redpanda-yaml`,
 		`/etc/redpanda/redpanda.yaml`,
 		`--redpanda-cluster-namespace`,
-		dot.Release.Namespace,
+		state.Release.Namespace,
 		`--redpanda-cluster-name`,
-		Fullname(dot),
+		Fullname(state),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
 		// even though this is named "...URLs", it returns
 		// only the url for the given pod
-		adminURLsCLI(dot),
+		adminURLsCLI(state),
 	}
 
-	if values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
+	if state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		args = append(args, []string{
 			`--run-decommissioner`,
-			fmt.Sprintf("--decommission-vote-interval=%s", values.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
-			fmt.Sprintf("--decommission-requeue-timeout=%s", values.Statefulset.SideCars.BrokerDecommissioner.DecommissionRequeueTimeout),
+			fmt.Sprintf("--decommission-vote-interval=%s", state.Values.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
+			fmt.Sprintf("--decommission-requeue-timeout=%s", state.Values.Statefulset.SideCars.BrokerDecommissioner.DecommissionRequeueTimeout),
 			`--decommission-vote-count=2`,
 		}...)
 	}
 
-	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" && values.Statefulset.SideCars.ConfigWatcher.Enabled {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" && state.Values.Statefulset.SideCars.ConfigWatcher.Enabled {
 		args = append(args, []string{
 			`--watch-users`,
 			`--users-directory=/etc/secrets/users/`,
 		}...)
 	}
 
-	if values.Statefulset.SideCars.PVCUnbinder.Enabled {
+	if state.Values.Statefulset.SideCars.PVCUnbinder.Enabled {
 		args = append(args, []string{
 			`--run-pvc-unbinder`,
-			fmt.Sprintf("--pvc-unbinder-timeout=%s", values.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
+			fmt.Sprintf("--pvc-unbinder-timeout=%s", state.Values.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
 		}...)
 	}
 
-	args = append(args, values.Statefulset.SideCars.Args...)
+	args = append(args, state.Values.Statefulset.SideCars.Args...)
 
 	volumeMounts := append(
-		CommonMounts(dot),
+		CommonMounts(state),
 		corev1.VolumeMount{
 			Name:      "config",
 			MountPath: "/etc/redpanda",
@@ -883,10 +846,10 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 
 	return &corev1.Container{
 		Name:         "sidecar",
-		Image:        fmt.Sprintf(`%s:%s`, values.Statefulset.SideCars.Image.Repository, values.Statefulset.SideCars.Image.Tag),
+		Image:        fmt.Sprintf(`%s:%s`, state.Values.Statefulset.SideCars.Image.Repository, state.Values.Statefulset.SideCars.Image.Tag),
 		Command:      []string{`/redpanda-operator`},
 		Args:         append([]string{`supervisor`, `--`}, args...),
-		Env:          append(rpkEnvVars(dot, nil), statefulSetRedpandaEnv()...),
+		Env:          append(rpkEnvVars(state, nil), statefulSetRedpandaEnv()...),
 		VolumeMounts: volumeMounts,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -908,60 +871,56 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 	}
 }
 
-func rpkEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVar {
-	values := helmette.Unwrap[Values](dot.Values)
-	if values.Auth.SASL != nil && values.Auth.SASL.Enabled {
-		return append(envVars, values.Auth.SASL.BootstrapUser.RpkEnvironment(Fullname(dot))...)
+func rpkEnvVars(state *RenderState, envVars []corev1.EnvVar) []corev1.EnvVar {
+	if state.Values.Auth.SASL != nil && state.Values.Auth.SASL.Enabled {
+		return append(envVars, state.Values.Auth.SASL.BootstrapUser.RpkEnvironment(Fullname(state))...)
 	}
 	return envVars
 }
 
-func bootstrapEnvVars(dot *helmette.Dot, envVars []corev1.EnvVar) []corev1.EnvVar {
-	values := helmette.Unwrap[Values](dot.Values)
-	if values.Auth.SASL != nil && values.Auth.SASL.Enabled {
-		return append(envVars, values.Auth.SASL.BootstrapUser.BootstrapEnvironment(Fullname(dot))...)
+func bootstrapEnvVars(state *RenderState, envVars []corev1.EnvVar) []corev1.EnvVar {
+	if state.Values.Auth.SASL != nil && state.Values.Auth.SASL.Enabled {
+		return append(envVars, state.Values.Auth.SASL.BootstrapUser.BootstrapEnvironment(Fullname(state))...)
 	}
 	return envVars
 }
 
-func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*appsv1.StatefulSet {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
 	ss := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(dot),
-			Namespace: dot.Release.Namespace,
-			Labels:    FullLabels(dot),
+			Name:      Fullname(state),
+			Namespace: state.Release.Namespace,
+			Labels:    FullLabels(state),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: StatefulSetPodLabelsSelector(dot),
+				MatchLabels: StatefulSetPodLabelsSelector(state),
 			},
-			ServiceName:         ServiceName(dot),
-			Replicas:            ptr.To(values.Statefulset.Replicas),
-			UpdateStrategy:      values.Statefulset.UpdateStrategy,
+			ServiceName:         ServiceName(state),
+			Replicas:            ptr.To(state.Values.Statefulset.Replicas),
+			UpdateStrategy:      state.Values.Statefulset.UpdateStrategy,
 			PodManagementPolicy: "Parallel",
 			Template: StrategicMergePatch(
-				StructuredTpl(dot, values.Statefulset.PodTemplate),
+				StructuredTpl(state, state.Values.Statefulset.PodTemplate),
 				StrategicMergePatch(
-					StructuredTpl(dot, values.PodTemplate),
+					StructuredTpl(state, state.Values.PodTemplate),
 					corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: StatefulSetPodLabels(dot),
+							Labels: StatefulSetPodLabels(state),
 							Annotations: map[string]string{
-								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(dot),
+								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state),
 							},
 						},
 						Spec: corev1.PodSpec{
 							AutomountServiceAccountToken: ptr.To(false),
-							ServiceAccountName:           ServiceAccountName(dot),
-							InitContainers:               StatefulSetInitContainers(dot),
-							Containers:                   StatefulSetContainers(dot),
-							Volumes:                      StatefulSetVolumes(dot),
+							ServiceAccountName:           ServiceAccountName(state),
+							InitContainers:               StatefulSetInitContainers(state),
+							Containers:                   StatefulSetContainers(state),
+							Volumes:                      StatefulSetVolumes(state),
 						},
 					},
 				),
@@ -971,11 +930,11 @@ func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*app
 	}
 
 	// VolumeClaimTemplates
-	if values.Storage.PersistentVolume.Enabled || (values.Storage.IsTieredStorageEnabled() && values.Storage.TieredMountType() == "persistentVolume") {
-		if t := volumeClaimTemplateDatadir(dot); t != nil {
+	if state.Values.Storage.PersistentVolume.Enabled || (state.Values.Storage.IsTieredStorageEnabled() && state.Values.Storage.TieredMountType() == "persistentVolume") {
+		if t := volumeClaimTemplateDatadir(state); t != nil {
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, *t)
 		}
-		if t := volumeClaimTemplateTieredStorageDir(dot); t != nil {
+		if t := volumeClaimTemplateTieredStorageDir(state); t != nil {
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, *t)
 		}
 	}
@@ -983,8 +942,8 @@ func StatefulSets(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []*app
 	return []*appsv1.StatefulSet{ss}
 }
 
-func semver(dot *helmette.Dot) string {
-	return strings.TrimPrefix(Tag(dot), "v")
+func semver(state *RenderState) string {
+	return strings.TrimPrefix(Tag(state), "v")
 }
 
 // statefulSetChecksumAnnotation was statefulset-checksum-annotation
@@ -994,26 +953,24 @@ func semver(dot *helmette.Dot) string {
 //
 // Append any additional dependencies that require the pods to restart
 // to the $dependencies list.
-func statefulSetChecksumAnnotation(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
+func statefulSetChecksumAnnotation(state *RenderState) string {
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
-	dependencies = append(dependencies, RedpandaConfigFile(dot, false))
-	if values.External.Enabled {
-		dependencies = append(dependencies, ptr.Deref(values.External.Domain, ""))
-		if helmette.Empty(values.External.Addresses) {
+	dependencies = append(dependencies, RedpandaConfigFile(state, false))
+	if state.Values.External.Enabled {
+		dependencies = append(dependencies, ptr.Deref(state.Values.External.Domain, ""))
+		if helmette.Empty(state.Values.External.Addresses) {
 			dependencies = append(dependencies, "")
 		} else {
-			dependencies = append(dependencies, values.External.Addresses)
+			dependencies = append(dependencies, state.Values.External.Addresses)
 		}
 	}
 	return helmette.Sha256Sum(helmette.ToJSON(dependencies))
 }
 
-func volumeClaimTemplateDatadir(dot *helmette.Dot) *corev1.PersistentVolumeClaim {
-	values := helmette.Unwrap[Values](dot.Values)
-	if !values.Storage.PersistentVolume.Enabled {
+func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClaim {
+	if !state.Values.Storage.PersistentVolume.Enabled {
 		return nil
 	}
 
@@ -1021,14 +978,14 @@ func volumeClaimTemplateDatadir(dot *helmette.Dot) *corev1.PersistentVolumeClaim
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "datadir",
 			Labels: helmette.Merge(map[string]string{
-				`app.kubernetes.io/name`:      Name(dot),
-				`app.kubernetes.io/instance`:  dot.Release.Name,
-				`app.kubernetes.io/component`: Name(dot),
+				`app.kubernetes.io/name`:      Name(state),
+				`app.kubernetes.io/instance`:  state.Release.Name,
+				`app.kubernetes.io/component`: Name(state),
 			},
-				values.Storage.PersistentVolume.Labels,
-				values.CommonLabels,
+				state.Values.Storage.PersistentVolume.Labels,
+				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Default(nil, values.Storage.PersistentVolume.Annotations),
+			Annotations: helmette.Default(nil, state.Values.Storage.PersistentVolume.Annotations),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -1036,42 +993,40 @@ func volumeClaimTemplateDatadir(dot *helmette.Dot) *corev1.PersistentVolumeClaim
 			},
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: helmette.UnmarshalInto[corev1.ResourceList](map[string]any{
-					"storage": values.Storage.PersistentVolume.Size,
+					"storage": state.Values.Storage.PersistentVolume.Size,
 				}),
 			},
 		},
 	}
 
-	if !helmette.Empty(values.Storage.PersistentVolume.StorageClass) {
-		if values.Storage.PersistentVolume.StorageClass == "-" {
+	if !helmette.Empty(state.Values.Storage.PersistentVolume.StorageClass) {
+		if state.Values.Storage.PersistentVolume.StorageClass == "-" {
 			pvc.Spec.StorageClassName = ptr.To("")
 		} else {
-			pvc.Spec.StorageClassName = ptr.To(values.Storage.PersistentVolume.StorageClass)
+			pvc.Spec.StorageClassName = ptr.To(state.Values.Storage.PersistentVolume.StorageClass)
 		}
 	}
 
 	return pvc
 }
 
-func volumeClaimTemplateTieredStorageDir(dot *helmette.Dot) *corev1.PersistentVolumeClaim {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Storage.IsTieredStorageEnabled() || values.Storage.TieredMountType() != "persistentVolume" {
+func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentVolumeClaim {
+	if !state.Values.Storage.IsTieredStorageEnabled() || state.Values.Storage.TieredMountType() != "persistentVolume" {
 		return nil
 	}
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: helmette.Default("tiered-storage-dir", values.Storage.PersistentVolume.NameOverwrite),
+			Name: helmette.Default("tiered-storage-dir", state.Values.Storage.PersistentVolume.NameOverwrite),
 			Labels: helmette.Merge(map[string]string{
-				`app.kubernetes.io/name`:      Name(dot),
-				`app.kubernetes.io/instance`:  dot.Release.Name,
-				`app.kubernetes.io/component`: Name(dot),
+				`app.kubernetes.io/name`:      Name(state),
+				`app.kubernetes.io/instance`:  state.Release.Name,
+				`app.kubernetes.io/component`: Name(state),
 			},
-				values.Storage.TieredPersistentVolumeLabels(),
-				values.CommonLabels,
+				state.Values.Storage.TieredPersistentVolumeLabels(),
+				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Default(nil, values.Storage.TieredPersistentVolumeAnnotations()),
+			Annotations: helmette.Default(nil, state.Values.Storage.TieredPersistentVolumeAnnotations()),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -1079,13 +1034,13 @@ func volumeClaimTemplateTieredStorageDir(dot *helmette.Dot) *corev1.PersistentVo
 			},
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: helmette.UnmarshalInto[corev1.ResourceList](map[string]any{
-					"storage": values.Storage.GetTieredStorageConfig()[`cloud_storage_cache_size`],
+					"storage": state.Values.Storage.GetTieredStorageConfig()[`cloud_storage_cache_size`],
 				}),
 			},
 		},
 	}
 
-	if sc := values.Storage.TieredPersistentVolumeStorageClass(); sc == "-" {
+	if sc := state.Values.Storage.TieredPersistentVolumeStorageClass(); sc == "-" {
 		pvc.Spec.StorageClassName = ptr.To("")
 	} else if !helmette.Empty(sc) {
 		pvc.Spec.StorageClassName = ptr.To(sc)
@@ -1095,17 +1050,15 @@ func volumeClaimTemplateTieredStorageDir(dot *helmette.Dot) *corev1.PersistentVo
 }
 
 // TODO this will also need templating support.
-// func statefulSetTopologySpreadConstraints(dot *helmette.Dot) []corev1.TopologySpreadConstraint {
-// 	values := helmette.Unwrap[Values](dot.Values)
-//
+// func statefulSetTopologySpreadConstraints(state *RenderState) []corev1.TopologySpreadConstraint {
 // 	// XXX: Was protected with this: semverCompare ">=1.16-0" .Capabilities.KubeVersion.GitVersion
 // 	// but that version is beyond EOL; and the chart as a whole wants >= 1.21
 //
 // 	var result []corev1.TopologySpreadConstraint
 // 	labelSelector := &metav1.LabelSelector{
-// 		MatchLabels: StatefulSetPodLabelsSelector(dot),
+// 		MatchLabels: StatefulSetPodLabelsSelector(state),
 // 	}
-// 	for _, v := range values.Statefulset.TopologySpreadConstraints {
+// 	for _, v := range state.Values.Statefulset.TopologySpreadConstraints {
 // 		result = append(result,
 // 			corev1.TopologySpreadConstraint{
 // 				MaxSkew:           v.MaxSkew,
@@ -1121,7 +1074,6 @@ func volumeClaimTemplateTieredStorageDir(dot *helmette.Dot) *corev1.PersistentVo
 
 // StorageTieredConfig was: storage-tiered-config
 // Wrap this up since there are helm tests that require it
-func StorageTieredConfig(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-	return values.Storage.GetTieredStorageConfig()
+func StorageTieredConfig(state *RenderState) map[string]any {
+	return state.Values.Storage.GetTieredStorageConfig()
 }

@@ -143,10 +143,10 @@ func (AuditLogging) JSONSchemaExtend(schema *jsonschema.Schema) {
 	makeNullable(schema, "replicationFactor", "enabledEventTypes", "excludedPrincipals", "excludedTopics")
 }
 
-func (a *AuditLogging) Translate(dot *helmette.Dot, isSASLEnabled bool) map[string]any {
+func (a *AuditLogging) Translate(state *RenderState, isSASLEnabled bool) map[string]any {
 	result := map[string]any{}
 
-	if !RedpandaAtLeast_23_3_0(dot) {
+	if !RedpandaAtLeast_23_3_0(state) {
 		return result
 	}
 
@@ -653,17 +653,15 @@ func (s *Storage) GetTieredStorageHostPath() string {
 }
 
 // TieredCacheDirectory was: tieredStorage.cacheDirectory
-func (s *Storage) TieredCacheDirectory(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if dir, ok := values.Config.Node["cloud_storage_cache_directory"].(string); ok {
+func (s *Storage) TieredCacheDirectory(state *RenderState) string {
+	if dir, ok := state.Values.Config.Node["cloud_storage_cache_directory"].(string); ok {
 		return dir
 	}
 
 	// TODO: Deprecate or just remove the ability to set
 	// cloud_storage_cache_directory in tiered config(s) so their reserved for
 	// cluster settings only.
-	tieredConfig := values.Storage.GetTieredStorageConfig()
+	tieredConfig := state.Values.Storage.GetTieredStorageConfig()
 	if dir, ok := tieredConfig["cloud_storage_cache_directory"].(string); ok {
 		return dir
 	}

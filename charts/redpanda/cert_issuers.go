@@ -21,27 +21,25 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func CertIssuers(dot *helmette.Dot) []*certmanagerv1.Issuer {
-	issuers, _ := certIssuersAndCAs(dot)
+func CertIssuers(state *RenderState) []*certmanagerv1.Issuer {
+	issuers, _ := certIssuersAndCAs(state)
 	return issuers
 }
 
-func RootCAs(dot *helmette.Dot) []*certmanagerv1.Certificate {
-	_, cas := certIssuersAndCAs(dot)
+func RootCAs(state *RenderState) []*certmanagerv1.Certificate {
+	_, cas := certIssuersAndCAs(state)
 	return cas
 }
 
-func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanagerv1.Certificate) {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmanagerv1.Certificate) {
 	var issuers []*certmanagerv1.Issuer
 	var certs []*certmanagerv1.Certificate
 
-	if !TLSEnabled(dot) {
+	if !TLSEnabled(state) {
 		return issuers, certs
 	}
 
-	for name, data := range helmette.SortedMap(values.TLS.Certs) {
+	for name, data := range helmette.SortedMap(state.Values.TLS.Certs) {
 		// If this certificate is disabled (.Enabled), provided directly by the
 		// end user (.SecretRef), or has an issuer provided (.IssuerRef), we
 		// don't need to bootstrap an issuer.
@@ -66,9 +64,9 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 					Kind:       "Issuer",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(dot), name),
-					Namespace: dot.Release.Namespace,
-					Labels:    FullLabels(dot),
+					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
+					Namespace: state.Release.Namespace,
+					Labels:    FullLabels(state),
 				},
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
@@ -89,21 +87,21 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 					Kind:       "Certificate",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
-					Namespace: dot.Release.Namespace,
-					Labels:    FullLabels(dot),
+					Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+					Namespace: state.Release.Namespace,
+					Labels:    FullLabels(state),
 				},
 				Spec: certmanagerv1.CertificateSpec{
 					Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
 					IsCA:       true,
-					CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
-					SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
+					CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+					SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
 					PrivateKey: &certmanagerv1.CertificatePrivateKey{
 						Algorithm: "ECDSA",
 						Size:      256,
 					},
 					IssuerRef: cmmetav1.ObjectReference{
-						Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(dot), name),
+						Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
 						Kind:  "Issuer",
 						Group: "cert-manager.io",
 					},
@@ -123,14 +121,14 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 					Kind:       "Issuer",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(dot), name),
-					Namespace: dot.Release.Namespace,
-					Labels:    FullLabels(dot),
+					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
+					Namespace: state.Release.Namespace,
+					Labels:    FullLabels(state),
 				},
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
 						CA: &certmanagerv1.CAIssuer{
-							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
+							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
 						},
 					},
 				},
