@@ -237,28 +237,28 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
-				if spec.Statefulset.InitContainers.Tuning != nil {
+				if spec.Statefulset.InitContainers.Tuning != nil && values.Tuning.TuneAIOEvents {
 					tuningContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.Tuning.Resources, tuningContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
-				if spec.Statefulset.InitContainers.SetDataDirOwnership != nil {
+				if spec.Statefulset.InitContainers.SetDataDirOwnership != nil && values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
 					setDataDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetDataDirectoryOwnershipContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetDataDirOwnership.Resources, setDataDirectoryContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
-				if spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership != nil {
+				if spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership != nil && values.Storage.IsTieredStorageEnabled() {
 					setTieredStorageDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetTieredStorageCacheOwnershipContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership.Resources, setTieredStorageDirectoryContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
-				if spec.Statefulset.InitContainers.FsValidator != nil {
+				if spec.Statefulset.InitContainers.FsValidator != nil && values.Statefulset.InitContainers.FSValidator.Enabled {
 					fsValidatorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.FsValidator.Resources, fsValidatorContainer.Resources); err != nil {
 						return err
