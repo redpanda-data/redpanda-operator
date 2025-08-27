@@ -172,7 +172,10 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 // RenderStateFromDot constructs a [RenderState] from the provided [helmette.Dot].
 // +gotohelm:ignore=true
 func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(values Values) error) (*RenderState, error) {
-	state := renderStateFromDot(dot)
+	state, err := renderStateFromDot(dot)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, fn := range migrateFNs {
 		if err := fn(state.Values); err != nil {
@@ -185,8 +188,18 @@ func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(values Values) err
 
 // renderStateFromDot constructs a [RenderState] from the provided [helmette.Dot]
 // +gotohelm:ignore=true
-func renderStateFromDot(dot *helmette.Dot) *RenderState {
-	state := &RenderState{
+func renderStateFromDot(dot *helmette.Dot) (state *RenderState, err error) {
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "chart execution failed")
+		default:
+			err = errors.Newf("chart execution failed: %#v", r)
+		}
+	}()
+
+	state = &RenderState{
 		Release: &dot.Release,
 		Files:   &dot.Files,
 		Chart:   &dot.Chart,
@@ -196,7 +209,7 @@ func renderStateFromDot(dot *helmette.Dot) *RenderState {
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()
 
-	return state
+	return
 }
 
 // +gotohelm:ignore=true

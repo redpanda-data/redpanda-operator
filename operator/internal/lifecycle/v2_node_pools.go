@@ -149,30 +149,17 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 		if spec.NodeSelector != nil {
 			values.PodTemplate.Spec.NodeSelector = spec.NodeSelector
 		}
-		if spec.Affinity != nil {
-			if values.PodTemplate.Spec.Affinity == nil {
-				values.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
-			}
-			if err := convertJSON(spec.Affinity, values.PodTemplate.Spec.Affinity); err != nil {
-				return err
-			}
+		if err := convertJSONNotNil(spec.Affinity, values.PodTemplate.Spec.Affinity); err != nil {
+			return err
 		}
-		if spec.Tolerations != nil {
-			if values.PodTemplate.Spec.Tolerations == nil {
-				values.PodTemplate.Spec.Tolerations = []applycorev1.TolerationApplyConfiguration{}
-			}
-			if err := convertJSON(spec.Tolerations, &values.PodTemplate.Spec.Tolerations); err != nil {
-				return err
-			}
+		if err := convertAndAppendJSONNotNil(spec.Tolerations, &values.PodTemplate.Spec.Tolerations); err != nil {
+			return err
 		}
-		if spec.ImagePullSecrets != nil {
-			if values.PodTemplate.Spec.ImagePullSecrets == nil {
-				values.PodTemplate.Spec.ImagePullSecrets = []applycorev1.LocalObjectReferenceApplyConfiguration{}
-			}
-			if err := convertJSON(spec.ImagePullSecrets, &values.PodTemplate.Spec.ImagePullSecrets); err != nil {
-				return err
-			}
+
+		if err := convertAndAppendJSONNotNil(spec.ImagePullSecrets, &values.PodTemplate.Spec.ImagePullSecrets); err != nil {
+			return err
 		}
+
 		if spec.Statefulset != nil {
 			if values.Statefulset.PodTemplate.Spec == nil {
 				values.Statefulset.PodTemplate.Spec = &applycorev1.PodSpecApplyConfiguration{}
@@ -184,67 +171,28 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 				values.Statefulset.PodTemplate.Spec.InitContainers = []applycorev1.ContainerApplyConfiguration{}
 			}
 
-			redpandaContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.Containers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.RedpandaContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.RedpandaContainerName),
-			})
-			sidecarContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.Containers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.SidecarContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.SidecarContainerName),
-			})
-			configuratorContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.RedpandaConfiguratorContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
-			})
-			tuningContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.RedpandaTuningContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.RedpandaTuningContainerName),
-			})
-			setDataDirectoryContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.SetDataDirectoryOwnershipContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.SetDataDirectoryOwnershipContainerName),
-			})
-			setTieredStorageDirectoryContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.SetTieredStorageCacheOwnershipContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.SetTieredStorageCacheOwnershipContainerName),
-			})
-			fsValidatorContainer := firstOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, func(c applycorev1.ContainerApplyConfiguration) bool {
-				return ptr.Deref(c.Name, "") == redpanda.FSValidatorContainerName
-			}, applycorev1.ContainerApplyConfiguration{
-				Name: ptr.To(redpanda.FSValidatorContainerName),
-			})
+			redpandaContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
+			sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
+			configuratorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
+			tuningContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
+			setDataDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetDataDirectoryOwnershipContainerName)
+			setTieredStorageDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetTieredStorageCacheOwnershipContainerName)
+			fsValidatorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
 
 			if spec.Statefulset.Annotations != nil {
 				values.Statefulset.PodTemplate.Annotations = spec.Statefulset.Annotations
 			}
-			if spec.Statefulset.LivenessProbe != nil {
-				if err := convertJSON(spec.Statefulset.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
-					return err
-				}
+			if err := convertJSONNotNil(spec.Statefulset.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
+				return err
 			}
-			if spec.Statefulset.StartupProbe != nil {
-				if err := convertJSON(spec.Statefulset.StartupProbe, redpandaContainer.StartupProbe); err != nil {
-					return err
-				}
+			if err := convertJSONNotNil(spec.Statefulset.StartupProbe, redpandaContainer.StartupProbe); err != nil {
+				return err
 			}
-			if spec.Statefulset.ReadinessProbe != nil {
-				if err := convertJSON(spec.Statefulset.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
-					return err
-				}
+			if err := convertJSONNotNil(spec.Statefulset.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
+				return err
 			}
-			if spec.Statefulset.PodAffinity != nil {
-				if values.Statefulset.PodTemplate.Spec.Affinity == nil {
-					values.Statefulset.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
-				}
-				if err := convertJSON(spec.Statefulset.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity); err != nil {
-					return err
-				}
+			if err := convertAndInitializeJSONNotNil(spec.Statefulset.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity); err != nil {
+				return err
 			}
 			if spec.Statefulset.NodeSelector != nil {
 				values.Statefulset.PodTemplate.Spec.NodeSelector = spec.Statefulset.NodeSelector
@@ -252,19 +200,12 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 			if spec.Statefulset.PriorityClassName != nil {
 				values.Statefulset.PodTemplate.Spec.PriorityClassName = spec.Statefulset.PriorityClassName
 			}
-			if spec.Statefulset.Tolerations != nil {
-				tolerations := []applycorev1.TolerationApplyConfiguration{}
-				if err := convertJSON(spec.Statefulset.Tolerations, &tolerations); err != nil {
-					return err
-				}
-				values.Statefulset.PodTemplate.Spec.Tolerations = append(values.Statefulset.PodTemplate.Spec.Tolerations, tolerations...)
+
+			if err := convertAndAppendJSONNotNil(spec.Statefulset.Tolerations, &values.Statefulset.PodTemplate.Spec.Tolerations); err != nil {
+				return err
 			}
-			if spec.Statefulset.TopologySpreadConstraints != nil {
-				topologyContraints := []applycorev1.TopologySpreadConstraintApplyConfiguration{}
-				if err := convertJSON(spec.Statefulset.TopologySpreadConstraints, &topologyContraints); err != nil {
-					return err
-				}
-				values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints = append(values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints, topologyContraints...)
+			if err := convertAndAppendJSONNotNil(spec.Statefulset.TopologySpreadConstraints, &values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints); err != nil {
+				return err
 			}
 			if spec.Statefulset.TerminationGracePeriodSeconds != nil {
 				values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To[int64](int64(*spec.Statefulset.TerminationGracePeriodSeconds))
@@ -281,51 +222,42 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 			// }
 
 			if spec.Statefulset.InitContainers != nil {
-				if spec.Statefulset.InitContainers.ExtraInitContainers != nil {
-					extraContainers := []applycorev1.ContainerApplyConfiguration{}
-					if err := convertJSON(spec.Statefulset.InitContainers.ExtraInitContainers, &extraContainers); err != nil {
-						return err
-					}
-					values.Statefulset.PodTemplate.Spec.InitContainers = append(values.Statefulset.PodTemplate.Spec.InitContainers, extraContainers...)
-				}
+				// TODO: handle these later as they go from string to array
+				// if spec.Statefulset.InitContainers.ExtraInitContainers != nil {
+				// 	extraContainers := []applycorev1.ContainerApplyConfiguration{}
+				// 	if err := convertJSON(spec.Statefulset.InitContainers.ExtraInitContainers, &extraContainers); err != nil {
+				// 		return err
+				// 	}
+				// 	values.Statefulset.PodTemplate.Spec.InitContainers = append(values.Statefulset.PodTemplate.Spec.InitContainers, extraContainers...)
+				// }
 
 				if spec.Statefulset.InitContainers.Configurator != nil {
-					if spec.Statefulset.InitContainers.Configurator.Resources != nil {
-						if err := convertJSON(spec.Statefulset.InitContainers.Configurator.Resources, configuratorContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.InitContainers.Configurator.Resources, configuratorContainer.Resources); err != nil {
+						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.Tuning != nil {
-					if spec.Statefulset.InitContainers.Tuning.Resources != nil {
-						if err := convertJSON(spec.Statefulset.InitContainers.Tuning.Resources, tuningContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.InitContainers.Tuning.Resources, tuningContainer.Resources); err != nil {
+						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.SetDataDirOwnership != nil {
-					if spec.Statefulset.InitContainers.SetDataDirOwnership.Resources != nil {
-						if err := convertJSON(spec.Statefulset.InitContainers.SetDataDirOwnership.Resources, setDataDirectoryContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetDataDirOwnership.Resources, setDataDirectoryContainer.Resources); err != nil {
+						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership != nil {
-					if spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership.Resources != nil {
-						if err := convertJSON(spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership.Resources, setTieredStorageDirectoryContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership.Resources, setTieredStorageDirectoryContainer.Resources); err != nil {
+						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.FsValidator != nil {
-					if spec.Statefulset.InitContainers.FsValidator.Resources != nil {
-						if err := convertJSON(spec.Statefulset.InitContainers.FsValidator.Resources, fsValidatorContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.InitContainers.FsValidator.Resources, fsValidatorContainer.Resources); err != nil {
+						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
@@ -338,19 +270,12 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 				if spec.Statefulset.SideCars.ConfigWatcher != nil {
 					// TODO: extra volume mounts as they go from a string to an array
 					// statefulset.sidecars.configWatcher.extraVolumeMounts -> statefulset.podTemplate.spec.containers[*].volumeMounts
-					if spec.Statefulset.SideCars.ConfigWatcher.Resources != nil {
-						if err := convertJSON(spec.Statefulset.SideCars.ConfigWatcher.Resources, sidecarContainer.Resources); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.SideCars.ConfigWatcher.Resources, sidecarContainer.Resources); err != nil {
+						return err
 					}
 
-					if spec.Statefulset.SideCars.ConfigWatcher.SecurityContext != nil {
-						if sidecarContainer.SecurityContext == nil {
-							sidecarContainer.SecurityContext = &applycorev1.SecurityContextApplyConfiguration{}
-						}
-						if err := convertJSON(spec.Statefulset.SideCars.ConfigWatcher.SecurityContext, sidecarContainer.SecurityContext); err != nil {
-							return err
-						}
+					if err := convertJSONNotNil(spec.Statefulset.SideCars.ConfigWatcher.SecurityContext, sidecarContainer.SecurityContext); err != nil {
+						return err
 					}
 
 					// TODO: should we handle sidecars.controllers.resources/securityContext? the controllers and sidecar are the same container
@@ -371,12 +296,49 @@ func convertJSON(from, to any) error {
 	return json.Unmarshal(data, to)
 }
 
-func firstOrInit[T any](slice *[]T, cond func(T) bool, v T) *T {
-	for _, entry := range *slice {
-		if cond(entry) {
-			return &entry
+func convertAndInitializeJSONNotNil[T any, U *T, V any, W *V](from U, to W) error {
+	if from == nil {
+		return nil
+	}
+
+	if to == nil {
+		var v V
+		to = &v
+	}
+
+	return convertJSON(from, to)
+}
+
+func convertAndAppendJSONNotNil[T any, V any](from []T, to *[]V) error {
+	if from == nil {
+		return nil
+	}
+
+	converted := []V{}
+	if err := convertJSON(from, &converted); err != nil {
+		return err
+	}
+	*to = append(*to, converted...)
+	return nil
+}
+
+func convertJSONNotNil[T any, U *T](from U, to any) error {
+	if from == nil {
+		return nil
+	}
+	return convertJSON(from, to)
+}
+
+func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name string) *applycorev1.ContainerApplyConfiguration {
+	for i := range *containers {
+		container := &(*containers)[i]
+		if ptr.Deref(container.Name, "") == name {
+			return container
 		}
 	}
-	*slice = append(*slice, v)
-	return &v
+	container := applycorev1.ContainerApplyConfiguration{
+		Name: ptr.To(name),
+	}
+	*containers = append(*containers, container)
+	return &(*containers)[len(*containers)-1]
 }
