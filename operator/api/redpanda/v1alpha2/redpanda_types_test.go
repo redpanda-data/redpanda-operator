@@ -203,7 +203,7 @@ func TestHelmValuesCompat(t *testing.T) {
 				"Console":           rapid.Just[any](nil), // Asserted in their own test.
 				"Connectors":        rapid.Just[any](nil), // Asserted in their own test.
 				"CommonAnnotations": rapid.Just[any](nil), // This was accidentally added and shouldn't exist.
-				// WARNING: we have essentially broken the byte-to-byte compatability guarantees between v1alpha2 and the v25 helm chart
+				// WARNING: we have essentially broken the byte-to-byte compatibility guarantees between v1alpha2 and the v25 helm chart
 				// due to how we mapped fields we want to eventually deprecate in the chart to a big pod template field. Because
 				// this test goes from chart --> CRD we're going to just nil out the entirety of the pod template since we don't ever
 				// do any back conversion in the operator, and only convert CRD --> chart manually.
