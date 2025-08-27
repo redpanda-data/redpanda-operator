@@ -991,7 +991,8 @@ func TestLabels(t *testing.T) {
 		}, helmValues)
 		require.NoError(t, err)
 
-		state := redpanda.RenderStateFromDot(dot)
+		state, err := redpanda.RenderStateFromDot(dot)
+		require.NoError(t, err)
 
 		manifests, err := client.Template(ctx, "./chart", helm.TemplateOptions{
 			Name:      dot.Release.Name,

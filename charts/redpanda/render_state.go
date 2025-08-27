@@ -14,11 +14,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -170,14 +171,16 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 
 // RenderStateFromDot constructs a [RenderState] from the provided [helmette.Dot].
 // +gotohelm:ignore=true
-func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(values Values)) *RenderState {
+func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(values Values) error) (*RenderState, error) {
 	state := renderStateFromDot(dot)
 
 	for _, fn := range migrateFNs {
-		fn(state.Values)
+		if err := fn(state.Values); err != nil {
+			return nil, err
+		}
 	}
 
-	return state
+	return state, nil
 }
 
 // renderStateFromDot constructs a [RenderState] from the provided [helmette.Dot]
@@ -329,4 +332,53 @@ func certificatesFor(state *RenderState, cert string) (certSecret, certKey, clie
 // +gotohelm:ignore=true
 func (r *RenderState) KubeCTL() (*kube.Ctl, error) {
 	return kube.FromRESTConfig(r.Dot.KubeConfig)
+}
+
+// RenderNodePools can be used to render node pools programmatically from Go.
+// +gotohelm:ignore=true
+func RenderNodePools(state *RenderState) (sets []*appsv1.StatefulSet, err error) {
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "chart execution failed")
+		default:
+			err = errors.Newf("chart execution failed: %#v", r)
+		}
+	}()
+
+	sets = StatefulSets(state)
+	return
+}
+
+// RenderResources can be used to render non-nodepool resources programmatically from Go.
+// +gotohelm:ignore=true
+func RenderResources(state *RenderState) (manifests []kube.Object, err error) {
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "chart execution failed")
+		default:
+			err = errors.Newf("chart execution failed: %#v", r)
+		}
+	}()
+
+	resources := renderResources(state)
+
+	// the renderer is expected to return nil interfaces.
+	// In the helm world, these nils are filtered out by
+	// _shims.render-manifests.
+	j := 0
+	for i := range resources {
+		// Handle the nil unboxing issue.
+		if reflect.ValueOf(resources[i]).IsNil() {
+			continue
+		}
+		resources[j] = resources[i]
+		j++
+	}
+
+	manifests = resources[:j]
+	return
 }

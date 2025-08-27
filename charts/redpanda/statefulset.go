@@ -344,7 +344,7 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 	}
 
 	return &corev1.Container{
-		Name:  "tuning",
+		Name:  RedpandaTuningContainerName,
 		Image: fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
 		Command: []string{
 			`/bin/bash`,
@@ -377,7 +377,7 @@ func statefulSetInitContainerSetDataDirOwnership(state *RenderState) *corev1.Con
 	uid, gid := securityContextUidGid(state, "set-datadir-ownership")
 
 	return &corev1.Container{
-		Name:  "set-datadir-ownership",
+		Name:  SetDataDirectoryOwnershipContainerName,
 		Image: fmt.Sprintf("%s:%s", state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
@@ -452,7 +452,7 @@ func statefulSetInitContainerFSValidator(state *RenderState) *corev1.Container {
 	}
 
 	return &corev1.Container{
-		Name:    "fs-validator",
+		Name:    FSValidatorContainerName,
 		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
 		Command: []string{`/bin/sh`},
 		Args: []string{
@@ -499,7 +499,7 @@ func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderStat
 	}
 
 	return &corev1.Container{
-		Name:  `set-tiered-storage-cache-dir-ownership`,
+		Name:  SetTieredStorageCacheOwnershipContainerName,
 		Image: fmt.Sprintf(`%s:%s`, state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
@@ -845,7 +845,7 @@ func statefulSetContainerSidecar(state *RenderState) *corev1.Container {
 	)
 
 	return &corev1.Container{
-		Name:         "sidecar",
+		Name:         SidecarContainerName,
 		Image:        fmt.Sprintf(`%s:%s`, state.Values.Statefulset.SideCars.Image.Repository, state.Values.Statefulset.SideCars.Image.Tag),
 		Command:      []string{`/redpanda-operator`},
 		Args:         append([]string{`supervisor`, `--`}, args...),

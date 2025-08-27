@@ -15,8 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -45,21 +44,19 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec.Connectors = nil
 	}
 
-	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
-	// v1alpha2 to it's values here.
-	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
-		Namespace: cluster.Namespace,
-		Name:      cluster.GetHelmReleaseName(),
-		Service:   "Helm",
-		IsUpgrade: true,
-	}, spec)
+	state, err := constructRenderState(m.kubeConfig, cluster.Namespace, cluster.GetHelmReleaseName(), spec, cluster.NodePools)
+	if err != nil {
+		return nil, err
+	}
+
+	rendered, err := redpanda.RenderResources(state)
 	if err != nil {
 		return nil, err
 	}
 
 	resources := []client.Object{}
 
-	// filter out the statefulsets and hooks
+	// filter out the hooks
 	for _, object := range rendered {
 		isHook := false
 		annotations := object.GetAnnotations()
@@ -67,7 +64,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 			_, isHook = annotations["helm.sh/hook"]
 		}
 
-		if !isNodePool(object) && !isHook {
+		if !isHook {
 			resources = append(resources, object)
 		}
 	}

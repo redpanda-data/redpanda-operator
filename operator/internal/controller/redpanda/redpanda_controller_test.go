@@ -39,7 +39,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -988,7 +988,8 @@ func TestPostInstallUpgradeJobIndex(t *testing.T) {
 	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
 	require.NoError(t, err)
 
-	job := redpandachart.PostInstallUpgradeJob(dot)
+	state := &redpandachart.RenderState{Dot: dot, Values: helmette.Unwrap[redpandachart.Values](dot.Values), Chart: &dot.Chart, Files: &dot.Files, Release: &dot.Release}
+	job := redpandachart.PostInstallUpgradeJob(state)
 
 	// Assert that index 0 is the envsubst container as that's what
 	// `clusterConfigfor` utilizes.

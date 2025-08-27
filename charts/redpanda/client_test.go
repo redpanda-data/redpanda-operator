@@ -51,7 +51,8 @@ func newClient(t *testing.T, ctl *kube.Ctl, release *helm.Release, values any) *
 	)
 	require.NoError(t, err)
 
-	state := redpanda.RenderStateFromDot(dot)
+	state, err := redpanda.RenderStateFromDot(dot)
+	require.NoError(t, err)
 
 	return &Client{Ctl: ctl, state: state}
 }
