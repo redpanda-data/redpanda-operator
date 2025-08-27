@@ -1,4 +1,5 @@
-{{- /* Generated from "directives.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/directives/directives.go" */ -}}
 
 {{- define "_directives.Directives" -}}
 {{- range $_ := (list 1) -}}

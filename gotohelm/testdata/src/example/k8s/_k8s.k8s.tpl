@@ -1,4 +1,5 @@
-{{- /* Generated from "k8s.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/k8s/k8s.go" */ -}}
 
 {{- define "k8s.K8s" -}}
 {{- $dot := (index .a 0) -}}

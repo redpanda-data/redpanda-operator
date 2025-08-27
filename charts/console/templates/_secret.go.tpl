@@ -1,4 +1,5 @@
-{{- /* Generated from "secret.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/console/v3/secret.go" */ -}}
 
 {{- define "console.Secret" -}}
 {{- $dot := (index .a 0) -}}

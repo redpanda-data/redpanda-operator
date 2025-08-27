@@ -1,4 +1,5 @@
-{{- /* Generated from "servicemonitor.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/servicemonitor.go" */ -}}
 
 {{- define "operator.ServiceMonitor" -}}
 {{- $dot := (index .a 0) -}}

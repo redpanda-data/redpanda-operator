@@ -1,4 +1,5 @@
-{{- /* Generated from "embedding.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/typing/embedding.go" */ -}}
 
 {{- define "typing.embedding" -}}
 {{- $dot := (index .a 0) -}}

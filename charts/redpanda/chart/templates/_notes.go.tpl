@@ -1,4 +1,5 @@
-{{- /* Generated from "notes.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/notes.go" */ -}}
 
 {{- define "redpanda.Warnings" -}}
 {{- $state := (index .a 0) -}}

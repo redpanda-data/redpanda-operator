@@ -1,4 +1,5 @@
-{{- /* Generated from "structs.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/typing/structs.go" */ -}}
 
 {{- define "typing.zeros" -}}
 {{- range $_ := (list 1) -}}

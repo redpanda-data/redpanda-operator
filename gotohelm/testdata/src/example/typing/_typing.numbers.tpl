@@ -1,4 +1,5 @@
-{{- /* Generated from "numbers.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/typing/numbers.go" */ -}}
 
 {{- define "typing.numbers" -}}
 {{- range $_ := (list 1) -}}

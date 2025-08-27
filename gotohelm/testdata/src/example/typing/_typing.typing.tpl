@@ -1,4 +1,5 @@
-{{- /* Generated from "typing.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/typing/typing.go" */ -}}
 
 {{- define "typing.Typing" -}}
 {{- $dot := (index .a 0) -}}

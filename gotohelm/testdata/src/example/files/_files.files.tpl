@@ -1,4 +1,5 @@
-{{- /* Generated from "files.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/files/files.go" */ -}}
 
 {{- define "files.Files" -}}
 {{- $dot := (index .a 0) -}}

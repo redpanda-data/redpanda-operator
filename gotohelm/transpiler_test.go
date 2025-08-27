@@ -65,6 +65,7 @@ var seedObjects = []kube.Object{
 
 type TestSpec struct {
 	Values []map[string]any
+	Bundle []string
 	// Namespace, if specified, is used as the gotohelm namespace to filter
 	// templates names. If not specified, the package name is used.
 	Namespace string
@@ -74,6 +75,7 @@ var testSpecs = map[string]TestSpec{
 	"aaacommon":   {},
 	"astrewrites": {},
 	"bootstrap":   {},
+	"consumer":    {Bundle: []string{"example.com/example/dependency/v2", "example.com/example/dependency/v3"}},
 	"directives":  {Namespace: "_directives"},
 	"k8s": {
 		Values: []map[string]any{
@@ -178,6 +180,11 @@ func TestTranspile(t *testing.T) {
 	commonPkg := pkgs[0].PkgPath
 	commonName := pkgs[0].Name
 
+	pkgByPath := make(map[string]*packages.Package, len(pkgs))
+	for _, pkg := range pkgs {
+		pkgByPath[pkg.PkgPath] = pkg
+	}
+
 	for _, pkg := range pkgs {
 		pkg := pkg
 		t.Run(pkg.Name, func(t *testing.T) {
@@ -188,7 +195,15 @@ func TestTranspile(t *testing.T) {
 				t.Skipf("no test spec for %q", pkg.Name)
 			}
 
-			chart, err := Transpile(pkg, commonPkg)
+			toTranspile := []*packages.Package{pkg}
+			for _, bundled := range spec.Bundle {
+				if _, ok := pkgByPath[bundled]; !ok {
+					t.Fatalf("Bundled package %q not found in pkgs", bundled)
+				}
+				toTranspile = append(toTranspile, pkgByPath[bundled])
+			}
+
+			chart, err := Transpile(toTranspile, commonPkg)
 			require.NoError(t, err)
 
 			for _, f := range chart.Files {
@@ -310,12 +325,6 @@ func NewHelmRunner(chartName string, cfg *kube.RESTConfig, logf func(string, ...
 	runner.tpl = runner.tpl.Funcs(funcs)
 
 	for _, dir := range dirs {
-		logf("loading %q/*.yaml...", dir)
-		runner.tpl, err = runner.tpl.ParseGlob(filepath.Join(dir, "*.yaml"))
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
 		logf("loading %q/*.tpl...", dir)
 		runner.tpl, err = runner.tpl.ParseGlob(filepath.Join(dir, "*.tpl"))
 		if err != nil {
