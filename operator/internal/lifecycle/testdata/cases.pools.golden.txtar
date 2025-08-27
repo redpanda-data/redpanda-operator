@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -35,7 +35,7 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.10.4
+          helm.sh/chart: redpanda-25.1.1-beta3
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
@@ -117,9 +117,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
           startupProbe:
             exec:
               command:
@@ -190,7 +187,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext: {}
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -247,9 +243,6 @@
           image: redpandadata/redpanda-operator:v25.2.1
           name: redpanda-configurator
           resources: {}
-          securityContext:
-            runAsGroup: 101
-            runAsUser: 101
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -289,6 +282,7 @@
         securityContext:
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
+          runAsUser: 101
         serviceAccountName: basic-test
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:

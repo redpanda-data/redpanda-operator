@@ -143,6 +143,10 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 	}
 
 	return redpanda.RenderStateFromDot(dot, func(values redpanda.Values) error {
+		if spec == nil {
+			return nil
+		}
+
 		if values.PodTemplate.Spec == nil {
 			values.PodTemplate.Spec = &applycorev1.PodSpecApplyConfiguration{}
 		}
@@ -173,11 +177,6 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 
 			redpandaContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
 			sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
-			configuratorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
-			tuningContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
-			setDataDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetDataDirectoryOwnershipContainerName)
-			setTieredStorageDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetTieredStorageCacheOwnershipContainerName)
-			fsValidatorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
 
 			if spec.Statefulset.Annotations != nil {
 				values.Statefulset.PodTemplate.Annotations = spec.Statefulset.Annotations
@@ -232,30 +231,35 @@ func constructRenderState(config *kube.RESTConfig, namespace, release string, sp
 				// }
 
 				if spec.Statefulset.InitContainers.Configurator != nil {
+					configuratorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.Configurator.Resources, configuratorContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.Tuning != nil {
+					tuningContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.Tuning.Resources, tuningContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.SetDataDirOwnership != nil {
+					setDataDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetDataDirectoryOwnershipContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetDataDirOwnership.Resources, setDataDirectoryContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership != nil {
+					setTieredStorageDirectoryContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.SetTieredStorageCacheOwnershipContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.SetTieredStorageCacheDirOwnership.Resources, setTieredStorageDirectoryContainer.Resources); err != nil {
 						return err
 					}
 					// TODO: volume mounts as they go from a string to an array
 				}
 				if spec.Statefulset.InitContainers.FsValidator != nil {
+					fsValidatorContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
 					if err := convertJSONNotNil(spec.Statefulset.InitContainers.FsValidator.Resources, fsValidatorContainer.Resources); err != nil {
 						return err
 					}
