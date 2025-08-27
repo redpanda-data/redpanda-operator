@@ -100,3 +100,22 @@ func (r *ClusterRoleResource) obj() k8sclient.Object {
 func (r *ClusterRoleResource) Key() types.NamespacedName {
 	return types.NamespacedName{Name: "redpanda-init-configurator", Namespace: ""}
 }
+
+// RenderClusterRole generates a cluster role
+func RenderClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			// metav1.ObjectMeta can NOT have namespace set as
+			// ClusterRole is the cluster wide resource.
+			Name:      "redpanda-init-configurator",
+			Namespace: "",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{corev1.GroupName},
+				Resources: []string{"nodes"},
+			},
+		},
+	}
+}
