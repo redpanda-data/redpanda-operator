@@ -18,47 +18,44 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // consoleChartIntegration plumbs redpanda connection information into the console subchart.
 // It does this by calculating Kafka, Schema registry, Redpanda Admin API configuration
-// from Redpanda chart values.
-func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodePool) []kube.Object {
-	values := helmette.UnmarshalInto[Values](dot.Values)
-
-	if !ptr.Deref(values.Console.Enabled, true) {
+// from Redpanda chart state.Values.
+func consoleChartIntegration(state *RenderState) []kube.Object {
+	if !ptr.Deref(state.Values.Console.Enabled, true) {
 		return nil
 	}
 
-	consoleDot := dot.Subcharts["console"]
+	consoleDot := state.Dot.Subcharts["console"]
 	loadedValues := consoleDot.Values
 
 	consoleValue := helmette.UnmarshalInto[console.Values](consoleDot.Values)
 	// Pass the same Redpanda License to Console
-	if license := values.Enterprise.License; license != "" && !ptr.Deref(values.Console.Secret.Create, false) {
+	if license := state.Values.Enterprise.License; license != "" && !ptr.Deref(state.Values.Console.Secret.Create, false) {
 		consoleValue.Secret.Create = true
 		consoleValue.Secret.License = license
 	}
 
-	// Create console configuration based on Redpanda helm chart values.
-	if !ptr.Deref(values.Console.ConfigMap.Create, false) {
+	// Create console configuration based on Redpanda helm chart state.Values.
+	if !ptr.Deref(state.Values.Console.ConfigMap.Create, false) {
 		consoleValue.ConfigMap.Create = true
-		consoleValue.Config = ConsoleConfig(dot)
+		consoleValue.Config = ConsoleConfig(state)
 	}
 
-	if !ptr.Deref(values.Console.Deployment.Create, false) {
+	if !ptr.Deref(state.Values.Console.Deployment.Create, false) {
 		consoleValue.Deployment.Create = true
 
 		// Adopt Console entry point to use SASL user in Kafka,
 		// Schema Registry and Redpanda Admin API connection
-		if values.Auth.IsSASLEnabled() {
+		if state.Values.Auth.IsSASLEnabled() {
 			command := []string{
 				"sh",
 				"-c",
 				"set -e; IFS=':' read -r KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM < <(grep \"\" $(find /mnt/users/* -print));" +
-					fmt.Sprintf(" KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM:-%s};", GetSASLMechanism(dot)) +
+					fmt.Sprintf(" KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM:-%s};", GetSASLMechanism(state)) +
 					" export KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM;" +
 					" export KAFKA_SCHEMAREGISTRY_USERNAME=$KAFKA_SASL_USERNAME;" +
 					" export KAFKA_SCHEMAREGISTRY_PASSWORD=$KAFKA_SASL_PASSWORD;" +
@@ -71,12 +68,12 @@ func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodeP
 		}
 
 		// Create License reference for Console
-		if secret := values.Enterprise.LicenseSecretRef; secret != nil {
+		if secret := state.Values.Enterprise.LicenseSecretRef; secret != nil {
 			consoleValue.LicenseSecretRef = secret
 		}
 
-		consoleValue.ExtraVolumes = consoleTLSVolumes(dot)
-		consoleValue.ExtraVolumeMounts = consoleTLSVolumesMounts(dot)
+		consoleValue.ExtraVolumes = consoleTLSVolumes(state)
+		consoleValue.ExtraVolumeMounts = consoleTLSVolumesMounts(state)
 
 		consoleDot.Values = helmette.UnmarshalInto[helmette.Values](consoleValue)
 		cfg := console.ConfigMap(consoleDot)
@@ -102,20 +99,18 @@ func consoleChartIntegration(dot *helmette.Dot, _pools []*redpandav1alpha3.NodeP
 	return manifests
 }
 
-func consoleTLSVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func consoleTLSVolumesMounts(state *RenderState) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 
-	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      fmt.Sprintf("%s-users", Fullname(dot)),
+			Name:      fmt.Sprintf("%s-users", Fullname(state)),
 			MountPath: "/mnt/users",
 			ReadOnly:  true,
 		})
 	}
 
-	if len(values.Listeners.TrustStores(&values.TLS)) > 0 {
+	if len(state.Values.Listeners.TrustStores(&state.Values.TLS)) > 0 {
 		mounts = append(
 			mounts,
 			corev1.VolumeMount{Name: "truststores", MountPath: TrustStoreMountPath, ReadOnly: true},
@@ -124,12 +119,12 @@ func consoleTLSVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 
 	visitedCert := map[string]bool{}
 	for _, tlsCfg := range []InternalTLS{
-		values.Listeners.Kafka.TLS,
-		values.Listeners.SchemaRegistry.TLS,
-		values.Listeners.Admin.TLS,
+		state.Values.Listeners.Kafka.TLS,
+		state.Values.Listeners.SchemaRegistry.TLS,
+		state.Values.Listeners.Admin.TLS,
 	} {
 		_, visited := visitedCert[tlsCfg.Cert]
-		if !tlsCfg.IsEnabled(&values.TLS) || visited {
+		if !tlsCfg.IsEnabled(&state.Values.TLS) || visited {
 			continue
 		}
 		visitedCert[tlsCfg.Cert] = true
@@ -140,37 +135,35 @@ func consoleTLSVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		})
 	}
 
-	return append(mounts, values.Console.ExtraVolumeMounts...)
+	return append(mounts, state.Values.Console.ExtraVolumeMounts...)
 }
 
-func consoleTLSVolumes(dot *helmette.Dot) []corev1.Volume {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func consoleTLSVolumes(state *RenderState) []corev1.Volume {
 	volumes := []corev1.Volume{}
 
-	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("%s-users", Fullname(dot)),
+			Name: fmt.Sprintf("%s-users", Fullname(state)),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: values.Auth.SASL.SecretRef,
+					SecretName: state.Values.Auth.SASL.SecretRef,
 				},
 			},
 		})
 	}
 
-	if vol := values.Listeners.TrustStoreVolume(&values.TLS); vol != nil {
+	if vol := state.Values.Listeners.TrustStoreVolume(&state.Values.TLS); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
 	visitedCert := map[string]bool{}
 	for _, tlsCfg := range []InternalTLS{
-		values.Listeners.Kafka.TLS,
-		values.Listeners.SchemaRegistry.TLS,
-		values.Listeners.Admin.TLS,
+		state.Values.Listeners.Kafka.TLS,
+		state.Values.Listeners.SchemaRegistry.TLS,
+		state.Values.Listeners.Admin.TLS,
 	} {
 		_, visited := visitedCert[tlsCfg.Cert]
-		if !tlsCfg.IsEnabled(&values.TLS) || visited {
+		if !tlsCfg.IsEnabled(&state.Values.TLS) || visited {
 			continue
 		}
 		visitedCert[tlsCfg.Cert] = true
@@ -180,62 +173,60 @@ func consoleTLSVolumes(dot *helmette.Dot) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					DefaultMode: ptr.To[int32](0o420),
-					SecretName:  CertSecretName(dot, tlsCfg.Cert, values.TLS.Certs.MustGet(tlsCfg.Cert)),
+					SecretName:  CertSecretName(state, tlsCfg.Cert, state.Values.TLS.Certs.MustGet(tlsCfg.Cert)),
 				},
 			},
 		})
 	}
 
-	return append(volumes, values.Console.ExtraVolumes...)
+	return append(volumes, state.Values.Console.ExtraVolumes...)
 }
 
-func ConsoleConfig(dot *helmette.Dot) map[string]any {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func ConsoleConfig(state *RenderState) map[string]any {
 	var schemaURLs []string
-	if values.Listeners.SchemaRegistry.Enabled {
+	if state.Values.Listeners.SchemaRegistry.Enabled {
 		schema := "http"
-		if values.Listeners.SchemaRegistry.TLS.IsEnabled(&values.TLS) {
+		if state.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&state.Values.TLS) {
 			schema = "https"
 		}
 
-		for i := int32(0); i < values.Statefulset.Replicas; i++ {
-			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s-%d.%s:%d", schema, Fullname(dot), i, InternalDomain(dot), values.Listeners.SchemaRegistry.Port))
+		for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
+			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s-%d.%s:%d", schema, Fullname(state), i, InternalDomain(state), state.Values.Listeners.SchemaRegistry.Port))
 		}
 	}
 
 	schema := "http"
-	if values.Listeners.Admin.TLS.IsEnabled(&values.TLS) {
+	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
 		schema = "https"
 	}
 
 	c := map[string]any{
 		"kafka": map[string]any{
-			"brokers": BrokerList(dot, values.Statefulset.Replicas, values.Listeners.Kafka.Port),
+			"brokers": BrokerList(state, state.Values.Statefulset.Replicas, state.Values.Listeners.Kafka.Port),
 			"sasl": map[string]any{
-				"enabled": values.Auth.IsSASLEnabled(),
+				"enabled": state.Values.Auth.IsSASLEnabled(),
 			},
-			"tls": values.Listeners.Kafka.ConsoleTLS(&values.TLS),
+			"tls": state.Values.Listeners.Kafka.ConsoleTLS(&state.Values.TLS),
 		},
 		"redpanda": map[string]any{
 			"adminApi": map[string]any{
 				"enabled": true,
 				"urls": []string{
-					fmt.Sprintf("%s://%s:%d", schema, InternalDomain(dot), values.Listeners.Admin.Port),
+					fmt.Sprintf("%s://%s:%d", schema, InternalDomain(state), state.Values.Listeners.Admin.Port),
 				},
-				"tls": values.Listeners.Admin.ConsoleTLS(&values.TLS),
+				"tls": state.Values.Listeners.Admin.ConsoleTLS(&state.Values.TLS),
 			},
 		},
 		"schemaRegistry": map[string]any{
-			"enabled": values.Listeners.SchemaRegistry.Enabled,
+			"enabled": state.Values.Listeners.SchemaRegistry.Enabled,
 			"urls":    schemaURLs,
-			"tls":     values.Listeners.SchemaRegistry.ConsoleTLS(&values.TLS),
+			"tls":     state.Values.Listeners.SchemaRegistry.ConsoleTLS(&state.Values.TLS),
 		},
 	}
 
-	if values.Console.Config == nil {
-		values.Console.Config = map[string]any{}
+	if state.Values.Console.Config == nil {
+		state.Values.Console.Config = map[string]any{}
 	}
 
-	return helmette.Merge(values.Console.Config, c)
+	return helmette.Merge(state.Values.Console.Config, c)
 }

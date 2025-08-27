@@ -1,6 +1,0 @@
-dependencies:
-- name: console
-  repository: file://../console
-  version: 3.1.0
-digest: sha256:a2c6b3725e7f01128880651f2a79fa648896adfde857bdf10322f6ac5191c3a8
-generated: "2025-05-05T23:39:58.646719+02:00"

@@ -61,10 +61,10 @@ tasks:
 
       # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
       # The chart embeds these permissions so they can't get out of sync with the operator.
-      - rm ../charts/redpanda/files/*.yaml
+      - rm ../charts/redpanda/chart/files/*.yaml
       - |
         yq e \
-          --split-exp '"../charts/redpanda/files/\( .metadata.name ).\( .kind ).yaml"' \
+          --split-exp '"../charts/redpanda/chart/files/\( .metadata.name ).\( .kind ).yaml"' \
           '.' \
           ./config/rbac/itemized/decommission.yaml \
           ./config/rbac/itemized/pvcunbinder.yaml \

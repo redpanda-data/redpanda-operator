@@ -19,19 +19,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func NodePortService(dot *helmette.Dot) *corev1.Service {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.External.Enabled || !values.External.Service.Enabled {
+func NodePortService(state *RenderState) *corev1.Service {
+	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
 		return nil
 	}
 
-	if values.External.Type != corev1.ServiceTypeNodePort {
+	if state.Values.External.Type != corev1.ServiceTypeNodePort {
 		return nil
 	}
 
 	var ports []corev1.ServicePort
-	for name, listener := range helmette.SortedMap(values.Listeners.Admin.External) {
+	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -49,7 +47,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range helmette.SortedMap(values.Listeners.Kafka.External) {
+	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -67,7 +65,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range helmette.SortedMap(values.Listeners.HTTP.External) {
+	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -85,7 +83,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	for name, listener := range helmette.SortedMap(values.Listeners.SchemaRegistry.External) {
+	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
 		if !listener.IsEnabled() {
 			continue
 		}
@@ -103,7 +101,7 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 		})
 	}
 
-	annotations := values.External.Annotations
+	annotations := state.Values.External.Annotations
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
@@ -114,16 +112,16 @@ func NodePortService(dot *helmette.Dot) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-external", ServiceName(dot)),
-			Namespace:   dot.Release.Namespace,
-			Labels:      FullLabels(dot),
+			Name:        fmt.Sprintf("%s-external", ServiceName(state)),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
 			Ports:                    ports,
 			PublishNotReadyAddresses: true,
-			Selector:                 StatefulSetPodLabelsSelector(dot),
+			Selector:                 StatefulSetPodLabelsSelector(state),
 			SessionAffinity:          corev1.ServiceAffinityNone,
 			Type:                     corev1.ServiceTypeNodePort,
 		},

@@ -39,7 +39,7 @@ import (
 
 type Client struct {
 	Ctl          *kube.Ctl
-	dot          *helmette.Dot
+	state        *redpanda.RenderState
 	proxyClients map[string]*portForwardClient
 }
 
@@ -51,7 +51,9 @@ func newClient(t *testing.T, ctl *kube.Ctl, release *helm.Release, values any) *
 	)
 	require.NoError(t, err)
 
-	return &Client{Ctl: ctl, dot: dot}
+	state := redpanda.RenderStateFromDot(dot)
+
+	return &Client{Ctl: ctl, state: state}
 }
 
 type portForwardClient struct {
@@ -62,8 +64,8 @@ type portForwardClient struct {
 
 func (c *Client) getStsPod(ctx context.Context, ordinal int) (*corev1.Pod, error) {
 	return kube.Get[corev1.Pod](ctx, c.Ctl, kube.ObjectKey{
-		Name:      fmt.Sprintf("%s-%d", c.dot.Release.Name, ordinal),
-		Namespace: c.dot.Release.Namespace,
+		Name:      fmt.Sprintf("%s-%d", c.state.Release.Name, ordinal),
+		Namespace: c.state.Release.Namespace,
 	})
 }
 
@@ -137,7 +139,7 @@ func (c *Client) KafkaConsume(ctx context.Context, topicName string) (map[string
 func (c *Client) GetClusterHealth(ctx context.Context) (rpadmin.ClusterHealthOverview, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	adminClient, err := client.AdminClient(c.dot, dialer.DialContext)
+	adminClient, err := client.AdminClient(c.state, dialer.DialContext)
 	if err != nil {
 		return rpadmin.ClusterHealthOverview{}, err
 	}
@@ -150,7 +152,7 @@ func (c *Client) GetClusterHealth(ctx context.Context) (rpadmin.ClusterHealthOve
 func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	adminClient, err := client.AdminClient(c.dot, dialer.DialContext)
+	adminClient, err := client.AdminClient(c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +176,7 @@ func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +197,7 @@ func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
 func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (sr.SubjectSchema, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return sr.SubjectSchema{}, err
 	}
@@ -218,7 +220,7 @@ func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (sr.
 func (c *Client) RetrieveSchema(ctx context.Context, id int) (sr.Schema, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return sr.Schema{}, err
 	}
@@ -234,7 +236,7 @@ func (c *Client) RetrieveSchema(ctx context.Context, id int) (sr.Schema, error) 
 func (c *Client) ListRegistrySubjects(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +247,7 @@ func (c *Client) ListRegistrySubjects(ctx context.Context) ([]string, error) {
 func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version int) error {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return err
 	}
@@ -256,7 +258,7 @@ func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version i
 func (c *Client) HardDeleteSchema(ctx context.Context, subject string, version int) error {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.dot, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
 	if err != nil {
 		return err
 	}
@@ -395,12 +397,10 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 		return cleanup, errors.WithStack(err)
 	}
 
-	values := helmette.Unwrap[redpanda.Values](c.dot.Values)
-
-	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.dot.Release.Name, "default", "cert")
+	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.state.Release.Name, "default", "cert")
 
 	secretName := defaultSecretName
-	cert := values.TLS.Certs[values.Listeners.HTTP.TLS.Cert]
+	cert := c.state.Values.TLS.Certs[c.state.Values.Listeners.HTTP.TLS.Cert]
 	if ref := cert.ClientSecretRef; ref != nil {
 		secretName = ref.Name
 	}
@@ -469,8 +469,8 @@ func getInternalPort(addresses any, availablePorts []portforward.ForwardedPort) 
 
 func (c *Client) getRedpandaConfig(ctx context.Context) (*config.RedpandaYaml, error) {
 	cm, err := kube.Get[corev1.ConfigMap](ctx, c.Ctl, kube.ObjectKey{
-		Name:      c.dot.Release.Name,
-		Namespace: c.dot.Release.Namespace,
+		Name:      c.state.Release.Name,
+		Namespace: c.state.Release.Namespace,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -502,7 +502,7 @@ func (c *Client) createClient(ctx context.Context, port int, tlsEnabled, mTLSEna
 		schema = "https"
 		s, err := kube.Get[corev1.Secret](ctx, c.Ctl, kube.ObjectKey{
 			Name:      tlsK8SSecretName,
-			Namespace: c.dot.Release.Namespace,
+			Namespace: c.state.Release.Namespace,
 		})
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -528,7 +528,7 @@ func (c *Client) createClient(ctx context.Context, port int, tlsEnabled, mTLSEna
 			Certificates: certs,
 			RootCAs:      rootCAs,
 			// Available subject alternative names are defined in certs.go
-			ServerName: fmt.Sprintf("%s.%s", c.dot.Release.Name, c.dot.Release.Namespace),
+			ServerName: fmt.Sprintf("%s.%s", c.state.Release.Name, c.state.Release.Namespace),
 		},
 		TLSHandshakeTimeout:   10 * time.Second,
 		MaxIdleConns:          100,

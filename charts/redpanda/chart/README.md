@@ -1,9 +1,11 @@
-# Redpanda Helm Chart
+# Redpanda Helm Chart Specification
+---
+description: Find the default values and descriptions of settings in the Redpanda Helm chart.
+---
 
-<<<<<<< HEAD
-![Version: 25.1.1](https://img.shields.io/badge/Version-25.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v25.1.9](https://img.shields.io/badge/AppVersion-v25.1.9-informational?style=flat-square)
+![Version: 25.1.1-beta3](https://img.shields.io/badge/Version-25.1.1--beta3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v25.2.1](https://img.shields.io/badge/AppVersion-v25.2.1-informational?style=flat-square)
 
-This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/values.yaml). Each of the settings is listed and described on this page, along with any default values.
+This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/chart/values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
 For instructions on how to install and use the chart, including how to override and customize the chart’s values, refer to the [deployment documentation](https://docs.redpanda.com/docs/deploy/deployment-option/self-hosted/kubernetes/kubernetes-deploy/).
 
@@ -20,7 +22,7 @@ Kubernetes: `>= 1.25.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../console | console | >=3.1.0-0 |
+| file://../../console | console | >=3.1.0-0 |
 
 ## Settings
 
@@ -590,7 +592,7 @@ Annotations to add to the `rbac` resources.
 
 ### [rbac.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=rbac.enabled)
 
-Controls whether or not Roles, ClusterRoles, and bindings thereof will be generated. Disabling this very likely result in a non-functional deployment. If you use the Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true` flag to give it the required ClusterRoles.
+Controls whether or not Roles, ClusterRoles, and bindings thereof will be generated. Disabling this very likely result in a non-functional deployment.
 
 **Default:** `true`
 
@@ -875,7 +877,7 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v25.1.2"`
+**Default:** `"v25.2.1-beta1"`
 
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
 
@@ -1078,6 +1080,3 @@ that are not directly exposed via the chart.
 
 [k8s.smp]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#use-a-strategic-merge-patch-to-update-a-deployment
 [k8s.jsonmp]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#use-a-json-merge-patch-to-update-a-deployment
-=======
-- See Chart [README](./chart/README.md)
->>>>>>> c2c845c5 (Introduce RenderState to Redpanda Chart rendering (#1054))
