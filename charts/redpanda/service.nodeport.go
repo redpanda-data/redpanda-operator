@@ -121,7 +121,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
 			Ports:                    ports,
 			PublishNotReadyAddresses: true,
-			Selector:                 StatefulSetPodLabelsSelector(state),
+			Selector:                 ClusterPodLabelsSelector(state),
 			SessionAffinity:          corev1.ServiceAffinityNone,
 			Type:                     corev1.ServiceTypeNodePort,
 		},

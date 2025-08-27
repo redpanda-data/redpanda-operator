@@ -22,12 +22,17 @@ import (
 )
 
 func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(state), RPKProfile(state)}
-	return cms
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, NamedStatefulset{Statefulset: state.Values.Statefulset})}
+
+	for _, set := range state.Pools {
+		cms = append(cms, RedpandaConfigMap(state, set))
+	}
+
+	return append(cms, RPKProfile(state))
 }
 
-func RedpandaConfigMap(state *RenderState) *corev1.ConfigMap {
-	bootstrap, fixups := BootstrapFile(state)
+func RedpandaConfigMap(state *RenderState, ss NamedStatefulset) *corev1.ConfigMap {
+	bootstrap, fixups := BootstrapFile(state, ss)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -57,8 +62,8 @@ func RedpandaConfigMap(state *RenderState) *corev1.ConfigMap {
 //
 // `.bootstrap.yaml` is templated and then read by both the redpanda container
 // and the post install/upgrade job.
-func BootstrapFile(state *RenderState) (string, string) {
-	template, fixups := BootstrapContents(state)
+func BootstrapFile(state *RenderState, ss NamedStatefulset) (string, string) {
+	template, fixups := BootstrapContents(state, ss)
 	fixupStr := helmette.ToJSON(fixups)
 	if len(fixups) == 0 {
 		fixupStr = `[]`
@@ -66,7 +71,7 @@ func BootstrapFile(state *RenderState) (string, string) {
 	return helmette.ToJSON(template), fixupStr
 }
 
-func BootstrapContents(state *RenderState) (map[string]string, []clusterconfiguration.Fixup) {
+func BootstrapContents(state *RenderState, ss NamedStatefulset) (map[string]string, []clusterconfiguration.Fixup) {
 	// Accumulate values and fixups
 	fixups := []clusterconfiguration.Fixup{}
 
@@ -92,7 +97,7 @@ func BootstrapContents(state *RenderState) (map[string]string, []clusterconfigur
 	// See also:
 	// - https://github.com/redpanda-data/helm-charts/issues/583
 	// - https://github.com/redpanda-data/helm-charts/issues/1501
-	if _, ok := state.Values.Config.Cluster["default_topic_replications"]; !ok && state.Values.Statefulset.Replicas >= 3 {
+	if _, ok := state.Values.Config.Cluster["default_topic_replications"]; !ok && ss.Statefulset.Replicas >= 3 {
 		bootstrap["default_topic_replications"] = 3
 	}
 
@@ -119,7 +124,13 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool) string
 	}
 
 	if includeNonHashableItems {
-		redpanda["seed_servers"] = state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+		servers := state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+
+		for _, set := range state.Pools {
+			servers = append(servers, state.Values.Listeners.CreateSeedServers(set.Statefulset.Replicas, Fullname(state), InternalDomain(state))...)
+		}
+
+		redpanda["seed_servers"] = servers
 	}
 
 	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
@@ -339,19 +350,31 @@ func getFirstExternalKafkaListener(state *RenderState) string {
 	return helmette.First(keys).(string)
 }
 
-func BrokerList(state *RenderState, replicas int32, port int32) []string {
-	var bl []string
-
-	for i := int32(0); i < replicas; i++ {
-		bl = append(bl, fmt.Sprintf("%s-%d.%s:%d", Fullname(state), i, InternalDomain(state), port))
+func BrokerList(state *RenderState, port int32) []string {
+	bl := brokersFor(state, NamedStatefulset{Statefulset: state.Values.Statefulset}, port)
+	for _, set := range state.Pools {
+		bl = append(bl, brokersFor(state, set, port)...)
 	}
 
 	return bl
 }
 
+func brokersFor(state *RenderState, ss NamedStatefulset, port int32) []string {
+	var bl []string
+
+	for i := range ss.Statefulset.Replicas {
+		if port == -1 {
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s", Fullname(state), ss.Suffix(), i, InternalDomain(state)))
+		} else {
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s:%d", Fullname(state), ss.Suffix(), i, InternalDomain(state), port))
+		}
+	}
+	return bl
+}
+
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
 func rpkNodeConfig(state *RenderState) map[string]any {
-	brokerList := BrokerList(state, state.Values.Statefulset.Replicas, state.Values.Listeners.Kafka.Port)
+	brokerList := BrokerList(state, state.Values.Listeners.Kafka.Port)
 
 	var adminTLS map[string]any
 	if tls := rpkAdminAPIClientTLSConfiguration(state); len(tls) > 0 {
@@ -379,11 +402,11 @@ func rpkNodeConfig(state *RenderState) map[string]any {
 			"tls":     brokerTLS,
 		},
 		"admin_api": map[string]any{
-			"addresses": state.Values.Listeners.AdminList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
+			"addresses": BrokerList(state, state.Values.Listeners.Admin.Port),
 			"tls":       adminTLS,
 		},
 		"schema_registry": map[string]any{
-			"addresses": state.Values.Listeners.SchemaRegistryList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
+			"addresses": BrokerList(state, state.Values.Listeners.SchemaRegistry.Port),
 			"tls":       schemaRegistryTLS,
 		},
 	}

@@ -670,7 +670,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 		return nil, errors.WithStack(err)
 	}
 	job := redpanda.PostInstallUpgradeJob(state)
-	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state)
+	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, redpanda.NamedStatefulset{Statefulset: state.Values.Statefulset})
 	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
 	for k, v := range clusterConfigTemplate {
 		conf.SetAdditionalConfiguration(k, v)

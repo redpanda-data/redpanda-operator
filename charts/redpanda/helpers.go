@@ -541,6 +541,20 @@ func mergeContainer(original corev1.Container, override applycorev1.ContainerApp
 	return merged
 }
 
+func PodNames(state *RenderState, ss NamedStatefulset) []string {
+	suffix := ""
+	if ss.Name != "" {
+		suffix = fmt.Sprintf("-%s", ss.Name)
+	}
+
+	var pods []string
+	for i := range ss.Statefulset.Replicas {
+		pods = append(pods, fmt.Sprintf("%s%s-%d", Fullname(state), suffix, i))
+	}
+
+	return pods
+}
+
 // ParseCLIArgs parses a slice of strings intended for rpk's
 // `additional_start_flags` field into a map to allow merging slices of flags
 // or introspection thereof.

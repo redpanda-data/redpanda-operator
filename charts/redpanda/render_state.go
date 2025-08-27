@@ -25,7 +25,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	redpandav1alpha3 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha3"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -78,8 +77,7 @@ type RenderState struct {
 	StatefulSetSelector map[string]string
 
 	// Pools contains the list of NodePools that are being rendered.
-	// TODO: move this to v1alpha2
-	Pools []*redpandav1alpha3.NodePool
+	Pools []NamedStatefulset
 
 	// Dot is the underlying [helmette.Dot] that was used to construct this
 	// RenderState.

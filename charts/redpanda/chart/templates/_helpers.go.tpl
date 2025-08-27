@@ -587,6 +587,28 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.PodNames" -}}
+{{- $state := (index .a 0) -}}
+{{- $ss := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $suffix := "" -}}
+{{- if (ne $ss.Name "") -}}
+{{- $suffix = (printf "-%s" $ss.Name) -}}
+{{- end -}}
+{{- $pods := (coalesce nil) -}}
+{{- range $i, $_ := ($ss.Statefulset.replicas | int) -}}
+{{- $pods = (concat (default (list) $pods) (list (printf "%s%s-%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $suffix $i))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $pods) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.ParseCLIArgs" -}}
 {{- $args := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
