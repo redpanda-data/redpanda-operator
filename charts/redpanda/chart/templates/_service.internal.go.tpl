@@ -1,4 +1,5 @@
-{{- /* Generated from "service_internal.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/service_internal.go" */ -}}
 
 {{- define "redpanda.MonitoringEnabledLabel" -}}
 {{- $state := (index .a 0) -}}

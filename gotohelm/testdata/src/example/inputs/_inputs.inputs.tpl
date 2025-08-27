@@ -1,4 +1,5 @@
-{{- /* Generated from "inputs.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/inputs/inputs.go" */ -}}
 
 {{- define "inputs.Inputs" -}}
 {{- $dot := (index .a 0) -}}

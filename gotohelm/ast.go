@@ -230,7 +230,8 @@ type File struct {
 
 func (f *File) Write(w io.Writer) {
 	if f.Source != "" {
-		fmt.Fprintf(w, "{{- /* Generated from %q */ -}}\n\n", f.Source)
+		fmt.Fprintf(w, "{{- /* GENERATED FILE DO NOT EDIT */ -}}\n")
+		fmt.Fprintf(w, "{{- /* Transpiled by gotohelm from %q */ -}}\n\n", f.Source)
 	}
 	w.Write([]byte(f.Header))
 	for _, s := range f.Funcs {

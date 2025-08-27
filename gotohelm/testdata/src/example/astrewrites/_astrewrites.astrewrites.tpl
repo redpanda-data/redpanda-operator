@@ -1,4 +1,5 @@
-{{- /* Generated from "astrewrites.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/astrewrites/astrewrites.go" */ -}}
 
 {{- define "astrewrites.ASTRewrites" -}}
 {{- range $_ := (list 1) -}}

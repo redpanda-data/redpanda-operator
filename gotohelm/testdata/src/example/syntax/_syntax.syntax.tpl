@@ -1,4 +1,5 @@
-{{- /* Generated from "syntax.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/syntax/syntax.go" */ -}}
 
 {{- define "syntax.Syntax" -}}
 {{- range $_ := (list 1) -}}

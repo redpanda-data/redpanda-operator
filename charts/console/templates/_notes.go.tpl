@@ -1,4 +1,5 @@
-{{- /* Generated from "notes.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/console/v3/notes.go" */ -}}
 
 {{- define "console.Notes" -}}
 {{- $dot := (index .a 0) -}}

@@ -1,4 +1,5 @@
-{{- /* Generated from "values.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/connectors/values.go" */ -}}
 
 {{- define "connectors.Auth.SASLEnabled" -}}
 {{- $c := (index .a 0) -}}

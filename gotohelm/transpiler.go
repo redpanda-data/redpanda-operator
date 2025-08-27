@@ -54,10 +54,18 @@ type Chart struct {
 	Files []*File
 }
 
-func Transpile(pkg *packages.Package, deps ...string) (*Chart, error) {
-	chart, err := transpile(pkg, deps...)
-	if err != nil {
-		return nil, err
+func Transpile(pkgs []*packages.Package, deps ...string) (*Chart, error) {
+	for _, pkg := range pkgs {
+		deps = append(deps, pkg.PkgPath)
+	}
+
+	var chart Chart
+	for _, pkg := range pkgs {
+		files, err := transpile(pkg, deps...)
+		if err != nil {
+			return nil, err
+		}
+		chart.Files = append(chart.Files, files...)
 	}
 
 	shims, err := transpileBootstrap()
@@ -67,14 +75,20 @@ func Transpile(pkg *packages.Package, deps ...string) (*Chart, error) {
 
 	chart.Files = append(chart.Files, shims)
 
-	return chart, nil
+	return &chart, nil
 }
 
-// transpile is the entrypoint to the gotohelm transpiler. The public method
-// [Transpile] delegates to this method and injects the shims/bootstrap file
-// before returning the chart. This private method is necessary to prevent any
-// infinite recursion issues.
-func transpile(pkg *packages.Package, deps ...string) (_ *Chart, err error) {
+// transpile is the entrypoint to the gotohelm transpiler. It transpiles a
+// single go package into go/helm templates.
+//
+// deps is a slice of PkgPaths indicating "permitted dependencies". Any
+// function calls from `pkg` to one of the listed packages will be transpiled
+// as normal. The caller is then responsible for ensuring that the dependent
+// package is available either by bundling or subcharting.
+//
+// The public [Transpile] method handles bundling of multiple packages and
+// injecting the shims/bootstrap.
+func transpile(pkg *packages.Package, deps ...string) (_ []*File, err error) {
 	defer func() {
 		switch v := recover().(type) {
 		case nil:
@@ -138,21 +152,22 @@ type Transpiler struct {
 	names map[*types.Func]string
 }
 
-func (t *Transpiler) Transpile() *Chart {
-	var chart Chart
+func (t *Transpiler) Transpile() []*File {
+	var files []*File
 	for _, f := range t.Files {
 		if transpiled := t.transpileFile(f); transpiled != nil {
-			chart.Files = append(chart.Files, transpiled)
+			files = append(files, transpiled)
 		}
 	}
 
-	return &chart
+	return files
 }
 
 func (t *Transpiler) transpileFile(f *ast.File) *File {
 	path := t.Fset.File(f.Pos()).Name()
 	source := filepath.Base(path)
-	name := source[:len(source)-3] + ".yaml"
+
+	name := fmt.Sprintf("_%s.%s.tpl", t.namespaceFor(t.Package.Types), source[:len(source)-3])
 
 	isTestFile := strings.HasSuffix(name, "_test.go")
 	if isTestFile || name == "main.go" {
@@ -211,7 +226,7 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 
 	return &File{
 		Name:   name,
-		Source: source,
+		Source: filepath.Join(t.Package.PkgPath, source),
 		Funcs:  funcs,
 	}
 }
@@ -1684,7 +1699,7 @@ func (t *Transpiler) getStructType(typ *types.Struct) (*packages.Package, *ast.S
 		panic("unhandled")
 	}
 
-	pack := t.Package.Imports[typ.Field(0).Pkg().Path()]
+	pack := t.packages[typ.Field(0).Pkg().Path()]
 	if pack == nil {
 		pack = t.Package
 	}
@@ -1723,7 +1738,27 @@ func (t *Transpiler) namespaceFor(pkg *types.Package) string {
 		namespace = &ns
 	}
 
-	t.namespaces[pkg] = ptr.Deref(namespace, pkg.Name())
+	// Really bad heuristic to turn versioned modules into combined names to
+	// dance around imports of other charts across different versions.
+	// e.g. console/v3 (package console) -> consolev3
+	defaultName := pkg.Name()
+	importName := pkg.Path()[strings.LastIndex(pkg.Path(), "/")+1:]
+	if pkg.Name() != importName {
+		defaultName += importName
+	}
+
+	t.namespaces[pkg] = ptr.Deref(namespace, defaultName)
+
+	// Check for duplicates.
+	for path, inUse := range t.namespaces {
+		if path != pkg && inUse == t.namespaces[pkg] {
+			panic(fmt.Sprintf(
+				"cross package conflicting namespaces encountered:\n%q -> %q\n%q -> %q",
+				path, inUse,
+				pkg, inUse,
+			))
+		}
+	}
 
 	return t.namespaces[pkg]
 }

@@ -10,54 +10,55 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path"
 
+	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 )
 
 func main() {
-	out := flag.String("write", "-", "The directory to write the transpiled templates to or - to write them to standard out")
+	var out string
+	var bundled []string
 
-	flag.Parse()
+	cmd := cobra.Command{
+		Use:  "gotohelm <package to transpile> [--bundle package/to/bundle] [subcharts...]",
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			cwd, _ := os.Getwd()
 
-	if len(flag.Args()) == 0 {
-		fmt.Printf("usage: gotohelm <package to transpile> [dependencies...]")
+			pkgs, err := gotohelm.LoadPackages(&packages.Config{
+				Dir: cwd,
+			}, append(bundled, args[0])...)
+			if err != nil {
+				panic(err)
+			}
+
+			chart, err := gotohelm.Transpile(pkgs, args[1:]...)
+			if err != nil {
+				fmt.Printf("Failed to transpile %q: %s\n", args[0], err)
+				os.Exit(1)
+			}
+
+			if out == "-" {
+				writeToStdout(chart)
+			} else {
+				if err := writeToDir(chart, out); err != nil {
+					panic(err)
+				}
+			}
+		},
+	}
+
+	cmd.Flags().StringArrayVarP(&bundled, "bundle", "b", []string{}, "dependency packages that will be bundled into the final output")
+	cmd.Flags().StringVarP(&out, "write", "w", "-", "The directory to write the transpiled templates to or - to write them to standard out")
+
+	if err := cmd.Execute(); err != nil {
+		fmt.Printf("%+v\n", err)
 		os.Exit(1)
-	}
-
-	cwd, _ := os.Getwd()
-
-	pkgs, err := gotohelm.LoadPackages(&packages.Config{
-		Dir: cwd,
-	}, flag.Args()[0])
-	if err != nil {
-		panic(err)
-	}
-
-	if len(pkgs) != 1 {
-		fmt.Printf("loading %q resulted in loading more than one package.", flag.Args()[0])
-		os.Exit(1)
-	}
-
-	pkg := pkgs[0]
-
-	chart, err := gotohelm.Transpile(pkg, flag.Args()[1:]...)
-	if err != nil {
-		fmt.Printf("Failed to transpile %q: %s\n", pkg.Name, err)
-		os.Exit(1)
-	}
-
-	if *out == "-" {
-		writeToStdout(chart)
-	} else {
-		if err := writeToDir(chart, *out); err != nil {
-			panic(err)
-		}
 	}
 }
 

@@ -1,4 +1,5 @@
-{{- /* Generated from "podmonitor.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/connectors/podmonitor.go" */ -}}
 
 {{- define "connectors.PodMonitor" -}}
 {{- $dot := (index .a 0) -}}

@@ -21,6 +21,7 @@ import (
 	"example.com/example/aaacommon"
 	"example.com/example/astrewrites"
 	"example.com/example/changing_inputs"
+	"example.com/example/consumer"
 	"example.com/example/directives"
 	"example.com/example/files"
 	"example.com/example/flowcontrol"
@@ -164,6 +165,11 @@ func runChart(dot *helmette.Dot) (_ map[string]any, err any) {
 	case "files":
 		return map[string]any{
 			"Files": files.Files(dot),
+		}, nil
+
+	case "consumer":
+		return map[string]any{
+			"Render": consumer.Render(dot),
 		}, nil
 
 	default:

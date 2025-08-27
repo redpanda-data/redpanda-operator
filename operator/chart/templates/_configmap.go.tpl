@@ -1,4 +1,5 @@
-{{- /* Generated from "configmap.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/configmap.go" */ -}}
 
 {{- define "operator.ConfigMap" -}}
 {{- $dot := (index .a 0) -}}
