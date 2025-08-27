@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -44,7 +46,11 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec.Connectors = nil
 	}
 
-	state, err := constructRenderState(m.kubeConfig, cluster.Namespace, cluster.GetHelmReleaseName(), spec, cluster.NodePools)
+	if spec == nil {
+		spec = &redpandav1alpha2.RedpandaClusterSpec{}
+	}
+
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaults{}, cluster.Redpanda, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}
