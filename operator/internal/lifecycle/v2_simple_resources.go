@@ -55,27 +55,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		return nil, err
 	}
 
-	rendered, err := redpanda.RenderResources(state)
-	if err != nil {
-		return nil, err
-	}
-
-	resources := []client.Object{}
-
-	// filter out the hooks
-	for _, object := range rendered {
-		isHook := false
-		annotations := object.GetAnnotations()
-		if annotations != nil {
-			_, isHook = annotations["helm.sh/hook"]
-		}
-
-		if !isHook {
-			resources = append(resources, object)
-		}
-	}
-
-	return resources, nil
+	return redpanda.RenderResources(state)
 }
 
 // WatchedResourceTypes returns the list of all the resources that the cluster

@@ -40,8 +40,8 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaults, clust
 		return nil, err
 	}
 
-	return redpanda.RenderStateFromDot(dot, func(values redpanda.Values) error {
-		return convertV2Fields(dot, &values, spec)
+	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
+		return convertV2Fields(state, &state.Values, spec)
 	})
 }
 
@@ -109,7 +109,7 @@ func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *re
 // - `imagePullSecrets` -> `podTemplate.spec.imagePullSecrets`.
 //
 // All other field mappings happen in nested conversion functions.
-func convertV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav1alpha2.RedpandaClusterSpec) error {
+func convertV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.RedpandaClusterSpec) error {
 	if values.PodTemplate.Spec == nil {
 		values.PodTemplate.Spec = &applycorev1.PodSpecApplyConfiguration{}
 	}
@@ -128,7 +128,7 @@ func convertV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav
 		return err
 	}
 
-	return convertStatefulsetV2Fields(dot, values, spec.Statefulset)
+	return convertStatefulsetV2Fields(state, values, spec.Statefulset)
 }
 
 // The `convertStatefulsetV2Fields` function is responsible for the following field mappings:
@@ -142,11 +142,12 @@ func convertV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav
 // - `statefulset.tolerations` -> `statefulset.podTemplate.spec.tolerations`
 // - `statefulset.topologySpreadConstraints` -> `statefulset.podTemplate.spec.topologySpreadConstraints`
 // - `statefulset.podAffinity` -> `statefulset.podTemplate.spec.affinity.podAffinity`
+// - `statefulset.podAntiAffinity` -> `statefulset.podTemplate.spec.affinity.podAntiAffinity`
 // - `statefulset.extraVolumes` -> `statefulset.podTemplate.spec.volumes`
 // - `statefulset.extraVolumesMounts` -> `statefulset.podTemplate.spec.containers[*].volumeMounts`
 //
 // All other field mappings for init and sidecar containers happen in nested conversion functions.
-func convertStatefulsetV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav1alpha2.Statefulset) error {
+func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.Statefulset) error {
 	if spec == nil {
 		return nil
 	}
@@ -192,61 +193,65 @@ func convertStatefulsetV2Fields(dot *helmette.Dot, values *redpanda.Values, spec
 	if err := convertAndAppendJSONNotNil(spec.TopologySpreadConstraints, &values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints); err != nil {
 		return err
 	}
-	if err := convertAndInitializeJSONNotNil(spec.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity); err != nil {
+	if values.Statefulset.PodTemplate.Spec.Affinity == nil {
+		values.Statefulset.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
+	}
+	if err := convertAndInitializeJSONNotNil(spec.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity.PodAffinity); err != nil {
 		return err
 	}
-	if err := convertAndAppendYAMLNotNil(dot, spec.ExtraVolumes, &values.Statefulset.PodTemplate.Spec.Volumes); err != nil {
+	convertAndInitializeAntiAffinityNotNil(state, spec.PodAntiAffinity, values.Statefulset.PodTemplate.Spec.Affinity)
+	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumes, &values.Statefulset.PodTemplate.Spec.Volumes); err != nil {
 		return err
 	}
-	if err := convertAndAppendYAMLNotNil(dot, spec.ExtraVolumeMounts, &redpandaContainer.VolumeMounts); err != nil {
+	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &redpandaContainer.VolumeMounts); err != nil {
 		return err
 	}
-	if err := convertAndAppendYAMLNotNil(dot, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
+	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
 		return err
 	}
 
-	if err := convertStatefulsetInitContainersV2Fields(dot, values, spec.InitContainers); err != nil {
+	if err := convertStatefulsetInitContainersV2Fields(state, values, spec.InitContainers); err != nil {
 		return err
 	}
 
-	return convertStatefulsetSidecarV2Fields(dot, values, spec.SideCars)
+	return convertStatefulsetSidecarV2Fields(state, values, spec.SideCars)
 }
 
 // The `convertStatefulsetInitContainersV2Fields` function is responsible for the following field mappings:
 // - `statefulset.initContainers.extraInitContainers` -> `statefulset.podTemplate.spec.initContainers`
 // - `statefulset.initContainers.*.extraVolumesMounts` -> `statefulset.podTemplate.spec.initContainers[*].volumeMounts`
 // - `statefulset.initContainers.*.resources` -> `statefulset.podTemplate.spec.initContainers[*].resources`
-func convertStatefulsetInitContainersV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav1alpha2.InitContainers) error {
+func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.InitContainers) error {
 	if spec == nil {
 		return nil
 	}
 
-	if err := convertAndAppendYAMLNotNil(dot, spec.ExtraInitContainers, &values.Statefulset.PodTemplate.Spec.InitContainers); err != nil {
+	if err := convertAndAppendYAMLNotNil(state, spec.ExtraInitContainers, &values.Statefulset.PodTemplate.Spec.InitContainers); err != nil {
 		return err
 	}
 
-	if err := convertInitContainer(dot, values, redpanda.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
+	if err := convertInitContainer(state, values, redpanda.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
 		return err
 	}
 
 	// NB: we need to check if the following containers are enabled first, otherwise we wind up with a badly merged pod template spec.
 	if values.Tuning.TuneAIOEvents {
-		if err := convertInitContainer(dot, values, redpanda.RedpandaTuningContainerName, spec.Tuning); err != nil {
+		if err := convertInitContainer(state, values, redpanda.RedpandaTuningContainerName, spec.Tuning); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
-		if err := convertInitContainer(dot, values, redpanda.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpanda.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Storage.IsTieredStorageEnabled() {
-		if err := convertInitContainer(dot, values, redpanda.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpanda.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.FSValidator.Enabled {
-		if err := convertInitContainer(dot, values, redpanda.FSValidatorContainerName, spec.FsValidator); err != nil {
+		if err := convertInitContainer(state, values, redpanda.FSValidatorContainerName, spec.FsValidator); err != nil {
 			return err
 		}
 	}
@@ -258,14 +263,14 @@ func convertStatefulsetInitContainersV2Fields(dot *helmette.Dot, values *redpand
 // - `statefulset.sidecars.extraVolumeMounts` -> `statefulset.podTemplate.spec.containers[1].volumeMounts`
 // - `statefulset.sidecars.resources` -> `statefulset.podTemplate.spec.containers[1].resources`
 // - `statefulset.sidecars.securityContext` -> `statefulset.podTemplate.spec.containers[1].securityContext`
-func convertStatefulsetSidecarV2Fields(dot *helmette.Dot, values *redpanda.Values, spec *redpandav1alpha2.SideCars) error {
+func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.SideCars) error {
 	if spec == nil {
 		return nil
 	}
 
 	sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
 
-	if err := convertAndAppendYAMLNotNil(dot, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
+	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
 		return err
 	}
 	if err := convertJSONNotNil(spec.Resources, sidecarContainer.Resources); err != nil {

@@ -16,10 +16,12 @@ import (
 	"github.com/cockroachdb/errors"
 	corev1 "k8s.io/api/core/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 func convertJSON(from, to any) error {
@@ -30,7 +32,7 @@ func convertJSON(from, to any) error {
 	return json.Unmarshal(data, to)
 }
 
-func convertYAMLArrayNotNil[T any](dot *helmette.Dot, from *string, to *[]T) (err error) {
+func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) (err error) {
 	if from == nil {
 		return nil
 	}
@@ -45,14 +47,14 @@ func convertYAMLArrayNotNil[T any](dot *helmette.Dot, from *string, to *[]T) (er
 		}
 	}()
 
-	result := helmette.Tpl(dot, *from, dot)
+	result := helmette.Tpl(state.Dot, *from, state.Dot)
 	*to = helmette.UnmarshalYamlArray[T](result)
 	return
 }
 
-func convertAndAppendYAMLNotNil[T any](dot *helmette.Dot, from *string, to *[]T) error {
+func convertAndAppendYAMLNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) error {
 	converted := []T{}
-	if err := convertYAMLArrayNotNil(dot, from, &converted); err != nil {
+	if err := convertYAMLArrayNotNil(state, from, &converted); err != nil {
 		return err
 	}
 	*to = append(*to, converted...)
@@ -111,7 +113,7 @@ type containerSpec interface {
 	GetExtraVolumeMounts() *string
 }
 
-func convertInitContainer(dot *helmette.Dot, values *redpanda.Values, name string, spec containerSpec) error {
+func convertInitContainer(state *redpanda.RenderState, values *redpanda.Values, name string, spec containerSpec) error {
 	if reflect.ValueOf(spec).IsNil() {
 		return nil
 	}
@@ -120,9 +122,49 @@ func convertInitContainer(dot *helmette.Dot, values *redpanda.Values, name strin
 	if err := convertJSONNotNil(spec.GetResources(), container.Resources); err != nil {
 		return err
 	}
-	if err := convertAndAppendYAMLNotNil(dot, spec.GetExtraVolumeMounts(), &container.VolumeMounts); err != nil {
+	if err := convertAndAppendYAMLNotNil(state, spec.GetExtraVolumeMounts(), &container.VolumeMounts); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *redpandav1alpha2.PodAntiAffinity, affinity *applycorev1.AffinityApplyConfiguration) {
+	if spec == nil {
+		return
+	}
+
+	switch ptr.Deref(spec.Type, "") {
+	case "hard":
+		affinity.PodAntiAffinity = &applycorev1.PodAntiAffinityApplyConfiguration{
+			RequiredDuringSchedulingIgnoredDuringExecution: []applycorev1.PodAffinityTermApplyConfiguration{
+				{
+					TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
+					LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
+						MatchLabels: redpanda.StatefulSetPodLabelsSelector(state),
+					},
+				},
+			},
+		}
+	case "soft":
+		affinity.PodAntiAffinity = &applycorev1.PodAntiAffinityApplyConfiguration{
+			PreferredDuringSchedulingIgnoredDuringExecution: []applycorev1.WeightedPodAffinityTermApplyConfiguration{
+				{
+					// the default values for weight and topologyKey are taken from the v5 values.yaml
+					Weight: ptr.To(int32(ptr.Deref(spec.Weight, 100))),
+					PodAffinityTerm: &applycorev1.PodAffinityTermApplyConfiguration{
+						TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
+						LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
+							MatchLabels: redpanda.StatefulSetPodLabelsSelector(state),
+						},
+					},
+				},
+			},
+		}
+	case "custom":
+		if spec.Custom == nil {
+			return
+		}
+		affinity.PodAntiAffinity = ptr.To(helmette.UnmarshalInto[applycorev1.PodAntiAffinityApplyConfiguration](spec.Custom))
+	}
 }
