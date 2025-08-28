@@ -126,15 +126,6 @@ func (a *attachedResources) getBootstrapServiceKey() types.NamespacedName {
 	return a.getBootstrapService().Key()
 }
 
-func (a *attachedResources) clusterRole() {
-	// if already initialized, exit immediately
-	if _, ok := a.items[clusterRole]; ok {
-		return
-	}
-	a.items[clusterRole] = resources.NewClusterRole(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
-	a.order = append(a.order, clusterRole)
-}
-
 func (a *attachedResources) clusterRoleBinding() {
 	// if already initialized, exit immediately
 	if _, ok := a.items[clusterRoleBinding]; ok {
@@ -163,10 +154,6 @@ func (a *attachedResources) clusterService() {
 func (a *attachedResources) getClusterService() *resources.ClusterServiceResource {
 	a.clusterService()
 	return a.items[clusterService].(*resources.ClusterServiceResource)
-}
-
-func (a *attachedResources) getClusterServiceName() string {
-	return a.getClusterService().Key().Name
 }
 
 func (a *attachedResources) getClusterServiceFQDN() string {
@@ -212,32 +199,6 @@ func (a *attachedResources) getHeadlessServiceFQDN() string {
 	return a.getHeadlessService().HeadlessServiceFQDN(a.reconciler.clusterDomain)
 }
 
-func (a *attachedResources) ingress() {
-	// if already initialized, exit immediately
-	if _, ok := a.items[ingress]; ok {
-		return
-	}
-	clusterServiceName := a.getClusterServiceName()
-
-	var pandaProxyIngressConfig *vectorizedv1alpha1.IngressConfig
-	subdomain := ""
-	proxyAPIExternal := a.cluster.PandaproxyAPIExternal()
-	if proxyAPIExternal != nil {
-		subdomain = proxyAPIExternal.External.Subdomain
-		pandaProxyIngressConfig = proxyAPIExternal.External.Ingress
-	}
-
-	a.items[ingress] = resources.NewIngress(
-		a.reconciler.Client,
-		a.cluster,
-		a.reconciler.Scheme,
-		subdomain,
-		clusterServiceName,
-		resources.PandaproxyPortExternalName,
-		a.log).WithAnnotations(map[string]string{resources.SSLPassthroughAnnotation: "true"}).WithUserConfig(pandaProxyIngressConfig)
-	a.order = append(a.order, ingress)
-}
-
 func (a *attachedResources) nodeportService() {
 	// if already initialized, exit immediately
 	if _, ok := a.items[nodeportService]; ok {
@@ -280,15 +241,6 @@ func (a *attachedResources) getPKI() (*certmanager.PkiReconciler, error) {
 		return nil, err
 	}
 	return a.items[pki].(*certmanager.PkiReconciler), nil
-}
-
-func (a *attachedResources) podDisruptionBudget() {
-	// if already initialized, exit immediately
-	if _, ok := a.items[podDisruptionBudget]; ok {
-		return
-	}
-	a.items[podDisruptionBudget] = resources.NewPDB(a.reconciler.Client, a.cluster, a.reconciler.Scheme, a.log)
-	a.order = append(a.order, podDisruptionBudget)
 }
 
 func (a *attachedResources) proxySuperuser() {
