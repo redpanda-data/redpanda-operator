@@ -15,8 +15,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -45,34 +46,19 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec.Connectors = nil
 	}
 
-	// TODO: upgrade the chart to redpanda/v25 by performing a conversion of
-	// v1alpha2 to it's values here.
-	rendered, err := redpanda.Chart.Render(m.kubeConfig, helmette.Release{
-		Namespace: cluster.Namespace,
-		Name:      cluster.GetHelmReleaseName(),
-		Service:   "Helm",
-		IsUpgrade: true,
-	}, spec)
+	if spec == nil {
+		spec = &redpandav1alpha2.RedpandaClusterSpec{}
+	}
+
+	// NB: No need for real defaults here as the defaults are leveraged only in the stateful set
+	// images and pod command-line args, neither of which are looked at for rendering simple
+	// resources.
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaults{}, cluster.Redpanda, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}
 
-	resources := []client.Object{}
-
-	// filter out the statefulsets and hooks
-	for _, object := range rendered {
-		isHook := false
-		annotations := object.GetAnnotations()
-		if annotations != nil {
-			_, isHook = annotations["helm.sh/hook"]
-		}
-
-		if !isNodePool(object) && !isHook {
-			resources = append(resources, object)
-		}
-	}
-
-	return resources, nil
+	return redpanda.RenderResources(state)
 }
 
 // WatchedResourceTypes returns the list of all the resources that the cluster

@@ -139,7 +139,7 @@ func (tt *clientTest) setupClient(ctx context.Context, t *testing.T) (*clientTes
 	manager := tt.setupManager(ctx, t)
 
 	resolver, updater, nodeRenderer, resourceRenderer, factory := MockResourceManagersSetup()
-	resourceClient := NewResourceClient[MockCluster, *MockCluster](manager, factory)
+	resourceClient := NewResourceClient(manager, factory)
 
 	return &clientTestInstances{
 		resolver:         resolver,

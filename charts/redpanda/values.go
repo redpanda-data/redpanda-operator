@@ -39,6 +39,9 @@ const (
 	// RedpandaContainerName is the user facing name of the redpanda container
 	// in the redpanda StatefulSet.
 	RedpandaContainerName = "redpanda"
+	// SidecarContainerName is the user facing name of the sidecar container
+	// in the redpanda StatefulSet.
+	SidecarContainerName = "sidecar"
 	// PostUpgradeContainerName is the user facing name of the post-install
 	// job's container.
 	PostInstallContainerName = "post-install"
@@ -48,6 +51,18 @@ const (
 	// RedpandaConfiguratorContainerName is the user facing name of the
 	// redpanda-configurator init container in the redpanda StatefulSet.
 	RedpandaConfiguratorContainerName = "redpanda-configurator"
+	// RedpandaTuningContainerName is the user facing name of the
+	// tuning init container in the redpanda StatefulSet.
+	RedpandaTuningContainerName = "tuning"
+	// SetDataDirectoryOwnershipContainerName is the user facing name of the
+	// set-datadir-ownership init container in the redpanda StatefulSet.
+	SetDataDirectoryOwnershipContainerName = "set-datadir-ownership"
+	// SetTieredStorageCacheOwnershipContainerName is the user facing name of the
+	// set-tiered-storage-cache-dir-ownership init container in the redpanda StatefulSet.
+	SetTieredStorageCacheOwnershipContainerName = "set-tiered-storage-cache-dir-ownership"
+	// FSValidatorContainerName is the user facing name of the
+	// fs-validator init container in the redpanda StatefulSet.
+	FSValidatorContainerName = "fs-validator"
 
 	// certificateMountPoint is a common mount point for any TLS certificate
 	// defined as external truststore or as certificate that would be

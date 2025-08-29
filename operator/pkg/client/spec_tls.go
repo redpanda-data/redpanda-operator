@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )

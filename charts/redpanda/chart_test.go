@@ -273,7 +273,7 @@ func TestIntegrationChart(t *testing.T) {
 				"tls.key": sPrivate,
 			},
 		}
-		_, err = kube.Create[corev1.Secret](ctx, env.Ctl(), s)
+		_, err = kube.Create(ctx, env.Ctl(), s)
 		require.NoError(t, err)
 
 		c := corev1.Secret{
@@ -287,7 +287,7 @@ func TestIntegrationChart(t *testing.T) {
 				"tls.key": cPrivate,
 			},
 		}
-		_, err = kube.Create[corev1.Secret](ctx, env.Ctl(), c)
+		_, err = kube.Create(ctx, env.Ctl(), c)
 		require.NoError(t, err)
 
 		partial := mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName)
@@ -991,7 +991,8 @@ func TestLabels(t *testing.T) {
 		}, helmValues)
 		require.NoError(t, err)
 
-		state := redpanda.RenderStateFromDot(dot)
+		state, err := redpanda.RenderStateFromDot(dot)
+		require.NoError(t, err)
 
 		manifests, err := client.Template(ctx, "./chart", helm.TemplateOptions{
 			Name:      dot.Release.Name,

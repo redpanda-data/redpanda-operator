@@ -608,9 +608,12 @@ ConfigWatcher configures a sidecar that watches for changes to the Secret in `au
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether the sidecar is enabled. + |  | 
-| *`extraVolumeMounts`* __string__ | Specifies additional volumes to mount to the sidecar. + |  | 
-| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. + |  | 
-| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. + |  | 
+| *`extraVolumeMounts`* __string__ | Specifies additional volumes to mount to the sidecar. +
+DEPRECATED: Use sideCars.extraVolumeMounts + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. +
+DEPRECATED: Use sideCars.resources + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. +
+DEPRECATED: Use sideCars.securityContext + |  | 
 |===
 
 
@@ -1829,8 +1832,10 @@ RPControllers configures additional controllers that can be deployed as sidecars
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether the Controllers are enabled. + |  | 
-| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
-| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. +
+DEPRECATED: Use sideCars.resources + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. +
+DEPRECATED: Use sideCars.securityContext + |  | 
 | *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
 | *`healthProbeAddress`* __string__ |  |  | 
 | *`metricsAddress`* __string__ |  |  | 
@@ -2786,8 +2791,10 @@ SideCarObj represents a generic sidecar object. This is a placeholder for now.
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ |  |  | 
-| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
-| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. +
+DEPRECATED: Use sideCars.resources + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. +
+DEPRECATED: Use sideCars.securityContext + |  | 
 |===
 
 
@@ -2809,6 +2816,9 @@ SideCars configures the additional sidecar containers that run alongside the mai
 |===
 | Field | Description | Default | Validation
 | *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`extraVolumeMounts`* __string__ | Specifies additional volumes to mount to the sidecar. + |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies resource requests for the sidecar container. + |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ | Specifies the container's security context, including privileges and access levels of the container and its processes. + |  | 
 
 | *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
 | *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 

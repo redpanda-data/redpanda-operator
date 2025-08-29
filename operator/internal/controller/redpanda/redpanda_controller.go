@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -665,8 +665,12 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	// "envsubst" the bootstrap file itself as various components feed into the
 	// final cluster config and they may be referencing values stored in
 	// configmaps or secrets.
-	job := redpanda.PostInstallUpgradeJob(dot)
-	clusterConfigTemplate, fixups := redpanda.BootstrapContents(dot)
+	state, err := redpanda.RenderStateFromDot(dot)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	job := redpanda.PostInstallUpgradeJob(state)
+	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state)
 	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
 	for k, v := range clusterConfigTemplate {
 		conf.SetAdditionalConfiguration(k, v)

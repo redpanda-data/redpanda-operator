@@ -195,9 +195,8 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.0 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.3 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.5-0.20250813202210-1c00a87f10f7 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0 // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

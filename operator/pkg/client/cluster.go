@@ -17,7 +17,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5/client"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -31,7 +32,11 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 		return nil, err
 	}
 
-	client, err := redpanda.AdminClient(dot, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
+	state, err := redpandachart.RenderStateFromDot(dot)
+	if err != nil {
+		return nil, err
+	}
+	client, err := redpanda.AdminClient(state, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +77,11 @@ func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (
 		return nil, err
 	}
 
-	client, err := redpanda.SchemaRegistryClient(dot, c.dialer)
+	state, err := redpandachart.RenderStateFromDot(dot)
+	if err != nil {
+		return nil, err
+	}
+	client, err := redpanda.SchemaRegistryClient(state, c.dialer)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +103,11 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 		return nil, err
 	}
 
-	client, err := redpanda.KafkaClient(dot, c.dialer, opts...)
+	state, err := redpandachart.RenderStateFromDot(dot)
+	if err != nil {
+		return nil, err
+	}
+	client, err := redpanda.KafkaClient(state, c.dialer, opts...)
 	if err != nil {
 		return nil, err
 	}

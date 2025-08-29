@@ -151,10 +151,13 @@ type ConfigWatcher struct {
 	// Specifies whether the sidecar is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies additional volumes to mount to the sidecar.
+	// DEPRECATED: Use sideCars.extraVolumeMounts
 	ExtraVolumeMounts *string `json:"extraVolumeMounts,omitempty"`
 	// Specifies resource requests for the sidecar container.
+	// DEPRECATED: Use sideCars.resources
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Specifies the container's security context, including privileges and access levels of the container and its processes.
+	// DEPRECATED: Use sideCars.securityContext
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
@@ -908,6 +911,14 @@ type Tuning struct {
 	WellKnownIo *string `json:"well_known_io,omitempty"`
 }
 
+func (t *Tuning) GetResources() *corev1.ResourceRequirements {
+	return t.Resources
+}
+
+func (t *Tuning) GetExtraVolumeMounts() *string {
+	return t.ExtraVolumeMounts
+}
+
 // Listeners configures settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API. See https://docs.redpanda.com/current/manage/kubernetes/networking/configure-listeners/.
 type Listeners struct {
 	// Configures settings for the Admin API listeners.
@@ -1029,6 +1040,12 @@ type ClusterConfiguration vectorizedv1alpha1.ClusterConfiguration
 // SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
 type SideCars struct {
 	Image *RedpandaImage `json:"image,omitempty"`
+	// Specifies additional volumes to mount to the sidecar.
+	ExtraVolumeMounts *string `json:"extraVolumeMounts,omitempty"`
+	// Specifies resource requests for the sidecar container.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Specifies the container's security context, including privileges and access levels of the container and its processes.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 	// +hidefromdoc
 	Args []string `json:"args,omitempty"`
 	// Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster.
@@ -1040,15 +1057,19 @@ type SideCars struct {
 // RPControllers configures additional controllers that can be deployed as sidecars in rp helm
 type RPControllers struct {
 	// Specifies whether the Controllers are enabled.
-	Enabled            *bool                        `json:"enabled,omitempty"`
-	Resources          *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecurityContext    *corev1.SecurityContext      `json:"securityContext,omitempty"`
-	Image              *RedpandaImage               `json:"image,omitempty"`
-	HealthProbeAddress *string                      `json:"healthProbeAddress,omitempty"`
-	MetricsAddress     *string                      `json:"metricsAddress,omitempty"`
-	PProfAddress       *string                      `json:"pprofAddress,omitempty"`
-	Run                []string                     `json:"run,omitempty"`
-	CreateRBAC         *bool                        `json:"createRBAC,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies resource requests for the sidecar container.
+	// DEPRECATED: Use sideCars.resources
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Specifies the container's security context, including privileges and access levels of the container and its processes.
+	// DEPRECATED: Use sideCars.securityContext
+	SecurityContext    *corev1.SecurityContext `json:"securityContext,omitempty"`
+	Image              *RedpandaImage          `json:"image,omitempty"`
+	HealthProbeAddress *string                 `json:"healthProbeAddress,omitempty"`
+	MetricsAddress     *string                 `json:"metricsAddress,omitempty"`
+	PProfAddress       *string                 `json:"pprofAddress,omitempty"`
+	Run                []string                `json:"run,omitempty"`
+	CreateRBAC         *bool                   `json:"createRBAC,omitempty"`
 }
 
 // CPU configures CPU resources for containers. See https://docs.redpanda.com/current/manage/kubernetes/manage-resources/.
@@ -1124,6 +1145,14 @@ type SetDataDirOwnership struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
+func (t *SetDataDirOwnership) GetResources() *corev1.ResourceRequirements {
+	return t.Resources
+}
+
+func (t *SetDataDirOwnership) GetExtraVolumeMounts() *string {
+	return t.ExtraVolumeMounts
+}
+
 // InitContainerImage configures the init container image used to perform initial setup tasks before the main containers start.
 type InitContainerImage struct {
 	Repository *string `json:"repository,omitempty"`
@@ -1153,16 +1182,40 @@ type FsValidator struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
+func (t *FsValidator) GetResources() *corev1.ResourceRequirements {
+	return t.Resources
+}
+
+func (t *FsValidator) GetExtraVolumeMounts() *string {
+	return t.ExtraVolumeMounts
+}
+
 type Configurator struct {
 	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
 	AdditionalCLIArgs []string                     `json:"additionalCLIArgs,omitempty"`
 }
 
+func (t *Configurator) GetResources() *corev1.ResourceRequirements {
+	return t.Resources
+}
+
+func (t *Configurator) GetExtraVolumeMounts() *string {
+	return t.ExtraVolumeMounts
+}
+
 // SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
 type SetTieredStorageCacheDirOwnership struct {
 	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+func (t *SetTieredStorageCacheDirOwnership) GetResources() *corev1.ResourceRequirements {
+	return t.Resources
+}
+
+func (t *SetTieredStorageCacheDirOwnership) GetExtraVolumeMounts() *string {
+	return t.ExtraVolumeMounts
 }
 
 // Monitoring configures monitoring resources for Redpanda. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
@@ -1202,9 +1255,13 @@ type ExternalDNS struct {
 
 // SideCarObj represents a generic sidecar object. This is a placeholder for now.
 type SideCarObj struct {
-	Enabled         bool                         `json:"enabled,omitempty"`
-	Resources       *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecurityContext *corev1.SecurityContext      `json:"securityContext,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	// Specifies resource requests for the sidecar container.
+	// DEPRECATED: Use sideCars.resources
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Specifies the container's security context, including privileges and access levels of the container and its processes.
+	// DEPRECATED: Use sideCars.securityContext
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // EnterpriseLicenseSecretRef configures a reference to a Secret resource that contains the Enterprise license key.

@@ -104,7 +104,8 @@ func TestCertificates(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
-			state := RenderStateFromDot(dot)
+			state, err := RenderStateFromDot(dot)
+			require.NoError(t, err)
 
 			actualRootCertName, actualRootCertKey, actualClientCertName := certificatesFor(state, c.CertificateName)
 			require.Equal(t, c.ExpectedRootCertName, actualRootCertName)
