@@ -289,6 +289,7 @@ require (
 )
 
 replace (
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
 	github.com/redpanda-data/redpanda-operator/operator => ../operator

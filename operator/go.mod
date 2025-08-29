@@ -327,8 +327,7 @@ require (
 )
 
 replace (
-	// now that operator no longer leverages flux, just reference the local
-	// chart definition for our structs
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
 	// we want to leverage the latest pkg -- all of this should go away when we
 	// reintroduce go.work

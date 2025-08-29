@@ -51,7 +51,7 @@ tasks:
       - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - task: charts:download-dependencies
         vars: { CHART: redpanda/chart }
-      - helm lint --strict ./charts/console ./charts/connectors ./charts/redpanda/chart ./operator/chart/
+      - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
 
   lint-fix:
