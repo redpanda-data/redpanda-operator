@@ -8,34 +8,19 @@
 // by the Apache License, Version 2.0
 
 // +gotohelm:namespace=console
-// +gotohelm:filename=_chart.go.tpl
 package console
 
 import (
-	"embed"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
-var (
-	// Scheme is a [runtime.Scheme] with the appropriate extensions to load all
-	// objects produced by the console chart.
-	Scheme = runtime.NewScheme()
-
-	//go:embed Chart.yaml
-	//go:embed templates/*
-	//go:embed values.schema.json
-	//go:embed values.yaml
-	chartFiles embed.FS
-
-	// ChartLabel is the go version of the console helm chart.
-	Chart = gotohelm.MustLoad(chartFiles, render)
-)
+// Scheme is a [runtime.Scheme] with the appropriate extensions to load all
+// objects produced by the console chart.
+var Scheme = runtime.NewScheme()
 
 // +gotohelm:ignore=true
 func init() {
@@ -55,7 +40,7 @@ func must(err error) {
 // this function.
 // In go, this function should be call by executing [ChartLabel.Render], which will
 // handle construction of [helmette.Dot], subcharting, and output filtering.
-func render(dot *helmette.Dot) []kube.Object {
+func Render(dot *helmette.Dot) []kube.Object {
 	manifests := []kube.Object{
 		ServiceAccount(dot),
 		Secret(dot),

@@ -9,18 +9,19 @@ tasks:
       - task: generate:redpanda
       - task: generate:connectors
       # Generate chart README.md's
-      - helm-docs --chart-to-generate charts/connectors,charts/console,operator/chart
-      - helm-docs --chart-to-generate charts/redpanda/chart --template-files ./charts/redpanda/README.md.gotmpl --output-file README.md
+      - helm-docs --chart-to-generate charts/connectors,charts/console/chart,operator/chart,charts/redpanda/chart
 
   generate:console:
     desc: "Generate files for the console Helm chart"
     cmds:
     - task: genpartial
       vars: { CHART: console }
+    - task: genpartial
+      vars: { CHART: console/chart }
     - task: genschema
-      vars: { CHART: console }
+      vars: { CHART: console, DIR: charts/console/chart }
     - task: gotohelm
-      vars: { CHART: console }
+      vars: { CHART: console/chart, BUNDLE: ['github.com/redpanda-data/redpanda-operator/charts/console/v3'] }
 
   generate:operator:
     desc: "Generate files for the operator Helm chart"
@@ -40,7 +41,12 @@ tasks:
     - task: genschema
       vars: { CHART: redpanda, OUT: ./chart/values.schema.json }
     - task: gotohelm
-      vars: { CHART: redpanda, DEPS: github.com/redpanda-data/redpanda-operator/charts/console/v3, OUT: "./chart/templates" }
+      vars:
+        CHART: redpanda
+        OUT: "./chart/templates"
+        SUBCHARTS:
+        - github.com/redpanda-data/redpanda-operator/charts/console/v3
+        - github.com/redpanda-data/redpanda-operator/charts/console/v3/chart
 
   generate:connectors:
     desc: "Generate files for the connectors Helm chart"
@@ -66,6 +72,7 @@ tasks:
     vars:
       CHART: '{{ .CHART }}'
       DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
+      STRUCT: '{{ .STRUCT | default "Values" }}'
     dir: "{{ .DIR }}"
     requires:
       vars: [CHART]
@@ -76,7 +83,7 @@ tasks:
     generates:
     - ./values_partial.gen.go
     cmds:
-    - gen partial --header {{ .SRC_DIR }}/licenses/boilerplate.go.txt --out ./values_partial.gen.go --struct Values .
+    - gen partial --header {{ .SRC_DIR }}/licenses/boilerplate.go.txt --out ./{{ .STRUCT | lower }}_partial.gen.go --struct {{ .STRUCT }} .
 
   genschema:
     internal: true
@@ -108,7 +115,8 @@ tasks:
     - task: :build:gotohelm
     vars:
       CHART: '{{ .CHART }}'
-      DEPS: '{{ .DEPS }}'
+      SUBCHARTS: '{{ .SUBCHARTS | default (list) | join " " }}'
+      BUNDLE: '{{ range $bundled := .BUNDLE }} --bundle {{ $bundled }} {{ end }}'
       DIR: '{{ .DIR | default (printf "charts/%s" .CHART ) }}'
       OUT: '{{ .OUT | default "./templates" }}'
     requires:
@@ -122,7 +130,7 @@ tasks:
     - "{{ .OUT }}/**/*"
     cmds:
     # Generate helm templates from Go definitions
-    - gotohelm --write {{ .OUT }} . {{ .DEPS }}
+    - gotohelm --write {{ .OUT }} . {{ .SUBCHARTS }} {{ .BUNDLE }}
 
   download-dependencies:
     desc: "Build out the charts/ directory from the Chart.lock file"

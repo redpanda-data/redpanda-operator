@@ -27,7 +27,7 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 )
@@ -87,32 +87,32 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any        `json:"global,omitempty"`
-	NameOverride     string                `json:"nameOverride"`
-	FullnameOverride string                `json:"fullnameOverride"`
-	ClusterDomain    string                `json:"clusterDomain"`
-	CommonLabels     map[string]string     `json:"commonLabels"`
-	Image            Image                 `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service              `json:"service"`
-	LicenseKey       string                `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	AuditLogging     AuditLogging          `json:"auditLogging"`
-	Enterprise       Enterprise            `json:"enterprise"`
-	RackAwareness    RackAwareness         `json:"rackAwareness"`
-	Console          console.PartialValues `json:"console,omitempty"`
-	Auth             Auth                  `json:"auth"`
-	TLS              TLS                   `json:"tls"`
-	External         ExternalConfig        `json:"external"`
-	Logging          Logging               `json:"logging"`
-	Monitoring       Monitoring            `json:"monitoring"`
-	Resources        RedpandaResources     `json:"resources"`
-	Storage          Storage               `json:"storage"`
-	PostInstallJob   PostInstallJob        `json:"post_install_job"`
-	Statefulset      Statefulset           `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg     `json:"serviceAccount"`
-	RBAC             RBAC                  `json:"rbac"`
-	Tuning           Tuning                `json:"tuning"`
-	Listeners        Listeners             `json:"listeners"`
-	Config           Config                `json:"config"`
+	Global           map[string]any             `json:"global,omitempty"`
+	NameOverride     string                     `json:"nameOverride"`
+	FullnameOverride string                     `json:"fullnameOverride"`
+	ClusterDomain    string                     `json:"clusterDomain"`
+	CommonLabels     map[string]string          `json:"commonLabels"`
+	Image            Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service                   `json:"service"`
+	LicenseKey       string                     `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	AuditLogging     AuditLogging               `json:"auditLogging"`
+	Enterprise       Enterprise                 `json:"enterprise"`
+	RackAwareness    RackAwareness              `json:"rackAwareness"`
+	Console          consolechart.PartialValues `json:"console,omitempty"`
+	Auth             Auth                       `json:"auth"`
+	TLS              TLS                        `json:"tls"`
+	External         ExternalConfig             `json:"external"`
+	Logging          Logging                    `json:"logging"`
+	Monitoring       Monitoring                 `json:"monitoring"`
+	Resources        RedpandaResources          `json:"resources"`
+	Storage          Storage                    `json:"storage"`
+	PostInstallJob   PostInstallJob             `json:"post_install_job"`
+	Statefulset      Statefulset                `json:"statefulset"`
+	ServiceAccount   ServiceAccountCfg          `json:"serviceAccount"`
+	RBAC             RBAC                       `json:"rbac"`
+	Tuning           Tuning                     `json:"tuning"`
+	Listeners        Listeners                  `json:"listeners"`
+	Config           Config                     `json:"config"`
 	Tests            *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
