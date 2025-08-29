@@ -58,8 +58,6 @@ type PartialValues struct {
 	ConfigMap                    *PartialCreatable                 "json:\"configmap,omitempty\""
 	Deployment                   *PartialDeploymentConfig          "json:\"deployment,omitempty\""
 	Strategy                     *appsv1.DeploymentStrategy        "json:\"strategy,omitempty\""
-	Tests                        *PartialEnableable                "json:\"tests,omitempty\""
-	Enabled                      *bool                             "json:\"enabled,omitempty\""
 }
 
 type PartialImage struct {
@@ -122,10 +120,6 @@ type PartialDeploymentConfig struct {
 	Create    *bool    "json:\"create,omitempty\""
 	Command   []string "json:\"command,omitempty\""
 	ExtraArgs []string "json:\"extraArgs,omitempty\""
-}
-
-type PartialEnableable struct {
-	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialSecretMount struct {

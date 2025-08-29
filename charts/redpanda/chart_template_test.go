@@ -50,12 +50,7 @@ func TestMain(m *testing.M) {
 	// Chart.lock, which is tracked by git.
 	// This is performed in TestMain as there may be many tests that run the
 	// redpanda helm chart.
-	out, err := exec.Command("helm", "repo", "add", "redpanda", "https://charts.redpanda.com").CombinedOutput()
-	if err != nil {
-		log.Fatalf("failed to run helm repo add: %s", out)
-	}
-
-	out, err = exec.Command("helm", "dep", "build", "./chart").CombinedOutput()
+	out, err := exec.Command("helm", "dep", "build", "./chart").CombinedOutput()
 	if err != nil {
 		log.Fatalf("failed to run helm dep build: %s", out)
 	}

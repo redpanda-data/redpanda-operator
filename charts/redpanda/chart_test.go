@@ -45,6 +45,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -911,7 +912,7 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
 	final := &redpanda.PartialValues{
-		Console: &console.PartialValues{
+		Console: &consolechart.PartialValues{
 			Enabled: ptr.To(false),
 		},
 		Statefulset: &redpanda.PartialStatefulset{
@@ -978,7 +979,7 @@ func TestLabels(t *testing.T) {
 		values := &redpanda.PartialValues{
 			CommonLabels: labels,
 			// This guarantee does not currently extend to console.
-			Console: &console.PartialValues{Enabled: ptr.To(false)},
+			Console: &consolechart.PartialValues{Enabled: ptr.To(false)},
 		}
 
 		helmValues, err := redpanda.Chart.LoadValues(values)
@@ -1095,23 +1096,25 @@ func TestGoHelmEquivalence(t *testing.T) {
 				values.Auth.SASL.BootstrapUser.Password = ptr.To("bootstrapuser-p@ssw0rd")
 			}
 
-			values.Console = &console.PartialValues{
+			values.Console = &consolechart.PartialValues{
 				Enabled: ptr.To(true),
-				Ingress: &console.PartialIngressConfig{
-					Enabled: ptr.To(true),
-				},
-				Secret: &console.PartialSecretConfig{
-					Authentication: &console.PartialAuthenticationSecrets{
-						JWTSigningKey: ptr.To("JWT_PLACEHOLDER"),
+				Tests:   &consolechart.PartialEnableable{Enabled: ptr.To(false)},
+				PartialValues: console.PartialValues{
+					Ingress: &console.PartialIngressConfig{
+						Enabled: ptr.To(true),
 					},
-				},
-				Tests: &console.PartialEnableable{Enabled: ptr.To(false)},
-				// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
-				// Currently there is difference between dependency Console Deployment and ServiceAccount
-				ServiceAccount: &console.PartialServiceAccountConfig{
+					Secret: &console.PartialSecretConfig{
+						Authentication: &console.PartialAuthenticationSecrets{
+							JWTSigningKey: ptr.To("JWT_PLACEHOLDER"),
+						},
+					},
+					// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
+					// Currently there is difference between dependency Console Deployment and ServiceAccount
+					ServiceAccount: &console.PartialServiceAccountConfig{
+						AutomountServiceAccountToken: ptr.To(false),
+					},
 					AutomountServiceAccountToken: ptr.To(false),
 				},
-				AutomountServiceAccountToken: ptr.To(false),
 			}
 
 			goObjs, err := redpanda.Chart.Render(nil, helmette.Release{
