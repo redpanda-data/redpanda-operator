@@ -1,4 +1,5 @@
-{{- /* Generated from "render_state.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/render_state.go" */ -}}
 
 {{- define "redpanda.RenderState.FetchBootstrapUser" -}}
 {{- $r := (index .a 0) -}}

@@ -1,4 +1,5 @@
-{{- /* Generated from "service.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/console/v3/service.go" */ -}}
 
 {{- define "console.Service" -}}
 {{- $dot := (index .a 0) -}}

@@ -1,4 +1,5 @@
-{{- /* Generated from "bootstrap.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "internal/bootstrap/bootstrap.go" */ -}}
 
 {{- define "_shims.typetest" -}}
 {{- $typ := (index .a 0) -}}

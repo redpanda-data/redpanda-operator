@@ -7,6 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
+// +gotohelm:namespace=console
 // +gotohelm:filename=_chart.go.tpl
 package console
 

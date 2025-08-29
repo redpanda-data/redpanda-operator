@@ -1,4 +1,5 @@
-{{- /* Generated from "chart.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/chart.go" */ -}}
 
 {{- define "operator.render" -}}
 {{- $dot := (index .a 0) -}}

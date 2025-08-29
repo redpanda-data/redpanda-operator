@@ -1,4 +1,5 @@
-{{- /* Generated from "ingress.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/console/v3/ingress.go" */ -}}
 
 {{- define "console.Ingress" -}}
 {{- $dot := (index .a 0) -}}

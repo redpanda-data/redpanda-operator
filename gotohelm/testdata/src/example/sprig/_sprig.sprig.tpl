@@ -1,4 +1,5 @@
-{{- /* Generated from "sprig.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/sprig/sprig.go" */ -}}
 
 {{- define "sprig.Sprig" -}}
 {{- $dot := (index .a 0) -}}

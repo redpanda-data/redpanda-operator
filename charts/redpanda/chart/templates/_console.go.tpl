@@ -1,4 +1,5 @@
-{{- /* Generated from "console.tpl.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/console.tpl.go" */ -}}
 
 {{- define "redpanda.consoleChartIntegration" -}}
 {{- $state := (index .a 0) -}}

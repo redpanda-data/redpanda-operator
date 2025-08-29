@@ -1,4 +1,5 @@
-{{- /* Generated from "shims.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "example.com/example/sprig/shims.go" */ -}}
 
 {{- define "sprig.numericTestInputs" -}}
 {{- $dot := (index .a 0) -}}

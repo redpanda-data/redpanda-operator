@@ -1,4 +1,5 @@
-{{- /* Generated from "pre_install_crd_job.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/pre_install_crd_job.go" */ -}}
 
 {{- define "operator.PreInstallCRDJob" -}}
 {{- $dot := (index .a 0) -}}

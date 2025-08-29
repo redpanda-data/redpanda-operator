@@ -1,4 +1,5 @@
-{{- /* Generated from "rbac.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/rbac.go" */ -}}
 
 {{- define "operator.rbacBundles" -}}
 {{- $dot := (index .a 0) -}}

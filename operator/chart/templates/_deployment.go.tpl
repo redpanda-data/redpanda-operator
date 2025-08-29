@@ -1,4 +1,5 @@
-{{- /* Generated from "deployment.go" */ -}}
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/deployment.go" */ -}}
 
 {{- define "operator.Deployment" -}}
 {{- $dot := (index .a 0) -}}
