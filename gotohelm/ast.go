@@ -150,8 +150,9 @@ func (c *Cast) Write(w io.Writer) {
 }
 
 type Call struct {
-	FuncName  Node
-	Arguments []Node
+	FuncName     Node
+	Encapsulator Node
+	Arguments    []Node
 }
 
 func litCall(funcName string, args ...Node) *Call {
@@ -159,12 +160,17 @@ func litCall(funcName string, args ...Node) *Call {
 }
 
 func (c *Call) Write(w io.Writer) {
+	encapsulator := c.Encapsulator
+	if encapsulator == nil {
+		encapsulator = Literal("list")
+	}
+
 	args := &DictLiteral{
 		KeysValues: []*KeyValue{
 			{
 				Key: Quoted("a"),
 				Value: &BuiltInCall{
-					Func:      Literal("list"),
+					Func:      encapsulator,
 					Arguments: c.Arguments,
 				},
 			},

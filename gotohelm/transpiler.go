@@ -753,9 +753,17 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 					Fset: t.Fset,
 				})
 			}
-			return Quoted(
-				fmt.Sprintf("%s.%s", t.namespaceFor(obj.Pkg()), t.funcNameFor(obj)),
-			)
+
+			// Function references are stored as []{funcName, capturedArguments...}.
+			// See transpileCallExpr for details about this format.
+			return &BuiltInCall{
+				Func: Literal("list"),
+				Arguments: []Node{
+					Quoted(
+						fmt.Sprintf("%s.%s", t.namespaceFor(obj.Pkg()), t.funcNameFor(obj)),
+					),
+				},
+			}
 
 		// Unclear how often this check is correct. true, false, and _ won't
 		// have an Obj. AST rewriting can also result in .Obj being nil.
@@ -779,11 +787,28 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			return t.transpileConst(obj)
 
 		case *types.Func:
-			// TODO this needs better documentation
-			// And probably needs a more aggressive check.
-			return &Selector{
-				Expr:  t.transpileExpr(n.X),
-				Field: n.Sel.Name,
+			// Function references are stored as []{funcName, capturedArguments...}.
+			// See transpileCallExpr for details about this format.
+
+			args := []Node{
+				Quoted(fmt.Sprintf("%s.%s", t.namespaceFor(obj.Pkg()), t.funcNameFor(obj))),
+			}
+
+			if obj.Signature().Recv() != nil {
+				recv := t.transpileExpr(n.X)
+
+				// If recv isn't a pointer, deepCopy it at the point of being
+				// referenced to emulate its immutability.
+				if _, ok := obj.Signature().Recv().Type().(*types.Pointer); !ok {
+					recv = &BuiltInCall{Func: Literal("deepCopy"), Arguments: []Node{recv}}
+				}
+
+				args = append(args, recv)
+			}
+
+			return &BuiltInCall{
+				Func:      Literal("list"),
+				Arguments: args,
 			}
 
 		case *types.Var:
@@ -1362,7 +1387,47 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 			// Easy case: if there's no receiver, this is just a function call.
 			call = litCall(fmt.Sprintf("%s.%s", t.namespaceFor(callee.Pkg()), t.funcNameFor(callee)), args...)
 		case *types.Var:
-			call = &Call{FuncName: &Ident{Name: callee.Name()}, Arguments: args}
+			// If callee is a var, we're calling a function variable. e.g.:
+			// func myfn() {}
+			// x := myfn
+			// x()
+			// OR
+			// type doer struct{}
+			// x := doer{}
+			// x.Do()
+			//
+			// To support both (and leave a bit of room for closures in the
+			// future), functions are captured as a slice where [0] is the name
+			// of the function's template and [1:] is any additional arguments,
+			// namely a reference to the receiver.
+			//
+			// To invoke such functions, we need to make use of the
+			// "Encapsulator" member on Call which allows us to control the
+			// mapping of []Node arguments to a single Node for gotohelm's
+			// calling convention. This let's us use concat and rest which
+			// avoids the need to perform additional checks to distinguish
+			// between a function and method.
+			call = &Call{
+				FuncName: &BuiltInCall{
+					Func: Literal("first"),
+					Arguments: []Node{
+						t.transpileExpr(n.Fun),
+					},
+				},
+				Encapsulator: Literal("concat"),
+				Arguments: []Node{
+					&BuiltInCall{
+						Func: Literal("rest"),
+						Arguments: []Node{
+							t.transpileExpr(n.Fun),
+						},
+					},
+					&BuiltInCall{
+						Func:      Literal("list"),
+						Arguments: args,
+					},
+				},
+			}
 		default:
 			panic(&Unsupported{
 				Node: n,
@@ -1584,7 +1649,7 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 			panic(fmt.Sprintf("unsupported Basic type: %#v", typ))
 		}
 
-	case *types.Pointer, *types.Map, *types.Interface, *types.Slice:
+	case *types.Pointer, *types.Map, *types.Interface, *types.Slice, *types.Signature:
 		return &Nil{}
 
 	case *types.Struct:
