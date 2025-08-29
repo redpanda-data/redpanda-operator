@@ -14,6 +14,7 @@ import (
 	"reflect"
 
 	"github.com/cockroachdb/errors"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -22,15 +23,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
-
-func convertJSON(from, to any) error {
-	data, err := json.Marshal(from)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, to)
-}
 
 func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) (err error) {
 	if from == nil {
@@ -48,8 +42,7 @@ func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to
 	}()
 
 	result := helmette.Tpl(state.Dot, *from, state.Dot)
-	*to = helmette.UnmarshalYamlArray[T](result)
-	return
+	return yaml.Unmarshal([]byte(result), to)
 }
 
 func convertAndAppendYAMLNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) error {
@@ -61,36 +54,32 @@ func convertAndAppendYAMLNotNil[T any](state *redpanda.RenderState, from *string
 	return nil
 }
 
-func convertAndInitializeJSONNotNil[T any, U *T, V any, W *V](from U, to W) error {
-	if from == nil {
-		return nil
-	}
-
-	if to == nil {
-		var v V
-		to = &v
-	}
-
-	return convertJSON(from, to)
-}
-
 func convertAndAppendJSONNotNil[T any, V any](from []T, to *[]V) error {
 	if from == nil {
 		return nil
 	}
 
-	converted := []V{}
-	if err := convertJSON(from, &converted); err != nil {
+	converted, err := valuesutil.UnmarshalInto[[]V](from)
+	if err != nil {
 		return err
 	}
 	*to = append(*to, converted...)
 	return nil
 }
 
-func convertJSONNotNil[T any, U *T](from U, to any) error {
+func convertJSON(from, to any) error {
+	data, err := json.Marshal(from)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, to)
+}
+
+func convertJSONNotNil[T any, U *T, V any](from U, to *V) error {
 	if from == nil {
 		return nil
 	}
+
 	return convertJSON(from, to)
 }
 
@@ -127,6 +116,18 @@ func convertInitContainer(state *redpanda.RenderState, values *redpanda.Values, 
 	}
 
 	return nil
+}
+
+func convertAndInitializeAffinityNotNil(spec *corev1.PodAffinity, affinity *applycorev1.AffinityApplyConfiguration) error {
+	if spec == nil {
+		return nil
+	}
+
+	if affinity.PodAffinity == nil {
+		affinity.PodAffinity = &applycorev1.PodAffinityApplyConfiguration{}
+	}
+
+	return convertJSON(spec, affinity.PodAffinity)
 }
 
 func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *redpandav1alpha2.PodAntiAffinity, affinity *applycorev1.AffinityApplyConfiguration) {

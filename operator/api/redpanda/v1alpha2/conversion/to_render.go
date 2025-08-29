@@ -73,8 +73,7 @@ func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *re
 		spec.Statefulset.InitContainers.Configurator = &redpandav1alpha2.Configurator{}
 	}
 
-	// As we're currently pinned to the v5.10.x chart, we need to set the
-	// default image to the operator's preferred version.
+	// Use the default image passed on the command-line.
 	spec.Image = defaults.RedpandaImage
 
 	// The flag that disables cluster configuration synchronization is set to `true` to not
@@ -196,7 +195,7 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 	if values.Statefulset.PodTemplate.Spec.Affinity == nil {
 		values.Statefulset.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
 	}
-	if err := convertAndInitializeJSONNotNil(spec.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity.PodAffinity); err != nil {
+	if err := convertAndInitializeAffinityNotNil(spec.PodAffinity, values.Statefulset.PodTemplate.Spec.Affinity); err != nil {
 		return err
 	}
 	convertAndInitializeAntiAffinityNotNil(state, spec.PodAntiAffinity, values.Statefulset.PodTemplate.Spec.Affinity)

@@ -50,6 +50,9 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec = &redpandav1alpha2.RedpandaClusterSpec{}
 	}
 
+	// NB: No need for real defaults here as the defaults are leveraged only in the stateful set
+	// images and pod command-line args, neither of which are looked at for rendering simple
+	// resources.
 	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaults{}, cluster.Redpanda, cluster.NodePools)
 	if err != nil {
 		return nil, err

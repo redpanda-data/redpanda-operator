@@ -12,6 +12,7 @@
 package redpanda
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -23,6 +24,8 @@ import (
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -48,6 +51,12 @@ var (
 // FetchSASLUsers attempts to locate an existing SASL users secret in the cluster.
 // If found, it is used to populate the first user in the secret for use.
 func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, err error) {
+	ctl, ctlErr := r.KubeCTL()
+	if ctlErr != nil {
+		err = ctlErr
+		return
+	}
+
 	saslUsers := SecretSASLUsers(r)
 	saslUsersError := func(err error) error {
 		return fmt.Errorf("error fetching SASL authentication for %s/%s: %w", saslUsers.Namespace, saslUsers.Name, err)
@@ -56,14 +65,14 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 	if saslUsers != nil {
 		// read from the server since we're assuming all the resources
 		// have already been created
-		users, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, saslUsers.Namespace, saslUsers.Name)
+		var users corev1.Secret
+		lookupErr := ctl.Get(context.TODO(), types.NamespacedName{Name: saslUsers.Name, Namespace: saslUsers.Namespace}, &users)
 		if lookupErr != nil {
+			if k8sapierrors.IsNotFound(lookupErr) {
+				err = saslUsersError(ErrSASLSecretNotFound)
+				return
+			}
 			err = saslUsersError(lookupErr)
-			return
-		}
-
-		if !found {
-			err = saslUsersError(ErrSASLSecretNotFound)
 			return
 		}
 
@@ -151,6 +160,11 @@ func firstUser(data []byte) (user string, password string, mechanism string) {
 
 // TLSConfig constructs a tls.Config for the given internal listener.
 func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
+	ctl, err := r.KubeCTL()
+	if err != nil {
+		return nil, err
+	}
+
 	namespace := r.Release.Namespace
 	serverName := InternalDomain(r)
 
@@ -165,13 +179,13 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: serverName}
 
-	serverCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, namespace, rootCertName)
+	var serverCert corev1.Secret
+	lookupErr := ctl.Get(context.TODO(), types.NamespacedName{Name: rootCertName, Namespace: namespace}, &serverCert)
 	if lookupErr != nil {
+		if k8sapierrors.IsNotFound(lookupErr) {
+			return nil, serverTLSError(ErrServerCertificateNotFound)
+		}
 		return nil, serverTLSError(lookupErr)
-	}
-
-	if !found {
-		return nil, serverTLSError(ErrServerCertificateNotFound)
 	}
 
 	serverPublicKey, found := serverCert.Data[rootCertKey]
@@ -190,13 +204,13 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	tlsConfig.RootCAs = pool
 
 	if listener.RequireClientAuth {
-		clientCert, found, lookupErr := helmette.SafeLookup[corev1.Secret](r.Dot, namespace, clientCertName)
+		var clientCert corev1.Secret
+		lookupErr := ctl.Get(context.TODO(), types.NamespacedName{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {
+			if k8sapierrors.IsNotFound(lookupErr) {
+				return nil, clientTLSError(ErrClientCertificateNotFound)
+			}
 			return nil, clientTLSError(lookupErr)
-		}
-
-		if !found {
-			return nil, clientTLSError(ErrServerCertificateNotFound)
 		}
 
 		// we always use tls.crt for client certs
