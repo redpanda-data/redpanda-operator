@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
 var _ Resource = &ServiceAccountResource{}
@@ -67,6 +68,7 @@ func (s *ServiceAccountResource) obj() (k8sclient.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Key().Name,
 			Namespace: s.Key().Namespace,
+			Labels:    labels.ForCluster(s.pandaCluster),
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
