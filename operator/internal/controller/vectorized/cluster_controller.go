@@ -43,6 +43,7 @@ import (
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -71,6 +72,7 @@ type ClusterReconciler struct {
 	client.Client
 	Log                            logr.Logger
 	configuratorSettings           resources.ConfiguratorSettings
+	LifecycleClient                *lifecycle.ResourceClient[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster]
 	clusterDomain                  string
 	Scheme                         *runtime.Scheme
 	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
@@ -214,12 +216,16 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("Redpanda version >=%s is required to support FeatureGate EmptySeedStartCluster", featuregates.V23_2.String())
 	}
 
-	ar.bootstrapService()
-	ar.clusterRole()
-	ar.clusterRoleBinding()
-	ar.clusterService()
-	ar.headlessService()
-	ar.ingress()
+	if err := r.LifecycleClient.SyncAll(ctx, &vectorizedCluster); err != nil {
+		return ctrl.Result{}, fmt.Errorf("syncing resources: %w", err)
+	}
+
+	//	ar.bootstrapService()
+	// ar.clusterRole()
+	// ar.clusterRoleBinding()
+	// ar.clusterService()
+	//	ar.headlessService()
+	//	ar.ingress()
 	ar.nodeportService()
 	if err := ar.pki(); err != nil {
 		return ctrl.Result{}, err
@@ -228,11 +234,11 @@ func (r *ClusterReconciler) Reconcile(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("getting pki: %w", err)
 	}
-	ar.podDisruptionBudget()
+	// ar.podDisruptionBudget()
 	ar.proxySuperuser()
 	ar.schemaRegistrySuperUser()
 	ar.rpkSuperUser()
-	ar.serviceAccount()
+	// ar.serviceAccount()
 	ar.secret()
 
 	var secrets []types.NamespacedName
