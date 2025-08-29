@@ -454,9 +454,9 @@
 {{- $overrideSpec = (mustMergeOverwrite (dict) (dict)) -}}
 {{- end -}}
 {{- $merged := (merge (dict) (mustMergeOverwrite (dict) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" $overrides.labels "annotations" $overrides.annotations)) "spec" $overrideSpec)) $original) -}}
-{{- $_ := (set $merged.spec "initContainers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.initContainers $overrideSpec.initContainers "name" "redpanda.mergeContainer")))) "r")) -}}
-{{- $_ := (set $merged.spec "containers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.containers $overrideSpec.containers "name" "redpanda.mergeContainer")))) "r")) -}}
-{{- $_ := (set $merged.spec "volumes" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.volumes $overrideSpec.volumes "name" "redpanda.mergeVolume")))) "r")) -}}
+{{- $_ := (set $merged.spec "initContainers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.initContainers $overrideSpec.initContainers "name" (list "redpanda.mergeContainer"))))) "r")) -}}
+{{- $_ := (set $merged.spec "containers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.containers $overrideSpec.containers "name" (list "redpanda.mergeContainer"))))) "r")) -}}
+{{- $_ := (set $merged.spec "volumes" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.volumes $overrideSpec.volumes "name" (list "redpanda.mergeVolume"))))) "r")) -}}
 {{- if (eq (toJson $merged.metadata.labels) "null") -}}
 {{- $_ := (set $merged.metadata "labels" (dict)) -}}
 {{- end -}}
@@ -509,7 +509,7 @@
 {{- $elOverride_5 := (index $_500_elOverride_5_ok_6 0) -}}
 {{- $ok_6 := (index $_500_elOverride_5_ok_6 1) -}}
 {{- if $ok_6 -}}
-{{- $merged = (concat (default (list) $merged) (list (get (fromJson (include $mergeFunc (dict "a" (list $el $elOverride_5)))) "r"))) -}}
+{{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
 {{- else -}}
 {{- $merged = (concat (default (list) $merged) (list $el)) -}}
 {{- end -}}
@@ -580,8 +580,8 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $merged := (merge (dict) $override $original) -}}
-{{- $_ := (set $merged "env" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.env $override.env "name" "redpanda.mergeEnvVar")))) "r")) -}}
-{{- $_ := (set $merged "volumeMounts" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.volumeMounts $override.volumeMounts "name" "redpanda.mergeVolumeMount")))) "r")) -}}
+{{- $_ := (set $merged "env" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.env $override.env "name" (list "redpanda.mergeEnvVar"))))) "r")) -}}
+{{- $_ := (set $merged "volumeMounts" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.volumeMounts $override.volumeMounts "name" (list "redpanda.mergeVolumeMount"))))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $merged) | toJson -}}
 {{- break -}}
