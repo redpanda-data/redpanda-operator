@@ -162,6 +162,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -171,6 +172,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -181,6 +183,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
