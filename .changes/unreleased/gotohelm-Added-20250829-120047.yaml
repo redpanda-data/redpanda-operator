@@ -1,0 +1,17 @@
+project: gotohelm
+kind: Added
+body: |-
+    Added support for passing method references.
+
+      The following code (sans the Printf) now transpiles successfully.
+
+      ```go
+      type S struct {Value int}
+      func (s *S) GetValue() int {return s.Value}
+
+      s := S{Value: 10}
+      ref := s.GetValue
+
+      fmt.Printf("%d", ref()) // 10
+      ```
+time: 2025-08-29T12:00:47.078209-04:00

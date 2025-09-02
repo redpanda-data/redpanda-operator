@@ -109,7 +109,7 @@ func (ts *TestStruct) Double(input int) int {
 	return input * 2
 }
 
-func (ts *TestStruct) Multiplayer(input int) int {
+func (ts *TestStruct) Multiply(input int) int {
 	return input * ts.Mult
 }
 
@@ -139,8 +139,8 @@ func instanceMethod() any {
 		f.InstanceMethod(),
 		t.Double(2),
 		t.Double(4),
-		t.Multiplayer(6),
-		f.Multiplayer(6),
+		t.Multiply(6),
+		f.Multiply(6),
 		t.String("one", "two"),
 		f.SomeString == "Change string",
 	}
@@ -335,11 +335,36 @@ func appends() [][]int {
 func funcArgs() []any {
 	// Showcase support for first class functions!
 	// NOTE: Closures are NOT supported.
+
+	sThunk := thunk[string]{Val: "wow!"}
+	sThunkThunk := sThunk.Thunk
+	sThunkImmutableThunk := sThunk.ImmutableThunk
+	sThunk.Val = "wow! Mutation"
+
+	throughVar := hello
+	depThroughVar := aaacommon.SharedConstant
+
 	return []any{
+		depThroughVar(),
 		sliceOf(5, ident),
 		sliceOf(10, hello),
+		sliceOf(10, throughVar),
+		sliceOf(10, sThunkThunk),
+		sliceOf(10, sThunkImmutableThunk),
+		sliceOf(10, sThunk.Thunk),
 	}
+}
 
+type thunk[T any] struct {
+	Val T
+}
+
+func (t *thunk[T]) Thunk(_ int) T {
+	return t.Val
+}
+
+func (t thunk[T]) ImmutableThunk(_ int) T {
+	return t.Val
 }
 
 func sliceOf[T any](l int, fn func(int) T) []T {

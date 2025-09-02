@@ -94,7 +94,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "syntax.TestStruct.Multiplayer" -}}
+{{- define "syntax.TestStruct.Multiply" -}}
 {{- $ts := (index .a 0) -}}
 {{- $input := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -135,7 +135,7 @@
 {{- $_ := (get (fromJson (include "syntax.TestStruct.MutateString" (dict "a" (list $f "Change string")))) "r") -}}
 {{- $_ := (get (fromJson (include "syntax.TestStruct.DoNotMutateString" (dict "a" (list (deepCopy $f) "do not change")))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (get (fromJson (include "syntax.TestStruct.InstanceMethod" (dict "a" (list $t)))) "r") (get (fromJson (include "syntax.TestStruct.InstanceMethod" (dict "a" (list $f)))) "r") ((get (fromJson (include "syntax.TestStruct.Double" (dict "a" (list $t (2 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Double" (dict "a" (list $t (4 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Multiplayer" (dict "a" (list $t (6 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Multiplayer" (dict "a" (list $f (6 | int))))) "r") | int) (get (fromJson (include "syntax.TestStruct.String" (dict "a" (list (deepCopy $t) "one" "two")))) "r") (eq $f.SomeString "Change string"))) | toJson -}}
+{{- (dict "r" (list (get (fromJson (include "syntax.TestStruct.InstanceMethod" (dict "a" (list $t)))) "r") (get (fromJson (include "syntax.TestStruct.InstanceMethod" (dict "a" (list $f)))) "r") ((get (fromJson (include "syntax.TestStruct.Double" (dict "a" (list $t (2 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Double" (dict "a" (list $t (4 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Multiply" (dict "a" (list $t (6 | int))))) "r") | int) ((get (fromJson (include "syntax.TestStruct.Multiply" (dict "a" (list $f (6 | int))))) "r") | int) (get (fromJson (include "syntax.TestStruct.String" (dict "a" (list (deepCopy $t) "one" "two")))) "r") (eq $f.SomeString "Change string"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -316,8 +316,36 @@
 {{- define "syntax.funcArgs" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- $sThunk := (mustMergeOverwrite (dict "Val" "") (dict "Val" "wow!")) -}}
+{{- $sThunkThunk := (list "syntax.thunk.Thunk" $sThunk) -}}
+{{- $sThunkImmutableThunk := (list "syntax.thunk.ImmutableThunk" (deepCopy $sThunk)) -}}
+{{- $_ := (set $sThunk "Val" "wow! Mutation") -}}
+{{- $throughVar := (list "syntax.hello") -}}
+{{- $depThroughVar := (list "aaacommon.SharedConstant") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (get (fromJson (include "syntax.sliceOf" (dict "a" (list (5 | int) "syntax.ident")))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) "syntax.hello")))) "r"))) | toJson -}}
+{{- (dict "r" (list (get (fromJson (include (first $depThroughVar) (dict "a" (concat (rest $depThroughVar) (list))))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (5 | int) (list "syntax.ident"))))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) (list "syntax.hello"))))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) $throughVar)))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) $sThunkThunk)))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) $sThunkImmutableThunk)))) "r") (get (fromJson (include "syntax.sliceOf" (dict "a" (list (10 | int) (list "syntax.thunk.Thunk" $sThunk))))) "r"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "syntax.thunk.Thunk" -}}
+{{- $t := (index .a 0) -}}
+{{- $_ := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $t.Val) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "syntax.thunk.ImmutableThunk" -}}
+{{- $t := (index .a 0) -}}
+{{- $_ := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $t.Val) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -329,7 +357,7 @@
 {{- $_is_returning := false -}}
 {{- $r := (coalesce nil) -}}
 {{- range $_, $i := untilStep ((0 | int)|int) ($l|int) (1|int) -}}
-{{- $r = (concat (default (list) $r) (list (get (fromJson (include $fn (dict "a" (list $i)))) "r"))) -}}
+{{- $r = (concat (default (list) $r) (list (get (fromJson (include (first $fn) (dict "a" (concat (rest $fn) (list $i))))) "r"))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
