@@ -15,7 +15,7 @@ tasks:
     desc: "Generate files for the console Helm chart"
     cmds:
     - task: genpartial
-      vars: { CHART: console }
+      vars: { CHART: console, STRUCT: RenderValues }
     - task: genpartial
       vars: { CHART: console/chart }
     - task: genschema

@@ -28,7 +28,7 @@ require (
 	github.com/redpanda-data/common-go/rpadmin v0.1.14
 	github.com/redpanda-data/common-go/secrets v0.1.3
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
-	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250718150737-e01f8476d560
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
@@ -246,6 +246,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect

@@ -344,6 +344,9 @@
     "console": {
       "additionalProperties": false,
       "properties": {
+        "NameOverride": {
+          "type": "string"
+        },
         "affinity": {
           "additionalProperties": false,
           "properties": {
