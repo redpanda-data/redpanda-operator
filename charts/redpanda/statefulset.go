@@ -134,6 +134,7 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
 func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 	fullname := Fullname(state)
+	poolFullname := fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())
 	volumes := CommonVolumes(state)
 
 	// NOTE and tiered-storage-dir are NOT in this
@@ -152,7 +153,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 			Name: "base-config",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fullname},
+					LocalObjectReference: corev1.LocalObjectReference{Name: poolFullname},
 				},
 			},
 		},
@@ -166,7 +167,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 			Name: fmt.Sprintf("%.51s-configurator", fullname),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  fmt.Sprintf("%.51s-configurator", fullname),
+					SecretName:  fmt.Sprintf("%.51s-configurator", poolFullname),
 					DefaultMode: ptr.To[int32](0o775),
 				},
 			},
@@ -178,7 +179,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  fmt.Sprintf("%.49s-fs-validator", fullname),
+					SecretName:  fmt.Sprintf("%.49s-fs-validator", poolFullname),
 					DefaultMode: ptr.To[int32](0o775),
 				},
 			},

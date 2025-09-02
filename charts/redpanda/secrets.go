@@ -247,7 +247,7 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.49s-fs-validator", Fullname(state)),
+			Name:      fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},

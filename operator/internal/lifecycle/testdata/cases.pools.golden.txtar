@@ -1030,14 +1030,14 @@
             defaultMode: 509
             secretName: nodepool-basic-test-sts-lifecycle
         - configMap:
-            name: nodepool-basic-test
+            name: nodepool-basic-test-basic
           name: base-config
         - emptyDir: {}
           name: config
         - name: nodepool-basic-test-configurator
           secret:
             defaultMode: 509
-            secretName: nodepool-basic-test-configurator
+            secretName: nodepool-basic-test-basic-configurator
         - name: datadir
           persistentVolumeClaim:
             claimName: datadir

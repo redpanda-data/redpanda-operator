@@ -70,10 +70,11 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $fullname := (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") -}}
+{{- $poolFullname := (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r")) -}}
 {{- $volumes := (get (fromJson (include "redpanda.CommonVolumes" (dict "a" (list $state)))) "r") -}}
-{{- $volumes = (concat (default (list) $volumes) (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.50s-sts-lifecycle" $fullname) "defaultMode" (0o775 | int))))) (dict "name" "lifecycle-scripts")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" $fullname)) (dict)))) (dict "name" "base-config")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "emptyDir" (mustMergeOverwrite (dict) (dict)))) (dict "name" "config")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.51s-configurator" $fullname) "defaultMode" (0o775 | int))))) (dict "name" (printf "%.51s-configurator" $fullname)))))) -}}
+{{- $volumes = (concat (default (list) $volumes) (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.50s-sts-lifecycle" $fullname) "defaultMode" (0o775 | int))))) (dict "name" "lifecycle-scripts")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" $poolFullname)) (dict)))) (dict "name" "base-config")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "emptyDir" (mustMergeOverwrite (dict) (dict)))) (dict "name" "config")) (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.51s-configurator" $poolFullname) "defaultMode" (0o775 | int))))) (dict "name" (printf "%.51s-configurator" $fullname)))))) -}}
 {{- if $pool.Statefulset.initContainers.fsValidator.enabled -}}
-{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.49s-fs-validator" $fullname) "defaultMode" (0o775 | int))))) (dict "name" (printf "%.49s-fs-validator" $fullname))))) -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%.49s-fs-validator" $poolFullname) "defaultMode" (0o775 | int))))) (dict "name" (printf "%.49s-fs-validator" $fullname))))) -}}
 {{- end -}}
 {{- $vol_1 := (get (fromJson (include "redpanda.Listeners.TrustStoreVolume" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
 {{- if (ne (toJson $vol_1) "null") -}}
@@ -214,9 +215,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_389_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_389_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_389_uid_gid 1) | int64) -}}
+{{- $_390_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_390_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_390_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $pool.Statefulset.initContainerImage.repository $pool.Statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -229,12 +230,12 @@
 {{- $containerName := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_415_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_415_gid_uid 0) -}}
-{{- $uid := (index $_415_gid_uid 1) -}}
-{{- $_416_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_416_sgid_suid 0) -}}
-{{- $suid := (index $_416_sgid_suid 1) -}}
+{{- $_416_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_416_gid_uid 0) -}}
+{{- $uid := (index $_416_gid_uid 1) -}}
+{{- $_417_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_417_sgid_suid 0) -}}
+{{- $suid := (index $_417_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -311,9 +312,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_495_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_495_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_495_uid_gid 1) | int64) -}}
+{{- $_496_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_496_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_496_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $state.Values.storage $state)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
