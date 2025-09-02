@@ -303,7 +303,7 @@ func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.51s-configurator", Fullname(state)),
+			Name:      fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},

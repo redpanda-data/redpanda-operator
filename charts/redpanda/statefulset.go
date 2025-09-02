@@ -909,7 +909,7 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
+			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},

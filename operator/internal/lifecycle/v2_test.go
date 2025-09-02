@@ -198,7 +198,6 @@ func TestV2ResourceClient(t *testing.T) {
 
 			poolBytes, err := yaml.Marshal(sets)
 			require.NoError(t, err)
-
 			goldenPools.AssertGolden(t, testutil.YAML, file.Name, poolBytes)
 
 			resources, err := resourceClient.simpleResourceRenderer.Render(ctx, cluster)

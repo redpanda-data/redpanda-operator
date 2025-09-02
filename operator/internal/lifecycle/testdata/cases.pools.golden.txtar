@@ -735,7 +735,7 @@
       helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test
+    name: nodepool-basic-test-basic
     namespace: nodepool-basic-test
   spec:
     podManagementPolicy: Parallel

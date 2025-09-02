@@ -39,7 +39,7 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
+			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
