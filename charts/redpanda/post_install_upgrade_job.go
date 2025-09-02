@@ -25,14 +25,14 @@ import (
 // bootstrapYamlTemplater returns an initcontainer that will template
 // environment variables into ${base-config}/boostrap.yaml and output it to
 // ${config}/.bootstrap.yaml.
-func bootstrapYamlTemplater(state *RenderState) corev1.Container {
+func bootstrapYamlTemplater(state *RenderState, ss Statefulset) corev1.Container {
 	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
 	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
 	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
-		state.Values.Statefulset.SideCars.Image.Repository,
-		state.Values.Statefulset.SideCars.Image.Tag,
+		ss.SideCars.Image.Repository,
+		ss.SideCars.Image.Tag,
 	)
 
 	return corev1.Container{
@@ -76,6 +76,8 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 		return nil
 	}
 
+	// NB: since the job is a singleton, we only use the sidecar
+	// image from the default statefulset for rendering
 	image := fmt.Sprintf(`%s:%s`,
 		state.Values.Statefulset.SideCars.Image.Repository,
 		state.Values.Statefulset.SideCars.Image.Tag,
@@ -123,7 +125,7 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 						},
 						Spec: corev1.PodSpec{
 							RestartPolicy:                corev1.RestartPolicyNever,
-							InitContainers:               []corev1.Container{bootstrapYamlTemplater(state)},
+							InitContainers:               []corev1.Container{bootstrapYamlTemplater(state, state.Values.Statefulset)},
 							AutomountServiceAccountToken: ptr.To(false),
 							Containers: []corev1.Container{
 								{

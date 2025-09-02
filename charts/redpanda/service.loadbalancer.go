@@ -39,13 +39,15 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 	// https://github.com/redpanda-data/helm-charts/blob/2baa77b99a71a993e639a7138deaf4543727c8a1/charts/redpanda/templates/service.loadbalancer.yaml#L33
 	labels["repdanda.com/type"] = "loadbalancer"
 
-	selector := StatefulSetPodLabelsSelector(state)
+	selector := ClusterPodLabelsSelector(state)
 
 	var services []*corev1.Service
-	replicas := state.Values.Statefulset.Replicas // TODO fix me once the transpiler is fixed.
-	for i := int32(0); i < replicas; i++ {
-		podname := fmt.Sprintf("%s-%d", Fullname(state), i)
+	pods := PodNames(state, Pool{Statefulset: state.Values.Statefulset})
+	for _, set := range state.Pools {
+		pods = append(pods, PodNames(state, set)...)
+	}
 
+	for i, podname := range pods {
 		// NB: A range loop is used here as its the most terse way to handle
 		// nil maps in gotohelm.
 		annotations := map[string]string{}
@@ -53,6 +55,8 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 			annotations[k] = v
 		}
 
+		// TODO: this looks quite broken just based on the fact that if replicas > addresses
+		// this panics
 		if externalDNS.Enabled {
 			prefix := podname
 			if len(state.Values.External.Addresses) > 0 {

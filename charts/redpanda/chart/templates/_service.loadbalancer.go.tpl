@@ -1,7 +1,7 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/service.loadbalancer.go" */ -}}
 
-{{- define "redpanda.LoadBalancerServices" -}}
+{{- define "redpandav25.LoadBalancerServices" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -16,13 +16,18 @@
 {{- break -}}
 {{- end -}}
 {{- $externalDNS := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.externalDns (mustMergeOverwrite (dict "enabled" false) (dict)))))) "r") -}}
-{{- $labels := (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") -}}
+{{- $labels := (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $labels "repdanda.com/type" "loadbalancer") -}}
-{{- $selector := (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state)))) "r") -}}
+{{- $selector := (get (fromJson (include "redpandav25.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") -}}
 {{- $services := (coalesce nil) -}}
-{{- $replicas := ($state.Values.statefulset.replicas | int) -}}
-{{- range $_, $i := untilStep (((0 | int) | int)|int) (($state.Values.statefulset.replicas | int)|int) (1|int) -}}
-{{- $podname := (printf "%s-%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $i) -}}
+{{- $pods := (get (fromJson (include "redpandav25.PodNames" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
+{{- range $_, $set := $state.Pools -}}
+{{- $pods = (concat (default (list) $pods) (default (list) (get (fromJson (include "redpandav25.PodNames" (dict "a" (list $state $set)))) "r"))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $i, $podname := $pods -}}
 {{- $annotations := (dict) -}}
 {{- range $k, $v := $state.Values.external.annotations -}}
 {{- $_ := (set $annotations $k $v) -}}
@@ -51,10 +56,10 @@
 {{- end -}}
 {{- $_ := (set $podSelector "statefulset.kubernetes.io/pod-name" $podname) -}}
 {{- $ports := (coalesce nil) -}}
-{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.admin "admin" $state.Values.external)))) "r"))) -}}
-{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.kafka "kafka" $state.Values.external)))) "r"))) -}}
-{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.http "http" $state.Values.external)))) "r"))) -}}
-{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.schemaRegistry "schema" $state.Values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpandav25.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.admin "admin" $state.Values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpandav25.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.kafka "kafka" $state.Values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpandav25.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.http "http" $state.Values.external)))) "r"))) -}}
+{{- $ports = (concat (default (list) $ports) (default (list) (get (fromJson (include "redpandav25.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.schemaRegistry "schema" $state.Values.external)))) "r"))) -}}
 {{- $svc := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "lb-%s" $podname) "namespace" $state.Release.Namespace "labels" $labels "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "loadBalancerSourceRanges" $state.Values.external.sourceRanges "ports" $ports "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" "LoadBalancer")))) -}}
 {{- $services = (concat (default (list) $services) (list $svc)) -}}
 {{- end -}}

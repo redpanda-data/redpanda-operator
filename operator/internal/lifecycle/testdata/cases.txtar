@@ -1,1 +1,12 @@
 -- basic-test --
+-- nodepool-basic-test --
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic
+spec:
+  replicas: 1
+  sidecarImage:
+    tag: dev
+    repository: localhost/test

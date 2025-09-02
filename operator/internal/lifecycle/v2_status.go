@@ -41,7 +41,7 @@ func (m *V2ClusterStatusUpdater) Update(cluster *ClusterWithPools, status *Clust
 	return dirty
 }
 
-func setAndDirtyCheckPools(pools *[]redpandav1alpha2.NodePoolStatus, updated PoolStatus) bool {
+func setAndDirtyCheckPools(pools *[]redpandav1alpha2.EmbeddedNodePoolStatus, updated PoolStatus) bool {
 	dirty := false
 	for i, existing := range *pools {
 		if existing.Name == updated.Name {
@@ -72,7 +72,7 @@ func setAndDirtyCheckPools(pools *[]redpandav1alpha2.NodePoolStatus, updated Poo
 		}
 	}
 
-	*pools = append(*pools, redpandav1alpha2.NodePoolStatus{
+	*pools = append(*pools, redpandav1alpha2.EmbeddedNodePoolStatus{
 		Name:              updated.Name,
 		Replicas:          updated.Replicas,
 		DesiredReplicas:   updated.DesiredReplicas,

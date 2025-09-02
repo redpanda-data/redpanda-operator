@@ -142,7 +142,7 @@ func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *r
 				{
 					TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
 					LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
-						MatchLabels: redpanda.StatefulSetPodLabelsSelector(state),
+						MatchLabels: redpanda.StatefulSetPodLabelsSelector(state, redpanda.Pool{Statefulset: state.Values.Statefulset}),
 					},
 				},
 			},
@@ -156,7 +156,7 @@ func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *r
 					PodAffinityTerm: &applycorev1.PodAffinityTermApplyConfiguration{
 						TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
 						LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
-							MatchLabels: redpanda.StatefulSetPodLabelsSelector(state),
+							MatchLabels: redpanda.StatefulSetPodLabelsSelector(state, redpanda.Pool{Statefulset: state.Values.Statefulset}),
 						},
 					},
 				},

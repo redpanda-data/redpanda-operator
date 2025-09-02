@@ -35,15 +35,14 @@ var (
 		crds.Topic(),
 		crds.User(),
 		crds.Schema(),
+		crds.NodePool(),
 	}
 	vectorizedCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.Cluster(),
 		crds.Console(),
 	}
-	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
-		crds.NodePool(),
-	}
-	schemes = []func(s *runtime.Scheme) error{
+	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{}
+	schemes          = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		apiextensionsv1.AddToScheme,
 	}

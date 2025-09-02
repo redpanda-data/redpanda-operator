@@ -1,7 +1,7 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/service_internal.go" */ -}}
 
-{{- define "redpanda.MonitoringEnabledLabel" -}}
+{{- define "redpandav25.MonitoringEnabledLabel" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -11,7 +11,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.ServiceInternal" -}}
+{{- define "redpandav25.ServiceInternal" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -30,7 +30,7 @@
 {{- $annotations = $state.Values.service.internal.annotations -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (merge (dict) (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.MonitoringEnabledLabel" (dict "a" (list $state)))) "r")) "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "type" "ClusterIP" "publishNotReadyAddresses" true "clusterIP" "None" "selector" (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state)))) "r") "ports" $ports))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (get (fromJson (include "redpandav25.ServiceName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (merge (dict) (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r") (get (fromJson (include "redpandav25.MonitoringEnabledLabel" (dict "a" (list $state)))) "r")) "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "type" "ClusterIP" "publishNotReadyAddresses" true "clusterIP" "None" "selector" (get (fromJson (include "redpandav25.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") "ports" $ports))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

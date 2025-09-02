@@ -7,16 +7,15 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package v1alpha3
+package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
 // +kubebuilder:object:root=true
-// +kubebuilder:skipversion
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:path=nodepools
 // +kubebuilder:resource:shortName=np
 type NodePool struct {
@@ -27,14 +26,16 @@ type NodePool struct {
 	Status NodePoolStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-type NodePoolList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NodePool `json:"items"`
+// NodePoolStatus defines the observed state of any node pools tied to this cluster
+type NodePoolStatus struct {
+	EmbeddedNodePoolStatus `json:",inline"`
+	// Conditions holds the conditions for the Redpanda.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type NodePoolStatus struct {
+// EmbeddedNodePoolStatus defines the observed state of any node pools tied to this cluster
+type EmbeddedNodePoolStatus struct {
 	// Name is the name of the pool
 	Name string `json:"name"`
 	// Replicas is the number of actual replicas currently across
@@ -64,35 +65,44 @@ type NodePoolStatus struct {
 	RunningReplicas int32 `json:"runningReplicas"`
 }
 
+// +kubebuilder:object:root=true
+type NodePoolList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []NodePool `json:"items"`
+}
+
 type NodePoolSpec struct {
 	EmbeddedNodePoolSpec `json:",inline"`
 	ClusterRef           ClusterRef `json:"clusterRef"`
 }
 
-type EmbeddedNodePoolSpec struct {
-	Replicas       *int32         `json:"replicas,omitempty"`
-	BrokerTemplate BrokerTemplate `json:"brokerTemplate"`
+type PoolConfigurator struct {
+	AdditionalCLIArgs []string `json:"additionalCLIArgs,omitempty"`
 }
 
-type BrokerTemplate struct {
-	Image     string                      `json:"image"`
-	Resources corev1.ResourceRequirements `json:"resources"`
-	// Arguments to be passed to rpk tune
-	// https://docs.redpanda.com/current/reference/rpk/rpk-redpanda/rpk-redpanda-tune/
-	Tuning                    []string               `json:"tuning"`
-	NodeConfig                map[string]ValueSource `json:"nodeConfig"`
-	RPKConfig                 map[string]ValueSource `json:"rpkConfig"`
-	SetDataDirectoryOwnership bool                   `json:"setDataDirectoryOwnership"`
-	ValidateFilesystem        bool                   `json:"validateFilesystem"`
+type PoolSetDataDirOwnership struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
 
-	// Require volumes with special names to be provided.
-	// datadir = required
-	// ts-cache = optional tiered storage cache
-	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates"`
-	PodTemplate          *PodTemplate                   `json:"podTemplate"`
+type PoolFSValidator struct {
+	Enabled    *bool   `json:"enabled,omitempty"`
+	ExpectedFS *string `json:"expectedFS,omitempty"`
+}
 
-	// TODO flags??
-	// Likely to be merged into NodeConfig w/ CEL functions.
-	// rack: Expr(node_annotation('k8s.io/failure-domain')),
-	// TODO deprecate and move me into CEL functions.
+type PoolInitContainers struct {
+	FSValidator         *PoolFSValidator         `json:"fsValidator,omitempty"`
+	SetDataDirOwnership *PoolSetDataDirOwnership `json:"setDataDirOwnership,omitempty"`
+	Configurator        *PoolConfigurator        `json:"configurator,omitempty"`
+}
+
+type EmbeddedNodePoolSpec struct {
+	AdditionalSelectorLabels   map[string]string   `json:"additionalSelectorLabels,omitempty"`
+	Replicas                   *int32              `json:"replicas,omitempty"`
+	AdditionalRedpandaCmdFlags []string            `json:"additionalRedpandaCmdFlags,omitempty"`
+	PodTemplate                *PodTemplate        `json:"podTemplate,omitempty"`
+	InitContainers             *PoolInitContainers `json:"initContainers,omitempty"`
+	Image                      *RedpandaImage      `json:"image,omitempty"`
+	SidecarImage               *RedpandaImage      `json:"sidecarImage,omitempty"`
+	InitContainerImage         *InitContainerImage `json:"initContainerImage,omitempty"`
 }

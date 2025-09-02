@@ -78,9 +78,19 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 	}
 }
 
+// ClusterPodLabelsSelector returns the labels that apply to every broker
+// pod in a cluster, regardless of node pool.
+func ClusterPodLabelsSelector(state *RenderState) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance":  state.Release.Name,
+		"app.kubernetes.io/name":      Name(state),
+		"cluster.redpanda.com/broker": "true",
+	}
+}
+
 // StatefulSetPodLabelsSelector returns the label selector for the Redpanda StatefulSet.
 // If this helm release is an upgrade, the existing statefulset's label selector will be used as it's an immutable field.
-func StatefulSetPodLabelsSelector(state *RenderState) map[string]string {
+func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
 	if state.StatefulSetSelector != nil {
@@ -88,43 +98,40 @@ func StatefulSetPodLabelsSelector(state *RenderState) map[string]string {
 	}
 
 	additionalSelectorLabels := map[string]string{}
-	if state.Values.Statefulset.AdditionalSelectorLabels != nil {
-		additionalSelectorLabels = state.Values.Statefulset.AdditionalSelectorLabels
+	if pool.Statefulset.AdditionalSelectorLabels != nil {
+		additionalSelectorLabels = pool.Statefulset.AdditionalSelectorLabels
 	}
 
-	component := fmt.Sprintf("%s-statefulset",
-		strings.TrimSuffix(helmette.Trunc(51, Name(state)), "-"))
+	component := fmt.Sprintf("%s-statefulset", strings.TrimSuffix(helmette.Trunc(51, Name(state)), "-"))
 
 	defaults := map[string]string{
 		"app.kubernetes.io/component": component,
-		"app.kubernetes.io/instance":  state.Release.Name,
-		"app.kubernetes.io/name":      Name(state),
 	}
 
-	return helmette.Merge(additionalSelectorLabels, defaults)
+	return helmette.Merge(additionalSelectorLabels, defaults, ClusterPodLabelsSelector(state))
 }
 
 // StatefulSetPodLabels returns the label that includes label selector for the Redpanda PodTemplate.
 // If this helm release is an upgrade, the existing statefulset's pod template labels will be used as it's an immutable field.
-func StatefulSetPodLabels(state *RenderState) map[string]string {
+func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 	if state.StatefulSetPodLabels != nil {
 		return state.StatefulSetPodLabels
 	}
 
 	statefulSetLabels := map[string]string{}
-	if state.Values.Statefulset.PodTemplate.Labels != nil {
-		statefulSetLabels = state.Values.Statefulset.PodTemplate.Labels
+	if pool.Statefulset.PodTemplate.Labels != nil {
+		statefulSetLabels = pool.Statefulset.PodTemplate.Labels
 	}
 
 	defaults := map[string]string{
 		"redpanda.com/poddisruptionbudget": Fullname(state),
 	}
 
-	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state), defaults, FullLabels(state))
+	return helmette.Merge(statefulSetLabels, FullLabels(state), StatefulSetPodLabelsSelector(state, pool), defaults)
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
-func StatefulSetVolumes(state *RenderState) []corev1.Volume {
+func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 	fullname := Fullname(state)
 	volumes := CommonVolumes(state)
 
@@ -165,7 +172,7 @@ func StatefulSetVolumes(state *RenderState) []corev1.Volume {
 		},
 	}...)
 
-	if state.Values.Statefulset.InitContainers.FSValidator.Enabled {
+	if pool.Statefulset.InitContainers.FSValidator.Enabled {
 		volumes = append(volumes, corev1.Volume{
 			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
 			VolumeSource: corev1.VolumeSource{
@@ -319,22 +326,22 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	return mounts
 }
 
-func StatefulSetInitContainers(state *RenderState) []corev1.Container {
+func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container {
 	var containers []corev1.Container
 	if c := statefulSetInitContainerTuning(state); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerSetDataDirOwnership(state); c != nil {
+	if c := statefulSetInitContainerSetDataDirOwnership(state, pool); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerFSValidator(state); c != nil {
+	if c := statefulSetInitContainerFSValidator(state, pool); c != nil {
 		containers = append(containers, *c)
 	}
-	if c := statefulSetInitContainerSetTieredStorageCacheDirOwnership(state); c != nil {
+	if c := statefulSetInitContainerSetTieredStorageCacheDirOwnership(state, pool); c != nil {
 		containers = append(containers, *c)
 	}
 	containers = append(containers, *statefulSetInitContainerConfigurator(state))
-	containers = append(containers, bootstrapYamlTemplater(state))
+	containers = append(containers, bootstrapYamlTemplater(state, pool.Statefulset))
 	return containers
 }
 
@@ -369,16 +376,16 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 	}
 }
 
-func statefulSetInitContainerSetDataDirOwnership(state *RenderState) *corev1.Container {
-	if !state.Values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
+func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool Pool) *corev1.Container {
+	if !pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
 		return nil
 	}
 
-	uid, gid := securityContextUidGid(state, "set-datadir-ownership")
+	uid, gid := securityContextUidGid(state, pool, "set-datadir-ownership")
 
 	return &corev1.Container{
 		Name:  SetDataDirectoryOwnershipContainerName,
-		Image: fmt.Sprintf("%s:%s", state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
+		Image: fmt.Sprintf("%s:%s", pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
 			`-c`,
@@ -399,9 +406,9 @@ func statefulSetInitContainerSetDataDirOwnership(state *RenderState) *corev1.Con
 }
 
 //nolint:stylecheck
-func securityContextUidGid(state *RenderState, containerName string) (int64, int64) {
+func securityContextUidGid(state *RenderState, pool Pool, containerName string) (int64, int64) {
 	gid, uid := giduidFromPodTemplate(&state.Values.PodTemplate, RedpandaContainerName)
-	sgid, suid := giduidFromPodTemplate(&state.Values.Statefulset.PodTemplate, RedpandaContainerName)
+	sgid, suid := giduidFromPodTemplate(&pool.Statefulset.PodTemplate, RedpandaContainerName)
 
 	if sgid != nil {
 		gid = sgid
@@ -446,8 +453,8 @@ func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int
 	return gid, uid
 }
 
-func statefulSetInitContainerFSValidator(state *RenderState) *corev1.Container {
-	if !state.Values.Statefulset.InitContainers.FSValidator.Enabled {
+func statefulSetInitContainerFSValidator(state *RenderState, pool Pool) *corev1.Container {
+	if !pool.Statefulset.InitContainers.FSValidator.Enabled {
 		return nil
 	}
 
@@ -458,7 +465,7 @@ func statefulSetInitContainerFSValidator(state *RenderState) *corev1.Container {
 		Args: []string{
 			`-c`,
 			fmt.Sprintf(`trap "exit 0" TERM; exec /etc/secrets/fs-validator/scripts/fsValidator.sh %s & wait $!`,
-				state.Values.Statefulset.InitContainers.FSValidator.ExpectedFS,
+				pool.Statefulset.InitContainers.FSValidator.ExpectedFS,
 			),
 		},
 		VolumeMounts: append(
@@ -475,12 +482,12 @@ func statefulSetInitContainerFSValidator(state *RenderState) *corev1.Container {
 	}
 }
 
-func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState) *corev1.Container {
+func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState, pool Pool) *corev1.Container {
 	if !state.Values.Storage.IsTieredStorageEnabled() {
 		return nil
 	}
 
-	uid, gid := securityContextUidGid(state, "set-tiered-storage-cache-dir-ownership")
+	uid, gid := securityContextUidGid(state, pool, "set-tiered-storage-cache-dir-ownership")
 	cacheDir := state.Values.Storage.TieredCacheDirectory(state)
 	mounts := CommonMounts(state)
 	mounts = append(mounts, corev1.VolumeMount{
@@ -500,7 +507,7 @@ func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderStat
 
 	return &corev1.Container{
 		Name:  SetTieredStorageCacheOwnershipContainerName,
-		Image: fmt.Sprintf(`%s:%s`, state.Values.Statefulset.InitContainerImage.Repository, state.Values.Statefulset.InitContainerImage.Tag),
+		Image: fmt.Sprintf(`%s:%s`, pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
 		Command: []string{
 			`/bin/sh`,
 			`-c`,
@@ -589,10 +596,10 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 	}
 }
 
-func StatefulSetContainers(state *RenderState) []corev1.Container {
+func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	var containers []corev1.Container
-	containers = append(containers, statefulSetContainerRedpanda(state))
-	if c := statefulSetContainerSidecar(state); c != nil {
+	containers = append(containers, statefulSetContainerRedpanda(state, pool))
+	if c := statefulSetContainerSidecar(state, pool); c != nil {
 		containers = append(containers, *c)
 	}
 	return containers
@@ -609,7 +616,7 @@ func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string
 	return []string{"bash", "-c", fmt.Sprintf("timeout -v %d %s 2>&1 | sed \"s/^/lifecycle-hook %s $(date): /\" | tee /proc/1/fd/1; true", timeoutSeconds, wrapped, hook)}
 }
 
-func statefulSetContainerRedpanda(state *RenderState) corev1.Container {
+func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(state))
 
 	container := corev1.Container{
@@ -622,7 +629,7 @@ func statefulSetContainerRedpanda(state *RenderState) corev1.Container {
 				Exec: &corev1.ExecAction{
 					Command: wrapLifecycleHook(
 						"post-start",
-						*state.Values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
+						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
 					),
 				},
@@ -631,7 +638,7 @@ func statefulSetContainerRedpanda(state *RenderState) corev1.Container {
 				Exec: &corev1.ExecAction{
 					Command: wrapLifecycleHook(
 						"pre-stop",
-						*state.Values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
+						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},
 					),
 				},
@@ -789,7 +796,7 @@ func adminURLsCLI(state *RenderState) string {
 	)
 }
 
-func statefulSetContainerSidecar(state *RenderState) *corev1.Container {
+func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Container {
 	args := []string{
 		`/redpanda-operator`,
 		`sidecar`,
@@ -806,30 +813,30 @@ func statefulSetContainerSidecar(state *RenderState) *corev1.Container {
 		adminURLsCLI(state),
 	}
 
-	if state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled {
+	if pool.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		args = append(args, []string{
 			`--run-decommissioner`,
-			fmt.Sprintf("--decommission-vote-interval=%s", state.Values.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
-			fmt.Sprintf("--decommission-requeue-timeout=%s", state.Values.Statefulset.SideCars.BrokerDecommissioner.DecommissionRequeueTimeout),
+			fmt.Sprintf("--decommission-vote-interval=%s", pool.Statefulset.SideCars.BrokerDecommissioner.DecommissionAfter),
+			fmt.Sprintf("--decommission-requeue-timeout=%s", pool.Statefulset.SideCars.BrokerDecommissioner.DecommissionRequeueTimeout),
 			`--decommission-vote-count=2`,
 		}...)
 	}
 
-	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" && state.Values.Statefulset.SideCars.ConfigWatcher.Enabled {
+	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" && pool.Statefulset.SideCars.ConfigWatcher.Enabled {
 		args = append(args, []string{
 			`--watch-users`,
 			`--users-directory=/etc/secrets/users/`,
 		}...)
 	}
 
-	if state.Values.Statefulset.SideCars.PVCUnbinder.Enabled {
+	if pool.Statefulset.SideCars.PVCUnbinder.Enabled {
 		args = append(args, []string{
 			`--run-pvc-unbinder`,
-			fmt.Sprintf("--pvc-unbinder-timeout=%s", state.Values.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
+			fmt.Sprintf("--pvc-unbinder-timeout=%s", pool.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
 		}...)
 	}
 
-	args = append(args, state.Values.Statefulset.SideCars.Args...)
+	args = append(args, pool.Statefulset.SideCars.Args...)
 
 	volumeMounts := append(
 		CommonMounts(state),
@@ -846,7 +853,7 @@ func statefulSetContainerSidecar(state *RenderState) *corev1.Container {
 
 	return &corev1.Container{
 		Name:         SidecarContainerName,
-		Image:        fmt.Sprintf(`%s:%s`, state.Values.Statefulset.SideCars.Image.Repository, state.Values.Statefulset.SideCars.Image.Tag),
+		Image:        fmt.Sprintf(`%s:%s`, pool.Statefulset.SideCars.Image.Repository, pool.Statefulset.SideCars.Image.Tag),
 		Command:      []string{`/redpanda-operator`},
 		Args:         append([]string{`supervisor`, `--`}, args...),
 		Env:          append(rpkEnvVars(state, nil), statefulSetRedpandaEnv()...),
@@ -886,7 +893,16 @@ func bootstrapEnvVars(state *RenderState, envVars []corev1.EnvVar) []corev1.EnvV
 }
 
 func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
-	ss := &appsv1.StatefulSet{
+	// default statefulset
+	sets := []*appsv1.StatefulSet{StatefulSet(state, Pool{Statefulset: state.Values.Statefulset})}
+	for _, set := range state.Pools {
+		sets = append(sets, StatefulSet(state, set))
+	}
+	return sets
+}
+
+func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
+	set := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
@@ -898,29 +914,29 @@ func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: StatefulSetPodLabelsSelector(state),
+				MatchLabels: StatefulSetPodLabelsSelector(state, pool),
 			},
 			ServiceName:         ServiceName(state),
-			Replicas:            ptr.To(state.Values.Statefulset.Replicas),
-			UpdateStrategy:      state.Values.Statefulset.UpdateStrategy,
+			Replicas:            ptr.To(pool.Statefulset.Replicas),
+			UpdateStrategy:      pool.Statefulset.UpdateStrategy,
 			PodManagementPolicy: "Parallel",
 			Template: StrategicMergePatch(
-				StructuredTpl(state, state.Values.Statefulset.PodTemplate),
+				StructuredTpl(state, pool.Statefulset.PodTemplate),
 				StrategicMergePatch(
 					StructuredTpl(state, state.Values.PodTemplate),
 					corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: StatefulSetPodLabels(state),
+							Labels: StatefulSetPodLabels(state, pool),
 							Annotations: map[string]string{
-								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state),
+								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state, pool),
 							},
 						},
 						Spec: corev1.PodSpec{
 							AutomountServiceAccountToken: ptr.To(false),
 							ServiceAccountName:           ServiceAccountName(state),
-							InitContainers:               StatefulSetInitContainers(state),
-							Containers:                   StatefulSetContainers(state),
-							Volumes:                      StatefulSetVolumes(state),
+							InitContainers:               StatefulSetInitContainers(state, pool),
+							Containers:                   StatefulSetContainers(state, pool),
+							Volumes:                      StatefulSetVolumes(state, pool),
 						},
 					},
 				),
@@ -932,14 +948,14 @@ func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
 	// VolumeClaimTemplates
 	if state.Values.Storage.PersistentVolume.Enabled || (state.Values.Storage.IsTieredStorageEnabled() && state.Values.Storage.TieredMountType() == "persistentVolume") {
 		if t := volumeClaimTemplateDatadir(state); t != nil {
-			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, *t)
+			set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 		}
 		if t := volumeClaimTemplateTieredStorageDir(state); t != nil {
-			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, *t)
+			set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 		}
 	}
 
-	return []*appsv1.StatefulSet{ss}
+	return set
 }
 
 func semver(state *RenderState) string {
@@ -953,11 +969,11 @@ func semver(state *RenderState) string {
 //
 // Append any additional dependencies that require the pods to restart
 // to the $dependencies list.
-func statefulSetChecksumAnnotation(state *RenderState) string {
+func statefulSetChecksumAnnotation(state *RenderState, pool Pool) string {
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
-	dependencies = append(dependencies, RedpandaConfigFile(state, false))
+	dependencies = append(dependencies, RedpandaConfigFile(state, false, pool))
 	if state.Values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(state.Values.External.Domain, ""))
 		if helmette.Empty(state.Values.External.Addresses) {
@@ -1050,7 +1066,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 }
 
 // TODO this will also need templating support.
-// func statefulSetTopologySpreadConstraints(state *RenderState) []corev1.TopologySpreadConstraint {
+// func statefulSetTopologySpreadConstraints(state *RenderState, pool Pool) []corev1.TopologySpreadConstraint {
 // 	// XXX: Was protected with this: semverCompare ">=1.16-0" .Capabilities.KubeVersion.GitVersion
 // 	// but that version is beyond EOL; and the chart as a whole wants >= 1.21
 //
@@ -1058,7 +1074,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 // 	labelSelector := &metav1.LabelSelector{
 // 		MatchLabels: StatefulSetPodLabelsSelector(state),
 // 	}
-// 	for _, v := range state.Values.Statefulset.TopologySpreadConstraints {
+// 	for _, v := range pool.Statefulset.TopologySpreadConstraints {
 // 		result = append(result,
 // 			corev1.TopologySpreadConstraint{
 // 				MaxSkew:           v.MaxSkew,
