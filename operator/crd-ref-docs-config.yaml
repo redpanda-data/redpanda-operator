@@ -2,6 +2,7 @@ processor:
   ignoreTypes:
   - 'List$' # Don't include List types, end users likely don't care about these.
   - 'Migration$'
+  - 'EmbeddedNodePoolSpec$'
   ignoreFields:
   - 'migration$'
   customMarkers:

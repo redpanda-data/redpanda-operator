@@ -798,34 +798,6 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolspec"]
-==== EmbeddedNodePoolSpec
-
-
-
-
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
-| *`replicas`* __integer__ |  |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
-|===
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus"]
 ==== EmbeddedNodePoolStatus
 
@@ -1110,8 +1082,6 @@ InitContainerImage configures the init container image used to perform initial s
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolspec[$$EmbeddedNodePoolSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
 ****
 
@@ -1630,14 +1600,6 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
-| *`replicas`* __integer__ |  |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
 | *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
 |===
 
@@ -1826,8 +1788,6 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolspec[$$EmbeddedNodePoolSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob[$$PostInstallJob$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob[$$PostUpgradeJob$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
@@ -1885,28 +1845,6 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers"]
-==== PoolInitContainers
-
-
-
-
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolspec[$$EmbeddedNodePoolSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`fsValidator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolfsvalidator[$$PoolFSValidator$$]__ |  |  | 
-| *`setDataDirOwnership`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolsetdatadirownership[$$PoolSetDataDirOwnership$$]__ |  |  | 
-| *`configurator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolconfigurator[$$PoolConfigurator$$]__ |  |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolsetdatadirownership"]
@@ -2326,8 +2264,6 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolspec[$$EmbeddedNodePoolSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
