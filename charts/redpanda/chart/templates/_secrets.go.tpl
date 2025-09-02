@@ -1,24 +1,24 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/secrets.go" */ -}}
 
-{{- define "redpandav25.Secrets" -}}
+{{- define "redpanda.Secrets" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $secrets := (coalesce nil) -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpandav25.SecretSTSLifecycle" (dict "a" (list $state)))) "r"))) -}}
-{{- $saslUsers_1 := (get (fromJson (include "redpandav25.SecretSASLUsers" (dict "a" (list $state)))) "r") -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretSTSLifecycle" (dict "a" (list $state)))) "r"))) -}}
+{{- $saslUsers_1 := (get (fromJson (include "redpanda.SecretSASLUsers" (dict "a" (list $state)))) "r") -}}
 {{- if (ne (toJson $saslUsers_1) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $saslUsers_1)) -}}
 {{- end -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpandav25.SecretConfigurator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r"))) -}}
-{{- $fsValidator_2 := (get (fromJson (include "redpandav25.SecretFSValidator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r"))) -}}
+{{- $fsValidator_2 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
 {{- if (ne (toJson $fsValidator_2) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $fsValidator_2)) -}}
 {{- end -}}
 {{- range $_, $set := $state.Pools -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpandav25.SecretConfigurator" (dict "a" (list $state $set)))) "r"))) -}}
-{{- $fsValidator_3 := (get (fromJson (include "redpandav25.SecretFSValidator" (dict "a" (list $state $set)))) "r") -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $set)))) "r"))) -}}
+{{- $fsValidator_3 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state $set)))) "r") -}}
 {{- if (ne (toJson $fsValidator_3) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $fsValidator_3)) -}}
 {{- end -}}
@@ -26,7 +26,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $bootstrapUser_4 := (get (fromJson (include "redpandav25.SecretBootstrapUser" (dict "a" (list $state)))) "r") -}}
+{{- $bootstrapUser_4 := (get (fromJson (include "redpanda.SecretBootstrapUser" (dict "a" (list $state)))) "r") -}}
 {{- if (ne (toJson $bootstrapUser_4) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $bootstrapUser_4)) -}}
 {{- end -}}
@@ -36,7 +36,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.SecretSTSLifecycle" -}}
+{{- define "redpanda.SecretSTSLifecycle" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -47,9 +47,9 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-sts-lifecycle" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
-{{- $adminCurlFlags := (get (fromJson (include "redpandav25.adminTLSCurlFlags" (dict "a" (list $state)))) "r") -}}
-{{- $_ := (set $secret.stringData "common.sh" (join "\n" (list `#!/usr/bin/env bash` `` `# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME` (printf `CURL_URL="%s"` (get (fromJson (include "redpandav25.adminInternalURL" (dict "a" (list $state)))) "r")) `` `# commands used throughout` (printf `CURL_NODE_ID_CMD="curl --silent --fail %s ${CURL_URL}/v1/node_config"` $adminCurlFlags) `` `CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'` `CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'` (printf `CURL_MAINTENANCE_GET_CMD="curl -X GET --silent %s ${CURL_URL}/v1/maintenance"` $adminCurlFlags)))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-sts-lifecycle" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $adminCurlFlags := (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $state)))) "r") -}}
+{{- $_ := (set $secret.stringData "common.sh" (join "\n" (list `#!/usr/bin/env bash` `` `# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME` (printf `CURL_URL="%s"` (get (fromJson (include "redpanda.adminInternalURL" (dict "a" (list $state)))) "r")) `` `# commands used throughout` (printf `CURL_NODE_ID_CMD="curl --silent --fail %s ${CURL_URL}/v1/node_config"` $adminCurlFlags) `` `CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'` `CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'` (printf `CURL_MAINTENANCE_GET_CMD="curl -X GET --silent %s ${CURL_URL}/v1/maintenance"` $adminCurlFlags)))) -}}
 {{- $postStartSh := (list `#!/usr/bin/env bash` `# This code should be similar if not exactly the same as that found in the panda-operator, see` `# https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go` `` `# path below should match the path defined on the statefulset` `source /var/lifecycle/common.sh` `` `postStartHook () {` `  set -x` `` `  touch /tmp/postStartHookStarted` `` `  until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do` `      sleep 0.5` `  done` `` `  echo "Clearing maintenance mode on node ${NODE_ID}"` (printf `  CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} %s ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"` $adminCurlFlags) `  # a 400 here would mean not in maintenance mode` `  until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do` `      status=$(${CURL_MAINTENANCE_DELETE_CMD})` `      sleep 0.5` `  done` `` `  touch /tmp/postStartHookFinished` `}` `` `postStartHook` `true`) -}}
 {{- $_ := (set $secret.stringData "postStart.sh" (join "\n" $postStartSh)) -}}
 {{- $preStopSh := (list `#!/usr/bin/env bash` `# This code should be similar if not exactly the same as that found in the panda-operator, see` `# https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go` `` `touch /tmp/preStopHookStarted` `` `# path below should match the path defined on the statefulset` `source /var/lifecycle/common.sh` `` `set -x` `` `preStopHook () {` `  until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do` `      sleep 0.5` `  done` `` `  echo "Setting maintenance mode on node ${NODE_ID}"` (printf `  CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} %s ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"` $adminCurlFlags) `  until [ "${status:-}" = '"200"' ]; do` `      status=$(${CURL_MAINTENANCE_PUT_CMD})` `      sleep 0.5` `  done` `` `  until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do` `      res=$(${CURL_MAINTENANCE_GET_CMD})` `      finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')` `      draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')` `      sleep 0.5` `  done` `` `  touch /tmp/preStopHookFinished` `}`) -}}
@@ -66,12 +66,12 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.SecretSASLUsers" -}}
+{{- define "redpanda.SecretSASLUsers" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (and (ne $state.Values.auth.sasl.secretRef "") $state.Values.auth.sasl.enabled) (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.auth.sasl.users)))) "r") | int) (0 | int))) -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $state.Values.auth.sasl.secretRef "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $state.Values.auth.sasl.secretRef "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $usersTxt := (list) -}}
 {{- $defaultMechanism := "SCRAM-SHA-512" -}}
 {{- if (ne $state.Values.auth.sasl.mechanism "") -}}
@@ -99,7 +99,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.SecretBootstrapUser" -}}
+{{- define "redpanda.SecretBootstrapUser" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -108,7 +108,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $secretName := (printf "%s-bootstrap-user" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) -}}
+{{- $secretName := (printf "%s-bootstrap-user" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) -}}
 {{- if (ne (toJson $state.BootstrapUserSecret) "null") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $state.BootstrapUserSecret) | toJson -}}
@@ -120,12 +120,12 @@
 {{- $password = $userPassword -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $secretName "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r"))) "immutable" true "type" "Opaque" "stringData" (dict "password" $password)))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $secretName "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "immutable" true "type" "Opaque" "stringData" (dict "password" $password)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.SecretFSValidator" -}}
+{{- define "redpanda.SecretFSValidator" -}}
 {{- $state := (index .a 0) -}}
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -135,7 +135,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.49s-fs-validator" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.49s-fs-validator" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $_ := (set $secret.stringData "fsValidator.sh" `set -e
 EXPECTED_FS_TYPE=$1
 
@@ -180,22 +180,22 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.SecretConfigurator" -}}
+{{- define "redpanda.SecretConfigurator" -}}
 {{- $state := (index .a 0) -}}
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.51s-configurator" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.51s-configurator" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $configuratorSh := (list) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `set -xe` `SERVICE_NAME=$1` `KUBERNETES_NODE_NAME=$2` `POD_ORDINAL=${SERVICE_NAME##*-}` "BROKER_INDEX=`expr $POD_ORDINAL + 1`" `` `CONFIG=/etc/redpanda/redpanda.yaml` `` `# Setup config files` `cp /tmp/base-config/redpanda.yaml "${CONFIG}"`)) -}}
-{{- if (not (get (fromJson (include "redpandav25.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r")) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure bootstrap` `## Not used for Redpanda v22.3.0+` `rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"` `if [ "${POD_ORDINAL}" = "0" ]; then` `	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml` `fi`)) -}}
 {{- end -}}
-{{- $kafkaSnippet := (get (fromJson (include "redpandav25.secretConfiguratorKafkaConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
+{{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorKafkaConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $kafkaSnippet)) -}}
-{{- $httpSnippet := (get (fromJson (include "redpandav25.secretConfiguratorHTTPConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
+{{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorHTTPConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $httpSnippet)) -}}
-{{- if (and (get (fromJson (include "redpandav25.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r") $state.Values.rackAwareness.enabled) -}}
+{{- if (and (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r") $state.Values.rackAwareness.enabled) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $state.Values.rackAwareness.nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) -}}
 {{- end -}}
 {{- $_ := (set $secret.stringData "configurator.sh" (join "\n" $configuratorSh)) -}}
@@ -205,12 +205,12 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.secretConfiguratorKafkaConfig" -}}
+{{- define "redpanda.secretConfiguratorKafkaConfig" -}}
 {{- $state := (index .a 0) -}}
 {{- $ss := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpandav25.InternalDomain" (dict "a" (list $state)))) "r")) -}}
+{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
 {{- $snippet := (coalesce nil) -}}
 {{- $listenerName := "kafka" -}}
 {{- $listenerAdvertisedName := $listenerName -}}
@@ -230,7 +230,7 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpandav25.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -253,12 +253,12 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.secretConfiguratorHTTPConfig" -}}
+{{- define "redpanda.secretConfiguratorHTTPConfig" -}}
 {{- $state := (index .a 0) -}}
 {{- $ss := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpandav25.InternalDomain" (dict "a" (list $state)))) "r")) -}}
+{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
 {{- $snippet := (coalesce nil) -}}
 {{- $listenerName := "http" -}}
 {{- $listenerAdvertisedName := "pandaproxy" -}}
@@ -278,7 +278,7 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpandav25.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -301,29 +301,29 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.adminTLSCurlFlags" -}}
+{{- define "redpanda.adminTLSCurlFlags" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (not (get (fromJson (include "redpandav25.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "") | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- if $state.Values.listeners.admin.tls.requireClientAuth -}}
-{{- $path := (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) -}}
+{{- $path := (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key" $path $path $path)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $path := (get (fromJson (include "redpandav25.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+{{- $path := (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s" $path)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.externalAdvertiseAddress" -}}
+{{- define "redpanda.externalAdvertiseAddress" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -339,14 +339,14 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.advertisedHostJSON" -}}
+{{- define "redpanda.advertisedHostJSON" -}}
 {{- $state := (index .a 0) -}}
 {{- $externalName := (index .a 1) -}}
 {{- $port := (index .a 2) -}}
 {{- $replicaIndex := (index .a 3) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $host := (dict "name" $externalName "address" (get (fromJson (include "redpandav25.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
+{{- $host := (dict "name" $externalName "address" (get (fromJson (include "redpanda.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (0 | int)) -}}
 {{- $address := "" -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (1 | int)) -}}
@@ -367,11 +367,11 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.adminInternalHTTPProtocol" -}}
+{{- define "redpanda.adminInternalHTTPProtocol" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (get (fromJson (include "redpandav25.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "https") | toJson -}}
 {{- break -}}
@@ -382,12 +382,12 @@ echo "passed"`) -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.adminInternalURL" -}}
+{{- define "redpanda.adminInternalURL" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf "%s://%s.%s:%d" (get (fromJson (include "redpandav25.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") `${SERVICE_NAME}` (trimSuffix "." (get (fromJson (include "redpandav25.InternalDomain" (dict "a" (list $state)))) "r")) ($state.Values.listeners.admin.port | int))) | toJson -}}
+{{- (dict "r" (printf "%s://%s.%s:%d" (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") `${SERVICE_NAME}` (trimSuffix "." (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) ($state.Values.listeners.admin.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

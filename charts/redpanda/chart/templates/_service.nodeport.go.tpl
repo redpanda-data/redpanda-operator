@@ -1,7 +1,7 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/service.nodeport.go" */ -}}
 
-{{- define "redpandav25.NodePortService" -}}
+{{- define "redpanda.NodePortService" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -17,7 +17,7 @@
 {{- end -}}
 {{- $ports := (coalesce nil) -}}
 {{- range $name, $listener := $state.Values.listeners.admin.external -}}
-{{- if (not (get (fromJson (include "redpandav25.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -30,7 +30,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.kafka.external -}}
-{{- if (not (get (fromJson (include "redpandav25.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -43,7 +43,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.http.external -}}
-{{- if (not (get (fromJson (include "redpandav25.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -56,7 +56,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.schemaRegistry.external -}}
-{{- if (not (get (fromJson (include "redpandav25.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -73,7 +73,7 @@
 {{- $annotations = (dict) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-external" (get (fromJson (include "redpandav25.ServiceName" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpandav25.FullLabels" (dict "a" (list $state)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "ports" $ports "publishNotReadyAddresses" true "selector" (get (fromJson (include "redpandav25.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") "sessionAffinity" "None" "type" "NodePort"))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-external" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "ports" $ports "publishNotReadyAddresses" true "selector" (get (fromJson (include "redpanda.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") "sessionAffinity" "None" "type" "NodePort"))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

@@ -1,49 +1,49 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/helpers.go" */ -}}
 
-{{- define "redpandav25.ChartLabel" -}}
+{{- define "redpanda.ChartLabel" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list (replace "+" "_" (printf "%s-%s" $state.Chart.Name $state.Chart.Version)))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list (replace "+" "_" (printf "%s-%s" $state.Chart.Name $state.Chart.Version)))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.Name" -}}
+{{- define "redpanda.Name" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $override_1 := $state.Values.nameOverride -}}
 {{- if (ne $override_1 "") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list $override_1)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list $override_1)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list $state.Chart.Name)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list $state.Chart.Name)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.Fullname" -}}
+{{- define "redpanda.Fullname" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $override_2 := $state.Values.fullnameOverride -}}
 {{- if (ne $override_2 "") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list $override_2)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list $override_2)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list $state.Release.Name)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list $state.Release.Name)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.FullLabels" -}}
+{{- define "redpanda.FullLabels" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -51,14 +51,14 @@
 {{- if (ne (toJson $state.Values.commonLabels) "null") -}}
 {{- $labels = $state.Values.commonLabels -}}
 {{- end -}}
-{{- $defaults := (dict "helm.sh/chart" (get (fromJson (include "redpandav25.ChartLabel" (dict "a" (list $state)))) "r") "app.kubernetes.io/name" (get (fromJson (include "redpandav25.Name" (dict "a" (list $state)))) "r") "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/managed-by" $state.Release.Service "app.kubernetes.io/component" (get (fromJson (include "redpandav25.Name" (dict "a" (list $state)))) "r")) -}}
+{{- $defaults := (dict "helm.sh/chart" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") "app.kubernetes.io/name" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/managed-by" $state.Release.Service "app.kubernetes.io/component" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (merge (dict) $labels $defaults)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.Tag" -}}
+{{- define "redpanda.Tag" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -76,26 +76,26 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.ServiceName" -}}
+{{- define "redpanda.ServiceName" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (ne (toJson $state.Values.service) "null") (ne (toJson $state.Values.service.name) "null")) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.cleanForK8s" (dict "a" (list $state.Values.service.name)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.cleanForK8s" (dict "a" (list $state.Values.service.name)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.InternalDomain" -}}
+{{- define "redpanda.InternalDomain" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $service := (get (fromJson (include "redpandav25.ServiceName" (dict "a" (list $state)))) "r") -}}
+{{- $service := (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") -}}
 {{- $ns := $state.Release.Namespace -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "%s.%s.svc.%s" $service $ns $state.Values.clusterDomain)) | toJson -}}
@@ -103,7 +103,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.TLSEnabled" -}}
+{{- define "redpanda.TLSEnabled" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -149,7 +149,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.ClientAuthRequired" -}}
+{{- define "redpanda.ClientAuthRequired" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -171,17 +171,17 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.DefaultMounts" -}}
+{{- define "redpanda.DefaultMounts" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda")))) (default (list) (get (fromJson (include "redpandav25.CommonMounts" (dict "a" (list $state)))) "r")))) | toJson -}}
+{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda")))) (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.CommonMounts" -}}
+{{- define "redpanda.CommonMounts" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -190,7 +190,7 @@
 {{- if (and $sasl_3.enabled (ne $sasl_3.secretRef "")) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "users" "mountPath" "/etc/secrets/users" "readOnly" true)))) -}}
 {{- end -}}
-{{- if (get (fromJson (include "redpandav25.TLSEnabled" (dict "a" (list $state)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $state)))) "r") -}}
 {{- $certNames := (keys $state.Values.tls.certs) -}}
 {{- $_ := (sortAlpha $certNames) -}}
 {{- range $_, $name := $certNames -}}
@@ -205,7 +205,7 @@
 {{- end -}}
 {{- $adminTLS := $state.Values.listeners.admin.tls -}}
 {{- if $adminTLS.requireClientAuth -}}
-{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "mtls-client" "mountPath" (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")))))) -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "mtls-client" "mountPath" (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")))))) -}}
 {{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -214,22 +214,22 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.DefaultVolumes" -}}
+{{- define "redpanda.DefaultVolumes" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r"))) (dict)))) (dict "name" "base-config")))) (default (list) (get (fromJson (include "redpandav25.CommonVolumes" (dict "a" (list $state)))) "r")))) | toJson -}}
+{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) (dict)))) (dict "name" "base-config")))) (default (list) (get (fromJson (include "redpanda.CommonVolumes" (dict "a" (list $state)))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.CommonVolumes" -}}
+{{- define "redpanda.CommonVolumes" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $volumes := (list) -}}
-{{- if (get (fromJson (include "redpandav25.TLSEnabled" (dict "a" (list $state)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $state)))) "r") -}}
 {{- $certNames := (keys $state.Values.tls.certs) -}}
 {{- $_ := (sortAlpha $certNames) -}}
 {{- range $_, $name := $certNames -}}
@@ -237,7 +237,7 @@
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $cert.enabled true)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
-{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpandav25.CertSecretName" (dict "a" (list $state $name $cert)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (printf "redpanda-%s-cert" $name))))) -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.CertSecretName" (dict "a" (list $state $name $cert)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (printf "redpanda-%s-cert" $name))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -245,7 +245,7 @@
 {{- $adminTLS := $state.Values.listeners.admin.tls -}}
 {{- $cert := (ternary (index $state.Values.tls.certs $adminTLS.cert) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)) (hasKey $state.Values.tls.certs $adminTLS.cert)) -}}
 {{- if $adminTLS.requireClientAuth -}}
-{{- $secretName := (printf "%s-client" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r")) -}}
+{{- $secretName := (printf "%s-client" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) -}}
 {{- if (ne (toJson $cert.clientSecretRef) "null") -}}
 {{- $secretName = $cert.clientSecretRef.name -}}
 {{- end -}}
@@ -262,7 +262,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.CertSecretName" -}}
+{{- define "redpanda.CertSecretName" -}}
 {{- $state := (index .a 0) -}}
 {{- $certName := (index .a 1) -}}
 {{- $cert := (index .a 2) -}}
@@ -274,97 +274,97 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf "%s-%s-cert" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r") $certName)) | toJson -}}
+{{- (dict "r" (printf "%s-%s-cert" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $certName)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_22_2_0" -}}
+{{- define "redpanda.RedpandaAtLeast_22_2_0" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=22.2.0-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.2.0-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_22_3_0" -}}
+{{- define "redpanda.RedpandaAtLeast_22_3_0" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=22.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_23_1_1" -}}
+{{- define "redpanda.RedpandaAtLeast_23_1_1" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=23.1.1-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.1.1-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_23_1_2" -}}
+{{- define "redpanda.RedpandaAtLeast_23_1_2" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=23.1.2-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.1.2-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_22_3_atleast_22_3_13" -}}
+{{- define "redpanda.RedpandaAtLeast_22_3_atleast_22_3_13" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=22.3.13-0,<22.4")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.3.13-0,<22.4")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_22_2_atleast_22_2_10" -}}
+{{- define "redpanda.RedpandaAtLeast_22_2_atleast_22_2_10" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=22.2.10-0,<22.3")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.2.10-0,<22.3")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_23_2_1" -}}
+{{- define "redpanda.RedpandaAtLeast_23_2_1" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=23.2.1-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.2.1-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.RedpandaAtLeast_23_3_0" -}}
+{{- define "redpanda.RedpandaAtLeast_23_3_0" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpandav25.redpandaAtLeast" (dict "a" (list $state ">=23.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.redpandaAtLeast" -}}
+{{- define "redpanda.redpandaAtLeast" -}}
 {{- $state := (index .a 0) -}}
 {{- $constraint := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $version := (trimPrefix "v" (get (fromJson (include "redpandav25.Tag" (dict "a" (list $state)))) "r")) -}}
+{{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
 {{- $_349_result_err := (list (semverCompare $constraint $version) nil) -}}
 {{- $result := (index $_349_result_err 0) -}}
 {{- $err := (index $_349_result_err 1) -}}
@@ -377,7 +377,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.cleanForK8s" -}}
+{{- define "redpanda.cleanForK8s" -}}
 {{- $in := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -387,20 +387,20 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.StructuredTpl" -}}
+{{- define "redpanda.StructuredTpl" -}}
 {{- $state := (index .a 0) -}}
 {{- $in := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $untyped := $in -}}
-{{- $expanded := (get (fromJson (include "redpandav25.recursiveTpl" (dict "a" (list $state $untyped)))) "r") -}}
+{{- $expanded := (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $state $untyped)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (merge (dict) $expanded)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.recursiveTpl" -}}
+{{- define "redpanda.recursiveTpl" -}}
 {{- $state := (index .a 0) -}}
 {{- $data := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -409,7 +409,7 @@
 {{- if (eq $kind "map") -}}
 {{- $m := (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $data)))) "r") -}}
 {{- range $key, $value := $m -}}
-{{- $_ := (set $m $key (get (fromJson (include "redpandav25.recursiveTpl" (dict "a" (list $state $value)))) "r")) -}}
+{{- $_ := (set $m $key (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $state $value)))) "r")) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -421,7 +421,7 @@
 {{- $s := (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "[]%s" "interface {}") $data)))) "r") -}}
 {{- $out := (coalesce nil) -}}
 {{- range $i, $_ := $s -}}
-{{- $out = (concat (default (list) $out) (list (get (fromJson (include "redpandav25.recursiveTpl" (dict "a" (list $state (index $s $i))))) "r"))) -}}
+{{- $out = (concat (default (list) $out) (list (get (fromJson (include "redpanda.recursiveTpl" (dict "a" (list $state (index $s $i))))) "r"))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -442,7 +442,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.StrategicMergePatch" -}}
+{{- define "redpanda.StrategicMergePatch" -}}
 {{- $overrides := (index .a 0) -}}
 {{- $original := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -454,9 +454,9 @@
 {{- $overrideSpec = (mustMergeOverwrite (dict) (dict)) -}}
 {{- end -}}
 {{- $merged := (merge (dict) (mustMergeOverwrite (dict) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" $overrides.labels "annotations" $overrides.annotations)) "spec" $overrideSpec)) $original) -}}
-{{- $_ := (set $merged.spec "initContainers" (get (fromJson (include "redpandav25.mergeSliceBy" (dict "a" (list $original.spec.initContainers $overrideSpec.initContainers "name" (list "redpandav25.mergeContainer"))))) "r")) -}}
-{{- $_ := (set $merged.spec "containers" (get (fromJson (include "redpandav25.mergeSliceBy" (dict "a" (list $original.spec.containers $overrideSpec.containers "name" (list "redpandav25.mergeContainer"))))) "r")) -}}
-{{- $_ := (set $merged.spec "volumes" (get (fromJson (include "redpandav25.mergeSliceBy" (dict "a" (list $original.spec.volumes $overrideSpec.volumes "name" (list "redpandav25.mergeVolume"))))) "r")) -}}
+{{- $_ := (set $merged.spec "initContainers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.initContainers $overrideSpec.initContainers "name" (list "redpanda.mergeContainer"))))) "r")) -}}
+{{- $_ := (set $merged.spec "containers" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.containers $overrideSpec.containers "name" (list "redpanda.mergeContainer"))))) "r")) -}}
+{{- $_ := (set $merged.spec "volumes" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.spec.volumes $overrideSpec.volumes "name" (list "redpanda.mergeVolume"))))) "r")) -}}
 {{- if (eq (toJson $merged.metadata.labels) "null") -}}
 {{- $_ := (set $merged.metadata "labels" (dict)) -}}
 {{- end -}}
@@ -478,7 +478,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.mergeSliceBy" -}}
+{{- define "redpanda.mergeSliceBy" -}}
 {{- $original := (index .a 0) -}}
 {{- $override := (index .a 1) -}}
 {{- $mergeKey := (index .a 2) -}}
@@ -541,7 +541,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.mergeEnvVar" -}}
+{{- define "redpanda.mergeEnvVar" -}}
 {{- $original := (index .a 0) -}}
 {{- $overrides := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -552,7 +552,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.mergeVolume" -}}
+{{- define "redpanda.mergeVolume" -}}
 {{- $original := (index .a 0) -}}
 {{- $override := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -563,7 +563,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.mergeVolumeMount" -}}
+{{- define "redpanda.mergeVolumeMount" -}}
 {{- $original := (index .a 0) -}}
 {{- $override := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -574,21 +574,21 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.mergeContainer" -}}
+{{- define "redpanda.mergeContainer" -}}
 {{- $original := (index .a 0) -}}
 {{- $override := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $merged := (merge (dict) $override $original) -}}
-{{- $_ := (set $merged "env" (get (fromJson (include "redpandav25.mergeSliceBy" (dict "a" (list $original.env $override.env "name" (list "redpandav25.mergeEnvVar"))))) "r")) -}}
-{{- $_ := (set $merged "volumeMounts" (get (fromJson (include "redpandav25.mergeSliceBy" (dict "a" (list $original.volumeMounts $override.volumeMounts "name" (list "redpandav25.mergeVolumeMount"))))) "r")) -}}
+{{- $_ := (set $merged "env" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.env $override.env "name" (list "redpanda.mergeEnvVar"))))) "r")) -}}
+{{- $_ := (set $merged "volumeMounts" (get (fromJson (include "redpanda.mergeSliceBy" (dict "a" (list $original.volumeMounts $override.volumeMounts "name" (list "redpanda.mergeVolumeMount"))))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $merged) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.PodNames" -}}
+{{- define "redpanda.PodNames" -}}
 {{- $state := (index .a 0) -}}
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
@@ -599,7 +599,7 @@
 {{- end -}}
 {{- $pods := (coalesce nil) -}}
 {{- range $_, $i := untilStep (((0 | int) | int)|int) (($pool.Statefulset.replicas | int)|int) (1|int) -}}
-{{- $pods = (concat (default (list) $pods) (list (printf "%s%s-%d" (get (fromJson (include "redpandav25.Fullname" (dict "a" (list $state)))) "r") $suffix $i))) -}}
+{{- $pods = (concat (default (list) $pods) (list (printf "%s%s-%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $suffix $i))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -610,7 +610,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpandav25.ParseCLIArgs" -}}
+{{- define "redpanda.ParseCLIArgs" -}}
 {{- $args := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}

@@ -18,7 +18,7 @@ limitations under the License.
 Expand the name of the chart.
 */}}
 {{- define "redpanda.name" -}}
-{{- get ((include "redpandav25.Name" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.Name" (dict "a" (list .))) | fromJson) "r" }}
 {{- end -}}
 
 {{/*
@@ -26,52 +26,52 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "redpanda.fullname" -}}
-{{- get ((include "redpandav25.Fullname" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.Fullname" (dict "a" (list .))) | fromJson) "r" }}
 {{- end -}}
 
 {{/*
 Create a default service name
 */}}
 {{- define "redpanda.servicename" -}}
-{{- get ((include "redpandav25.ServiceName" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.ServiceName" (dict "a" (list .))) | fromJson) "r" }}
 {{- end -}}
 
 {{/*
 full helm labels + common labels
 */}}
 {{- define "full.labels" -}}
-{{- (get ((include "redpandav25.FullLabels" (dict "a" (list .))) | fromJson) "r") | toYaml }}
+{{- (get ((include "redpanda.FullLabels" (dict "a" (list .))) | fromJson) "r") | toYaml }}
 {{- end -}}
 
 {{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "redpanda.chart" -}}
-{{- get ((include "redpandav25.Chart" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.Chart" (dict "a" (list .))) | fromJson) "r" }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
 {{- define "redpanda.serviceAccountName" -}}
-{{- get ((include "redpandav25.ServiceAccountName" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.ServiceAccountName" (dict "a" (list .))) | fromJson) "r" }}
 {{- end }}
 
 {{/*
 Use AppVersion if image.tag is not set
 */}}
 {{- define "redpanda.tag" -}}
-{{- get ((include "redpandav25.Tag" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.Tag" (dict "a" (list .))) | fromJson) "r" }}
 {{- end -}}
 
 {{/* Generate internal fqdn */}}
 {{- define "redpanda.internal.domain" -}}
-{{- get ((include "redpandav25.InternalDomain" (dict "a" (list .))) | fromJson) "r" }}
+{{- get ((include "redpanda.InternalDomain" (dict "a" (list .))) | fromJson) "r" }}
 {{- end -}}
 
 {{/* ConfigMap variables */}}
 {{- define "admin-internal-tls-enabled" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.InternalTLS.IsEnabled" (dict "a" (list .Values.listeners.admin.tls .Values.tls))) | fromJson) "r")) -}}
+{{- toJson (dict "bool" (get ((include "redpanda.InternalTLS.IsEnabled" (dict "a" (list .Values.listeners.admin.tls .Values.tls))) | fromJson) "r")) -}}
 {{- end -}}
 
 {{- define "kafka-internal-tls-enabled" -}}
@@ -94,7 +94,7 @@ Use AppVersion if image.tag is not set
 {{- end -}}
 
 {{- define "tls-enabled" -}}
-{{- $tlsenabled := get ((include "redpandav25.TLSEnabled" (dict "a" (list .))) | fromJson) "r" }}
+{{- $tlsenabled := get ((include "redpanda.TLSEnabled" (dict "a" (list .))) | fromJson) "r" }}
 {{- toJson (dict "bool" $tlsenabled) -}}
 {{- end -}}
 
@@ -135,28 +135,28 @@ Use AppVersion if image.tag is not set
 {{- end -}}
 
 {{- define "redpanda-atleast-22-2-0" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_22_2_0" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_2_0" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-atleast-22-3-0" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_22_3_0" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-atleast-23-1-1" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_23_1_1" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_1_1" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-atleast-23-1-2" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_23_1_2" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_1_2" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-22-3-atleast-22-3-13" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_22_3_atleast_22_3_13" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_3_atleast_22_3_13" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-22-2-atleast-22-2-10" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_22_2_atleast_22_2_10" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_2_atleast_22_2_10" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-atleast-23-2-1" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_23_2_1" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_2_1" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 {{- define "redpanda-atleast-23-3-0" -}}
-{{- toJson (dict "bool" (get ((include "redpandav25.RedpandaAtLeast_23_3_0" (dict "a" (list .))) | fromJson) "r")) }}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_3_0" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 
 {{- define "redpanda-22-2-x-without-sasl" -}}
@@ -269,7 +269,7 @@ advertised-host returns a json string with the data needed for configuring the a
 
 {{/* mounts that are common to all containers */}}
 {{- define "common-mounts" -}}
-{{- $mounts := get ((include "redpandav25.CommonMounts" (dict "a" (list .))) | fromJson) "r" }}
+{{- $mounts := get ((include "redpanda.CommonMounts" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $mounts -}}
 {{- toYaml $mounts -}}
 {{- end -}}
@@ -277,7 +277,7 @@ advertised-host returns a json string with the data needed for configuring the a
 
 {{/* mounts that are common to most containers */}}
 {{- define "default-mounts" -}}
-{{- $mounts := get ((include "redpandav25.DefaultMounts" (dict "a" (list .))) | fromJson) "r" }}
+{{- $mounts := get ((include "redpanda.DefaultMounts" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $mounts -}}
 {{- toYaml $mounts -}}
 {{- end -}}
@@ -285,7 +285,7 @@ advertised-host returns a json string with the data needed for configuring the a
 
 {{/* volumes that are common to all pods */}}
 {{- define "common-volumes" -}}
-{{- $volumes := get ((include "redpandav25.CommonVolumes" (dict "a" (list .))) | fromJson) "r" }}
+{{- $volumes := get ((include "redpanda.CommonVolumes" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $volumes -}}
 {{- toYaml $volumes -}}
 {{- end -}}
@@ -293,7 +293,7 @@ advertised-host returns a json string with the data needed for configuring the a
 
 {{/* the default set of volumes for most pods, except the sts pod */}}
 {{- define "default-volumes" -}}
-{{- $volumes := get ((include "redpandav25.DefaultVolumes" (dict "a" (list .))) | fromJson) "r" }}
+{{- $volumes := get ((include "redpanda.DefaultVolumes" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $volumes -}}
 {{- toYaml $volumes -}}
 {{- end -}}
@@ -301,7 +301,7 @@ advertised-host returns a json string with the data needed for configuring the a
 
 {{/* support legacy storage.tieredConfig */}}
 {{- define "storage-tiered-config" -}}
-{{- $cfg := get ((include "redpandav25.StorageTieredConfig" (dict "a" (list .))) | fromJson) "r" }}
+{{- $cfg := get ((include "redpanda.StorageTieredConfig" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $cfg -}}
 {{- toYaml $cfg -}}
 {{- end -}}
@@ -335,6 +335,6 @@ REDPANDA_SASL_USERNAME REDPANDA_SASL_PASSWORD REDPANDA_SASL_MECHANISM
 
 {{/* check if client auth is enabled for any of the listeners */}}
 {{- define "client-auth-required" -}}
-{{- $requireClientAuth := get ((include "redpandav25.ClientAuthRequired" (dict "a" (list .))) | fromJson) "r" }}
+{{- $requireClientAuth := get ((include "redpanda.ClientAuthRequired" (dict "a" (list .))) | fromJson) "r" }}
 {{- toJson (dict "bool" $requireClientAuth) -}}
 {{- end -}}
