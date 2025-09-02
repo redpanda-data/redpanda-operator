@@ -452,7 +452,7 @@ pools:
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-statefulset'
+                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-statefulset'
                   app.kubernetes.io/instance: '{{ .Release.Name }}'
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
@@ -462,7 +462,7 @@ pools:
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
-              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-statefulset'
+              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-statefulset'
               app.kubernetes.io/instance: '{{ .Release.Name }}'
               app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
           maxSkew: 1

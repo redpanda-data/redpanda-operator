@@ -766,7 +766,7 @@
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app.kubernetes.io/component: redpanda-statefulset
+                  app.kubernetes.io/component: redpanda-basic-statefulset
                   app.kubernetes.io/instance: nodepool-basic-test
                   app.kubernetes.io/name: redpanda
               topologyKey: kubernetes.io/hostname
@@ -1010,7 +1010,7 @@
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
-              app.kubernetes.io/component: redpanda-statefulset
+              app.kubernetes.io/component: redpanda-basic-statefulset
               app.kubernetes.io/instance: nodepool-basic-test
               app.kubernetes.io/name: redpanda
           maxSkew: 1

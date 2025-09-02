@@ -10,6 +10,8 @@
 package conversion
 
 import (
+	"fmt"
+
 	"github.com/cockroachdb/errors"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
@@ -316,6 +318,17 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 
 	values := helmette.Unwrap[redpanda.Values](v)
 	defaultSet := values.Statefulset
+	// we adjust some of the defaults that need to be changed in the nodepool context
+	defaultSet.PodTemplate.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchLabels = map[string]string{
+		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
+		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
+		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
+	}
+	defaultSet.PodTemplate.Spec.TopologySpreadConstraints[0].LabelSelector.MatchLabels = map[string]string{
+		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
+		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
+		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
+	}
 
 	// next we default our images
 	if defaulters.RedpandaImage != nil {
