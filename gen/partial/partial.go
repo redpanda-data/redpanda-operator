@@ -146,7 +146,7 @@ func (g *Generator) Generate(t types.Type) []ast.Node {
 				Tok: token.TYPE,
 				Specs: []ast.Spec{
 					&ast.TypeSpec{
-						Name:       &ast.Ident{Name: "Partial" + named.Obj().Name()},
+						Name:       &ast.Ident{Name: g.partialName(named.Obj().Name())},
 						TypeParams: params,
 						Type:       g.typeToNode(partialized).(ast.Expr),
 					},
@@ -216,8 +216,16 @@ func (g *Generator) partializeStruct(t *types.Struct) *types.Struct {
 
 		partialized := g.partialize(field.Type())
 		switch partialized.Underlying().(type) {
-		case *types.Basic, *types.Struct:
+		case *types.Basic:
 			partialized = types.NewPointer(partialized)
+		case *types.Struct:
+			// Embedding of pointer values is kinda weird, so we don't do
+			// it. TODO: this should technically only be done if no JSON tag
+			// is explicitly specified (e.g. ObjectMeta) but we don't currently have any such
+			// cases.
+			if !field.Embedded() {
+				partialized = types.NewPointer(partialized)
+			}
 		}
 
 		// TODO Docs injection would be nice but given that we're crawling the
@@ -233,12 +241,30 @@ func (g *Generator) partializeStruct(t *types.Struct) *types.Struct {
 }
 
 func (g *Generator) partializeNamed(t *types.Named) types.Type {
+	// If there exists a Partial___ variant of the type, we'll use this. This
+	// allows Partial structs to references partial structs from other packages
+	// that contain Partialized structs and/or allows end users to provide
+	// "manual" implementations of certain types.
+	inPkg := t.Obj().Pkg() == g.pkg.Types
+	partialName := g.partialName(t.Obj().Name())
+	if obj := t.Obj().Pkg().Scope().Lookup(partialName); obj != nil {
+		// Normally, we'd rely on build flags here but redpanda's values rely
+		// on console's PartialValues. Instead, we check if the file looks like
+		// a generated files as this will always resolve to the results of the
+		// previous generation for redpanda.
+		// To be a bit more accurate, we could alternatively get the full
+		// source file and manually check for the go:build constraint.
+		srcFile := g.pkg.Fset.Position(obj.Pos()).Filename
+		if !inPkg || !strings.HasSuffix(srcFile, ".gen.go") {
+			return obj.Type()
+		}
+	}
+
 	// This check isn't going to be correct in the long run but it's intention
 	// boils down to "Have we generated a Partialized version of this named
 	// type?"
 	// NB: This check MUST match the check in FindAllNames.
-	isPartialized := t.Obj().Pkg() == g.pkg.Types && !IsType[*types.Basic](t.Underlying())
-
+	isPartialized := inPkg && !IsType[*types.Basic](t.Underlying())
 	if !isPartialized {
 		// If we haven't partialized this type, there's nothing we can do. Noop.
 		return t
@@ -261,7 +287,7 @@ func (g *Generator) partializeNamed(t *types.Named) types.Type {
 		params[i] = types.NewTypeParam(param.Obj(), param.Constraint())
 	}
 
-	named := types.NewNamed(types.NewTypeName(0, g.pkg.Types, "Partial"+t.Obj().Name(), t.Underlying()), t.Underlying(), nil)
+	named := types.NewNamed(types.NewTypeName(0, g.pkg.Types, partialName, t.Underlying()), t.Underlying(), nil)
 	if len(args) < 1 {
 		return named
 	}
@@ -271,6 +297,10 @@ func (g *Generator) partializeNamed(t *types.Named) types.Type {
 		panic(err)
 	}
 	return result
+}
+
+func (g *Generator) partialName(name string) string {
+	return "Partial" + name
 }
 
 func GeneratePartial(pkg *packages.Package, structName string, outPackage string, out io.Writer) error {
