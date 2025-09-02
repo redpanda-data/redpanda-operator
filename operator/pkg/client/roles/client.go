@@ -47,6 +47,10 @@ func (c *Client) Close() {
 
 // Has checks if a role exists in the Redpanda cluster.
 func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.Role) (bool, error) {
+	if role == nil || role.Name == "" {
+		return false, fmt.Errorf("role is nil or has empty name")
+	}
+
 	_, err := c.adminClient.Role(ctx, role.Name)
 	if err != nil {
 		// Check if error indicates role doesn't exist using proper error unwrapping
@@ -61,8 +65,21 @@ func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.Role) (bool, er
 
 // Create creates a role in the Redpanda cluster.
 func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error {
+	if role == nil || role.Name == "" {
+		return fmt.Errorf("role is nil or has empty name")
+	}
+
+	// Check if role already exists
+	exists, err := c.Has(ctx, role)
+	if err != nil {
+		return fmt.Errorf("checking if role %s already exists: %w", role.Name, err)
+	}
+	if exists {
+		return fmt.Errorf("role %s already exists", role.Name)
+	}
+
 	// Create the role
-	_, err := c.adminClient.CreateRole(ctx, role.Name)
+	_, err = c.adminClient.CreateRole(ctx, role.Name)
 	if err != nil {
 		return fmt.Errorf("creating role %s: %w", role.Name, err)
 	}
@@ -71,6 +88,8 @@ func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error 
 	if len(role.Spec.Principals) > 0 {
 		err = c.updateRoleMembers(ctx, role.Name, role.Spec.Principals, nil)
 		if err != nil {
+			// Try to clean up the role if principal assignment fails
+			_ = c.adminClient.DeleteRole(ctx, role.Name, true)
 			return fmt.Errorf("assigning principals to role %s: %w", role.Name, err)
 		}
 	}
@@ -80,6 +99,10 @@ func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error 
 
 // Delete removes a role from the Redpanda cluster.
 func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.Role) error {
+	if role == nil || role.Name == "" {
+		return fmt.Errorf("role is nil or has empty name")
+	}
+
 	// Delete role and its associated ACLs
 	err := c.adminClient.DeleteRole(ctx, role.Name, true)
 	if err != nil {
@@ -95,6 +118,19 @@ func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.Role) error 
 
 // Update updates an existing role in the Redpanda cluster.
 func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.Role) error {
+	if role == nil || role.Name == "" {
+		return fmt.Errorf("role is nil or has empty name")
+	}
+
+	// Check if role exists
+	exists, err := c.Has(ctx, role)
+	if err != nil {
+		return fmt.Errorf("checking if role %s exists: %w", role.Name, err)
+	}
+	if !exists {
+		return fmt.Errorf("role %s does not exist", role.Name)
+	}
+
 	// Get current role members
 	currentMembersResp, err := c.adminClient.RoleMembers(ctx, role.Name)
 	if err != nil {
@@ -124,11 +160,18 @@ func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.Role) error 
 
 // updateRoleMembers updates role membership by adding and removing principals
 func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, toRemove []string) error {
+	if roleName == "" {
+		return fmt.Errorf("role name cannot be empty")
+	}
+
 	// Convert to RoleMember structs - extract username from "User:username" format
 	addMembers := make([]rpadmin.RoleMember, len(toAdd))
 	removeMembers := make([]rpadmin.RoleMember, len(toRemove))
 
 	for i, principal := range toAdd {
+		if principal == "" {
+			return fmt.Errorf("principal at index %d is empty", i)
+		}
 		// Parse principal to extract username
 		name := parsePrincipal(principal)
 		addMembers[i] = rpadmin.RoleMember{
@@ -138,6 +181,9 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 	}
 
 	for i, principal := range toRemove {
+		if principal == "" {
+			return fmt.Errorf("principal at index %d is empty", i)
+		}
 		// Parse principal to extract username
 		name := parsePrincipal(principal)
 		removeMembers[i] = rpadmin.RoleMember{
@@ -150,7 +196,7 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 	if len(addMembers) > 0 || len(removeMembers) > 0 {
 		_, err := c.adminClient.UpdateRoleMembership(ctx, roleName, addMembers, removeMembers, false)
 		if err != nil {
-			return fmt.Errorf("updating role membership: %w", err)
+			return fmt.Errorf("updating role membership for role %s: %w", roleName, err)
 		}
 	}
 
@@ -194,8 +240,8 @@ const (
 // Handles "User:username" format and defaults to treating the whole string as username if no prefix.
 // Currently only supports User principals.
 func parsePrincipal(p string) string {
-	if strings.HasPrefix(p, userPrefix) {
-		return strings.TrimPrefix(p, userPrefix)
+	if name, found := strings.CutPrefix(p, userPrefix); found {
+		return name
 	}
 	// Default to treating the whole string as username
 	return p
