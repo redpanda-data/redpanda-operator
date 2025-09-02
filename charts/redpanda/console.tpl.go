@@ -17,6 +17,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
@@ -29,24 +30,22 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 		return nil
 	}
 
-	consoleDot := state.Dot.Subcharts["console"]
-	loadedValues := consoleDot.Values
+	consoleState := consolechart.DotToState(state.Dot.Subcharts["console"])
 
-	consoleValue := helmette.UnmarshalInto[console.Values](consoleDot.Values)
 	// Pass the same Redpanda License to Console
 	if license := state.Values.Enterprise.License; license != "" && !ptr.Deref(state.Values.Console.Secret.Create, false) {
-		consoleValue.Secret.Create = true
-		consoleValue.Secret.License = license
+		consoleState.Values.Secret.Create = true
+		consoleState.Values.Secret.License = license
 	}
 
 	// Create console configuration based on Redpanda helm chart state.Values.
 	if !ptr.Deref(state.Values.Console.ConfigMap.Create, false) {
-		consoleValue.ConfigMap.Create = true
-		consoleValue.Config = ConsoleConfig(state)
+		consoleState.Values.ConfigMap.Create = true
+		consoleState.Values.Config = ConsoleConfig(state)
 	}
 
 	if !ptr.Deref(state.Values.Console.Deployment.Create, false) {
-		consoleValue.Deployment.Create = true
+		consoleState.Values.Deployment.Create = true
 
 		// Adopt Console entry point to use SASL user in Kafka,
 		// Schema Registry and Redpanda Admin API connection
@@ -64,39 +63,33 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 					" /app/console $@",
 				" --",
 			}
-			consoleValue.Deployment.Command = command
+			consoleState.Values.Deployment.Command = command
 		}
 
 		// Create License reference for Console
 		if secret := state.Values.Enterprise.LicenseSecretRef; secret != nil {
-			consoleValue.LicenseSecretRef = secret
+			consoleState.Values.LicenseSecretRef = secret
 		}
 
-		consoleValue.ExtraVolumes = consoleTLSVolumes(state)
-		consoleValue.ExtraVolumeMounts = consoleTLSVolumesMounts(state)
+		consoleState.Values.ExtraVolumes = consoleTLSVolumes(state)
+		consoleState.Values.ExtraVolumeMounts = consoleTLSVolumesMounts(state)
 
-		consoleDot.Values = helmette.UnmarshalInto[helmette.Values](consoleValue)
-		cfg := console.ConfigMap(consoleDot)
-		if consoleValue.PodAnnotations == nil {
-			consoleValue.PodAnnotations = map[string]string{}
+		if consoleState.Values.PodAnnotations == nil {
+			consoleState.Values.PodAnnotations = map[string]string{}
 		}
-		consoleValue.PodAnnotations["checksum-redpanda-chart/config"] = helmette.Sha256Sum(helmette.ToYaml(cfg))
+
+		cfg := console.ConfigMap(consoleState)
+		consoleState.Values.PodAnnotations["checksum-redpanda-chart/config"] = helmette.Sha256Sum(helmette.ToYaml(cfg))
 	}
-
-	consoleDot.Values = helmette.UnmarshalInto[helmette.Values](consoleValue)
-
-	manifests := []kube.Object{
-		console.Secret(consoleDot),
-		console.ConfigMap(consoleDot),
-		console.Deployment(consoleDot),
-	}
-
-	consoleDot.Values = loadedValues
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
-	return manifests
+	return []kube.Object{
+		console.Secret(consoleState),
+		console.ConfigMap(consoleState),
+		console.Deployment(consoleState),
+	}
 }
 
 func consoleTLSVolumesMounts(state *RenderState) []corev1.VolumeMount {

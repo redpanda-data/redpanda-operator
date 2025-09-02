@@ -39,16 +39,19 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-func TestArtifactHubImages(t *testing.T) {
+func TestChartYAML(t *testing.T) {
 	var images []map[string]any
 	require.NoError(t, yaml.Unmarshal([]byte(Chart.Metadata().Annotations["artifacthub.io/images"]), &images))
 
-	require.Equal(t, []map[string]any{
+	assert.Equal(t, []map[string]any{
 		{
 			"name":  "console",
 			"image": "docker.redpanda.com/redpandadata/console:" + Chart.Metadata().AppVersion,
 		},
 	}, images)
+
+	assert.Equal(t, console.ChartName, Chart.Metadata().Name)
+	assert.Equal(t, console.AppVersion, Chart.Metadata().AppVersion)
 }
 
 // TestValues asserts that the chart's values.yaml file can be losslessly
@@ -206,7 +209,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 		Tests: &PartialEnableable{
 			Enabled: ptr.To(false),
 		},
-		PartialValues: console.PartialValues{
+		PartialRenderValues: console.PartialRenderValues{
 			Secret: &console.PartialSecretConfig{
 				Authentication: &console.PartialAuthenticationSecrets{
 					JWTSigningKey: ptr.To("SECRET"),
@@ -259,7 +262,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 
 func TestSecrets(t *testing.T) {
 	values := PartialValues{
-		PartialValues: console.PartialValues{
+		PartialRenderValues: console.PartialRenderValues{
 			Secret: &console.PartialSecretConfig{
 				Create: ptr.To(true),
 				Kafka: &console.PartialKafkaSecrets{
@@ -357,7 +360,7 @@ func TestIntegrationChart(t *testing.T) {
 		env := h.Namespaced(t)
 
 		partial := PartialValues{
-			PartialValues: console.PartialValues{
+			PartialRenderValues: console.PartialRenderValues{
 				Image: &console.PartialImage{
 					Repository: ptr.To("redpandadata/console-unstable"),
 					Tag:        ptr.To("master-a4cf9be"),

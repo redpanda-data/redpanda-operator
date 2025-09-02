@@ -19,16 +19,15 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-type PartialValues struct {
-	Globals                      map[string]any                    "json:\"global,omitempty\""
+type PartialRenderValues struct {
 	ReplicaCount                 *int32                            "json:\"replicaCount,omitempty\""
+	NameOverride                 *string                           "json:\"nameOverride,omitempty\""
+	CommonLabels                 map[string]string                 "json:\"commonLabels,omitempty\""
+	FullnameOverride             *string                           "json:\"fullnameOverride,omitempty\""
 	Image                        *PartialImage                     "json:\"image,omitempty\""
 	ImagePullSecrets             []corev1.LocalObjectReference     "json:\"imagePullSecrets,omitempty\""
-	NameOverride                 *string                           "json:\"nameOverride,omitempty\""
-	FullnameOverride             *string                           "json:\"fullnameOverride,omitempty\""
 	AutomountServiceAccountToken *bool                             "json:\"automountServiceAccountToken,omitempty\""
 	ServiceAccount               *PartialServiceAccountConfig      "json:\"serviceAccount,omitempty\""
-	CommonLabels                 map[string]string                 "json:\"commonLabels,omitempty\""
 	Annotations                  map[string]string                 "json:\"annotations,omitempty\""
 	PodAnnotations               map[string]string                 "json:\"podAnnotations,omitempty\""
 	PodLabels                    map[string]string                 "json:\"podLabels,omitempty\""

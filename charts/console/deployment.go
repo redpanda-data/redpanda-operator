@@ -24,15 +24,13 @@ import (
 // Console's HTTP server Port.
 // The port is defined from the provided config but can be overridden
 // by setting service.targetPort and if that is missing defaults to 8080.
-func ContainerPort(dot *helmette.Dot) int32 {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func ContainerPort(state *RenderState) int32 {
 	listenPort := int32(8080)
-	if values.Service.TargetPort != nil {
-		listenPort = *values.Service.TargetPort
+	if state.Values.Service.TargetPort != nil {
+		listenPort = *state.Values.Service.TargetPort
 	}
 
-	configListenPort := helmette.Dig(values.Config, nil, "server", "listenPort")
+	configListenPort := helmette.Dig(state.Values.Config, nil, "server", "listenPort")
 	if asInt, ok := helmette.AsIntegral[int](configListenPort); ok {
 		return int32(asInt)
 	}
@@ -40,21 +38,19 @@ func ContainerPort(dot *helmette.Dot) int32 {
 	return listenPort
 }
 
-func Deployment(dot *helmette.Dot) *appsv1.Deployment {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Deployment.Create {
+func Deployment(state *RenderState) *appsv1.Deployment {
+	if !state.Values.Deployment.Create {
 		return nil
 	}
 
 	var replicas *int32
-	if !values.Autoscaling.Enabled {
-		replicas = ptr.To(values.ReplicaCount)
+	if !state.Values.Autoscaling.Enabled {
+		replicas = ptr.To(state.Values.ReplicaCount)
 	}
 
 	var initContainers []corev1.Container
-	if !helmette.Empty(values.InitContainers.ExtraInitContainers) {
-		initContainers = helmette.UnmarshalYamlArray[corev1.Container](helmette.Tpl(dot, *values.InitContainers.ExtraInitContainers, dot))
+	if !helmette.Empty(state.Values.InitContainers.ExtraInitContainers) {
+		initContainers = helmette.UnmarshalYamlArray[corev1.Container](state.Template(*state.Values.InitContainers.ExtraInitContainers))
 	}
 
 	volumeMounts := []corev1.VolumeMount{
@@ -65,7 +61,7 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 		},
 	}
 
-	if values.Secret.Create {
+	if state.Values.Secret.Create {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      "secrets",
 			MountPath: "/etc/console/secrets",
@@ -73,7 +69,7 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 		})
 	}
 
-	for _, mount := range values.SecretMounts {
+	for _, mount := range state.Values.SecretMounts {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      mount.Name,
 			MountPath: mount.Path,
@@ -81,7 +77,7 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 		})
 	}
 
-	volumeMounts = append(volumeMounts, values.ExtraVolumeMounts...)
+	volumeMounts = append(volumeMounts, state.Values.ExtraVolumeMounts...)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -89,60 +85,60 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        Fullname(dot),
-			Labels:      Labels(dot),
-			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Name:        state.FullName(),
+			Labels:      state.Labels(nil),
+			Namespace:   state.Namespace,
+			Annotations: state.Values.Annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(dot),
+				MatchLabels: state.SelectorLabels(),
 			},
-			Strategy: values.Strategy,
+			Strategy: state.Values.Strategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: helmette.Merge(map[string]string{
-						"checksum/config": helmette.Sha256Sum(helmette.ToYaml(ConfigMap(dot).Data)),
-					}, values.PodAnnotations),
-					Labels: helmette.Merge(SelectorLabels(dot), values.PodLabels),
+						"checksum/config": helmette.Sha256Sum(helmette.ToYaml(ConfigMap(state).Data)),
+					}, state.Values.PodAnnotations),
+					Labels: helmette.Merge(state.SelectorLabels(), state.Values.PodLabels),
 				},
 				Spec: corev1.PodSpec{
-					ImagePullSecrets:             values.ImagePullSecrets,
-					ServiceAccountName:           ServiceAccountName(dot),
-					AutomountServiceAccountToken: &values.AutomountServiceAccountToken,
-					SecurityContext:              &values.PodSecurityContext,
-					NodeSelector:                 values.NodeSelector,
-					Affinity:                     &values.Affinity,
-					TopologySpreadConstraints:    values.TopologySpreadConstraints,
-					PriorityClassName:            values.PriorityClassName,
-					Tolerations:                  values.Tolerations,
-					Volumes:                      consolePodVolumes(dot),
+					ImagePullSecrets:             state.Values.ImagePullSecrets,
+					ServiceAccountName:           ServiceAccountName(state),
+					AutomountServiceAccountToken: &state.Values.AutomountServiceAccountToken,
+					SecurityContext:              &state.Values.PodSecurityContext,
+					NodeSelector:                 state.Values.NodeSelector,
+					Affinity:                     &state.Values.Affinity,
+					TopologySpreadConstraints:    state.Values.TopologySpreadConstraints,
+					PriorityClassName:            state.Values.PriorityClassName,
+					Tolerations:                  state.Values.Tolerations,
+					Volumes:                      consolePodVolumes(state),
 					InitContainers:               initContainers,
 					Containers: append([]corev1.Container{
 						{
-							Name:    dot.Chart.Name,
-							Command: values.Deployment.Command,
+							Name:    ConsoleContainerName,
+							Command: state.Values.Deployment.Command,
 							Args: append([]string{
 								"--config.filepath=/etc/console/configs/config.yaml",
-							}, values.Deployment.ExtraArgs...),
-							SecurityContext: &values.SecurityContext,
-							Image:           containerImage(dot),
-							ImagePullPolicy: values.Image.PullPolicy,
+							}, state.Values.Deployment.ExtraArgs...),
+							SecurityContext: &state.Values.SecurityContext,
+							Image:           containerImage(state),
+							ImagePullPolicy: state.Values.Image.PullPolicy,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
-									ContainerPort: ContainerPort(dot),
+									ContainerPort: ContainerPort(state),
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
 							VolumeMounts: volumeMounts,
 							LivenessProbe: &corev1.Probe{
-								InitialDelaySeconds: values.LivenessProbe.InitialDelaySeconds, // TODO what to do with this??
-								PeriodSeconds:       values.LivenessProbe.PeriodSeconds,
-								TimeoutSeconds:      values.LivenessProbe.TimeoutSeconds,
-								SuccessThreshold:    values.LivenessProbe.SuccessThreshold,
-								FailureThreshold:    values.LivenessProbe.FailureThreshold,
+								InitialDelaySeconds: state.Values.LivenessProbe.InitialDelaySeconds, // TODO what to do with this??
+								PeriodSeconds:       state.Values.LivenessProbe.PeriodSeconds,
+								TimeoutSeconds:      state.Values.LivenessProbe.TimeoutSeconds,
+								SuccessThreshold:    state.Values.LivenessProbe.SuccessThreshold,
+								FailureThreshold:    state.Values.LivenessProbe.FailureThreshold,
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/admin/health",
@@ -151,11 +147,11 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								InitialDelaySeconds: values.ReadinessProbe.InitialDelaySeconds,
-								PeriodSeconds:       values.ReadinessProbe.PeriodSeconds,
-								TimeoutSeconds:      values.ReadinessProbe.TimeoutSeconds,
-								SuccessThreshold:    values.ReadinessProbe.SuccessThreshold,
-								FailureThreshold:    values.ReadinessProbe.FailureThreshold,
+								InitialDelaySeconds: state.Values.ReadinessProbe.InitialDelaySeconds,
+								PeriodSeconds:       state.Values.ReadinessProbe.PeriodSeconds,
+								TimeoutSeconds:      state.Values.ReadinessProbe.TimeoutSeconds,
+								SuccessThreshold:    state.Values.ReadinessProbe.SuccessThreshold,
+								FailureThreshold:    state.Values.ReadinessProbe.FailureThreshold,
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/admin/health",
@@ -163,11 +159,11 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 									},
 								},
 							},
-							Resources: values.Resources,
-							Env:       consoleContainerEnv(dot),
-							EnvFrom:   values.ExtraEnvFrom,
+							Resources: state.Values.Resources,
+							Env:       consoleContainerEnv(state),
+							EnvFrom:   state.Values.ExtraEnvFrom,
 						},
-					}, values.ExtraContainers...),
+					}, state.Values.ExtraContainers...),
 				},
 			},
 		},
@@ -175,18 +171,17 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 }
 
 // ConsoleImage
-func containerImage(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	tag := dot.Chart.AppVersion
-	if !helmette.Empty(values.Image.Tag) {
-		tag = *values.Image.Tag
+func containerImage(state *RenderState) string {
+	// Use a default if tag is not set
+	tag := state.Values.Image.Tag
+	if tag == "" {
+		tag = AppVersion
 	}
 
-	image := fmt.Sprintf("%s:%s", values.Image.Repository, tag)
+	image := fmt.Sprintf("%s:%s", state.Values.Image.Repository, tag)
 
-	if !helmette.Empty(values.Image.Registry) {
-		return fmt.Sprintf("%s/%s", values.Image.Registry, image)
+	if !helmette.Empty(state.Values.Image.Registry) {
+		return fmt.Sprintf("%s/%s", state.Values.Image.Registry, image)
 	}
 
 	return image
@@ -197,21 +192,19 @@ type PossibleEnvVar struct {
 	EnvVar corev1.EnvVar
 }
 
-func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
-	values := helmette.Unwrap[Values](dot.Values)
+func consoleContainerEnv(state *RenderState) []corev1.EnvVar {
+	if !state.Values.Secret.Create {
+		vars := state.Values.ExtraEnv
 
-	if !values.Secret.Create {
-		vars := values.ExtraEnv
-
-		if values.LicenseSecretRef != nil && !helmette.Empty(values.LicenseSecretRef.Name) {
-			vars = append(values.ExtraEnv, corev1.EnvVar{
+		if state.Values.LicenseSecretRef != nil && !helmette.Empty(state.Values.LicenseSecretRef.Name) {
+			vars = append(state.Values.ExtraEnv, corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: values.LicenseSecretRef.Name,
+							Name: state.Values.LicenseSecretRef.Name,
 						},
-						Key: helmette.Default("enterprise-license", values.LicenseSecretRef.Key),
+						Key: helmette.Default("enterprise-license", state.Values.LicenseSecretRef.Key),
 					},
 				},
 			})
@@ -222,13 +215,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 
 	possibleVars := []PossibleEnvVar{
 		{
-			Value: values.Secret.Kafka.SASLPassword,
+			Value: state.Values.Secret.Kafka.SASLPassword,
 			EnvVar: corev1.EnvVar{
 				Name: "KAFKA_SASL_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "kafka-sasl-password",
 					},
@@ -236,13 +229,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Serde.ProtobufGitBasicAuthPassword,
+			Value: state.Values.Secret.Serde.ProtobufGitBasicAuthPassword,
 			EnvVar: corev1.EnvVar{
 				Name: "SERDE_PROTOBUF_GIT_BASICAUTH_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "serde-protobuf-git-basicauth-password",
 					},
@@ -250,13 +243,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Kafka.AWSMSKIAMSecretKey,
+			Value: state.Values.Secret.Kafka.AWSMSKIAMSecretKey,
 			EnvVar: corev1.EnvVar{
 				Name: "KAFKA_SASL_AWSMSKIAM_SECRETKEY",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "kafka-sasl-aws-msk-iam-secret-key",
 					},
@@ -264,55 +257,55 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Kafka.TLSCA,
+			Value: state.Values.Secret.Kafka.TLSCA,
 			EnvVar: corev1.EnvVar{
 				Name:  "KAFKA_TLS_CAFILEPATH",
 				Value: "/etc/console/secrets/kafka-tls-ca",
 			},
 		},
 		{
-			Value: values.Secret.Kafka.TLSCert,
+			Value: state.Values.Secret.Kafka.TLSCert,
 			EnvVar: corev1.EnvVar{
 				Name:  "KAFKA_TLS_CERTFILEPATH",
 				Value: "/etc/console/secrets/kafka-tls-cert",
 			},
 		},
 		{
-			Value: values.Secret.Kafka.TLSKey,
+			Value: state.Values.Secret.Kafka.TLSKey,
 			EnvVar: corev1.EnvVar{
 				Name:  "KAFKA_TLS_KEYFILEPATH",
 				Value: "/etc/console/secrets/kafka-tls-key",
 			},
 		},
 		{
-			Value: values.Secret.SchemaRegistry.TLSCA,
+			Value: state.Values.Secret.SchemaRegistry.TLSCA,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_CAFILEPATH",
 				Value: "/etc/console/secrets/schemaregistry-tls-ca",
 			},
 		},
 		{
-			Value: values.Secret.SchemaRegistry.TLSCert,
+			Value: state.Values.Secret.SchemaRegistry.TLSCert,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_CERTFILEPATH",
 				Value: "/etc/console/secrets/schemaregistry-tls-cert",
 			},
 		},
 		{
-			Value: values.Secret.SchemaRegistry.TLSKey,
+			Value: state.Values.Secret.SchemaRegistry.TLSKey,
 			EnvVar: corev1.EnvVar{
 				Name:  "SCHEMAREGISTRY_TLS_KEYFILEPATH",
 				Value: "/etc/console/secrets/schemaregistry-tls-key",
 			},
 		},
 		{
-			Value: values.Secret.SchemaRegistry.Password,
+			Value: state.Values.Secret.SchemaRegistry.Password,
 			EnvVar: corev1.EnvVar{
 				Name: "SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "schema-registry-password",
 					},
@@ -320,13 +313,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.SchemaRegistry.BearerToken,
+			Value: state.Values.Secret.SchemaRegistry.BearerToken,
 			EnvVar: corev1.EnvVar{
 				Name: "SCHEMAREGISTRY_AUTHENTICATION_BEARERTOKEN",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "schema-registry-bearertoken",
 					},
@@ -334,13 +327,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Authentication.JWTSigningKey,
+			Value: state.Values.Secret.Authentication.JWTSigningKey,
 			EnvVar: corev1.EnvVar{
 				Name: "AUTHENTICATION_JWTSIGNINGKEY",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "authentication-jwt-signingkey",
 					},
@@ -348,13 +341,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.License,
+			Value: state.Values.Secret.License,
 			EnvVar: corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "license",
 					},
@@ -362,13 +355,13 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Redpanda.AdminAPI.Password,
+			Value: state.Values.Secret.Redpanda.AdminAPI.Password,
 			EnvVar: corev1.EnvVar{
 				Name: "REDPANDA_ADMINAPI_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: Fullname(dot),
+							Name: state.FullName(),
 						},
 						Key: "redpanda-admin-api-password",
 					},
@@ -376,21 +369,21 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: values.Secret.Redpanda.AdminAPI.TLSCA,
+			Value: state.Values.Secret.Redpanda.AdminAPI.TLSCA,
 			EnvVar: corev1.EnvVar{
 				Name:  "REDPANDA_ADMINAPI_TLS_CAFILEPATH",
 				Value: "/etc/console/secrets/redpanda-admin-api-tls-ca",
 			},
 		},
 		{
-			Value: values.Secret.Redpanda.AdminAPI.TLSKey,
+			Value: state.Values.Secret.Redpanda.AdminAPI.TLSKey,
 			EnvVar: corev1.EnvVar{
 				Name:  "REDPANDA_ADMINAPI_TLS_KEYFILEPATH",
 				Value: "/etc/console/secrets/redpanda-admin-api-tls-key",
 			},
 		},
 		{
-			Value: values.Secret.Redpanda.AdminAPI.TLSCert,
+			Value: state.Values.Secret.Redpanda.AdminAPI.TLSCert,
 			EnvVar: corev1.EnvVar{
 				Name:  "REDPANDA_ADMINAPI_TLS_CERTFILEPATH",
 				Value: "/etc/console/secrets/redpanda-admin-api-tls-cert",
@@ -398,7 +391,7 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 		},
 	}
 
-	vars := values.ExtraEnv
+	vars := state.Values.ExtraEnv
 	for _, possible := range possibleVars {
 		if !helmette.Empty(possible.Value) {
 			vars = append(vars, possible.EnvVar)
@@ -408,34 +401,32 @@ func consoleContainerEnv(dot *helmette.Dot) []corev1.EnvVar {
 	return vars
 }
 
-func consolePodVolumes(dot *helmette.Dot) []corev1.Volume {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func consolePodVolumes(state *RenderState) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: "configs",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: Fullname(dot),
+						Name: state.FullName(),
 					},
 				},
 			},
 		},
 	}
 
-	if values.Secret.Create {
+	if state.Values.Secret.Create {
 		volumes = append(volumes, corev1.Volume{
 			Name: "secrets",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: Fullname(dot),
+					SecretName: state.FullName(),
 				},
 			},
 		})
 	}
 
-	for _, mount := range values.SecretMounts {
+	for _, mount := range state.Values.SecretMounts {
 		volumes = append(volumes, corev1.Volume{
 			Name: mount.Name,
 			VolumeSource: corev1.VolumeSource{
@@ -447,5 +438,5 @@ func consolePodVolumes(dot *helmette.Dot) []corev1.Volume {
 		})
 	}
 
-	return append(volumes, values.ExtraVolumes...)
+	return append(volumes, state.Values.ExtraVolumes...)
 }
