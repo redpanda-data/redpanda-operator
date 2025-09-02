@@ -1099,7 +1099,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 			values.Console = &consolechart.PartialValues{
 				Enabled: ptr.To(true),
 				Tests:   &consolechart.PartialEnableable{Enabled: ptr.To(false)},
-				PartialValues: console.PartialValues{
+				PartialRenderValues: console.PartialRenderValues{
 					Ingress: &console.PartialIngressConfig{
 						Enabled: ptr.To(true),
 					},
