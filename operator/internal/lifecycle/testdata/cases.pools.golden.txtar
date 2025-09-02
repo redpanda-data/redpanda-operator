@@ -32,7 +32,7 @@
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         creationTimestamp: null
         labels:
-          app.kubernetes.io/component: redpanda
+          app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
@@ -393,7 +393,7 @@
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         creationTimestamp: null
         labels:
-          app.kubernetes.io/component: redpanda
+          app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
@@ -742,7 +742,7 @@
     replicas: 1
     selector:
       matchLabels:
-        app.kubernetes.io/component: redpanda-statefulset
+        app.kubernetes.io/component: redpanda-basic-statefulset
         app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
         cluster.redpanda.com/broker: "true"
@@ -753,7 +753,7 @@
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         creationTimestamp: null
         labels:
-          app.kubernetes.io/component: redpanda
+          app.kubernetes.io/component: redpanda-basic-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda

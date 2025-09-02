@@ -102,7 +102,8 @@ func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]stri
 		additionalSelectorLabels = pool.Statefulset.AdditionalSelectorLabels
 	}
 
-	component := fmt.Sprintf("%s-statefulset", strings.TrimSuffix(helmette.Trunc(51, Name(state)), "-"))
+	name := fmt.Sprintf("%s%s", Name(state), pool.Suffix())
+	component := fmt.Sprintf("%s-statefulset", strings.TrimSuffix(helmette.Trunc(51, name), "-"))
 
 	defaults := map[string]string{
 		"app.kubernetes.io/component": component,
@@ -127,7 +128,7 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 		"redpanda.com/poddisruptionbudget": Fullname(state),
 	}
 
-	return helmette.Merge(statefulSetLabels, FullLabels(state), StatefulSetPodLabelsSelector(state, pool), defaults)
+	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state))
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
