@@ -25,14 +25,14 @@ import (
 // bootstrapYamlTemplater returns an initcontainer that will template
 // environment variables into ${base-config}/boostrap.yaml and output it to
 // ${config}/.bootstrap.yaml.
-func bootstrapYamlTemplater(state *RenderState, ss Statefulset) corev1.Container {
+func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Container {
 	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
 	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
 	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
-		ss.SideCars.Image.Repository,
-		ss.SideCars.Image.Tag,
+		sts.SideCars.Image.Repository,
+		sts.SideCars.Image.Tag,
 	)
 
 	return corev1.Container{

@@ -350,6 +350,8 @@ func getFirstExternalKafkaListener(state *RenderState) string {
 	return helmette.First(keys).(string)
 }
 
+// BrokerList returns the list of brokers referenced in every node pool in the RenderState.
+// If the port specified is -1 then it is not appended onto the generated hostnames.
 func BrokerList(state *RenderState, port int32) []string {
 	bl := brokersFor(state, Pool{Statefulset: state.Values.Statefulset}, port)
 	for _, set := range state.Pools {

@@ -1067,29 +1067,6 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 	return pvc
 }
 
-// TODO this will also need templating support.
-// func statefulSetTopologySpreadConstraints(state *RenderState, pool Pool) []corev1.TopologySpreadConstraint {
-// 	// XXX: Was protected with this: semverCompare ">=1.16-0" .Capabilities.KubeVersion.GitVersion
-// 	// but that version is beyond EOL; and the chart as a whole wants >= 1.21
-//
-// 	var result []corev1.TopologySpreadConstraint
-// 	labelSelector := &metav1.LabelSelector{
-// 		MatchLabels: StatefulSetPodLabelsSelector(state),
-// 	}
-// 	for _, v := range pool.Statefulset.TopologySpreadConstraints {
-// 		result = append(result,
-// 			corev1.TopologySpreadConstraint{
-// 				MaxSkew:           v.MaxSkew,
-// 				TopologyKey:       v.TopologyKey,
-// 				WhenUnsatisfiable: v.WhenUnsatisfiable,
-// 				LabelSelector:     labelSelector,
-// 			},
-// 		)
-// 	}
-//
-// 	return result
-// }
-
 // StorageTieredConfig was: storage-tiered-config
 // Wrap this up since there are helm tests that require it
 func StorageTieredConfig(state *RenderState) map[string]any {

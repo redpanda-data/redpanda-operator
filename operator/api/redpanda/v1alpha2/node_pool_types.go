@@ -96,6 +96,7 @@ type PoolInitContainers struct {
 	Configurator        *PoolConfigurator        `json:"configurator,omitempty"`
 }
 
+// +hidefromdoc
 type EmbeddedNodePoolSpec struct {
 	AdditionalSelectorLabels   map[string]string   `json:"additionalSelectorLabels,omitempty"`
 	Replicas                   *int32              `json:"replicas,omitempty"`

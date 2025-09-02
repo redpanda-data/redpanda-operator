@@ -357,7 +357,7 @@ func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 	return secret
 }
 
-func secretConfiguratorKafkaConfig(state *RenderState, ss Statefulset) []string {
+func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -386,7 +386,8 @@ func secretConfiguratorKafkaConfig(state *RenderState, ss Statefulset) []string 
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(ss.Replicas)) {
+			// TODO: this looks quite broken just based on the fact that if replicas > addresses
+			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {
@@ -432,7 +433,7 @@ func secretConfiguratorKafkaConfig(state *RenderState, ss Statefulset) []string 
 	return snippet
 }
 
-func secretConfiguratorHTTPConfig(state *RenderState, ss Statefulset) []string {
+func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -461,7 +462,8 @@ func secretConfiguratorHTTPConfig(state *RenderState, ss Statefulset) []string {
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(ss.Replicas)) {
+			// TODO: this looks quite broken just based on the fact that if replicas > addresses
+			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {

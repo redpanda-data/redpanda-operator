@@ -775,6 +775,10 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
+		s.Require().NoError((&redpanda.NodePoolReconciler{
+			Client: mgr.GetClient(),
+		}).SetupWithManager(s.ctx, mgr))
+
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),

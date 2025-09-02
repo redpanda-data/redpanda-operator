@@ -289,13 +289,13 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 }
 
 func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
-	converted := []redpanda.Pool{}
-	for _, pool := range pools {
+	converted := make([]redpanda.Pool, len(pools))
+	for i, pool := range pools {
 		set, err := convertV2NodepoolToPool(pool, defaulters)
 		if err != nil {
 			return nil, err
 		}
-		converted = append(converted, set)
+		converted[i] = set
 	}
 	return converted, nil
 }

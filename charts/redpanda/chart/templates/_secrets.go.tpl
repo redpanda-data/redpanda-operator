@@ -207,7 +207,7 @@ echo "passed"`) -}}
 
 {{- define "redpanda.secretConfiguratorKafkaConfig" -}}
 {{- $state := (index .a 0) -}}
-{{- $ss := (index .a 1) -}}
+{{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
@@ -221,7 +221,7 @@ echo "passed"`) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.kafka.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
-{{- range $_, $replicaIndex := (until (($ss.replicas | int) | int)) -}}
+{{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (1 | int)) -}}
@@ -255,7 +255,7 @@ echo "passed"`) -}}
 
 {{- define "redpanda.secretConfiguratorHTTPConfig" -}}
 {{- $state := (index .a 0) -}}
-{{- $ss := (index .a 1) -}}
+{{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
@@ -269,7 +269,7 @@ echo "passed"`) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.http.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
-{{- range $_, $replicaIndex := (until (($ss.replicas | int) | int)) -}}
+{{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (1 | int)) -}}

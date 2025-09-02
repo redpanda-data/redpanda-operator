@@ -3,7 +3,7 @@
 
 {{- define "redpanda.bootstrapYamlTemplater" -}}
 {{- $state := (index .a 0) -}}
-{{- $ss := (index .a 1) -}}
+{{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $env := (get (fromJson (include "redpanda.TieredStorageCredentials.AsEnvVars" (dict "a" (list $state.Values.storage.tiered.credentialsSecretRef (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $state.Values.storage)))) "r"))))) "r") -}}
@@ -12,7 +12,7 @@
 {{- $_ := (index $_30_____additionalEnv 1) -}}
 {{- $additionalEnv := (index $_30_____additionalEnv 2) -}}
 {{- $env = (concat (default (list) $env) (default (list) $additionalEnv)) -}}
-{{- $image := (printf `%s:%s` $ss.sideCars.image.repository $ss.sideCars.image.tag) -}}
+{{- $image := (printf `%s:%s` $sts.sideCars.image.repository $sts.sideCars.image.tag) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "bootstrap-yaml-envsubst" "image" $image "command" (concat (default (list) (list "/redpanda-operator" "bootstrap" "--in-dir" "/tmp/base-config" "--out-dir" "/tmp/config")) (default (list) $state.Values.statefulset.initContainers.configurator.additionalCLIArgs)) "env" $env "resources" (mustMergeOverwrite (dict) (dict "limits" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")) "requests" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")))) "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false "readOnlyRootFilesystem" true "runAsNonRoot" true)) "volumeMounts" (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/tmp/config/")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config/")))))) | toJson -}}
 {{- break -}}

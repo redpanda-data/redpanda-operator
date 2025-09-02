@@ -24,23 +24,21 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 )
 
-// redpanda resources
+// nodepool resources
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
-// NodePoolReconciler reconciles a NodePool object
+// NodePoolReconciler reconciles a NodePool object. This reconciler in particular should only update status
+// fields and finalizers on the NodePool objects, rendering of NodePools takes place within the RedpandaReconciler.
 type NodePoolReconciler struct {
 	Client client.Client
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	builder := ctrl.NewControllerManagedBy(mgr)
-	builder.For(&redpandav1alpha2.NodePool{})
-
-	return builder.Complete(r)
+	return ctrl.NewControllerManagedBy(mgr).For(&redpandav1alpha2.NodePool{}).Complete(r)
 }
 
 // Reconcile reconciles NodePool objects

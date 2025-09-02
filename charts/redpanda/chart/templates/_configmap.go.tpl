@@ -387,10 +387,10 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_8)))) "r") | int) (0 | int)) -}}
 {{- $schemaRegistryTLS = $tls_8 -}}
 {{- end -}}
-{{- $_402_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values $pool)))) "r") -}}
-{{- $lockMemory := (index $_402_lockMemory_overprovisioned_flags 0) -}}
-{{- $overprovisioned := (index $_402_lockMemory_overprovisioned_flags 1) -}}
-{{- $flags := (index $_402_lockMemory_overprovisioned_flags 2) -}}
+{{- $_404_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values $pool)))) "r") -}}
+{{- $lockMemory := (index $_404_lockMemory_overprovisioned_flags 0) -}}
+{{- $overprovisioned := (index $_404_lockMemory_overprovisioned_flags 1) -}}
+{{- $flags := (index $_404_lockMemory_overprovisioned_flags 2) -}}
 {{- $result := (dict "additional_start_flags" $flags "enable_memory_locking" $lockMemory "overprovisioned" $overprovisioned "kafka_api" (dict "brokers" $brokerList "tls" $brokerTLS) "admin_api" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.admin.port | int))))) "r") "tls" $adminTLS) "schema_registry" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.schemaRegistry.port | int))))) "r") "tls" $schemaRegistryTLS)) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Tuning.Translate" (dict "a" (list $state.Values.tuning)))) "r")) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Config.CreateRPKConfiguration" (dict "a" (list $state.Values.config)))) "r")) -}}
@@ -624,17 +624,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_670_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_14 := (index $_670_value_14_ok_15 0) -}}
-{{- $ok_15 := (index $_670_value_14_ok_15 1) -}}
+{{- $_672_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_14 := (index $_672_value_14_ok_15 0) -}}
+{{- $ok_15 := (index $_672_value_14_ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_14) false (hasKey $enabledOptions $value_14)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_677_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_16 := (index $_677_value_16_ok_17 0) -}}
-{{- $ok_17 := (index $_677_value_16_ok_17 1) -}}
+{{- $_679_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_16 := (index $_679_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_679_value_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
