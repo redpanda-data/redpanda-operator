@@ -1233,6 +1233,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	switch id {
 	case "sort.Strings":
 		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: args}
+	case "strings.Contains":
+		return &BuiltInCall{Func: Literal("contains"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimSuffix":
 		return &BuiltInCall{Func: Literal("trimSuffix"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimPrefix":

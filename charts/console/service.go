@@ -17,21 +17,19 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func Service(dot *helmette.Dot) *corev1.Service {
-	values := helmette.Unwrap[Values](dot.Values)
-
+func Service(state *RenderState) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:     "http",
-		Port:     int32(values.Service.Port),
+		Port:     int32(state.Values.Service.Port),
 		Protocol: corev1.ProtocolTCP,
 	}
 
-	if values.Service.TargetPort != nil {
-		port.TargetPort = intstr.FromInt32(*values.Service.TargetPort)
+	if state.Values.Service.TargetPort != nil {
+		port.TargetPort = intstr.FromInt32(*state.Values.Service.TargetPort)
 	}
 
-	if helmette.Contains("NodePort", string(values.Service.Type)) && values.Service.NodePort != nil {
-		port.NodePort = *values.Service.NodePort
+	if helmette.Contains("NodePort", string(state.Values.Service.Type)) && state.Values.Service.NodePort != nil {
+		port.NodePort = *state.Values.Service.NodePort
 	}
 
 	return &corev1.Service{
@@ -40,14 +38,14 @@ func Service(dot *helmette.Dot) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        Fullname(dot),
-			Namespace:   dot.Release.Namespace,
-			Labels:      Labels(dot),
-			Annotations: values.Service.Annotations,
+			Name:        state.FullName(),
+			Namespace:   state.Namespace,
+			Labels:      state.Labels(nil),
+			Annotations: state.Values.Service.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     values.Service.Type,
-			Selector: SelectorLabels(dot),
+			Type:     state.Values.Service.Type,
+			Selector: state.SelectorLabels(),
 			Ports:    []corev1.ServicePort{port},
 		},
 	}

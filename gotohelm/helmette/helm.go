@@ -33,6 +33,7 @@ type Dot struct {
 	Chart     Chart
 	Subcharts map[string]*Dot
 	Files     Files
+	Template  Template
 	// Capabilities
 
 	// KubeConfig is a hacked in value to allow `Lookup` to not rely on global
@@ -48,6 +49,15 @@ type Dot struct {
 	// special case to rehydrate it.
 	// WARNING: DO NOT USE OR REFERENCE IN HELM CHARTS. IT WILL NOT WORK.
 	Templates fs.FS `json:"-"`
+}
+
+// Template is not technically a struct but it acts like one and is always
+// present in the helm execution context[1]. Specially, it's referenced by the
+// `tpl` function.
+// [^1]: https://github.com/helm/helm/blob/618b14a7723589887e02cd482dcd5a85768583cc/pkg/engine/engine.go#L315
+type Template struct {
+	Name     string
+	BasePath string
 }
 
 // Files is a re-implementation of helm's `.Files` construct.

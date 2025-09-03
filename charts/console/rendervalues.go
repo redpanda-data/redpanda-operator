@@ -16,16 +16,15 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-type Values struct {
-	Globals                      map[string]any                    `json:"global,omitempty"`
+type RenderValues struct {
 	ReplicaCount                 int32                             `json:"replicaCount"`
+	NameOverride                 string                            `json:"nameOverride"`
+	CommonLabels                 map[string]string                 `json:"commonLabels"`
+	FullnameOverride             string                            `json:"fullnameOverride"`
 	Image                        Image                             `json:"image"`
 	ImagePullSecrets             []corev1.LocalObjectReference     `json:"imagePullSecrets"`
-	NameOverride                 string                            `json:"nameOverride"`
-	FullnameOverride             string                            `json:"fullnameOverride"`
 	AutomountServiceAccountToken bool                              `json:"automountServiceAccountToken"`
 	ServiceAccount               ServiceAccountConfig              `json:"serviceAccount"`
-	CommonLabels                 map[string]string                 `json:"commonLabels"`
 	Annotations                  map[string]string                 `json:"annotations"`
 	PodAnnotations               map[string]string                 `json:"podAnnotations"`
 	PodLabels                    map[string]string                 `json:"podLabels"`
@@ -180,5 +179,5 @@ type Image struct {
 	Registry   string            `json:"registry"`
 	Repository string            `json:"repository"`
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
-	Tag        *string           `json:"tag"`
+	Tag        string            `json:"tag"`
 }

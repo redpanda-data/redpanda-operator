@@ -18,9 +18,13 @@ import (
 )
 
 type PartialValues struct {
-	console.PartialValues "json:\",inline,omitempty\""
-	Enabled               *bool              "json:\"enabled,omitempty\""
-	Tests                 *PartialEnableable "json:\"tests,omitempty\""
+	console.PartialRenderValues "json:\",inline,omitempty\""
+	Globals                     map[string]any     "json:\"global,omitempty\""
+	Enabled                     *bool              "json:\"enabled,omitempty\""
+	CommonLabels                map[string]string  "json:\"commonLabels,omitempty\""
+	NameOverride                *string            "json:\"nameOverride,omitempty\""
+	FullnameOverride            *string            "json:\"fullnameOverride,omitempty\""
+	Tests                       *PartialEnableable "json:\"tests,omitempty\""
 }
 
 type PartialEnableable struct {

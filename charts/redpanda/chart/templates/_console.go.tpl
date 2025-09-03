@@ -10,42 +10,36 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $consoleDot := (index $state.Dot.Subcharts "console") -}}
-{{- $loadedValues := $consoleDot.Values -}}
-{{- $consoleValue := $consoleDot.Values -}}
+{{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list (index $state.Dot.Subcharts "console"))))) "r") -}}
 {{- $license_1 := $state.Values.enterprise.license -}}
 {{- if (and (ne $license_1 "") (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.console.secret.create false)))) "r"))) -}}
-{{- $_ := (set $consoleValue.secret "create" true) -}}
-{{- $_ := (set $consoleValue.secret "license" $license_1) -}}
+{{- $_ := (set $consoleState.Values.secret "create" true) -}}
+{{- $_ := (set $consoleState.Values.secret "license" $license_1) -}}
 {{- end -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.console.configmap.create false)))) "r")) -}}
-{{- $_ := (set $consoleValue.configmap "create" true) -}}
-{{- $_ := (set $consoleValue "config" (get (fromJson (include "redpanda.ConsoleConfig" (dict "a" (list $state)))) "r")) -}}
+{{- $_ := (set $consoleState.Values.configmap "create" true) -}}
+{{- $_ := (set $consoleState.Values "config" (get (fromJson (include "redpanda.ConsoleConfig" (dict "a" (list $state)))) "r")) -}}
 {{- end -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.console.deployment.create false)))) "r")) -}}
-{{- $_ := (set $consoleValue.deployment "create" true) -}}
+{{- $_ := (set $consoleState.Values.deployment "create" true) -}}
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") -}}
 {{- $command := (list "sh" "-c" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" "set -e; IFS=':' read -r KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM < <(grep \"\" $(find /mnt/users/* -print));" (printf " KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM:-%s};" (get (fromJson (include "redpanda.GetSASLMechanism" (dict "a" (list $state)))) "r"))) " export KAFKA_SASL_USERNAME KAFKA_SASL_PASSWORD KAFKA_SASL_MECHANISM;") " export KAFKA_SCHEMAREGISTRY_USERNAME=$KAFKA_SASL_USERNAME;") " export KAFKA_SCHEMAREGISTRY_PASSWORD=$KAFKA_SASL_PASSWORD;") " export REDPANDA_ADMINAPI_USERNAME=$KAFKA_SASL_USERNAME;") " export REDPANDA_ADMINAPI_PASSWORD=$KAFKA_SASL_PASSWORD;") " /app/console $@") " --") -}}
-{{- $_ := (set $consoleValue.deployment "command" $command) -}}
+{{- $_ := (set $consoleState.Values.deployment "command" $command) -}}
 {{- end -}}
 {{- $secret_2 := $state.Values.enterprise.licenseSecretRef -}}
 {{- if (ne (toJson $secret_2) "null") -}}
-{{- $_ := (set $consoleValue "licenseSecretRef" $secret_2) -}}
+{{- $_ := (set $consoleState.Values "licenseSecretRef" $secret_2) -}}
 {{- end -}}
-{{- $_ := (set $consoleValue "extraVolumes" (get (fromJson (include "redpanda.consoleTLSVolumes" (dict "a" (list $state)))) "r")) -}}
-{{- $_ := (set $consoleValue "extraVolumeMounts" (get (fromJson (include "redpanda.consoleTLSVolumesMounts" (dict "a" (list $state)))) "r")) -}}
-{{- $_ := (set $consoleDot "Values" $consoleValue) -}}
-{{- $cfg := (get (fromJson (include "console.ConfigMap" (dict "a" (list $consoleDot)))) "r") -}}
-{{- if (eq (toJson $consoleValue.podAnnotations) "null") -}}
-{{- $_ := (set $consoleValue "podAnnotations" (dict)) -}}
+{{- $_ := (set $consoleState.Values "extraVolumes" (get (fromJson (include "redpanda.consoleTLSVolumes" (dict "a" (list $state)))) "r")) -}}
+{{- $_ := (set $consoleState.Values "extraVolumeMounts" (get (fromJson (include "redpanda.consoleTLSVolumesMounts" (dict "a" (list $state)))) "r")) -}}
+{{- if (eq (toJson $consoleState.Values.podAnnotations) "null") -}}
+{{- $_ := (set $consoleState.Values "podAnnotations" (dict)) -}}
 {{- end -}}
-{{- $_ := (set $consoleValue.podAnnotations "checksum-redpanda-chart/config" (sha256sum (toYaml $cfg))) -}}
+{{- $cfg := (get (fromJson (include "console.ConfigMap" (dict "a" (list $consoleState)))) "r") -}}
+{{- $_ := (set $consoleState.Values.podAnnotations "checksum-redpanda-chart/config" (sha256sum (toYaml $cfg))) -}}
 {{- end -}}
-{{- $_ := (set $consoleDot "Values" $consoleValue) -}}
-{{- $manifests := (list (get (fromJson (include "console.Secret" (dict "a" (list $consoleDot)))) "r") (get (fromJson (include "console.ConfigMap" (dict "a" (list $consoleDot)))) "r") (get (fromJson (include "console.Deployment" (dict "a" (list $consoleDot)))) "r")) -}}
-{{- $_ := (set $consoleDot "Values" $loadedValues) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $manifests) | toJson -}}
+{{- (dict "r" (list (get (fromJson (include "console.Secret" (dict "a" (list $consoleState)))) "r") (get (fromJson (include "console.ConfigMap" (dict "a" (list $consoleState)))) "r") (get (fromJson (include "console.Deployment" (dict "a" (list $consoleState)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -64,9 +58,9 @@
 {{- end -}}
 {{- $visitedCert := (dict) -}}
 {{- range $_, $tlsCfg := (list $state.Values.listeners.kafka.tls $state.Values.listeners.schemaRegistry.tls $state.Values.listeners.admin.tls) -}}
-{{- $_127___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
-{{- $_ := (index $_127___visited 0) -}}
-{{- $visited := (index $_127___visited 1) -}}
+{{- $_119___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
+{{- $_ := (index $_119___visited 0) -}}
+{{- $visited := (index $_119___visited 1) -}}
 {{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $tlsCfg $state.Values.tls)))) "r")) $visited) -}}
 {{- continue -}}
 {{- end -}}
@@ -97,9 +91,9 @@
 {{- end -}}
 {{- $visitedCert := (dict) -}}
 {{- range $_, $tlsCfg := (list $state.Values.listeners.kafka.tls $state.Values.listeners.schemaRegistry.tls $state.Values.listeners.admin.tls) -}}
-{{- $_166___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
-{{- $_ := (index $_166___visited 0) -}}
-{{- $visited := (index $_166___visited 1) -}}
+{{- $_158___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
+{{- $_ := (index $_158___visited 0) -}}
+{{- $visited := (index $_158___visited 1) -}}
 {{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $tlsCfg $state.Values.tls)))) "r")) $visited) -}}
 {{- continue -}}
 {{- end -}}
