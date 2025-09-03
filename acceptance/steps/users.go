@@ -15,6 +15,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kgo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -175,4 +176,45 @@ func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.Testi
 
 func thereIsNoUser(ctx context.Context, user, cluster string) {
 	clientsForCluster(ctx, cluster).ExpectNoUser(ctx, user)
+}
+
+func userShouldBeAbleToReadFromTopicInCluster(ctx context.Context, t framework.TestingT, user, topic, cluster string) {
+	payload := []byte("test")
+
+	// First, ensure the topic exists and has a test message (using admin client)
+	adminClients := clientsForCluster(ctx, cluster)
+	adminClients.ExpectTopic(ctx, topic)
+
+	adminKafkaClient := adminClients.Kafka(ctx)
+
+	// Produce a test message to the topic
+	t.Logf("Producing record for topic %q", topic)
+	require.NoError(t, adminKafkaClient.ProduceSync(ctx, &kgo.Record{Topic: topic, Value: payload}).FirstErr())
+	t.Logf("Wrote record to topic %q", topic)
+
+	// Now test consumption as the authenticated user
+	clients := clientsForCluster(ctx, cluster).WithAuthentication(&client.UserAuth{
+		Username:  user,
+		Password:  "password", // Using default password from test setup
+		Mechanism: "SCRAM-SHA-256",
+	})
+
+	kafkaClient := clients.Kafka(ctx)
+
+	// Create a consumer client to read from the topic
+	consumerClient, err := kgo.NewClient(append(kafkaClient.Opts(),
+		kgo.ConsumerGroup("test-user-"+user),
+		kgo.ConsumeTopics(topic),
+	)...)
+	require.NoError(t, err)
+
+	t.Logf("Polling records from topic %q", topic)
+	fetches := consumerClient.PollFetches(ctx)
+	t.Logf("Polled records from topic %q", topic)
+	require.NoError(t, fetches.Err())
+	records := fetches.Records()
+	require.Len(t, records, 1)
+	require.Equal(t, string(payload), string(records[0].Value))
+	kafkaClient.Close()
+	consumerClient.Close()
 }

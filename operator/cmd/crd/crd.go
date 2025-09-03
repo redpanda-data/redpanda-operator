@@ -35,6 +35,7 @@ var (
 		crds.Topic(),
 		crds.User(),
 		crds.Schema(),
+		crds.Role(),
 	}
 	vectorizedCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.Cluster(),
