@@ -3,6 +3,7 @@ package steps
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -19,50 +20,64 @@ import (
 )
 
 func runScriptInClusterCheckOutput(ctx context.Context, t framework.TestingT, command string, output *godog.DocString) {
-	var redpandas redpandav1alpha2.RedpandaList
-	require.NoError(t, t.List(ctx, &redpandas))
+	expected := strings.TrimSpace(output.Content)
 
-	if len(redpandas.Items) != 1 {
-		require.FailNow(t, "expected to find 1 %T but found %d", (*redpandav1alpha2.Redpanda)(nil), len(redpandas.Items))
-	}
+	require.Eventually(t, func() bool {
+		var redpandas redpandav1alpha2.RedpandaList
+		require.NoError(t, t.List(ctx, &redpandas))
 
-	redpanda := redpandas.Items[0]
+		if len(redpandas.Items) != 1 {
+			require.FailNow(t, "expected to find 1 %T but found %d", (*redpandav1alpha2.Redpanda)(nil), len(redpandas.Items))
+		}
 
-	var sts appsv1.StatefulSet
-	require.NoError(t, t.Get(ctx, t.ResourceKey(redpanda.Name), &sts))
+		redpanda := redpandas.Items[0]
 
-	selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-	require.NoError(t, err)
+		var sts appsv1.StatefulSet
+		require.NoError(t, t.Get(ctx, t.ResourceKey(redpanda.Name), &sts))
 
-	var pods corev1.PodList
-	require.NoError(t, t.List(ctx, &pods, client.MatchingLabelsSelector{
-		Selector: selector,
+		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+		require.NoError(t, err)
+
+		var pods corev1.PodList
+		require.NoError(t, t.List(ctx, &pods, client.MatchingLabelsSelector{
+			Selector: selector,
+		}))
+
+		if len(pods.Items) < 1 {
+			t.Log("expected to find at least 1 Pod but found none, retrying")
+			return false
+		}
+
+		pod := pods.Items[0]
+
+		ctl, err := kube.FromRESTConfig(t.RestConfig())
+		require.NoError(t, err)
+
+		t.Logf("executing %q in Pod %q", command, pod.Name)
+
+		var stdout bytes.Buffer
+		if err := ctl.Exec(ctx, &pod, kube.ExecOptions{
+			Container: "redpanda",
+			Command:   []string{"/bin/bash", "-c", command},
+			Stdout:    &stdout,
+		}); err != nil {
+			t.Logf("retrying after error executing %q in Pod %q: %v", command, pod.Name, err)
+			return false
+		}
+
+		// Correct for extra whitespace from either the command itself or from
+		// godog's parsing.
+		actual := strings.TrimSpace(stdout.String())
+
+		if expected != actual {
+			t.Logf("%q != %q", actual, expected)
+			return false
+		}
+
+		return true
+	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf(`Never succeeded in executing %q with output %q`, command, expected)
 	}))
-
-	if len(pods.Items) < 1 {
-		require.FailNow(t, "expected to find at least 1 Pod but found none")
-	}
-
-	pod := pods.Items[0]
-
-	ctl, err := kube.FromRESTConfig(t.RestConfig())
-	require.NoError(t, err)
-
-	t.Logf("executing %q in Pod %q", command, pod.Name)
-
-	var stdout bytes.Buffer
-	require.NoError(t, ctl.Exec(ctx, &pod, kube.ExecOptions{
-		Container: "redpanda",
-		Command:   []string{"/bin/bash", "-c", command},
-		Stdout:    &stdout,
-	}))
-
-	// Correct for extra whitespace from either the command itself or from
-	// godog's parsing.
-	expected := strings.Trim(output.Content, "\n ")
-	actual := strings.Trim(stdout.String(), "\n ")
-
-	require.Equal(t, expected, actual)
 }
 
 func checkRPKCommands(ctx context.Context, t framework.TestingT, clusterName string) {

@@ -258,6 +258,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -270,6 +271,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -279,6 +281,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -689,25 +692,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/case-000.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -971,6 +955,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -983,6 +968,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -992,6 +978,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -1461,28 +1448,6 @@ spec:
       app.kubernetes.io/name: aNfgS0
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    2XzRXgKjP: qV75G
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    k0MXnvN5ry3d: qJm80
-    k3SW6gk9w: zIr1y
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: aNfgS0
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: S-crd-job
-  namespace: default
 -- testdata/case-001.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -1743,6 +1708,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -1755,6 +1721,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -1764,6 +1731,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -2184,25 +2152,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: EbX3hB7N
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: WSGbu-crd-job
-  namespace: default
 -- testdata/case-002.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -2472,6 +2421,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -2484,6 +2434,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -2493,6 +2444,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -2934,25 +2886,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: HICN
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Dx441G-crd-job
-  namespace: default
 -- testdata/case-003.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -3213,6 +3146,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -3225,6 +3159,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -3234,6 +3169,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -3685,25 +3621,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: kzHCtV
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: rEba-crd-job
-  namespace: default
 -- testdata/case-004.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -3970,6 +3887,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -3982,6 +3900,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -3991,6 +3910,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -4420,28 +4340,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    Rt5: OeMr
-    bO3NPc: qn0ImYNRP
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    F0wS: vBToTa
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: BRlD
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: SpE0-crd-job
-  namespace: default
 -- testdata/case-005.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -4714,6 +4612,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -4726,6 +4625,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -4735,6 +4635,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -5191,28 +5092,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    "1": Waszk6s
-    AhQJg: sYlEc
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: zejbO
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    wU3MsxN: 4Bn0vQj
-  name: WM7nRI7B-crd-job
-  namespace: default
 -- testdata/case-006.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -5477,6 +5356,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -5489,6 +5369,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -5498,6 +5379,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -5959,26 +5841,6 @@ spec:
       app.kubernetes.io/name: di
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    CQkNCSKpK8nmJ: B
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: di
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Em-crd-job
-  namespace: default
 -- testdata/case-007.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -6167,27 +6029,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    RzmaQG: 6HA
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    oww9mt3ERn: Dv6Y
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ij1lCfI4a
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: QOxZ1-crd-job
-  namespace: default
 -- testdata/case-008.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -6461,6 +6302,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -6473,6 +6315,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -6482,6 +6325,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -6939,26 +6783,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: GNbmN
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    u: yT9Aqc
-  name: q5hs-crd-job
-  namespace: default
 -- testdata/case-009.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -7227,6 +7051,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -7239,6 +7064,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -7248,6 +7074,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -7684,27 +7511,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    "": Wyz
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 6n9214EY
-    app.kubernetes.io/version: v25.2.1-beta1
-    gLlqKr: m
-    helm.sh/chart: operator-25.2.1-beta1
-  name: kBI8lEs-crd-job
-  namespace: default
 -- testdata/case-010.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -7971,6 +7777,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -7983,6 +7790,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -7992,6 +7800,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -8471,25 +8280,6 @@ spec:
                 path: namespace
       - name: KNj
       - name: oh9dwhjnMI
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Ubj
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: rcE-crd-job
-  namespace: default
 -- testdata/case-011.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -8762,6 +8552,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -8774,6 +8565,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -8783,6 +8575,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -9217,28 +9010,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    VTHH: SaDKhXP
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: pP
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    mOxaE: dEuL
-    w49JChsEQqA0: "3"
-  name: 7guti07-crd-job
-  namespace: default
 -- testdata/case-012.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -9499,6 +9270,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -9511,6 +9283,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -9520,6 +9293,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -9986,25 +9760,6 @@ spec:
                 path: namespace
       - name: E1uqQaR
       - name: op3V5nJ
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: E4UR
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: J5MiI-crd-job
-  namespace: default
 -- testdata/case-013.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -10273,6 +10028,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -10285,6 +10041,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -10294,6 +10051,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -10732,27 +10490,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    71sOOTU: en8OPZRyg7
-    L2FlwR: TODz
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: xALbe0A
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: NofaS-crd-job
-  namespace: default
 -- testdata/case-014.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -11011,26 +10748,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    7AtBTRGr: U8ZxJ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: qKT
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: g5-crd-job
-  namespace: default
 -- testdata/case-015.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -11278,6 +10995,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -11290,6 +11008,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -11299,6 +11018,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -11596,27 +11316,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    8u: ClGJRRP
-    QqIpNPP: SI09hz
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: TCq
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Y7Y8-crd-job
-  namespace: default
 -- testdata/case-016.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -11922,26 +11621,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 5aFk
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    pSTEUjYKreNw: j4onXF
-  name: f0FlDsNL-crd-job
-  namespace: default
 -- testdata/case-017.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -12210,6 +11889,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -12222,6 +11902,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -12231,6 +11912,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -12798,27 +12480,6 @@ spec:
       bKX: d
       helm.sh/chart: operator-25.2.1-beta1
       m2Z8Z: wRw
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: NlE3orKsq9
-    app.kubernetes.io/version: v25.2.1-beta1
-    bKX: d
-    helm.sh/chart: operator-25.2.1-beta1
-    m2Z8Z: wRw
-  name: pHzNPjb-crd-job
-  namespace: default
 -- testdata/case-018.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -13088,6 +12749,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -13100,6 +12762,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -13109,6 +12772,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -13600,25 +13264,6 @@ spec:
       app.kubernetes.io/name: "5"
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: "5"
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: x8K24mCZYsnh-crd-job
-  namespace: default
 -- testdata/case-019.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -13888,6 +13533,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -13900,6 +13546,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -13909,6 +13556,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -14394,25 +14042,6 @@ spec:
       app.kubernetes.io/name: Fk
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Fk
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: UHlKDi-crd-job
-  namespace: default
 -- testdata/case-020.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -14663,6 +14292,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -14675,6 +14305,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -14684,6 +14315,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -15294,27 +14926,6 @@ spec:
                 path: namespace
       - name: ""
       - name: CM
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    NoeniB5: Fc1
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: IC6CHScZj
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    ruSHmUUvOj1: h3BuiPAHIC
-  name: ft-crd-job
-  namespace: default
 -- testdata/case-021.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -15579,6 +15190,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -15591,6 +15203,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -15600,6 +15213,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -16047,26 +15661,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ZtDuI
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    kxvj1aV: un4v2
-  name: 12bwUKO-crd-job
-  namespace: default
 -- testdata/case-022.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -16345,6 +15939,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -16357,6 +15952,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -16366,6 +15962,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -17010,28 +16607,6 @@ spec:
                   fieldPath: metadata.namespace
                 path: namespace
       - name: 9wZm7
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    8BO5: Bd5OIo
-    JnjTVDz: 5xDh
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: NY
-    app.kubernetes.io/version: v25.2.1-beta1
-    gWL: pM
-    helm.sh/chart: operator-25.2.1-beta1
-  name: sFwgtf-crd-job
-  namespace: default
 -- testdata/case-023.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -17279,6 +16854,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -17291,6 +16867,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -17300,6 +16877,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -17990,27 +17568,6 @@ spec:
                   fieldPath: metadata.namespace
                 path: namespace
       - name: dZEjjoa
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    C: n9n9f
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 4waX
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    iW8sRg: to
-  name: TWwJQX-crd-job
-  namespace: default
 -- testdata/case-024.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -18281,6 +17838,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -18293,6 +17851,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -18302,6 +17861,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -18885,26 +18445,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    qXu: "N"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: YCs
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: a-crd-job
-  namespace: default
 -- testdata/case-025.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -19404,27 +18944,6 @@ spec:
       - name: ""
       - name: 061joXv
       - name: nASsEAPm
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    0tYCAF2p: LH0vf
-    9izrY41ZN: MvuV647jr
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Gn
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: sA-crd-job
-  namespace: default
 -- testdata/case-026.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -19702,6 +19221,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -19714,6 +19234,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -19723,6 +19244,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -20406,30 +19928,6 @@ spec:
       app.kubernetes.io/name: VhCMS
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    5L: j2D1CM1hpmck3l
-    VtUx5gn: vI6EOhi2BO
-    fHiSr: wgWqdOQ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    9Yl4uYdhi: AwRf
-    SX: I
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: VhCMS
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: blB-crd-job
-  namespace: default
 -- testdata/case-027.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -20698,6 +20196,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -20710,6 +20209,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -20719,6 +20219,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -21329,27 +20830,6 @@ spec:
       app.kubernetes.io/name: Qi
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    "9": WiLvS4
-    Fzjuqz0im: "023"
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Qi
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: tIa-crd-job
-  namespace: default
 -- testdata/case-028.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -21736,26 +21216,6 @@ spec:
       app.kubernetes.io/name: 7Nn
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    2KJ0g0: EDTV8VI1gX
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 7Nn
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: LS9-crd-job
-  namespace: default
 -- testdata/case-029.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -22009,6 +21469,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -22021,6 +21482,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -22030,6 +21492,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -22635,30 +22098,6 @@ spec:
       - name: 2vvwzU
       - name: KiD
       - name: ZxdGol15G
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    OLg70: YQZ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    izml0: AtEbGFb
-  creationTimestamp: null
-  labels:
-    H15A: FR
-    ImNZ2R: 4b11Ajcj71
-    MkV5WTrr: tzjZwG
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: aYT
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 40Wt-crd-job
-  namespace: default
 -- testdata/case-030.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -23208,29 +22647,6 @@ spec:
                   fieldPath: metadata.namespace
                 path: namespace
       - name: 1OUY
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    9GSVF: FmEK
-    gy8pF: IttW
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    jNt: b7Ckh
-  creationTimestamp: null
-  labels:
-    QYmKJqsxF: a
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: xl0SYd
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: spW-crd-job
-  namespace: default
 -- testdata/case-031.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -23503,6 +22919,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -23515,6 +22932,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -23524,6 +22942,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -24290,28 +23709,6 @@ spec:
                   fieldPath: metadata.namespace
                 path: namespace
       - name: SQhKg
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    6WOM: xxkxL
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    Q3Y: wWGGlI
-    ZgcMSFjkA: f0Je
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: pnciO
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Zihc6G-crd-job
-  namespace: default
 -- testdata/case-032.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -24734,28 +24131,6 @@ spec:
       app.kubernetes.io/name: P6wEG
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    3Y64: eosT
-    5Qb9G22j: um5NlI6mc
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    uDYM5WqGQ: 6Z7
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: P6wEG
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: TmM6fo-crd-job
-  namespace: default
 -- testdata/case-033.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -25009,6 +24384,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -25021,6 +24397,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -25030,6 +24407,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -25608,30 +24986,6 @@ spec:
                 path: namespace
       - name: Y4eYBG
       - name: wtbsGN
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    Ak8Zx: tu0
-    Ed: ""
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    IkOwwd: 37ZfCkM
-    M3fH: xmhoB
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 9wjOhT
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    uUW: Us
-  name: 9xg1jKJ-crd-job
-  namespace: default
 -- testdata/case-034.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -26151,27 +25505,6 @@ spec:
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
       in: IEvkGW7b
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    0A3p3: jM
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 6xIMZiuoly3
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    in: IEvkGW7b
-  name: ClL0jwLRjj-crd-job
-  namespace: default
 -- testdata/case-035.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -26669,27 +26002,6 @@ spec:
                 path: namespace
       - name: ""
       - name: MlOcWr
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    R: x
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: k
-    app.kubernetes.io/version: v25.2.1-beta1
-    dcuPV: Fy
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 1316QiC-crd-job
-  namespace: default
 -- testdata/case-036.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -27321,28 +26633,6 @@ spec:
       app.kubernetes.io/name: Z4N6WbZ
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    H27ggQ: dT9QyA1UW
-    "N": Hp8B3e
-    ZCB5x: a01o
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Z4N6WbZ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: HOry-crd-job
-  namespace: default
 -- testdata/case-037.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -27884,29 +27174,6 @@ spec:
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
       miGH: N7Ko
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    CBAVn: vqsp8U3m
-    gy: whGyY0khAMsJ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    D0BN9: JZC8K
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 2rbFmR
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    miGH: N7Ko
-  name: tFtWKgQ-crd-job
-  namespace: default
 -- testdata/case-038.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -28177,6 +27444,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -28189,6 +27457,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -28198,6 +27467,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -28899,29 +28169,6 @@ spec:
       - name: anjrvNnG
       - name: w
       - name: y8U2FY2
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    1U4k: i7
-    U8TFHg6A: OLyvSN
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: RYuL
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    oMSwsE1: VOZ
-    x: 4Xx1lbe
-  name: dgtMSpw-crd-job
-  namespace: default
 -- testdata/case-039.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -29389,30 +28636,6 @@ spec:
       - name: A2B8
       - name: G
       - name: ZtPPBy
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    EMLMp9: eWUNFToc
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    psVEMcLU: IjAVEkU9t
-    uucv5x: 52Q
-  creationTimestamp: null
-  labels:
-    ZPcQPMKo: 8du
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: "4"
-    app.kubernetes.io/version: v25.2.1-beta1
-    chNK6Zz: 5Ii
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 1s-crd-job
-  namespace: default
 -- testdata/case-040.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -29837,29 +29060,6 @@ spec:
       c1ch6r: sk7vUnRJ
       helm.sh/chart: operator-25.2.1-beta1
       o7: kFLRHJ8kS
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    qKwD7uKV1jG8: 91mmo
-  creationTimestamp: null
-  labels:
-    Vs8tyk3nrH: X
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: kam5
-    app.kubernetes.io/version: v25.2.1-beta1
-    c1ch6r: sk7vUnRJ
-    helm.sh/chart: operator-25.2.1-beta1
-    o7: kFLRHJ8kS
-  name: rPim-crd-job
-  namespace: default
 -- testdata/case-041.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -30107,6 +29307,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -30119,6 +29320,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -30128,6 +29330,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -30878,27 +30081,6 @@ spec:
       app.kubernetes.io/name: ATIdy9
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    aTQmdweF: E7
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    5M5X: Fi
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ATIdy9
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: ttC-crd-job
-  namespace: default
 -- testdata/case-042.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -31152,6 +30334,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -31164,6 +30347,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -31173,6 +30357,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -32092,30 +31277,6 @@ spec:
       helm.sh/chart: operator-25.2.1-beta1
       vAU3IVb: K0a
       x: c
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    HSs9D: 9SpkutyWquq
-    VJ: Lsbx4ai1
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    hp9N: w
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: A
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    vAU3IVb: K0a
-    x: c
-  name: jPVwE-crd-job
-  namespace: default
 -- testdata/case-043.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -32659,28 +31820,6 @@ spec:
       - name: Did3
       - name: SvnDHs
       - name: ciwpJb
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    PMp9J: ObRXDGAb
-    Z0EUj9: 9nCl
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    JSQeek3: yjWsGmb
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Kha-crd-job
-  namespace: default
 -- testdata/case-044.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -32934,6 +32073,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -32946,6 +32086,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -32955,6 +32096,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -33702,30 +32844,6 @@ spec:
       app.kubernetes.io/name: 23c
       app.kubernetes.io/version: v25.2.1-beta1
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    UtMd: aFO1
-    X2: gclsGu
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    s9YCj1ZV9d: jKVDaA
-  creationTimestamp: null
-  labels:
-    2Q3: 4eG3k4Q
-    3iy: cFa
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 23c
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 5rSJNtq-crd-job
-  namespace: default
 -- testdata/case-045.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -34311,30 +33429,6 @@ spec:
                   fieldPath: metadata.namespace
                 path: namespace
       - name: EbmP3
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    I6z: bgcjS
-    MNMEwkPV: kzM36
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    85G: Wn5f
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: WgoV
-    app.kubernetes.io/version: v25.2.1-beta1
-    aqO3ub: Ai5ntG
-    helm.sh/chart: operator-25.2.1-beta1
-    povH0tOlni: A
-  name: 4X8m6P-crd-job
-  namespace: default
 -- testdata/case-046.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -34869,26 +33963,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    uKiV: x73f
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 0tSU
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Wmx1ORHBT-crd-job
-  namespace: default
 -- testdata/case-047.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -35145,6 +34219,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -35157,6 +34232,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -35166,6 +34242,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -35921,28 +34998,6 @@ spec:
                 path: namespace
       - name: W9
       - name: xuaa0
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    7GKS: kf
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    5ga: L6kCMw6j
-    NImdN7q5tNW: UPT
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: kF
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: i7DA-crd-job
-  namespace: default
 -- testdata/case-048.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -36196,6 +35251,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -36208,6 +35264,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -36217,6 +35274,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -36821,25 +35879,6 @@ spec:
       - name: ""
       - name: "1"
       - name: zEJeXFitCdV
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: icwMYEubJ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Rsep9k-crd-job
-  namespace: default
 -- testdata/case-049.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -37107,6 +36146,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -37119,6 +36159,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -37128,6 +36169,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -37941,26 +36983,6 @@ spec:
       app.kubernetes.io/version: v25.2.1-beta1
       fuVZ: gcPCqrc0l
       helm.sh/chart: operator-25.2.1-beta1
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: DFwU
-    app.kubernetes.io/version: v25.2.1-beta1
-    fuVZ: gcPCqrc0l
-    helm.sh/chart: operator-25.2.1-beta1
-  name: tSPxL1Cf1HO9FjR-crd-job
-  namespace: default
 -- testdata/case-050.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -38221,6 +37243,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -38233,6 +37256,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -38242,6 +37266,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -38804,25 +37829,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 6iZG
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: RAyK-crd-job
-  namespace: default
 -- testdata/case-051.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -39083,6 +38089,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -39095,6 +38102,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -39104,6 +38112,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -39681,25 +38690,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: hsmvzpSm
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: tyx5W-crd-job
-  namespace: default
 -- testdata/case-052.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -39960,6 +38950,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -39972,6 +38963,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -39981,6 +38973,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -40558,25 +39551,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: njC0cLDExDA
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: fEL2-crd-job
-  namespace: default
 -- testdata/case-053.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -40843,6 +39817,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -40855,6 +39830,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -40864,6 +39840,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -41440,25 +40417,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Re
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: fRjXK1u0-crd-job
-  namespace: default
 -- testdata/case-054.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -41730,6 +40688,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -41742,6 +40701,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -41751,6 +40711,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -42343,27 +41304,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    1c0jr: ImaKzYy
-    afd: Q9L
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: eMNuQ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 2jUS-crd-job
-  namespace: default
 -- testdata/case-055.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -42628,6 +41568,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -42640,6 +41581,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -42649,6 +41591,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -43219,26 +42162,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: hJkIJY5Y
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    kP0Mu: tnINl
-  name: WM-crd-job
-  namespace: default
 -- testdata/case-056.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -43626,25 +42549,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: X2us
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-X2us-crd-job
-  namespace: default
 -- testdata/case-057.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -44098,27 +43002,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    GFJWcympe: pAUQva
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: BdJ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    jE0q9M4zk: 1A
-  name: n0qMA4h57I5-crd-job
-  namespace: default
 -- testdata/case-058.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -44379,6 +43262,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -44391,6 +43275,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -44400,6 +43285,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -44994,25 +43880,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: fgsJm
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 2PyZZ8ZNsM-crd-job
-  namespace: default
 -- testdata/case-059.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -45275,6 +44142,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -45287,6 +44155,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -45296,6 +44165,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -45890,27 +44760,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    F: 2wq
-    Vcp6O5a1Q: 5Dgl
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: zUC
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: PiQzKZrHGl-crd-job
-  namespace: default
 -- testdata/case-060.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -46181,6 +45030,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -46193,6 +45043,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -46202,6 +45053,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -46778,26 +45630,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    z: "1"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 8V1wVzO
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Fzbi9OkP-crd-job
-  namespace: default
 -- testdata/case-061.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -47067,6 +45899,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -47079,6 +45912,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -47088,6 +45922,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -47707,28 +46542,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    m: IHPyB
-  creationTimestamp: null
-  labels:
-    AWBTKJBE3: lLUGUf
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: JhtIXu
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    jcF: qXntI
-  name: Z20j25RfqSp-crd-job
-  namespace: default
 -- testdata/case-062.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -48001,6 +46814,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -48013,6 +46827,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -48022,6 +46837,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -48608,28 +47424,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    L5oVQe9mXi: Ha5na1
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ZRaS
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    j: Wmsdb
-    uS: h6Fj
-  name: 79ioSjMT8KG-crd-job
-  namespace: default
 -- testdata/case-063.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -48883,6 +47677,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -48895,6 +47690,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -48904,6 +47700,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -49626,27 +48423,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    aWCYcSH: IIt47c1D
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ibdE3
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    wig: gAae
-  name: v1W-crd-job
-  namespace: default
 -- testdata/case-064.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -49918,6 +48694,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -49930,6 +48707,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -49939,6 +48717,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -50596,27 +49375,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    Tv9mrE: QJOCh1aO
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    jW: CZz80QZ
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Kcp
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: Ev1EfK-crd-job
-  namespace: default
 -- testdata/case-065.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -51145,26 +49903,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: "78"
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    yhRLU: bn88A
-  name: Qi-crd-job
-  namespace: default
 -- testdata/case-066.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -51626,26 +50364,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    1qZ: ""
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 19ztDQ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 4s-crd-job
-  namespace: default
 -- testdata/case-067.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -51893,6 +50611,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -51905,6 +50624,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -51914,6 +50634,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -52744,26 +51465,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    bclGU: Z0rZ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: axjCvWi
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: hqG9jAF-crd-job
-  namespace: default
 -- testdata/case-068.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -53422,26 +52123,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: bNOJ
-    app.kubernetes.io/version: v25.2.1-beta1
-    fYyBJj2Al: 00TYG
-    helm.sh/chart: operator-25.2.1-beta1
-  name: -crd-job
-  namespace: default
 -- testdata/case-069.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -53964,28 +52645,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    HQJtGQ: "4"
-    J1VZibc: dy4OXHkP
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    2RSj: YyoP
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: "N"
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 9q-crd-job
-  namespace: default
 -- testdata/case-070.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -54233,6 +52892,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -54245,6 +52905,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -54254,6 +52915,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -55313,26 +53975,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    Pu8: aQVSuDE
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: nUS
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 8QmVHY8X-crd-job
-  namespace: default
 -- testdata/case-071.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -55592,6 +54234,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -55604,6 +54247,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -55613,6 +54257,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -56587,31 +55232,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    NA: wF
-    Rw: mH
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    uNRQOklv: e
-  creationTimestamp: null
-  labels:
-    6uv1egE: IzPSkvDQ
-    C9l: git
-    E5l: BF8ozbb
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Eg0Oz
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: BI7X-crd-job
-  namespace: default
 -- testdata/case-072.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -57330,28 +55950,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    D: M5xpMC
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    Q9a: uDXPfw
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 8I1Iyd
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    v0: 1iClRDvVO3c
-  name: 9r-crd-job
-  namespace: default
 -- testdata/case-073.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -58115,29 +56713,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    ET9H70: 1pFh
-    b28jlJ: gH2i
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    "": "3"
-    N9sd2SXL: f2jOHWU
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Pt
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: r8KRW4-crd-job
-  namespace: default
 -- testdata/case-074.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -58829,29 +57404,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    TfmSjDQ: xDJr
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    iMdWdUM: SiPHNH6j
-    oFoZcs: 8LViNh0JD
-  creationTimestamp: null
-  labels:
-    6tS3Gzxd: hgT9pfe
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 4MPmeCPMB
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: xPlFoa8U-crd-job
-  namespace: default
 -- testdata/case-075.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -59117,6 +57669,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -59129,6 +57682,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -59138,6 +57692,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -60008,27 +58563,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    e6mSM: MVXAO
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    zKu2Al: wC
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 8ZgI1VH
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 567-crd-job
-  namespace: default
 -- testdata/case-076.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -60285,6 +58819,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -60297,6 +58832,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -60306,6 +58842,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -61409,27 +59946,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: an
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    ib: 8cz
-    mKZJ: qFJ
-  name: YP12Q-crd-job
-  namespace: default
 -- testdata/case-077.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -61702,6 +60218,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -61714,6 +60231,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -61723,6 +60241,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -62684,28 +61203,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    "": sxTGebP3lQ
-    OQ: osmjf
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: MxF
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    mNkAknTCpbj0: NCMcS
-  name: gFdSAMIO-crd-job
-  namespace: default
 -- testdata/case-078.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -62975,6 +61472,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -62987,6 +61485,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -62996,6 +61495,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -63934,28 +62434,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    R: KqQ
-    UBlg5: vWsmCt3b
-    gW8Gbi6vR: mj0Y
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: vYy9
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: K-crd-job
-  namespace: default
 -- testdata/case-079.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -64695,28 +63173,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    0Kf6: o
-    AU8gkJ: lsVk
-    C2ct: Fx4QSm
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: lbhx
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: meK-crd-job
-  namespace: default
 -- testdata/case-080.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -64996,6 +63452,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -65008,6 +63465,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -65017,6 +63475,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -65785,29 +64244,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    xYYx: 8dxCCUX
-  creationTimestamp: null
-  labels:
-    JHXVQsYdx4WC: KFytXl
-    UN: h
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ovez
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    zWv: hIfkuex2B
-  name: Wx-crd-job
-  namespace: default
 -- testdata/case-081.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -66077,6 +64513,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -66089,6 +64526,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -66098,6 +64536,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -67119,25 +65558,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: zsU8D
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 7ZTjb-crd-job
-  namespace: default
 -- testdata/case-082.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -67671,26 +66091,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    v: pV
-  name: G-crd-job
-  namespace: default
 -- testdata/case-083.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -67941,6 +66341,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -67953,6 +66354,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -67962,6 +66364,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -68779,28 +67182,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    5w3BM: DJFeE
-    HPEA: ""
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: AD
-    app.kubernetes.io/version: v25.2.1-beta1
-    dRuotY: sUV
-    helm.sh/chart: operator-25.2.1-beta1
-  name: 53ObZL18D-crd-job
-  namespace: default
 -- testdata/case-084.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -69068,6 +67449,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -69080,6 +67462,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -69089,6 +67472,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -70071,29 +68455,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    "8": tf7ML2YS2
-    Nr: WJKMVr9D
-    Vl: ""
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    Jacfyrff: CPx2
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: MOjCBp
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: g-crd-job
-  namespace: default
 -- testdata/case-085.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -70341,6 +68702,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -70353,6 +68715,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -70362,6 +68725,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -71155,25 +69519,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: B
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: je1S-crd-job
-  namespace: default
 -- testdata/case-086.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -71789,27 +70134,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    RcCTPya3q: gXZ1Mm1dK
-    VnLc: jQYB
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: 3SyCJ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: S-crd-job
-  namespace: default
 -- testdata/case-087.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -72063,6 +70387,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -72075,6 +70400,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -72084,6 +70410,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -72774,30 +71101,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    eI7: rquDvoizQyW4
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    vP: 6yekynq
-  creationTimestamp: null
-  labels:
-    XFSHB: ot7Wo
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: o2
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    q93: ONPg3F
-    rZBEA7mOLYT: iFtHtFH
-  name: xOqjN-crd-job
-  namespace: default
 -- testdata/case-088.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -73057,6 +71360,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -73069,6 +71373,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -73078,6 +71383,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -73997,29 +72303,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    7CoUArlNjV: k
-    VcRiFP: YQhG3D
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    1S48I: gbO1FYE
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: WqmcFb
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    jHlVD3i0I: Hfqg8dMgdc
-  name: akO9K6-crd-job
-  namespace: default
 -- testdata/case-089.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -74722,26 +73005,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    9eKE: ayih32GI
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: yHixING
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: TxdHR-crd-job
-  namespace: default
 -- testdata/case-090.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -75015,6 +73278,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -75027,6 +73291,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -75036,6 +73301,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -75970,29 +74236,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    DxAFTmru: 8nIlFqE
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    zLK: RRb
-  creationTimestamp: null
-  labels:
-    DZeu: yUBayuz
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: L07
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    nI2ZSs: 4AI8h
-  name: drBf-crd-job
-  namespace: default
 -- testdata/case-091.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -76272,6 +74515,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -76284,6 +74528,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -76293,6 +74538,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -77177,29 +75423,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    L1Wi1Vv: trqviAw
-    arzbYiweWtKdUO: e
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: MK
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    t: W
-    wH2b: ""
-  name: 7QeW-crd-job
-  namespace: default
 -- testdata/case-092.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -77956,29 +76179,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    Hs8Cfsf: SbOxXEt
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    GvLRN: sCR
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: qv3g
-    app.kubernetes.io/version: v25.2.1-beta1
-    gi: 9j2
-    helm.sh/chart: operator-25.2.1-beta1
-    zb8lDT9V: olwEfoWZ
-  name: LjYLOL6C-crd-job
-  namespace: default
 -- testdata/case-093.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -78242,6 +76442,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -78254,6 +76455,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -78263,6 +76465,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -79011,25 +77214,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: Tlv
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: J2qRpt9-crd-job
-  namespace: default
 -- testdata/case-094.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -79283,6 +77467,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -79295,6 +77480,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -79304,6 +77490,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -80037,29 +78224,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    MW: NTwM
-    b: 7wv
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: DjMfg
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    oLWSEoF: Ps5P
-    uO6upU7K: lMwbJ
-  name: 11c-crd-job
-  namespace: default
 -- testdata/case-095.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -80327,6 +78491,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -80339,6 +78504,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -80348,6 +78514,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -81315,29 +79482,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    "": iI7Bd
-    9H7uauZ: fIw
-    G1: kAPGZ
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    DQ: JM
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: "Y"
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: -crd-job
-  namespace: default
 -- testdata/case-096.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -81994,25 +80138,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: axov6PJ
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: nNP8R-crd-job
-  namespace: default
 -- testdata/case-097.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -82272,6 +80397,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -82284,6 +80410,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -82293,6 +80420,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -83263,29 +81391,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-    miOT: 0tQoqwgkh
-    qxGIlj: xY0
-  creationTimestamp: null
-  labels:
-    1DVgfA62: TO
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: MkL0HtR
-    app.kubernetes.io/version: v25.2.1-beta1
-    dwmXsKZoxFp: TZf
-    helm.sh/chart: operator-25.2.1-beta1
-  name: hOWRGjU5-crd-job
-  namespace: default
 -- testdata/case-098.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -84047,26 +82152,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    4L: T4HM0h0
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: LH
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: L-crd-job
-  namespace: default
 -- testdata/case-099.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -84339,6 +82424,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -84351,6 +82437,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -84360,6 +82447,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -85223,28 +83311,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    E3s: wWjO
-    OD7: D
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: RoJFv
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-    rnKI: dxHr
-  name: vE4AZ-crd-job
-  namespace: default
 -- testdata/crd-installation-experimental.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -85505,6 +83571,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -85517,6 +83584,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -85526,6 +83594,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -85937,6 +84006,25 @@ spec:
                 path: namespace
 ---
 # Source: operator/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.2.1-beta1
+    helm.sh/chart: operator-25.2.1-beta1
+  name: operator-crd-job
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -86316,6 +84404,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -86328,6 +84417,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -86337,6 +84427,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -87145,6 +85236,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -87157,6 +85249,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -87166,6 +85259,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -87575,25 +85669,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/disabled-service-account-automount-token-with-volume-overwrite.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -87854,6 +85929,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -87866,6 +85942,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -87875,6 +85952,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -88301,25 +86379,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/enabled-service-account-automount-token-in-only-service-account-resource.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -88580,6 +86639,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -88592,6 +86652,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -88601,6 +86662,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -89010,25 +87072,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/enabled-service-account-automount-token-in-service-account-resource.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -89289,6 +87332,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -89301,6 +87345,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -89310,6 +87355,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -89719,25 +87765,6 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/operator-cluster-scoped.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -89998,6 +88025,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -90010,6 +88038,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -90019,6 +88048,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -90565,25 +88595,6 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default
 -- testdata/operator-namespaced-scoped-with-secuirty-context.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -90844,6 +88855,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -90856,6 +88868,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -90865,6 +88878,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status
@@ -91281,22 +89295,3 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
-    helm.sh/hook-weight: "-10"
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.2.1-beta1
-    helm.sh/chart: operator-25.2.1-beta1
-  name: operator-crd-job
-  namespace: default

@@ -6,7 +6,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (and (not $values.crds.enabled) (not $values.crds.experimental)) -}}
+{{- if (not ((or $values.crds.enabled $values.crds.experimental))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}

@@ -22,26 +22,31 @@ import (
 )
 
 func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(state), RPKProfile(state)}
-	return cms
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, Pool{Statefulset: state.Values.Statefulset})}
+
+	for _, set := range state.Pools {
+		cms = append(cms, RedpandaConfigMap(state, set))
+	}
+
+	return append(cms, RPKProfile(state))
 }
 
-func RedpandaConfigMap(state *RenderState) *corev1.ConfigMap {
-	bootstrap, fixups := BootstrapFile(state)
+func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
+	bootstrap, fixups := BootstrapFile(state, pool)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
+			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
 		Data: map[string]string{
 			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
 			clusterconfiguration.BootstrapFixupFile:       fixups,
-			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */),
+			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */, pool),
 		},
 	}
 }
@@ -57,8 +62,8 @@ func RedpandaConfigMap(state *RenderState) *corev1.ConfigMap {
 //
 // `.bootstrap.yaml` is templated and then read by both the redpanda container
 // and the post install/upgrade job.
-func BootstrapFile(state *RenderState) (string, string) {
-	template, fixups := BootstrapContents(state)
+func BootstrapFile(state *RenderState, pool Pool) (string, string) {
+	template, fixups := BootstrapContents(state, pool)
 	fixupStr := helmette.ToJSON(fixups)
 	if len(fixups) == 0 {
 		fixupStr = `[]`
@@ -66,7 +71,7 @@ func BootstrapFile(state *RenderState) (string, string) {
 	return helmette.ToJSON(template), fixupStr
 }
 
-func BootstrapContents(state *RenderState) (map[string]string, []clusterconfiguration.Fixup) {
+func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clusterconfiguration.Fixup) {
 	// Accumulate values and fixups
 	fixups := []clusterconfiguration.Fixup{}
 
@@ -92,7 +97,7 @@ func BootstrapContents(state *RenderState) (map[string]string, []clusterconfigur
 	// See also:
 	// - https://github.com/redpanda-data/helm-charts/issues/583
 	// - https://github.com/redpanda-data/helm-charts/issues/1501
-	if _, ok := state.Values.Config.Cluster["default_topic_replications"]; !ok && state.Values.Statefulset.Replicas >= 3 {
+	if _, ok := state.Values.Config.Cluster["default_topic_replications"]; !ok && pool.Statefulset.Replicas >= 3 {
 		bootstrap["default_topic_replications"] = 3
 	}
 
@@ -113,13 +118,19 @@ func BootstrapContents(state *RenderState) (map[string]string, []clusterconfigur
 	return template, fixups
 }
 
-func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool) string {
+func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool Pool) string {
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 	}
 
 	if includeNonHashableItems {
-		redpanda["seed_servers"] = state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+		servers := state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+
+		for _, set := range state.Pools {
+			servers = append(servers, state.Values.Listeners.CreateSeedServers(set.Statefulset.Replicas, fmt.Sprintf("%s%s", Fullname(state), set.Suffix()), InternalDomain(state))...)
+		}
+
+		redpanda["seed_servers"] = servers
 	}
 
 	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
@@ -134,7 +145,7 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool) string
 	}
 
 	if includeNonHashableItems {
-		redpandaYaml["rpk"] = rpkNodeConfig(state)
+		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
 		redpandaYaml["pandaproxy_client"] = kafkaClient(state)
 		redpandaYaml["schema_registry_client"] = kafkaClient(state)
 		if RedpandaAtLeast_23_3_0(state) && state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
@@ -339,19 +350,33 @@ func getFirstExternalKafkaListener(state *RenderState) string {
 	return helmette.First(keys).(string)
 }
 
-func BrokerList(state *RenderState, replicas int32, port int32) []string {
-	var bl []string
-
-	for i := int32(0); i < replicas; i++ {
-		bl = append(bl, fmt.Sprintf("%s-%d.%s:%d", Fullname(state), i, InternalDomain(state), port))
+// BrokerList returns the list of brokers referenced in every node pool in the RenderState.
+// If the port specified is -1 then it is not appended onto the generated hostnames.
+func BrokerList(state *RenderState, port int32) []string {
+	bl := brokersFor(state, Pool{Statefulset: state.Values.Statefulset}, port)
+	for _, set := range state.Pools {
+		bl = append(bl, brokersFor(state, set, port)...)
 	}
 
 	return bl
 }
 
+func brokersFor(state *RenderState, pool Pool, port int32) []string {
+	var bl []string
+
+	for i := int32(0); i < pool.Statefulset.Replicas; i++ {
+		if port == -1 {
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s", Fullname(state), pool.Suffix(), i, InternalDomain(state)))
+		} else {
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s:%d", Fullname(state), pool.Suffix(), i, InternalDomain(state), port))
+		}
+	}
+	return bl
+}
+
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
-func rpkNodeConfig(state *RenderState) map[string]any {
-	brokerList := BrokerList(state, state.Values.Statefulset.Replicas, state.Values.Listeners.Kafka.Port)
+func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
+	brokerList := BrokerList(state, state.Values.Listeners.Kafka.Port)
 
 	var adminTLS map[string]any
 	if tls := rpkAdminAPIClientTLSConfiguration(state); len(tls) > 0 {
@@ -368,7 +393,7 @@ func rpkNodeConfig(state *RenderState) map[string]any {
 		schemaRegistryTLS = tls
 	}
 
-	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&state.Values)
+	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&state.Values, pool)
 
 	result := map[string]any{
 		"additional_start_flags": flags,
@@ -379,11 +404,11 @@ func rpkNodeConfig(state *RenderState) map[string]any {
 			"tls":     brokerTLS,
 		},
 		"admin_api": map[string]any{
-			"addresses": state.Values.Listeners.AdminList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
+			"addresses": BrokerList(state, state.Values.Listeners.Admin.Port),
 			"tls":       adminTLS,
 		},
 		"schema_registry": map[string]any{
-			"addresses": state.Values.Listeners.SchemaRegistryList(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state)),
+			"addresses": BrokerList(state, state.Values.Listeners.SchemaRegistry.Port),
 			"tls":       schemaRegistryTLS,
 		},
 	}
@@ -607,7 +632,7 @@ func createInternalListenerTLSCfg(tls *TLS, internal InternalTLS) map[string]any
 // RedpandaAdditionalStartFlags returns a string slice of flags suitable for use
 // as `additional_start_flags`. User provided flags will override any of those
 // set by default.
-func RedpandaAdditionalStartFlags(values *Values) (bool, bool, []string) {
+func RedpandaAdditionalStartFlags(values *Values, pool Pool) (bool, bool, []string) {
 	// All `additional_start_flags` that are set by the chart.
 	flags := values.Resources.GetRedpandaFlags()
 	flags["--default-log-level"] = values.Logging.LogLevel
@@ -618,7 +643,7 @@ func RedpandaAdditionalStartFlags(values *Values) (bool, bool, []string) {
 		delete(flags, "--reserve-memory")
 	}
 
-	for key, value := range helmette.SortedMap(ParseCLIArgs(values.Statefulset.AdditionalRedpandaCmdFlags)) {
+	for key, value := range helmette.SortedMap(ParseCLIArgs(pool.Statefulset.AdditionalRedpandaCmdFlags)) {
 		flags[key] = value
 	}
 

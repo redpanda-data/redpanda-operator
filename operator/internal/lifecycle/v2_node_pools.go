@@ -47,29 +47,20 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager, redpandaImage, sideCarImage Image, 
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // isn't a node pool.
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]*appsv1.StatefulSet, error) {
-	spec := cluster.Spec.ClusterSpec.DeepCopy()
-	if spec == nil {
-		spec = &redpandav1alpha2.RedpandaClusterSpec{}
-	}
-
-	if spec.Statefulset == nil {
-		spec.Statefulset = &redpandav1alpha2.Statefulset{}
-	}
-
-	if spec.Statefulset.SideCars == nil {
-		spec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
-	}
-
-	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaults{
-		RedpandaImage:    defaultImage(spec.Image, m.redpandaImage),
-		SidecarImage:     defaultImage(spec.Statefulset.SideCars.Image, m.sideCarImage),
-		ConfiguratorArgs: m.cloudSecrets.AdditionalConfiguratorArgs(),
-	}, cluster.Redpanda, cluster.NodePools)
+	state, err := m.convertToRender(cluster)
 	if err != nil {
 		return nil, err
 	}
 
 	return redpanda.RenderNodePools(state)
+}
+
+func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpanda.RenderState, error) {
+	return conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{
+		RedpandaImage:    defaultImage(m.redpandaImage),
+		SidecarImage:     defaultImage(m.sideCarImage),
+		ConfiguratorArgs: m.cloudSecrets.AdditionalConfiguratorArgs(),
+	}, cluster.Redpanda, cluster.NodePools)
 }
 
 func isNodePool(object client.Object) bool {
@@ -82,16 +73,17 @@ func (m *V2NodePoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
 }
 
-func defaultImage(base *redpandav1alpha2.RedpandaImage, default_ Image) *redpandav1alpha2.RedpandaImage {
-	if base == nil {
-		return &redpandav1alpha2.RedpandaImage{
-			Repository: ptr.To(default_.Repository),
-			Tag:        ptr.To(default_.Tag),
+func defaultImage(default_ Image) func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+	return func(base *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+		if base == nil {
+			return &redpandav1alpha2.RedpandaImage{
+				Repository: ptr.To(default_.Repository),
+				Tag:        ptr.To(default_.Tag),
+			}
 		}
-	}
-
-	return &redpandav1alpha2.RedpandaImage{
-		Repository: ptr.To(ptr.Deref(base.Repository, default_.Repository)),
-		Tag:        ptr.To(ptr.Deref(base.Tag, default_.Tag)),
+		return &redpandav1alpha2.RedpandaImage{
+			Repository: ptr.To(ptr.Deref(base.Repository, default_.Repository)),
+			Tag:        ptr.To(ptr.Deref(base.Tag, default_.Tag)),
+		}
 	}
 }

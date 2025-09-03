@@ -13,6 +13,7 @@
 
 
 .Resource Types
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
@@ -456,6 +457,7 @@ ClusterRef represents a reference to a cluster that is being targeted.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -793,6 +795,46 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 | Field | Description | Default | Validation
 | *`accessKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
 | *`secretKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus"]
+==== EmbeddedNodePoolStatus
+
+
+
+EmbeddedNodePoolStatus defines the observed state of any node pools tied to this cluster
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is the name of the pool + |  | 
+| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
+the node pool. This differs from DesiredReplicas during +
+a scaling operation, but should be the same once the cluster +
+has quiesced. + |  | 
+| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
+run for the cluster. It combines the desired replicas across +
+all node pools. + |  | 
+| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
+match their node pool definitions. If OutOfDateReplicas is not 0 +
+it should mean that the operator will soon roll this many pods. + |  | 
+| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
+their node pool definitions. + |  | 
+| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
+as part of a scaling down operation. + |  | 
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
+currently passing. + |  | 
+| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
+state. + |  | 
 |===
 
 
@@ -1509,6 +1551,59 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool"]
+==== NodePool
+
+
+
+
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `NodePool` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec"]
+==== NodePoolSpec
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus"]
 ==== NodePoolStatus
 
@@ -1520,7 +1615,7 @@ NodePoolStatus defines the observed state of any node pools tied to this cluster
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -1545,6 +1640,7 @@ as part of a scaling down operation. + |  |
 currently passing. + |  | 
 | *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
 state. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 |===
 
 
@@ -1703,6 +1799,72 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 | *`labels`* __object (keys:string, values:string)__ |  |  | 
 | *`annotations`* __object (keys:string, values:string)__ |  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration[$$PodSpecApplyConfiguration$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolconfigurator"]
+==== PoolConfigurator
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`additionalCLIArgs`* __string array__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolfsvalidator"]
+==== PoolFSValidator
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`expectedFS`* __string__ |  |  | 
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolsetdatadirownership"]
+==== PoolSetDataDirOwnership
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
 |===
 
 
@@ -2218,7 +2380,7 @@ RedpandaStatus defines the observed state of Redpanda
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
 installed license in the Redpanda cluster. + |  | 
-| *`nodePools`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$] array__ | NodePools contains information about the node pools associated +
+| *`nodePools`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus[$$EmbeddedNodePoolStatus$$] array__ | NodePools contains information about the node pools associated +
 with this cluster. + |  | 
 | *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
 Redpanda used for restarting broker nodes as necessary. + |  | 

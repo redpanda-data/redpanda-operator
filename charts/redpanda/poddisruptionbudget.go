@@ -19,10 +19,17 @@ import (
 )
 
 func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
+	// We leverage the default StatefulSet here as this really can only be
+	// specified once.
 	budget := state.Values.Statefulset.Budget.MaxUnavailable
 
+	replicas := state.Values.Statefulset.Replicas
+	for _, set := range state.Pools {
+		replicas = replicas + set.Statefulset.Replicas
+	}
+
 	// to maintain quorum, raft cannot lose more than half its members
-	minReplicas := state.Values.Statefulset.Replicas / 2
+	minReplicas := replicas / 2
 
 	// the lowest we can go is 1 so allow that always
 	if budget > 1 && budget > minReplicas {
@@ -30,7 +37,7 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 	}
 
 	maxUnavailable := intstr.FromInt32(int32(budget))
-	matchLabels := StatefulSetPodLabelsSelector(state)
+	matchLabels := ClusterPodLabelsSelector(state)
 	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(state)
 
 	return &policyv1.PodDisruptionBudget{

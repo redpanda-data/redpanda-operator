@@ -202,7 +202,7 @@ func ConsoleConfig(state *RenderState) map[string]any {
 
 	c := map[string]any{
 		"kafka": map[string]any{
-			"brokers": BrokerList(state, state.Values.Statefulset.Replicas, state.Values.Listeners.Kafka.Port),
+			"brokers": BrokerList(state, state.Values.Listeners.Kafka.Port),
 			"sasl": map[string]any{
 				"enabled": state.Values.Auth.IsSASLEnabled(),
 			},

@@ -97,7 +97,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Type:                     corev1.ServiceTypeClusterIP,
 			PublishNotReadyAddresses: true,
 			ClusterIP:                corev1.ClusterIPNone,
-			Selector:                 StatefulSetPodLabelsSelector(state),
+			Selector:                 ClusterPodLabelsSelector(state),
 			Ports:                    ports,
 		},
 	}

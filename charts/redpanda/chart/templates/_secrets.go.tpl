@@ -11,14 +11,24 @@
 {{- if (ne (toJson $saslUsers_1) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $saslUsers_1)) -}}
 {{- end -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state)))) "r"))) -}}
-{{- $fsValidator_2 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state)))) "r") -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r"))) -}}
+{{- $fsValidator_2 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
 {{- if (ne (toJson $fsValidator_2) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $fsValidator_2)) -}}
 {{- end -}}
-{{- $bootstrapUser_3 := (get (fromJson (include "redpanda.SecretBootstrapUser" (dict "a" (list $state)))) "r") -}}
-{{- if (ne (toJson $bootstrapUser_3) "null") -}}
-{{- $secrets = (concat (default (list) $secrets) (list $bootstrapUser_3)) -}}
+{{- range $_, $set := $state.Pools -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $set)))) "r"))) -}}
+{{- $fsValidator_3 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state $set)))) "r") -}}
+{{- if (ne (toJson $fsValidator_3) "null") -}}
+{{- $secrets = (concat (default (list) $secrets) (list $fsValidator_3)) -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $bootstrapUser_4 := (get (fromJson (include "redpanda.SecretBootstrapUser" (dict "a" (list $state)))) "r") -}}
+{{- if (ne (toJson $bootstrapUser_4) "null") -}}
+{{- $secrets = (concat (default (list) $secrets) (list $bootstrapUser_4)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secrets) | toJson -}}
@@ -30,13 +40,20 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- $replicas := ($state.Values.statefulset.replicas | int) -}}
+{{- range $_, $set := $state.Pools -}}
+{{- $replicas = ((add $replicas ($set.Statefulset.replicas | int)) | int) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%s-sts-lifecycle" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $adminCurlFlags := (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $secret.stringData "common.sh" (join "\n" (list `#!/usr/bin/env bash` `` `# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME` (printf `CURL_URL="%s"` (get (fromJson (include "redpanda.adminInternalURL" (dict "a" (list $state)))) "r")) `` `# commands used throughout` (printf `CURL_NODE_ID_CMD="curl --silent --fail %s ${CURL_URL}/v1/node_config"` $adminCurlFlags) `` `CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'` `CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'` (printf `CURL_MAINTENANCE_GET_CMD="curl -X GET --silent %s ${CURL_URL}/v1/maintenance"` $adminCurlFlags)))) -}}
 {{- $postStartSh := (list `#!/usr/bin/env bash` `# This code should be similar if not exactly the same as that found in the panda-operator, see` `# https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go` `` `# path below should match the path defined on the statefulset` `source /var/lifecycle/common.sh` `` `postStartHook () {` `  set -x` `` `  touch /tmp/postStartHookStarted` `` `  until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do` `      sleep 0.5` `  done` `` `  echo "Clearing maintenance mode on node ${NODE_ID}"` (printf `  CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} %s ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"` $adminCurlFlags) `  # a 400 here would mean not in maintenance mode` `  until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do` `      status=$(${CURL_MAINTENANCE_DELETE_CMD})` `      sleep 0.5` `  done` `` `  touch /tmp/postStartHookFinished` `}` `` `postStartHook` `true`) -}}
 {{- $_ := (set $secret.stringData "postStart.sh" (join "\n" $postStartSh)) -}}
 {{- $preStopSh := (list `#!/usr/bin/env bash` `# This code should be similar if not exactly the same as that found in the panda-operator, see` `# https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go` `` `touch /tmp/preStopHookStarted` `` `# path below should match the path defined on the statefulset` `source /var/lifecycle/common.sh` `` `set -x` `` `preStopHook () {` `  until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do` `      sleep 0.5` `  done` `` `  echo "Setting maintenance mode on node ${NODE_ID}"` (printf `  CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} %s ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"` $adminCurlFlags) `  until [ "${status:-}" = '"200"' ]; do` `      status=$(${CURL_MAINTENANCE_PUT_CMD})` `      sleep 0.5` `  done` `` `  until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do` `      res=$(${CURL_MAINTENANCE_GET_CMD})` `      finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')` `      draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')` `      sleep 0.5` `  done` `` `  touch /tmp/preStopHookFinished` `}`) -}}
-{{- if (and (gt ($state.Values.statefulset.replicas | int) (2 | int)) (not (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" (dig "recovery_mode_enabled" false $state.Values.config.node))))) "r"))) -}}
+{{- if (and (gt $replicas (2 | int)) (not (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" (dig "recovery_mode_enabled" false $state.Values.config.node))))) "r"))) -}}
 {{- $preStopSh = (concat (default (list) $preStopSh) (list `preStopHook`)) -}}
 {{- else -}}
 {{- $preStopSh = (concat (default (list) $preStopSh) (list `touch /tmp/preStopHookFinished` `echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."`)) -}}
@@ -110,14 +127,15 @@
 
 {{- define "redpanda.SecretFSValidator" -}}
 {{- $state := (index .a 0) -}}
+{{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (not $state.Values.statefulset.initContainers.fsValidator.enabled) -}}
+{{- if (not $pool.Statefulset.initContainers.fsValidator.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.49s-fs-validator" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.49s-fs-validator" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $_ := (set $secret.stringData "fsValidator.sh" `set -e
 EXPECTED_FS_TYPE=$1
 
@@ -164,17 +182,18 @@ echo "passed"`) -}}
 
 {{- define "redpanda.SecretConfigurator" -}}
 {{- $state := (index .a 0) -}}
+{{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.51s-configurator" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf "%.51s-configurator" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $configuratorSh := (list) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `set -xe` `SERVICE_NAME=$1` `KUBERNETES_NODE_NAME=$2` `POD_ORDINAL=${SERVICE_NAME##*-}` "BROKER_INDEX=`expr $POD_ORDINAL + 1`" `` `CONFIG=/etc/redpanda/redpanda.yaml` `` `# Setup config files` `cp /tmp/base-config/redpanda.yaml "${CONFIG}"`)) -}}
 {{- if (not (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r")) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure bootstrap` `## Not used for Redpanda v22.3.0+` `rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"` `if [ "${POD_ORDINAL}" = "0" ]; then` `	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml` `fi`)) -}}
 {{- end -}}
-{{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorKafkaConfig" (dict "a" (list $state)))) "r") -}}
+{{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorKafkaConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $kafkaSnippet)) -}}
-{{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorHTTPConfig" (dict "a" (list $state)))) "r") -}}
+{{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorHTTPConfig" (dict "a" (list $state $pool.Statefulset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $httpSnippet)) -}}
 {{- if (and (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r") $state.Values.rackAwareness.enabled) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $state.Values.rackAwareness.nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) -}}
@@ -188,6 +207,7 @@ echo "passed"`) -}}
 
 {{- define "redpanda.secretConfiguratorKafkaConfig" -}}
 {{- $state := (index .a 0) -}}
+{{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
@@ -201,7 +221,7 @@ echo "passed"`) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.kafka.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
-{{- range $_, $replicaIndex := (until (($state.Values.statefulset.replicas | int) | int)) -}}
+{{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (1 | int)) -}}
@@ -235,6 +255,7 @@ echo "passed"`) -}}
 
 {{- define "redpanda.secretConfiguratorHTTPConfig" -}}
 {{- $state := (index .a 0) -}}
+{{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
@@ -248,7 +269,7 @@ echo "passed"`) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.http.external -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` (upper $listenerName)))) -}}
-{{- range $_, $replicaIndex := (until (($state.Values.statefulset.replicas | int) | int)) -}}
+{{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
 {{- $port := ($externalVals.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $externalVals.advertisedPorts)))) "r") | int) (1 | int)) -}}
@@ -333,9 +354,9 @@ echo "passed"`) -}}
 {{- else -}}
 {{- $address = (index $state.Values.external.addresses (0 | int)) -}}
 {{- end -}}
-{{- $domain_4 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
-{{- if (ne $domain_4 "") -}}
-{{- $host = (dict "name" $externalName "address" (printf "%s.%s" $address (tpl $domain_4 $state.Dot)) "port" $port) -}}
+{{- $domain_5 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
+{{- if (ne $domain_5 "") -}}
+{{- $host = (dict "name" $externalName "address" (printf "%s.%s" $address (tpl $domain_5 $state.Dot)) "port" $port) -}}
 {{- else -}}
 {{- $host = (dict "name" $externalName "address" $address "port" $port) -}}
 {{- end -}}

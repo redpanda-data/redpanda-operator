@@ -55,7 +55,7 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 func CRDJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !(values.CRDs.Enabled || !values.CRDs.Experimental) {
+	if !(values.CRDs.Enabled || values.CRDs.Experimental) {
 		return nil
 	}
 

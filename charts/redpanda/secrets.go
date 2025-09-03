@@ -29,9 +29,15 @@ func Secrets(state *RenderState) []*corev1.Secret {
 	if saslUsers := SecretSASLUsers(state); saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
-	secrets = append(secrets, SecretConfigurator(state))
-	if fsValidator := SecretFSValidator(state); fsValidator != nil {
+	secrets = append(secrets, SecretConfigurator(state, Pool{Statefulset: state.Values.Statefulset}))
+	if fsValidator := SecretFSValidator(state, Pool{Statefulset: state.Values.Statefulset}); fsValidator != nil {
 		secrets = append(secrets, fsValidator)
+	}
+	for _, set := range state.Pools {
+		secrets = append(secrets, SecretConfigurator(state, set))
+		if fsValidator := SecretFSValidator(state, set); fsValidator != nil {
+			secrets = append(secrets, fsValidator)
+		}
 	}
 	if bootstrapUser := SecretBootstrapUser(state); bootstrapUser != nil {
 		secrets = append(secrets, bootstrapUser)
@@ -40,6 +46,11 @@ func Secrets(state *RenderState) []*corev1.Secret {
 }
 
 func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
+	replicas := state.Values.Statefulset.Replicas
+	for _, set := range state.Pools {
+		replicas = replicas + set.Statefulset.Replicas
+	}
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -135,7 +146,7 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`  touch /tmp/preStopHookFinished`,
 		`}`,
 	}
-	if state.Values.Statefulset.Replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool) {
+	if replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool) {
 		preStopSh = append(preStopSh,
 			`preStopHook`,
 		)
@@ -225,8 +236,8 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 	}
 }
 
-func SecretFSValidator(state *RenderState) *corev1.Secret {
-	if !state.Values.Statefulset.InitContainers.FSValidator.Enabled {
+func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
+	if !pool.Statefulset.InitContainers.FSValidator.Enabled {
 		return nil
 	}
 
@@ -236,7 +247,7 @@ func SecretFSValidator(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.49s-fs-validator", Fullname(state)),
+			Name:      fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
@@ -285,14 +296,14 @@ echo "passed"`
 	return secret
 }
 
-func SecretConfigurator(state *RenderState) *corev1.Secret {
+func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.51s-configurator", Fullname(state)),
+			Name:      fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
@@ -324,10 +335,10 @@ func SecretConfigurator(state *RenderState) *corev1.Secret {
 		)
 	}
 
-	kafkaSnippet := secretConfiguratorKafkaConfig(state)
+	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
 
-	httpSnippet := secretConfiguratorHTTPConfig(state)
+	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
 	if RedpandaAtLeast_22_3_0(state) && state.Values.RackAwareness.Enabled {
@@ -346,7 +357,7 @@ func SecretConfigurator(state *RenderState) *corev1.Secret {
 	return secret
 }
 
-func secretConfiguratorKafkaConfig(state *RenderState) []string {
+func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -375,7 +386,8 @@ func secretConfiguratorKafkaConfig(state *RenderState) []string {
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(state.Values.Statefulset.Replicas)) {
+			// TODO: this looks quite broken just based on the fact that if replicas > addresses
+			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {
@@ -421,7 +433,7 @@ func secretConfiguratorKafkaConfig(state *RenderState) []string {
 	return snippet
 }
 
-func secretConfiguratorHTTPConfig(state *RenderState) []string {
+func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -450,7 +462,8 @@ func secretConfiguratorHTTPConfig(state *RenderState) []string {
 				``,
 				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
 			)
-			for _, replicaIndex := range helmette.Until(int(state.Values.Statefulset.Replicas)) {
+			// TODO: this looks quite broken just based on the fact that if replicas > addresses
+			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
 				// advertised-port for kafka
 				port := externalVals.Port // This is always defined for kafka
 				if len(externalVals.AdvertisedPorts) > 0 {

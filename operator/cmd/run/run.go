@@ -87,6 +87,7 @@ type RunOptions struct {
 	// will be enabled or not.
 	enableVectorizedControllers bool
 
+	enableV2NodepoolController          bool
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
 	secureMetrics                       bool
@@ -140,6 +141,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 
 	// Controller flags.
+	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
@@ -416,6 +418,16 @@ func Run(
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 		return err
+	}
+
+	// NodePool Reconciler
+	if opts.enableV2NodepoolController {
+		if err := (&redpandacontrollers.NodePoolReconciler{
+			Client: mgr.GetClient(),
+		}).SetupWithManager(ctx, mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+			return err
+		}
 	}
 
 	if err := (&redpandacontrollers.TopicReconciler{

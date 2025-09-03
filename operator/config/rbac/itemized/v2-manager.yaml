@@ -88,6 +88,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
   - redpandas
   verbs:
   - create
@@ -100,6 +101,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
   - topics/finalizers
@@ -109,6 +111,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools/status
   - redpandas/status
   - schemas/status
   - topics/status

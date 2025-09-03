@@ -120,15 +120,6 @@ tasks:
       - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
       - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
 
-      - |
-        applyconfiguration-gen \
-        --go-header-file "../licenses/boilerplate.go.txt" \
-        --output-dir "api/applyconfiguration" \
-        --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
-        ./api/redpanda/v1alpha3
-      - find ./api/applyconfiguration/redpanda/v1alpha3 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
-      - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
-
   generate:crd-docs:
     desc: Generates an example ascii doc from our crd-ref-docs configuration.
     dir: 'operator'

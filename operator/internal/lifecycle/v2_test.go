@@ -13,6 +13,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -91,6 +93,7 @@ func TestV2ResourceClient(t *testing.T) {
 
 	goldenPools := testutil.NewTxTar(t, "testdata/cases.pools.golden.txtar")
 	goldenResources := testutil.NewTxTar(t, "testdata/cases.resources.golden.txtar")
+	goldenValues := testutil.NewTxTar(t, "testdata/cases.values.golden.txtar")
 
 	cloudSecrets := CloudSecretsFlags{
 		CloudSecretsEnabled: false,
@@ -108,21 +111,60 @@ func TestV2ResourceClient(t *testing.T) {
 
 	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 
+	decoder := serializer.NewCodecFactory(controller.V2Scheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
+
+	decode := func(t *testing.T, manifests []byte) (*redpandav1alpha2.Redpanda, []*redpandav1alpha2.NodePool) {
+		var cluster *redpandav1alpha2.Redpanda
+		pools := []*redpandav1alpha2.NodePool{}
+		for _, obj := range strings.Split(string(manifests), "---") {
+			obj := strings.Trim(obj, " ")
+			if obj == "" {
+				continue
+			}
+			decoded, gvk, err := decoder.Decode([]byte(obj), nil, nil)
+			require.NoError(t, err)
+			switch o := decoded.(type) {
+			case *redpandav1alpha2.Redpanda:
+				require.Nil(t, cluster)
+				cluster = o
+			case *redpandav1alpha2.NodePool:
+				pools = append(pools, o)
+			default:
+				t.Fatalf("invalid type found in manifest: %s", gvk.String())
+			}
+		}
+
+		if cluster == nil {
+			cluster = &redpandav1alpha2.Redpanda{}
+		}
+
+		return cluster, pools
+	}
+
 	for _, file := range casesArchive.Files {
 		t.Run(file.Name, func(t *testing.T) {
 			t.Parallel()
 
-			redpanda := &redpandav1alpha2.Redpanda{}
-			require.NoError(t, yaml.Unmarshal(file.Data, redpanda))
+			redpanda, pools := decode(t, file.Data)
 
 			// override name and namespace to make it unique
 			redpanda.Name = file.Name
 			redpanda.Namespace = file.Name
-			cluster := NewClusterWithPools(redpanda)
+			cluster := NewClusterWithPools(redpanda, pools...)
 
 			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
 
-			pools, err := resourceClient.nodePoolRenderer.Render(ctx, cluster)
+			state, err := resourceClient.nodePoolRenderer.(*V2NodePoolRenderer).convertToRender(cluster)
+			require.NoError(t, err)
+
+			yamlBytes, err := yaml.Marshal(map[string]any{
+				"values": state.Values,
+				"pools":  state.Pools,
+			})
+			require.NoError(t, err)
+			goldenValues.AssertGolden(t, testutil.YAML, file.Name, yamlBytes)
+
+			sets, err := resourceClient.nodePoolRenderer.Render(ctx, cluster)
 			require.NoError(t, err)
 
 			assertOwnership := func(object client.Object) {
@@ -149,14 +191,13 @@ func TestV2ResourceClient(t *testing.T) {
 				object.SetLabels(labels)
 			}
 
-			for _, pool := range pools {
+			for _, pool := range sets {
 				assertOwnership(pool)
 				require.True(t, resourceClient.nodePoolRenderer.IsNodePool(pool))
 			}
 
-			poolBytes, err := yaml.Marshal(pools)
+			poolBytes, err := yaml.Marshal(sets)
 			require.NoError(t, err)
-
 			goldenPools.AssertGolden(t, testutil.YAML, file.Name, poolBytes)
 
 			resources, err := resourceClient.simpleResourceRenderer.Render(ctx, cluster)

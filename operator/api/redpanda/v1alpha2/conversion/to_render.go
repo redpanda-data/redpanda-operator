@@ -10,6 +10,9 @@
 package conversion
 
 import (
+	"fmt"
+
+	"github.com/cockroachdb/errors"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
@@ -20,15 +23,15 @@ import (
 )
 
 // V2Defaults contains the default values for the v2 CRD conversion.
-type V2Defaults struct {
-	RedpandaImage    *redpandav1alpha2.RedpandaImage
-	SidecarImage     *redpandav1alpha2.RedpandaImage
+type V2Defaulters struct {
+	RedpandaImage    func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage
+	SidecarImage     func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage
 	ConfiguratorArgs []string
 }
 
 // ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart RenderState.
-func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda, _pools any) (*redpanda.RenderState, error) {
-	spec := defaultV2Spec(defaults, cluster)
+func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpanda.RenderState, error) {
+	spec := defaultV2Spec(defaulters, cluster)
 
 	dot, err := redpanda.Chart.Dot(config, helmette.Release{
 		Namespace: cluster.Namespace,
@@ -41,12 +44,20 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaults *V2Defaults, clust
 	}
 
 	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
-		return convertV2Fields(state, &state.Values, spec)
+		if err := convertV2Fields(state, &state.Values, spec); err != nil {
+			return err
+		}
+		pools, err := convertV2NodepoolsToPools(pools, defaulters)
+		if err != nil {
+			return err
+		}
+		state.Pools = pools
+		return nil
 	})
 }
 
 // defaultV2Spec defaults the v2 Redpanda CRD spec to avoid nil dereferences during chart construction.
-func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.RedpandaClusterSpec {
+func defaultV2Spec(defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.RedpandaClusterSpec {
 	// Big ol' block of defaulting to avoid nil dereferences.
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 	if spec == nil {
@@ -74,25 +85,19 @@ func defaultV2Spec(defaults *V2Defaults, cluster *redpandav1alpha2.Redpanda) *re
 	}
 
 	// Use the default image passed on the command-line.
-	spec.Image = defaults.RedpandaImage
+	if defaulters.RedpandaImage != nil {
+		spec.Image = defaulters.RedpandaImage(spec.Image)
+	}
 
 	// The flag that disables cluster configuration synchronization is set to `true` to not
 	// conflict with operator cluster configuration synchronization.
 	spec.Statefulset.SideCars.Args = []string{"--no-set-superusers"}
 
-	// If not explicitly specified, set the tag and repository of the sidecar
-	// to the image specified via CLI args rather than relying on the default
-	// of the redpanda chart.
-	// This ensures that custom deployments (e.g.
-	// localhost/redpanda-operator:dev) will use the image they are deployed
-	// with.
-	spec.Statefulset.SideCars.Image = defaults.SidecarImage
-	spec.Statefulset.SideCars.Controllers.Image = defaults.SidecarImage
-
 	// If not explicitly specified, set the initContainer flags for the bootstrap
 	// templating to instantiate an appropriate CloudExpander
-	if len(spec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs) == 0 {
-		spec.Statefulset.InitContainers.Configurator.AdditionalCLIArgs = defaults.ConfiguratorArgs
+	if defaulters.SidecarImage != nil {
+		spec.Statefulset.SideCars.Image = defaulters.SidecarImage(spec.Statefulset.SideCars.Image)
+		spec.Statefulset.SideCars.Controllers.Image = defaulters.SidecarImage(spec.Statefulset.SideCars.Controllers.Image)
 	}
 
 	return spec
@@ -281,4 +286,71 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	}
 
 	return nil
+}
+
+func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
+	converted := make([]redpanda.Pool, len(pools))
+	for i, pool := range pools {
+		set, err := convertV2NodepoolToPool(pool, defaulters)
+		if err != nil {
+			return nil, err
+		}
+		converted[i] = set
+	}
+	return converted, nil
+}
+
+func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
+	// we grab *just* the default values here
+	v, err := redpanda.Chart.LoadValues(map[string]any{})
+	if err != nil {
+		return redpanda.Pool{}, err
+	}
+	defer func() {
+		switch r := recover().(type) {
+		case nil:
+		case error:
+			err = errors.Wrapf(r, "yaml conversion failed")
+		default:
+			err = errors.Newf("yaml conversion failed: %#v", r)
+		}
+	}()
+
+	values := helmette.Unwrap[redpanda.Values](v)
+	defaultSet := values.Statefulset
+	// we adjust some of the defaults that need to be changed in the nodepool context
+	defaultSet.PodTemplate.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchLabels = map[string]string{
+		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
+		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
+		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
+	}
+	defaultSet.PodTemplate.Spec.TopologySpreadConstraints[0].LabelSelector.MatchLabels = map[string]string{
+		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
+		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
+		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
+	}
+
+	// next we default our images
+	if defaulters.RedpandaImage != nil {
+		pool.Spec.Image = defaulters.RedpandaImage(pool.Spec.Image)
+	}
+	if defaulters.SidecarImage != nil {
+		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.Image)
+	}
+
+	// now we merge everything in to construct the pool
+	if err := convertJSON(pool.Spec, &defaultSet); err != nil {
+		return redpanda.Pool{}, err
+	}
+
+	// and do a little bit of conversion
+	if err := convertJSON(pool.Spec.SidecarImage, &defaultSet.SideCars.Image); err != nil {
+		return redpanda.Pool{}, err
+	}
+
+	// and finally return wrapped with a name
+	return redpanda.Pool{
+		Name:        pool.Name,
+		Statefulset: defaultSet,
+	}, nil
 }
