@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -747,6 +748,65 @@ func (s *RedpandaControllerSuite) TestScaling() {
 	s.deleteAndWait(rp)
 }
 
+func (s *RedpandaControllerSuite) TestNodePools() {
+	isStable := func(checkStable bool) func(obj client.Object, err error) (bool, error) {
+		return func(obj client.Object, err error) (bool, error) {
+			if err != nil {
+				return false, err
+			}
+			var conditions []metav1.Condition
+			var stable string
+			switch typ := obj.(type) {
+			case *redpandav1alpha2.Redpanda:
+				conditions = typ.Status.Conditions
+				stable = statuses.ClusterStable
+			case *redpandav1alpha2.NodePool:
+				conditions = typ.Status.Conditions
+				stable = statuses.NodePoolStable
+			default:
+				return false, errors.New("unsupported type")
+			}
+			status := metav1.ConditionTrue
+			if !checkStable {
+				status = metav1.ConditionFalse
+			}
+			for _, cond := range conditions {
+				if cond.Type == stable {
+					return cond.ObservedGeneration == obj.GetGeneration() && cond.Status == status, nil
+				}
+			}
+			return false, nil
+		}
+	}
+
+	rp := s.minimalRP()
+
+	// start with one broker and no nodepools
+	s.applyAndWaitFor(isStable(true), rp)
+
+	// add another broker via a nodepool.
+	pool := s.minimalNodePool(rp)
+	s.applyAndWaitFor(isStable(true), pool)
+
+	s.deleteAndWait(rp)
+
+	// we should go unstable due to an unhealthy broker
+	s.waitFor(pool, isStable(false))
+	// and eventually we should fully unbind
+	s.waitFor(pool, func(o client.Object, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
+		for _, cond := range o.(*redpandav1alpha2.NodePool).Status.Conditions {
+			if cond.Type == statuses.NodePoolBound {
+				return cond.ObservedGeneration == o.GetGeneration() && cond.Status == metav1.ConditionFalse, nil
+			}
+		}
+		return false, nil
+	})
+	s.deleteAndWait(pool)
+}
+
 func (s *RedpandaControllerSuite) SetupTest() {
 	prev := s.ctx
 	s.ctx = trace.Test(s.T())
@@ -790,6 +850,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
+			UseNodePools: true,
 		}).SetupWithManager(s.ctx, mgr)
 	})
 
@@ -885,6 +946,16 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 			Annotations: make(map[string]string),
 		},
 		Spec: redpandav1alpha2.MinimalRedpandaSpec(),
+	}
+}
+
+func (s *RedpandaControllerSuite) minimalNodePool(cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.NodePool {
+	return &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "pool-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
+			Annotations: make(map[string]string),
+		},
+		Spec: redpandav1alpha2.MinimalNodePoolSpec(cluster),
 	}
 }
 

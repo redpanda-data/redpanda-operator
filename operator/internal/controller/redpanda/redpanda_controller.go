@@ -23,12 +23,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	kuberecorder "k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -73,6 +76,7 @@ type RedpandaReconciler struct {
 	EventRecorder        kuberecorder.EventRecorder
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
+	UseNodePools         bool
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -105,10 +109,24 @@ type RedpandaReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+	enqueueClusterFromNodePool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		pool := o.(*redpandav1alpha2.NodePool)
+		return []reconcile.Request{{
+			NamespacedName: types.NamespacedName{
+				Name:      pool.Spec.ClusterRef.Name,
+				Namespace: pool.Namespace,
+			},
+		}}
+	})
+
 	builder := ctrl.NewControllerManagedBy(mgr)
 
 	if err := r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{}); err != nil {
 		return err
+	}
+
+	if r.UseNodePools {
+		builder.Watches(&redpandav1alpha2.NodePool{}, enqueueClusterFromNodePool)
 	}
 
 	return builder.Complete(r)
@@ -135,9 +153,18 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		result.RequeueAfter = periodicRequeue
 	}()
 
+	// fetch any related node pools
+	var existingPools []*redpandav1alpha2.NodePool
+	if r.UseNodePools {
+		existingPools, err = fromSourceCluster(ctx, r.Client, "pool", rp, &redpandav1alpha2.NodePoolList{})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	rp.ManagedFields = nil // nil out our managed fields
 
-	cluster := lifecycle.NewClusterWithPools(rp)
+	cluster := lifecycle.NewClusterWithPools(rp, existingPools...)
 
 	ctx, span := trace.Start(otelkube.Extract(ctx, rp), "Reconcile", trace.WithAttributes(
 		attribute.String("name", req.Name),

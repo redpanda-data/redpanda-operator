@@ -45,6 +45,9 @@ const (
 	// https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L55-L57
 	//nolint:gosec
 	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
+
+	NodePoolLabelName      = "cluster.redpanda.com/nodepool-name"
+	NodePoolLabelNamespace = "cluster.redpanda.com/nodepool-namespace"
 )
 
 // statefulSetRedpandaEnv returns the environment variables for the Redpanda
@@ -906,6 +909,12 @@ func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
 }
 
 func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
+	poolLabels := map[string]string{}
+	if pool.Name != "" {
+		poolLabels[NodePoolLabelName] = pool.Name
+		poolLabels[NodePoolLabelNamespace] = state.Release.Namespace
+	}
+
 	set := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -914,7 +923,7 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Labels:    helmette.Merge(FullLabels(state), poolLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{

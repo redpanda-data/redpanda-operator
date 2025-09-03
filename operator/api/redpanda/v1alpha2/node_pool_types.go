@@ -11,6 +11,9 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 // +genclient
@@ -18,12 +21,21 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=nodepools
 // +kubebuilder:resource:shortName=np
+// +kubebuilder:printcolumn:name="Bound",type="string",JSONPath=".status.conditions[?(@.type==\"Bound\")].status",description=""
+// +kubebuilder:printcolumn:name="Deployed",type="string",JSONPath=".status.conditions[?(@.type==\"Deployed\")].status",description=""
 type NodePool struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NodePoolSpec   `json:"spec,omitempty"`
+	Spec NodePoolSpec `json:"spec,omitempty"`
+	// +kubebuilder:default={conditions: {{type: "Bound", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Deployed", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
 	Status NodePoolStatus `json:"status,omitempty"`
+}
+
+func (n *NodePool) GetClusterSource() *ClusterSource {
+	return &ClusterSource{
+		ClusterRef: &n.Spec.ClusterRef,
+	}
 }
 
 // NodePoolStatus defines the observed state of any node pools tied to this cluster
@@ -37,32 +49,32 @@ type NodePoolStatus struct {
 // EmbeddedNodePoolStatus defines the observed state of any node pools tied to this cluster
 type EmbeddedNodePoolStatus struct {
 	// Name is the name of the pool
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	// Replicas is the number of actual replicas currently across
 	// the node pool. This differs from DesiredReplicas during
 	// a scaling operation, but should be the same once the cluster
 	// has quiesced.
-	Replicas int32 `json:"replicas"`
+	Replicas int32 `json:"replicas,omitempty"`
 	// DesiredReplicas is the number of replicas that ought to be
 	// run for the cluster. It combines the desired replicas across
 	// all node pools.
-	DesiredReplicas int32 `json:"desiredReplicas"`
+	DesiredReplicas int32 `json:"desiredReplicas,omitempty"`
 	// OutOfDateReplicas is the number of replicas that don't currently
 	// match their node pool definitions. If OutOfDateReplicas is not 0
 	// it should mean that the operator will soon roll this many pods.
-	OutOfDateReplicas int32 `json:"outOfDateReplicas"`
+	OutOfDateReplicas int32 `json:"outOfDateReplicas,omitempty"`
 	// UpToDateReplicas is the number of replicas that currently match
 	// their node pool definitions.
-	UpToDateReplicas int32 `json:"upToDateReplicas"`
+	UpToDateReplicas int32 `json:"upToDateReplicas,omitempty"`
 	// CondemnedReplicas is the number of replicas that will be decommissioned
 	// as part of a scaling down operation.
-	CondemnedReplicas int32 `json:"condemnedReplicas"`
+	CondemnedReplicas int32 `json:"condemnedReplicas,omitempty"`
 	// ReadyReplicas is the number of replicas whose readiness probes are
 	// currently passing.
-	ReadyReplicas int32 `json:"readyReplicas"`
+	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
 	// RunningReplicas is the number of replicas that are actively in a running
 	// state.
-	RunningReplicas int32 `json:"runningReplicas"`
+	RunningReplicas int32 `json:"runningReplicas,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -70,6 +82,10 @@ type NodePoolList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []NodePool `json:"items"`
+}
+
+func (s *NodePoolList) GetItems() []*NodePool {
+	return functional.MapFn(ptr.To, s.Items)
 }
 
 type NodePoolSpec struct {
@@ -105,4 +121,18 @@ type EmbeddedNodePoolSpec struct {
 	Image                      *RedpandaImage      `json:"image,omitempty"`
 	SidecarImage               *RedpandaImage      `json:"sidecarImage,omitempty"`
 	InitContainerImage         *InitContainerImage `json:"initContainerImage,omitempty"`
+}
+
+func MinimalNodePoolSpec(cluster *Redpanda) NodePoolSpec {
+	return NodePoolSpec{
+		ClusterRef: ClusterRef{
+			Name: cluster.Name,
+		},
+		EmbeddedNodePoolSpec: EmbeddedNodePoolSpec{
+			Replicas: ptr.To(int32(1)),
+			Image: &RedpandaImage{
+				Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
+			},
+		},
+	}
 }

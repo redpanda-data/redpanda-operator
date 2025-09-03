@@ -1579,7 +1579,7 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]__ |  |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Bound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Deployed] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
 |===
 
 

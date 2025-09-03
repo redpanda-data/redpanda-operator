@@ -16,7 +16,14 @@ spec:
     singular: nodepool
   scope: Namespaced
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Bound")].status
+      name: Bound
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].status
+      name: Deployed
+      type: string
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         properties:
@@ -4193,6 +4200,28 @@ spec:
             - clusterRef
             type: object
           status:
+            default:
+              conditions:
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Bound
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Deployed
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Quiesced
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Stable
             description: NodePoolStatus defines the observed state of any node pools
               tied to this cluster
             properties:
@@ -4302,15 +4331,6 @@ spec:
                   their node pool definitions.
                 format: int32
                 type: integer
-            required:
-            - condemnedReplicas
-            - desiredReplicas
-            - name
-            - outOfDateReplicas
-            - readyReplicas
-            - replicas
-            - runningReplicas
-            - upToDateReplicas
             type: object
         type: object
     served: true

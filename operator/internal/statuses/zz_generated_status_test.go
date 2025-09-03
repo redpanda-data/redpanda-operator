@@ -420,3 +420,223 @@ func TestCluster(t *testing.T) {
 		})
 	}
 }
+
+type setNodePoolFunc func(status *NodePoolStatus)
+
+func TestNodePool(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct {
+		condition string
+		reason    string
+		expected  metav1.ConditionStatus
+		setFn     setNodePoolFunc
+	}{
+		"Bound/Bound": {
+			condition: NodePoolBound,
+			reason:    string(NodePoolBoundReasonBound),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+		},
+		"Bound/NotBound": {
+			condition: NodePoolBound,
+			reason:    string(NodePoolBoundReasonNotBound),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonNotBound, "reason") },
+		},
+		"Bound/Error": {
+			condition: NodePoolBound,
+			reason:    string(NodePoolBoundReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonError, "reason") },
+		},
+		"Bound/TerminalError": {
+			condition: NodePoolBound,
+			reason:    string(NodePoolBoundReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonTerminalError, "reason") },
+		},
+		"Deployed/Deployed": {
+			condition: NodePoolDeployed,
+			reason:    string(NodePoolDeployedReasonDeployed),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+		},
+		"Deployed/Scaling": {
+			condition: NodePoolDeployed,
+			reason:    string(NodePoolDeployedReasonScaling),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonScaling, "reason") },
+		},
+		"Deployed/NotDeployed": {
+			condition: NodePoolDeployed,
+			reason:    string(NodePoolDeployedReasonNotDeployed),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonNotDeployed, "reason") },
+		},
+		"Deployed/Error": {
+			condition: NodePoolDeployed,
+			reason:    string(NodePoolDeployedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonError, "reason") },
+		},
+		"Deployed/TerminalError": {
+			condition: NodePoolDeployed,
+			reason:    string(NodePoolDeployedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewNodePool()
+
+			assertNoCondition(t, tt.condition, status.getConditions(0))
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
+		})
+	}
+
+	// final conditions tests
+	for name, conditionReason := range map[string]struct {
+		condition   string
+		trueReason  string
+		falseReason string
+	}{
+		"Quiesced": {
+			condition:   NodePoolQuiesced,
+			trueReason:  string(NodePoolQuiescedReasonQuiesced),
+			falseReason: string(NodePoolQuiescedReasonStillReconciling),
+		},
+	} {
+		conditionReason := conditionReason
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewNodePool()
+
+			// attempt to set all conditions one by one until they are all set
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetBound(NodePoolBoundReasonBound, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetDeployed(NodePoolDeployedReasonDeployed, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
+		})
+	}
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn   setNodePoolFunc
+		setConditionReasons []setNodePoolFunc
+	}{
+		"Transient Error: Error, Condition: Bound": {
+			setTransientErrFn: func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonError, "reason") },
+			setConditionReasons: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+			},
+		},
+		"Transient Error: Error, Condition: Deployed": {
+			setTransientErrFn: func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonError, "reason") },
+			setConditionReasons: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewNodePool()
+
+			assertConditionStatusReason(t, NodePoolQuiesced, metav1.ConditionFalse, string(NodePoolQuiescedReasonStillReconciling), status.getConditions(0))
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			assertConditionStatusReason(t, NodePoolQuiesced, metav1.ConditionFalse, string(NodePoolQuiescedReasonStillReconciling), status.getConditions(0))
+		})
+	}
+
+	// terminal error tests
+	for name, setFn := range map[string]setNodePoolFunc{
+		"Terminal Error: TerminalError, Condition: Bound":    func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: Deployed": func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewNodePool()
+
+			assertConditionStatusReason(t, NodePoolQuiesced, metav1.ConditionFalse, string(NodePoolQuiescedReasonStillReconciling), status.getConditions(0))
+
+			setFn(status)
+
+			assertConditionStatusReason(t, NodePoolQuiesced, metav1.ConditionTrue, string(NodePoolQuiescedReasonQuiesced), status.getConditions(0))
+		})
+	}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition      string
+		trueReason     string
+		falseReason    string
+		falseCondition setNodePoolFunc
+		trueConditions []setNodePoolFunc
+	}{
+		"Rollup Conditions: Stable, All True": {
+			condition:   NodePoolStable,
+			trueReason:  string(NodePoolStableReasonStable),
+			falseReason: string(NodePoolStableReasonUnstable),
+			trueConditions: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Bound": {
+			condition:      NodePoolStable,
+			trueReason:     string(NodePoolStableReasonStable),
+			falseReason:    string(NodePoolStableReasonUnstable),
+			falseCondition: func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonTerminalError, "reason") },
+			trueConditions: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Deployed": {
+			condition:      NodePoolStable,
+			trueReason:     string(NodePoolStableReasonStable),
+			falseReason:    string(NodePoolStableReasonUnstable),
+			falseCondition: func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
+			trueConditions: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewNodePool()
+
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
+			}
+		})
+	}
+}

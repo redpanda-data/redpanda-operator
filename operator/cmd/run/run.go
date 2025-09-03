@@ -415,6 +415,7 @@ func Run(
 		LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 		ClientFactory:        factory,
 		CloudSecretsExpander: cloudExpander,
+		UseNodePools:         opts.enableV2NodepoolController,
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 		return err
