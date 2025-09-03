@@ -15,7 +15,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/name" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") "cluster.redpanda.com/broker" "true")) | toJson -}}
+{{- (dict "r" (dict "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/name" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -57,7 +57,7 @@
 {{- if (ne (toJson $pool.Statefulset.podTemplate.labels) "null") -}}
 {{- $statefulSetLabels = $pool.Statefulset.podTemplate.labels -}}
 {{- end -}}
-{{- $defaults := (dict "redpanda.com/poddisruptionbudget" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) -}}
+{{- $defaults := (dict "redpanda.com/poddisruptionbudget" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") "cluster.redpanda.com/broker" "true") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (merge (dict) $statefulSetLabels (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r") $defaults (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) | toJson -}}
 {{- break -}}

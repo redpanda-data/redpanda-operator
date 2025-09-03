@@ -43,7 +43,6 @@
     selector:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/broker: "true"
     sessionAffinity: None
     type: NodePort
   status:
@@ -71,7 +70,6 @@
       matchLabels:
         app.kubernetes.io/instance: basic-test
         app.kubernetes.io/name: redpanda
-        cluster.redpanda.com/broker: "true"
         redpanda.com/poddisruptionbudget: basic-test
   status:
     currentHealthy: 0
@@ -141,7 +139,6 @@
     selector:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/broker: "true"
     type: ClusterIP
   status:
     loadBalancer: {}
@@ -1050,7 +1047,6 @@
     selector:
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/broker: "true"
     sessionAffinity: None
     type: NodePort
   status:
@@ -1078,7 +1074,6 @@
       matchLabels:
         app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
-        cluster.redpanda.com/broker: "true"
         redpanda.com/poddisruptionbudget: nodepool-basic-test
   status:
     currentHealthy: 0
@@ -1148,7 +1143,6 @@
     selector:
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/broker: "true"
     type: ClusterIP
   status:
     loadBalancer: {}

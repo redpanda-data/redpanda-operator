@@ -24,7 +24,6 @@
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: basic-test
         app.kubernetes.io/name: redpanda
-        cluster.redpanda.com/broker: "true"
     serviceName: basic-test
     template:
       metadata:
@@ -385,7 +384,6 @@
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
-        cluster.redpanda.com/broker: "true"
     serviceName: nodepool-basic-test
     template:
       metadata:
@@ -745,7 +743,6 @@
         app.kubernetes.io/component: redpanda-basic-statefulset
         app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
-        cluster.redpanda.com/broker: "true"
     serviceName: nodepool-basic-test
     template:
       metadata:

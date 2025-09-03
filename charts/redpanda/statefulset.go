@@ -82,9 +82,8 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 // pod in a cluster, regardless of node pool.
 func ClusterPodLabelsSelector(state *RenderState) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/instance":  state.Release.Name,
-		"app.kubernetes.io/name":      Name(state),
-		"cluster.redpanda.com/broker": "true",
+		"app.kubernetes.io/instance": state.Release.Name,
+		"app.kubernetes.io/name":     Name(state),
 	}
 }
 
@@ -126,6 +125,9 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 
 	defaults := map[string]string{
 		"redpanda.com/poddisruptionbudget": Fullname(state),
+		// the following label should really be part of our selector for services, etc. but adding it
+		// currently breaks backwards compatibility with our services during upgrades
+		"cluster.redpanda.com/broker": "true",
 	}
 
 	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state))

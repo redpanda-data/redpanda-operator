@@ -109,6 +109,7 @@ func iCanUpgradeToTheLatestOperatorWithTheValues(ctx context.Context, t framewor
 	t.UpgradeLocalHelmChart(ctx, "../operator/chart", "redpanda-operator", helm.UpgradeOptions{
 		Namespace:  t.Namespace(),
 		ValuesFile: file.Name(),
+		NoWait:     true,
 	})
 }
 
