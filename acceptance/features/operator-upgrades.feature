@@ -1,4 +1,4 @@
-@operator:none
+@operator:none @vcluster
 Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 2.4.5
