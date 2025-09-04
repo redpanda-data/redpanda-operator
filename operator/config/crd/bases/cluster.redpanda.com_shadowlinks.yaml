@@ -40,94 +40,56 @@ spec:
             type: object
           spec:
             properties:
-              aclFilters:
-                items:
-                  properties:
-                    accessFilter:
+              consumerOffsetSyncOptions:
+                description: Consumer offset sync options
+                properties:
+                  enabled:
+                    description: Whether it's enabled
+                    type: boolean
+                  groupFilters:
+                    description: The filters
+                    items:
+                      description: A filter based on the name of a resource
                       properties:
-                        host:
-                          default: '*'
-                          type: string
-                        operation:
-                          description: ACLOperation specifies the type of operation
-                            for an ACL.
-                          type: string
-                        permissionType:
-                          description: ACLType specifies the type, either allow or
-                            deny of an ACL rule.
+                        filterType:
+                          description: |-
+                            Valid values:
+                            - include
+                            - exclude
                           enum:
-                          - allow
-                          - deny
+                          - include
+                          - exclude
                           type: string
-                        principal:
-                          default: '*'
-                          type: string
-                      required:
-                      - host
-                      - principal
-                      type: object
-                    resourceFilter:
-                      properties:
                         name:
                           default: '*'
+                          description: |-
+                            The resource name, or "*"
+                            Note if the wildcar "*" is used it must be the _only_ character
+                            and `patternType` must be `literal`
                           type: string
                         patternType:
-                          description: PatternType specifies the type of pattern applied
-                            for ACL resource matching.
+                          default: literal
+                          description: |-
+                            Default value is literal. Valid values:
+                            - literal
+                            - prefixed
                           enum:
                           - literal
                           - prefixed
                           type: string
-                        resourceType:
-                          description: ResourceType specifies the type of resource
-                            an ACL is applied to.
-                          enum:
-                          - topic
-                          - group
-                          - cluster
-                          - transactionalId
-                          type: string
                       required:
+                      - filterType
                       - name
                       type: object
-                  required:
-                  - accessFilter
-                  - resourceFilter
-                  type: object
-                type: array
-              configs:
+                    type: array
+                  interval:
+                    default: 30
+                    description: |-
+                      Sync interval
+                      If 0 provided, defaults to 30 seconds
+                    format: int64
+                    type: integer
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
-              consumerGroupFilters:
-                items:
-                  properties:
-                    filterType:
-                      description: |-
-                        Valid values:
-                        - include
-                        - exclude
-                      enum:
-                      - include
-                      - exclude
-                      type: string
-                    name:
-                      default: '*'
-                      type: string
-                    patternType:
-                      default: literal
-                      description: |-
-                        Default value is literal. Valid values:
-                        - literal
-                        - prefixed
-                      enum:
-                      - literal
-                      - prefixed
-                      type: string
-                  required:
-                  - filterType
-                  - name
-                  type: object
-                type: array
               destinationCluster:
                 description: ClusterSource defines how to connect to a particular
                   Redpanda cluster.
@@ -607,79 +569,154 @@ spec:
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
-              linkMode:
-                default: source
-                enum:
-                - destination
-                - source
-                type: string
-              mirrorTopicOptions:
+              securitySyncOptions:
+                description: Security settings sync options
                 properties:
-                  autoCreateTopics:
-                    properties:
-                      enabled:
-                        default: false
-                        type: boolean
-                      topicFilters:
-                        items:
+                  aclFilters:
+                    description: ACL filters
+                    items:
+                      description: A filter for ACLs
+                      properties:
+                        accessFilter:
+                          description: The access filter
                           properties:
-                            filterType:
+                            host:
                               description: |-
-                                Valid values:
-                                - include
-                                - exclude
-                              enum:
-                              - include
-                              - exclude
+                                The host to match.  If not set, will default to match all hosts
+                                with the specified `operation` and `permissionType`. Note that
+                                the asterisk `*` is literal and matches hosts that are set to `*`
                               type: string
+                            operation:
+                              description: The ACL operation to match
+                              type: string
+                            permissionType:
+                              description: The permission type
+                              enum:
+                              - allow
+                              - deny
+                              type: string
+                            principal:
+                              default: '*'
+                              description: |-
+                                The name of the principal, if not set will default to match
+                                all principals with the specified `operation` and `permissionType`
+                              type: string
+                          required:
+                          - principal
+                          type: object
+                        resourceFilter:
+                          description: The resource filter
+                          properties:
                             name:
                               default: '*'
                               type: string
                             patternType:
-                              default: literal
-                              description: |-
-                                Default value is literal. Valid values:
-                                - literal
-                                - prefixed
+                              description: PatternType specifies the type of pattern
+                                applied for ACL resource matching.
                               enum:
                               - literal
                               - prefixed
                               type: string
+                            resourceType:
+                              description: ResourceType specifies the type of resource
+                                an ACL is applied to.
+                              enum:
+                              - topic
+                              - group
+                              - cluster
+                              - transactionalId
+                              type: string
                           required:
-                          - filterType
+                          - name
                           type: object
-                        type: array
-                    type: object
-                  prefix:
-                    type: string
-                required:
-                - autoCreateTopics
-                type: object
-              mirrorTopics:
-                items:
-                  properties:
-                    configs:
+                      required:
+                      - accessFilter
+                      - resourceFilter
                       type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    name:
-                      type: string
-                    replicationFactor:
-                      format: int32
-                      type: integer
-                    sourceTopicName:
-                      type: string
-                    state:
-                      default: active
-                      enum:
-                      - pause
-                      - promote
-                      - failover
-                      - active
-                      type: string
-                  required:
-                  - name
-                  type: object
-                type: array
+                    type: array
+                  enabled:
+                    description: Whether or not it's enabled
+                    type: boolean
+                  interval:
+                    default: 30
+                    description: |-
+                      Sync interval
+                      If 0 provided, defaults to 30 seconds
+                    format: int64
+                    type: integer
+                  roleFilters:
+                    description: Role filters
+                    items:
+                      description: A filter based on the name of a resource
+                      properties:
+                        filterType:
+                          description: |-
+                            Valid values:
+                            - include
+                            - exclude
+                          enum:
+                          - include
+                          - exclude
+                          type: string
+                        name:
+                          default: '*'
+                          description: |-
+                            The resource name, or "*"
+                            Note if the wildcar "*" is used it must be the _only_ character
+                            and `patternType` must be `literal`
+                          type: string
+                        patternType:
+                          default: literal
+                          description: |-
+                            Default value is literal. Valid values:
+                            - literal
+                            - prefixed
+                          enum:
+                          - literal
+                          - prefixed
+                          type: string
+                      required:
+                      - filterType
+                      - name
+                      type: object
+                    type: array
+                  scramCredFilters:
+                    description: SCRAM credential filters
+                    items:
+                      description: A filter based on the name of a resource
+                      properties:
+                        filterType:
+                          description: |-
+                            Valid values:
+                            - include
+                            - exclude
+                          enum:
+                          - include
+                          - exclude
+                          type: string
+                        name:
+                          default: '*'
+                          description: |-
+                            The resource name, or "*"
+                            Note if the wildcar "*" is used it must be the _only_ character
+                            and `patternType` must be `literal`
+                          type: string
+                        patternType:
+                          default: literal
+                          description: |-
+                            Default value is literal. Valid values:
+                            - literal
+                            - prefixed
+                          enum:
+                          - literal
+                          - prefixed
+                          type: string
+                      required:
+                      - filterType
+                      - name
+                      type: object
+                    type: array
+                type: object
               sourceCluster:
                 description: ClusterSource defines how to connect to a particular
                   Redpanda cluster.
@@ -1159,10 +1196,63 @@ spec:
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
+              topicMetadataSyncOptions:
+                description: Topic metadata sync options
+                properties:
+                  interval:
+                    default: 30
+                    description: |-
+                      How often to sync metadata
+                      If 0 provided, defaults to 30 seconds
+                    format: int64
+                    type: integer
+                  shadowedTopicProperties:
+                    description: |-
+                      Additional topic properties to shadow
+                      Partition count, `max.message.bytes`, `cleanup.policy` and
+                      `timestamp.type` will always be replicated
+                    items:
+                      type: string
+                    type: array
+                  topicFilters:
+                    description: The topic filters to use
+                    items:
+                      description: A filter based on the name of a resource
+                      properties:
+                        filterType:
+                          description: |-
+                            Valid values:
+                            - include
+                            - exclude
+                          enum:
+                          - include
+                          - exclude
+                          type: string
+                        name:
+                          default: '*'
+                          description: |-
+                            The resource name, or "*"
+                            Note if the wildcar "*" is used it must be the _only_ character
+                            and `patternType` must be `literal`
+                          type: string
+                        patternType:
+                          default: literal
+                          description: |-
+                            Default value is literal. Valid values:
+                            - literal
+                            - prefixed
+                          enum:
+                          - literal
+                          - prefixed
+                          type: string
+                      required:
+                      - filterType
+                      - name
+                      type: object
+                    type: array
+                type: object
             required:
             - destinationCluster
-            - linkMode
-            - mirrorTopicOptions
             - sourceCluster
             type: object
           status:
@@ -1224,6 +1314,74 @@ spec:
                   - reason
                   - status
                   - type
+                  type: object
+                type: array
+              shadowTopicStatuses:
+                description: Status of shadow topics
+                items:
+                  description: Status of a ShadowTopic
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    name:
+                      description: Name of the shadow topic
+                      type: string
+                    partitionInformation:
+                      description: List of partition information for the shadow topic
+                      items:
+                        description: Topic partition information
+                        properties:
+                          highWatermark:
+                            description: Shadowed partition's HWM
+                            format: int64
+                            type: integer
+                          partitionId:
+                            description: Partition ID
+                            format: int64
+                            type: integer
+                          sourceHighWatermark:
+                            description: Source partition's HWM
+                            format: int64
+                            type: integer
+                          sourceLastStableOffset:
+                            description: Source partition's LSO
+                            format: int64
+                            type: integer
+                        type: object
+                      type: array
+                    state:
+                      description: State of the shadow topic
+                      type: string
+                    topicId:
+                      description: Topic ID of the shadow topic
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  type: object
+                type: array
+              taskStatuses:
+                description: Statuses of the running tasks
+                items:
+                  properties:
+                    brokerId:
+                      description: The broker the task is running on
+                      format: int32
+                      type: integer
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    name:
+                      description: Name of the task
+                      type: string
+                    reason:
+                      description: Reason for task being in state
+                      type: string
+                    state:
+                      description: State of the task
+                      type: string
+                  required:
+                  - lastTransitionTime
                   type: object
                 type: array
             type: object

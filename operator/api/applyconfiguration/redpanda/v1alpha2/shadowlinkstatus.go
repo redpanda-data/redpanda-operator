@@ -18,13 +18,41 @@ import (
 // ShadowLinkStatusApplyConfiguration represents a declarative configuration of the ShadowLinkStatus type for use
 // with apply.
 type ShadowLinkStatusApplyConfiguration struct {
-	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	TaskStatuses        []ShadowLinkTaskStatusApplyConfiguration `json:"taskStatuses,omitempty"`
+	ShadowTopicStatuses []ShadowTopicStatusApplyConfiguration    `json:"shadowTopicStatuses,omitempty"`
+	Conditions          []v1.ConditionApplyConfiguration         `json:"conditions,omitempty"`
 }
 
 // ShadowLinkStatusApplyConfiguration constructs a declarative configuration of the ShadowLinkStatus type for use with
 // apply.
 func ShadowLinkStatus() *ShadowLinkStatusApplyConfiguration {
 	return &ShadowLinkStatusApplyConfiguration{}
+}
+
+// WithTaskStatuses adds the given value to the TaskStatuses field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the TaskStatuses field.
+func (b *ShadowLinkStatusApplyConfiguration) WithTaskStatuses(values ...*ShadowLinkTaskStatusApplyConfiguration) *ShadowLinkStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithTaskStatuses")
+		}
+		b.TaskStatuses = append(b.TaskStatuses, *values[i])
+	}
+	return b
+}
+
+// WithShadowTopicStatuses adds the given value to the ShadowTopicStatuses field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ShadowTopicStatuses field.
+func (b *ShadowLinkStatusApplyConfiguration) WithShadowTopicStatuses(values ...*ShadowTopicStatusApplyConfiguration) *ShadowLinkStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithShadowTopicStatuses")
+		}
+		b.ShadowTopicStatuses = append(b.ShadowTopicStatuses, *values[i])
+	}
+	return b
 }
 
 // WithConditions adds the given value to the Conditions field in the declarative configuration

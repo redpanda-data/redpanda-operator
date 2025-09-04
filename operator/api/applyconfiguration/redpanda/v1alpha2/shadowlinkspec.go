@@ -11,36 +11,20 @@
 
 package v1alpha2
 
-import (
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-)
-
 // ShadowLinkSpecApplyConfiguration represents a declarative configuration of the ShadowLinkSpec type for use
 // with apply.
 type ShadowLinkSpecApplyConfiguration struct {
-	LinkMode             *redpandav1alpha2.LinkMode              `json:"linkMode,omitempty"`
-	SourceCluster        *ClusterSourceApplyConfiguration        `json:"sourceCluster,omitempty"`
-	DestinationCluster   *ClusterSourceApplyConfiguration        `json:"destinationCluster,omitempty"`
-	ConsumerGroupFilters []ConsumerGroupFilterApplyConfiguration `json:"consumerGroupFilters,omitempty"`
-	ACLFilter            []ACLFilterApplyConfiguration           `json:"aclFilters,omitempty"`
-	Configs              *runtime.RawExtension                   `json:"configs,omitempty"`
-	MirrorTopics         []MirrorTopicApplyConfiguration         `json:"mirrorTopics,omitempty"`
-	MirrorTopicOptions   *MirrorTopicOptionsApplyConfiguration   `json:"mirrorTopicOptions,omitempty"`
+	SourceCluster             *ClusterSourceApplyConfiguration                         `json:"sourceCluster,omitempty"`
+	DestinationCluster        *ClusterSourceApplyConfiguration                         `json:"destinationCluster,omitempty"`
+	TopicMetadataSyncOptions  *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration    `json:"topicMetadataSyncOptions,omitempty"`
+	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration   `json:"consumerOffsetSyncOptions,omitempty"`
+	SecuritySyncOptions       *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration `json:"securitySyncOptions,omitempty"`
 }
 
 // ShadowLinkSpecApplyConfiguration constructs a declarative configuration of the ShadowLinkSpec type for use with
 // apply.
 func ShadowLinkSpec() *ShadowLinkSpecApplyConfiguration {
 	return &ShadowLinkSpecApplyConfiguration{}
-}
-
-// WithLinkMode sets the LinkMode field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the LinkMode field is set to the value of the last call.
-func (b *ShadowLinkSpecApplyConfiguration) WithLinkMode(value redpandav1alpha2.LinkMode) *ShadowLinkSpecApplyConfiguration {
-	b.LinkMode = &value
-	return b
 }
 
 // WithSourceCluster sets the SourceCluster field in the declarative configuration to the given value
@@ -59,57 +43,26 @@ func (b *ShadowLinkSpecApplyConfiguration) WithDestinationCluster(value *Cluster
 	return b
 }
 
-// WithConsumerGroupFilters adds the given value to the ConsumerGroupFilters field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ConsumerGroupFilters field.
-func (b *ShadowLinkSpecApplyConfiguration) WithConsumerGroupFilters(values ...*ConsumerGroupFilterApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithConsumerGroupFilters")
-		}
-		b.ConsumerGroupFilters = append(b.ConsumerGroupFilters, *values[i])
-	}
-	return b
-}
-
-// WithACLFilter adds the given value to the ACLFilter field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ACLFilter field.
-func (b *ShadowLinkSpecApplyConfiguration) WithACLFilter(values ...*ACLFilterApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithACLFilter")
-		}
-		b.ACLFilter = append(b.ACLFilter, *values[i])
-	}
-	return b
-}
-
-// WithConfigs sets the Configs field in the declarative configuration to the given value
+// WithTopicMetadataSyncOptions sets the TopicMetadataSyncOptions field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Configs field is set to the value of the last call.
-func (b *ShadowLinkSpecApplyConfiguration) WithConfigs(value runtime.RawExtension) *ShadowLinkSpecApplyConfiguration {
-	b.Configs = &value
+// If called multiple times, the TopicMetadataSyncOptions field is set to the value of the last call.
+func (b *ShadowLinkSpecApplyConfiguration) WithTopicMetadataSyncOptions(value *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
+	b.TopicMetadataSyncOptions = value
 	return b
 }
 
-// WithMirrorTopics adds the given value to the MirrorTopics field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the MirrorTopics field.
-func (b *ShadowLinkSpecApplyConfiguration) WithMirrorTopics(values ...*MirrorTopicApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithMirrorTopics")
-		}
-		b.MirrorTopics = append(b.MirrorTopics, *values[i])
-	}
-	return b
-}
-
-// WithMirrorTopicOptions sets the MirrorTopicOptions field in the declarative configuration to the given value
+// WithConsumerOffsetSyncOptions sets the ConsumerOffsetSyncOptions field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the MirrorTopicOptions field is set to the value of the last call.
-func (b *ShadowLinkSpecApplyConfiguration) WithMirrorTopicOptions(value *MirrorTopicOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
-	b.MirrorTopicOptions = value
+// If called multiple times, the ConsumerOffsetSyncOptions field is set to the value of the last call.
+func (b *ShadowLinkSpecApplyConfiguration) WithConsumerOffsetSyncOptions(value *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
+	b.ConsumerOffsetSyncOptions = value
+	return b
+}
+
+// WithSecuritySyncOptions sets the SecuritySyncOptions field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SecuritySyncOptions field is set to the value of the last call.
+func (b *ShadowLinkSpecApplyConfiguration) WithSecuritySyncOptions(value *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
+	b.SecuritySyncOptions = value
 	return b
 }
