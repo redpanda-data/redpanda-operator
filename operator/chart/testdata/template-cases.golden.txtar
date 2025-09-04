@@ -37636,7 +37636,6 @@ spec:
         - --leader-elect
         - --log-level=Y01SjB
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=WHh
         - --configurator-base-image=AzmZ3dTJs
@@ -38484,7 +38483,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=H1NDG8
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=K
@@ -39347,7 +39345,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=SQz
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
@@ -40221,7 +40218,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=z1LU
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
@@ -41099,7 +41095,6 @@ spec:
         - --leader-elect
         - --log-level=yVlZuzf
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=NnFVx
         - --configurator-base-image=zCQ
@@ -41970,7 +41965,6 @@ spec:
         - --leader-elect
         - --log-level=caaG
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -42340,7 +42334,6 @@ spec:
         - --leader-elect
         - --log-level=smF3
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -42703,7 +42696,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Co
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Jug9nLx
@@ -43663,7 +43655,6 @@ spec:
         - --leader-elect
         - --log-level=vMA
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=vnJvYTYU8
         - --configurator-base-image=idWmcYq6IZQH
@@ -44539,7 +44530,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=d
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
@@ -45417,7 +45407,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OzauffS1XLt
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=9mw
@@ -46307,7 +46296,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=pN6bqJZQR
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=GfYtT
@@ -47213,7 +47201,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=7mzP0
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
@@ -48171,7 +48158,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=6i5
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=vJ7ET
@@ -49162,7 +49148,6 @@ spec:
         - --leader-elect
         - --log-level=irlLOaCak6uG
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=DF517x
         - --configurator-base-image=SCN
@@ -49636,7 +49621,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=x4gaS
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=1
@@ -50151,7 +50135,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=LwcaR
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=47nK
@@ -51179,7 +51162,6 @@ spec:
         - --leader-elect
         - --log-level=tI
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=boxAxRu
         - --configurator-base-image=kBJV23
@@ -51767,7 +51749,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=4J4TVSNI8I
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=HXXm
@@ -52375,7 +52356,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=CpVihaT
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Vk
@@ -53635,7 +53615,6 @@ spec:
         - --leader-elect
         - --log-level=Kp
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=m0a
         - --configurator-base-image=h9
@@ -54886,7 +54865,6 @@ spec:
         - --leader-elect
         - --log-level=VNcVbeobGuK
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=TPaa
         - --configurator-base-image=Zme9w8o
@@ -55670,7 +55648,6 @@ spec:
         - --leader-elect
         - --log-level=OdA
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=6E02z0oYQUL
         - --configurator-base-image=Tzah
@@ -56397,7 +56374,6 @@ spec:
         - --leader-elect
         - --log-level=dtDojkH
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3ncj
         - --configurator-base-image=Ozfq
@@ -57102,7 +57078,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=51BriCol
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=8YPjvr
@@ -58232,7 +58207,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=HTKj8qv
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=hk
@@ -59689,7 +59663,6 @@ spec:
         - --leader-elect
         - --log-level=VC4
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=McKTb81
         - --configurator-base-image=D43Nf
@@ -60941,7 +60914,6 @@ spec:
         - --leader-elect
         - --log-level=
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Q9Q
         - --configurator-base-image=M2Q
@@ -62152,7 +62124,6 @@ spec:
         - --leader-elect
         - --log-level=XrGv
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=EQ6C
         - --configurator-base-image=tczCHr
@@ -62859,7 +62830,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=o7
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=w8Y59
@@ -63878,7 +63848,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=I
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=ZpYBKn
@@ -65204,7 +65173,6 @@ spec:
         - --leader-elect
         - --log-level=fhg
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=okj1Bqm1LHE
         - --configurator-base-image=YYLGC7
@@ -65780,7 +65748,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=E3A4
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=H0aN
@@ -66855,7 +66822,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=p7w
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3BE
@@ -68174,7 +68140,6 @@ spec:
         - --leader-elect
         - --log-level=grDHZkPyKot
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=y8Skx9
         - --configurator-base-image=n74Ca
@@ -69168,7 +69133,6 @@ spec:
         - --leader-elect
         - --log-level=Yd
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=bBlM
         - --configurator-base-image=ftKlY
@@ -69852,7 +69816,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Ufou7z
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=wp
@@ -70837,7 +70800,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=pB9UJO8ZqB
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=1XQEc73
@@ -71977,7 +71939,6 @@ spec:
         - --leader-elect
         - --log-level=tYc
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=y3ROS
         - --configurator-base-image=I
@@ -72670,7 +72631,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=AKFy
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=u
@@ -73887,7 +73847,6 @@ spec:
         - --leader-elect
         - --log-level=PcP
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=tr
         - --configurator-base-image=MxYHsvk3O
@@ -75064,7 +75023,6 @@ spec:
         - --leader-elect
         - --log-level=s63h
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=lWf3R8lv
         - --configurator-base-image=zZLbhNE
@@ -75844,7 +75802,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=qZr
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=EyNNr90u1
@@ -76881,7 +76838,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=hj
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=wA5XUe
@@ -77959,7 +77915,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=cU5MS1z
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=PQfV4
@@ -79182,7 +79137,6 @@ spec:
         - --leader-elect
         - --log-level=sbpkgy
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=ob8Ckc
         - --configurator-base-image=iqTYWQsJpRK
@@ -79831,7 +79785,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=TmP83vnBu
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v
@@ -81078,7 +81031,6 @@ spec:
         - --leader-elect
         - --log-level=G6sQWEEyqb
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3EcYA
         - --configurator-base-image=HoNUZ89Keda
@@ -81852,7 +81804,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=tqqBMvp3V
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=P
@@ -82984,7 +82935,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OIXyC
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=HAScR
@@ -88417,7 +88367,6 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
-        - --webhook-enabled=true
         - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1

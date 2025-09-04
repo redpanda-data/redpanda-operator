@@ -320,7 +320,6 @@ func operatorArguments(dot *helmette.Dot) []string {
 
 	if values.Webhook.Enabled {
 		args = append(args,
-			"--webhook-enabled=true",
 			fmt.Sprintf("--webhook-cert-path=%s", webhookCertificatePath),
 		)
 	}
