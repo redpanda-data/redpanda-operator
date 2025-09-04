@@ -77,7 +77,7 @@ func Test(t TestingT) context.Context {
 			log.FromContext(ctx).GetSink(),
 			log.ContextFree(testr.NewWithInterface(t, testr.Options{}).GetSink()),
 		},
-	}).V(log.TraceLevel))
+	}))
 
 	t.Cleanup(func() {
 		if t.Failed() {
