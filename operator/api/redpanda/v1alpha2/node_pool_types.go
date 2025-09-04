@@ -133,6 +133,35 @@ func MinimalNodePoolSpec(cluster *Redpanda) NodePoolSpec {
 			Image: &RedpandaImage{
 				Repository: ptr.To("redpandadata/redpanda"), // Use docker.io to make caching easier and to not inflate our own metrics.
 			},
+			// PodTemplate: &PodTemplate{
+			// 	Spec: &PodSpecApplyConfiguration{
+			// 		PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+			// 			Affinity: &applycorev1.AffinityApplyConfiguration{
+			// 				PodAntiAffinity: &applycorev1.PodAntiAffinityApplyConfiguration{
+			// 					PreferredDuringSchedulingIgnoredDuringExecution: []applycorev1.WeightedPodAffinityTermApplyConfiguration{
+			// 						{
+			// 							// the default values for weight and topologyKey are taken from the v5 values.yaml
+			// 							Weight: ptr.To(int32(ptr.Deref(spec.Weight, 100))),
+			// 							PodAffinityTerm: &applycorev1.PodAffinityTermApplyConfiguration{
+			// 								TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
+			// 								LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
+			// 									MatchLabels: redpanda.StatefulSetPodLabelsSelector(state, redpanda.Pool{Statefulset: state.Values.Statefulset}),
+			// 								},
+			// 							},
+			// 						},
+			// 					},
+			// 				},
+			// 			},
+			// 		},
+			// 	},
+			// },
+			// PodAntiAffinity: &PodAntiAffinity{
+			// 	// Disable the default "hard" affinity so we can
+			// 	// schedule multiple redpanda Pods on a single
+			// 	// kubernetes node. Useful for tests that require > 3
+			// 	// brokers.
+			// 	Type: ptr.To("soft"),
+			// },
 		},
 	}
 }

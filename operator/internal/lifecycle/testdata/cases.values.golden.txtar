@@ -487,8 +487,8 @@ pools:
         run:
         - all
       image:
-        repository: redpandadata/redpanda-operator
-        tag: v25.2.1
+        repository: localhost/test
+        tag: dev
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s

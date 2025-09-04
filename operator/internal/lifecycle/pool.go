@@ -82,6 +82,15 @@ func (p *PoolTracker) AnyReady() bool {
 	return false
 }
 
+func (p *PoolTracker) AllZero() bool {
+	for _, pool := range p.existingPools {
+		if ptr.Deref(pool.set.Spec.Replicas, 0) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
 func (p *PoolTracker) PoolStatuses() []PoolStatus {
 	sets := []PoolStatus{}

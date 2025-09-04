@@ -246,7 +246,7 @@ func (s *{{ $status.GoName }}) get{{ $condition.Name }}(conditions []metav1.Cond
 
 // HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
 // within the given time period.
-func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
+func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration, noMatch ...string) bool {
     condition := apimeta.FindStatusCondition(GetConditions(o), string(conditionType))
     if condition == nil {
         return false
@@ -254,6 +254,11 @@ func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav
 
 	recent := time.Since(condition.LastTransitionTime.Time) > period
     matchedCondition := condition.Status == value
+    for _, except := range noMatch {
+        if condition.Message == except {
+            return false
+        }
+    }
     generationChanged := condition.ObservedGeneration != 0 && condition.ObservedGeneration < o.GetGeneration()
 
     return matchedCondition && !(generationChanged || recent)

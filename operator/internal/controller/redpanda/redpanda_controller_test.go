@@ -807,6 +807,67 @@ func (s *RedpandaControllerSuite) TestNodePools() {
 	s.deleteAndWait(pool)
 }
 
+func (s *RedpandaControllerSuite) TestNodePoolsBlueGreen() {
+	isStable := func(checkStable bool) func(obj client.Object, err error) (bool, error) {
+		return func(obj client.Object, err error) (bool, error) {
+			if err != nil {
+				return false, err
+			}
+			var conditions []metav1.Condition
+			var stable string
+			switch typ := obj.(type) {
+			case *redpandav1alpha2.Redpanda:
+				conditions = typ.Status.Conditions
+				stable = statuses.ClusterStable
+			case *redpandav1alpha2.NodePool:
+				conditions = typ.Status.Conditions
+				stable = statuses.NodePoolStable
+			default:
+				return false, errors.New("unsupported type")
+			}
+			status := metav1.ConditionTrue
+			if !checkStable {
+				status = metav1.ConditionFalse
+			}
+			for _, cond := range conditions {
+				if cond.Type == stable {
+					return cond.ObservedGeneration == obj.GetGeneration() && cond.Status == status, nil
+				}
+			}
+			return false, nil
+		}
+	}
+
+	rp := s.minimalRP()
+
+	// set the default pool's replicas to 0
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(0)
+
+	// start with one broker and no nodepools
+	s.applyAndWaitFor(isStable(true), rp)
+
+	// add a nodepool with 3 brokers.
+	bluePool := s.minimalNodePool(rp)
+	bluePool.Spec.Replicas = ptr.To(int32(3))
+	s.applyAndWaitFor(isStable(true), bluePool)
+	s.waitFor(rp, isStable(true))
+
+	greenPool := s.minimalNodePool(rp)
+	greenPool.Spec.Replicas = ptr.To(int32(0))
+	s.applyAndWaitFor(isStable(true), greenPool)
+	s.waitFor(rp, isStable(true))
+
+	greenPool.Spec.Replicas = ptr.To(int32(3))
+	s.applyAndWaitFor(isStable(true), greenPool)
+	s.waitFor(rp, isStable(true))
+
+	bluePool.Spec.Replicas = ptr.To(int32(0))
+	s.applyAndWaitFor(isStable(true), bluePool)
+	s.waitFor(rp, isStable(true))
+
+	s.deleteAndWait(rp)
+}
+
 func (s *RedpandaControllerSuite) SetupTest() {
 	prev := s.ctx
 	s.ctx = trace.Test(s.T())

@@ -95,7 +95,8 @@ func ClusterPodLabelsSelector(state *RenderState) map[string]string {
 func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
-	if state.StatefulSetSelector != nil {
+	// NB: the name check means we only memoize the default StatefulSet selector
+	if state.StatefulSetSelector != nil && pool.Name == "" {
 		return state.StatefulSetSelector
 	}
 
@@ -117,7 +118,8 @@ func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]stri
 // StatefulSetPodLabels returns the label that includes label selector for the Redpanda PodTemplate.
 // If this helm release is an upgrade, the existing statefulset's pod template labels will be used as it's an immutable field.
 func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
-	if state.StatefulSetPodLabels != nil {
+	// NB: the name check means we only memoize the default StatefulSet labels
+	if state.StatefulSetPodLabels != nil && pool.Name == "" {
 		return state.StatefulSetPodLabels
 	}
 
@@ -923,7 +925,9 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
-			Labels:    helmette.Merge(FullLabels(state), poolLabels),
+			Labels: helmette.Merge(map[string]string{
+				"app.kubernetes.io/component": fmt.Sprintf("%s%s", Name(state), pool.Suffix()),
+			}, poolLabels, FullLabels(state)),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{

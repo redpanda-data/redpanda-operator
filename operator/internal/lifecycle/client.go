@@ -298,7 +298,6 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			if ref == nil || ref.UID == statefulSet.GetUID() {
 				ownedRevisions = append(ownedRevisions, &revisions.Items[i])
 			}
-
 		}
 
 		pods, err := kube.List[corev1.PodList](ctx, r.ctl, client.MatchingLabelsSelector{
