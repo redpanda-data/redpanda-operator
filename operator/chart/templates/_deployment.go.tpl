@@ -151,7 +151,7 @@
 {{- $values := $dot.Values.AsMap -}}
 {{- $args := (list "--health-probe-bind-address=:8081" "--metrics-bind-address=:8443" "--leader-elect" (printf "--log-level=%s" $values.logLevel) (printf "--webhook-enabled=%t" $values.webhook.enabled)) -}}
 {{- if $values.webhook.enabled -}}
-{{- $args = (concat (default (list) $args) (list "--webhook-enabled=true" (printf "--webhook-cert-path=%s" "/tmp/k8s-webhook-server/serving-certs"))) -}}
+{{- $args = (concat (default (list) $args) (list (printf "--webhook-cert-path=%s" "/tmp/k8s-webhook-server/serving-certs"))) -}}
 {{- end -}}
 {{- if $values.vectorizedControllers.enabled -}}
 {{- $args = (concat (default (list) $args) (list "--enable-vectorized-controllers")) -}}
