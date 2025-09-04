@@ -95,7 +95,7 @@ func MutatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.Mu
 			Name:      fmt.Sprintf("%s-mutating-webhook-configuration", Fullname(dot)),
 			Namespace: dot.Release.Namespace,
 			Annotations: map[string]string{
-				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/redpanda-serving-cert", dot.Release.Namespace),
+				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/%s", dot.Release.Namespace, CertificateName(dot)),
 			},
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
@@ -145,7 +145,7 @@ func ValidatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.
 			Name:      fmt.Sprintf("%s-validating-webhook-configuration", Fullname(dot)),
 			Namespace: dot.Release.Namespace,
 			Annotations: map[string]string{
-				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/redpanda-serving-cert", dot.Release.Namespace),
+				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/%s", dot.Release.Namespace, CertificateName(dot)),
 			},
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
