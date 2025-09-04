@@ -46,6 +46,16 @@ type ClusterReferencingObject interface {
 	GetClusterSource() *ClusterSource
 }
 
+// RemoteClusterReferencingObject is an interface for an object
+// that specifies connection parameters to a Redpanda cluster,
+// (both the Kafka and Admin APIs) in the form of an ClusterRef
+// somewhere in its CRD definition.
+// +kubebuilder:object:generate=false
+type RemoteClusterReferencingObject interface {
+	client.Object
+	GetRemoteClusterSource() *ClusterSource
+}
+
 // AuthorizedObject is an interface for an object
 // that specifies ACLs, currently only Users are supported,
 // but this can also be used for groups.

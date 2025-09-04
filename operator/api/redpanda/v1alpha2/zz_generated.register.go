@@ -60,6 +60,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&RedpandaList{},
 		&Schema{},
 		&SchemaList{},
+		&ShadowLink{},
+		&ShadowLinkList{},
 		&Topic{},
 		&TopicList{},
 		&User{},

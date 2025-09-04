@@ -51,6 +51,14 @@ func indexByClusterSource(o client.Object) []string {
 		clusters = append(clusters, cluster.String())
 	}
 
+	if remoteClusterReferencingObject, ok := o.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
+		remoteSource := remoteClusterReferencingObject.GetRemoteClusterSource()
+		if remoteSource != nil && remoteSource.ClusterRef != nil {
+			cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: remoteSource.ClusterRef.Name}
+			clusters = append(clusters, cluster.String())
+		}
+	}
+
 	return clusters
 }
 
