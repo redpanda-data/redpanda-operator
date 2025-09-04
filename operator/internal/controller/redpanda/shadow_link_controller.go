@@ -11,6 +11,7 @@ package redpanda
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -52,8 +54,8 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 		}
 
 		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.ShadowLinkStatus().
-			WithShadowTopicStatuses(redpandav1alpha2.ShadowTopicStatusesToConfigs(shadowLink.Status.ShadowTopicStatuses, topics)...).
-			WithTaskStatuses(redpandav1alpha2.ShadowLinkTaskStatusesToConfigs(shadowLink.Status.TaskStatuses, tasks)...).
+			WithShadowTopicStatuses(ShadowTopicStatusesToConfigs(shadowLink.Status.ShadowTopicStatuses, topics)...).
+			WithTaskStatuses(ShadowLinkTaskStatusesToConfigs(shadowLink.Status.TaskStatuses, tasks)...).
 			WithConditions(utils.StatusConditionConfigs(shadowLink.Status.Conditions, shadowLink.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -109,4 +111,112 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
 	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+}
+
+func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.ShadowLinkTaskStatus) []*redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration {
+	now := metav1.Now()
+	tasks := []*redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration{}
+
+	findStatus := func(status redpandav1alpha2.ShadowLinkTaskStatus) *redpandav1alpha2.ShadowLinkTaskStatus {
+		for _, o := range existing {
+			if o.Name == status.Name {
+				return &o
+			}
+		}
+		return nil
+	}
+
+	for _, task := range updated {
+		existingTask := findStatus(task)
+		if existingTask == nil {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.State != task.State {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.Reason != task.Reason {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.BrokerID != task.BrokerID {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		tasks = append(tasks, shadowLinkTaskStatusToConfig(existingTask.LastTransitionTime, *existingTask))
+	}
+
+	return tasks
+}
+
+func shadowLinkTaskStatusToConfig(now metav1.Time, task redpandav1alpha2.ShadowLinkTaskStatus) *redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration {
+	return redpandav1alpha2ac.ShadowLinkTaskStatus().
+		WithName(task.Name).
+		WithState(task.State).
+		WithReason(task.Reason).
+		WithBrokerID(task.BrokerID).
+		WithLastTransitionTime(now)
+}
+
+func ShadowTopicStatusesToConfigs(existing, updated []redpandav1alpha2.ShadowTopicStatus) []*redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration {
+	now := metav1.Now()
+	topics := []*redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration{}
+
+	findStatus := func(status redpandav1alpha2.ShadowTopicStatus) *redpandav1alpha2.ShadowTopicStatus {
+		for _, o := range existing {
+			if o.Name == status.Name && o.TopicID == status.TopicID {
+				return &o
+			}
+		}
+		return nil
+	}
+
+OUTER:
+	for _, topic := range updated {
+		existingTopic := findStatus(topic)
+		if existingTopic == nil {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		if existingTopic.State != topic.State {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		if len(existingTopic.PartitionInformation) != len(topic.PartitionInformation) {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		for i, updatedPartition := range topic.PartitionInformation {
+			if !reflect.DeepEqual(updatedPartition, existingTopic.PartitionInformation[i]) {
+				continue OUTER
+			}
+		}
+
+		topics = append(topics, shadowTopicStatusToConfig(existingTopic.LastTransitionTime, *existingTopic))
+	}
+
+	return topics
+}
+
+func shadowTopicStatusToConfig(now metav1.Time, topic redpandav1alpha2.ShadowTopicStatus) *redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration {
+	return redpandav1alpha2ac.ShadowTopicStatus().
+		WithName(topic.Name).
+		WithTopicID(topic.TopicID).
+		WithState(topic.State).
+		WithPartitionInformation(functional.MapFn(func(info redpandav1alpha2.TopicPartitionInformation) *redpandav1alpha2ac.TopicPartitionInformationApplyConfiguration {
+			return redpandav1alpha2ac.TopicPartitionInformation().
+				WithPartitionID(info.PartitionID).
+				WithSourceLastStableOffset(info.SourceLastStableOffset).
+				WithSourceHighWatermark(info.SourceHighWatermark).
+				WithHighWatermark(info.HighWatermark)
+		}, topic.PartitionInformation)...).
+		WithLastTransitionTime(now)
 }
