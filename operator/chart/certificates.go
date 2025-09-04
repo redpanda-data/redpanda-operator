@@ -20,6 +20,10 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+func CertificateName(dot *helmette.Dot) string {
+	return cleanForK8sWithSuffix(Fullname(dot), "webhook-cert")
+}
+
 func Certificate(dot *helmette.Dot) *certmanagerv1.Certificate {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -33,7 +37,7 @@ func Certificate(dot *helmette.Dot) *certmanagerv1.Certificate {
 			Kind:       "Certificate",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "redpanda-serving-cert",
+			Name:        CertificateName(dot),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
 			Annotations: values.Annotations,
