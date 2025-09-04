@@ -52,7 +52,7 @@ type ClusterReferencingObject interface {
 // somewhere in its CRD definition.
 // +kubebuilder:object:generate=false
 type RemoteClusterReferencingObject interface {
-	client.Object
+	ClusterReferencingObject
 	GetRemoteClusterSource() *ClusterSource
 }
 

@@ -10,11 +10,13 @@
 package v1alpha2
 
 import (
+	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
@@ -26,10 +28,10 @@ import (
 // +kubebuilder:resource:shortName=sl
 type ShadowLink struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata"`
 
-	Spec   ShadowLinkSpec   `json:"spec,omitempty"`
-	Status ShadowLinkStatus `json:"status,omitempty"`
+	Spec   ShadowLinkSpec   `json:"spec"`
+	Status ShadowLinkStatus `json:"status"`
 }
 
 func (n *ShadowLink) GetClusterSource() *ClusterSource {
@@ -92,6 +94,56 @@ type ShadowLinkTaskStatus struct {
 	BrokerID int32 `json:"brokerId,omitempty"`
 }
 
+func ShadowLinkTaskStatusesToConfigs(existing, updated []ShadowLinkTaskStatus) []*redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration {
+	now := metav1.Now()
+	tasks := []*redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration{}
+
+	findStatus := func(status ShadowLinkTaskStatus) *ShadowLinkTaskStatus {
+		for _, o := range existing {
+			if o.Name == status.Name {
+				return &o
+			}
+		}
+		return nil
+	}
+
+	for _, task := range updated {
+		existingTask := findStatus(task)
+		if existingTask == nil {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.State != task.State {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.Reason != task.Reason {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		if existingTask.BrokerID != task.BrokerID {
+			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
+			continue
+		}
+
+		tasks = append(tasks, shadowLinkTaskStatusToConfig(existingTask.LastTransitionTime, *existingTask))
+	}
+
+	return tasks
+}
+
+func shadowLinkTaskStatusToConfig(now metav1.Time, task ShadowLinkTaskStatus) *redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration {
+	return redpandav1alpha2ac.ShadowLinkTaskStatus().
+		WithName(task.Name).
+		WithState(task.State).
+		WithReason(task.Reason).
+		WithBrokerID(task.BrokerID).
+		WithLastTransitionTime(now)
+}
+
 // State of a shadow topic
 type ShadowTopicState string
 
@@ -118,6 +170,64 @@ type ShadowTopicStatus struct {
 	State ShadowTopicState `json:"state,omitempty"`
 	// List of partition information for the shadow topic
 	PartitionInformation []TopicPartitionInformation `json:"partitionInformation,omitempty"`
+}
+
+func ShadowTopicStatusesToConfigs(existing, updated []ShadowTopicStatus) []*redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration {
+	now := metav1.Now()
+	topics := []*redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration{}
+
+	findStatus := func(status ShadowTopicStatus) *ShadowTopicStatus {
+		for _, o := range existing {
+			if o.Name == status.Name && o.TopicID == status.TopicID {
+				return &o
+			}
+		}
+		return nil
+	}
+
+OUTER:
+	for _, topic := range updated {
+		existingTopic := findStatus(topic)
+		if existingTopic == nil {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		if existingTopic.State != topic.State {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		if len(existingTopic.PartitionInformation) != len(topic.PartitionInformation) {
+			topics = append(topics, shadowTopicStatusToConfig(now, topic))
+			continue
+		}
+
+		for i, updatedPartition := range topic.PartitionInformation {
+			if !reflect.DeepEqual(updatedPartition, existingTopic.PartitionInformation[i]) {
+				continue OUTER
+			}
+		}
+
+		topics = append(topics, shadowTopicStatusToConfig(existingTopic.LastTransitionTime, *existingTopic))
+	}
+
+	return topics
+}
+
+func shadowTopicStatusToConfig(now metav1.Time, topic ShadowTopicStatus) *redpandav1alpha2ac.ShadowTopicStatusApplyConfiguration {
+	return redpandav1alpha2ac.ShadowTopicStatus().
+		WithName(topic.Name).
+		WithTopicID(topic.TopicID).
+		WithState(topic.State).
+		WithPartitionInformation(functional.MapFn(func(info TopicPartitionInformation) *redpandav1alpha2ac.TopicPartitionInformationApplyConfiguration {
+			return redpandav1alpha2ac.TopicPartitionInformation().
+				WithPartitionID(info.PartitionID).
+				WithSourceLastStableOffset(info.SourceLastStableOffset).
+				WithSourceHighWatermark(info.SourceHighWatermark).
+				WithHighWatermark(info.HighWatermark)
+		}, topic.PartitionInformation)...).
+		WithLastTransitionTime(now)
 }
 
 // Topic partition information
@@ -160,7 +270,7 @@ type NameFilter struct {
 	// Note if the wildcar "*" is used it must be the _only_ character
 	// and `patternType` must be `literal`
 	// +kubebuilder:default=*
-	Name string `json:"name,optional"`
+	Name string `json:"name,omitempty"`
 	// Valid values:
 	// - include
 	// - exclude
