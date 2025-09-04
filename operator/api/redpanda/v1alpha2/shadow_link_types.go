@@ -10,8 +10,9 @@
 package v1alpha2
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -39,13 +40,6 @@ func (n *ShadowLink) GetRemoteClusterSource() *ClusterSource {
 	return &n.Spec.DestinationCluster
 }
 
-// ShadowLinkStatus defines the observed state of any node pools tied to this cluster
-type ShadowLinkStatus struct {
-	// Conditions holds the conditions for the ShadowLink.
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 type ShadowLinkList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -57,14 +51,98 @@ func (s *ShadowLinkList) GetItems() []*ShadowLink {
 	return functional.MapFn(ptr.To, s.Items)
 }
 
-// +kubebuilder:validation:Enum=destination;source
-type LinkMode string
+// ShadowLinkStatus defines the observed state of any node pools tied to this cluster
+type ShadowLinkStatus struct {
+	// Statuses of the running tasks
+	TaskStatuses []ShadowLinkTaskStatus `json:"taskStatuses,omitempty"`
+	// Status of shadow topics
+	ShadowTopicStatuses []ShadowTopicStatus `json:"shadowTopicStatuses,omitempty"`
 
-var (
-	LinkModeUnknown      LinkMode = ""
-	LinkModeDestionation LinkMode = "destination"
-	LinkModeSource       LinkMode = "source"
+	// Conditions holds the conditions for the ShadowLink.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+// Task states
+type TaskState string
+
+const (
+	TaskStateUnknown TaskState = ""
+	// Task is active
+	TaskStateActive TaskState = "active"
+	// Task was paused
+	TaskStatePaused TaskState = "paused"
+	// Task is unable to communicate with source cluster
+	TaskStateUnavailable TaskState = "unvailable"
+	// Task is not running
+	TaskStateNotRunning TaskState = "not running"
+	// Task is faulted
+	TaskStateFaulted TaskState = "faulted"
 )
+
+type ShadowLinkTaskStatus struct {
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	// Name of the task
+	Name string `json:"name,omitempty"`
+	// State of the task
+	State TaskState `json:"state,omitempty"`
+	// Reason for task being in state
+	Reason string `json:"reason,omitempty"`
+	// The broker the task is running on
+	BrokerID int32 `json:"brokerId,omitempty"`
+}
+
+// State of a shadow topic
+type ShadowTopicState string
+
+const (
+	ShadowTopicStateUnknown ShadowTopicState = ""
+	// Shadow topic is active
+	ShadowTopicStateActive ShadowTopicState = "active"
+	// Shadow topic has been promoted
+	ShadowTopicStatePromoted ShadowTopicState = "promoted"
+	// Shadow topic has faulted
+	ShadowTopicStateFaulted ShadowTopicState = "faulted"
+	// Shadow topic has been paused
+	ShadowTopicStatePaused ShadowTopicState = "paused"
+)
+
+// Status of a ShadowTopic
+type ShadowTopicStatus struct {
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	// Name of the shadow topic
+	Name string `json:"name,omitempty"`
+	// Topic ID of the shadow topic
+	TopicID string `json:"topicId,omitempty"`
+	// State of the shadow topic
+	State ShadowTopicState `json:"state,omitempty"`
+	// List of partition information for the shadow topic
+	PartitionInformation []TopicPartitionInformation `json:"partitionInformation,omitempty"`
+}
+
+// Topic partition information
+type TopicPartitionInformation struct {
+	// Partition ID
+	PartitionID int64 `json:"partitionId,omitempty"`
+	// Source partition's LSO
+	SourceLastStableOffset int64 `json:"sourceLastStableOffset,omitempty"`
+	// Source partition's HWM
+	SourceHighWatermark int64 `json:"sourceHighWatermark,omitempty"`
+	// Shadowed partition's HWM
+	HighWatermark int64 `json:"highWatermark,omitempty"`
+}
+
+type ShadowLinkSpec struct {
+	SourceCluster      ClusterSource `json:"sourceCluster"`
+	DestinationCluster ClusterSource `json:"destinationCluster"`
+
+	// Topic metadata sync options
+	TopicMetadataSyncOptions *ShadowLinkTopicMetadataSyncOptions `json:"topicMetadataSyncOptions,omitempty"`
+	// Consumer offset sync options
+	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptions `json:"consumerOffsetSyncOptions,omitempty"`
+	// Security settings sync options
+	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
+}
 
 // FilterType specifies the type, either include or exclude of a consumer group filter.
 // +kubebuilder:validation:Enum=include;exclude
@@ -76,7 +154,11 @@ var (
 	FilterTypeExclude FilterType = "exclude"
 )
 
-type ConsumerGroupFilter struct {
+// A filter based on the name of a resource
+type NameFilter struct {
+	// The resource name, or "*"
+	// Note if the wildcar "*" is used it must be the _only_ character
+	// and `patternType` must be `literal`
 	// +kubebuilder:default=*
 	Name string `json:"name,optional"`
 	// Valid values:
@@ -91,11 +173,18 @@ type ConsumerGroupFilter struct {
 	PatternType *PatternType `json:"patternType,omitempty"`
 }
 
+// Filter an ACL based on its access
 type ACLAccessFilter struct {
-	// +kubebuilder:default=*
-	Host           string        `json:"host"`
-	Operation      *ACLOperation `json:"operation,omitempty"`
-	PermissionType *ACLType      `json:"permissionType,omitempty"`
+	// The host to match.  If not set, will default to match all hosts
+	// with the specified `operation` and `permissionType`. Note that
+	// the asterisk `*` is literal and matches hosts that are set to `*`
+	Host string `json:"host,omitempty"`
+	// The ACL operation to match
+	Operation *ACLOperation `json:"operation,omitempty"`
+	// The permission type
+	PermissionType *ACLType `json:"permissionType,omitempty"`
+	// The name of the principal, if not set will default to match
+	// all principals with the specified `operation` and `permissionType`
 	// +kubebuilder:default=*
 	Principal string `json:"principal"`
 }
@@ -107,65 +196,52 @@ type ACLResourceFilter struct {
 	ResourceType *ResourceType `json:"resourceType,omitempty"`
 }
 
+// A filter for ACLs
 type ACLFilter struct {
-	AccessFilter   ACLAccessFilter   `json:"accessFilter"`
+	// The access filter
+	AccessFilter ACLAccessFilter `json:"accessFilter"`
+	// The resource filter
 	ResourceFilter ACLResourceFilter `json:"resourceFilter"`
 }
 
-// +kubebuilder:validation:Enum=pause;promote;failover;active
-type MirrorTopicState string
-
-var (
-	MirrorTopicStateUnknown  MirrorTopicState = ""
-	MirrorTopicStatePause    MirrorTopicState = "pause"
-	MirrorTopicStatePromote  MirrorTopicState = "promote"
-	MirrorTopicStateFailover MirrorTopicState = "failover"
-	MirrorTopicStateActive   MirrorTopicState = "active"
-)
-
-type MirrorTopic struct {
-	Name string `json:"name"`
-	// +kubebuilder:default=active
-	State             MirrorTopicState      `json:"state,omitempty"`
-	Configs           *runtime.RawExtension `json:"configs,omitempty"`
-	ReplicationFactor *int32                `json:"replicationFactor,omitempty"`
-	SourceTopicName   *string               `json:"sourceTopicName,omitempty"`
+// Options for syncing topic metadata
+type ShadowLinkTopicMetadataSyncOptions struct {
+	// How often to sync metadata
+	// If 0 provided, defaults to 30 seconds
+	// +kubebuilder:default=30
+	Interval time.Duration `json:"interval,omitempty"`
+	// The topic filters to use
+	TopicFilters []NameFilter `json:"topicFilters,omitempty"`
+	// Additional topic properties to shadow
+	// Partition count, `max.message.bytes`, `cleanup.policy` and
+	// `timestamp.type` will always be replicated
+	ShadowedTopicProperties []string `json:"shadowedTopicProperties,omitempty"`
 }
 
-type TopicFilter struct {
-	// +kubebuilder:default=*
-	Name string `json:"name,omitempty"`
-	// Valid values:
-	// - include
-	// - exclude
-	FilterType FilterType `json:"filterType"`
-	// Default value is literal. Valid values:
-	// - literal
-	// - prefixed
-	//
-	// +kubebuilder:default=literal
-	PatternType *PatternType `json:"patternType,omitempty"`
+// Options for syncing consumer offsets
+type ShadowLinkConsumerOffsetSyncOptions struct {
+	// Sync interval
+	// If 0 provided, defaults to 30 seconds
+	// +kubebuilder:default=30
+	Interval time.Duration `json:"interval,omitempty"`
+	// Whether it's enabled
+	Enabled bool `json:"enabled,omitempty"`
+	// The filters
+	GroupFilters []NameFilter `json:"groupFilters,omitempty"`
 }
 
-type AutoCreateTopics struct {
-	// +kubebuilder:default=false
-	Enabled      bool          `json:"enabled,omitempty"`
-	TopicFilters []TopicFilter `json:"topicFilters,omitempty"`
-}
-
-type MirrorTopicOptions struct {
-	AutoCreateTopics AutoCreateTopics `json:"autoCreateTopics"`
-	Prefix           *string          `json:"prefix,omitempty"`
-}
-
-type ShadowLinkSpec struct {
-	// +kubebuilder:default=source
-	LinkMode             LinkMode              `json:"linkMode"`
-	SourceCluster        ClusterSource         `json:"sourceCluster"`
-	DestinationCluster   ClusterSource         `json:"destinationCluster"`
-	ConsumerGroupFilters []ConsumerGroupFilter `json:"consumerGroupFilters,omitempty"`
-	ACLFilter            []ACLFilter           `json:"aclFilters,omitempty"`
-	Configs              *runtime.RawExtension `json:"configs,omitempty"`
-	MirrorTopics         []MirrorTopic         `json:"mirrorTopics,omitempty"`
-	MirrorTopicOptions   MirrorTopicOptions    `json:"mirrorTopicOptions"`
+// Options for syncing security settings
+type ShadowLinkSecuritySettingsSyncOptions struct {
+	// Sync interval
+	// If 0 provided, defaults to 30 seconds
+	// +kubebuilder:default=30
+	Interval time.Duration `json:"interval,omitempty"`
+	// Whether or not it's enabled
+	Enabled bool `json:"enabled,omitempty"`
+	// Role filters
+	RoleFilters []NameFilter `json:"roleFilters,omitempty"`
+	// SCRAM credential filters
+	ScramCredentialFilters []NameFilter `json:"scramCredFilters,omitempty"`
+	// ACL filters
+	ACLFilters []*ACLFilter `json:"aclFilters,omitempty"`
 }

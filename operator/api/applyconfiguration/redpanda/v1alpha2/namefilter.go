@@ -15,24 +15,24 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// ConsumerGroupFilterApplyConfiguration represents a declarative configuration of the ConsumerGroupFilter type for use
+// NameFilterApplyConfiguration represents a declarative configuration of the NameFilter type for use
 // with apply.
-type ConsumerGroupFilterApplyConfiguration struct {
+type NameFilterApplyConfiguration struct {
 	Name        *string                       `json:"name,omitempty"`
 	FilterType  *redpandav1alpha2.FilterType  `json:"filterType,omitempty"`
 	PatternType *redpandav1alpha2.PatternType `json:"patternType,omitempty"`
 }
 
-// ConsumerGroupFilterApplyConfiguration constructs a declarative configuration of the ConsumerGroupFilter type for use with
+// NameFilterApplyConfiguration constructs a declarative configuration of the NameFilter type for use with
 // apply.
-func ConsumerGroupFilter() *ConsumerGroupFilterApplyConfiguration {
-	return &ConsumerGroupFilterApplyConfiguration{}
+func NameFilter() *NameFilterApplyConfiguration {
+	return &NameFilterApplyConfiguration{}
 }
 
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *ConsumerGroupFilterApplyConfiguration) WithName(value string) *ConsumerGroupFilterApplyConfiguration {
+func (b *NameFilterApplyConfiguration) WithName(value string) *NameFilterApplyConfiguration {
 	b.Name = &value
 	return b
 }
@@ -40,7 +40,7 @@ func (b *ConsumerGroupFilterApplyConfiguration) WithName(value string) *Consumer
 // WithFilterType sets the FilterType field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the FilterType field is set to the value of the last call.
-func (b *ConsumerGroupFilterApplyConfiguration) WithFilterType(value redpandav1alpha2.FilterType) *ConsumerGroupFilterApplyConfiguration {
+func (b *NameFilterApplyConfiguration) WithFilterType(value redpandav1alpha2.FilterType) *NameFilterApplyConfiguration {
 	b.FilterType = &value
 	return b
 }
@@ -48,7 +48,7 @@ func (b *ConsumerGroupFilterApplyConfiguration) WithFilterType(value redpandav1a
 // WithPatternType sets the PatternType field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PatternType field is set to the value of the last call.
-func (b *ConsumerGroupFilterApplyConfiguration) WithPatternType(value redpandav1alpha2.PatternType) *ConsumerGroupFilterApplyConfiguration {
+func (b *NameFilterApplyConfiguration) WithPatternType(value redpandav1alpha2.PatternType) *NameFilterApplyConfiguration {
 	b.PatternType = &value
 	return b
 }

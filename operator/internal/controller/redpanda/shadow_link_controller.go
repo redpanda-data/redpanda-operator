@@ -51,6 +51,7 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 		}
 
 		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.ShadowLinkStatus().
+			// TODO: read back shadow link state
 			WithConditions(utils.StatusConditionConfigs(shadowLink.Status.Conditions, shadowLink.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
