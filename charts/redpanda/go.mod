@@ -248,4 +248,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
 )
 
-replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
+replace (
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../../charts/console
+	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
+)

@@ -22,7 +22,7 @@ Kubernetes: `>= 1.25.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../../console | console | >=3.1.0-0 |
+| file://../../console/chart | console | >=3.1.0-0 |
 
 ## Settings
 

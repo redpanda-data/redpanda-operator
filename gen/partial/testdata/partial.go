@@ -26,14 +26,14 @@ type PartialExampleStruct struct {
 		Any any  "json:\",omitempty\""
 		Int *int "json:\",omitempty\""
 	} "json:\",omitempty\""
-	C2                   *struct{} "json:\",omitempty\""
-	*PartialNestedStruct "json:\",omitempty\""
-	D1                   *PartialNestedStruct "json:\",omitempty\""
-	D2                   *PartialNestedStruct "json:\",omitempty\""
-	E1                   []any                "json:\",omitempty\""
-	E2                   []int                "json:\",omitempty\""
-	E3                   []*int               "json:\",omitempty\""
-	E4                   []map[string]struct {
+	C2                  *struct{} "json:\",omitempty\""
+	PartialNestedStruct "json:\",omitempty\""
+	D1                  *PartialNestedStruct "json:\",omitempty\""
+	D2                  *PartialNestedStruct "json:\",omitempty\""
+	E1                  []any                "json:\",omitempty\""
+	E2                  []int                "json:\",omitempty\""
+	E3                  []*int               "json:\",omitempty\""
+	E4                  []map[string]struct {
 		Foo *string "json:\",omitempty\""
 	} "json:\",omitempty\""
 	E5 []map[string]PartialNestedStruct                       "json:\",omitempty\""
@@ -49,6 +49,8 @@ type PartialExampleStruct struct {
 	H3 map[string]PartialGenericStruct[int]                   "json:\",omitempty\""
 	H4 map[string]PartialGenericStruct[PartialNestedStruct]   "json:\",omitempty\""
 	H5 PartialMapAlias                                        "json:\",omitempty\""
+	I1 *PartialCustomPartial                                  "json:\",omitempty\""
+	J1 *PartialHasEmbedded                                    "json:\",omitempty\""
 }
 
 type PartialNestedStruct struct {
@@ -57,8 +59,16 @@ type PartialNestedStruct struct {
 
 type PartialMapAlias map[string]int
 
+type PartialCustomPartial struct{}
+
+type PartialHasEmbedded struct {
+	PartialEmbedded "json:\",omitempty\""
+}
+
 type PartialMapGeneric[T any] map[string]T
 
 type PartialGenericStruct[T any] struct {
 	Foo T "json:\",omitempty\""
 }
+
+type PartialEmbedded struct{}

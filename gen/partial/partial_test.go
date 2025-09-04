@@ -83,6 +83,10 @@ type ExampleStruct struct {
 	H3 map[string]GenericStruct[int]
 	H4 map[string]GenericStruct[NestedStruct]
 	H5 MapAlias
+
+	I1 CustomPartial
+
+	J1 HasEmbedded
 }
 
 type NestedStruct struct {
@@ -92,6 +96,18 @@ type NestedStruct struct {
 type GenericStruct[T any] struct {
 	Foo T
 }
+
+type (
+	CustomPartial        struct{}
+	PartialCustomPartial struct{}
+)
+
+type (
+	Embedded    struct{}
+	HasEmbedded struct {
+		Embedded
+	}
+)
 
 func TestGenerateParital(t *testing.T) {
 	pkgs, err := packages.Load(&packages.Config{

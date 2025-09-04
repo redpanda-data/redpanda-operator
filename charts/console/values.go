@@ -11,19 +11,9 @@
 package console
 
 import (
-	_ "embed"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-)
-
-var (
-	//go:embed values.yaml
-	DefaultValuesYAML []byte
-
-	//go:embed values.schema.json
-	ValuesSchemaJSON []byte
 )
 
 type Values struct {
@@ -65,8 +55,6 @@ type Values struct {
 	ConfigMap                    Creatable                         `json:"configmap"`
 	Deployment                   DeploymentConfig                  `json:"deployment"`
 	Strategy                     appsv1.DeploymentStrategy         `json:"strategy"`
-	Tests                        Enableable                        `json:"tests"`
-	Enabled                      *bool                             `json:"enabled,omitempty"`
 }
 
 type DeploymentConfig struct {
@@ -182,10 +170,6 @@ type RedpandaAdminAPISecrets struct {
 type SecretKeyRef struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
-}
-
-type Enableable struct {
-	Enabled bool `json:"enabled"`
 }
 
 type Creatable struct {
