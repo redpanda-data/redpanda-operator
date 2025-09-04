@@ -83,7 +83,7 @@ func (p *PoolTracker) AnyReady() bool {
 }
 
 func (p *PoolTracker) AllZero() bool {
-	for _, pool := range p.existingPools {
+	for _, pool := range p.desiredPools {
 		if ptr.Deref(pool.set.Spec.Replicas, 0) > 0 {
 			return false
 		}

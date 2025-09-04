@@ -596,7 +596,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 	}
 
 	// rate limit license reconciliation
-	if !statuses.HasRecentCondition(state.cluster.Redpanda, statuses.ClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
+	if statuses.HasRecentCondition(state.cluster.Redpanda, statuses.ClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
 		// just copy over the license status from our existing status
 		state.status.Status.SetLicenseValidFromCurrent(state.cluster.Redpanda)
 		return ctrl.Result{}, nil

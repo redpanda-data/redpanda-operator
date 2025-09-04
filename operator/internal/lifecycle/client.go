@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // Cluster is a generic interface for a pointer to a Kubernetes object
@@ -200,7 +201,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 				return err
 			}
 
-			r.logger.Error(err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
+			log.DebounceError(r.logger, err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
 
 			// we have a no match error, so just drop the watch altogether
 			continue
