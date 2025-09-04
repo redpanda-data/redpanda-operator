@@ -21,6 +21,11 @@ func NewDebouncer(period time.Duration) *Debouncer {
 }
 
 func (d *Debouncer) Error(logger logr.Logger, err error, msg string, keysAndValues ...any) {
+	if err == nil {
+		logger.Error(err, msg, keysAndValues...)
+		return
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
