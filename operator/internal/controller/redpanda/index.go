@@ -35,31 +35,45 @@ func clusterReferenceIndexName(name string) string {
 
 func registerClusterSourceIndex[T client.Object, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
 	indexName := clusterReferenceIndexName(name)
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+		return cr.IsV2()
+	})); err != nil {
 		return nil, err
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
 }
 
-func indexByClusterSource(o client.Object) []string {
-	clusterReferencingObject := o.(redpandav1alpha2.ClusterReferencingObject)
-	source := clusterReferencingObject.GetClusterSource()
-
-	clusters := []string{}
-	if source != nil && source.ClusterRef != nil {
-		cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: source.ClusterRef.Name}
-		clusters = append(clusters, cluster.String())
+func registerV1ClusterSourceIndex[T client.Object, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
+	indexName := clusterReferenceIndexName(name)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+		return cr.IsV1()
+	})); err != nil {
+		return nil, err
 	}
+	return enqueueFromSourceCluster(mgr, name, l), nil
+}
 
-	if remoteClusterReferencingObject, ok := o.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
-		remoteSource := remoteClusterReferencingObject.GetRemoteClusterSource()
-		if remoteSource != nil && remoteSource.ClusterRef != nil {
-			cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: remoteSource.ClusterRef.Name}
+func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func(o client.Object) []string {
+	return func(o client.Object) []string {
+		clusterReferencingObject := o.(redpandav1alpha2.ClusterReferencingObject)
+		source := clusterReferencingObject.GetClusterSource()
+
+		clusters := []string{}
+		if source != nil && source.ClusterRef != nil && checkRef(source.ClusterRef) {
+			cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: source.ClusterRef.Name}
 			clusters = append(clusters, cluster.String())
 		}
-	}
 
-	return clusters
+		if remoteClusterReferencingObject, ok := o.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
+			remoteSource := remoteClusterReferencingObject.GetRemoteClusterSource()
+			if remoteSource != nil && remoteSource.ClusterRef != nil && checkRef(source.ClusterRef) {
+				cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: remoteSource.ClusterRef.Name}
+				clusters = append(clusters, cluster.String())
+			}
+		}
+
+		return clusters
+	}
 }
 
 func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c client.Client, list U, name string, nn types.NamespacedName) ([]reconcile.Request, error) {

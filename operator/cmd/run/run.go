@@ -444,7 +444,7 @@ func Run(
 
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}

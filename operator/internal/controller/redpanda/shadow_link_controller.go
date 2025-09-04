@@ -19,6 +19,7 @@ import (
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
@@ -40,7 +41,7 @@ func (r *ShadowLinkReconciler) FinalizerPatch(request ResourceRequest[*redpandav
 func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.ShadowLink]) (client.Patch, error) {
 	shadowLink := request.object
 
-	createPatch := func(err error) (client.Patch, error) {
+	createPatch := func(err error, tasks []redpandav1alpha2.ShadowLinkTaskStatus, topics []redpandav1alpha2.ShadowTopicStatus) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.ShadowLink(shadowLink.Name, shadowLink.Namespace)
 
@@ -51,41 +52,61 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 		}
 
 		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.ShadowLinkStatus().
-			// TODO: read back shadow link state
+			WithShadowTopicStatuses(redpandav1alpha2.ShadowTopicStatusesToConfigs(shadowLink.Status.ShadowTopicStatuses, topics)...).
+			WithTaskStatuses(redpandav1alpha2.ShadowLinkTaskStatusesToConfigs(shadowLink.Status.TaskStatuses, tasks)...).
 			WithConditions(utils.StatusConditionConfigs(shadowLink.Status.Conditions, shadowLink.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
 	}
 
-	// TODO: add in sync logic
+	tasks := shadowLink.Status.TaskStatuses
+	topics := shadowLink.Status.ShadowTopicStatuses
+	syncer, err := request.factory.ShadowLinks(ctx, shadowLink)
+	if err != nil {
+		return createPatch(err, tasks, topics)
+	}
 
-	return createPatch(nil)
+	tasks, topics, err = syncer.Sync(ctx, shadowLink, nil)
+	return createPatch(err, tasks, topics)
 }
 
 func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.ShadowLink]) error {
-	request.logger.V(2).Info("Deleting shadow link from cluster")
-
-	// TODO: add in deletion logic
+	syncer, err := request.factory.ShadowLinks(ctx, request.object)
+	if err != nil {
+		return ignoreAllConnectionErrors(request.logger, err)
+	}
+	if err := syncer.Delete(ctx, request.object); err != nil {
+		return ignoreAllConnectionErrors(request.logger, err)
+	}
 
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager) error {
+func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
 	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
 
-	enqueueShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadowLink", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+	enqueueShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 	if err != nil {
 		return err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.ShadowLink{}).
-		Watches(&redpandav1alpha2.Redpanda{}, enqueueShadowLink).
-		// Every 5 minutes try and check to make sure no manual modifications
-		// happened on the resource synced to the cluster and attempt to correct
-		// any drift.
-		Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+		Watches(&redpandav1alpha2.Redpanda{}, enqueueShadowLink)
+
+	if includeV1 {
+		enqueueV1ShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
+	}
+
+	// Every 5 minutes try and check to make sure no manual modifications
+	// happened on the resource synced to the cluster and attempt to correct
+	// any drift.
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
 }
