@@ -197,9 +197,19 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 
 func convertAPIToCRDStatus(status *adminv2api.ShadowLinkStatus) redpandav1alpha2.ShadowLinkStatus {
 	return redpandav1alpha2.ShadowLinkStatus{
+		State:               convertAPIToCRDState(status.State),
 		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, status.TaskStatuses),
 		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, status.ShadowTopicStatuses),
 	}
+}
+
+func convertAPIToCRDState(state adminv2api.ShadowLinkState) redpandav1alpha2.ShadowLinkState {
+	return map[adminv2api.ShadowLinkState]redpandav1alpha2.ShadowLinkState{
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_ACTIVE:       redpandav1alpha2.ShadowLinkStateActive,
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_PAUSED:       redpandav1alpha2.ShadowLinkStatePaused,
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_FAILING_OVER: redpandav1alpha2.ShadowLinkStateFailingOver,
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_FAILED_OVER:  redpandav1alpha2.ShadowLinkStateFailedOver,
+	}[state]
 }
 
 func convertAPIToCRDTaskStatus(status *adminv2api.ShadowLinkTaskStatus) redpandav1alpha2.ShadowLinkTaskStatus {

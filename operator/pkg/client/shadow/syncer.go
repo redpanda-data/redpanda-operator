@@ -11,11 +11,15 @@ package shadow
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"k8s.io/utils/ptr"
 )
 
 // Syncer synchronizes Schemas for the given object to Redpanda.
@@ -31,20 +35,53 @@ func NewSyncer(client *adminv2.Client) *Syncer {
 }
 
 // Sync synchronizes the shadow link in Redpanda.
-func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) ([]redpandav1alpha2.ShadowLinkTaskStatus, []redpandav1alpha2.ShadowTopicStatus, error) {
-	response, err := s.client.ShadowLinks().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
-		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
+func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) (*redpandav1alpha2.ShadowLinkStatus, error) {
+	response, err := s.client.ShadowLinks().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
+		Name: o.Name,
 	}))
+	var existing *adminv2api.GetShadowLinkResponse
 	if err != nil {
-		return nil, nil, err
+		var httpError *adminv2.HTTPResponseError
+		if !errors.As(err, &httpError) || httpError.StatusCode != http.StatusNotFound {
+			return nil, err
+		}
+	} else {
+		existing = response.Msg
 	}
 
-	converted := convertAPIToCRDStatus(response.Msg.ShadowLink.Status)
-	return converted.TaskStatuses, converted.ShadowTopicStatuses, nil
+	// creation
+	if existing == nil {
+		link := convertCRDToAPIShadowLink(o, remoteClusterSettings)
+
+		response, err := s.client.ShadowLinks().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
+			ShadowLink: link,
+		}))
+		if err != nil {
+			return nil, err
+		}
+
+		converted := convertAPIToCRDStatus(response.Msg.ShadowLink.Status)
+		return ptr.To(converted), nil
+	}
+
+	// update (NOTE: this is unimplemented currently)
+	update, err := s.client.ShadowLinks().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
+		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
+		UpdateMask: &fieldmaskpb.FieldMask{
+			// update all fields
+			Paths: []string{"*"},
+		},
+	}))
+	if err != nil {
+		return nil, err
+	}
+	converted := convertAPIToCRDStatus(update.Msg.ShadowLink.Status)
+	return ptr.To(converted), nil
 }
 
 // Delete deletes the shadow link in Redpanda.
 func (s *Syncer) Delete(ctx context.Context, o *redpandav1alpha2.ShadowLink) error {
+	// delete (NOTE: this is unimplemented currently)
 	_, err := s.client.ShadowLinks().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
 		Name: o.Name,
 	}))

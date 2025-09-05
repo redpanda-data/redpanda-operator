@@ -31,10 +31,11 @@ type authFn func(*http.Request)
 
 // HTTPResponseError is the error response.
 type HTTPResponseError struct {
-	Method   string
-	URL      string
-	Response *http.Response
-	Body     []byte
+	Method     string
+	URL        string
+	Response   *http.Response
+	StatusCode int
+	Body       []byte
 }
 
 // Error returns string representation of the error.

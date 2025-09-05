@@ -12,12 +12,14 @@
 package v1alpha2
 
 import (
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
 // ShadowLinkStatusApplyConfiguration represents a declarative configuration of the ShadowLinkStatus type for use
 // with apply.
 type ShadowLinkStatusApplyConfiguration struct {
+	State               *redpandav1alpha2.ShadowLinkState        `json:"state,omitempty"`
 	TaskStatuses        []ShadowLinkTaskStatusApplyConfiguration `json:"taskStatuses,omitempty"`
 	ShadowTopicStatuses []ShadowTopicStatusApplyConfiguration    `json:"shadowTopicStatuses,omitempty"`
 	Conditions          []v1.ConditionApplyConfiguration         `json:"conditions,omitempty"`
@@ -27,6 +29,14 @@ type ShadowLinkStatusApplyConfiguration struct {
 // apply.
 func ShadowLinkStatus() *ShadowLinkStatusApplyConfiguration {
 	return &ShadowLinkStatusApplyConfiguration{}
+}
+
+// WithState sets the State field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the State field is set to the value of the last call.
+func (b *ShadowLinkStatusApplyConfiguration) WithState(value redpandav1alpha2.ShadowLinkState) *ShadowLinkStatusApplyConfiguration {
+	b.State = &value
+	return b
 }
 
 // WithTaskStatuses adds the given value to the TaskStatuses field in the declarative configuration

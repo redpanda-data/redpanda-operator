@@ -121,7 +121,7 @@ func (c *wrappedClient) sendAndReceive(req *http.Request, retryable bool) (*http
 		if err != nil {
 			return nil, fmt.Errorf("request %s %s failed: %s, unable to read body: %w", req.Method, req.URL.String(), status, err)
 		}
-		return nil, &HTTPResponseError{Response: res, Body: resBody, Method: req.Method, URL: req.URL.String()}
+		return nil, &HTTPResponseError{StatusCode: res.StatusCode, Response: res, Body: resBody, Method: req.Method, URL: req.URL.String()}
 	}
 
 	return res, nil
