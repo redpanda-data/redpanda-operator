@@ -28,7 +28,7 @@ func NewV2OwnershipResolver() *V2OwnershipResolver {
 	return &V2OwnershipResolver{
 		operatorLabel:  defaultOperatorLabel,
 		ownerLabel:     defaultOwnerLabel,
-		namespaceLabel: defaultNamespaceLabel,
+		namespaceLabel: DefaultNamespaceLabel,
 	}
 }
 

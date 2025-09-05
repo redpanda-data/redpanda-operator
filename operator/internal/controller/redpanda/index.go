@@ -14,8 +14,6 @@ import (
 	"fmt"
 	"reflect"
 
-	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,12 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-)
-
-const (
-	nodepoolStatefulSetIndex = "__nodepool_referencing_statefulset"
 )
 
 type clientList[T client.Object] interface {
@@ -46,24 +39,6 @@ func registerClusterSourceIndex[T client.Object, U clientList[T]](ctx context.Co
 		return nil, err
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
-}
-
-func registerPoolStatefulset(ctx context.Context, mgr ctrl.Manager) (handler.EventHandler, error) {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &appsv1.StatefulSet{}, nodepoolStatefulSetIndex, indexByNodePoolLabels); err != nil {
-		return nil, err
-	}
-	return enqueueNodePoolFromStatefulSet(mgr), nil
-}
-
-func indexByNodePoolLabels(o client.Object) []string {
-	labels := o.GetLabels()
-	if labels != nil {
-		nodepool := types.NamespacedName{Namespace: labels[redpanda.NodePoolLabelNamespace], Name: labels[redpanda.NodePoolLabelName]}
-		if nodepool.Name != "" && nodepool.Namespace != "" {
-			return []string{nodepool.String()}
-		}
-	}
-	return nil
 }
 
 func indexByClusterSource(o client.Object) []string {
@@ -122,56 +97,4 @@ func fromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c 
 	}
 
 	return list.GetItems(), nil
-}
-
-func sourceNodePoolStatefulSet(ctx context.Context, c client.Client, nn types.NamespacedName) ([]reconcile.Request, error) {
-	pool := &redpandav1alpha2.NodePool{}
-	if err := c.Get(ctx, nn, pool); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(pool)}}, nil
-}
-
-func statefulSetForNodePool(ctx context.Context, c client.Client, pool *redpandav1alpha2.NodePool) (*appsv1.StatefulSet, error) {
-	nn := client.ObjectKeyFromObject(pool).String()
-	var list appsv1.StatefulSetList
-	err := c.List(ctx, &list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(nodepoolStatefulSetIndex, nn),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(list.Items) > 1 {
-		return nil, fmt.Errorf("node pool %q maps to multiple(%d) StatefulSets", nn, len(list.Items))
-	}
-
-	if len(list.Items) == 0 {
-		return nil, nil
-	}
-
-	return &list.Items[0], nil
-}
-
-func enqueueNodePoolFromStatefulSet(mgr ctrl.Manager) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		labels := o.GetLabels()
-		if labels == nil {
-			return nil
-		}
-		nn := types.NamespacedName{Namespace: labels[redpanda.NodePoolLabelNamespace], Name: labels[redpanda.NodePoolLabelName]}
-		if nn.Name == "" || nn.Namespace == "" {
-			return nil
-		}
-		requests, err := sourceNodePoolStatefulSet(ctx, mgr.GetClient(), nn)
-		if err != nil {
-			mgr.GetLogger().V(1).Info("possibly skipping NodePool reconciliation due to failure to fetch associated StatefulSets", "error", err)
-			return nil
-		}
-		return requests
-	})
 }

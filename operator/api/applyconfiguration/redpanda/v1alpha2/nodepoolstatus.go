@@ -19,6 +19,7 @@ import (
 // with apply.
 type NodePoolStatusApplyConfiguration struct {
 	EmbeddedNodePoolStatusApplyConfiguration `json:",inline"`
+	DeployedGeneration                       *int64                           `json:"deployedGeneration,omitempty"`
 	Conditions                               []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
@@ -89,6 +90,14 @@ func (b *NodePoolStatusApplyConfiguration) WithReadyReplicas(value int32) *NodeP
 // If called multiple times, the RunningReplicas field is set to the value of the last call.
 func (b *NodePoolStatusApplyConfiguration) WithRunningReplicas(value int32) *NodePoolStatusApplyConfiguration {
 	b.EmbeddedNodePoolStatusApplyConfiguration.RunningReplicas = &value
+	return b
+}
+
+// WithDeployedGeneration sets the DeployedGeneration field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeployedGeneration field is set to the value of the last call.
+func (b *NodePoolStatusApplyConfiguration) WithDeployedGeneration(value int64) *NodePoolStatusApplyConfiguration {
+	b.DeployedGeneration = &value
 	return b
 }
 

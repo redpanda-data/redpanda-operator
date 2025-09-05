@@ -728,8 +728,8 @@
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/nodepool-generation: "0"
       cluster.redpanda.com/nodepool-name: basic
-      cluster.redpanda.com/nodepool-namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
       helm.sh/chart: redpanda-25.1.1-beta3

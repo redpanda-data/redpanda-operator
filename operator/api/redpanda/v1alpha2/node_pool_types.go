@@ -41,6 +41,9 @@ func (n *NodePool) GetClusterSource() *ClusterSource {
 // NodePoolStatus defines the observed state of any node pools tied to this cluster
 type NodePoolStatus struct {
 	EmbeddedNodePoolStatus `json:",inline"`
+	// DeployedGeneration represents the generation of the NodePool CRD that is currently
+	// deployed as a StatefulSet
+	DeployedGeneration int64 `json:"deployedGeneration,omitempty"`
 	// Conditions holds the conditions for the Redpanda.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
@@ -88,21 +91,29 @@ func (s *NodePoolList) GetItems() []*NodePool {
 	return functional.MapFn(ptr.To, s.Items)
 }
 
+// NodePoolSpec contains the node pool spec for the given node pool.
+// Note that the defaulting behavior comes from the underlying Redpanda
+// chart renderer, the attributes specified here will get merged in and
+// override the defaults.
 type NodePoolSpec struct {
 	EmbeddedNodePoolSpec `json:",inline"`
 	ClusterRef           ClusterRef `json:"clusterRef"`
 }
 
 type PoolConfigurator struct {
+	// Chart default: []
 	AdditionalCLIArgs []string `json:"additionalCLIArgs,omitempty"`
 }
 
 type PoolSetDataDirOwnership struct {
+	// Chart default: false
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type PoolFSValidator struct {
-	Enabled    *bool   `json:"enabled,omitempty"`
+	// Chart default: false
+	Enabled *bool `json:"enabled,omitempty"`
+	// Chart default: xfs
 	ExpectedFS *string `json:"expectedFS,omitempty"`
 }
 
@@ -113,14 +124,53 @@ type PoolInitContainers struct {
 }
 
 type EmbeddedNodePoolSpec struct {
-	AdditionalSelectorLabels   map[string]string   `json:"additionalSelectorLabels,omitempty"`
-	Replicas                   *int32              `json:"replicas,omitempty"`
-	AdditionalRedpandaCmdFlags []string            `json:"additionalRedpandaCmdFlags,omitempty"`
-	PodTemplate                *PodTemplate        `json:"podTemplate,omitempty"`
-	InitContainers             *PoolInitContainers `json:"initContainers,omitempty"`
-	Image                      *RedpandaImage      `json:"image,omitempty"`
-	SidecarImage               *RedpandaImage      `json:"sidecarImage,omitempty"`
-	InitContainerImage         *InitContainerImage `json:"initContainerImage,omitempty"`
+	// Chart default: {}
+	AdditionalSelectorLabels map[string]string `json:"additionalSelectorLabels,omitempty"`
+	// Chart default: 3
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Chart default: []
+	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags,omitempty"`
+	// Chart default:
+	//     labels: {}
+	//     annotations: {}
+	//     spec:
+	//       securityContext: {}
+	//       affinity:
+	//         podAntiAffinity:
+	//           requiredDuringSchedulingIgnoredDuringExecution:
+	//           - topologyKey: kubernetes.io/hostname
+	//             labelSelector:
+	//               matchLabels:
+	//                 "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
+	//                 "app.kubernetes.io/instance":  '{{ .Release.Name }}'
+	//                 "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
+	//       terminationGracePeriodSeconds: 90
+	//       nodeSelector: {}
+	//       priorityClassName: ""
+	//       tolerations: []
+	//       topologySpreadConstraints:
+	//       - maxSkew: 1
+	//         topologyKey: topology.kubernetes.io/zone
+	//         whenUnsatisfiable: ScheduleAnyway
+	//         labelSelector:
+	//           matchLabels:
+	//             "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
+	//             "app.kubernetes.io/instance":  '{{ .Release.Name }}'
+	//             "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
+	PodTemplate    *PodTemplate        `json:"podTemplate,omitempty"`
+	InitContainers *PoolInitContainers `json:"initContainers,omitempty"`
+	// Default:
+	//     repository: docker.redpanda.com/redpandadata/redpanda
+	//     tag: {{.redpandaVersion}}
+	Image *RedpandaImage `json:"image,omitempty"`
+	// Default:
+	//     repository: docker.redpanda.com/redpandadata/redpanda-operator
+	//     tag: {{.operatorVersion}}
+	SidecarImage *RedpandaImage `json:"sidecarImage,omitempty"`
+	// Chart default:
+	//     repository: busybox
+	//     tag: latest
+	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
 }
 
 func MinimalNodePoolSpec(cluster *Redpanda) NodePoolSpec {

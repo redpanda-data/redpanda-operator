@@ -201,6 +201,8 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 				return err
 			}
 
+			// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+			// so we can just use the global debouncer which debounces by error string
 			log.DebounceError(r.logger, err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
 
 			// we have a no match error, so just drop the watch altogether

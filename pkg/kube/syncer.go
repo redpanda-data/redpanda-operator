@@ -99,6 +99,8 @@ func (s *Syncer) Sync(ctx context.Context) ([]Object, error) {
 					return nil, err
 				}
 
+				// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+				// so we can just use the global debouncer which debounces by error string
 				log.DebounceError(logger, err, "WARNING no registered value for resource type", "gvk", gvk.String(), "key", AsKey(obj))
 				continue
 			}
@@ -154,6 +156,8 @@ func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
 			// cert-manager, don't block the entire sync process. Instead we'll
 			// log a warning and move on.
 			if meta.IsNoMatchError(err) {
+				// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+				// so we can just use the global debouncer which debounces by error string
 				log.DebounceError(logger, err, "WARNING no registered value for resource type", "gvk", gvk.String())
 				continue
 			}

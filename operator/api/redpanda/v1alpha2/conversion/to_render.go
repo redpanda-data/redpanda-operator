@@ -348,9 +348,10 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		return redpanda.Pool{}, err
 	}
 
-	// and finally return wrapped with a name
+	// and finally return wrapped with a name and generation
 	return redpanda.Pool{
 		Name:        pool.Name,
+		Generation:  fmt.Sprintf("%d", pool.Generation),
 		Statefulset: defaultSet,
 	}, nil
 }

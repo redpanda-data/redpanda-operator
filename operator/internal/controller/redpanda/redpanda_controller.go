@@ -64,9 +64,9 @@ const (
 	// cluster configuration (which may depend on external secrets,
 	// for which there's no change event we can latch onto).
 	periodicRequeue = 3 * time.Minute
-)
 
-const messageNoBrokers = "Cluster has no desired brokers"
+	messageNoBrokers = "Cluster has no desired brokers"
+)
 
 // RedpandaReconciler reconciles a Redpanda object
 type RedpandaReconciler struct {
@@ -233,7 +233,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		// next we sync up all of our pools themselves
 		r.reconcilePools,
 		// now we memoize the admin client onto the state
-		r.getAdminClient,
+		r.initAdminClient,
 		// now we ensure that we reconcile all of our decommissioning nodes
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
@@ -271,7 +271,6 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 		}
 	}
 
-	rp.ManagedFields = nil // nil out our managed fields
 	cluster := lifecycle.NewClusterWithPools(rp, existingPools...)
 
 	// grab our existing and desired pool resources
@@ -403,7 +402,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	return ctrl.Result{Requeue: !(state.pools.AnyReady() || state.pools.AllZero())}, nil
 }
 
-func (r *RedpandaReconciler) getAdminClient(ctx context.Context, state *clusterReconciliationState) (ctrl.Result, error) {
+func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *clusterReconciliationState) (ctrl.Result, error) {
 	if state.pools.AllZero() {
 		return ctrl.Result{}, nil
 	}
@@ -426,8 +425,6 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	logger := log.FromContext(ctx)
 
 	defer func() {
-		defer trace.EndSpan(span, err)
-
 		if err != nil {
 			logger.Error(err, "error decommissioning brokers")
 			if internalclient.IsTerminalClientError(err) {
@@ -437,6 +434,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
 				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonError, err.Error())
 			}
+			trace.EndSpan(span, err)
 			return
 		}
 
@@ -451,6 +449,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			// TODO: give more specific message here
 			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, "Cluster is not healthy")
 		}
+		trace.EndSpan(span, err)
 	}()
 
 	if state.pools.AllZero() {
@@ -577,8 +576,6 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 	logger := log.FromContext(ctx)
 
 	defer func() {
-		defer trace.EndSpan(span, err)
-
 		if err != nil {
 			if internalclient.IsTerminalClientError(err) {
 				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonTerminalError, err.Error())
@@ -588,6 +585,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 		} else if license != nil {
 			state.cluster.Redpanda.Status.LicenseStatus = license
 		}
+		trace.EndSpan(span, err)
 	}()
 
 	if state.pools.AllZero() {
@@ -670,8 +668,6 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 	logger := log.FromContext(ctx)
 
 	defer func() {
-		defer trace.EndSpan(span, err)
-
 		if err != nil {
 			if internalclient.IsTerminalClientError(err) {
 				state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonTerminalError, err.Error())
@@ -679,6 +675,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 				state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
 			}
 		}
+		trace.EndSpan(span, err)
 	}()
 
 	if state.pools.AllZero() {

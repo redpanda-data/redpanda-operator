@@ -1588,7 +1588,10 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 
 
 
-
+NodePoolSpec contains the node pool spec for the given node pool.
+Note that the defaulting behavior comes from the underlying Redpanda
+chart renderer, the attributes specified here will get merged in and
+override the defaults.
 
 
 
@@ -1640,6 +1643,8 @@ as part of a scaling down operation. + |  |
 currently passing. + |  | 
 | *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
 state. + |  | 
+| *`deployedGeneration`* __integer__ | DeployedGeneration represents the generation of the NodePool CRD that is currently +
+deployed as a StatefulSet + |  | 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 |===
 
@@ -1819,7 +1824,7 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalCLIArgs`* __string array__ |  |  | 
+| *`additionalCLIArgs`* __string array__ | Chart default: [] + |  | 
 |===
 
 
@@ -1840,8 +1845,8 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`enabled`* __boolean__ |  |  | 
-| *`expectedFS`* __string__ |  |  | 
+| *`enabled`* __boolean__ | Chart default: false + |  | 
+| *`expectedFS`* __string__ | Chart default: xfs + |  | 
 |===
 
 
@@ -1864,7 +1869,7 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`enabled`* __boolean__ |  |  | 
+| *`enabled`* __boolean__ | Chart default: false + |  | 
 |===
 
 

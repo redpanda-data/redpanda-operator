@@ -843,7 +843,7 @@ func (s *RedpandaControllerSuite) TestNodePoolsBlueGreen() {
 	// set the default pool's replicas to 0
 	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(0)
 
-	// start with one broker and no nodepools
+	// start with no brokers and no nodepools
 	s.applyAndWaitFor(isStable(true), rp)
 
 	// add a nodepool with 3 brokers.

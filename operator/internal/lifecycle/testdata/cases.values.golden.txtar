@@ -424,7 +424,8 @@ values:
     tune_aio_events: true
 -- nodepool-basic-test --
 pools:
-- Name: basic
+- Generation: "0"
+  Name: basic
   Statefulset:
     additionalRedpandaCmdFlags: []
     additionalSelectorLabels: {}

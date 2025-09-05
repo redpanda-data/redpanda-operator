@@ -46,8 +46,8 @@ const (
 	//nolint:gosec
 	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
 
-	NodePoolLabelName      = "cluster.redpanda.com/nodepool-name"
-	NodePoolLabelNamespace = "cluster.redpanda.com/nodepool-namespace"
+	NodePoolLabelName       = "cluster.redpanda.com/nodepool-name"
+	NodePoolLabelGeneration = "cluster.redpanda.com/nodepool-generation"
 )
 
 // statefulSetRedpandaEnv returns the environment variables for the Redpanda
@@ -914,7 +914,7 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 	poolLabels := map[string]string{}
 	if pool.Name != "" {
 		poolLabels[NodePoolLabelName] = pool.Name
-		poolLabels[NodePoolLabelNamespace] = state.Release.Namespace
+		poolLabels[NodePoolLabelGeneration] = pool.Generation
 	}
 
 	set := &appsv1.StatefulSet{

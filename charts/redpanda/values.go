@@ -760,6 +760,7 @@ type PodTemplate struct {
 
 type Pool struct {
 	Name        string
+	Generation  string
 	Statefulset Statefulset
 }
 
