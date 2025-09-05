@@ -12,30 +12,43 @@ package shadow
 import (
 	"context"
 
-	"github.com/redpanda-data/common-go/rpadmin"
+	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
+	"connectrpc.com/connect"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
 // Syncer synchronizes Schemas for the given object to Redpanda.
 type Syncer struct {
-	client *rpadmin.AdminAPI
+	client *adminv2.Client
 }
 
 // NewSyncer initializes a Syncer.
-func NewSyncer(client *rpadmin.AdminAPI) *Syncer {
+func NewSyncer(client *adminv2.Client) *Syncer {
 	return &Syncer{
 		client: client,
 	}
 }
 
 // Sync synchronizes the shadow link in Redpanda.
-func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings any) ([]redpandav1alpha2.ShadowLinkTaskStatus, []redpandav1alpha2.ShadowTopicStatus, error) {
-	return nil, nil, nil
+func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) ([]redpandav1alpha2.ShadowLinkTaskStatus, []redpandav1alpha2.ShadowTopicStatus, error) {
+	response, err := s.client.ShadowLinks().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
+		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
+	}))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	converted := convertAPIToCRDStatus(response.Msg.ShadowLink.Status)
+	return converted.TaskStatuses, converted.ShadowTopicStatuses, nil
 }
 
 // Delete deletes the shadow link in Redpanda.
 func (s *Syncer) Delete(ctx context.Context, o *redpandav1alpha2.ShadowLink) error {
-	return nil
+	_, err := s.client.ShadowLinks().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
+		Name: o.Name,
+	}))
+	return err
 }
 
 // Close closes the underlying client connection.

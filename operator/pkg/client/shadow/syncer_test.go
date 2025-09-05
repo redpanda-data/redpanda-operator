@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +22,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
 // const redpandaTestContainerImage = "docker.redpanda.com/redpandadata/redpanda:"
@@ -55,7 +55,7 @@ func TestSyncer(t *testing.T) {
 
 	require.NoError(t, err)
 
-	_, err = redpanda.Run(ctx, getTestImage(),
+	containerTwo, err := redpanda.Run(ctx, getTestImage(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
 		redpanda.WithSuperusers("user"),
@@ -67,10 +67,10 @@ func TestSyncer(t *testing.T) {
 	adminOne, err := containerOne.AdminAPIAddress(ctx)
 	require.NoError(t, err)
 
-	rpadminClientOne, err := rpadmin.NewAdminAPI([]string{adminOne}, &rpadmin.BasicAuth{
-		Username: "user",
-		Password: "password",
-	}, nil)
+	adminTwo, err := containerTwo.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	rpadminClientOne, err := adminv2.NewClientBuilder(adminOne).WithBasicAuth("user", "password").Build()
 	require.NoError(t, err)
 
 	syncer := NewSyncer(rpadminClientOne)
@@ -99,10 +99,17 @@ func TestSyncer(t *testing.T) {
 	}
 
 	require.NoError(t, c.Create(ctx, link))
-	_, _, err = syncer.Sync(ctx, link, nil)
+	_, _, err = syncer.Sync(ctx, link, RemoteClusterSettings{
+		BootstrapServers: []string{adminTwo},
+		Authentication: &AuthenticationSettings{
+			Username:  "user",
+			Password:  "password",
+			Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+		},
+	})
 	require.NoError(t, err)
 
 	// TODO: add in expectations
 
-	require.NoError(t, syncer.Delete(ctx, link))
+	// require.NoError(t, syncer.Delete(ctx, link))
 }

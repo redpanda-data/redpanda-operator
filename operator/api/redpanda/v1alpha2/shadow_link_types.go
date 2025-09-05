@@ -26,10 +26,10 @@ import (
 // +kubebuilder:resource:shortName=sl
 type ShadowLink struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ShadowLinkSpec   `json:"spec"`
-	Status ShadowLinkStatus `json:"status"`
+	Spec   ShadowLinkSpec   `json:"spec,omitempty"`
+	Status ShadowLinkStatus `json:"status,omitempty"`
 }
 
 func (n *ShadowLink) GetClusterSource() *ClusterSource {
@@ -170,7 +170,7 @@ type NameFilter struct {
 	// - prefixed
 	//
 	// +kubebuilder:default=literal
-	PatternType *PatternType `json:"patternType,omitempty"`
+	PatternType PatternType `json:"patternType,omitempty"`
 }
 
 // Filter an ACL based on its access

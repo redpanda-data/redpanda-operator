@@ -34,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
 
@@ -76,6 +77,12 @@ type ClientFactory interface {
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
 	// to ensure any idle connections in the underlying transport are closed.
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
+
+	// RedpandaAdminV2Client initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
+	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
+	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
+	// to ensure any idle connections in the underlying transport are closed.
+	RedpandaAdminV2Client(ctx context.Context, object any) (*adminv2.Client, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
@@ -238,6 +245,46 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 	return nil, ErrInvalidRedpandaClientObject
 }
 
+func (c *Factory) RedpandaAdminV2Client(ctx context.Context, obj any) (*adminv2.Client, error) {
+	// if we pass in a Redpanda cluster, just use it
+	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
+		return c.redpandaAdminV2ForCluster(cluster)
+	}
+
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.redpandaAdminV2ForV1Cluster(cluster)
+	}
+
+	o, ok := obj.(client.Object)
+	if !ok {
+		return nil, ErrInvalidRedpandaClientObject
+	}
+
+	cluster, err := c.getV2Cluster(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster != nil {
+		return c.redpandaAdminV2ForCluster(cluster)
+	}
+
+	v1Cluster, err := c.getV1Cluster(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if v1Cluster != nil {
+		return c.redpandaAdminV2ForV1Cluster(v1Cluster)
+	}
+
+	if spec := c.getAdminSpec(o); spec != nil {
+		return c.redpandaAdminV2ForSpec(ctx, o.GetNamespace(), spec)
+	}
+
+	return nil, ErrInvalidRedpandaClientObject
+}
+
 func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
@@ -279,7 +326,7 @@ func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterRefer
 }
 
 func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error) {
-	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	adminClient, err := c.RedpandaAdminV2Client(ctx, obj)
 	if err != nil {
 		return nil, err
 	}

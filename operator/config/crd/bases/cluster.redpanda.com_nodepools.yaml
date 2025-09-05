@@ -51,6 +51,16 @@ spec:
                 description: ClusterRef represents a reference to a cluster that is
                   being targeted.
                 properties:
+                  group:
+                    description: |-
+                      Group is used to override the object group that this reference points to.
+                      If unspecified, defaults to "cluster.redpanda.com".
+                    type: string
+                  kind:
+                    description: |-
+                      Kind is used to override the object kind that this reference points to.
+                      If unspecified, defaults to "Redpanda".
+                    type: string
                   name:
                     description: Name specifies the name of the cluster being referenced.
                     type: string
