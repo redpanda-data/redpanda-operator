@@ -65,6 +65,7 @@ const (
 	// for which there's no change event we can latch onto).
 	periodicRequeue = 3 * time.Minute
 
+	// the message when a cluster has no desired brokers
 	messageNoBrokers = "Cluster has no desired brokers"
 )
 
@@ -294,7 +295,7 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 	if pools.AnyReady() {
 		status.Status.SetReady(statuses.ClusterReadyReasonReady)
 	} else if pools.AllZero() {
-		status.Status.SetReady(statuses.ClusterReadyReasonReady, messageNoBrokers)
+		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, messageNoBrokers)
 	} else {
 		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
 	}
@@ -679,7 +680,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 	}()
 
 	if state.pools.AllZero() {
-		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied, messageNoBrokers)
+		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonNotApplied, messageNoBrokers)
 		return ctrl.Result{}, nil
 	}
 

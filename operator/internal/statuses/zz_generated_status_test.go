@@ -159,6 +159,14 @@ func TestCluster(t *testing.T) {
 				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
 			},
 		},
+		"ConfigurationApplied/NotApplied": {
+			condition: ClusterConfigurationApplied,
+			reason:    string(ClusterConfigurationAppliedReasonNotApplied),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonNotApplied, "reason")
+			},
+		},
 		"ConfigurationApplied/Error": {
 			condition: ClusterConfigurationApplied,
 			reason:    string(ClusterConfigurationAppliedReasonError),

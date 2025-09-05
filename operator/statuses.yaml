@@ -151,6 +151,12 @@
           description: >
             This reason is used with the "ConfigurationApplied" condition when it evaluates to True because
             a cluster has had its cluster configuration parameters applied.
+        - name: NotApplied
+          message: Cluster configuration not applied
+          description: >
+            This reason is used with the "ConfigurationApplied" condition when it evaluates to False due to
+            some implementation-specific condition, such as when no brokers have been created and thus we can't
+            attempt a configuration.
     - name: Quiesced
       # final means that this state basically can only be set when all other standard fields are set, you never
       # have to set it manually and it is always calculated in the internal call to Conditions().

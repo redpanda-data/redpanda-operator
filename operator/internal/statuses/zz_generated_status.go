@@ -223,6 +223,11 @@ const (
 	// "ConfigurationApplied" condition when it evaluates to True because a cluster
 	// has had its cluster configuration parameters applied.
 	ClusterConfigurationAppliedReasonApplied ClusterConfigurationAppliedCondition = "Applied"
+	// ClusterConfigurationAppliedReasonNotApplied - This reason is used with the
+	// "ConfigurationApplied" condition when it evaluates to False due to some
+	// implementation-specific condition, such as when no brokers have been created
+	// and thus we can't attempt a configuration.
+	ClusterConfigurationAppliedReasonNotApplied ClusterConfigurationAppliedCondition = "NotApplied"
 	// ClusterConfigurationAppliedReasonError - This reason is used when a cluster
 	// has only been partially reconciled and we have early returned due to a
 	// retryable error occurring prior to applying the desired cluster state. If it
@@ -653,6 +658,11 @@ func (s *ClusterStatus) SetConfigurationApplied(reason ClusterConfigurationAppli
 			message = "Cluster configuration successfully applied"
 		}
 		status = metav1.ConditionTrue
+	case ClusterConfigurationAppliedReasonNotApplied:
+		if message == "" {
+			message = "Cluster configuration not applied"
+		}
+		status = metav1.ConditionFalse
 	case ClusterConfigurationAppliedReasonError:
 		s.isConfigurationAppliedTransientError = true
 		status = metav1.ConditionFalse
@@ -960,7 +970,7 @@ func (s *NodePoolStatus) getStable(conditions []metav1.Condition) metav1.Conditi
 
 // HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
 // within the given time period.
-func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration, noMatch ...string) bool {
+func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
 	condition := apimeta.FindStatusCondition(GetConditions(o), string(conditionType))
 	if condition == nil {
 		return false
@@ -968,11 +978,6 @@ func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav
 
 	recent := time.Since(condition.LastTransitionTime.Time) > period
 	matchedCondition := condition.Status == value
-	for _, except := range noMatch {
-		if condition.Message == except {
-			return false
-		}
-	}
 	generationChanged := condition.ObservedGeneration != 0 && condition.ObservedGeneration < o.GetGeneration()
 
 	return matchedCondition && !(generationChanged || recent)

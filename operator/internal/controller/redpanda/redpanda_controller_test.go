@@ -844,12 +844,15 @@ func (s *RedpandaControllerSuite) TestNodePoolsBlueGreen() {
 	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(0)
 
 	// start with no brokers and no nodepools
-	s.applyAndWaitFor(isStable(true), rp)
+	// we don't wait for stability here because the cluster
+	// won't stabilize as it has 0 brokers.
+	s.apply(rp)
 
 	// add a nodepool with 3 brokers.
 	bluePool := s.minimalNodePool(rp)
 	bluePool.Spec.Replicas = ptr.To(int32(3))
 	s.applyAndWaitFor(isStable(true), bluePool)
+	// now we make sure the cluster is stable each modification
 	s.waitFor(rp, isStable(true))
 
 	greenPool := s.minimalNodePool(rp)
