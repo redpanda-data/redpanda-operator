@@ -60,6 +60,8 @@ func (c *wrappedClient) Do(req *http.Request) (*http.Response, error) {
 	var err error
 	for i := range shuffled {
 		req.URL = shuffled[i].JoinPath(req.URL.Path)
+		// ensure that we have prefixed path
+		req.URL.Path = "/" + req.URL.Path
 
 		// If err is set, we are retrying after a failure on the previous node
 		if err != nil {

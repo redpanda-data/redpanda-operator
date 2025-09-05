@@ -13,8 +13,6 @@ package v1alpha2
 
 import (
 	time "time"
-
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkSecuritySettingsSyncOptions type for use
@@ -24,7 +22,7 @@ type ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration struct {
 	Enabled                *bool                          `json:"enabled,omitempty"`
 	RoleFilters            []NameFilterApplyConfiguration `json:"roleFilters,omitempty"`
 	ScramCredentialFilters []NameFilterApplyConfiguration `json:"scramCredFilters,omitempty"`
-	ACLFilters             []*redpandav1alpha2.ACLFilter  `json:"aclFilters,omitempty"`
+	ACLFilters             []ACLFilterApplyConfiguration  `json:"aclFilters,omitempty"`
 }
 
 // ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkSecuritySettingsSyncOptions type for use with
@@ -78,7 +76,7 @@ func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithScramCrede
 // WithACLFilters adds the given value to the ACLFilters field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ACLFilters field.
-func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithACLFilters(values ...**redpandav1alpha2.ACLFilter) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
+func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithACLFilters(values ...*ACLFilterApplyConfiguration) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithACLFilters")
