@@ -46,6 +46,7 @@ func (d *Debouncer) Error(logger logr.Logger, err error, msg string, keysAndValu
 
 	if !shouldCheck {
 		logger.Error(err, msg, keysAndValues...)
+		return
 	}
 
 	d.mutex.Lock()
