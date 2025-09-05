@@ -3,6 +3,9 @@ module github.com/redpanda-data/redpanda-operator/operator
 go 1.24.3
 
 require (
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.18.1-20250903131725-492a4ada6956.1
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.2-20250903131725-492a4ada6956.1
+	connectrpc.com/connect v1.18.1
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cert-manager/cert-manager v1.14.5
@@ -35,6 +38,7 @@ require (
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/scalalang2/golang-fifo v1.0.2
+	github.com/sethgrid/pester v1.2.0
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7
@@ -51,6 +55,7 @@ require (
 	golang.org/x/sync v0.16.0
 	golang.org/x/time v0.11.0
 	golang.org/x/tools v0.34.0
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
@@ -81,7 +86,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/iam v1.5.0 // indirect
 	cloud.google.com/go/secretmanager v1.14.6 // indirect
-	connectrpc.com/connect v1.18.1 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	emperror.dev/errors v0.8.1 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
@@ -253,7 +257,6 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
-	github.com/sethgrid/pester v1.2.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -307,7 +310,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250519155744-55703ea1f237 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 	google.golang.org/grpc v1.72.1 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiserver v0.33.3 // indirect
