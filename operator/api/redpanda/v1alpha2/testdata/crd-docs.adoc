@@ -541,6 +541,10 @@ ClusterRef represents a reference to a cluster that is being targeted.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`group`* __string__ | Group is used to override the object group that this reference points to. +
+If unspecified, defaults to "cluster.redpanda.com". + |  | 
+| *`kind`* __string__ | Kind is used to override the object kind that this reference points to. +
+If unspecified, defaults to "Redpanda". + |  | 
 | *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: {} +
 
 |===

@@ -44,29 +44,62 @@ type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn
 // AdminClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
 func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
+	params, err := AdminClientConnectionInfo(state, dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	var auth rpadmin.Auth
+	if params.AdminAuthParams.Username != "" {
+		auth = &rpadmin.BasicAuth{
+			Username: params.AdminAuthParams.Username,
+			Password: params.AdminAuthParams.Password,
+		}
+	} else {
+		auth = &rpadmin.NopAuth{}
+	}
+
+	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
+	client, err := rpadmin.NewAdminAPIWithDialer(params.Hosts, auth, params.TLSConfig, dialer, opts...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
+}
+
+type AdminAuthParams struct {
+	Username string
+	Password string
+	Token    string
+}
+
+type AdminConnectionParams struct {
+	Hosts           []string
+	AdminAuthParams AdminAuthParams
+	TLSConfig       *tls.Config
+}
+
+func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFunc) (*AdminConnectionParams, error) {
 	var err error
-	var tlsConfig *tls.Config
+
+	params := &AdminConnectionParams{}
 
 	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
-		tlsConfig, err = state.TLSConfig(state.Values.Listeners.Admin.TLS)
+		params.TLSConfig, err = state.TLSConfig(state.Values.Listeners.Admin.TLS)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	var auth rpadmin.Auth
 	username, password, _, err := authFromState(state)
 	if err != nil {
 		return nil, err
 	}
 
 	if username != "" {
-		auth = &rpadmin.BasicAuth{
-			Username: username,
-			Password: password,
-		}
-	} else {
-		auth = &rpadmin.NopAuth{}
+		params.AdminAuthParams.Password = password
+		params.AdminAuthParams.Username = username
 	}
 
 	records, err := srvLookup(state, dialer, redpanda.InternalAdminAPIPortName)
@@ -78,14 +111,8 @@ func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rp
 	for i, record := range records {
 		hosts[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
 	}
-
-	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
-	client, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer, opts...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return client, nil
+	params.Hosts = hosts
+	return params, nil
 }
 
 // SchemaRegistryClient creates a client to talk to a Redpanda cluster admin API based on its helm

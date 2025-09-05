@@ -79,7 +79,6 @@ spec:
                           type: string
                       required:
                       - filterType
-                      - name
                       type: object
                     type: array
                   interval:
@@ -100,6 +99,16 @@ spec:
                       It is used in constructing the client created to configure a cluster.
                       This takes precedence over StaticConfigurationSource.
                     properties:
+                      group:
+                        description: |-
+                          Group is used to override the object group that this reference points to.
+                          If unspecified, defaults to "cluster.redpanda.com".
+                        type: string
+                      kind:
+                        description: |-
+                          Kind is used to override the object kind that this reference points to.
+                          If unspecified, defaults to "Redpanda".
+                        type: string
                       name:
                         description: Name specifies the name of the cluster being
                           referenced.
@@ -677,7 +686,6 @@ spec:
                           type: string
                       required:
                       - filterType
-                      - name
                       type: object
                     type: array
                   scramCredFilters:
@@ -713,7 +721,6 @@ spec:
                           type: string
                       required:
                       - filterType
-                      - name
                       type: object
                     type: array
                 type: object
@@ -727,6 +734,16 @@ spec:
                       It is used in constructing the client created to configure a cluster.
                       This takes precedence over StaticConfigurationSource.
                     properties:
+                      group:
+                        description: |-
+                          Group is used to override the object group that this reference points to.
+                          If unspecified, defaults to "cluster.redpanda.com".
+                        type: string
+                      kind:
+                        description: |-
+                          Kind is used to override the object kind that this reference points to.
+                          If unspecified, defaults to "Redpanda".
+                        type: string
                       name:
                         description: Name specifies the name of the cluster being
                           referenced.
@@ -1247,7 +1264,6 @@ spec:
                           type: string
                       required:
                       - filterType
-                      - name
                       type: object
                     type: array
                 type: object
