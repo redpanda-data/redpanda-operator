@@ -191,6 +191,7 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 		Enabled:          options.Enabled,
 		RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
 		ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
+		AclFilters:       functional.MapFn(convertCRDToAPIACLFilter, options.ACLFilters),
 	}
 }
 

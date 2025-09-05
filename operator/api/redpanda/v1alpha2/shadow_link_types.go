@@ -243,5 +243,5 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	// SCRAM credential filters
 	ScramCredentialFilters []NameFilter `json:"scramCredFilters,omitempty"`
 	// ACL filters
-	ACLFilters []*ACLFilter `json:"aclFilters,omitempty"`
+	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
 }

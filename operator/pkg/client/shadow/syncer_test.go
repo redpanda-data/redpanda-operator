@@ -11,25 +11,20 @@ package shadow
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
-// const redpandaTestContainerImage = "docker.redpanda.com/redpandadata/redpanda:"
-
 func getTestImage() string {
-	// containerTag := os.Getenv("TEST_REDPANDA_VERSION")
-	// return redpandaTestContainerImage + containerTag
 	return "redpandadata/redpanda-nightly:v0.0.0-20250904git366e4b6"
 }
 
@@ -37,43 +32,10 @@ func TestSyncer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+	clusterOne := runShadowLinkEnabledCluster(t, ctx, "user", "password")
+	clusterTwo := runShadowLinkEnabledCluster(t, ctx, "user", "password")
 
-	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
-
-	containerOne, err := redpanda.Run(ctx, getTestImage(),
-		redpanda.WithEnableKafkaAuthorization(),
-		redpanda.WithEnableSASL(),
-		redpanda.WithSuperusers("user"),
-		redpanda.WithNewServiceAccount("user", "password"),
-	)
-
-	require.NoError(t, err)
-
-	containerTwo, err := redpanda.Run(ctx, getTestImage(),
-		redpanda.WithEnableKafkaAuthorization(),
-		redpanda.WithEnableSASL(),
-		redpanda.WithSuperusers("user"),
-		redpanda.WithNewServiceAccount("user", "password"),
-	)
-
-	require.NoError(t, err)
-
-	adminOne, err := containerOne.AdminAPIAddress(ctx)
-	require.NoError(t, err)
-
-	adminTwo, err := containerTwo.AdminAPIAddress(ctx)
-	require.NoError(t, err)
-
-	rpadminClientOne, err := adminv2.NewClientBuilder(adminOne).WithBasicAuth("user", "password").Build()
-	require.NoError(t, err)
-
-	syncer := NewSyncer(rpadminClientOne)
+	syncer := NewSyncer(clusterOne.v2Client)
 	defer syncer.Close()
 
 	link := &redpandav1alpha2.ShadowLink{
@@ -98,18 +60,90 @@ func TestSyncer(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, c.Create(ctx, link))
-	_, _, err = syncer.Sync(ctx, link, RemoteClusterSettings{
-		BootstrapServers: []string{adminTwo},
-		Authentication: &AuthenticationSettings{
-			Username:  "user",
-			Password:  "password",
-			Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
-		},
-	})
+	tasks, topics, err := syncer.Sync(ctx, link, clusterTwo.remoteClusterSettings())
+
 	require.NoError(t, err)
 
+	fmt.Println(tasks, topics)
 	// TODO: add in expectations
 
 	// require.NoError(t, syncer.Delete(ctx, link))
+}
+
+func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, username, password string) *cluster {
+	t.Helper()
+
+	container, err := redpanda.Run(ctx, getTestImage(),
+		redpanda.WithEnableKafkaAuthorization(),
+		redpanda.WithEnableSASL(),
+		redpanda.WithSuperusers(username),
+		redpanda.WithNewServiceAccount(username, password),
+	)
+
+	adminAddress, err := container.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	kafkaAddress, err := container.KafkaSeedBroker(ctx)
+	require.NoError(t, err)
+
+	rpadminClient, err := rpadmin.NewAdminAPI([]string{adminAddress}, &rpadmin.BasicAuth{
+		Username: username,
+		Password: password,
+	}, nil)
+	require.NoError(t, err)
+
+	adminV2Client, err := adminv2.NewClientBuilder(adminAddress).WithBasicAuth(username, password).Build()
+	require.NoError(t, err)
+
+	c := &cluster{
+		username: username,
+		password: password,
+		kafka:    kafkaAddress,
+		admin:    adminAddress,
+		client:   rpadminClient,
+		v2Client: adminV2Client,
+	}
+
+	c.enableDevelopmentFeature(t, ctx, "development_enable_cluster_link")
+	return c
+}
+
+type cluster struct {
+	username string
+	password string
+	kafka    string
+	admin    string
+
+	client   *rpadmin.AdminAPI
+	v2Client *adminv2.Client
+}
+
+func (c *cluster) remoteClusterSettings() RemoteClusterSettings {
+	return RemoteClusterSettings{
+		BootstrapServers: []string{c.kafka},
+		Authentication: &AuthenticationSettings{
+			Username:  c.username,
+			Password:  c.password,
+			Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+		},
+	}
+}
+
+func (c *cluster) enableDevelopmentFeature(t *testing.T, ctx context.Context, feature string) {
+	t.Helper()
+
+	// Enable experimental feature support.
+	//
+	// The key must be equal to the current broker time expressed as unix epoch
+	// in seconds, and be within 1 hour.
+	_, err := c.client.PatchClusterConfig(ctx, map[string]any{
+		"enable_developmental_unrecoverable_data_corrupting_features": time.Now().Unix(),
+	}, []string{})
+	require.NoError(t, err)
+
+	// now enable the feature
+	_, err = c.client.PatchClusterConfig(ctx, map[string]any{
+		feature: true,
+	}, []string{})
+	require.NoError(t, err)
 }
