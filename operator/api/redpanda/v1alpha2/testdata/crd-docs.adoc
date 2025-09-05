@@ -3180,6 +3180,22 @@ If 0 provided, defaults to 30 seconds + | 30 |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstate"]
+==== ShadowLinkState
+
+_Underlying type:_ _string_
+
+State of the shadow link
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus[$$ShadowLinkStatus$$]
+****
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus"]
 ==== ShadowLinkStatus
 
@@ -3197,6 +3213,7 @@ ShadowLinkStatus defines the observed state of any node pools tied to this clust
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`state`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstate[$$ShadowLinkState$$]__ | State of the shadow link + |  | 
 | *`taskStatuses`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktaskstatus[$$ShadowLinkTaskStatus$$] array__ | Statuses of the running tasks + |  | 
 | *`shadowTopicStatuses`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstatus[$$ShadowTopicStatus$$] array__ | Status of shadow topics + |  | 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the ShadowLink. + |  | 

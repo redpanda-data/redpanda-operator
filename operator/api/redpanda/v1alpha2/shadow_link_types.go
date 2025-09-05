@@ -51,8 +51,26 @@ func (s *ShadowLinkList) GetItems() []*ShadowLink {
 	return functional.MapFn(ptr.To, s.Items)
 }
 
+// State of the shadow link
+type ShadowLinkState string
+
+const (
+	// Unspecified
+	ShadowLinkStateUnknown ShadowLinkState = ""
+	// Shadow link is active
+	ShadowLinkStateActive ShadowLinkState = "active"
+	// Shadow link was paused
+	ShadowLinkStatePaused ShadowLinkState = "paused"
+	// Shadow link is in the process of failing over
+	ShadowLinkStateFailingOver ShadowLinkState = "failing over"
+	// Shadow link was failed over
+	ShadowLinkStateFailedOver ShadowLinkState = "failed over"
+)
+
 // ShadowLinkStatus defines the observed state of any node pools tied to this cluster
 type ShadowLinkStatus struct {
+	// State of the shadow link
+	State ShadowLinkState `json:"state,omitempty"`
 	// Statuses of the running tasks
 	TaskStatuses []ShadowLinkTaskStatus `json:"taskStatuses,omitempty"`
 	// Status of shadow topics
