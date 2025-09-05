@@ -335,7 +335,7 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		pool.Spec.Image = defaulters.RedpandaImage(pool.Spec.Image)
 	}
 	if defaulters.SidecarImage != nil {
-		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.SidecarImage)
 	}
 
 	// now we merge everything in to construct the pool
@@ -348,9 +348,10 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		return redpanda.Pool{}, err
 	}
 
-	// and finally return wrapped with a name
+	// and finally return wrapped with a name and generation
 	return redpanda.Pool{
 		Name:        pool.Name,
+		Generation:  fmt.Sprintf("%d", pool.Generation),
 		Statefulset: defaultSet,
 	}, nil
 }

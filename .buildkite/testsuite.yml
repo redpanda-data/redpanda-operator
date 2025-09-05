@@ -149,7 +149,7 @@ steps:
       automatic:
         limit: 3
     soft_fail: false
-    timeout_in_minutes: 60
+    timeout_in_minutes: 90
   - continue_on_failure: true
     wait: null
   - agents:

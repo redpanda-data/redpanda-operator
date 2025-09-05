@@ -151,6 +151,12 @@
           description: >
             This reason is used with the "ConfigurationApplied" condition when it evaluates to True because
             a cluster has had its cluster configuration parameters applied.
+        - name: NotApplied
+          message: Cluster configuration not applied
+          description: >
+            This reason is used with the "ConfigurationApplied" condition when it evaluates to False due to
+            some implementation-specific condition, such as when no brokers have been created and thus we can't
+            attempt a configuration.
     - name: Quiesced
       # final means that this state basically can only be set when all other standard fields are set, you never
       # have to set it manually and it is always calculated in the internal call to Conditions().
@@ -202,6 +208,107 @@
             all dependent conditions also evaluate to True.
         - name: Unstable
           message: Cluster Unstable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to True because
+            at least one dependent condition evaluates to False.
+- kind: NodePool
+  appliesTo:
+    - redpanda/v1alpha2/NodePool
+  description:
+    Defines the observed status conditions of a node pool.
+  errors:
+    - name: Error
+      transient: true
+      description: >
+        This reason is used when a node pool has only been partially reconciled and we have early returned
+        due to a retryable error occurring prior to applying the desired node pool state.
+    - name: TerminalError
+      description: >
+        This reason is used when a node pool has only been partially reconciled and we have early returned
+        due to a known terminal error occurring prior to applying the desired node pool state.
+  conditions:
+    - name: Bound
+      printerColumns:
+        - name: Bound
+      description: >
+        This condition indicates whether a node pool is bound to a known Redpanda cluster.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        node pool.
+      reasons:
+        - name: Bound
+          message: Node pool successfully bound to cluster
+          description: >
+            This reason is used with the "Bound" condition when it evaluates to True because
+            a node pool is bound to a cluster.
+        - name: NotBound
+          message: Node pool not bound to cluster
+          description: >
+            This reason is used with the "Bound" condition when it evaluates to False because
+            a node pool is not bound to a cluster.
+    - name: Deployed
+      printerColumns:
+        - name: Deployed
+      description: >
+        This condition indicates whether a node pool has been deployed for a known Redpanda cluster.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        node pool.
+      reasons:
+        - name: Deployed
+          message: Node pool successfully deployed to cluster
+          description: >
+            This reason is used with the "Deployed" condition when it evaluates to True because
+            a node pool has been fully deployed for a cluster.
+        - name: Scaling
+          message: Node pool is scaling
+          description: >
+            This reason is used with the "Deployed" condition when it evaluates to False because
+            a node pool has not yet been fully deployed for a cluster.
+        - name: NotDeployed
+          message: Node pool not deployed to cluster
+          description: >
+            This reason is used with the "Deployed" condition when it evaluates to False because
+            a node pool has not started to deploy for a cluster.
+    - name: Quiesced
+      final: true
+      description: >
+        This condition is used as to indicate that the node pool is no longer reconciling
+        due to it being in a finalized state for the current generation.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        node pool.
+      reasons:
+        - name: Quiesced
+          message: Node pool reconciliation finished
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to True because
+            the operator has finished reconciling the node pool at its current generation.
+        - name: StillReconciling
+          message: Node pool still reconciling
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to False because
+            the operator has not finished reconciling the node pool at its current generation.
+    - name: Stable
+      rollup: [ Bound, Deployed, Quiesced ]
+      description: >
+        This condition is used as a roll-up status for any sort of automation such as
+        terraform.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        node pool.
+      reasons:
+        - name: Stable
+          message: Node pool stable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to True because
+            all dependent conditions also evaluate to True.
+        - name: Unstable
+          message: Node pool unstable
           description: >
             This reason is used with the "Stable" condition when it evaluates to True because
             at least one dependent condition evaluates to False.

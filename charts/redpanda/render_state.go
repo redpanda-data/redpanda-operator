@@ -38,9 +38,9 @@ type RenderState struct {
 	// BootstrapPassword is the password of the bootstrap user, if it could be found.
 	BootstrapUserPassword string
 
-	// StatefulSetPodLabels contains the labels that may already exist for the statefulset pod template.
+	// StatefulSetPodLabels contains the labels that may already exist for the default statefulset pod template.
 	StatefulSetPodLabels map[string]string
-	// StatefulSetSelector contains the selector that may already exist for the statefulset.
+	// StatefulSetSelector contains the selector that may already exist for the default statefulset.
 	StatefulSetSelector map[string]string
 
 	// Pools contains the list of NodePools that are being rendered.

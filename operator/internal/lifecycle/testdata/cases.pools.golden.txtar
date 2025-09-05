@@ -723,11 +723,13 @@
   metadata:
     creationTimestamp: null
     labels:
-      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/component: redpanda-basic
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: basic
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
       helm.sh/chart: redpanda-25.1.1-beta3
@@ -895,7 +897,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-operator:v25.2.1
+          image: localhost/test:dev
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -980,7 +982,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: redpandadata/redpanda-operator:v25.2.1
+          image: localhost/test:dev
           name: bootstrap-yaml-envsubst
           resources:
             limits:

@@ -45,6 +45,9 @@ const (
 	// https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L55-L57
 	//nolint:gosec
 	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
+
+	NodePoolLabelName       = "cluster.redpanda.com/nodepool-name"
+	NodePoolLabelGeneration = "cluster.redpanda.com/nodepool-generation"
 )
 
 // statefulSetRedpandaEnv returns the environment variables for the Redpanda
@@ -92,7 +95,8 @@ func ClusterPodLabelsSelector(state *RenderState) map[string]string {
 func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
-	if state.StatefulSetSelector != nil {
+	// NB: the name check means we only memoize the default StatefulSet selector
+	if state.StatefulSetSelector != nil && pool.Name == "" {
 		return state.StatefulSetSelector
 	}
 
@@ -114,7 +118,8 @@ func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]stri
 // StatefulSetPodLabels returns the label that includes label selector for the Redpanda PodTemplate.
 // If this helm release is an upgrade, the existing statefulset's pod template labels will be used as it's an immutable field.
 func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
-	if state.StatefulSetPodLabels != nil {
+	// NB: the name check means we only memoize the default StatefulSet labels
+	if state.StatefulSetPodLabels != nil && pool.Name == "" {
 		return state.StatefulSetPodLabels
 	}
 
@@ -906,6 +911,12 @@ func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
 }
 
 func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
+	poolLabels := map[string]string{}
+	if pool.Name != "" {
+		poolLabels[NodePoolLabelName] = pool.Name
+		poolLabels[NodePoolLabelGeneration] = pool.Generation
+	}
+
 	set := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -914,7 +925,9 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
 			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Labels: helmette.Merge(map[string]string{
+				"app.kubernetes.io/component": fmt.Sprintf("%s%s", Name(state), pool.Suffix()),
+			}, poolLabels, FullLabels(state)),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
