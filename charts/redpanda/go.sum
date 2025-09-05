@@ -124,6 +124,8 @@ github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c h1:GZtcJAFTBCr16eM
 github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=
 github.com/cisco-open/k8s-objectmatcher v1.9.0 h1:/sfuO0BD09fpynZjXsqeZrh28Juc4VEwc2P6Ov/Q6fM=
 github.com/cisco-open/k8s-objectmatcher v1.9.0/go.mod h1:CH4E6qAK+q+JwKFJn0DaTNqxrbmWCaDQzGthKLK4nZ0=
+github.com/cloudhut/common v0.10.0 h1:Z5nhW3yo60bJSGBJEq6MZurlu3XrYJFMPWPCsVJFcDc=
+github.com/cloudhut/common v0.10.0/go.mod h1:qbvZg1TgR2mO11rS3d/NCGeUzUzzdEMHTivsSeFjO2A=
 github.com/cockroachdb/errors v1.11.3 h1:5bA+k2Y6r+oz/6Z/RFlNeVCesGARKuC6YymtcDrbC/I=
 github.com/cockroachdb/errors v1.11.3/go.mod h1:m4UIW4CDjx+R5cybPsNrRbreomiFqt8o1h1wUVazSd8=
 github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b h1:r6VH0faHjZeQy818SGhaone5OnYfxFR/+AzdY3sf5aE=
@@ -195,6 +197,8 @@ github.com/fxamacker/cbor/v2 v2.8.0 h1:fFtUGXUzXPHTIUdne5+zzMPTfffl3RD5qYnkY40vt
 github.com/fxamacker/cbor/v2 v2.8.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
 github.com/getsentry/sentry-go v0.27.0/go.mod h1:lc76E2QywIyW8WuBnwl8Lc4bkmQH4+w1gwTf25trprY=
+github.com/go-chi/chi/v5 v5.0.12 h1:9euLV5sTrTNTRUU9POmDUvfxyj6LAABLUcEWO+JJb4s=
+github.com/go-chi/chi/v5 v5.0.12/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
 github.com/go-errors/errors v1.5.1 h1:ZwEMSLRCapFLflTpT7NKaAc7ukJ8ZPEjzlxt8rPN8bk=
 github.com/go-errors/errors v1.5.1/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
 github.com/go-gorp/gorp/v3 v3.1.0 h1:ItKF/Vbuj31dmV4jxA1qblpSwkl9g1typ24xoe70IGs=
@@ -450,10 +454,8 @@ github.com/redpanda-data/common-go/rpadmin v0.1.14 h1:G/rlh9cHsGhTsNpkwrISdpGA8f
 github.com/redpanda-data/common-go/rpadmin v0.1.14/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
 github.com/redpanda-data/common-go/secrets v0.1.3 h1:VRo+OFS4Zgb2UMvwcIuUujdMhAPNGoGESZgcF4gjgcY=
 github.com/redpanda-data/common-go/secrets v0.1.3/go.mod h1:WjUU/5saSXwItZx6veFOGbQZUgPQz4MQ65z22y0Ky84=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17 h1:aARsVhc9XYhrC/aeJpDHnel8QicHbo6BtZzbhqe33UY=
-github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17/go.mod h1:QkZMtADhtFgS5Bixk6N931yazp9mBtQ7VAJ5gWPrsgg=
-github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250528175436-e8cca0053dc6 h1:7ZGF97PVyQ5yst9mvcmnllYCfMgRSts/1XYgh84Q6Pw=
-github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250528175436-e8cca0053dc6/go.mod h1:C4oYf3EfNvIhrNnRqciGojBoeiBm06hO8QrquzYJFG4=
+github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 h1:IV2Ic66JDKPtCnNU4Kn1naJlzZmhl0izRj17qgTCo20=
+github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0/go.mod h1:usCpPzzzhgtPrRTiUQOzFqGmukce8U0SrzEeX2ONDFE=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6 h1:3j3DgUcLJIDXnQYv+bOt2GShkTq0LZlFzFypSaZFUMc=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6/go.mod h1:YWnwTs6NZCiNQNTkQkJCC7Fdwbn5ur8hIcloWjuR+48=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6 h1:SbcvWTYFEbH5+NQOl1To5jppEa8RCK1HAkRNfhdUGLg=

@@ -155,7 +155,12 @@ func TestGoModLint(t *testing.T) {
 		modPrefix + "harpoon": {modPrefix + "pkg"},
 
 		modPrefix + "charts/redpanda/v25": {
+			modPrefix + "operator",
 			modPrefix + "charts/console/v3",
+		},
+
+		modPrefix + "charts/console/v3": {
+			modPrefix + "operator",
 		},
 
 		// acceptance is exempt as it's just a runner for the harpoon module.
