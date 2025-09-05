@@ -3,9 +3,10 @@ package shadow
 import (
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type RemoteClusterSettings struct {

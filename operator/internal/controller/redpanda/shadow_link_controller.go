@@ -104,7 +104,7 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 
 		Watches(&redpandav1alpha2.Redpanda{}, enqueueShadowLink)
 
 	if includeV1 {
-		enqueueV1ShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		enqueueV1ShadowLink, err := registerV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}

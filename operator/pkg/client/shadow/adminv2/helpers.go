@@ -26,8 +26,10 @@ var rng = func() func(int) int {
 
 type DialContextFunc = func(ctx context.Context, network, addr string) (net.Conn, error)
 
-type clientOptFn func(*pester.Client)
-type authFn func(*http.Request)
+type (
+	clientOptFn func(*pester.Client)
+	authFn      func(*http.Request)
+)
 
 // HTTPResponseError is the error response.
 type HTTPResponseError struct {

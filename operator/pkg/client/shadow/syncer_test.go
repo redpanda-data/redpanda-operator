@@ -20,6 +20,7 @@ import (
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
@@ -31,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/common-go/rpadmin"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
@@ -268,7 +268,7 @@ func (c *cluster) createACL(t *testing.T, ctx context.Context, user string) {
 	}
 }
 
-func (c *cluster) hasACL(t *testing.T, ctx context.Context, user string) bool {
+func (c *cluster) hasACL(t *testing.T, ctx context.Context, user string) bool { //nolint: unused  // This is stubbed out and will eventually be used
 	t.Helper()
 
 	req := kmsg.NewPtrDescribeACLsRequest()
@@ -367,7 +367,7 @@ func (c *cluster) enableDevelopmentFeature(t *testing.T, ctx context.Context, fe
 	require.NoError(t, err)
 }
 
-func (c *cluster) dumpLogs(t *testing.T, ctx context.Context) {
+func (c *cluster) dumpLogs(t *testing.T, ctx context.Context) { //nolint: unused  // This is stubbed out and will eventually be used
 	logs, err := c.container.Logs(ctx)
 	require.NoError(t, err)
 
@@ -378,8 +378,10 @@ func (c *cluster) dumpLogs(t *testing.T, ctx context.Context) {
 	t.Log(buffer.String())
 }
 
-var networkName string
-var networkOnce sync.Once
+var (
+	networkName string
+	networkOnce sync.Once
+)
 
 func ensureNetwork(t *testing.T, ctx context.Context) string {
 	t.Helper()

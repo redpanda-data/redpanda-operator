@@ -16,10 +16,11 @@ import (
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
 // Syncer synchronizes Schemas for the given object to Redpanda.
