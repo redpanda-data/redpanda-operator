@@ -23,6 +23,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -43,7 +44,7 @@ func (r *ShadowLinkReconciler) FinalizerPatch(request ResourceRequest[*redpandav
 func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.ShadowLink]) (client.Patch, error) {
 	shadowLink := request.object
 
-	createPatch := func(err error, tasks []redpandav1alpha2.ShadowLinkTaskStatus, topics []redpandav1alpha2.ShadowTopicStatus) (client.Patch, error) {
+	createPatch := func(err error, state redpandav1alpha2.ShadowLinkState, tasks []redpandav1alpha2.ShadowLinkTaskStatus, topics []redpandav1alpha2.ShadowTopicStatus) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.ShadowLink(shadowLink.Name, shadowLink.Namespace)
 
@@ -54,6 +55,7 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 		}
 
 		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.ShadowLinkStatus().
+			WithState(state).
 			WithShadowTopicStatuses(ShadowTopicStatusesToConfigs(shadowLink.Status.ShadowTopicStatuses, topics)...).
 			WithTaskStatuses(ShadowLinkTaskStatusesToConfigs(shadowLink.Status.TaskStatuses, tasks)...).
 			WithConditions(utils.StatusConditionConfigs(shadowLink.Status.Conditions, shadowLink.Generation, []metav1.Condition{
@@ -61,15 +63,17 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 			})...))), err
 	}
 
+	state := shadowLink.Status.State
 	tasks := shadowLink.Status.TaskStatuses
 	topics := shadowLink.Status.ShadowTopicStatuses
 	syncer, err := request.factory.ShadowLinks(ctx, shadowLink)
 	if err != nil {
-		return createPatch(err, tasks, topics)
+		return createPatch(err, state, tasks, topics)
 	}
 
-	tasks, topics, err = syncer.Sync(ctx, shadowLink, nil)
-	return createPatch(err, tasks, topics)
+	// TODO: map the cluster ref to RemoteClusterSettings
+	status, err := syncer.Sync(ctx, shadowLink, shadow.RemoteClusterSettings{})
+	return createPatch(err, status.State, status.TaskStatuses, status.ShadowTopicStatuses)
 }
 
 func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.ShadowLink]) error {
