@@ -30,6 +30,7 @@ import (
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
 const (
@@ -1372,6 +1373,61 @@ func (t *InternalTLS) ServerCAPath(tls *TLS) string {
 	// Other options would be: failing or falling back to the container's
 	// default truststore.
 	return fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, t.Cert)
+}
+
+// ToCommonTLS converts InternalTLS configuration to ir.CommonTLS format with proper secret references.
+func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
+	if !t.IsEnabled(tls) {
+		return nil
+	}
+
+	spec := &ir.CommonTLS{}
+	cert := tls.Certs.MustGet(t.Cert)
+	secretName := CertSecretName(state, t.Cert, cert)
+
+	if t.TrustStore != nil {
+		// Only one of ConfigMapKeyRef or SecretKeyRef should actually be set.
+		// Copy both to simplify the logic.
+		spec.CaCert = &ir.ObjectKeyRef{
+			ConfigMapKeyRef: t.TrustStore.ConfigMapKeyRef,
+			SecretKeyRef:    t.TrustStore.SecretKeyRef,
+		}
+	} else if cert.CAEnabled {
+		spec.CaCert = &ir.ObjectKeyRef{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secretName,
+				},
+				Key: "ca.crt",
+			},
+		}
+	} else {
+		spec.CaCert = &ir.ObjectKeyRef{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secretName,
+				},
+				Key: "cert.crt",
+			},
+		}
+	}
+
+	// Add client certificate and key if client auth is required
+	if t.RequireClientAuth {
+		clientSecretName := ClientCertSecretName(state, t.Cert, cert)
+
+		spec.Cert = &ir.SecretKeyRef{
+			Name: clientSecretName,
+			Key:  "tls.crt",
+		}
+
+		spec.Key = &ir.SecretKeyRef{
+			Name: clientSecretName,
+			Key:  "tls.key",
+		}
+	}
+
+	return spec
 }
 
 // ExternalTLS is the TLS configuration associated with a given "external"
