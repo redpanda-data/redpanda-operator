@@ -948,7 +948,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: foo:bar
           name: tuning
           resources: {}
           securityContext:
@@ -1033,7 +1033,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: foo:bar
           name: redpanda-configurator
           resources: {}
           volumeMounts:

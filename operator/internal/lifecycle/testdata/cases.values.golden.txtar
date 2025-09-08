@@ -524,6 +524,10 @@ pools:
             requests:
               cpu: 16m
               memory: 256Mi
+        - image: foo:bar
+          name: redpanda-configurator
+        - image: foo:bar
+          name: tuning
         nodeSelector:
           foo: bar
         priorityClassName: some-priority-class
@@ -1044,6 +1048,11 @@ pools:
         containers:
         - image: redpandadata/redpanda:v25.2.1
           name: redpanda
+        initContainers:
+        - image: redpandadata/redpanda:v25.2.1
+          name: redpanda-configurator
+        - image: redpandadata/redpanda:v25.2.1
+          name: tuning
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
