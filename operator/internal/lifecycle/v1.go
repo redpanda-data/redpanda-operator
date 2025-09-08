@@ -16,18 +16,13 @@ import (
 )
 
 // V1ResourceManagers is a factory function for tying together all of our v1 interfaces.
-func V1ResourceManagers(cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
-	OwnershipResolver[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
-	ClusterStatusUpdater[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
-	NodePoolRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
-	SimpleResourceRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
-) {
+func V1ResourceManagers() func(mgr ctrl.Manager) (OwnershipResolver[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster], ClusterStatusUpdater[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster], NodePoolRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster], SimpleResourceRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster]) {
 	return func(mgr ctrl.Manager) (
 		OwnershipResolver[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 		ClusterStatusUpdater[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 		NodePoolRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 		SimpleResourceRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 	) {
-		return NewV1OwnershipResolver(), NewV1ClusterStatusUpdater(), NewV1NodePoolRenderer(mgr), NewV1SimpleResourceRenderer(mgr, cloudSecrets)
+		return NewV1OwnershipResolver(), NewV1ClusterStatusUpdater(), NewV1NodePoolRenderer(mgr), NewV1SimpleResourceRenderer(mgr)
 	}
 }

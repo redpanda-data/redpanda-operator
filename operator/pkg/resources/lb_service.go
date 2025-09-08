@@ -144,8 +144,8 @@ func (r *LoadBalancerServiceResource) getAnnotation() map[string]string {
 	return ext.External.Bootstrap.Annotations
 }
 
-// RenderLoadBalancerService renders a LoadBalancer service
-func RenderLoadBalancerService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
+// RenderBootstrapLoadBalancer renders a Bootstrap LoadBalancer service
+func RenderBootstrapLoadBalancer(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
 	var bootstrapPorts []NamedServicePort
 	for _, listener := range cluster.KafkaAPIExternalListeners() {
 		if listener.External.Bootstrap != nil {
@@ -162,6 +162,11 @@ func RenderLoadBalancerService(cluster *vectorizedv1alpha1.Cluster) *corev1.Serv
 				TargetPort: listener.Port,
 			})
 		}
+	}
+
+	// If no bootstrap ports are configured, don't create the service
+	if len(bootstrapPorts) == 0 {
+		return nil
 	}
 
 	name := cluster.Name + "-lb-bootstrap"

@@ -23,14 +23,14 @@ type V1SimpleResourceRenderer struct {
 
 var _ SimpleResourceRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster] = (*V1SimpleResourceRenderer)(nil)
 
-func NewV1SimpleResourceRenderer(mgr ctrl.Manager, cloudSecrets CloudSecretsFlags) *V1SimpleResourceRenderer {
+func NewV1SimpleResourceRenderer(mgr ctrl.Manager) *V1SimpleResourceRenderer {
 	return &V1SimpleResourceRenderer{
 		Client: mgr.GetClient(),
 	}
 }
 
 // Render renders all simple resources for a cluster
-func (v V1SimpleResourceRenderer) Render(ctx context.Context, cluster *vectorizedv1alpha1.Cluster) ([]client.Object, error) {
+func (v *V1SimpleResourceRenderer) Render(ctx context.Context, cluster *vectorizedv1alpha1.Cluster) ([]client.Object, error) {
 	var objects []client.Object
 
 	if o := resources.RenderClusterRole(); o != nil {
@@ -44,33 +44,21 @@ func (v V1SimpleResourceRenderer) Render(ctx context.Context, cluster *vectorize
 	}
 
 	if svc := resources.RenderClusterService(cluster); svc != nil {
-		for _, s := range svc {
-			objects = append(objects, s)
-		}
+		objects = append(objects, svc)
 	}
 	if o := resources.RenderHeadlessService(cluster); o != nil {
 		objects = append(objects, o)
 	}
-	//if o := resources.RenderNodePortService(cluster); o != nil {
-	//	objects = append(objects, o)
-	//}
-	if o := resources.RenderLoadBalancerService(cluster); o != nil {
+
+	if o := resources.RenderBootstrapLoadBalancer(cluster); o != nil {
 		objects = append(objects, o)
 	}
 
-	//if cm, err := resources.RenderConfigMap(cluster, v.ConfigFactory(cluster)); err != nil {
-	//	return nil, err
-	//} else if cm != nil {
-	//	objects = append(objects, cm)
-	//}
-	//
 	if o := resources.RenderPodDisruptionBudget(cluster); o != nil {
 		objects = append(objects, o)
 	}
 
-	if ing, err := resources.RenderIngress(cluster, v.TLSSecretName, v.ClusterIssuer); err != nil {
-		return nil, err
-	} else if ing != nil {
+	if ing := resources.RenderIngress(cluster, v.TLSSecretName, v.ClusterIssuer); ing != nil {
 		objects = append(objects, ing)
 	}
 
@@ -78,7 +66,7 @@ func (v V1SimpleResourceRenderer) Render(ctx context.Context, cluster *vectorize
 }
 
 // WatchedResourceTypes returns the types of resources that should be watched
-func (v V1SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
+func (v *V1SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return []client.Object{
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},

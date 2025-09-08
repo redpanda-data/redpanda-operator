@@ -36,6 +36,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
@@ -167,6 +168,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		AdminAPIClientFactory:          testAdminAPIFactory,
 		DecommissionWaitInterval:       100 * time.Millisecond,
 		ConfigurationReassertionPeriod: driftCheckPeriod,
+		LifecycleClient:                lifecycle.NewResourceClient(k8sManager, lifecycle.V1ResourceManagers()),
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
 		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
 		ConfiguratorTag:       "latest",

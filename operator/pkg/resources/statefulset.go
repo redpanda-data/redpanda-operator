@@ -326,17 +326,19 @@ func (r *StatefulSetResource) obj(
 	tlsVolumes, tlsVolumeMounts := r.volumeProvider.Volumes()
 
 	rpkFlags := []string{}
-	u := fmt.Sprintf("%s://${POD_NAME}.%s:%d", r.pandaCluster.AdminAPIInternal().GetHTTPScheme(), r.serviceFQDN, r.pandaCluster.AdminAPIInternal().GetPort())
-	rpkFlags = append(rpkFlags, fmt.Sprintf("--api-urls %q", u))
-	if r.pandaCluster.AdminAPIInternal().GetTLS().Enabled {
-		rpkFlags = append(rpkFlags,
-			"--admin-api-tls-enabled",
-			fmt.Sprintf("--admin-api-tls-truststore %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.NodeCertMountDir, "ca.crt")))
-	}
-	if r.pandaCluster.AdminAPIInternal().GetTLS().RequireClientAuth {
-		rpkFlags = append(rpkFlags,
-			fmt.Sprintf("--admin-api-tls-cert %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.ClientCAMountDir, "tls.crt")),
-			fmt.Sprintf("--admin-api-tls-key %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.ClientCAMountDir, "tls.key")))
+	if adminAPI := r.pandaCluster.AdminAPIInternal(); adminAPI != nil {
+		u := fmt.Sprintf("%s://${POD_NAME}.%s:%d", adminAPI.GetHTTPScheme(), r.serviceFQDN, adminAPI.GetPort())
+		rpkFlags = append(rpkFlags, fmt.Sprintf("--api-urls %q", u))
+		if adminAPI.GetTLS().Enabled {
+			rpkFlags = append(rpkFlags,
+				"--admin-api-tls-enabled",
+				fmt.Sprintf("--admin-api-tls-truststore %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.NodeCertMountDir, "ca.crt")))
+		}
+		if adminAPI.GetTLS().RequireClientAuth {
+			rpkFlags = append(rpkFlags,
+				fmt.Sprintf("--admin-api-tls-cert %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.ClientCAMountDir, "tls.crt")),
+				fmt.Sprintf("--admin-api-tls-key %q", path.Join(resourcetypes.GetTLSMountPoints().AdminAPI.ClientCAMountDir, "tls.key")))
+		}
 	}
 
 	// In any case, configure PersistentVolumeClaimRetentionPolicy
@@ -624,12 +626,16 @@ func (r *StatefulSetResource) obj(
 									},
 								},
 							},
-							Ports: append([]corev1.ContainerPort{
-								{
-									Name:          "rpc",
-									ContainerPort: int32(r.pandaCluster.Spec.Configuration.RPCServer.Port),
-								},
-							}, r.getPorts()...),
+							Ports: func() []corev1.ContainerPort {
+								var ports []corev1.ContainerPort
+								if r.pandaCluster.Spec.Configuration.RPCServer.Port > 0 {
+									ports = append(ports, corev1.ContainerPort{
+										Name:          "rpc",
+										ContainerPort: int32(r.pandaCluster.Spec.Configuration.RPCServer.Port),
+									})
+								}
+								return append(ports, r.getPorts()...)
+							}(),
 							ReadinessProbe: &corev1.Probe{
 								TimeoutSeconds: 5,
 								ProbeHandler: corev1.ProbeHandler{
@@ -971,16 +977,21 @@ func (r *StatefulSetResource) portsConfiguration() string {
 }
 
 func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
-	ports := []corev1.ContainerPort{{
-		Name:          AdminPortName,
-		ContainerPort: int32(r.pandaCluster.AdminAPIInternal().Port),
-	}}
-	internalListener := r.pandaCluster.InternalListener()
-	ports = append(ports, corev1.ContainerPort{
-		Name:          InternalListenerName,
-		ContainerPort: int32(internalListener.Port),
-	})
-	if internalProxy := r.pandaCluster.PandaproxyAPIInternal(); internalProxy != nil {
+	var ports []corev1.ContainerPort
+
+	if adminAPI := r.pandaCluster.AdminAPIInternal(); adminAPI != nil && adminAPI.Port > 0 {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          AdminPortName,
+			ContainerPort: int32(adminAPI.Port),
+		})
+	}
+	if internalListener := r.pandaCluster.InternalListener(); internalListener != nil && internalListener.Port > 0 {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          InternalListenerName,
+			ContainerPort: int32(internalListener.Port),
+		})
+	}
+	if internalProxy := r.pandaCluster.PandaproxyAPIInternal(); internalProxy != nil && internalProxy.Port > 0 {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          PandaproxyPortInternalName,
 			ContainerPort: int32(internalProxy.Port),
