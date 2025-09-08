@@ -249,6 +249,8 @@ data:
   preStop.sh: IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLXgKCnByZVN0b3BIb29rICgpIHsKCXVudGlsIE5PREVfSUQ9JChjdXJsIC0tc2lsZW50IC0tZmFpbCBodHRwOi8vJHtQT0RfTkFNRX0uY2x1c3Rlci5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsOjk2NDQvdjEvbm9kZV9jb25maWcgfCBncmVwIC1vICdcIm5vZGVfaWRcIjpbXix9XSonIHwgZ3JlcCAtbyAnW146IF0qJCcpOyBkbwoJCXNsZWVwIDAuNQoJZG9uZQoJZWNobyAiU2V0dGluZyBtYWludGVuYW5jZSBtb2RlIG9uIG5vZGUgJHtOT0RFX0lEfSIKCXVudGlsIFsgIiR7c3RhdHVzOi19IiA9ICIyMDAiIF07IGRvCgkJc3RhdHVzPSQoY3VybCAtWCBQVVQgLS1zaWxlbnQgLW8gL2Rldi9udWxsIC13ICIle2h0dHBfY29kZX0iIGh0dHA6Ly8ke1BPRF9OQU1FfS5jbHVzdGVyLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWw6OTY0NC92MS9icm9rZXJzLyR7Tk9ERV9JRH0vbWFpbnRlbmFuY2UpCgkJaWYgWyAiJHtzdGF0dXM6LX0iID0gIjQwNCIgXTsgdGhlbgoJCQllY2hvICJHb3QgNDA0IHdoZW4gZW5hYmxpbmcgbWFpbnRlbmFuY2UgbW9kZSwgZ2l2aW5nIHVwIGJlY2F1c2Ugbm9kZSBkb2VzIG5vdCBleGlzdCBhbnltb3JlLiIKCQkJcmV0dXJuIDAKCQlmaQoJCWVjaG8gIkdvdCAke3N0YXR1c30gZm9yIGVuYWJsaW5nIG1haW50LiBtb2RlIgoJCXNsZWVwIDAuNQoJZG9uZQoJdW50aWwgWyAiJHtmaW5pc2hlZDotfSIgPSAidHJ1ZSIgXSB8fCBbICIke2RyYWluaW5nOi19IiA9ICJmYWxzZSIgXTsgZG8KCQlyZXM9JChjdXJsIC0tc2lsZW50IGh0dHA6Ly8ke1BPRF9OQU1FfS5jbHVzdGVyLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWw6OTY0NC92MS9tYWludGVuYW5jZSkKCQlmaW5pc2hlZD0kKGVjaG8gJHJlcyB8IGdyZXAgLW8gJ1wiZmluaXNoZWRcIjpbXix9XSonIHwgZ3JlcCAtbyAnW146IF0qJCcpCgkJZHJhaW5pbmc9JChlY2hvICRyZXMgfCBncmVwIC1vICdcImRyYWluaW5nXCI6W14sfV0qJyB8IGdyZXAgLW8gJ1teOiBdKiQnKQoJCXNsZWVwIDAuNQoJZG9uZQp9CgpleHBvcnQgLWYgcHJlU3RvcEhvb2sKdGltZW91dCA2MCBiYXNoIC1jICJwcmVTdG9wSG9vayIKdHJ1ZQo=
 kind: Secret
 metadata:
+  annotations:
+    redpanda.com/last-applied: <removed>
   creationTimestamp: "1970-01-01T00:00:00Z"
   labels:
     app.kubernetes.io/component: redpanda
@@ -256,7 +258,6 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
-    migrate: "true"
   name: cluster-lifecycle
   namespace: default
   ownerReferences:
@@ -339,6 +340,7 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    migrate: "true"
   name: cluster-cluster
   namespace: default
   ownerReferences:
@@ -358,6 +360,14 @@ spec:
   - IPv4
   ipFamilyPolicy: SingleStack
   ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: kafka
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
   - name: proxy
     port: 8082
     protocol: TCP
@@ -366,14 +376,6 @@ spec:
     port: 8081
     protocol: TCP
     targetPort: 8081
-  - name: kafka
-    port: 9092
-    protocol: TCP
-    targetPort: 9092
-  - name: admin
-    port: 9644
-    protocol: TCP
-    targetPort: 9644
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/component: redpanda

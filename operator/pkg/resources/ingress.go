@@ -274,11 +274,11 @@ func RenderIngress(
 	cluster *vectorizedv1alpha1.Cluster,
 	tlsSecretName string,
 	clusterIssuer string,
-) (*networkingv1.Ingress, error) {
+) *networkingv1.Ingress {
 	// Get subdomain from first PandaProxy external listener
 	pandaproxyAPI := cluster.FirstPandaproxyAPIExternal()
 	if pandaproxyAPI == nil || pandaproxyAPI.External.Subdomain == "" {
-		return nil, nil // No ingress needed without external configuration
+		return nil
 	}
 
 	subdomain := pandaproxyAPI.External.Subdomain
@@ -286,7 +286,7 @@ func RenderIngress(
 	userConfig := pandaproxyAPI.External.Ingress
 
 	if userConfig != nil && userConfig.Enabled != nil && !*userConfig.Enabled {
-		return nil, nil
+		return nil
 	}
 
 	svcName := cluster.GetName() + "-cluster"
@@ -325,16 +325,12 @@ func RenderIngress(
 	}
 
 	var tlsConfig []networkingv1.IngressTLS
-
-	// Configure TLS if secret name is provided
 	if tlsSecretName != "" {
-		// Add TLS annotations
 		if clusterIssuer != "" {
 			annotations["cert-manager.io/cluster-issuer"] = clusterIssuer
 			annotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = "true"
 		}
 
-		// Add TLS configuration
 		tlsConfig = []networkingv1.IngressTLS{
 			{
 				Hosts:      []string{host, fmt.Sprintf("*.%s", host)},
@@ -343,7 +339,7 @@ func RenderIngress(
 		}
 	}
 
-	ingress := &networkingv1.Ingress{
+	return &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Ingress",
 			APIVersion: "networking.k8s.io/v1",
@@ -355,6 +351,7 @@ func RenderIngress(
 		},
 		Spec: networkingv1.IngressSpec{
 			IngressClassName: &ingressClassName,
+			TLS:              tlsConfig,
 			Rules: []networkingv1.IngressRule{
 				{
 					Host: host,
@@ -378,9 +375,6 @@ func RenderIngress(
 					},
 				},
 			},
-			TLS: tlsConfig,
 		},
 	}
-
-	return ingress, nil
 }

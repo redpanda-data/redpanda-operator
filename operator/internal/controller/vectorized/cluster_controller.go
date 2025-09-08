@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -220,12 +221,6 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, fmt.Errorf("syncing resources: %w", err)
 	}
 
-	//	ar.bootstrapService()
-	// ar.clusterRole()
-	// ar.clusterRoleBinding()
-	// ar.clusterService()
-	//	ar.headlessService()
-	//	ar.ingress()
 	ar.nodeportService()
 	if err := ar.pki(); err != nil {
 		return ctrl.Result{}, err
@@ -234,11 +229,9 @@ func (r *ClusterReconciler) Reconcile(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("getting pki: %w", err)
 	}
-	// ar.podDisruptionBudget()
 	ar.proxySuperuser()
 	ar.schemaRegistrySuperUser()
 	ar.rpkSuperUser()
-	// ar.serviceAccount()
 	ar.secret()
 
 	var secrets []types.NamespacedName
@@ -1208,6 +1201,11 @@ func collectClusterPorts(
 		port := redpandaPorts.AdminAPI.Internal.Port
 		clusterPorts = append(clusterPorts, resources.NamedServicePort{Name: resources.AdminPortName, Port: port})
 	}
+
+	// Sort ports by name to ensure deterministic ordering
+	sort.Slice(clusterPorts, func(i, j int) bool {
+		return clusterPorts[i].Name < clusterPorts[j].Name
+	})
 
 	return clusterPorts
 }

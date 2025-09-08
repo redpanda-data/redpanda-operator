@@ -169,24 +169,22 @@ func (r *HeadlessServiceResource) getAnnotation() map[string]string {
 
 // RenderHeadlessService creates a headless Service for the Redpanda cluster
 func RenderHeadlessService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
-	headlessPorts := generateHeadlessServicePorts(cluster)
-
-	ports := make([]corev1.ServicePort, 0, len(headlessPorts))
-	for _, svcPort := range headlessPorts {
+	var ports []corev1.ServicePort
+	for _, p := range generateHeadlessServicePorts(cluster) {
 		ports = append(ports, corev1.ServicePort{
-			Name:       svcPort.Name,
+			Name:       p.Name,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       int32(svcPort.Port),
-			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
+			Port:       int32(p.Port),
+			TargetPort: intstr.FromInt32(int32(p.Port)),
 		})
 	}
 
-	objLabels := labels.ForCluster(cluster)
+	labels := labels.ForCluster(cluster)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cluster.Name,
 			Namespace:   cluster.Namespace,
-			Labels:      objLabels,
+			Labels:      labels,
 			Annotations: getHeadlessServiceAnnotations(cluster),
 		},
 		TypeMeta: metav1.TypeMeta{
@@ -198,40 +196,37 @@ func RenderHeadlessService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service 
 			Type:                     corev1.ServiceTypeClusterIP,
 			ClusterIP:                corev1.ClusterIPNone,
 			Ports:                    ports,
-			Selector:                 objLabels.AsAPISelector().MatchLabels,
+			Selector:                 labels.AsAPISelector().MatchLabels,
 		},
 	}
 }
 
 // generateHeadlessServicePorts collects all internal ports for the headless service
 func generateHeadlessServicePorts(cluster *vectorizedv1alpha1.Cluster) []NamedServicePort {
-	var headlessPorts []NamedServicePort
+	var ports []NamedServicePort
 
-	adminAPI := cluster.AdminAPIInternal()
-	if adminAPI != nil {
-		headlessPorts = append(headlessPorts, NamedServicePort{
+	if admin := cluster.AdminAPIInternal(); admin != nil {
+		ports = append(ports, NamedServicePort{
 			Name: AdminPortName,
-			Port: adminAPI.Port,
+			Port: admin.Port,
 		})
 	}
 
-	internalListener := cluster.InternalListener()
-	if internalListener != nil {
-		headlessPorts = append(headlessPorts, NamedServicePort{
+	if internal := cluster.InternalListener(); internal != nil {
+		ports = append(ports, NamedServicePort{
 			Name: InternalListenerName,
-			Port: internalListener.Port,
+			Port: internal.Port,
 		})
 	}
 
-	proxyInternal := cluster.PandaproxyAPIInternal()
-	if proxyInternal != nil {
-		headlessPorts = append(headlessPorts, NamedServicePort{
+	if proxy := cluster.PandaproxyAPIInternal(); proxy != nil {
+		ports = append(ports, NamedServicePort{
 			Name: PandaproxyPortInternalName,
-			Port: proxyInternal.Port,
+			Port: proxy.Port,
 		})
 	}
 
-	return headlessPorts
+	return ports
 }
 
 // getHeadlessServiceAnnotations returns annotations for the headless service

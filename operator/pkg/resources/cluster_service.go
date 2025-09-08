@@ -12,6 +12,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -90,7 +91,7 @@ func (r *ClusterServiceResource) obj() (k8sclient.Object, error) {
 			Name:       svcPort.Name,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       int32(svcPort.Port),
-			TargetPort: intstr.FromInt(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
 		})
 	}
 
@@ -150,8 +151,7 @@ func (r *ClusterServiceResource) ServiceFQDN(clusterDomain string) string {
 }
 
 // RenderClusterService renders a cluster service
-func RenderClusterService(cluster *vectorizedv1alpha1.Cluster) []*corev1.Service {
-	var output []*corev1.Service
+func RenderClusterService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
 	var ports []corev1.ServicePort
 	for _, svcPort := range generateClusterServicePorts(cluster) {
 		ports = append(ports, corev1.ServicePort{
@@ -163,7 +163,8 @@ func RenderClusterService(cluster *vectorizedv1alpha1.Cluster) []*corev1.Service
 	}
 
 	objLabels := labels.ForCluster(cluster)
-	output = append(output, &corev1.Service{
+
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
 			Name:      cluster.Name + "-cluster",
@@ -179,8 +180,7 @@ func RenderClusterService(cluster *vectorizedv1alpha1.Cluster) []*corev1.Service
 			Ports:                    ports,
 			Selector:                 objLabels.AsAPISelector().MatchLabels,
 		},
-	})
-	return output
+	}
 }
 
 // generateClusterServicePorts generates the service ports for a cluster service
@@ -218,6 +218,11 @@ func generateClusterServicePorts(cluster *vectorizedv1alpha1.Cluster) []NamedSer
 			break // Only need the internal one for cluster service
 		}
 	}
+
+	// Sort ports by name to ensure deterministic ordering
+	sort.Slice(clusterPorts, func(i, j int) bool {
+		return clusterPorts[i].Name < clusterPorts[j].Name
+	})
 
 	return clusterPorts
 }

@@ -28,7 +28,6 @@ var (
 		clientgoscheme.AddToScheme,
 		certmanagerv1.AddToScheme,
 		vectorizedv1alpha1.Install,
-		apiextensionsv1.AddToScheme,
 	}
 	v2SchemeFns = []func(s *runtime.Scheme) error{
 		apiextensionsv1.AddToScheme,
@@ -37,7 +36,6 @@ var (
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
 		monitoringv1.AddToScheme,
-		apiextensionsv1.AddToScheme,
 	}
 
 	V1Scheme      *runtime.Scheme

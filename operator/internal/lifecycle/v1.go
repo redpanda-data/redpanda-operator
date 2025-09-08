@@ -28,6 +28,6 @@ func V1ResourceManagers(cloudSecrets CloudSecretsFlags) func(mgr ctrl.Manager) (
 		NodePoolRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 		SimpleResourceRenderer[vectorizedv1alpha1.Cluster, *vectorizedv1alpha1.Cluster],
 	) {
-		return NewV1OwnershipResolver(), NewV1ClusterStatusUpdater(), NewV1NodePoolRenderer(mgr), NewV1SimpleResourceRenderer(mgr, cloudSecrets)
+		return NewV1OwnershipResolver(), NewV1ClusterStatusUpdater(), NewV1NodePoolRenderer(mgr), NewV1SimpleResourceRenderer(mgr)
 	}
 }

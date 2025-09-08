@@ -25,6 +25,24 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
+const (
+	// ClusterRoleBindingName is the name of the ClusterRoleBinding resource
+	// TODO: Make this dynamic based on cluster configuration instead of static
+	ClusterRoleBindingName = "redpanda-init-configurator"
+
+	// ServiceAccountKind is the Kubernetes kind for ServiceAccount resources
+	ServiceAccountKind = "ServiceAccount"
+
+	// ClusterRoleKind is the Kubernetes kind for ClusterRole resources
+	ClusterRoleKind = "ClusterRole"
+
+	// ClusterRoleBindingKind is the Kubernetes kind for ClusterRoleBinding resources
+	ClusterRoleBindingKind = "ClusterRoleBinding"
+
+	// RBACAPIVersion is the API version for RBAC resources
+	RBACAPIVersion = "rbac.authorization.k8s.io/v1"
+)
+
 var _ Resource = &ClusterRoleBindingResource{}
 
 // ClusterRoleBindingResource is part of the reconciliation of redpanda.vectorized.io CRD
@@ -87,7 +105,7 @@ func (r *ClusterRoleBindingResource) Ensure(ctx context.Context) error {
 	}
 	if !found {
 		crb.Subjects = append(crb.Subjects, rbacv1.Subject{
-			Kind:      "ServiceAccount",
+			Kind:      ServiceAccountKind,
 			Name:      sa.Key().Name,
 			Namespace: sa.Key().Namespace,
 		})
@@ -114,19 +132,19 @@ func (r *ClusterRoleBindingResource) Obj() (k8sclient.Object, error) {
 			Labels:    labels.ForCluster(r.pandaCluster),
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       ClusterRoleBindingKind,
+			APIVersion: RBACAPIVersion,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      ServiceAccountKind,
 				Name:      sa.Key().Name,
 				Namespace: sa.Key().Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
-			Kind:     "ClusterRole",
+			Kind:     ClusterRoleKind,
 			Name:     role.Key().Name,
 		},
 	}, nil
@@ -136,7 +154,7 @@ func (r *ClusterRoleBindingResource) Obj() (k8sclient.Object, error) {
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 // Note that Namespace can not be set as this is cluster scoped resource
 func (r *ClusterRoleBindingResource) Key() types.NamespacedName {
-	return types.NamespacedName{Name: "redpanda-init-configurator", Namespace: ""}
+	return types.NamespacedName{Name: ClusterRoleBindingName, Namespace: ""}
 }
 
 // RemoveSubject removes ServiceAccount from the ClusterRoleBinding subject list
@@ -188,24 +206,24 @@ func RenderClusterRoleBinding(cluster *vectorizedv1alpha1.Cluster) *rbacv1.Clust
 		// metav1.ObjectMeta can NOT have namespace set as
 		// ClusterRoleBinding is the cluster wide resource.
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "redpanda-init-configurator",
+			Name:      ClusterRoleBindingName,
 			Namespace: "",
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       ClusterRoleBindingKind,
+			APIVersion: RBACAPIVersion,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      ServiceAccountKind,
 				Name:      s.Name,
 				Namespace: s.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
-			Kind:     "ClusterRole",
-			Name:     "redpanda-init-configurator",
+			Kind:     ClusterRoleKind,
+			Name:     ClusterRoleBindingName,
 		},
 	}
 }
