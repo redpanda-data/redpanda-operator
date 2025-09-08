@@ -567,7 +567,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (merge (dict) $override $original)) | toJson -}}
+{{- (dict "r" (merge (dict) $override)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
