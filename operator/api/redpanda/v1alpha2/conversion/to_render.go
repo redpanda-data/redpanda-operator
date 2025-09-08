@@ -348,6 +348,17 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		return redpanda.Pool{}, err
 	}
 
+	// this is needed since normally the image is taken from the top-level cluster CRD, but node pools
+	// can override it
+	if pool.Spec.Image != nil {
+		repo := ptr.Deref(pool.Spec.Image.Repository, "")
+		tag := ptr.Deref(pool.Spec.Image.Tag, "")
+		if repo != "" && tag != "" {
+			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
+			container.Image = ptr.To(fmt.Sprintf("%s:%s", repo, tag))
+		}
+	}
+
 	// and finally return wrapped with a name and generation
 	return redpanda.Pool{
 		Name:        pool.Name,
