@@ -247,6 +247,55 @@ func TestStrategicMergePatch(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "volumes",
+			Override: redpanda.PodTemplate{
+				Spec: &applycorev1.PodSpecApplyConfiguration{
+					Volumes: []applycorev1.VolumeApplyConfiguration{
+						{
+							Name: ptr.To("certs-volume-mount"),
+							VolumeSourceApplyConfiguration: applycorev1.VolumeSourceApplyConfiguration{
+								Secret:   nil,
+								EmptyDir: &applycorev1.EmptyDirVolumeSourceApplyConfiguration{},
+							},
+						},
+					},
+				},
+			},
+			Original: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "certs-volume-mount",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: "some-secret",
+								},
+							},
+						},
+					},
+				},
+			},
+			Expected: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      map[string]string{},
+					Annotations: map[string]string{},
+				},
+				Spec: corev1.PodSpec{
+					NodeSelector:     map[string]string{},
+					Tolerations:      []corev1.Toleration{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Volumes: []corev1.Volume{
+						{
+							Name: "certs-volume-mount",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
