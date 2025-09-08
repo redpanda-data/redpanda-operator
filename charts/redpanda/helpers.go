@@ -544,7 +544,9 @@ func mergeEnvVar(original corev1.EnvVar, overrides applycorev1.EnvVarApplyConfig
 }
 
 func mergeVolume(original corev1.Volume, override applycorev1.VolumeApplyConfiguration) corev1.Volume {
-	return helmette.MergeTo[corev1.Volume](override, original)
+	// Similar to the above, if a volume is being overridden, it's likely to
+	// change the VolumeSource. Don't merge, just accept the override.
+	return helmette.MergeTo[corev1.Volume](override)
 }
 
 func mergeVolumeMount(original corev1.VolumeMount, override applycorev1.VolumeMountApplyConfiguration) corev1.VolumeMount {
