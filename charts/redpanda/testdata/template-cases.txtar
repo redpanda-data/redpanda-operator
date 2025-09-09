@@ -1584,3 +1584,59 @@ statefulset:
       enabled: false
     pvcUnbinder:
       enabled: false
+
+-- jit-certificates --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[?(@.name == \"redpanda-external-cert\")]}", {"name": "redpanda-external-cert", "emptyDir": {}}]
+# This case demonstrates how to provide "Just In Time" certificates via an
+# initContainer by using podTemplate to overwrite the auto generated volume.
+tls:
+  certs:
+    external:
+      # Uncomment this block to disable the generation of cert-manager Certificates.
+      # secretRef:
+      #   name: "set-to-disable-cert-manager"
+
+      # Controls whether or not the chart expects a ca.crt key to
+      # exist in the volume we create with the below init
+      # container. If set to false, the trustStore feature can
+      # continue to be used as is with the strategy.
+      caEnabled: true
+
+statefulset:
+  podTemplate:
+    spec:
+      initContainers:
+        - name: cert-minter
+          image: debian:latest
+          command:
+          - bash
+          - -c
+          - 'cp -L -r /original/.'
+          # Provide the rest of your initContainer implementation here.
+          # This runs with the redpanda ServiceAccount.
+          volumeMounts:
+          # autoMountServiceAccountToken is set to false but we do mount it. To
+          # mount it to your init container, specify this volume:
+          - name: "kube-api-access"
+            readOnly: true
+            mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+          # Mount the empty dir volume that will be used to pass certs through to redpanda.
+          - name: "redpanda-external-cert"
+            mountPath: "/certs"
+          # Unique to this example, we're just stealing the certs from the original.
+          - name: "3rd-party-certs"
+            mountPath: "/original"
+
+      volumes:
+      # Here's where the "magic" is. We're going to use podTemplate
+      # to override the standard certificate mount that the chart
+      # generates with an emptyDir. The initContainer will then
+      # populate it with a tls.crt, tls.key, and (optionally) ca.crt
+      # which makes it look like a standard TLS Secret mount.
+      - name: "redpanda-external-cert" # "{{ nameOverride }}-{{ cert }}-cert"
+        emptyDir: {}
+      # Unique to this example, we're just stealing the certs from the original.
+      - name: "3rd-party-certs"
+        secret:
+          secretName: "redpanda-external-cert"
