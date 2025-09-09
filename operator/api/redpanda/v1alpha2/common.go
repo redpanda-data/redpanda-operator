@@ -19,6 +19,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -239,9 +240,38 @@ type SchemaRegistrySASL struct {
 
 // ClusterRef represents a reference to a cluster that is being targeted.
 type ClusterRef struct {
+	// Group is used to override the object group that this reference points to.
+	// If unspecified, defaults to "cluster.redpanda.com".
+	Group *string `json:"group,omitempty"`
+	// Kind is used to override the object kind that this reference points to.
+	// If unspecified, defaults to "Redpanda".
+	Kind *string `json:"kind,omitempty"`
 	// Name specifies the name of the cluster being referenced.
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+}
+
+const (
+	v1ClusterRefGroup = "redpanda.vectorized.io"
+	v1ClusterRefKind  = "Cluster"
+	v2ClusterRefGroup = "cluster.redpanda.com"
+	v2ClusterRefKind  = "Redpanda"
+)
+
+func (c *ClusterRef) GetGroup() string {
+	return ptr.Deref(c.Group, v2ClusterRefGroup)
+}
+
+func (c *ClusterRef) GetKind() string {
+	return ptr.Deref(c.Kind, v2ClusterRefKind)
+}
+
+func (c *ClusterRef) IsV1() bool {
+	return c.GetGroup() == v1ClusterRefGroup && c.GetKind() == v1ClusterRefKind
+}
+
+func (c *ClusterRef) IsV2() bool {
+	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == v2ClusterRefKind
 }
 
 // ResourceTemplate specifies additional configuration for a resource.

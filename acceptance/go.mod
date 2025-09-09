@@ -26,12 +26,15 @@ require (
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.6-20221127060915-a1ecdc58eccd.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.6-20250616170632-3de895655308.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.6-20240917150400-3f349e63f44a.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.18.1-20250903131725-492a4ada6956.1 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.2-20250903131725-492a4ada6956.1 // indirect
 	cel.dev/expr v0.20.0 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/iam v1.5.0 // indirect
 	cloud.google.com/go/secretmanager v1.14.6 // indirect
+	connectrpc.com/connect v1.18.1 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	emperror.dev/errors v0.8.1 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect

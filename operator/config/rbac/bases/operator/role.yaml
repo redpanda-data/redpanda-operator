@@ -165,6 +165,7 @@ rules:
   - nodepools/finalizers
   - redpandas/finalizers
   - schemas/finalizers
+  - shadowlinks/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -175,6 +176,7 @@ rules:
   - nodepools/status
   - redpandas/status
   - schemas/status
+  - shadowlinks/status
   - topics/status
   - users/status
   verbs:
@@ -185,6 +187,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - schemas
+  - shadowlinks
   - topics
   - users
   verbs:

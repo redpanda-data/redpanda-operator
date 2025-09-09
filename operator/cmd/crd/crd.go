@@ -42,6 +42,7 @@ var (
 	}
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.NodePool(),
+		crds.ShadowLink(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
