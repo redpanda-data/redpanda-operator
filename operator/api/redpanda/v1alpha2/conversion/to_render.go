@@ -348,6 +348,32 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		return redpanda.Pool{}, err
 	}
 
+	// this is needed since normally the image is taken from the top-level cluster CRD, but node pools
+	// can override it
+	if pool.Spec.Image != nil {
+		repo := ptr.Deref(pool.Spec.Image.Repository, "")
+		tag := ptr.Deref(pool.Spec.Image.Tag, "")
+		if repo != "" && tag != "" {
+			image := fmt.Sprintf("%s:%s", repo, tag)
+
+			// override all of the containers that generally are set via Values.Image
+			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
+			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
+
+			container.Image = ptr.To(image)
+			configurator.Image = ptr.To(image)
+
+			if values.Tuning.TuneAIOEvents {
+				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
+				tuning.Image = ptr.To(image)
+			}
+			if values.Statefulset.InitContainers.FSValidator.Enabled {
+				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
+				validator.Image = ptr.To(image)
+			}
+		}
+	}
+
 	// and finally return wrapped with a name and generation
 	return redpanda.Pool{
 		Name:        pool.Name,
