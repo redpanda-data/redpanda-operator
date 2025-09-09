@@ -96,6 +96,29 @@ func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (
 	return client, nil
 }
 
+func (c *Factory) schemaRegistryForV1Cluster(cluster *vectorizedv1alpha1.Cluster) (*sr.Client, error) {
+	ctx := context.Background()
+
+	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := newNodePoolInternalSchemaRegistryAPI(ctx, c.Client, cluster, fqdn, certs, c.dialer, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.userAuth != nil {
+		client, err = sr.NewClient(append(client.Opts(), sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return client, nil
+}
+
 // kafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
 	dot, err := cluster.GetDot(c.config)
@@ -108,6 +131,37 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 		return nil, err
 	}
 	client, err := redpanda.KafkaClient(state, c.dialer, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	authOpt, err := c.kafkaUserAuth()
+	if err != nil {
+		// close the client since it's no longer usable
+		client.Close()
+
+		return nil, err
+	}
+
+	if authOpt != nil {
+		// close this client since we're not going to use it anymore
+		client.Close()
+
+		return kgo.NewClient(append(client.Opts(), authOpt)...)
+	}
+
+	return client, nil
+}
+
+func (c *Factory) kafkaForV1Cluster(cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
+	ctx := context.Background()
+
+	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := newNodePoolInternalKafkaAPI(ctx, c.Client, cluster, fqdn, certs, c.dialer, opts)
 	if err != nil {
 		return nil, err
 	}

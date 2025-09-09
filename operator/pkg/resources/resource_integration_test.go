@@ -661,3 +661,15 @@ func (TestAdminTLSConfigProvider) GetTLSConfig(
 ) (*tls.Config, error) {
 	return nil, nil
 }
+
+func (TestAdminTLSConfigProvider) GetKafkaTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return nil, nil
+}
+
+func (TestAdminTLSConfigProvider) GetSchemaTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return nil, nil
+}
