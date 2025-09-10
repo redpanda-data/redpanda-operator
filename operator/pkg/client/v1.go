@@ -56,14 +56,22 @@ func newNodePoolInternalKafkaAPI(
 	opts []kgo.Opt,
 	pods ...string,
 ) (*kgo.Client, error) {
+	var err error
+
 	kafkaAPI := redpandaCluster.InternalListener()
 	if kafkaAPI == nil {
 		return nil, NoKafkaAPI
 	}
 
+	if len(pods) == 0 {
+		pods, err = v1PodNames(ctx, k8sClient, redpandaCluster)
+		if err != nil {
+			return nil, fmt.Errorf("unable list pods to infer kafka API URLs: %w", err)
+		}
+	}
+
 	var tlsConfig *tls.Config
 	if kafkaAPI.TLS.Enabled {
-		var err error
 		tlsConfig, err = tlsProvider.GetKafkaTLSConfig(ctx, k8sClient)
 		if err != nil {
 			return nil, fmt.Errorf("could not create tls configuration for internal kafka API: %w", err)
@@ -72,27 +80,9 @@ func newNodePoolInternalKafkaAPI(
 
 	kafkaInternalPort := kafkaAPI.Port
 
-	urls := make([]string, 0)
-
-	if len(pods) == 0 {
-		// If none provided, just add a URL for every Pod.
-		var listedPods corev1.PodList
-		err := k8sClient.List(ctx, &listedPods, &client.ListOptions{
-			LabelSelector: labels.ForCluster(redpandaCluster).AsClientSelector(),
-			Namespace:     redpandaCluster.Namespace,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable list pods to infer schema registry API URLs: %w", err)
-		}
-
-		for i := range listedPods.Items {
-			pod := listedPods.Items[i]
-			pods = append(pods, pod.Name)
-		}
-	}
-
-	for _, pod := range pods {
-		urls = append(urls, fmt.Sprintf("%s.%s:%d", pod, fqdn, kafkaInternalPort))
+	urls := make([]string, len(pods))
+	for i, pod := range pods {
+		urls[i] = fmt.Sprintf("%s.%s:%d", pod, fqdn, kafkaInternalPort)
 	}
 
 	opts = append(opts, kgo.SeedBrokers(urls...))
@@ -108,17 +98,9 @@ func newNodePoolInternalKafkaAPI(
 		opts = append(opts, kgo.Dialer(dialer))
 	}
 
-	var username, password, mechanism string
-	if redpandaCluster.IsSASLOnInternalEnabled() {
-		superuser := resources.NewSuperUsers(k8sClient, redpandaCluster, controller.UnifiedScheme, resources.ScramRPKUsername, resources.RPKSuffix, log.FromContext(ctx))
-		var superuserSecret corev1.Secret
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: superuser.Key().Namespace, Name: superuser.Key().Name}, &superuserSecret); err != nil {
-			return nil, err
-		}
-		username = string(superuserSecret.Data[corev1.BasicAuthUsernameKey])
-		password = string(superuserSecret.Data[corev1.BasicAuthPasswordKey])
-		// this looks hardcoded in the controller, see cluster_controller.go updateUserOnAdminAPI
-		mechanism = rpadmin.ScramSha256
+	username, password, mechanism, err := v1ClusterAuth(ctx, k8sClient, redpandaCluster)
+	if err != nil {
+		return nil, err
 	}
 
 	if username != "" {
@@ -144,9 +126,18 @@ func newNodePoolInternalSchemaRegistryAPI(
 	opts []sr.ClientOpt,
 	pods ...string,
 ) (*sr.Client, error) {
+	var err error
+
 	schemaRegistryAPI := redpandaCluster.SchemaRegistryInternalListener()
 	if schemaRegistryAPI == nil {
 		return nil, NoSchemaRegistryAPI
+	}
+
+	if len(pods) == 0 {
+		pods, err = v1PodNames(ctx, k8sClient, redpandaCluster)
+		if err != nil {
+			return nil, fmt.Errorf("unable list pods to infer admin API URLs: %w", err)
+		}
 	}
 
 	// These transport values come from the TLS client options found here:
@@ -173,7 +164,6 @@ func newNodePoolInternalSchemaRegistryAPI(
 
 	var tlsConfig *tls.Config
 	if schemaRegistryAPI.TLS != nil && schemaRegistryAPI.TLS.Enabled {
-		var err error
 		tlsConfig, err = tlsProvider.GetSchemaTLSConfig(ctx, k8sClient)
 		if err != nil {
 			return nil, fmt.Errorf("could not create tls configuration for internal schema registry API: %w", err)
@@ -187,47 +177,23 @@ func newNodePoolInternalSchemaRegistryAPI(
 		Transport: transport,
 	})}
 
-	var username, password string
-	if redpandaCluster.IsSASLOnInternalEnabled() {
-		superuser := resources.NewSuperUsers(k8sClient, redpandaCluster, controller.UnifiedScheme, resources.ScramRPKUsername, resources.RPKSuffix, log.FromContext(ctx))
-		var superuserSecret corev1.Secret
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: superuser.Key().Namespace, Name: superuser.Key().Name}, &superuserSecret); err != nil {
-			return nil, err
-		}
-		username = string(superuserSecret.Data[corev1.BasicAuthUsernameKey])
-		password = string(superuserSecret.Data[corev1.BasicAuthPasswordKey])
+	schemaRegistryInternalPort := schemaRegistryAPI.Port
+
+	urls := make([]string, len(pods))
+	for i, pod := range pods {
+		urls[i] = fmt.Sprintf("%s%s.%s:%d", prefix, pod, fqdn, schemaRegistryInternalPort)
+	}
+
+	copts = append(copts, sr.URLs(urls...))
+
+	username, password, _, err := v1ClusterAuth(ctx, k8sClient, redpandaCluster)
+	if err != nil {
+		return nil, err
 	}
 
 	if username != "" {
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
-
-	schemaRegistryInternalPort := schemaRegistryAPI.Port
-
-	urls := make([]string, 0)
-
-	if len(pods) == 0 {
-		// If none provided, just add a URL for every Pod.
-		var listedPods corev1.PodList
-		err := k8sClient.List(ctx, &listedPods, &client.ListOptions{
-			LabelSelector: labels.ForCluster(redpandaCluster).AsClientSelector(),
-			Namespace:     redpandaCluster.Namespace,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable list pods to infer admin API URLs: %w", err)
-		}
-
-		for i := range listedPods.Items {
-			pod := listedPods.Items[i]
-			pods = append(pods, pod.Name)
-		}
-	}
-
-	for _, pod := range pods {
-		urls = append(urls, fmt.Sprintf("%s%s.%s:%d", prefix, pod, fqdn, schemaRegistryInternalPort))
-	}
-
-	copts = append(copts, sr.URLs(urls...))
 
 	// finally, override any calculated client opts with whatever was
 	// passed in
@@ -244,6 +210,44 @@ func v1ClusterCerts(ctx context.Context, k8sClient client.Client, cluster *vecto
 		return "", nil, err
 	}
 	return fqdn, certs, nil
+}
+
+func v1ClusterAuth(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster) (string, string, string, error) {
+	if !cluster.IsSASLOnInternalEnabled() {
+		return "", "", "", nil
+	}
+
+	superuser := resources.NewSuperUsers(k8sClient, cluster, controller.UnifiedScheme, resources.ScramRPKUsername, resources.RPKSuffix, log.FromContext(ctx))
+	var superuserSecret corev1.Secret
+	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: superuser.Key().Namespace, Name: superuser.Key().Name}, &superuserSecret); err != nil {
+		return "", "", "", err
+	}
+	username := string(superuserSecret.Data[corev1.BasicAuthUsernameKey])
+	password := string(superuserSecret.Data[corev1.BasicAuthPasswordKey])
+	// this looks hardcoded in the controller, see cluster_controller.go updateUserOnAdminAPI
+	mechanism := rpadmin.ScramSha256
+
+	return username, password, mechanism, nil
+}
+
+func v1PodNames(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster) ([]string, error) {
+	names := []string{}
+
+	var listedPods corev1.PodList
+	err := k8sClient.List(ctx, &listedPods, &client.ListOptions{
+		LabelSelector: labels.ForCluster(cluster).AsClientSelector(),
+		Namespace:     cluster.Namespace,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to list pods for cluster: %w", err)
+	}
+
+	for i := range listedPods.Items {
+		pod := listedPods.Items[i]
+		names = append(names, pod.Name)
+	}
+
+	return names, nil
 }
 
 func saslOpt(user, password, mechanism string) (kgo.Opt, error) {
