@@ -241,13 +241,15 @@ func (w *ConfigWatcher) syncUser(ctx context.Context, user, password, mechanism 
 	if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			if recreate {
-				// the original implementation did an update via Delete + Create, so do that here
-				if err := w.adminClient.DeleteUser(ctx, user); err != nil {
-					w.log.Error(err, "could not delete user for recreation", "user", user)
-					return
-				}
-				if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
-					w.log.Error(err, "could not recreate user", "user", user)
+				if err := w.adminClient.UpdateUser(ctx, user, password, mechanism); err != nil {
+					w.log.Error(err, "could not update user, falling back to delete/recreate", "user", user)
+					if err := w.adminClient.DeleteUser(ctx, user); err != nil {
+						w.log.Error(err, "could not delete user for recreation", "user", user)
+						return
+					}
+					if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
+						w.log.Error(err, "could not recreate user", "user", user)
+					}
 				}
 			}
 			return
