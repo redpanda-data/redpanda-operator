@@ -94,13 +94,21 @@ func (r *StatefulSetResource) runUpdate(
 	// Check if we should run update on this specific STS.
 
 	log.V(logger.DebugLevel).Info("Checking that we should update")
-	update, err := r.shouldUpdate(current, modified)
+	stsChanged, nodePoolRestarting, err := r.shouldUpdate(current, modified)
 	if err != nil {
 		return fmt.Errorf("unable to determine the update procedure: %w", err)
 	}
 
-	if !update {
+	if !stsChanged && !nodePoolRestarting {
 		return nil
+	}
+
+	// When a StatefulSet change is detected, mark all Node Pool Pods as requiring a Pod rolling restart
+	if stsChanged {
+		log.V(logger.DebugLevel).Info("Setting ClusterUpdate condition on pods")
+		if err = r.MarkPodsForUpdate(ctx, ClusterUpdateReasonVersion); err != nil {
+			return fmt.Errorf("unable to mark pods for update: %w", err)
+		}
 	}
 
 	// At this point, we have seen a diff and want to update the StatefulSet.
@@ -612,17 +620,19 @@ func (r *StatefulSetResource) updateStatefulSet(
 	return nil
 }
 
-// shouldUpdate returns true if changes on the CR require update
+// shouldUpdate compares the generated appsv1.StatefulSet from the StatefulSetResource.obj
+// function (referred to as `modified`) with appsv1.StatefulSet retrieved from
+// the Kubernetes API (referred to as `current`). If a difference is detected, the function returns
+// `true` as the first value. Certain fields are ignored because they are not relevant to a Pod
+// rolling upgrade (e.g. `Status`, `VolumeClaimTemplate`, or `Annotations`).
+//
+// If no differences are found, the function returns `false` as first value. The second value
+// depends on the Node Pool Status, indicating whether rolling restart is still in progress.
 func (r *StatefulSetResource) shouldUpdate(
 	current, modified *appsv1.StatefulSet,
-) (bool, error) {
+) (bool, bool, error) {
 	log := r.logger.WithName("shouldUpdate")
 
-	npStatus := r.getNodePoolStatus()
-
-	if npStatus.Restarting || r.pandaCluster.Status.Restarting {
-		return true, nil
-	}
 	prepareResourceForPatch(current, modified)
 	opts := []patch.CalculateOption{
 		patch.IgnoreStatusFields(),
@@ -632,10 +642,16 @@ func (r *StatefulSetResource) shouldUpdate(
 	}
 	patchResult, err := patch.NewPatchMaker(patch.NewAnnotator(redpandaAnnotatorKey), &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{}).Calculate(current, modified, opts...)
 	if err != nil || patchResult.IsEmpty() {
-		return false, err
+		npStatus := r.getNodePoolStatus()
+
+		if npStatus.Restarting || r.pandaCluster.Status.Restarting {
+			return false, true, nil
+		}
+
+		return false, false, err
 	}
 	log.Info("Detected diff", "patchResult", string(patchResult.Patch))
-	return true, nil
+	return true, false, nil
 }
 
 func (r *StatefulSetResource) getRestartingStatus() bool {
