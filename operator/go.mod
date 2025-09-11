@@ -59,6 +59,7 @@ require (
 	k8s.io/apimachinery v0.33.3
 	k8s.io/client-go v0.33.3
 	k8s.io/component-helpers v0.33.3
+	k8s.io/kubectl v0.33.3
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -316,7 +317,6 @@ require (
 	k8s.io/component-base v0.33.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
-	k8s.io/kubectl v0.33.3 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
