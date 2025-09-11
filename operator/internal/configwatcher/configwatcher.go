@@ -39,12 +39,13 @@ type Option func(c *ConfigWatcher)
 // ConfigWatcher replaces the old bash scripts we leveraged for waiting
 // for a cluster to become stable and then creating superusers
 type ConfigWatcher struct {
-	adminClient    *rpadmin.AdminAPI
-	configPath     string
-	usersDirectory string
-	watch          bool
-	fs             afero.Fs
-	log            logr.Logger
+	adminClient           *rpadmin.AdminAPI
+	configPath            string
+	usersDirectory        string
+	defaultK8sUserSymlink string
+	watch                 bool
+	fs                    afero.Fs
+	log                   logr.Logger
 
 	// When deployed using operator cluster configuration is synced only
 	// in main reconciler. ConfigWatcher sidecar should only synchronize users
@@ -100,6 +101,7 @@ func NewConfigWatcher(log logr.Logger, watch bool, options ...Option) *ConfigWat
 	for _, option := range options {
 		option(watcher)
 	}
+	watcher.defaultK8sUserSymlink = path.Join(watcher.usersDirectory, "..data")
 
 	return watcher
 }
@@ -168,7 +170,18 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 			w.log.Error(err, "watcher returned an error")
 			time.Sleep(5 * time.Second)
 		case event := <-watcher.Events:
-			if strings.HasSuffix(event.Name, ".txt") {
+			// Kubernete updates secrets by swapping a symlink named `..data`.
+			// We must watch for the CREATE event on this specific symlink.
+			if event.Name == w.defaultK8sUserSymlink && event.Has(fsnotify.Create) {
+				w.log.Info("Kubernetes secret update detected, synchronizing users", "event", event.String())
+				// use syncInital to re-read entire Directory
+				w.syncInitial(ctx)
+				continue
+			}
+
+			// The original logic in case there is direct file writes,
+			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".txt") {
+				w.log.Info("Direct file write detected, synchronizing users", "event", event.String())
 				w.SyncUsers(ctx, event.Name)
 			}
 		case <-ctx.Done():
