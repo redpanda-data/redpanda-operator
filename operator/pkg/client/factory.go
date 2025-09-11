@@ -32,6 +32,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
@@ -88,6 +89,10 @@ type ClientFactory interface {
 	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
 	// goroutines.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
+
+	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
+	// goroutines.
+	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error)
 
 	// Schemas returns a high-level client for synchronizing Schemas.
 	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
@@ -286,6 +291,15 @@ func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	}
 
 	return users.NewClient(ctx, c.Client, kadm.NewClient(kafkaClient), adminClient)
+}
+
+func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error) {
+	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return roles.NewClient(ctx, adminClient)
 }
 
 func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
