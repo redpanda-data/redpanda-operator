@@ -43,6 +43,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
@@ -78,6 +79,14 @@ func (c *clusterClients) Users(ctx context.Context) *users.Client {
 	t := framework.T(ctx)
 
 	client, err := c.factory.Users(ctx, c.resourceTarget)
+	require.NoError(t, err)
+	return client
+}
+
+func (c *clusterClients) Roles(ctx context.Context) *roles.Client {
+	t := framework.T(ctx)
+
+	client, err := c.factory.Roles(ctx, c.resourceTarget)
 	require.NoError(t, err)
 	return client
 }
@@ -145,6 +154,22 @@ func (c *clusterClients) ExpectNoUser(ctx context.Context, user string) {
 	t.Logf("Checking that user %q does not exist in cluster %q", user, c.cluster)
 	c.checkUser(ctx, user, false, fmt.Sprintf("User %q still exists in cluster %q", user, c.cluster))
 	t.Logf("Found no user %q in cluster %q", user, c.cluster)
+}
+
+func (c *clusterClients) ExpectRole(ctx context.Context, role string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking for role %q in cluster %q", role, c.cluster)
+	c.checkRole(ctx, role, true, fmt.Sprintf("Role %q does not exist in cluster %q", role, c.cluster))
+	t.Logf("Found role %q in cluster %q", role, c.cluster)
+}
+
+func (c *clusterClients) ExpectNoRole(ctx context.Context, role string) {
+	t := framework.T(ctx)
+
+	t.Logf("Checking that role %q does not exist in cluster %q", role, c.cluster)
+	c.checkRole(ctx, role, false, fmt.Sprintf("Role %q still exists in cluster %q", role, c.cluster))
+	t.Logf("Found no role %q in cluster %q", role, c.cluster)
 }
 
 func (c *clusterClients) ExpectSchema(ctx context.Context, schema string) {
@@ -237,13 +262,42 @@ func (c *clusterClients) checkUser(ctx context.Context, user string, exists bool
 	}
 }
 
+func (c *clusterClients) checkRole(ctx context.Context, role string, exists bool, message string) {
+	t := framework.T(ctx)
+
+	if !assert.Eventually(t, func() bool {
+		t.Logf("Checking if role %q exists in cluster", role)
+		adminClient := c.RedpandaAdmin(ctx)
+
+		// Try to get role members - if it succeeds, role exists
+		_, err := adminClient.RoleMembers(ctx, role)
+		roleExists := err == nil
+
+		adminClient.Close()
+		return exists == roleExists
+	}, 30*time.Second, 2*time.Second, message) {
+		t.Errorf("Role %q existence check failed", role)
+	}
+}
+
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t := framework.T(ctx)
+
+	t.Logf("Creating clients for cluster %q in namespace %q", cluster, t.Namespace())
+
+	// First verify the cluster exists
+	var testCluster redpandav1alpha2.Redpanda
+	clusterKey := t.ResourceKey(cluster)
+	if err := t.Get(ctx, clusterKey, &testCluster); err != nil {
+		t.Fatalf("Failed to find cluster %q in namespace %q: %v", cluster, t.Namespace(), err)
+	}
+	t.Logf("Found cluster %q with status: %+v", cluster, testCluster.Status)
 
 	// we construct a fake user to grab all of the clients for the cluster
 	referencer := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace(),
+			Name:      "test-user-" + cluster, // Add a name for debugging
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: &redpandav1alpha2.ClusterSource{
@@ -254,13 +308,19 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 		},
 	}
 
+	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
+	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
+
 	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
-	return &clusterClients{
+	clients := &clusterClients{
 		resourceTarget: referencer,
 		cluster:        cluster,
 		factory:        factory,
 	}
+
+	t.Logf("Successfully created clients for cluster %q", cluster)
+	return clients
 }
 
 func usersFromACLTable(t framework.TestingT, cluster string, table *godog.Table) []*redpandav1alpha2.User {
